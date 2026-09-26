@@ -119,7 +119,7 @@ class SubprocessBackend:
 
     def amend_date(self, date_str: str) -> tuple[bool, str]:
         result = self._run(
-            ["commit", "--amend", "--no-edit", "--date", date_str],
+            ["commit", "--amend", "--no-edit", "--date", "-m", date_str],
             check=False,
         )
         return result.returncode == 0, result.stderr
