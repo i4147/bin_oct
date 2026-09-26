@@ -5,21 +5,28 @@ Safely remove comments, docstrings, type annotations, and repeated blank
 lines from Python files using LibCST.
 
 Backup / restore model
------------------------
+----------------------
 This tool overwrites files in place. There is no way to "undo" that after
 the fact unless the original content was saved somewhere first. To make
---reverse actually work (rather than pretend to), every strip operation
-writes a sidecar backup file (default: "<file>.pystripbak") next to the
-original *before* overwriting it. --reverse reads that sidecar back and
-restores the original content, then deletes the sidecar.
+--reverse actually work (rather than pretend to), a strip operation must
+first write a sidecar backup file (default: "<file>.pystripbak") next to
+the original *before* overwriting it.
 
-If you delete the sidecar files (or run with --no-backup), there is
+Backups are OPT-IN. By default this script writes NO backup file and the
+original bytes are gone the moment a file is rewritten. To enable
+backups, pass --backup. Only files stripped with --backup can later be
+restored by --reverse: --reverse reads the sidecar back, restores the
+original content, and then deletes the sidecar.
+
+If you delete the sidecar files, or run without --backup, there is
 nothing to reverse. This is a hard requirement of doing destructive,
 in-place edits without a VCS: either you keep a copy of the original, or
 you don't, and no flag can restore data that was never kept. If your files
 are already tracked in git, `git checkout -- <path>` is an alternative to
 --reverse that doesn't require sidecar files at all, provided the file has
-no other uncommitted changes.
+no other uncommitted changes. For throwaway use on scratch files, the
+default (no backup) is the fast path; for anything you care about, either
+pass --backup or have the file under version control.
 
 Commented-out code detection (heuristic, not exact)
 ----------------------------------------------------
@@ -410,6 +417,9 @@ class CommentDocstringStripper(cst.CSTTransformer):
         """Remove function docstrings and return annotations.
 
         Parameter annotations are removed separately by ``leave_Param``.
+        `FunctionDef` carries a `type_comment` field in recent LibCST, but
+        not every version exposes it, so it's only added to the change set
+        when the attribute actually exists.
         """
         del original_node
         if self.remove_docstrings:
@@ -417,7 +427,10 @@ class CommentDocstringStripper(cst.CSTTransformer):
             if changed:
                 updated_node = updated_node.with_changes(body=new_body)
         if self.remove_type_annotations:
-            updated_node = updated_node.with_changes(returns=None, type_comment=None)
+            changes = {"returns": None}
+            if getattr(updated_node, "type_comment", None) is not None:
+                changes["type_comment"] = None
+            updated_node = updated_node.with_changes(**changes)
         return updated_node
 
     def leave_ClassDef(self, original_node, updated_node):
@@ -431,13 +444,20 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node
 
     def leave_Param(self, original_node, updated_node):
-        """Remove annotations from function, method, and lambda parameters."""
+        """Remove annotations from function, method, and lambda parameters.
+
+        `cst.Param` has an `annotation` field but NO `type_comment` field,
+        so unlike assignments / for / with / function defs, there is no
+        type comment to strip here. Referencing `type_comment` on a Param
+        is what previously raised:
+            AttributeError: 'Param' object has no attribute 'type_comment'
+        """
         del original_node
         if not self.remove_type_annotations:
             return updated_node
-        if updated_node.annotation is None and updated_node.type_comment is None:
+        if updated_node.annotation is None:
             return updated_node
-        return updated_node.with_changes(annotation=None, type_comment=None)
+        return updated_node.with_changes(annotation=None)
 
     def leave_AnnAssign(self, original_node, updated_node):
         """Remove variable annotations.
@@ -643,7 +663,9 @@ def process_file(
     The input file is modified only after the generated source passes
     ast.parse() validation. If `make_backup` is True, the original bytes
     are saved to a sidecar file before the real file is overwritten, so
-    --reverse can restore them later.
+    --reverse can restore them later. When `make_backup` is False (the
+    default), the original bytes are discarded and --reverse will have
+    nothing to restore for this file.
     """
     try:
         original_bytes = path.read_bytes()
@@ -854,11 +876,14 @@ def build_arg_parser():
         ),
     )
     parser.add_argument(
-        "--no-backup",
+        "--backup",
         action="store_true",
         help=(
-            "Do not write a sidecar backup file before stripping. Without a "
-            "backup, --reverse has nothing to restore from for these files."
+            "Write a sidecar backup file (<name>.pystripbak) next to each "
+            "file before overwriting it. Without this flag (the default), no "
+            "backup is written, the original bytes are discarded, and "
+            "--reverse will have nothing to restore for files stripped in "
+            "this run."
         ),
     )
     parser.add_argument(
@@ -866,8 +891,9 @@ def build_arg_parser():
         action="store_true",
         help=(
             "Restore files from their sidecar backup files instead of "
-            "stripping. Only works for files that were stripped previously "
-            "with backups enabled (the default)."
+            "stripping. Only works for files that were previously stripped "
+            "with --backup; files stripped without a backup cannot be "
+            "restored by this tool."
         ),
     )
     parser.add_argument(
@@ -920,7 +946,7 @@ def main(argv=None):
         remove_all_comments=remove_all_comments,
         remove_docstrings=remove_docstrings,
         remove_type_annotations=args.remove_type_annotations,
-        make_backup=not args.no_backup,
+        make_backup=args.backup,
     )
 
     total_count = 0
