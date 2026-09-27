@@ -109,16 +109,12 @@ def save_progress(
     output_type: str = "json",
 ) -> None:
     try:
-        # "Successful" = we have a translation that is not empty and not
-        # identical to the source text.
         successful = {
             line: results[line]
             for line in all_lines
             if line in results and results[line] and results[line] != line
         }
-        # "Failed" = we have a result but it equals the source or is empty.
-        # (Untranslated lines — not in results at all — are NOT failures;
-        # they are simply not attempted yet.)
+
         failed = [
             line
             for line in all_lines
@@ -154,8 +150,6 @@ def save_progress(
             with json_path.open("w", encoding="utf-8") as f:
                 json.dump(json_data, f, ensure_ascii=False, indent=2)
 
-            # Always write the failed file (empty if nothing failed) so the
-            # presence of the file is a reliable signal.
             with failed_path.open("w", encoding="utf-8") as f:
                 for line in failed:
                     f.write(f"{line}\n")

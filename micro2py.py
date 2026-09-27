@@ -29,13 +29,6 @@ import re
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Standard library detection
-# ---------------------------------------------------------------------------
-# ``sys.stdlib_module_names`` is a frozenset available on Python >= 3.10.
-# On older interpreters we fall back to importlib.util.find_spec, which is
-# slower but sufficient for this script's purposes.
-
 if sys.version_info >= (3, 10):
     _STDLIB: set[str] | None = set(sys.stdlib_module_names)
 else:  # pragma: no cover - fallback for older interpreters
@@ -53,15 +46,6 @@ def is_stdlib(name: str) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# Content refactoring
-# ---------------------------------------------------------------------------
-
-# Matches a word-boundary 'u' followed by a Python identifier.
-# group(1) is the candidate stdlib module name (the part *after* the 'u').
-# Using \b on both sides avoids matching things like 'hour' or 'gui'
-# (no 'u' at a word boundary) as well as 'utime2' (trailing digits are
-# part of the identifier, so 'time2' is checked instead of 'time').
 _U_PREFIX_RE = re.compile(r"\bu([A-Za-z_][A-Za-z0-9_]*)\b")
 
 
@@ -76,11 +60,6 @@ def refactor_content(text: str) -> str:
     return _U_PREFIX_RE.sub(repl, text)
 
 
-# ---------------------------------------------------------------------------
-# File-level refactoring
-# ---------------------------------------------------------------------------
-
-
 def _rename_target(path: Path) -> Path | None:
     stem = path.stem
     if len(stem) > 1 and stem.startswith("u") and is_stdlib(stem[1:]):
@@ -92,7 +71,6 @@ def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
     content_changed = False
     name_changed = False
 
-    # ---- content ----------------------------------------------------------
     original = path.read_text(encoding="utf-8")
     updated = refactor_content(original)
     if updated != original:
@@ -100,23 +78,16 @@ def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
         if not dry_run:
             path.write_text(updated, encoding="utf-8")
 
-    # ---- filename ---------------------------------------------------------
     new_path = _rename_target(path)
     if new_path is not None:
         name_changed = True
         if not dry_run:
             if new_path.exists():
-                # Never clobber an existing file; report and skip.
                 print(f"  ! not renaming {path.name}: {new_path.name} already exists")
             else:
                 path.rename(new_path)
 
     return content_changed, name_changed
-
-
-# ---------------------------------------------------------------------------
-# Path iteration
-# ---------------------------------------------------------------------------
 
 
 def _iter_py_files(root: Path):
@@ -125,11 +96,6 @@ def _iter_py_files(root: Path):
             yield root
     elif root.is_dir():
         yield from root.rglob("*.py")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -152,8 +118,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
-    # ``nargs='*'`` with a ``default`` gives us an empty list when nothing
-    # is supplied, so normalise that to ['.'] explicitly.
     roots = args.paths or [Path(".")]
 
     total = 0

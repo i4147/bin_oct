@@ -42,15 +42,9 @@ from typing import Iterable, Iterator
 
 import libcst as cst
 
-# --------------------------------------------------------------------------- #
-# Configuration
-# --------------------------------------------------------------------------- #
-
 NUM_WORKERS = 8
 CHUNKSIZE = 4
 
-# Directories silently pruned during recursive discovery. Users who *want* to
-# process files inside these can still pass them explicitly.
 SKIP_DIRS: frozenset[str] = frozenset(
     {
         ".git",
@@ -72,10 +66,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
     }
 )
 
-# --------------------------------------------------------------------------- #
-# CST transformation
-# --------------------------------------------------------------------------- #
-
 
 class InlineCommentRemover(cst.CSTTransformer):
     def __init__(self) -> None:
@@ -91,17 +81,11 @@ class InlineCommentRemover(cst.CSTTransformer):
             return updated_node
 
         self.comments_removed += 1
-        # Clear both the comment and the whitespace that preceded it so
-        # `x = 1  # c` becomes `x = 1`, not `x = 1  ` with dangling spaces.
+
         return updated_node.with_changes(
             whitespace=cst.SimpleWhitespace(""),
             comment=None,
         )
-
-
-# --------------------------------------------------------------------------- #
-# Filesystem helpers
-# --------------------------------------------------------------------------- #
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
@@ -131,26 +115,19 @@ def _atomic_write(path: Path, data: bytes) -> None:
         raise
 
 
-# --------------------------------------------------------------------------- #
-# Per-file worker
-# --------------------------------------------------------------------------- #
-
-
 def process_file(path: Path) -> tuple[Path, int, str | None]:
-    # 1. Read raw bytes.
+
     try:
         source_bytes = path.read_bytes()
     except OSError as exc:
         return path, 0, f"read error: {exc}"
 
-    # 2. Detect encoding (respects BOM + PEP 263 coding declarations).
     try:
         encoding, _ = tokenize.detect_encoding(io.BytesIO(source_bytes).readline)
         source = source_bytes.decode(encoding)
     except (SyntaxError, UnicodeDecodeError) as exc:
         return path, 0, f"encoding error: {exc}"
 
-    # 3. Parse with libcst.
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
@@ -158,7 +135,6 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
     except Exception as exc:
         return path, 0, f"parse error: {type(exc).__name__}: {exc}"
 
-    # 4. Transform the CST.
     transformer = InlineCommentRemover()
     try:
         new_module = module.visit(transformer)
@@ -168,25 +144,18 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
     if transformer.comments_removed == 0:
         return path, 0, None
 
-    # 5. Generate and validate the new source BEFORE touching the file.
     new_source = new_module.code
     try:
         ast.parse(new_source, filename=str(path))
     except SyntaxError as exc:
         return path, 0, f"post-transform validation failed: {exc}"
 
-    # 6. Atomic write-back, preserving the original encoding.
     try:
         _atomic_write(path, new_source.encode(encoding))
     except (OSError, UnicodeEncodeError) as exc:
         return path, 0, f"write error: {exc}"
 
     return path, transformer.comments_removed, None
-
-
-# --------------------------------------------------------------------------- #
-# Path discovery
-# --------------------------------------------------------------------------- #
 
 
 def iter_python_files(roots: Iterable[Path]) -> Iterator[Path]:
@@ -205,7 +174,6 @@ def iter_python_files(roots: Iterable[Path]) -> Iterator[Path]:
                         yield root
             elif root.is_dir():
                 for dirpath, dirnames, filenames in root.walk(on_error=_on_error):
-                    # Prune well-known irrelevant trees in place.
                     dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
                     for name in filenames:
                         if not name.endswith(".py"):
@@ -223,11 +191,6 @@ def iter_python_files(roots: Iterable[Path]) -> Iterator[Path]:
                 print(f"warning: skipping non-existent path: {root}", file=sys.stderr)
         except OSError as exc:
             print(f"warning: cannot access {root}: {exc}", file=sys.stderr)
-
-
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -260,8 +223,6 @@ def main(argv: list[str] | None = None) -> int:
     total_removed = 0
     error_count = 0
 
-    # `imap_unordered` streams tasks out and results in as they finish, which
-    # keeps memory usage flat and lets us report progress incrementally.
     with mp.Pool(processes=NUM_WORKERS) as pool:
         results = pool.imap_unordered(
             process_file,

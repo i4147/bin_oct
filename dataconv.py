@@ -46,19 +46,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-# --------------------------------------------------------------------------- #
-# Types / constants
-# --------------------------------------------------------------------------- #
-
-# Canonical in-memory representation every loader/writer agrees on.
 Tables = dict[str, list[dict[str, Any]]]
 
-# Files above this size get read via mmap (text formats only).
 MMAP_THRESHOLD = 5 * 1024 * 1024
-
-# --------------------------------------------------------------------------- #
-# Small shared helpers
-# --------------------------------------------------------------------------- #
 
 
 def _require(modname: str):
@@ -174,16 +164,9 @@ def _as_tables(data: Any, fallback_name: str) -> Tables:
     return {fallback_name: [data if isinstance(data, dict) else {"value": data}]}
 
 
-# =========================================================================== #
-# CORE FORMATS: csv, json, sqlite, sql dump
-# =========================================================================== #
-
-# ------------------------------- CSV / TSV --------------------------------- #
-
-
 def load_csv(path: Path) -> Tables:
     text = read_text(path)
-    # Tab-delimited TSV files get sniffed as such if their ext says so.
+
     dialect: Any = "excel-tab" if path.suffix.lower() == ".tsv" else "excel"
     reader = csv.DictReader(io.StringIO(text), dialect=dialect)
     return {path.stem: [dict(r) for r in reader]}
@@ -208,9 +191,6 @@ def write_csv(tables: Tables, out_path: Path) -> list[Path]:
     return written
 
 
-# ------------------------------- JSON -------------------------------------- #
-
-
 def load_json(path: Path) -> Tables:
     return _as_tables(json.loads(read_text(path)), path.stem)
 
@@ -222,9 +202,6 @@ def write_json(tables: Tables, out_path: Path) -> list[Path]:
         encoding="utf-8",
     )
     return [out_path]
-
-
-# ---------------------------- JSON Lines ----------------------------------- #
 
 
 def load_jsonl(path: Path) -> Tables:
@@ -245,9 +222,6 @@ def write_jsonl(tables: Tables, out_path: Path) -> list[Path]:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
     return [out_path]
-
-
-# ------------------------------- SQLite ------------------------------------ #
 
 
 def load_db(path: Path) -> Tables:
@@ -297,9 +271,6 @@ def write_db(tables: Tables, out_path: Path) -> list[Path]:
     return [out_path]
 
 
-# ------------------------------ SQL dump ----------------------------------- #
-
-# Regexes for the (necessarily heuristic) SQL parser.
 _CREATE_RE = re.compile(
     r'CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[\]]?(\w+)[`"\[\]]?\s*\(',
     re.I,
@@ -486,7 +457,7 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
 
 def load_sql(path: Path) -> Tables:
     text = read_text(path)
-    # Strip comments so our regexes don't trip over them.
+
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     text = re.sub(r"^\s*--.*$", "", text, flags=re.M)
     text = re.sub(r"^\s*#.*$", "", text, flags=re.M)
@@ -538,11 +509,6 @@ def write_sql(tables: Tables, out_path: Path) -> list[Path]:
         lines.append("")
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return [out_path]
-
-
-# =========================================================================== #
-# EXCEL & FRIENDS: xlsx / xls / xlsm / xlsb / ods
-# =========================================================================== #
 
 
 def load_xlsx(path: Path) -> Tables:
@@ -616,7 +582,7 @@ def load_ods(path: Path) -> Tables:
         header: Optional[list[str]] = None
         for row in sheet.getElementsByType(table_mod.TableRow):
             cells = row.getElementsByType(table_mod.TableCell)
-            # Expand number-columns-repeated for correctness.
+
             values: list[Any] = []
             for cell in cells:
                 repeat = int(cell.getAttribute("numbercolumnsrepeated") or 1)
@@ -675,13 +641,8 @@ def write_ods(tables: Tables, out_path: Path) -> list[Path]:
             sheet.addElement(tr)
         doc.spreadsheet.addElement(sheet)
     doc.save(str(out_path).rsplit(".", 1)[0])
-    # odfpy appends the .ods extension itself
+
     return [Path(str(out_path).rsplit(".", 1)[0] + ".ods")]
-
-
-# =========================================================================== #
-# COLUMNAR: parquet / feather / orc / arrow
-# =========================================================================== #
 
 
 def load_parquet(path: Path) -> Tables:
@@ -759,11 +720,6 @@ def write_arrow(tables: Tables, out_path: Path) -> list[Path]:
     return [out_path]
 
 
-# =========================================================================== #
-# SERIALIZATION: yaml / toml / xml / pickle / msgpack / avro / bson
-# =========================================================================== #
-
-
 def load_yaml(path: Path) -> Tables:
     yaml = _require("yaml")
     return _as_tables(yaml.safe_load(read_text(path)), path.stem)
@@ -799,7 +755,6 @@ def load_xml(path: Path) -> Tables:
     tree = ET.parse(path)
     root = tree.getroot()
 
-    # <data><table1>...</table1><table2>...</table2></data> pattern.
     if any(child.tag != "row" for child in root):
         out: Tables = {}
         for child in root:
@@ -809,7 +764,6 @@ def load_xml(path: Path) -> Tables:
             out[child.tag] = rows
         return out
 
-    # Flat <root><row>...</row></root>
     rows = []
     for child in root:
         rows.append({sub.tag: sub.text for sub in child})
@@ -902,11 +856,6 @@ def write_bson(tables: Tables, out_path: Path) -> list[Path]:
         for row in rows:
             fh.write(bson_mod.encode(row))
     return [out_path]
-
-
-# =========================================================================== #
-# STATISTICS / SCIENTIFIC: hdf5 / netcdf / zarr / rds / dta / sav / sas7bdat
-# =========================================================================== #
 
 
 def load_hdf5(path: Path) -> Tables:
@@ -1014,11 +963,6 @@ def load_sas7bdat(path: Path) -> Tables:
     return {path.stem: df.to_dict(orient="records")}
 
 
-# =========================================================================== #
-# DBF / dBASE
-# =========================================================================== #
-
-
 def load_dbf(path: Path) -> Tables:
     dbfread = _require("dbfread")
     return {path.stem: [dict(r) for r in dbfread.DBF(str(path))]}
@@ -1040,11 +984,6 @@ def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
     finally:
         table.close()
     return [out_path]
-
-
-# =========================================================================== #
-# GEO: geojson / shapefile (attribute tables only, geometry as WKT)
-# =========================================================================== #
 
 
 def _geo_to_tables(gdf) -> Tables:
@@ -1111,11 +1050,6 @@ def write_shapefile(tables: Tables, out_path: Path) -> list[Path]:
     return [out_path]
 
 
-# =========================================================================== #
-# MISC: ini, fixed-width
-# =========================================================================== #
-
-
 def load_ini(path: Path) -> Tables:
     import configparser
 
@@ -1166,7 +1100,7 @@ def load_fixed_width(path: Path) -> Tables:
 def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
     _, rows = next(iter(tables.items()))
     cols = _columns(rows)
-    # Compute widths from the longest rendered value per column.
+
     widths = {}
     for c in cols:
         widths[c] = max([len(str(c))] + [len(str(row.get(c, ""))) for row in rows])
@@ -1181,11 +1115,6 @@ def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
     return [out_path, schema_path]
 
 
-# =========================================================================== #
-# DISPATCH TABLES
-# =========================================================================== #
-
-# Every extension we recognize -> canonical format id.
 EXT_TO_FMT: dict[str, str] = {
     # core
     ".csv": "csv",
@@ -1243,7 +1172,6 @@ EXT_TO_FMT: dict[str, str] = {
     ".fixed": "fixedwidth",
 }
 
-# Reverse mapping for choosing output filenames.
 FMT_TO_EXT: dict[str, str] = {
     "csv": ".csv",
     "json": ".json",
@@ -1279,8 +1207,6 @@ FMT_TO_EXT: dict[str, str] = {
     "fixedwidth": ".fw",
 }
 
-# Registered loaders/writers. Formats not present here are read-only
-# or write-only (e.g. xls and sas7bdat can be read but not written).
 LOADERS: dict[str, Callable[[Path], Tables]] = {
     # core
     "csv": load_csv,
@@ -1363,10 +1289,6 @@ WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
     "fixedwidth": write_fixed_width,
 }
 
-# --------------------------------------------------------------------------- #
-# Job plumbing (module-level so multiprocessing can pickle it)
-# --------------------------------------------------------------------------- #
-
 
 def _output_path(src: Path, target_fmt: str, out_dir: Optional[Path]) -> Path:
     name = src.stem + FMT_TO_EXT[target_fmt]
@@ -1409,11 +1331,6 @@ def detect_format(path: Path) -> Optional[str]:
     return EXT_TO_FMT.get(path.suffix.lower())
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="dataconv",
@@ -1422,8 +1339,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
-    # Only expose target formats that have a writer. Read-only formats
-    # (xls, sav, sas7bdat) are intentionally not offered as outputs.
+
     for fmt in sorted(WRITERS.keys()):
         group.add_argument(f"--{fmt}", action="store_true", help=f"write {fmt} output")
 
@@ -1465,7 +1381,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             logger.error(f"input not found: {p}")
             continue
         if not p.is_file() and p.suffix.lower() != ".zarr":
-            # zarr paths are directories, not files
             logger.error(f"not a file: {p}")
             continue
         sources.append(p)

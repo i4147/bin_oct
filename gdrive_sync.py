@@ -31,9 +31,6 @@ from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlencode
 
-# --------------------------------------------------------------------------- #
-# Third-party imports (with graceful fallback for python-dotenv)
-# --------------------------------------------------------------------------- #
 try:
     from dotenv import load_dotenv  # type: ignore
 except ImportError:  # pragma: no cover
@@ -50,9 +47,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
 
@@ -62,9 +56,6 @@ DEFAULT_ENV_FILE = Path.home() / ".env"
 DEFAULT_BACKUP_DIR = "./google_drive_backup"
 
 
-# --------------------------------------------------------------------------- #
-# Helpers
-# --------------------------------------------------------------------------- #
 def _iso_to_timestamp(value: str) -> Optional[float]:
     if not value:
         return None
@@ -82,9 +73,6 @@ def _sanitize(name: str) -> str:
     return name
 
 
-# --------------------------------------------------------------------------- #
-# Drive client
-# --------------------------------------------------------------------------- #
 class DriveClient:
     def __init__(
         self,
@@ -100,7 +88,6 @@ class DriveClient:
         self.token_file = token_file
         self.env_file = Path(env_file) if env_file else DEFAULT_ENV_FILE
 
-        # Load env vars (if present) so `from_client_config` / manual flow can use them.
         if self.env_file.exists():
             load_dotenv(dotenv_path=str(self.env_file))
 
@@ -306,9 +293,6 @@ class DriveClient:
                     os.utime(path, (ts, ts))
 
 
-# --------------------------------------------------------------------------- #
-# Subcommand implementations
-# --------------------------------------------------------------------------- #
 def _make_client(args: argparse.Namespace) -> DriveClient:
     return DriveClient(
         auth_mode=args.auth_mode,
@@ -396,9 +380,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
         return 1
 
 
-# --------------------------------------------------------------------------- #
-# Argument parsing
-# --------------------------------------------------------------------------- #
 def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
     grp = parser.add_argument_group("authentication")
     grp.add_argument(
@@ -449,7 +430,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # ---- download subcommand ------------------------------------------- #
     p_down = subparsers.add_parser(
         "download",
         help="Download a single named folder from Drive root (gdrive_downloader.py).",
@@ -468,7 +448,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_auth_arguments(p_down)
     p_down.set_defaults(func=cmd_download)
 
-    # ---- sync subcommand ------------------------------------------------ #
     p_sync = subparsers.add_parser(
         "sync",
         help="Sync the entire Drive or one named folder (gdrive_syncer*.py).",

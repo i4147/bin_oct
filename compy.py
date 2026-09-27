@@ -34,7 +34,6 @@ from dh import append_text, runcmd
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8
 
-# Names that should not be renamed because Python/runtime code may depend on them.
 PROTECTED_NAMES = {
     "__name__",
     "__main__",
@@ -76,7 +75,6 @@ PROTECTED_NAMES = {
 BUILTIN_NAMES = set(dir(builtins))
 KEYWORDS = set(keyword.kwlist)
 
-# Alias names are intentionally short and valid Python identifiers.
 SHORT_NAMES = [
     *list("abcdefghijklmnopqrstuvwxyz"),
     *list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
@@ -105,7 +103,6 @@ def strip_comments_and_shebang(source: str) -> str:
         return tokenize.untokenize(result)
 
     except tokenize.TokenError:
-        # Let AST parsing report the actual syntax issue later.
         return source
 
 
@@ -217,7 +214,6 @@ class AnnotationStripper(ast.NodeTransformer):
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
         self.generic_visit(node)
 
-        # "x: int" has no runtime assignment and can be removed.
         if node.value is None:
             return None
 
@@ -268,7 +264,6 @@ class ImportCleaner(ast.NodeTransformer):
         if node.module == "__future__":
             return None
 
-        # Relative imports are project-local and should remain.
         if node.level > 0:
             return node
 
@@ -335,10 +330,6 @@ class Simplifier(ast.NodeTransformer):
         if bool_return is not None:
             return ast.copy_location(bool_return, node)
 
-        # #3: Drop else after a terminating body.
-        #
-        # This transformation is handled at block level because statements from
-        # the else body must be placed after the if statement.
         return node
 
     def visit_While(self, node: ast.While) -> ast.AST:
@@ -526,8 +517,7 @@ class Simplifier(ast.NodeTransformer):
             value = eval(compiled, {"__builtins__": {}}, {})
             folded = ast.Constant(value=value)
             after = ast.unparse(folded)
-        #        except:
-        #            return node
+
         except (
             ArithmeticError,
             MemoryError,
@@ -723,7 +713,6 @@ def join_simple_lines(source: str) -> str:
         if not stripped:
             return False
 
-        # A trailing colon represents a compound statement/suite header.
         if stripped.endswith(":"):
             return False
 
@@ -764,7 +753,6 @@ def compact_spacing(source: str) -> str:
     source = re.sub(r",\s+", ",", source)
     source = re.sub(r":\s+", ":", source)
 
-    # Safe reductions around common operators.
     operators = [
         r"\*\*",
         r"//",
@@ -826,7 +814,6 @@ def compress_source(source: str, filename: str = "<input>") -> str:
     result = join_simple_lines(result)
     result = compact_spacing(result)
 
-    # Guarantee no blank output lines.
     return "\n".join(line for line in result.splitlines() if line.strip())
 
 
@@ -895,7 +882,6 @@ def format_output(results: list[tuple[str, str, str | None]]) -> str:
         lines.extend(line for line in content.splitlines() if line.strip())
         sections.append("\n".join(lines))
 
-    # No blank lines: sections are separated by a single normal line only.
     return "\n".join(sections)
 
 
@@ -923,11 +909,9 @@ def main() -> int:
     if len(paths) == 1:
         results = [process_file(paths[0])]
     else:
-        # Required fixed worker count: always use exactly 8 workers.
         with mp.Pool(processes=WORKERS) as pool:
             results = list(pool.imap_unordered(process_file, paths))
 
-    # Keep output deterministic despite imap_unordered.
     results.sort(key=lambda item: item[0])
 
     for _, _, error in results:
@@ -936,7 +920,6 @@ def main() -> int:
 
     output = format_output(results)
 
-    # Explicitly remove blank lines before writing.
     output = "\n".join(line for line in output.splitlines() if line.strip())
 
     if output:

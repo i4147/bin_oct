@@ -50,7 +50,6 @@ def build_wheel(pkg_dir: Path) -> tuple[str, bool, str]:
 def main() -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
-    # Discover package dirs in current dir
     pkg_dirs = sorted(
         p for p in CURRENT_DIR.iterdir() if is_package_dir(p) and p != OUTPUT_DIR
     )
@@ -65,7 +64,6 @@ def main() -> None:
     print(f"\nBuilding wheels into: {OUTPUT_DIR}")
     print(f"Using {NUM_WORKERS} workers\n")
 
-    # Use multiprocessing with fixed 8 workers and apply_async
     results = []
     with Pool(processes=NUM_WORKERS) as pool:
         async_results = [

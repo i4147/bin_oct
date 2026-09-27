@@ -45,10 +45,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-# ---------------------------------------------------------------------------
-# Defaults (originally hardcoded in both scripts)
-# ---------------------------------------------------------------------------
-
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"
 DEFAULT_OUTPUT = Path.home() / "dh_usage.txt"
@@ -56,7 +52,6 @@ DEFAULT_CHART_DIR = Path.home()
 DEFAULT_CHART_STYLE = "seaborn-v0_8-darkgrid"
 DEFAULT_TOP_N = 10
 
-# Fallback stdlib set used when importlib cannot enumerate a module list.
 STDLIB_FALLBACK: set[str] = {
     "os",
     "sys",
@@ -127,10 +122,6 @@ STDLIB_FALLBACK: set[str] = {
     "turtle",
 }
 
-# ---------------------------------------------------------------------------
-# Stdlib discovery
-# ---------------------------------------------------------------------------
-
 
 def collect_stdlib_modules() -> set[str]:
     modules: set[str] = set()
@@ -142,7 +133,6 @@ def collect_stdlib_modules() -> set[str]:
     except Exception:
         pass
 
-    # Enumerate builtin/stdlib modules via pkgutil.
     import pkgutil
 
     for info in pkgutil.iter_modules():
@@ -153,11 +143,6 @@ def collect_stdlib_modules() -> set[str]:
 
     modules.update(STDLIB_FALLBACK)
     return modules
-
-
-# ---------------------------------------------------------------------------
-# AST import extraction
-# ---------------------------------------------------------------------------
 
 
 def extract_imports(path: Path) -> dict[str, list[str]]:
@@ -220,11 +205,6 @@ def _record_package_attribute_calls(
                 imports[package].append(func.attr)
 
 
-# ---------------------------------------------------------------------------
-# Call counting
-# ---------------------------------------------------------------------------
-
-
 def count_calls(
     path: Path,
     imports: dict[str, list[str]],
@@ -277,11 +257,6 @@ def _extract_imports_full(
     return imports
 
 
-# ---------------------------------------------------------------------------
-# Analysis
-# ---------------------------------------------------------------------------
-
-
 def analyze_directory(
     directory: Path,
     package: str,
@@ -329,7 +304,6 @@ def analyze_directory(
                 for attr in attrs:
                     thirdparty_files[attr].add(filename)
 
-    # Convert file-set dicts to simple dict[str, int] of counts.
     stdlib_filecounts = {k: len(v) for k, v in stdlib_files.items()}
     thirdparty_filecounts = {k: len(v) for k, v in thirdparty_files.items()}
     package_filecounts = {k: len(v) for k, v in package_files.items()}
@@ -343,11 +317,6 @@ def analyze_directory(
         thirdparty_filecounts,
         package_filecounts,
     )
-
-
-# ---------------------------------------------------------------------------
-# Report formatting
-# ---------------------------------------------------------------------------
 
 
 def build_report(
@@ -371,7 +340,6 @@ def build_report(
     lines.append(f"  Files scanned: {len(per_file)}")
     lines.append("")
 
-    # Section 1: stdlib
     lines.append("─" * 40)
     lines.append("  SECTION 1: STANDARD LIBRARY MODULES")
     lines.append("─" * 40)
@@ -385,7 +353,6 @@ def build_report(
     else:
         lines.append("  (none)")
 
-    # Section 2: third-party
     lines.append(f"\n{'─' * 40}")
     lines.append("  SECTION 2: THIRD-PARTY PACKAGES")
     lines.append("─" * 40)
@@ -399,7 +366,6 @@ def build_report(
     else:
         lines.append("  (none)")
 
-    # Section 3: custom package
     lines.append(f"\n{'─' * 40}")
     lines.append(f"  SECTION 3: CUSTOM '{package}' PACKAGE")
     lines.append("─" * 40)
@@ -413,7 +379,6 @@ def build_report(
     else:
         lines.append("  (none)")
 
-    # Section 4: per-file breakdown
     lines.append(f"\n{'─' * 40}")
     lines.append("  SECTION 4: PER-FILE BREAKDOWN")
     lines.append("─" * 40)
@@ -462,11 +427,6 @@ def build_report(
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------------------
-# Charts (matplotlib)
-# ---------------------------------------------------------------------------
-
-
 def _load_matplotlib():
     try:
         import matplotlib
@@ -504,7 +464,6 @@ def generate_charts(
     chart_dir.mkdir(parents=True, exist_ok=True)
     print("\n📊 Generating matplotlib charts...")
 
-    # 1) Top-N stdlib modules
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(stdlib_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -522,7 +481,6 @@ def generate_charts(
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
 
-    # 2) Category distribution pie
     fig, ax = plt.subplots(figsize=(10, 8))
     distribution = {
         "Standard Library": sum(stdlib_totals.values()),
@@ -553,7 +511,6 @@ def generate_charts(
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
 
-    # 3) Top-N third-party packages
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(thirdparty_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -571,9 +528,6 @@ def generate_charts(
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
 
-    # 4) Custom package functions
-    # NOTE: the original source was truncated mid-way through this chart.
-    # We complete it as a bar chart of custom-package function usage.
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(package_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -590,11 +544,6 @@ def generate_charts(
         plt.savefig(out, dpi=100, bbox_inches="tight")
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
-
-
-# ---------------------------------------------------------------------------
-# Subcommand handlers
-# ---------------------------------------------------------------------------
 
 
 def _run_analysis(args: argparse.Namespace) -> tuple[Any, str]:
@@ -675,11 +624,6 @@ def cmd_charts(args: argparse.Namespace) -> int:
         args.package,
     )
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

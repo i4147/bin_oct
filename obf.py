@@ -19,12 +19,11 @@ def obfuscate(src: str) -> str:
     out = []
     eval_parts = []
 
-    # split source into small chunks (e.g. 3 chars each)
     CHUNK = 3
     for i in range(0, len(src), CHUNK):
         piece = src[i : i + CHUNK]
         name = next(names)
-        # single-quote the chunk, escape single quotes inside
+
         escaped = piece.replace("'", "'\\''")
         out.append(f"{name}='{escaped}';")
         eval_parts.append(f"${name}")

@@ -28,7 +28,6 @@ def main() -> int:
 
         target = cwd / name
 
-        # Safety: only operate on top-level entries directly under cwd
         if target.parent.resolve() != cwd.resolve():
             print(f"skipping (not top-level): {name}", file=sys.stderr)
             continue
@@ -41,7 +40,6 @@ def main() -> int:
             print(f"not found: {name}", file=sys.stderr)
             missing += 1
 
-    # Remove the list file itself (only if it's the top-level one we read)
     if list_file.resolve().parent == cwd.resolve():
         list_file.unlink()
         print(f"removed list file: {list_file.name}")

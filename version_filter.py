@@ -13,13 +13,8 @@ import os
 import re
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
 WHL_DIRECTORY = Path(".")
 
-# Matches: <name>-<version>[-<YYYYMMDD>]-<python tag>.whl
 WHL_PATTERN = re.compile(
     r"(?P<name>[\w\-]+)"
     r"-(?P<version>[\d\.]+(?:-\d{8})?)"
@@ -32,12 +27,7 @@ WHL_PATTERN = re.compile(
     r")\.whl"
 )
 
-# Packages whose pure-python wheel (py3-none-any) should always be removed.
 PY3_NONE_ANY_BLOCKLIST: frozenset[str] = frozenset({"pycryptodome", "matplotlib"})
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _parse_wheel(filename: str) -> tuple[str, str, str] | None:
@@ -58,13 +48,8 @@ def _latest_dates(parsed: list[tuple[str, str, str, str]]) -> dict[str, str]:
     return latest
 
 
-# ---------------------------------------------------------------------------
-# Main logic
-# ---------------------------------------------------------------------------
-
-
 def cleanup_wheels(whl_files: list[str], directory: Path = WHL_DIRECTORY) -> int:
-    # Parse each file once and keep only the ones that match our pattern.
+
     parsed: list[tuple[str, str, str, str]] = []
     for filename in whl_files:
         info = _parse_wheel(filename)
@@ -75,12 +60,10 @@ def cleanup_wheels(whl_files: list[str], directory: Path = WHL_DIRECTORY) -> int
 
     deleted = 0
     for filename, name, version, python_variant in parsed:
-        # Rule 1: blocklisted pure-python wheels
         blocked_py3 = (
             name in PY3_NONE_ANY_BLOCKLIST and python_variant == "py3-none-any"
         )
 
-        # Rule 2: outdated date-stamped versions
         outdated = "-" in version and version.rsplit("-", 1)[-1] != latest_versions.get(
             name
         )

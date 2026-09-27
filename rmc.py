@@ -61,10 +61,6 @@ from pathlib import Path
 import libcst as cst
 from dh import DOC_TH1, DOC_TH2
 
-# --------------------------------------------------------------------------
-# Constants
-# --------------------------------------------------------------------------
-
 POOL_PROCESSES = 8
 CHUNK_SIZE = 4
 PY_SUFFIXES = (".py", ".pyi")
@@ -106,18 +102,9 @@ GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
 BACKUP_SUFFIX = ".pystripbak"
 
-# --------------------------------------------------------------------------
-# Early "nothing to do" check
-# --------------------------------------------------------------------------
-
 
 def has_no_strippable_content(source: str) -> bool:
     return "#" not in source and DOC_TH1 not in source and DOC_TH2 not in source
-
-
-# --------------------------------------------------------------------------
-# Size formatting
-# --------------------------------------------------------------------------
 
 
 def format_size(num_bytes: int) -> str:
@@ -129,11 +116,6 @@ def format_size(num_bytes: int) -> str:
             text = f"{scaled:.1f}".rstrip("0").rstrip(".")
             return f"{text}{suffix}"
     return f"{num_bytes} B"
-
-
-# --------------------------------------------------------------------------
-# Docstring detection / removal helpers
-# --------------------------------------------------------------------------
 
 
 def is_docstring_literal(expr: cst.BaseExpression) -> bool:
@@ -235,11 +217,6 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
     return module.with_changes(body=rest_of_module)
 
 
-# --------------------------------------------------------------------------
-# Commented-out-code detection (heuristic)
-# --------------------------------------------------------------------------
-
-
 def _dehash(comment_text: str) -> str:
     text = comment_text[1:]
     if text.startswith(" "):
@@ -289,11 +266,6 @@ def find_commented_out_code_lines(source: str) -> set[int]:
 
     flush_group()
     return protected_lines
-
-
-# --------------------------------------------------------------------------
-# LibCST transformer
-# --------------------------------------------------------------------------
 
 
 class CommentDocstringStripper(cst.CSTTransformer):
@@ -428,11 +400,6 @@ def run_transform(
     return wrapper.visit(transformer)
 
 
-# --------------------------------------------------------------------------
-# Blank line collapsing
-# --------------------------------------------------------------------------
-
-
 def string_token_lines(source: str) -> set[int]:
     occupied = set()
     try:
@@ -469,11 +436,6 @@ def collapse_blank_lines(source: str) -> str:
         result.append(line)
         prev_was_blank = False
     return "".join(result)
-
-
-# --------------------------------------------------------------------------
-# Atomic file replacement / backup / restore
-# --------------------------------------------------------------------------
 
 
 def atomic_replace(path: Path, data: bytes) -> None:
@@ -531,11 +493,6 @@ def restore_from_backup(path: Path) -> tuple[Path, bool, str | None]:
     return path, True, None
 
 
-# --------------------------------------------------------------------------
-# Per-file transform
-# --------------------------------------------------------------------------
-
-
 def process_file(
     path: Path,
     *,
@@ -556,8 +513,6 @@ def process_file(
     except (SyntaxError, UnicodeDecodeError) as exc:
         return path, 0, False, f"encoding error: {exc}"
 
-    # Early check: skip files with nothing plausibly strippable, before
-    # paying for a LibCST parse.
     if has_no_strippable_content(source):
         return path, 0, False, None
 
@@ -609,11 +564,6 @@ def process_file(
 
     bytes_reduced = len(original_bytes) - len(new_bytes)
     return path, bytes_reduced, True, None
-
-
-# --------------------------------------------------------------------------
-# File discovery
-# --------------------------------------------------------------------------
 
 
 def iter_python_files(paths):
@@ -697,11 +647,6 @@ def iter_backup_files(paths):
                 )
         except OSError as exc:
             print(f"warning: cannot access {given_path}: {exc}", file=sys.stderr)
-
-
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 
 
 def build_arg_parser():

@@ -44,9 +44,6 @@ from multiprocessing import Pool, freeze_support
 from pathlib import Path
 from typing import Any
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
 try:
     import py7zr  # type: ignore
 except ImportError:  # pragma: no cover
@@ -66,10 +63,6 @@ def _setup_logging(verbose: bool = False) -> None:
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
-
-# ===========================================================================
-# add-files  (merges add2db.py + add7db.py)
-# ===========================================================================
 
 DEFAULT_TEXT_ENCODINGS: tuple[str, ...] = ("utf-8", "latin-1", "cp1252", "iso-8859-1")
 DEFAULT_TEXT_CHAR_LIMIT = 1024 * 1024
@@ -147,7 +140,6 @@ def _collect_cwd_files(
         print(f"  Processing: {entry.name} ({human})")
 
         if compress:
-            # Only UTF-8 counts as "text"; anything else is treated as binary.
             text, is_binary = _read_file(entry, ("utf-8",), None)
             if is_binary:
                 try:
@@ -219,7 +211,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
     folder = Path.cwd()
     default_table = folder.name
 
-    # Resolve table name (prompted in add7db, derived in add2db)
     table = args.table
     if args.prompt:
         answer = input(f"Enter folder name (default: {default_table}): ").strip()
@@ -288,13 +279,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
             f"({saved:.1f}% saved)"
         )
     return 0
-
-
-# ===========================================================================
-# sqlite-to-json
-# (merges coverage2json.py, sqlite2json.py, sqlite2json2.py,
-#  sqlite2json3.py, sqlitetojson.py)
-# ===========================================================================
 
 
 def _serialize_value(value: Any, blob_format: str) -> Any:
@@ -420,10 +404,6 @@ def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# md-to-sqlite  (merges md2sqlite.py)
-# ===========================================================================
-
 _MD_RULE_RE = re.compile(
     r"^#\s+(.*?)\s+\((.*?)\)\s*\n(.*?)(?=\n#\s+|\Z)",
     re.DOTALL | re.MULTILINE,
@@ -483,11 +463,6 @@ def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# search-rule  (merges search_rule.py)
-# ===========================================================================
-
-
 def cmd_search_rule(args: argparse.Namespace) -> int:
     db_path = Path(args.db)
     if not db_path.is_file():
@@ -523,10 +498,6 @@ def cmd_search_rule(args: argparse.Namespace) -> int:
     print("-" * 40)
     return 0
 
-
-# ===========================================================================
-# mdb-to-json  (merges mdb2json.py)
-# ===========================================================================
 
 MDB_EXTS = {".mdb", ".accdb"}
 MDB_FETCH = 1000
@@ -742,10 +713,6 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     print(f"Done. Successes: {ok}, Failures: {fail}, Total: {total}")
     return 0 if fail == 0 else 1
 
-
-# ===========================================================================
-# sql-to-json  (merges sql2json.py)
-# ===========================================================================
 
 SQL_DEFAULT_WORKERS = 8
 SQL_CHUNK = 1024 * 1024
@@ -1106,11 +1073,6 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
     return 1 if fails else 0
 
 
-# ===========================================================================
-# CLI wiring
-# ===========================================================================
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged.py",
@@ -1119,7 +1081,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ------------------------------------------------------------------
     ap = sub.add_parser(
         "add-files",
         help="Add every file in the current directory to a SQLite table.",
@@ -1150,7 +1111,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.set_defaults(func=cmd_add_files)
 
-    # ------------------------------------------------------------------
     sp = sub.add_parser("sqlite-to-json", help="Convert a SQLite database to JSON.")
     sp.add_argument("database", type=Path)
     sp.add_argument(
@@ -1181,7 +1141,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_sqlite_to_json)
 
-    # ------------------------------------------------------------------
     mp = sub.add_parser(
         "md-to-sqlite", help="Parse a ruff-style Markdown file into SQLite."
     )
@@ -1189,7 +1148,6 @@ def _build_parser() -> argparse.ArgumentParser:
     mp.add_argument("--db", type=Path, default=Path("ruff_rules.db"))
     mp.set_defaults(func=cmd_md_to_sqlite)
 
-    # ------------------------------------------------------------------
     rp = sub.add_parser(
         "search-rule", help="Look up a Ruff rule from a SQLite database."
     )
@@ -1199,7 +1157,6 @@ def _build_parser() -> argparse.ArgumentParser:
     rp.add_argument("--db", default="/sdcard/data/ruff.db")
     rp.set_defaults(func=cmd_search_rule)
 
-    # ------------------------------------------------------------------
     xp = sub.add_parser(
         "mdb-to-json", help="Convert .mdb/.accdb files to JSON (requires pyodbc)."
     )
@@ -1216,7 +1173,6 @@ def _build_parser() -> argparse.ArgumentParser:
     xp.add_argument("-v", "--verbose", action="store_true")
     xp.set_defaults(func=cmd_mdb_to_json)
 
-    # ------------------------------------------------------------------
     qp = sub.add_parser(
         "sql-to-json", help="Convert SQL INSERT dumps to newline-delimited JSON."
     )

@@ -37,15 +37,10 @@ from typing import Callable, Dict, Optional
 
 from loguru import logger
 
-# ============================================================================
-# CONFIGURATION & LOGGING
-# ============================================================================
-
 
 def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
     logger.remove()
 
-    # Debug level to file (rotated at 50 MB)
     logger.add(
         str(debug_log),
         level="DEBUG",
@@ -54,7 +49,6 @@ def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
         retention=3,
     )
 
-    # Error level to stderr
     if error_stderr:
         logger.add(
             sys.stderr,
@@ -63,11 +57,6 @@ def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
         )
 
 
-# ============================================================================
-# LANGUAGE CODE MAPPING
-# ============================================================================
-
-# Language code mappings per backend. Map user input (ISO 639-1) to backend-specific codes.
 LANGUAGE_CODES = {
     "deep_translator": {
         "en": "en",
@@ -141,11 +130,6 @@ def map_language_code(backend: str, code: str) -> str:
     if backend not in LANGUAGE_CODES:
         raise ValueError(f"Unknown backend: {backend}")
     return LANGUAGE_CODES[backend].get(code, code)
-
-
-# ============================================================================
-# TRANSLATION BACKEND FACTORIES
-# ============================================================================
 
 
 def _make_deep_translator(source: str, target: str) -> Callable:
@@ -233,7 +217,6 @@ def _make_googletrans(source: str, target: str) -> Callable:
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
 
-    # googletrans is not thread-safe; use lock for all calls
     lock = threading.Lock()
     translator = Translator()
 
@@ -292,7 +275,6 @@ def _make_boto3(source: str, target: str) -> Callable:
     return translate_chunk
 
 
-# Backend factory registry
 BACKEND_FACTORIES = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -303,7 +285,6 @@ BACKEND_FACTORIES = {
     "boto3": _make_boto3,
 }
 
-# Fallback order: deepl (if DEEPL_API_KEY set) → deep_translator → translate → ...
 DEFAULT_BACKEND_ORDER = [
     "deepl",
     "deep_translator",
@@ -312,10 +293,6 @@ DEFAULT_BACKEND_ORDER = [
     "googletrans",
     "pygoogletranslation",
 ]
-
-# ============================================================================
-# CHUNKING UTILITIES
-# ============================================================================
 
 
 def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
@@ -326,21 +303,15 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
     pos = 0
 
     while pos < len(text):
-        # Take up to chunk_size characters
         end = min(pos + chunk_size, len(text))
         chunk = text[pos:end]
 
-        # If we're not at the end of the text and the chunk ends mid-word,
-        # scan backwards to find a space
         if end < len(text) and chunk and chunk[-1] not in (" ", "\n", "\t"):
-            # Find the last space within the chunk
             last_space = chunk.rfind(" ")
             if last_space > 0:
-                # Use everything up to and including that space
                 chunk = chunk[:last_space]
                 end = pos + len(chunk)
             else:
-                # No space found; use as-is (single word exceeds chunk_size)
                 end = pos + len(chunk)
 
         # Strip and store
@@ -353,9 +324,6 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
     return chunks
 
 
-# ============================================================================
-# IDENTITY TRANSLATION DETECTION
-# ============================================================================
 def is_identity_translation(
     original: str, translated: str, threshold: float = 0.98
 ) -> bool:
@@ -367,19 +335,14 @@ def is_identity_translation(
         return True
     if a == b:
         return True
-    # Cheap length-based filter: skip expensive comparison for clearly different
+
     if abs(len(a) - len(b)) > max(4, int(0.05 * len(a))):
         return False
-    # Use difflib ratio for a robust comparison
+
     import difflib
 
     ratio = difflib.SequenceMatcher(None, a, b).ratio()
     return ratio >= threshold
-
-
-# ============================================================================
-# STATE MANAGEMENT (resume + atomic writes)
-# ============================================================================
 
 
 @dataclass
@@ -466,11 +429,6 @@ def append_failed_chunk(path: Path, index: int, text: str, error: str) -> None:
         logger.error(f"Could not append failed chunk: {e}")
 
 
-# ============================================================================
-# TRANSLATION ENGINE
-# ============================================================================
-
-
 def retry_with_backoff(
     fn: Callable[[], str],
     attempts: int = 3,
@@ -554,11 +512,6 @@ class TranslatorEngine:
         raise RuntimeError("All backends failed. " + " | ".join(errors))
 
 
-# ============================================================================
-# MAIN PIPELINE
-# ============================================================================
-
-
 class GracefulShutdown:
     def __init__(self):
         self.event = threading.Event()
@@ -608,7 +561,6 @@ def run_translation(
 
     failed_path = output_path.with_suffix(output_path.suffix + ".failed.jsonl")
 
-    # Load existing state if present
     state = load_state(output_path)
     if state is not None:
         if state.source_lang != source_lang or state.target_lang != target_lang:
@@ -620,7 +572,6 @@ def run_translation(
             state.source_lang = source_lang
             state.target_lang = target_lang
 
-    # Read & chunk (only if we don't already have chunks)
     if state is None or not state.chunks:
         logger.info(f"Reading {input_path}")
         text = input_path.read_text(encoding="utf-8", errors="replace")
@@ -632,7 +583,7 @@ def run_translation(
             target_lang=target_lang,
             chunks=chunks,
         )
-        # Save initial state so an immediate crash still resumes later
+
         save_state(output_path, state)
 
     total = len(state.chunks)
@@ -703,7 +654,6 @@ def run_translation(
                         stop_event.set()
 
     finally:
-        # Final save in all cases
         with state_lock:
             save_state(output_path, state)
 
@@ -718,11 +668,6 @@ def run_translation(
         save_state(output_path, state)
 
     return state
-
-
-# ============================================================================
-# CLI
-# ============================================================================
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:

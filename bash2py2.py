@@ -27,10 +27,6 @@ import re
 import sys
 from pathlib import Path
 
-# Matches lines like:
-#   python - <<PY
-#   python3 <<'EOF'
-#   py script.py <<-END
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^\n]*?)"
     r"<<(?P<dash>-)?[ \t]*"
@@ -72,7 +68,6 @@ def extract_python_heredocs(bash_text: str):
             blocks.append("".join(body_lines))
             i = j + 1
         else:
-            # No terminator found; best-effort: take the rest of the file.
             blocks.append("".join(lines[i + 1 :]))
             i = n
 

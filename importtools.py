@@ -49,10 +49,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
-# --------------------------------------------------------------------------- #
-#                             Common constants                                #
-# --------------------------------------------------------------------------- #
-
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8
 DEFAULT_PY2_THRESHOLD: int = 85
@@ -72,7 +68,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
     }
 )
 
-# Standard library top-level modules (union of the lists from the originals).
 STDLIB_MODULES: frozenset[str] = frozenset(
     {
         "abc",
@@ -273,7 +268,6 @@ STDLIB_MODULES: frozenset[str] = frozenset(
     }
 )
 
-# Names that are builtins / dunder values and never need importing.
 BUILTIN_NAMES: frozenset[str] = frozenset(
     {
         "print",
@@ -373,10 +367,8 @@ BUILTIN_NAMES: frozenset[str] = frozenset(
     }
 )
 
-# Modules that exist but shouldn't be auto-imported silently.
 IGNORED_AUTOFIX: frozenset[str] = frozenset({"imp", "cmd", "keyword", "token"})
 
-# From `fix_stdlib_imports.py`: known members of common stdlib modules.
 STDLIB_MEMBER_MAP: dict[str, set[str]] = {
     "os": {
         "path",
@@ -480,10 +472,6 @@ STDLIB_MEMBER_MAP: dict[str, set[str]] = {
     "time": {"time", "sleep", "ctime", "localtime", "gmtime", "strftime", "strptime"},
 }
 
-# --------------------------------------------------------------------------- #
-#                              Optional logger                                #
-# --------------------------------------------------------------------------- #
-
 
 def _make_logger():
     try:
@@ -498,10 +486,6 @@ def _make_logger():
 
 
 LOG = _make_logger()
-
-# --------------------------------------------------------------------------- #
-#                             Common helpers                                  #
-# --------------------------------------------------------------------------- #
 
 
 def iter_py_files(
@@ -619,7 +603,7 @@ def insert_imports(path: Path, imports: list[str]) -> bool:
     lines = src.split("\n")
     pos = top_import_block_end(lines)
     block = [f"{imp}\n" if not imp.endswith("\n") else imp for imp in imports]
-    # Keep a trailing newline joined properly:
+
     new = "\n".join(lines[:pos] + [imp.rstrip("\n") for imp in imports] + lines[pos:])
     path.write_text(new, encoding="utf-8")
     return True
@@ -630,11 +614,6 @@ def rel(path: Path, root: Path) -> str:
         return str(path.relative_to(root))
     except ValueError:
         return str(path)
-
-
-# --------------------------------------------------------------------------- #
-#                       Subcommand: check-missing                             #
-# --------------------------------------------------------------------------- #
 
 
 def _detect_missing(path: Path, strategy: str) -> list[str]:
@@ -671,7 +650,7 @@ def _detect_missing(path: Path, strategy: str) -> list[str]:
                     if name in members and module not in imported:
                         suggestions.append(f"from {module} import {name}")
                         break
-    # dedupe preserving order
+
     out: list[str] = []
     seen: set[str] = set()
     for s in suggestions:
@@ -730,11 +709,6 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
     if ns.autofix:
         print(f"Files fixed: {fixed}")
     return 1 if total and not ns.autofix else 0
-
-
-# --------------------------------------------------------------------------- #
-#                       Subcommand: check-position                            #
-# --------------------------------------------------------------------------- #
 
 
 def _position_basic(path: Path) -> list[str]:
@@ -892,11 +866,6 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
     return 1 if offenders_files and not ns.autofix else 0
 
 
-# --------------------------------------------------------------------------- #
-#                       Subcommand: add-import                                #
-# --------------------------------------------------------------------------- #
-
-
 def _add_import_to_file(path: Path, name: str, shebang: str) -> None:
     if not path.exists() or path.is_symlink():
         return
@@ -919,11 +888,6 @@ def cmd_add_import(ns: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-#                       Subcommand: check-load                                #
-# --------------------------------------------------------------------------- #
-
-
 def cmd_check_load(ns: argparse.Namespace) -> int:
     had_error = False
     for p in ns.files:
@@ -936,11 +900,6 @@ def cmd_check_load(ns: argparse.Namespace) -> int:
             traceback.print_exc()
             print()
     return 1 if had_error else 0
-
-
-# --------------------------------------------------------------------------- #
-#                       Subcommand: find-py2                                  #
-# --------------------------------------------------------------------------- #
 
 
 def _cprint(text: str, color: str = "cyan", *, enabled: bool = True) -> None:
@@ -1048,11 +1007,6 @@ def _extract_module_name(text: str) -> str:
     return name.strip()
 
 
-# --------------------------------------------------------------------------- #
-#                       Subcommand: transform                                 #
-# --------------------------------------------------------------------------- #
-
-
 class _ImportTransformer(ast.NodeTransformer):
     def __init__(self, tree: ast.Module) -> None:
         self.tree = tree
@@ -1128,11 +1082,6 @@ def cmd_transform(ns: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-#                                 CLI                                         #
-# --------------------------------------------------------------------------- #
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="import_tools.py",
@@ -1195,7 +1144,6 @@ def build_parser() -> argparse.ArgumentParser:
     cp.add_argument("-o", "--output", type=str, default=None)
     cp.set_defaults(func=cmd_check_position)
 
-    # add-import
     ai = sub.add_parser("add-import", help="Prepend 'import NAME' to every .py file.")
     ai.add_argument("name", help="Module name to import")
     ai.add_argument("-d", "--directory", type=Path, default=Path.cwd())

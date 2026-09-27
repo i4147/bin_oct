@@ -41,9 +41,6 @@ from typing import Iterable, Optional, Sequence
 
 LOG = logging.getLogger("fontpreview")
 
-# ---------------------------------------------------------------------------
-# Constants (all overridable via CLI)
-# ---------------------------------------------------------------------------
 FONT_EXTS: frozenset[str] = frozenset(
     {
         ".ttf",
@@ -55,7 +52,6 @@ FONT_EXTS: frozenset[str] = frozenset(
     }
 )
 
-# Two "simple" presets, matching the two original simple scripts.
 PRESETS: dict[str, dict] = {
     "fa": {
         "text": "هنر برتز از گوهر آمد پدید",
@@ -69,12 +65,10 @@ PRESETS: dict[str, dict] = {
     },
 }
 
-# Rich-mode defaults (from fontpre.py).
 RICH_TEXT_DEFAULT = "Lorem ipsum dolor sit amet\nهنر برتر از گوهر آمد پدید"
 RICH_OUTPUT_DEFAULT = "fontpreview.html"
 RICH_MAX_FONTS_DEFAULT = 10_000
 
-# Font family friendly names used by rich mode.
 _FONT_FORMATS = {
     ".ttf": "TrueType",
     ".otf": "OpenType",
@@ -85,9 +79,6 @@ _FONT_FORMATS = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 def find_fonts(
     paths: Sequence[Path],
     *,
@@ -161,9 +152,6 @@ def _parse_paths(raw: Sequence[str]) -> list[Path]:
     return out or [Path.cwd()]
 
 
-# ===========================================================================
-# Subcommand: simple  (fafontpreview.py + fontpreview.py)
-# ===========================================================================
 def _generate_simple_html(
     fonts: Sequence[Path], text: str, sizes: Sequence[int]
 ) -> str:
@@ -219,9 +207,6 @@ def cmd_simple(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: rich  (fontpre.py)
-# ===========================================================================
 FontInfo = namedtuple("FontInfo", ["path", "index", "size", "format"])
 
 
@@ -468,9 +453,6 @@ def cmd_rich(args: argparse.Namespace) -> int:
     return 1
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fontpreview.py",
@@ -480,7 +462,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # -- simple -------------------------------------------------------------
     p = sub.add_parser(
         "simple",
         help="Simple one-font-per-block preview (fafontpreview.py / fontpreview.py)",
@@ -508,7 +489,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_simple)
 
-    # -- rich ---------------------------------------------------------------
     p = sub.add_parser(
         "rich",
         help="Rich interactive preview with textareas + dark mode (fontpre.py)",

@@ -33,7 +33,6 @@ from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Iterable, Sequence
 
-# Third-party (same ones the originals used)
 from deep_translator import GoogleTranslator
 
 try:
@@ -48,10 +47,6 @@ try:
     _HAS_TENACITY = True
 except ImportError:
     _HAS_TENACITY = False
-
-# --------------------------------------------------------------------------- #
-# Constants & globals
-# --------------------------------------------------------------------------- #
 
 DEFAULT_SKIP_DIRS: Final = frozenset(
     {"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
@@ -86,11 +81,6 @@ class InterruptFlag:
     def trigger(self, *_args) -> None:
         print("\n⚠️  Ctrl+C — finishing current chunk then stopping.")
         self.set = True
-
-
-# --------------------------------------------------------------------------- #
-# Shared helpers
-# --------------------------------------------------------------------------- #
 
 
 def read_text_auto(path: Path) -> str:
@@ -225,11 +215,6 @@ def make_output_path(src: Path, style: str) -> Path:
     return src.with_name(f"{src.stem}_eng{src.suffix}")
 
 
-# --------------------------------------------------------------------------- #
-# Mode: vi  (formerly vitrans.py)
-# --------------------------------------------------------------------------- #
-
-
 def _save_vi_progress(src: Path, chunk_map: dict[int, str], total: int) -> None:
     payload = {
         "source": str(src),
@@ -359,11 +344,6 @@ def run_vi(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Mode: ko  (formerly tkor.py)
-# --------------------------------------------------------------------------- #
-
-
 def run_ko(args: argparse.Namespace) -> int:
     src = Path(args.input_path)
     if not src.exists():
@@ -398,11 +378,6 @@ def run_ko(args: argparse.Namespace) -> int:
 
     print(f"Saved translated file → {out}")
     return 0
-
-
-# --------------------------------------------------------------------------- #
-# Mode: zh  (formerly tchn.py)
-# --------------------------------------------------------------------------- #
 
 
 def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
@@ -450,11 +425,6 @@ def run_zh(args: argparse.Namespace) -> int:
             except Exception as exc:  # noqa: BLE001
                 print(f"Error processing {path}: {exc}")
     return 0
-
-
-# --------------------------------------------------------------------------- #
-# Mode: ru  (formerly trans_ru.py)
-# --------------------------------------------------------------------------- #
 
 
 def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
@@ -624,11 +594,6 @@ def run_ru(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI plumbing
-# --------------------------------------------------------------------------- #
-
-
 def _add_common_translation_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--source", default=None, help="Source language code (mode-specific default)."
@@ -646,7 +611,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="mode", required=True)
 
-    # --- vi ---------------------------------------------------------------
     p_vi = sub.add_parser(
         "vi", help="Vietnamese → English, batch over cwd *.txt (vitrans.py)."
     )
@@ -695,7 +659,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_translation_args(p_vi)
     p_vi.set_defaults(source="vi", _handler=run_vi)
 
-    # --- ko ---------------------------------------------------------------
     p_ko = sub.add_parser("ko", help="Korean → English, single file (tkor.py).")
     p_ko.add_argument("input_path", help="Path to the input file.")
     p_ko.add_argument(
@@ -713,7 +676,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_translation_args(p_ko)
     p_ko.set_defaults(source="ko", _handler=run_ko)
 
-    # --- zh ---------------------------------------------------------------
     p_zh = sub.add_parser("zh", help="Auto → English, recursive directory (tchn.py).")
     p_zh.add_argument("--root", default=".", help="Directory to walk (default: cwd).")
     p_zh.add_argument(
@@ -728,7 +690,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_translation_args(p_zh)
     p_zh.set_defaults(source="auto", _handler=run_zh)
 
-    # --- ru ---------------------------------------------------------------
     p_ru = sub.add_parser(
         "ru", help="Russian → English, line-based single file (trans_ru.py)."
     )

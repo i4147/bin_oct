@@ -26,7 +26,6 @@ MAX_FILE_SIZE = 50 * 1024 * 1024
 WORKERS = 8
 CHUNK_SIZE = 1024 * 1024
 
-# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -46,7 +45,6 @@ class ProcessingResult:
 
 
 class HTMLFormatter:
-    # Tags that should be on their own line
     BLOCK_TAGS = {
         "html",
         "head",
@@ -106,7 +104,6 @@ class HTMLFormatter:
         "custom-element",
     }
 
-    # Tags that should stay inline (typically text-only)
     INLINE_TAGS = {"b", "i", "u", "em", "strong", "code", "small", "sub", "sup"}
 
     def __init__(self):
@@ -121,23 +118,19 @@ class HTMLFormatter:
             return source_code, 0
 
         try:
-            # Parse the HTML
             tree = self.parser.parse(bytes(source_code, "utf8"))
 
-            # Extract formatting information
             edits = self._collect_edits(tree.root_node, source_code)
 
             if not edits:
                 return source_code, 0
 
-            # Apply edits in reverse order to maintain position validity
             edits.sort(key=lambda x: x[0], reverse=True)
             result = source_code
 
             for pos, insert_text, delete_count in edits:
                 result = result[:pos] + insert_text + result[pos + delete_count :]
 
-            # Clean up excessive blank lines
             result = self._cleanup_blank_lines(result)
 
             return result, len(edits)
@@ -149,31 +142,25 @@ class HTMLFormatter:
     def _collect_edits(self, node: Node, source: str) -> list[tuple[int, str, int]]:
         edits = []
 
-        # Walk the tree iteratively for better performance
         stack = [node]
         last_end = 0
 
         while stack:
             current = stack.pop()
 
-            # Process element nodes
             if current.type == "element":
-                # Get tag name
                 tag_name = self._get_tag_name(current, source)
 
                 if tag_name and self._should_format_tag(tag_name):
                     start_byte = current.start_byte
                     end_byte = current.end_byte
 
-                    # Check if there's content before this tag on the same line
                     line_start = source.rfind("\n", 0, start_byte) + 1
                     prefix = source[line_start:start_byte]
 
-                    # Add newline before tag if needed
                     if prefix.strip() and not prefix.strip().endswith("\n"):
                         edits.append((start_byte, "\n", 0))
 
-                    # Check if there's content after the closing tag on the same line
                     next_newline = source.find("\n", end_byte)
                     if next_newline == -1:
                         next_newline = len(source)
@@ -182,7 +169,6 @@ class HTMLFormatter:
                     if suffix.strip():
                         edits.append((end_byte, "\n", 0))
 
-            # Add children to stack (reverse order for left-to-right processing)
             for child in reversed(current.children):
                 stack.append(child)
 
@@ -197,7 +183,7 @@ class HTMLFormatter:
         return None
 
     def _should_format_tag(self, tag_name: str) -> bool:
-        # Format all tags except explicit inline tags
+
         return tag_name not in self.INLINE_TAGS
 
     def _cleanup_blank_lines(self, text: str) -> str:
@@ -219,13 +205,11 @@ class HTMLFormatter:
 
 def read_file_safe(path: Path, max_size: int = MAX_FILE_SIZE) -> str | None:
     try:
-        # Check file size
         file_size = path.stat().st_size
         if file_size > max_size:
             logger.warning(f"File too large ({file_size} bytes): {path}")
             return None
 
-        # Try UTF-8 first, then fallback to latin-1
         try:
             content = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
@@ -246,16 +230,14 @@ def write_file_atomic(path: Path, content: str) -> bool:
     temp_path = path.with_suffix(path.suffix + ".tmp")
 
     try:
-        # Write to temporary file
         temp_path.write_text(content, encoding="utf-8")
 
-        # Atomic rename
         temp_path.replace(path)
         return True
 
     except Exception as e:
         logger.error(f"Failed to write {path}: {e}")
-        # Clean up temp file if it exists
+
         try:
             if temp_path.exists():
                 temp_path.unlink()
@@ -273,12 +255,10 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
     for path in paths:
         try:
             if path.is_file():
-                # Single file
                 if path.suffix.lower() in HTML_EXTENSIONS and path not in seen:
                     seen.add(path)
                     yield path
             elif path.is_dir():
-                # Directory - search recursively
                 for html_file in path.rglob("*"):
                     if (
                         html_file.is_file()
@@ -297,21 +277,17 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
 
 def process_file(path: Path) -> ProcessingResult:
     try:
-        # Read file
         content = read_file_safe(path)
         if content is None:
             return ProcessingResult(
                 path=path, success=False, error="Failed to read file"
             )
 
-        # Format HTML
         formatter = HTMLFormatter()
         formatted, tag_count = formatter.format_html(content)
 
-        # Check if file was modified
         was_modified = formatted != content
 
-        # Write back if modified
         if was_modified and not write_file_atomic(path, formatted):
             return ProcessingResult(
                 path=path,
@@ -335,7 +311,7 @@ def process_file(path: Path) -> ProcessingResult:
 
 
 def main() -> int:
-    # Parse command line arguments
+
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -377,11 +353,9 @@ Examples:
 
     args = parser.parse_args()
 
-    # Configure logging
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Find all HTML files
     print("Searching for HTML files...")
     html_files = list(find_html_files(args.paths))
 
@@ -396,7 +370,6 @@ Examples:
             print(f"Would process: {f}")
         return 0
 
-    # Process files in parallel
     success_count = 0
     failed_count = 0
     modified_count = 0
@@ -405,7 +378,6 @@ Examples:
 
     try:
         with mp.Pool(processes=args.jobs) as pool:
-            # Process files with imap_unordered for better performance
             for result in pool.imap_unordered(process_file, html_files, chunksize=1):
                 if result.success:
                     success_count += 1
@@ -428,7 +400,6 @@ Examples:
         logger.error(f"Fatal error: {e}")
         return 1
 
-    # Print summary
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)

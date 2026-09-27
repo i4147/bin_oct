@@ -27,7 +27,7 @@ def load_pkl_file(filepath):
 
 
 def main():
-    # Find all .pkl files in current directory (non-recursive)
+
     pkl_files = sorted(glob.glob("*.pkl"))
 
     if not pkl_files:
@@ -39,7 +39,6 @@ def main():
         print(f"  - {f}")
     print()
 
-    # Load and concatenate all DataFrames
     dataframes = []
     for filepath in pkl_files:
         df = load_pkl_file(filepath)
@@ -50,7 +49,6 @@ def main():
         print("No valid DataFrames loaded. Exiting.")
         return
 
-    # Merge all DataFrames
     print(f"\nMerging {len(dataframes)} DataFrames...")
     merged_df = pd.concat(dataframes, ignore_index=True)
     print(f"Merged shape: {merged_df.shape}")
@@ -62,10 +60,8 @@ def main():
     print(f"Dropped {initial_count - final_count} duplicate rows")
     print(f"Final shape: {merged_df.shape}")
 
-    # Convert to JSON-safe records (handles NaN, Timestamps, numpy types, etc.)
     records = json.loads(merged_df.to_json(orient="records", date_format="iso"))
 
-    # Write to JSON
     output_file = "merged_deduped.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2, sort_keys=True)

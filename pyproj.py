@@ -11,10 +11,6 @@ from typing import Any, Final
 
 from dotenv import load_dotenv
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
-
 ENV_PATH: Final[Path] = Path.home() / ".env"
 """Location of the .env file that holds GITHUB_TOKEN."""
 
@@ -27,12 +23,7 @@ DEFAULT_BRANCH: Final[str] = "main"
 VERSION: Final[str] = "1.4.7"
 """Version stamped into pyproject.toml, __init__.py, <pkgname>.py, <pkgname>.pyx."""
 
-# Load .env early so GITHUB_TOKEN is available to any subsequent code.
 load_dotenv(dotenv_path=ENV_PATH)
-
-# --------------------------------------------------------------------------- #
-# File templates -- shared
-# --------------------------------------------------------------------------- #
 
 GITIGNORE: Final[str] = """\
 __pycache__/
@@ -67,10 +58,6 @@ dmypy.json
 site/
 """
 
-# setup.py is a minimal shim: all metadata lives in pyproject.toml.
-# It exists for tools / workflows that still expect a setup.py to be present.
-# NOTE: the Cython layout uses a *different* setup.py (see
-# SETUP_PY_CYTHON_TMPL below) because it must declare ``ext_modules``.
 SETUP_PY: Final[str] = '''\
 """Legacy shim for tools that still expect a setup.py.
 
@@ -81,16 +68,6 @@ from setuptools import setup
 
 setup()
 '''
-
-# --------------------------------------------------------------------------- #
-# File templates -- package layout
-#
-# The src-layout package contains only two modules:
-#   * __init__.py -- package version marker
-#   * cli.py      -- Typer application and console entry point
-# All other helpers (credentials, logging, utils, __main__, py.typed) were
-# intentionally dropped: they can be added back by the user on demand.
-# --------------------------------------------------------------------------- #
 
 PYPROJECT_PKG_TMPL: Final[str] = """\
 [build-system]
@@ -159,10 +136,6 @@ if __name__ == "__main__":
     app()
 """
 
-# --------------------------------------------------------------------------- #
-# File templates -- single-file layout
-# --------------------------------------------------------------------------- #
-
 PYPROJECT_SINGLE_TMPL: Final[str] = """\
 [build-system]
 requires = ["setuptools"]
@@ -221,19 +194,6 @@ if __name__ == "__main__":
     main()
 '''
 
-# --------------------------------------------------------------------------- #
-# File templates -- Cython layout
-#
-# A Cython project is a *single extension module* named <pkgname> built from
-# one <pkgname>.pyx source file at the project root. It looks like the
-# single-file layout from the user's point of view, but differs in two ways:
-#
-#   1. build-system requires "Cython" in addition to "setuptools".
-#   2. setup.py is *required* (not a legacy shim) because setuptools must be
-#      told about the Extension via ``ext_modules`` -- there is no
-#      declarative equivalent in pyproject.toml / setup.cfg.
-# --------------------------------------------------------------------------- #
-
 PYPROJECT_CYTHON_TMPL: Final[str] = """\
 [build-system]
 requires = ["setuptools", "Cython"]
@@ -266,8 +226,6 @@ testpaths = tests
 addopts = -ra -q
 """
 
-# Required (unlike the other layouts): setuptools needs ``ext_modules``,
-# which cannot be expressed declaratively in pyproject.toml / setup.cfg.
 SETUP_PY_CYTHON_TMPL: Final[str] = '''\
 """Build configuration for the Cython extension module ``{pkgname}``.
 
@@ -307,19 +265,10 @@ def main() -> None:
     print("Hello from {pkgname}")
 '''
 
-# --------------------------------------------------------------------------- #
-# Shell helpers
-# --------------------------------------------------------------------------- #
-
 
 def run(cmd: list[str], cwd: Path) -> None:
     print(f"$ {' '.join(cmd)}")
     subprocess.run(cmd, cwd=cwd, check=True)
-
-
-# --------------------------------------------------------------------------- #
-# GitHub REST API helpers
-# --------------------------------------------------------------------------- #
 
 
 def github_request(
@@ -393,16 +342,10 @@ def get_or_create_github_repo(
     try:
         return github_request("GET", f"{GITHUB_API}/repos/{user}/{name}", token)
     except SystemExit as exc:
-        # 404 means "not found" -> fall through to creation.
         if "404" not in str(exc):
             raise
     print(f"Repo {user}/{name} not found, creating ...")
     return create_github_repo(token, name, private=private)
-
-
-# --------------------------------------------------------------------------- #
-# Project scaffolding
-# --------------------------------------------------------------------------- #
 
 
 def render_package_files(pkgname: str) -> dict[Path, str]:
@@ -450,10 +393,6 @@ def render_cython_files(pkgname: str) -> dict[Path, str]:
     }
 
 
-# Layout identifiers accepted by ``init_project``. ``layout`` is a plain
-# string rather than a bool pair because the three options are mutually
-# exclusive (enforced at the argparse layer) and a string keeps the dispatch
-# table explicit.
 LAYOUT_PACKAGE: Final[str] = "package"
 LAYOUT_SINGLE: Final[str] = "single"
 LAYOUT_CYTHON: Final[str] = "cython"
@@ -477,7 +416,7 @@ def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[P
 
     for rel_path, content in files.items():
         abs_path: Path = root / rel_path
-        # Create parent directories as needed; never remove existing ones.
+
         abs_path.parent.mkdir(parents=True, exist_ok=True)
 
         if abs_path.exists():
@@ -490,24 +429,15 @@ def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[P
     return root, created, skipped
 
 
-# --------------------------------------------------------------------------- #
-# Git operations
-# --------------------------------------------------------------------------- #
-
-
 def git_init_and_push(root: Path, remote_url: str) -> None:
     run(["git", "init", "-b", DEFAULT_BRANCH], cwd=root)
     run(["git", "add", "."], cwd=root)
 
-    # Commit may be a no-op if there is nothing staged (e.g. re-run on an
-    # unchanged repo). Use ``--allow-empty`` so the flow keeps moving.
     run(
         ["git", "commit", "--allow-empty", "-m", "Initial commit"],
         cwd=root,
     )
 
-    # Replace or add ``origin``. ``git remote set-url`` fails if the remote
-    # doesn't exist; check first.
     existing = subprocess.run(
         ["git", "remote"],
         cwd=root,
@@ -529,11 +459,6 @@ def scrub_remote_token(root: Path, user: str, pkgname: str) -> None:
     run(["git", "remote", "set-url", "origin", clean_url], cwd=root)
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog=Path(sys.argv[0]).name,
@@ -549,8 +474,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Python package / module name (also used as the directory name)",
     )
 
-    # Layout selection: exactly one of the three layouts is allowed, and the
-    # two single-module variants cannot be combined.
     layout_group = parser.add_mutually_exclusive_group()
     layout_group.add_argument(
         "-s",
@@ -586,11 +509,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-# --------------------------------------------------------------------------- #
-# Entrypoint
-# --------------------------------------------------------------------------- #
-
-
 def main() -> None:
     args: argparse.Namespace = parse_args(sys.argv[1:])
     pkgname: str = args.pkgname
@@ -601,7 +519,6 @@ def main() -> None:
     if not pkgname.isidentifier():
         raise SystemExit(f"Error: {pkgname!r} is not a valid Python identifier")
 
-    # Mutually exclusive group guarantees at most one of these is True.
     if cython:
         layout: str = LAYOUT_CYTHON
         layout_desc: str = "Cython extension module"
@@ -614,7 +531,6 @@ def main() -> None:
 
     print(f"Scaffolding {layout_desc} for {pkgname!r}")
 
-    # 1. Scaffold the local project (only creating missing files).
     root, created, skipped = init_project(pkgname, layout=layout)
     print(f"Project root: {root}")
     print(f"  created: {len(created)} file(s)")
@@ -625,7 +541,6 @@ def main() -> None:
         for path in skipped:
             print(f"    = {path.relative_to(root)}")
 
-    # If -g was not passed, stop here: nothing remote, nothing git.
     if not do_git:
         print(
             f"\nSkipping git init / commit / push and GitHub repo creation "
@@ -633,19 +548,15 @@ def main() -> None:
         )
         return
 
-    # 2. Authenticate against GitHub.
     token: str = get_github_token()
     user: str = get_github_user(token)
     print(f"Authenticated as GitHub user: {user}")
 
-    # 3. Fetch or create the remote repository.
     get_or_create_github_repo(token, user, pkgname, private=True)
 
-    # 4. Initialise git and push using a token-embedded URL.
     push_url: str = f"https://{token}@github.com/{user}/{pkgname}.git"
     git_init_and_push(root, push_url)
 
-    # 5. Immediately rewrite origin so the token does not persist on disk.
     scrub_remote_token(root, user, pkgname)
 
     print(f"\nDone: https://github.com/{user}/{pkgname}")

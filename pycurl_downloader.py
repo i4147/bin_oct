@@ -119,7 +119,6 @@ def save_failed(path: Path, failed_urls: list[str]) -> None:
     if failed_urls:
         path.write_text("\n".join(failed_urls) + "\n", encoding="utf-8")
     else:
-        # All succeeded — truncate the file
         path.write_text("", encoding="utf-8")
 
 
@@ -144,13 +143,12 @@ def main():
     )
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Preserve original ordering info: {url -> first-seen index}
     original_order = {}
     for i, u in enumerate(urls):
         original_order.setdefault(u, i)
 
     failed_urls: set[str] = set()
-    # URLs we never got a definitive result for are kept as failed
+
     processed_ok: set[str] = set()
 
     try:
@@ -181,12 +179,11 @@ def main():
 
     except KeyboardInterrupt:
         print("\nInterrupted by user. Any unprocessed URLs remain in the file.")
-        # Any URL that wasn't confirmed OK is treated as failed (kept in file)
+
         for u in urls:
             if u not in processed_ok:
                 failed_urls.add(u)
 
-    # Write back only the failed URLs, preserving original file order
     kept_in_order = sorted(failed_urls, key=lambda u: original_order.get(u, 1 << 30))
     save_failed(input_path, kept_in_order)
 

@@ -57,10 +57,6 @@ from pathlib import Path
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-# ----------------------------------------------------------------------
-# Utilities
-# ----------------------------------------------------------------------
-
 
 def tail_file(fname, n: int = 10) -> list[str]:
     try:
@@ -98,11 +94,6 @@ def human_size(n: int) -> str:
     return f"{n:.1f}P"
 
 
-# ----------------------------------------------------------------------
-# Event handler
-# ----------------------------------------------------------------------
-
-
 class ChangeHandler(FileSystemEventHandler):
     def __init__(
         self,
@@ -135,8 +126,6 @@ class ChangeHandler(FileSystemEventHandler):
         self._pending: dict[Path, str] = {}
         self._last_flush = time.time()
         self._errors: list[str] = []
-
-    # -- helpers --------------------------------------------------------
 
     def _rel(self, p: Path) -> str:
         try:
@@ -174,8 +163,6 @@ class ChangeHandler(FileSystemEventHandler):
         if not self.pattern:
             return False
         return self.pattern in "".join(tail_file(path, self.tail_n))
-
-    # -- queuing / flushing --------------------------------------------
 
     def _queue(self, src_path: Path, reason: str) -> None:
         if not self._should_process(src_path):
@@ -230,8 +217,6 @@ class ChangeHandler(FileSystemEventHandler):
             print("-" * 40)
             self._errors.clear()
 
-    # -- watchdog callbacks --------------------------------------------
-
     def on_created(self, event) -> None:
         if not event.is_directory:
             self._queue(Path(event.src_path), "create")
@@ -248,11 +233,6 @@ class ChangeHandler(FileSystemEventHandler):
         if not event.is_directory:
             self._queue(Path(event.src_path), "moved-out")
             self._queue(Path(event.dest_path), "moved-in")
-
-
-# ----------------------------------------------------------------------
-# CLI
-# ----------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -382,7 +362,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-    # -- banner --------------------------------------------------------
     print(f"Watching ({'non-' if args.no_recursive else ''}recursive):")
     for t in targets:
         kind = "file" if t.is_file() else "dir"
@@ -403,7 +382,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.initial_copy and args.copy and dest_dir is not None:
         do_initial_copy(targets, allowed, excluded, dest_dir)
 
-    # -- set up observer ----------------------------------------------
     stop_event = threading.Event()
     observer = Observer()
     handlers: list[ChangeHandler] = []
@@ -444,7 +422,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\nStopping...")
     finally:
-        # Final flush so that any last events are not lost.
         for h in handlers:
             with contextlib.suppress(Exception):
                 h.flush()

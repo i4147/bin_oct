@@ -32,7 +32,6 @@ from typing import Any, Optional
 
 from loguru import logger
 
-# Number of worker processes used for parallel file processing.
 POOL_SIZE: int = 8
 
 

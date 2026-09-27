@@ -53,9 +53,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
-# --------------------------------------------------------------------------- #
-# Optional third-party imports (graceful fallback)
-# --------------------------------------------------------------------------- #
 try:
     from tqdm import tqdm  # type: ignore
 except Exception:  # pragma: no cover
@@ -75,17 +72,12 @@ except Exception:  # pragma: no cover
         return False
 
 
-# --------------------------------------------------------------------------- #
-# Constants (defaults match the originals)
-# --------------------------------------------------------------------------- #
 DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644
 EXEC_MODE: int = 0o755
 
-# Any of the three x bits — used by deexec to mask them off.
 EXEC_BITS: int = st.S_IXUSR | st.S_IXGRP | st.S_IXOTH
 
-# Merged skip set from all four scripts.
 DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
     {
         ".git",
@@ -98,7 +90,6 @@ DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
     }
 )
 
-# Merged "exec-dir" set (chmodi.py is the superset).
 DEFAULT_EXEC_DIRS: frozenset[str] = frozenset(
     {
         "bin",
@@ -112,17 +103,11 @@ DEFAULT_EXEC_DIRS: frozenset[str] = frozenset(
 
 DEFAULT_SUFFIX_EXEC: tuple[str, ...] = (".sh", ".so")
 
-# Default pattern(s) for `deexec` mode — matches the snippet's "*.py".
 DEFAULT_DEEXEC_PATTERNS: tuple[str, ...] = ("*.py",)
 
-# NEW: parent-dir names whose files must keep their exec state.
-# Only these two, exactly as requested (not the full DEFAULT_EXEC_DIRS).
 DEFAULT_KEEP_EXEC_PARENTS: frozenset[str] = frozenset({"bin", "sbin"})
 
 
-# --------------------------------------------------------------------------- #
-# Small helpers
-# --------------------------------------------------------------------------- #
 def mode_of(p: Path) -> Optional[int]:
     try:
         return st.S_IMODE(p.stat().st_mode)
@@ -199,9 +184,6 @@ def chmod_remove_x(p: Path) -> bool:
         return False
 
 
-# --------------------------------------------------------------------------- #
-# Configuration
-# --------------------------------------------------------------------------- #
 @dataclass
 class Config:
     root: Path
@@ -213,9 +195,9 @@ class Config:
     dir_mode: int = DIR_MODE
     file_mode: int = FILE_MODE
     exec_mode: int = EXEC_MODE
-    # Patterns used by `deexec` mode.
+
     deexec_patterns: tuple[str, ...] = DEFAULT_DEEXEC_PATTERNS
-    # NEW: parent dir names whose files keep their exec bits in deexec mode.
+
     keep_exec_parents: frozenset[str] = DEFAULT_KEEP_EXEC_PARENTS
 
     def is_skipped(self, p: Path) -> bool:
@@ -239,7 +221,6 @@ class Config:
         name = p.name
         return any(fnmatch.fnmatch(name, pat) for pat in self.deexec_patterns)
 
-    # NEW: the rule you asked for.
     def keeps_exec_by_parent(self, p: Path) -> bool:
         try:
             return p.parent.name in self.keep_exec_parents
@@ -247,9 +228,6 @@ class Config:
             return False
 
 
-# --------------------------------------------------------------------------- #
-# Scanning
-# --------------------------------------------------------------------------- #
 def walk_items(
     cfg: Config, include_dirs: bool = True, include_files: bool = True
 ) -> Iterator[tuple[str, Path]]:
@@ -270,9 +248,6 @@ def walk_items(
                 yield ("file", p)
 
 
-# --------------------------------------------------------------------------- #
-# Decision logic — used by all/dirs/files modes
-# --------------------------------------------------------------------------- #
 @dataclass
 class Decision:
     kind: str  # 'skip_exec' | 'skip_correct' | 'change' | 'error'
@@ -314,9 +289,6 @@ def decide(cfg: Config, kind: str, path: Path) -> Decision:
     return Decision("change", path, cur, target)
 
 
-# --------------------------------------------------------------------------- #
-# Application
-# --------------------------------------------------------------------------- #
 @dataclass
 class Stats:
     total: int = 0
@@ -324,7 +296,7 @@ class Stats:
     files_changed: int = 0
     files_made_exec: int = 0
     files_deexeced: int = 0
-    # NEW: files skipped because their parent is bin/sbin.
+
     files_kept_exec: int = 0
     skipped: int = 0
     errors: int = 0
@@ -400,9 +372,6 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
     return s
 
 
-# --------------------------------------------------------------------------- #
-# addx mode — nchmod.py behavior
-# --------------------------------------------------------------------------- #
 def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     s = Stats()
     items = list(walk_items(cfg))
@@ -448,9 +417,6 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     return s
 
 
-# --------------------------------------------------------------------------- #
-# deexec mode — strip x bits, EXCEPT under bin/ and sbin/
-# --------------------------------------------------------------------------- #
 def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     s = Stats()
     items = list(walk_items(cfg, include_dirs=False, include_files=True))
@@ -458,20 +424,14 @@ def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     for kind, path in tqdm(items, desc="deexec", unit="items"):
         s.total += 1
 
-        # Respect the global skip-dir set.
         if cfg.is_skipped(path):
             s.skipped += 1
             continue
 
-        # Only files matching the configured glob patterns.
         if not cfg.matches_deexec(path):
             s.skipped += 1
             continue
 
-        # NEW: the requested rule — keep exec state iff parent is bin/sbin.
-        # This is checked *before* the "already has x?" shortcut so the
-        # counter/report distinguishes "kept because of parent" from
-        # "skipped because no x bit".
         if cfg.keeps_exec_by_parent(path):
             s.files_kept_exec += 1
             if verbose:
@@ -485,7 +445,6 @@ def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
             s.messages.append(f"[ERR]  {path}: stat failed")
             continue
 
-        # Nothing to strip if no x bit is set.
         if not (cur & EXEC_BITS):
             s.skipped += 1
             continue
@@ -510,9 +469,6 @@ def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     return s
 
 
-# --------------------------------------------------------------------------- #
-# Parallel runner
-# --------------------------------------------------------------------------- #
 def run_parallel(cfg: Config, items: list[tuple[str, Path]], jobs: int) -> Stats:
     jobs = max(1, min(jobs, os.cpu_count() or 1, 32))
     chunk = max(1000, len(items) // (jobs * 10) or 1)
@@ -529,9 +485,6 @@ def run_parallel(cfg: Config, items: list[tuple[str, Path]], jobs: int) -> Stats
     return total
 
 
-# --------------------------------------------------------------------------- #
-# Serial runner
-# --------------------------------------------------------------------------- #
 def run_serial(cfg: Config, items: list[tuple[str, Path]], verbose: bool) -> Stats:
     total = Stats()
     for kind, path in tqdm(items, desc="scanning", unit="items"):
@@ -539,9 +492,6 @@ def run_serial(cfg: Config, items: list[tuple[str, Path]], verbose: bool) -> Sta
     return total
 
 
-# --------------------------------------------------------------------------- #
-# Reporting
-# --------------------------------------------------------------------------- #
 def report(s: Stats, elapsed: float, verbose: bool) -> None:
     bar = "=" * 44
     print(f"\n{bar}\n📊 PERMISSION NORMALIZATION SUMMARY\n{'-' * 44}")
@@ -554,7 +504,7 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
     print(f"✓  Files made executable:{s.files_made_exec}")
     if s.files_deexeced:
         print(f"✓  Files de-execed:      {s.files_deexeced}")
-    # NEW: only shown when relevant.
+
     if s.files_kept_exec:
         print(f"🔒 Files kept executable (bin/sbin): {s.files_kept_exec}")
     print(f"❌ Total errors:          {s.errors}")
@@ -651,9 +601,6 @@ def show_examples(
     dump("Errors during analysis", "errors")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def parse_mode(s: str) -> int:
     try:
         return int(s, 8)
@@ -731,7 +678,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=oct(EXEC_MODE),
         help="octal mode for executable files (default: 0755)",
     )
-    # NEW: allow overriding which parent names keep exec state.
+
     p.add_argument(
         "--keep-exec-parent",
         action="append",
@@ -790,7 +737,6 @@ def build_config(args: argparse.Namespace) -> Config:
     else:
         patterns = DEFAULT_DEEXEC_PATTERNS
 
-    # NEW: keep-exec parents override.
     if args.keep_exec_parent:
         keep = frozenset(args.keep_exec_parent)
     else:

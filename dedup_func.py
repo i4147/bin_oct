@@ -55,9 +55,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-# ---------------------------------------------------------------------------
-# Optional logger (loguru if available, else stdlib logging)
-# ---------------------------------------------------------------------------
 try:
     from loguru import logger  # type: ignore
 except ImportError:  # pragma: no cover
@@ -65,10 +62,6 @@ except ImportError:  # pragma: no cover
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("dedup_tool")
-
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 
 
 def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Path]:
@@ -122,11 +115,6 @@ def function_line_range(node: ast.AST) -> tuple[int, int]:
     decs = getattr(node, "decorator_list", None)
     start = decs[0].lineno if decs else node.lineno
     return start, end
-
-
-# ===========================================================================
-# Subcommand: single  (dedupfunc.py)
-# ===========================================================================
 
 
 class FunctionRecord:
@@ -282,11 +270,6 @@ def cmd_single(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: scan  (dup_detector.py)
-# ===========================================================================
-
-
 def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
     src, tree = parse_file(path)
     if tree is None:
@@ -421,7 +404,6 @@ def refactor_to_shared_module(
         target = Path(ref_file)
         lines = target.read_text(encoding="utf-8").splitlines(keepends=True)
 
-        # Collect all objects that must be deleted from this file.
         deletions = [
             obj
             for objs in groups.values()
@@ -435,7 +417,6 @@ def refactor_to_shared_module(
             end = obj["end_line"]
             del lines[start:end]
 
-        # Find last import block to insert after.
         last_import = -1
         for i, line in enumerate(lines):
             stripped = line.strip()
@@ -543,11 +524,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
             args.similarity,
         )
     return 0
-
-
-# ===========================================================================
-# Subcommand: consolidate  (find_dup_func_class_const.py)
-# ===========================================================================
 
 
 def extract_definitions(
@@ -699,11 +675,6 @@ def cmd_consolidate(args: argparse.Namespace) -> int:
 
     print(f"\n📊 Refactor complete. Adjusted and verified {updated} files.")
     return 0
-
-
-# ===========================================================================
-# Subcommand: prune  (remove_duplicate_functions.py)
-# ===========================================================================
 
 
 def _hash_function(node: ast.FunctionDef, lines: list[str]) -> str:
@@ -876,11 +847,6 @@ def cmd_prune(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI plumbing
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dedup_tool.py",
@@ -888,7 +854,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- single -----------------------------------------------------------
     p = sub.add_parser(
         "single",
         help="Find / remove duplicate functions in ONE file (dedupfunc.py).",
@@ -907,7 +872,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_single)
 
-    # --- scan -------------------------------------------------------------
     p = sub.add_parser(
         "scan",
         help="Recursive exact/fuzzy duplicate scanner (dup_detector.py).",
@@ -954,7 +918,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_scan)
 
-    # --- consolidate ------------------------------------------------------
     p = sub.add_parser(
         "consolidate",
         help="Consolidate exact duplicates into a shared module (find_dup_func_class_const.py).",
@@ -979,7 +942,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_consolidate)
 
-    # --- prune ------------------------------------------------------------
     p = sub.add_parser(
         "prune",
         help="Remove functions matching a reference file (remove_duplicate_functions.py).",

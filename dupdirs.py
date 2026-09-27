@@ -19,18 +19,12 @@ from pathlib import Path
 
 import xxhash
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 NUM_WORKERS = 8
 SKIP_DIR_NAMES = {".git"}
 HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _file_hash(path: Path) -> str:
     h = xxhash.xxh64()
     with open(path, "rb") as f:
@@ -103,16 +97,13 @@ def folder_signature(args):
         return None
 
     direct_files = [rel for rel, _ in files if "/" not in rel]
-    # Skip folders made only of subfolders (prevents a/b vs a false positive).
+
     if not direct_files:
         return None
 
     rel_files = sorted(rel for rel, _ in files)
     subdirs = sorted(_collect_subdirs(root))
 
-    # ------------------------------------------------------------------
-    # STRUCTURE key: same file layout + same subdir layout
-    # ------------------------------------------------------------------
     struct_h = xxhash.xxh64()
     for d in subdirs:
         struct_h.update(b"D")
@@ -124,9 +115,6 @@ def folder_signature(args):
         struct_h.update(b"\x00")
     struct_key = struct_h.hexdigest()
 
-    # ------------------------------------------------------------------
-    # CONTENT key: relative path + content hash
-    # ------------------------------------------------------------------
     if mode == "content":
         content_h = xxhash.xxh64()
         for rel, abs_path in sorted(files, key=lambda x: x[0]):
@@ -145,9 +133,6 @@ def folder_signature(args):
     return (struct_key, content_key, str(root))
 
 
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
 def find_all_folders(start: Path):
     start = start.resolve()
     folders = []
@@ -174,9 +159,6 @@ def find_all_folders(start: Path):
     return folders
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def parse_args():
     p = argparse.ArgumentParser(
         description="Find duplicate folders in the current directory tree."
@@ -217,7 +199,6 @@ def main():
             if res is not None:
                 results.append(res)
 
-    # Group by chosen key.
     groups = defaultdict(list)
     if mode == "content":
         for struct_key, content_key, path in results:

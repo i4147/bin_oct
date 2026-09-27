@@ -17,7 +17,6 @@ def main() -> None:
         print(f"Error: file not found: {input_path}")
         sys.exit(1)
 
-    # List available subtitle tracks
     tracks = extract_subtitle_tracks(str(input_path))
     if not tracks:
         print(f"No subtitle tracks found in {input_path}")
@@ -30,7 +29,6 @@ def main() -> None:
             f"[{t['language']}] – {t['name']}"
         )
 
-    # Pick the requested track, or default to the first one
     if len(sys.argv) >= 3:
         try:
             track_number = int(sys.argv[2])

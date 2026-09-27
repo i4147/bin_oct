@@ -38,9 +38,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
-# ---------------------------------------------------------------------------
-# Optional third-party backends (imported lazily so unrelated subcommands work)
-# ---------------------------------------------------------------------------
 try:
     import pycld2  # type: ignore
 except ImportError:
@@ -51,9 +48,6 @@ try:
 except ImportError:
     gcld3 = None  # type: ignore
 
-# ---------------------------------------------------------------------------
-# Constants (defaults mirror the originals)
-# ---------------------------------------------------------------------------
 CHINESE_RANGES = (
     (0x3400, 0x4DBF),
     (0x4E00, 0x9FFF),
@@ -67,7 +61,6 @@ CHINESE_RANGES = (
 
 ENCODINGS = ("utf-8", "utf-8-sig", "gb18030", "gbk", "cp1252")
 
-# Reasonable text extensions used by find_nonenglish_files.py (originally dh.TXT_EXT)
 TXT_EXT = {
     ".txt",
     ".md",
@@ -116,9 +109,6 @@ DEFAULT_NONENG_FILE = "noneng.txt"
 PROGRESS = True
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 def contains_chinese(text: str) -> bool:
     for ch in text:
         d = ord(ch)
@@ -206,9 +196,6 @@ def _matches_ext(p: Path, exts: Optional[set[str]]) -> bool:
     return p.suffix.lower().lstrip(".") in exts
 
 
-# ---------------------------------------------------------------------------
-# Backends
-# ---------------------------------------------------------------------------
 def _require_pycld2():
     if pycld2 is None:
         print(
@@ -244,9 +231,6 @@ def detect_with_pycld2(text: str, min_bytes: int = 20):
     return (None, None, 0)
 
 
-# ---------------------------------------------------------------------------
-# move-chinese  (fchin.py)
-# ---------------------------------------------------------------------------
 def cmd_move_chinese(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     target_dir = (root / args.target).resolve()
@@ -272,9 +256,6 @@ def cmd_move_chinese(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# filter-lines  (filter_noneng.py + strict_filter_noneng.py)
-# ---------------------------------------------------------------------------
 def _write_extraction(
     src: Path, kept: list[str], removed: list[str], out_name: str = DEFAULT_NONENG_FILE
 ) -> None:
@@ -390,9 +371,6 @@ def _filter_strict(path: Path, move: bool, threshold: float, out_name: str) -> i
     return 0
 
 
-# ---------------------------------------------------------------------------
-# find-files  (find_non_eng.py + find_nonenglish_files.py)
-# ---------------------------------------------------------------------------
 def cmd_find_files(args: argparse.Namespace) -> int:
     _require_pycld2()
     root = Path(args.directory).resolve()
@@ -607,9 +585,6 @@ def _report_detailed(stats: dict, show_files: bool) -> None:
         print(f"📢 Found {non_en} non-English files that may need translation.")
 
 
-# ---------------------------------------------------------------------------
-# find-lines  (find_noneng.py)
-# ---------------------------------------------------------------------------
 def cmd_find_lines(args: argparse.Namespace) -> int:
     _require_pycld2()
     root = Path(args.root)
@@ -659,9 +634,6 @@ def cmd_find_lines(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="langtool.py",
@@ -670,7 +642,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # -- move-chinese ------------------------------------------------------
     mc = sub.add_parser(
         "move-chinese", help="Move files containing Chinese characters."
     )
@@ -687,7 +658,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     mc.set_defaults(func=cmd_move_chinese)
 
-    # -- filter-lines ------------------------------------------------------
     fl = sub.add_parser(
         "filter-lines", help="Filter non-English lines out of one file."
     )
@@ -716,7 +686,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fl.set_defaults(func=cmd_filter_lines)
 
-    # -- find-files --------------------------------------------------------
     ff = sub.add_parser(
         "find-files", help="Recursively find non-English files (pycld2)."
     )
@@ -772,7 +741,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ff.set_defaults(func=cmd_find_files)
 
-    # -- find-lines --------------------------------------------------------
     fnd = sub.add_parser(
         "find-lines", help="Find non-English lines across many files, save TSV."
     )
@@ -831,8 +799,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # `find-lines` originally had skip_hidden=True but the flag was named
-    # --skip-hidden (opt-in); we keep both names but always default True.
     if args.command == "find-lines":
         args.no_skip_hidden = not args.skip_hidden
 

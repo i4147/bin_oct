@@ -55,10 +55,6 @@ from typing import Optional, Sequence
 
 from loguru import logger
 
-# --------------------------------------------------------------------------- #
-# Constants / defaults — everything that used to be hard-coded is exposed here
-# (and can be overridden on the command line).
-# --------------------------------------------------------------------------- #
 DEFAULT_WORKERS: int = 8
 DEFAULT_CHUNK_SIZE: int = 524_288
 DEFAULT_GZIPER_CHUNK: int = 262_144
@@ -68,8 +64,6 @@ DEFAULT_BZ2_LEVEL: int = 9
 DEFAULT_GZ_LEVEL: int = 9
 DEFAULT_GZIPER_LEVEL: int = 9
 
-# The three originals used slightly different "already compressed" sets.
-# We preserve each one exactly so behaviour is identical.
 EXCLUDE_BZ2: frozenset[str] = frozenset(
     {".bz2", ".xz", ".gz", ".br", ".zst", ".7z", ".zip", ".rar"}
 )
@@ -81,9 +75,6 @@ EXCLUDE_GZIPER: frozenset[str] = frozenset(
 )
 
 
-# --------------------------------------------------------------------------- #
-# Small formatting helpers
-# --------------------------------------------------------------------------- #
 def human_size(n: float) -> str:
     units = ("B", "KB", "MB", "GB", "TB")
     v = float(n)
@@ -98,9 +89,6 @@ def human_time(seconds: int) -> str:
     return str(timedelta(seconds=seconds))
 
 
-# --------------------------------------------------------------------------- #
-# Byte-level compression primitives (algorithm dispatch)
-# --------------------------------------------------------------------------- #
 def compress_bytes(data: bytes, algo: str, level: int) -> bytes:
     if algo == "bz2":
         return bz2.compress(data, compresslevel=level)
@@ -117,9 +105,6 @@ def decompress_bytes(data: bytes, algo: str) -> bytes:
     raise ValueError(f"unknown algorithm: {algo!r}")
 
 
-# --------------------------------------------------------------------------- #
-# ProcessPool worker functions (must live at module level to be picklable)
-# --------------------------------------------------------------------------- #
 def _worker_compress_chunk(args: tuple[int, bytes, str, int]) -> tuple[int, bytes]:
     idx, data, algo, level = args
     return idx, compress_bytes(data, algo, level)
@@ -145,9 +130,6 @@ def _worker_gzip_file(args: tuple[str, int, int]) -> tuple[str, bool, int, int, 
         return (path_str, False, 0, 0, str(exc))
 
 
-# --------------------------------------------------------------------------- #
-# Configuration container
-# --------------------------------------------------------------------------- #
 @dataclass
 class Config:
     algo: str  # 'bz2' or 'gz'
@@ -170,15 +152,11 @@ class Config:
         return EXCLUDE_BZ2 if self.algo == "bz2" else EXCLUDE_GZ
 
 
-# --------------------------------------------------------------------------- #
-# The main engine
-# --------------------------------------------------------------------------- #
 class Tool:
     def __init__(self, cfg: Config) -> None:
         self.cfg = cfg
         self._pool: Optional[ProcessPoolExecutor] = None
 
-    # ----- pool lifecycle ------------------------------------------------- #
     def _get_pool(self) -> ProcessPoolExecutor:
         if self._pool is None:
             self._pool = ProcessPoolExecutor(max_workers=self.cfg.workers)
@@ -195,7 +173,6 @@ class Tool:
     def __exit__(self, *exc_info) -> None:  # noqa: D401
         self.close()
 
-    # ----- low-level file compression ------------------------------------- #
     def _compress_small(self, src: Path, dst: Path) -> bool:
         try:
             data = src.read_bytes()
@@ -216,7 +193,6 @@ class Tool:
                 src.open("rb") as fh,
                 mmap.mmap(fh.fileno(), length=0, access=mmap.ACCESS_READ) as mm,
             ):
-                # Slice the mmap — bytes are copied lazily and picklable.
                 slices = [
                     (i, mm[i * chunk : min((i + 1) * chunk, size)]) for i in range(n)
                 ]
@@ -250,7 +226,6 @@ class Tool:
             return self._compress_small(src, dst)
         return self._compress_chunked(src, dst, size)
 
-    # ----- tar helpers ---------------------------------------------------- #
     @staticmethod
     def _create_tar(src_dir: Path, tar_path: Path) -> bool:
         try:
@@ -275,7 +250,6 @@ class Tool:
             logger.error(f"  Failed to extract tar archive: {exc}")
             return False
 
-    # ----- top-level directory compression -------------------------------- #
     def compress_dir(self, src_dir: Path) -> bool:
         tar_path = src_dir.with_name(src_dir.name + ".tar")
         out_path = src_dir.with_name(src_dir.name + self.cfg.tar_ext)
@@ -320,7 +294,6 @@ class Tool:
                 out_path.unlink()
             return False
 
-    # ----- single-file compression ---------------------------------------- #
     def compress_single_file(self, src: Path) -> tuple[bool, int, int]:
         dst = Path(str(src) + self.cfg.file_ext)
         if dst.exists():
@@ -352,7 +325,6 @@ class Tool:
             logger.error(f"  ✗ Failed to compress {src.name}: {exc}")
             return (False, 0, 0)
 
-    # ----- single-file decompression -------------------------------------- #
     def decompress_single_file(self, src: Path) -> bool:
         if src.suffix != self.cfg.file_ext:
             return False
@@ -373,12 +345,9 @@ class Tool:
             logger.error(f"  ✗ Failed to decompress {src.name}: {exc}")
             return False
 
-    # ----- archive decompression ------------------------------------------ #
     def decompress_archive(self, archive: Path) -> bool:
         tar_path = archive.with_suffix("")
-        # Destination: recreate the source directory in the parent of the archive.
-        # (The original scripts used an off-by-one path here; this is the
-        # intended behaviour and matches what the tar was created from.)
+
         dest = archive.parent
         try:
             print(f"\n  Decompressing {archive.name}...")
@@ -398,7 +367,6 @@ class Tool:
                 tar_path.unlink()
             return False
 
-    # ----- collection helpers --------------------------------------------- #
     def collect_dirs(self, root: Path) -> list[Path]:
         return [p for p in root.glob("*") if p.is_dir() and not p.is_symlink()]
 
@@ -433,7 +401,6 @@ class Tool:
             and not p.name.endswith(self.cfg.tar_ext)
         ]
 
-    # ----- high-level compress -------------------------------------------- #
     def compress(self, paths: Sequence[Path]) -> None:
         cwd = Path.cwd()
 
@@ -444,7 +411,6 @@ class Tool:
             dirs = self.collect_dirs(cwd)
             files = self.collect_files(cwd)
 
-        # --- directories → tar.<ext> ------------------------------------ #
         if dirs:
             print(f"\n📁 Compressing {len(dirs)} directories...")
             for d in sorted(dirs):
@@ -461,7 +427,6 @@ class Tool:
                 else:
                     logger.error(f"  ✗ Failed to compress {rel}")
 
-        # --- files → <name>.<ext> -------------------------------------- #
         if not files:
             print("\n📄 No files to compress")
             return
@@ -491,11 +456,9 @@ class Tool:
         elif files:
             logger.error("\n❌ No files were successfully compressed")
 
-    # ----- high-level decompress ------------------------------------------ #
     def decompress(self, paths: Sequence[Path]) -> None:
         cwd = Path.cwd()
 
-        # --- tar archives ------------------------------------------------- #
         if paths:
             archives = [
                 p for p in paths if p.is_file() and p.name.endswith(self.cfg.tar_ext)
@@ -508,7 +471,6 @@ class Tool:
             for a in sorted(archives):
                 self.decompress_archive(a)
 
-        # --- single compressed files ------------------------------------- #
         if paths:
             singles = [
                 p
@@ -548,9 +510,6 @@ class Tool:
             logger.error("\n❌ No files were successfully decompressed")
 
 
-# --------------------------------------------------------------------------- #
-# gzip-files mode (behaviour of the original gziper.py)
-# --------------------------------------------------------------------------- #
 def run_gzip_files(
     directories: Sequence[Path],
     excludes: Sequence[str],
@@ -574,7 +533,6 @@ def run_gzip_files(
         print("   •", d)
     print("🚫 Excluding extensions:", ",".join(sorted(exclude_set)))
 
-    # ----- collect --------------------------------------------------------- #
     files: list[Path] = []
     for d in resolved_dirs:
         if not d.exists():
@@ -595,7 +553,6 @@ def run_gzip_files(
     )
     print("-" * 40)
 
-    # ----- compress -------------------------------------------------------- #
     total_files = ok = fail = 0
     total_orig = total_comp = 0
     start = time.time()
@@ -631,7 +588,6 @@ def run_gzip_files(
 
     elapsed = time.time() - start
 
-    # ----- summary -------------------------------------------------------- #
     print("=" * 40)
     print("📊 COMPRESSION SUMMARY".center(70))
     print("-" * 40)
@@ -650,9 +606,6 @@ def run_gzip_files(
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def _add_pool_options(
     sp: argparse.ArgumentParser, algo_default_level: int, chunk_default: int
 ) -> None:
@@ -723,17 +676,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=False)
 
-    # --- bz2 subcommand -------------------------------------------------- #
     bz2_p = sub.add_parser("bz2", help="bzip2 compression / decompression (bzr.py)")
     _add_pool_options(bz2_p, DEFAULT_BZ2_LEVEL, DEFAULT_CHUNK_SIZE)
 
-    # --- gz subcommand --------------------------------------------------- #
     gz_p = sub.add_parser(
         "gz", help="gzip compression / decompression with tar support (gzr.py)"
     )
     _add_pool_options(gz_p, DEFAULT_GZ_LEVEL, DEFAULT_CHUNK_SIZE)
 
-    # --- gzip-files subcommand ------------------------------------------- #
     gf_p = sub.add_parser("gzip-files", help="recursive gzip on files only (gziper.py)")
     gf_p.add_argument(
         "directories",
@@ -772,9 +722,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# --------------------------------------------------------------------------- #
-# Entry point
-# --------------------------------------------------------------------------- #
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -793,7 +740,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 level=args.level,
             )
 
-        # -- bz2 / gz -------------------------------------------------- #
         algo = "bz2" if args.command == "bz2" else "gz"
         cfg = Config(
             algo=algo,

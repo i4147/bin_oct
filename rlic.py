@@ -36,11 +36,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-# ---------------------------------------------------------------------------
-# Constants (from the originals)
-# ---------------------------------------------------------------------------
-
-# mlic.py's default extension whitelist.
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",
     ".md",
@@ -90,7 +85,6 @@ DEFAULT_TEXT_EXTS: set[str] = {
     ".sql",
 }
 
-# mlic2.py's binary extension blacklist.
 BINARY_EXTS: set[str] = {
     ".pyc",
     ".pyo",
@@ -129,7 +123,6 @@ BINARY_EXTS: set[str] = {
     ".pptx",
 }
 
-# pylic.py: lines starting with any of these are NOT treated as generic comments.
 COMMENT_EXCEPTIONS: tuple[str, ...] = (
     "#!",
     "# type",
@@ -138,10 +131,6 @@ COMMENT_EXCEPTIONS: tuple[str, ...] = (
     "# ruff",
     "# mypy",
 )
-
-# ---------------------------------------------------------------------------
-# Logging helpers
-# ---------------------------------------------------------------------------
 
 
 def info(msg: str) -> None:
@@ -156,11 +145,6 @@ def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
 
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class Occurrence:
     path: Path
@@ -168,11 +152,6 @@ class Occurrence:
     end: int
     normalized: str
     raw_lines: list[str] = field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# File selection
-# ---------------------------------------------------------------------------
 
 
 def _is_binary(path: Path) -> bool:
@@ -225,15 +204,9 @@ def collect_files(
             out.append(p)
             continue
 
-        # mlic2 heuristic: extensionless and text-like.
         if block_mode == "paragraph" and "." not in p.name and _is_probably_text(p):
             out.append(p)
     return sorted(out)
-
-
-# ---------------------------------------------------------------------------
-# Block extraction
-# ---------------------------------------------------------------------------
 
 
 def _normalize(lines: Sequence[str]) -> str:
@@ -360,11 +333,6 @@ def extract_blocks(
     return blocks
 
 
-# ---------------------------------------------------------------------------
-# Parallel scan
-# ---------------------------------------------------------------------------
-
-
 def _worker_scan(args: tuple[Path, str, int, int]) -> tuple[Path, list[Occurrence]]:
     path, block_mode, min_lines, min_chars = args
     return path, extract_blocks(path, block_mode, min_lines, min_chars)
@@ -404,15 +372,7 @@ def scan_directory(
                 for b in blocks:
                     groups[b.normalized].append(b)
 
-    # Keep only blocks that appear at least twice (mlic2 also accepts
-    # multiple occurrences within the same file, so `len(values) >= 2`
-    # is the correct filter — matches every original).
     return {k: v for k, v in groups.items() if len(v) >= 2}
-
-
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
 
 
 def _preview(text: str, limit: int = 200) -> str:
@@ -454,11 +414,6 @@ def save_report(groups: dict[str, list[Occurrence]], path: Path) -> None:
         info(f"Report saved to {path}")
     except OSError as e:
         err(f"Error writing report to {path}: {e}")
-
-
-# ---------------------------------------------------------------------------
-# Removal
-# ---------------------------------------------------------------------------
 
 
 def _remove_lines(
@@ -513,11 +468,6 @@ def remove_blocks(
     return total_files, total_lines
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def _parse_extensions(raw: Optional[Sequence[str]]) -> Optional[set[str]]:
     if not raw:
         return None
@@ -555,7 +505,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
         workers=args.workers,
     )
 
-    # mlic.py's --half filter.
     if args.half and groups:
         scanned = collect_files(root, block_mode=args.block_mode, extensions=extensions)
         threshold = len(scanned) / 2
@@ -681,7 +630,6 @@ def build_parser() -> argparse.ArgumentParser:
             help="Parallel worker threads (default: 4)",
         )
 
-    # scan ----------------------------------------------------------------
     p = sub.add_parser("scan", help="Find repeated blocks and report them")
     add_common(p)
     p.add_argument(
@@ -695,7 +643,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_scan)
 
-    # remove --------------------------------------------------------------
     p = sub.add_parser("remove", help="Find repeated blocks and remove them")
     add_common(p)
     p.add_argument(

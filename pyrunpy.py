@@ -27,17 +27,9 @@ from typing import Final
 
 from loguru import logger
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
-
 WORKER_COUNT: Final[int] = 8
 DEFAULT_TIMEOUT: Final[float] = 30.0
 FILE_PATTERN: Final[str] = "*.py"
-
-# --------------------------------------------------------------------------- #
-# Data structures
-# --------------------------------------------------------------------------- #
 
 
 class Outcome(str, Enum):
@@ -85,11 +77,6 @@ class Summary:
         return counts
 
 
-# --------------------------------------------------------------------------- #
-# Core logic
-# --------------------------------------------------------------------------- #
-
-
 def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
     if recursive:
         return sorted(p for p in directory.rglob(FILE_PATTERN) if p.is_file())
@@ -97,7 +84,7 @@ def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
 
 
 def _classify_failure(stderr: str, returncode: int) -> Outcome:
-    # Order matters: more specific exceptions first.
+
     checks: tuple[tuple[str, Outcome], ...] = (
         ("ModuleNotFoundError", Outcome.MODULE_NOT_FOUND),
         ("ImportError", Outcome.IMPORT_ERROR),
@@ -158,11 +145,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
     )
 
 
-# --------------------------------------------------------------------------- #
-# Reporting
-# --------------------------------------------------------------------------- #
-
-
 def _log_result(result: FileResult, verbose: bool) -> None:
     if result.outcome is Outcome.SUCCESS:
         if verbose:
@@ -188,11 +170,6 @@ def report_summary(summary: Summary) -> None:
         if count:
             print(f"  {outcome.value:<22} {count}")
     print("=" * 60)
-
-
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 
 
 def _build_parser() -> argparse.ArgumentParser:

@@ -25,7 +25,7 @@ def has_main_guard(filepath: Path) -> bool:
         if not isinstance(node, ast.If):
             continue
         test = node.test
-        # Match: __name__ == "__main__"  (or reversed, or != is wrong but we only want ==)
+
         if not isinstance(test, ast.Compare):
             continue
         if len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq):
@@ -55,8 +55,6 @@ def main():
             if not has_main_guard(p):
                 print(p.name)
 
-
-#                break
 
 if __name__ == "__main__":
     sys.exit(main())

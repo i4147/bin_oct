@@ -45,15 +45,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Logging configuration
-# ---------------------------------------------------------------------------
-# Remove loguru's default stderr sink and install two of our own:
-#   * a plain-text file sink (rotating) for post-mortem analysis
-#   * a compact stderr sink for live visibility
-# Console output of translations is handled separately by our own prints so
-# loguru messages don't get mixed with the progress stream.
-
 logger.remove()
 logger.add(
     "translate_words.log",
@@ -69,29 +60,13 @@ logger.add(
     format="<red>{level}</red>: {message}",
 )
 
-# ---------------------------------------------------------------------------
-# Backend configuration
-# ---------------------------------------------------------------------------
-
-#: Backends we know how to talk to, in the order we try them when the user's
-#: preferred backend cannot be initialized (automatic fallback).
 FALLBACK_ORDER = ("translate", "deep_translator", "googletrans")
 
-#: How many attempts per word before we give up and log it as failed.
 MAX_RETRIES = 3
 
 
 class BackendError(Exception):
     pass
-
-
-# ---------------------------------------------------------------------------
-# Per-backend factory functions
-# ---------------------------------------------------------------------------
-# Every `_make_<backend>` returns a callable ``(text: str) -> str`` on success,
-# or raises ``BackendError``. The returned callable may close over any state it
-# needs (a lock, a cached translator instance, etc.), so the wrapper stays
-# agnostic of each library's particular API.
 
 
 def _make_translate(source, target, script_path):
@@ -100,8 +75,6 @@ def _make_translate(source, target, script_path):
     except ImportError as e:
         raise BackendError(f"cannot import 'translate': {e}")
 
-    # Guard: if `translate` resolves to *this* script, the user probably named
-    # their file `translate.py`, which shadows the real package.
     mod_file = os.path.abspath(getattr(translate, "__file__", "") or "")
     if mod_file and mod_file == os.path.abspath(script_path):
         raise BackendError(
@@ -109,7 +82,6 @@ def _make_translate(source, target, script_path):
             "(rename the script to avoid shadowing the package)"
         )
 
-    # Pick whichever translator class the module actually exposes.
     cls = getattr(translate, "Translator", None) or getattr(
         translate, "GoogleTranslator", None
     )
@@ -119,11 +91,11 @@ def _make_translate(source, target, script_path):
         )
 
     if cls.__name__ == "Translator":
-        # Upstream API: from_lang / to_lang
+
         def call(text, cls=cls, source=source, target=target):
             return cls(from_lang=source, to_lang=target).translate(text)
     else:
-        # GoogleTranslator-style API: source / target
+
         def call(text, cls=cls, source=source, target=target):
             return cls(source=source, target=target).translate(text)
 
@@ -137,7 +109,7 @@ def _make_deep_translator(source, target, _script_path):
         raise BackendError(f"cannot import 'deep_translator': {e}")
 
     def call(text, cls=GoogleTranslator, source=source, target=target):
-        # Fresh instance per call keeps the API thread-safe.
+
         return cls(source=source, target=target).translate(text)
 
     return call
@@ -159,16 +131,11 @@ def _make_googletrans(source, target, _script_path):
     return call
 
 
-#: Registry: backend name -> factory function.
 _BACKEND_FACTORIES = {
     "translate": _make_translate,
     "deep_translator": _make_deep_translator,
     "googletrans": _make_googletrans,
 }
-
-# ---------------------------------------------------------------------------
-# Unified translator wrapper
-# ---------------------------------------------------------------------------
 
 
 class TranslatorWrapper:
@@ -178,7 +145,6 @@ class TranslatorWrapper:
         self.backend_name = None
         self._call = None
 
-        # Preferred backend first, then the rest of FALLBACK_ORDER.
         candidates = [preferred] + [b for b in FALLBACK_ORDER if b != preferred]
 
         errors = []
@@ -194,7 +160,6 @@ class TranslatorWrapper:
                 logger.warning("Backend '{}' unavailable: {}", name, e)
                 continue
 
-            # Success.
             self.backend_name = name
             if name != preferred:
                 print(
@@ -203,7 +168,6 @@ class TranslatorWrapper:
             logger.info("Using backend '{}'", name)
             return
 
-        # No backend could be initialized: helpful diagnostic.
         print("Error: no usable translation backend found.", file=sys.stderr)
         for name, err in errors:
             print(f"  - {name}: {err}", file=sys.stderr)
@@ -216,11 +180,6 @@ class TranslatorWrapper:
 
     def translate(self, text):
         return self._call(text)
-
-
-# ---------------------------------------------------------------------------
-# Persistence helpers
-# ---------------------------------------------------------------------------
 
 
 def load_progress(out_path):
@@ -250,16 +209,11 @@ def append_failed(failed_path, word, lock):
             f.write(word + "\n")
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Translate a word list file line by line to JSON."
     )
-    # Input / output -------------------------------------------------------
+
     parser.add_argument(
         "-i",
         "--input",
@@ -277,14 +231,14 @@ def parse_args():
         default="failed.txt",
         help="File collecting words that failed all retries (default: failed.txt)",
     )
-    # Languages ------------------------------------------------------------
+
     parser.add_argument(
         "-s", "--source", default="fr", help="Source language code (default: fr)"
     )
     parser.add_argument(
         "-t", "--target", default="en", help="Target language code (default: en)"
     )
-    # Backend --------------------------------------------------------------
+
     parser.add_argument(
         "-b",
         "--backend",
@@ -293,7 +247,7 @@ def parse_args():
         help="Preferred translation backend (default: translate); "
         "falls back automatically if unusable",
     )
-    # Concurrency / rate limiting -----------------------------------------
+
     parser.add_argument(
         "-w",
         "--workers",
@@ -308,7 +262,7 @@ def parse_args():
         default=0.3,
         help="Delay in seconds between requests per worker (default: 0.3)",
     )
-    # Saving / resume ------------------------------------------------------
+
     parser.add_argument(
         "--save-every",
         type=int,
@@ -323,11 +277,6 @@ def parse_args():
     return parser.parse_args()
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
 def main():
     args = parse_args()
 
@@ -335,31 +284,26 @@ def main():
     out_path = args.output
     failed_path = args.failed
 
-    # -- Validate input -----------------------------------------------------
     if not os.path.exists(input_path):
         print(f"Error: Input file '{input_path}' not found.")
         sys.exit(1)
 
-    # -- Read words (strip blanks and whitespace) ---------------------------
     with open(input_path, "r", encoding="utf-8") as f:
         words = [line.strip() for line in f if line.strip()]
 
     print(f"Loaded {len(words)} words from {input_path}")
     print(f"Source -> target: {args.source} -> {args.target}")
 
-    # -- Load existing progress (unless --no-continue) ----------------------
     results = {} if args.no_continue else load_progress(out_path)
     if results:
         print(f"Resuming: {len(results)} words already translated.")
 
-    # -- Figure out what still needs translating ----------------------------
     pending = [w for w in words if w not in results]
 
     if not pending:
         print("Nothing to translate. Done.")
         return
 
-    # -- Set up translator (with fallback) ----------------------------------
     translator = TranslatorWrapper(
         preferred=args.backend,
         source=args.source,
@@ -373,7 +317,6 @@ def main():
     )
     print(f"Words to translate: {len(pending)}")
 
-    # -- Shared state -------------------------------------------------------
     save_lock = threading.Lock()
     counter_lock = threading.Lock()
     print_lock = threading.Lock()
@@ -381,7 +324,6 @@ def main():
     completed_count = [0]
     total_pending = len(pending)
 
-    # -- Worker function ----------------------------------------------------
     def translate_word(word):
         for attempt in range(1, MAX_RETRIES + 1):
             try:
@@ -390,14 +332,11 @@ def main():
                 raw = translator.translate(word)
                 text = "" if raw is None else str(raw).strip()
 
-                # Reject identity translations (input returned unchanged,
-                # case-insensitively) and empty responses.
                 if not text:
                     raise ValueError("empty translation")
                 if text.casefold() == word.casefold():
                     raise ValueError(f"identity translation returned: {text!r}")
 
-                # Success — report the raw result.
                 with print_lock:
                     print(f"  → {word!r} returned {text!r}")
                 return word, text
@@ -411,14 +350,11 @@ def main():
                     e,
                 )
                 if attempt < MAX_RETRIES:
-                    # Gentle exponential backoff before retrying.
                     time.sleep(args.delay * (attempt + 1))
 
-        # All attempts exhausted.
         logger.error("All {} attempts failed for {!r}", MAX_RETRIES, word)
         return word, None
 
-    # -- Run the thread pool ------------------------------------------------
     try:
         with ThreadPoolExecutor(max_workers=args.workers) as executor:
             futures = {executor.submit(translate_word, w): w for w in pending}
@@ -431,7 +367,6 @@ def main():
                     count = completed_count[0]
 
                 if translation is None:
-                    # Exhausted retries — record to failed.txt, skip JSON.
                     append_failed(failed_path, word, failed_lock)
                     with print_lock:
                         print(
@@ -443,21 +378,18 @@ def main():
                     with print_lock:
                         print(f"[{count}/{total_pending}] ✓ {word} -> {translation}")
 
-                # Periodic atomic save.
                 if count % args.save_every == 0:
                     save_output(out_path, results, save_lock)
                     with print_lock:
                         print(f"  💾 Saved progress ({count}/{total_pending})")
 
     except KeyboardInterrupt:
-        # Ctrl+C: flush what we have and exit cleanly.
         print("\n\n⚠️  Interrupted by user. Saving progress...")
         save_output(out_path, results, save_lock)
         print(f"Progress saved to {out_path}. Run again to resume.")
         logger.info("Interrupted by user; saved {} entries", len(results))
         sys.exit(0)
 
-    # -- Final save ---------------------------------------------------------
     save_output(out_path, results, save_lock)
     print(f"\n✅ Done! Translated {len(results)} words total.")
     print(f"Output: {out_path}")

@@ -9,8 +9,6 @@ from pathlib import Path
 from dh import get_random_filename
 from loguru import logger
 
-# Matches strings that contain only ASCII letters, spaces, hyphens, apostrophes, and periods.
-# Used to decide whether a key "looks English".
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
 
 
@@ -129,7 +127,6 @@ def main():
         logger.error("Nothing to merge — no valid input files.")
         sys.exit(1)
 
-    # Preserve insertion order: defaultdict already does, but cast to plain dict for clarity.
     merged = dict(merged)
 
     output_filename = get_random_filename() + ".json"

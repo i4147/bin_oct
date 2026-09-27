@@ -39,7 +39,6 @@ def is_sqlite_file(path: Path) -> bool:
 def detect_format(path: Path) -> str:
     ext = path.suffix.lower()
     if ext in (".db", ".sqlite", ".sqlite3"):
-        # .db files are usually sqlite; if not, we still attempt sqlite
         return "sqlite"
     if ext in (".jsonl", ".ndjson"):
         return "jsonl"
@@ -101,7 +100,6 @@ def read_json(path: Path) -> dict[str, pd.DataFrame]:
     if isinstance(obj, list):
         return {"data": pd.DataFrame(obj)}
     if isinstance(obj, dict):
-        # Heuristic: dict whose values are all lists -> multiple tables
         if obj and all(isinstance(v, list) for v in obj.values()):
             return {k: pd.DataFrame(v) for k, v in obj.items()}
         return {"data": pd.DataFrame([obj])}

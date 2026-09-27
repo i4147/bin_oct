@@ -47,10 +47,6 @@ from typing import Optional
 
 LOG = logging.getLogger("fmt")
 
-# ---------------------------------------------------------------------------
-# Default extension sets (kept as module constants so they can be overridden).
-# ---------------------------------------------------------------------------
-
 HTML_EXTS: set[str] = {".html", ".htm", ".xhtml"}
 JSBEAUTIFIER_EXTS: set[str] = {".js", ".css", ".html", ".htm", ".json"}
 PRETTIER_EXTS: set[str] = {
@@ -72,10 +68,6 @@ DEFAULT_EXTS_BY_TOOL: dict[str, set[str]] = {
     "prettier": PRETTIER_EXTS,
     "prettify": PRETTIFY_EXTS,
 }
-
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 
 
 @dataclass
@@ -171,13 +163,7 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
         LOG.error("Failed to move %s -> %s: %s", path, target_dir, exc)
 
 
-# ===========================================================================
-# Backend: tree-sitter (htmlformat.py)
-# ===========================================================================
-
-
 class HtmlTagFormatter:
-    # Tags that should NOT be forced onto their own line.
     INLINE_TAGS: frozenset[str] = frozenset(
         {
             "b",
@@ -209,8 +195,6 @@ class HtmlTagFormatter:
                 f"Failed to initialize Tree-sitter parser: {exc}"
             ) from exc
 
-    # -- public API --------------------------------------------------------
-
     def format(self, src: str) -> tuple[str, int]:
         if not src.strip():
             return src, 0
@@ -227,8 +211,6 @@ class HtmlTagFormatter:
         except Exception as exc:
             LOG.error("Error formatting HTML: %s", exc)
             return src, 0
-
-    # -- internals ---------------------------------------------------------
 
     def _collect_edits(self, root, src: str) -> list[tuple[int, str, int]]:
         edits: list[tuple[int, str, int]] = []
@@ -312,11 +294,6 @@ def _beautify_treesitter(
     )
 
 
-# ===========================================================================
-# Backend: jsbeautifier (pret3.py + pypret.py)
-# ===========================================================================
-
-
 def _beautify_jsbeautifier(
     path: Path,
     *,
@@ -355,11 +332,6 @@ def _beautify_jsbeautifier(
     if modified and not atomic_write(path, out):
         return FileResult(path, success=False, error="Failed to write file")
     return FileResult(path, success=True, modified=modified, bytes_processed=len(src))
-
-
-# ===========================================================================
-# Backend: prettier CLI (pret4.py + pretp.py + pretret.py)
-# ===========================================================================
 
 
 def _beautify_prettier(
@@ -407,11 +379,6 @@ def _beautify_prettier(
     return FileResult(path, success=True, modified=(before != after))
 
 
-# ===========================================================================
-# Backend: prettify.py (bs4 / cssbeautifier / yapf)
-# ===========================================================================
-
-
 def _beautify_prettify(path: Path) -> FileResult:
     src = read_text(path)
     if src is None:
@@ -442,11 +409,6 @@ def _beautify_prettify(path: Path) -> FileResult:
     if modified and not atomic_write(path, out):
         return FileResult(path, success=False, error="Failed to write file")
     return FileResult(path, success=True, modified=modified, bytes_processed=len(src))
-
-
-# ===========================================================================
-# Parallel batch runner
-# ===========================================================================
 
 
 def run_batch(
@@ -508,11 +470,6 @@ def run_batch(
     return stats
 
 
-# ===========================================================================
-# Subcommands
-# ===========================================================================
-
-
 def cmd_list_large(args: argparse.Namespace) -> int:
     root = Path.home()
     min_bytes = int(args.min_size_mb * 1024 * 1024)
@@ -569,7 +526,6 @@ def cmd_format(args: argparse.Namespace) -> int:
 
     skip_dirs = list(args.skip_dir or [])
     if args.move_errors_to and args.move_errors_to not in skip_dirs:
-        # Match pret4.py, which skips its own ``error/`` dump dir.
         skip_dirs.append(args.move_errors_to)
 
     targets = discover(args.paths or [Path.cwd()], exts, skip_dir_names=skip_dirs)
@@ -586,8 +542,6 @@ def cmd_format(args: argparse.Namespace) -> int:
 
     worker = _make_worker(args)
 
-    # subprocess-based backends are naturally thread-friendly; in-process
-    # ones (tree-sitter / jsbeautifier / prettify) benefit from processes.
     executor = args.executor
     if executor == "auto":
         executor = "thread" if args.tool == "prettier" else "process"
@@ -620,11 +574,6 @@ def cmd_format(args: argparse.Namespace) -> int:
     return 0 if stats["fail"] == 0 else 1
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="fmt",
@@ -648,7 +597,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- list-large ------------------------------------------------------
     ll = sub.add_parser(
         "list-large",
         help="List HTML files larger than a size threshold (bightml.py).",
@@ -667,7 +615,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Minimum size in MiB (default: 1.0).",
     )
 
-    # ---- format ----------------------------------------------------------
     fmt = sub.add_parser(
         "format",
         help="Beautify / reformat files using the selected backend.",

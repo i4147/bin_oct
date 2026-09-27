@@ -90,7 +90,6 @@ def main():
             print(f"{pkg_name:30s} {current_version:15s} -> {latest_version}")
             requirements_lines.append(f"{pkg_name}=={latest_version}\n")
 
-        # Derive the site-packages path dynamically
         import sysconfig
 
         site_packages = Path(sysconfig.get_paths()["purelib"])

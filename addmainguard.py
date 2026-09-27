@@ -23,10 +23,6 @@ from typing import Final, Literal, TypedDict
 
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
     ".git",
     "__pycache__",
@@ -63,11 +59,6 @@ class ProcessResult(TypedDict):
     status: Status
     message: str
     path: Path
-
-
-# ---------------------------------------------------------------------------
-# Core helpers
-# ---------------------------------------------------------------------------
 
 
 def has_main_guard(content: str) -> bool:
@@ -141,11 +132,6 @@ def find_python_files(
     return results
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Find and optionally add main guard to Python files",
@@ -182,11 +168,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Additional directories to exclude",
     )
     return parser
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:

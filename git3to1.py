@@ -44,14 +44,12 @@ def squash_commits(count: int, commit_date: str | None = None) -> bool:
         print(f"Error: Need at least 2 commits to squash, got {count}", file=sys.stderr)
         return False
 
-    # Verify we're in a git repo
     try:
         run_git(["rev-parse", "--git-dir"])
     except subprocess.CalledProcessError:
         print("Error: Not inside a git repository", file=sys.stderr)
         return False
 
-    # Check we have enough commits
     total_commits = get_commit_count()
     if count > total_commits:
         print(
@@ -60,13 +58,9 @@ def squash_commits(count: int, commit_date: str | None = None) -> bool:
         )
         return False
 
-    # Get the commit messages for the commits we're squashing
-    # (we'll use the first commit's message as the squashed message)
     first_commit = run_git(["rev-parse", f"HEAD~{count - 1}"]).stdout.strip()
     commit_message = get_commit_message(first_commit)
 
-    # Build the rebase todo list
-    # Format: "pick <sha> <subject>" for the first, "squash <sha> <subject>" for the rest
     todo_lines = []
     for i in range(count):
         commit_sha = run_git(["rev-parse", f"HEAD~{count - 1 - i}"]).stdout.strip()
@@ -76,8 +70,6 @@ def squash_commits(count: int, commit_date: str | None = None) -> bool:
 
     todo_text = "\n".join(todo_lines) + "\n"
 
-    # Use GIT_SEQUENCE_EDITOR to provide the todo list non-interactively
-    # We write the todo to a temp file and use a script that copies it
     import tempfile
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False) as f:
@@ -91,10 +83,8 @@ EOF
         editor_path = f.name
 
     try:
-        # Make the editor script executable
         Path(editor_path).chmod(0o755)
 
-        # Run the rebase with our custom sequence editor
         env = {"GIT_SEQUENCE_EDITOR": editor_path}
         result = subprocess.run(
             ["git", "rebase", "-i", f"HEAD~{count}"],
@@ -105,26 +95,20 @@ EOF
 
         if result.returncode != 0:
             print(f"Rebase failed: {result.stderr}", file=sys.stderr)
-            # Try to abort the rebase
+
             run_git(["rebase", "--abort"], check=False)
             return False
 
     finally:
-        # Clean up the temp editor script
         Path(editor_path).unlink(missing_ok=True)
 
-    # Now amend the squashed commit with the desired date
     if commit_date is None:
-        # Use current date in RFC 2822 format (what git expects)
         date_str = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
     else:
-        # Parse the provided date and format it for git
         try:
-            # Try common formats
             parsed = datetime.fromisoformat(commit_date.replace("Z", "+00:00"))
             date_str = parsed.strftime("%a, %d %b %Y %H:%M:%S %z")
         except ValueError:
-            # Fall back to using the string as-is (git will try to parse it)
             date_str = commit_date
 
     amend_result = run_git(
@@ -164,7 +148,6 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # Handle "today" keyword
     if args.date and args.date.lower() == "today":
         args.date = None
 

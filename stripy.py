@@ -33,12 +33,7 @@ from typing import Sequence
 import libcst as cst
 from loguru import logger
 
-#: Number of worker processes used to transform files in parallel.
 WORKERS: int = 8
-
-# ---------------------------------------------------------------------------
-# Result reporting
-# ---------------------------------------------------------------------------
 
 
 @dataclass(slots=True)
@@ -49,11 +44,6 @@ class FileReport:
     pass_inserted: int = 0
     written: bool = False
     skipped: bool = False
-
-
-# ---------------------------------------------------------------------------
-# libcst helpers
-# ---------------------------------------------------------------------------
 
 
 def _pass_stmt() -> cst.SimpleStatementLine:
@@ -108,11 +98,6 @@ def _strip_suite(body: cst.BaseSuite, counters: dict[str, int]) -> cst.BaseSuite
     return body
 
 
-# ---------------------------------------------------------------------------
-# Transformer
-# ---------------------------------------------------------------------------
-
-
 class StripTransformer(cst.CSTTransformer):
     def __init__(self) -> None:
         super().__init__()
@@ -121,8 +106,6 @@ class StripTransformer(cst.CSTTransformer):
             "comments": 0,
             "passes": 0,
         }
-
-    # ---- docstrings -------------------------------------------------------
 
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
@@ -163,8 +146,6 @@ class StripTransformer(cst.CSTTransformer):
         assert isinstance(result, cst.ClassDef)
         return result
 
-    # ---- comments ---------------------------------------------------------
-
     def leave_TrailingWhitespace(
         self,
         original_node: cst.TrailingWhitespace,
@@ -182,11 +163,6 @@ class StripTransformer(cst.CSTTransformer):
             self.counters["comments"] += 1
             return updated_node.with_changes(comment=None)
         return updated_node
-
-
-# ---------------------------------------------------------------------------
-# File processing
-# ---------------------------------------------------------------------------
 
 
 def process_file(path: Path) -> FileReport:
@@ -227,7 +203,6 @@ def process_file(path: Path) -> FileReport:
         logger.debug("unchanged {}", path)
         return report
 
-    # --- validate before writing -------------------------------------------
     try:
         ast.parse(new_code)
     except SyntaxError as exc:
@@ -255,11 +230,6 @@ def process_file(path: Path) -> FileReport:
     return report
 
 
-# ---------------------------------------------------------------------------
-# Input collection
-# ---------------------------------------------------------------------------
-
-
 def _collect_python_files(inputs: Sequence[Path]) -> list[Path]:
     seen: set[Path] = set()
     collected: list[Path] = []
@@ -285,11 +255,6 @@ def _collect_python_files(inputs: Sequence[Path]) -> list[Path]:
 
     collected.sort()
     return collected
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def _configure_logger() -> None:
@@ -339,7 +304,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     comments = sum(r.comments_removed for r in results)
     passes = sum(r.pass_inserted for r in results)
 
-    #    print(f"(files} updated={written} skipped={skipped} | {docstrings}/{comments}/{passes}\n")
     return 0 if skipped == 0 else 2
 
 

@@ -77,10 +77,6 @@ GIT_HOSTS: tuple[str, ...] = (
     "codeberg.org",
 )
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
 
 def system_site_dirs() -> list[Path]:
     return [Path(p) for p in site.getsitepackages() if Path(p).exists()]
@@ -179,7 +175,6 @@ def parse_entry_points(path: Path) -> dict[str, list[str]]:
                 for opt in cp.options(sec):
                     out["other"].append(f"{sec}:{opt}")
     except configparser.Error:
-        # Fallback: minimal line-based parser (some packages ship malformed files)
         cur: str | None = None
         for line in text.splitlines():
             line = line.strip()
@@ -238,11 +233,6 @@ def _iter_metadata_in_dirs(dirs: Sequence[Path]):
                 yield dist, Path(dpath)
         except Exception:
             continue
-
-
-# ---------------------------------------------------------------------------
-# duplicates
-# ---------------------------------------------------------------------------
 
 
 def _distinfo_packages(dirs: Sequence[Path]) -> dict[str, str]:
@@ -307,11 +297,6 @@ def cmd_duplicates(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# multi-version
-# ---------------------------------------------------------------------------
-
-
 def cmd_multi_version(_: argparse.Namespace) -> int:
     versions: dict[str, set[str]] = defaultdict(set)
     for di in iter_dist_infos(all_site_dirs()):
@@ -329,11 +314,6 @@ def cmd_multi_version(_: argparse.Namespace) -> int:
     if not found:
         print("No packages with multiple versions found.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# missing-scripts
-# ---------------------------------------------------------------------------
 
 
 def cmd_missing_scripts(args: argparse.Namespace) -> int:
@@ -387,11 +367,6 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
         print(f"\nReport written to: {report}")
 
     return 1 if broken else 0
-
-
-# ---------------------------------------------------------------------------
-# entrypoints
-# ---------------------------------------------------------------------------
 
 
 def _entrypoints_pip_show(_: argparse.Namespace) -> int:
@@ -497,7 +472,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
 
             has_ep = _find_entry_points_file(entry, site_dir, name) is not None
 
-            # Locate the actual package directory for purity checks
             if is_dist:
                 pkg_search = site_dir / name
                 if not pkg_search.exists():
@@ -551,11 +525,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# binary
-# ---------------------------------------------------------------------------
-
-
 def cmd_binary(args: argparse.Namespace) -> int:
     dirs = pick_scan_dirs(args.user_only, args.system_only)
     pure: set[str] = set()
@@ -599,10 +568,6 @@ def cmd_binary(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# orphans
-# ---------------------------------------------------------------------------
-
 _IGNORABLE_SUFFIXES = {".pyc", ".pyo", ".pyd", ".egg-link", ".pth"}
 
 
@@ -623,7 +588,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
 
     package_files: set[str] = set()
 
-    # Collect files belonging to any distribution that lives in our site dirs
     dir_strs = [str(d.resolve()) for d in site_dirs]
     for dist in metadata.distributions():
         try:
@@ -634,7 +598,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
             if not _is_within(str(dpath_p), dir_strs):
                 continue
 
-            # files attribute
             for f in dist.files or []:
                 try:
                     fp = Path(dist.locate_file(f)).resolve()
@@ -642,7 +605,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
                 except Exception:
                     continue
 
-            # RECORD file (fallback / extra)
             rec = dpath_p / "RECORD"
             if rec.exists():
                 with contextlib.suppress(Exception), rec.open(encoding="utf-8") as fh:
@@ -694,11 +656,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# small
-# ---------------------------------------------------------------------------
-
-
 def cmd_small(args: argparse.Namespace) -> int:
     results: list[tuple[str, int]] = []
     for dist, _ in _iter_metadata_in_dirs(all_site_dirs()):
@@ -733,11 +690,6 @@ def cmd_small(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# zpkg-list
-# ---------------------------------------------------------------------------
-
-
 def cmd_zpkg_list(args: argparse.Namespace) -> int:
     user_lib = (Path.home() / ".local" / "lib").resolve()
     results: list[str] = []
@@ -764,7 +716,6 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
             if is_binary:
                 continue
 
-            # Top-level determination: prefer top_level.txt, else derive from files
             tl = dpath_p / "top_level.txt"
             if tl.exists():
                 top = {ln.strip() for ln in tl.read_text().splitlines() if ln.strip()}
@@ -791,11 +742,6 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
     out.write_text("\n".join(results) + "\n", encoding="utf-8")
     print(f"Saved {len(results)} package names to {out}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# git-urls
-# ---------------------------------------------------------------------------
 
 
 def cmd_git_urls(args: argparse.Namespace) -> int:
@@ -889,11 +835,6 @@ def cmd_git_urls(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# save-deb
-# ---------------------------------------------------------------------------
-
-
 def cmd_save_deb(args: argparse.Namespace) -> int:
     try:
         r = subprocess.run(
@@ -916,11 +857,6 @@ def cmd_save_deb(args: argparse.Namespace) -> int:
     out.write_text("\n".join(pkgs) + "\n", encoding="utf-8")
     print(f"Saved {len(pkgs)} packages to {out}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# save-keys
-# ---------------------------------------------------------------------------
 
 
 def cmd_save_keys(args: argparse.Namespace) -> int:
@@ -962,11 +898,6 @@ def cmd_save_keys(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# rename-node
-# ---------------------------------------------------------------------------
-
-
 def cmd_rename_node(args: argparse.Namespace) -> int:
     root = Path(args.root).expanduser().resolve() if args.root else Path.cwd()
 
@@ -998,11 +929,6 @@ def cmd_rename_node(args: argparse.Namespace) -> int:
             print(f"[RENAME] {parent} -> {target}")
             parent.rename(target)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# argparse plumbing
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

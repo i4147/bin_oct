@@ -38,7 +38,6 @@ Examples
 
 from __future__ import annotations
 
-# --- stdlib ---------------------------------------------------------------
 import argparse
 import json
 import re
@@ -49,19 +48,12 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
 
-# --- third-party ----------------------------------------------------------
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm
 
-# ===========================================================================
-# Constants (defaults mirror the original scripts; all overridable via CLI)
-# ===========================================================================
-
-#: Farsi/Arabic unicode ranges used by all three original scripts, merged.
 FARSI_RE: re.Pattern[str] = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
 
-#: Marker-priority break points used by tofa.py (order matters — first match wins).
 TOFA_MARKERS: tuple[str, ...] = (
     "\n",
     "\r\n",
@@ -73,13 +65,10 @@ TOFA_MARKERS: tuple[str, ...] = (
     " ",
 )
 
-#: Regex break points used by transfa2.py.
 INPLACE_BREAK_RE: re.Pattern[str] = re.compile(r"[\s\n\.\!\?\;]+")
 
-#: File suffixes transfa2.py scans by default.
 DEFAULT_SUFFIXES: tuple[str, ...] = (".txt", ".md", ".py", ".json", ".csv")
 
-#: Directory names transfa2.py skips by default.
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     "lazy",
     ".git",
@@ -88,10 +77,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".ruff_cache",
     ".pytest_cache",
 )
-
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 
 
 def read_text_any_encoding(path: Path) -> str:
@@ -133,11 +118,6 @@ def translate_with_retry(
             )
             time.sleep(base_delay + attempt)
     raise RuntimeError(f"Translation failed after {retries} attempts: {last_error}")
-
-
-# ---------------------------------------------------------------------------
-# Chunkers
-# ---------------------------------------------------------------------------
 
 
 def chunk_by_markers(
@@ -217,11 +197,6 @@ def collect_files(
     return sorted(found)
 
 
-# ===========================================================================
-# Multiprocessing workers (must be module-level to be picklable)
-# ===========================================================================
-
-
 def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
     stripped = line.strip()
     if not stripped or not contains_farsi(stripped):
@@ -266,7 +241,6 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
 
         mapping: dict[str, str] = {}
         if len(src_lines) != len(out_lines):
-            # Fallback: translate each line individually.
             for i, line in enumerate(src_lines):
                 if not line:
                     continue
@@ -286,11 +260,6 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
     except Exception as exc:  # noqa: BLE001
         logger.error(f"❌ Error processing {path.name}: {exc}")
         return (path, {})
-
-
-# ===========================================================================
-# Subcommand implementations
-# ===========================================================================
 
 
 def cmd_to_fa(args: argparse.Namespace) -> int:
@@ -531,11 +500,6 @@ def _save_translations(
     return target
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="translator.py",
@@ -551,7 +515,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- to-fa (tofa.py) --------------------------------------------------
     p = sub.add_parser(
         "to-fa",
         help="Translate a single file to Farsi (auto-detect source by default).",
@@ -588,7 +551,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_to_fa)
 
-    # ---- lines-to-en (transfa.py) ----------------------------------------
     p = sub.add_parser(
         "lines-to-en",
         help="Translate Farsi lines of one file into English (line-by-line).",
@@ -610,7 +572,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_lines_to_en)
 
-    # ---- inplace-to-en (transfa2.py) -------------------------------------
     p = sub.add_parser(
         "inplace-to-en",
         help="Recursively translate Farsi files into English, in place.",
@@ -656,7 +617,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_inplace_to_en)
 
-    # ---- batch-json (transfamp.py) ---------------------------------------
     p = sub.add_parser(
         "batch-json",
         help="Translate every *.txt in a directory into per-file JSON maps.",

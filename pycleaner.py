@@ -63,10 +63,6 @@ try:
 except ImportError:
     _HAS_ZSTD = False
 
-# ════════════════════════════════════════════════════════════════════════
-#  0.  Shared colour / small helpers
-# ════════════════════════════════════════════════════════════════════════
-
 _USE_COLOR: bool = True
 
 
@@ -128,10 +124,6 @@ _SKIP_DIRS: set[str] = {
     "node_modules",
 }
 
-# ════════════════════════════════════════════════════════════════════════
-#  1.  `imports` subcommand  (merges afk2.py + afk_autoflake.py)
-# ════════════════════════════════════════════════════════════════════════
-
 
 @dataclass
 class UnusedImport:
@@ -146,9 +138,6 @@ class _ImportReport:
     path: str
     unused: list[UnusedImport] = field(default_factory=list)
     error: str | None = None
-
-
-# --- 1.1 AST-based detector (afk2.py) ------------------------------------
 
 
 def _collect_type_checking_lines(tree: ast.Module) -> set[int]:
@@ -228,7 +217,6 @@ def _analyse_imports(
     all_exports = _collect_all_exports(tree)
     used = _collect_used_names(tree)
 
-    # module docstring (its words count as references)
     docstring = ""
     if (
         tree.body
@@ -273,9 +261,6 @@ def _analyse_imports(
             )
         )
     return report
-
-
-# --- 1.2 AST-based fixer (rewrite the original import lines) -------------
 
 
 def _bound_name(segment: str) -> str:
@@ -374,9 +359,6 @@ def _rewrite_source(source: str, unused: list[UnusedImport]) -> str:
     return "".join(out)
 
 
-# --- 1.3 Autoflake backend (afk_autoflake.py) ----------------------------
-
-
 def _autoflake_one(path: Path, *, autofix: bool, diff: bool) -> None:
     if not path.exists():
         print(f"Error: The file `{path}` does not exist.")
@@ -426,9 +408,6 @@ def _autoflake_one(path: Path, *, autofix: bool, diff: bool) -> None:
                     print(f"{path}: {line}")
 
 
-# --- 1.4 Archive scanning -------------------------------------------------
-
-
 def _scan_zip(path: Path) -> Iterator[tuple[str, str]]:
     try:
         with zipfile.ZipFile(path) as zf:
@@ -472,8 +451,6 @@ def _scan_tar(path: Path) -> Iterator[tuple[str, str]]:
         yield f"{path.name}::?", f"__ERROR__:Archive error: {exc}"
 
 
-# --- 1.5 Worker wrappers -------------------------------------------------
-
 _WORKER_IGNORE_INIT: bool = False
 
 
@@ -498,9 +475,6 @@ def _worker_archive(item: tuple[str, str]) -> _ImportReport:
         return _ImportReport(path=key, error=src[len("__ERROR__:") :])
     is_init = key.endswith(("/__init__.py", "\\__init__.py"))
     return _analyse_imports(src, key, is_init=is_init, ignore_init=_WORKER_IGNORE_INIT)
-
-
-# --- 1.6 Collection / dispatch ------------------------------------------
 
 
 def _collect_import_targets(
@@ -670,11 +644,6 @@ def _cmd_imports_autoflake(args: argparse.Namespace) -> int:
     for f in files:
         _autoflake_one(f, autofix=args.autofix, diff=args.diff)
     return 0
-
-
-# ════════════════════════════════════════════════════════════════════════
-#  2.  `defs` subcommand  (merges detect_unused / rmunused_funcs / rmunusedfuncs)
-# ════════════════════════════════════════════════════════════════════════
 
 
 @dataclass
@@ -882,7 +851,6 @@ def _cmd_defs(args: argparse.Namespace) -> int:
         if s.error:
             print(yellow(f"[WARN] Failed to parse {s.file}: {s.error}"))
 
-    # -- detection --------------------------------------------------------
     if args.scope == "global":
         unused_items = _filter_unused_global(scans, args.kind)
     else:
@@ -904,7 +872,6 @@ def _cmd_defs(args: argparse.Namespace) -> int:
             rel = d.file
         print(f"  [{d.kind:5}] {d.name:30} {rel}:{d.lineno}")
 
-    # -- extraction (detect_unused.py) ------------------------------------
     if args.extract:
         out_base = (
             Path(args.extract_dir).resolve() if args.extract_dir else root / "output"
@@ -918,7 +885,6 @@ def _cmd_defs(args: argparse.Namespace) -> int:
             print(f"  wrote {p}")
         print(green("\nExtraction complete."))
 
-    # -- removal (rmunusedfuncs.py) ---------------------------------------
     if args.remove:
         by_file: dict[Path, set[str]] = defaultdict(set)
         for d in unused_items:
@@ -949,20 +915,13 @@ def _cmd_defs(args: argparse.Namespace) -> int:
     return 0
 
 
-# ════════════════════════════════════════════════════════════════════════
-#  3.  `vulture` subcommand  (merges fixvul / fixvulture / vulcomment)
-# ════════════════════════════════════════════════════════════════════════
-
-# fixvul.py pattern — SKIP_DIRS variables only
 _SKIPDIRS_RE = re.compile(r"^(.+?):(\d+):\s+unused variable\s+['\"]SKIP_DIRS['\"]")
 
-# vulcomment.py pattern — any unused variable
 _UNUSED_VAR_RE = re.compile(
     r"^(?P<path>.*?):(?P<lineno>\d+):\s*unused variable '(?P<var>[^']+)'",
     re.IGNORECASE,
 )
 
-# fixvulture.py pattern — many message kinds
 _VULTURE_RE = re.compile(
     r"^(.+?):(\d+):\s+"
     r"(unused\s+(function|variable|class|attribute|method|import)\s+'([^']+)'"
@@ -996,7 +955,6 @@ def _parse_vulture_lines(
                 )
         return dict(issues)
 
-    # comment-all / remove-all  ->  use the rich fixvulture regex
     for raw in lines:
         s = raw.strip()
         if not s:
@@ -1053,7 +1011,6 @@ def _apply_vulture_fixes(
         elif mode == "comment-all":
             lines[idx] = _comment_out(lines[idx], marker=True)
         elif mode == "remove-all":
-            # simple strategy: comment the reported line (safe, never breaks syntax)
             lines[idx] = _comment_out(lines[idx], marker=True)
 
     return original, lines
@@ -1125,12 +1082,6 @@ def _cmd_vulture(args: argparse.Namespace) -> int:
             print(dim("Dry-run mode — use --apply to write changes."))
     return 0
 
-
-# ════════════════════════════════════════════════════════════════════════
-#  4.  `replace` subcommand  (merges remove_func.py + replace_func.py)
-# ════════════════════════════════════════════════════════════════════════
-
-# --- 4.1 `replace func`  (remove_func.py) --------------------------------
 
 _REPLACE_FUNC_NAME = "format_size"
 _REPLACE_FUNC_NARGS = 1
@@ -1252,9 +1203,6 @@ def _cmd_replace_func(args: argparse.Namespace) -> int:
     return 0
 
 
-# --- 4.2 `replace block`  (replace_func.py) ------------------------------
-
-
 def _read_block(path: Path) -> list[str]:
     try:
         text = path.read_text(encoding="utf-8")
@@ -1356,11 +1304,6 @@ def _cmd_replace_block(args: argparse.Namespace) -> int:
     return 0
 
 
-# ════════════════════════════════════════════════════════════════════════
-#  5.  CLI
-# ════════════════════════════════════════════════════════════════════════
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pycleaner",
@@ -1372,7 +1315,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ── imports ──────────────────────────────────────────────────────────
     p_imp = sub.add_parser(
         "imports", help="Detect (and optionally remove) unused imports."
     )
@@ -1415,7 +1357,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_imp.set_defaults(func=_cmd_imports)
 
-    # ── defs ─────────────────────────────────────────────────────────────
     p_def = sub.add_parser(
         "defs", help="Detect/remove/extract unused functions, classes, constants."
     )
@@ -1461,7 +1402,6 @@ def _build_parser() -> argparse.ArgumentParser:
     p_def.add_argument("--workers", type=int, default=8)
     p_def.set_defaults(func=_cmd_defs)
 
-    # ── vulture ──────────────────────────────────────────────────────────
     p_vul = sub.add_parser(
         "vulture", help="Process vulture output file and fix/annotate findings."
     )
@@ -1488,7 +1428,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_vul.set_defaults(func=_cmd_vulture)
 
-    # ── replace ──────────────────────────────────────────────────────────
     p_rep = sub.add_parser(
         "replace", help="Replace/patch functions or code blocks across files."
     )

@@ -31,10 +31,6 @@ import ffmpeg  # type: ignore[import-untyped]
 from dh import fsz
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8
 STDERR_PREVIEW_LEN: Final[int] = 100
@@ -66,11 +62,6 @@ class ConversionStats:
     success: bool
     error_message: str = ""
     duration: float = 0.0
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def check_ffmpeg() -> None:
@@ -128,11 +119,6 @@ def subprocess_run(cmd: list[str]) -> str:
 
     completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
     return completed.stdout
-
-
-# ---------------------------------------------------------------------------
-# Conversion worker
-# ---------------------------------------------------------------------------
 
 
 def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
@@ -226,11 +212,6 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
         )
 
 
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-
-
 def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
     if stat.success:
         size_saved = stat.original_size - stat.new_size
@@ -280,11 +261,6 @@ def print_final_summary(stats: list[ConversionStats], total_duration: float) -> 
     print("─" * 40)
 
 
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
-
-
 def find_mp3_files(directories: list[Path]) -> list[Path]:
     mp3_files: list[Path] = []
     for directory in directories:
@@ -305,11 +281,6 @@ def find_mp3_files(directories: list[Path]) -> list[Path]:
             seen.add(resolved)
             unique_files.append(f)
     return sorted(unique_files)
-
-
-# ---------------------------------------------------------------------------
-# Directory processing
-# ---------------------------------------------------------------------------
 
 
 def process_directory(directory: Path) -> None:
@@ -344,11 +315,6 @@ def process_directory(directory: Path) -> None:
                 f"  <red>✗</red> {stat.path}: {stat.error_message}"
             )
     print_final_summary(stats, total_duration)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:

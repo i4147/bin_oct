@@ -17,7 +17,7 @@ from pathlib import Path
 
 def get_pkgname() -> str:
     raw = sys.argv[1] if len(sys.argv) > 1 else Path.cwd().name
-    # Cargo allows '-', Python doesn't. Normalize to a safe identifier.
+
     pkgname = re.sub(r"[^0-9A-Za-z_]", "_", raw)
     if not pkgname.isidentifier():
         raise SystemExit(f"Invalid package name derived: {pkgname!r}")
@@ -35,7 +35,6 @@ def main() -> None:
     root = Path.cwd()
     print(f"Initializing maturin project '{pkgname}' in {root}\n")
 
-    # ---- Rust side ---------------------------------------------------------
     write(
         root / "Cargo.toml",
         f"""[package]
@@ -69,7 +68,6 @@ fn _{pkgname}(m: &Bound<'_, PyModule>) -> PyResult<()> {{
 """,
     )
 
-    # ---- Python side -------------------------------------------------------
     write(
         root / "pyproject.toml",
         f"""[build-system]
@@ -104,7 +102,6 @@ __all__ = ["sum_as_string"]
 
     write(root / "python" / pkgname / "py.typed", "")
 
-    # ---- Auxiliary files ---------------------------------------------------
     write(root / "README.md", f"# {pkgname}\n\nA maturin-based Rust/Python project.\n")
 
     write(
@@ -149,7 +146,6 @@ if __name__ == "__main__":
 """,
     )
 
-    # ---- git ---------------------------------------------------------------
     print("\nInitializing git repository...")
     subprocess.run(["git", "init"], cwd=root, check=True)
     subprocess.run(["git", "add", "-A"], cwd=root, check=True)

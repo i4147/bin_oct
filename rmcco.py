@@ -272,8 +272,7 @@ def _remove_docstrings_from_source(
         return source, 0
 
     lines = source.split("\n")
-    # Determine the set of lines to remove, but only if the docstring is the
-    # sole statement in its body (otherwise keep a `pass`).
+
     removed_count = 0
     keep_lines: list[str] = []
     skip_until: int = -1
@@ -281,19 +280,15 @@ def _remove_docstrings_from_source(
         if idx <= skip_until:
             continue
         if idx in docstring_lines:
-            # Find the enclosing body to decide whether to keep `pass`.
             skip_until = idx
             removed_count += 1
             continue
         keep_lines.append(line)
 
-    # Now handle the case where a body became empty. We do a second pass to
-    # detect bodies that lost their only statement and insert `pass`.
     result = "\n".join(keep_lines)
     try:
         new_tree = ast.parse(result)
     except SyntaxError:
-        # Fall back to line-based removal only.
         return result, removed_count
 
     needs_pass = False
@@ -311,7 +306,6 @@ def _remove_docstrings_from_source(
     if not needs_pass:
         return result, removed_count
 
-    # Re-parse and insert `pass` using line numbers.
     lines = result.split("\n")
     insertions: list[tuple[int, str]] = []
     for node in ast.walk(new_tree):
@@ -319,7 +313,6 @@ def _remove_docstrings_from_source(
             isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
             and not node.body
         ):
-            # Insert a `pass` after the def/class line (and decorators).
             insert_at = getattr(node, "lineno", 1)
             indent = " " * (
                 len(lines[insert_at - 1]) - len(lines[insert_at - 1].lstrip())

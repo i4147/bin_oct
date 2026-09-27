@@ -41,7 +41,6 @@ from urllib.parse import unquote, urldefrag, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, Tag
 
-# ---------- logging -----------------------------------------------------
 try:
     from loguru import logger
 
@@ -57,13 +56,11 @@ except ImportError:  # pragma: no cover
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s | %(message)s")
     logger = logging.getLogger("htmltool")
 
-# Optional pycurl (only for `bundle`)
 try:
     import pycurl
 except ImportError:  # pragma: no cover
     pycurl = None
 
-# ---------- shared constants / helpers ---------------------------------
 IMAGE_EXTS = {
     ".png",
     ".jpg",
@@ -170,9 +167,6 @@ def fetch_remote(url: str, timeout: int) -> bytes | None:
         return None
 
 
-# ======================================================================
-# SUBCOMMAND: bundle
-# ======================================================================
 def cmd_bundle(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     out_dir = cwd / args.output_dir
@@ -327,9 +321,6 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     return 0
 
 
-# ======================================================================
-# SUBCOMMAND: inline  (inline_assets.py + mkst.py)
-# ======================================================================
 def _inline_urls_in_css(
     css: str, base_file: Path | str | None, remote_base: str | None, timeout: int
 ) -> tuple[str, int, int]:
@@ -534,9 +525,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
     return 0
 
 
-# ======================================================================
-# SUBCOMMAND: isolate  (isolate_html.py)
-# ======================================================================
 class _Isolator:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
@@ -675,9 +663,6 @@ def cmd_isolate(args: argparse.Namespace) -> int:
     return 0 if iso.save(inp, out) else 1
 
 
-# ======================================================================
-# SUBCOMMAND: standalone  (mkstand.py)
-# ======================================================================
 _STANDALONE_ASSET_CACHE: dict[str, tuple[bytes, str]] = {}
 
 
@@ -720,7 +705,6 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
     except OSError:
         return urls
 
-    # link href
     for link in soup.find_all("link", href=True):
         rel = link.get("rel", [])
         rel = rel if isinstance(rel, list) else [rel]
@@ -734,7 +718,6 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
                 if p.is_file():
                     css_queue.append((str(p), p.parent))
 
-    # img src / srcset / others
     for tag in soup.find_all(["img", "source"]):
         if tag.get("src"):
             full = _resolve_url(tag["src"], html_path.parent)
@@ -748,19 +731,16 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
                     if is_remote(full) and not is_image_url(full):
                         urls.add(full)
 
-    # script src
     for sc in soup.find_all("script", src=True):
         full = _resolve_url(sc["src"], html_path.parent)
         if is_remote(full):
             urls.add(full)
 
-    # style tags / style attrs
     for st in soup.find_all("style"):
         _scan_css_refs(st.get_text(), html_path.parent, urls)
     for tag in soup.find_all(style=True):
         _scan_css_refs(tag["style"], html_path.parent, urls)
 
-    # walk CSS imports
     seen_css: set[str] = set()
     while css_queue:
         ref, base = css_queue.pop()
@@ -848,7 +828,6 @@ def _rewrite_css(
     css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
 ) -> str:
 
-    # 1. @import inlining
     def import_repl(m: re.Match) -> str:
         ref = m.group(1).strip()
         got = _asset_bytes(ref, base, cache)
@@ -864,7 +843,6 @@ def _rewrite_css(
 
     css = CSS_IMPORT_RE.sub(import_repl, css)
 
-    # 2. url(...)
     def url_repl(m: re.Match) -> str:
         ref = m.group(2).strip()
         if ref.startswith(("#", "data:")):
@@ -891,7 +869,6 @@ def _process_standalone_html(html_str: str) -> bool:
         return False
     print(f"Processing: {html_path}")
 
-    # links -> style
     for link in soup.find_all("link", rel=True):
         rel = link.get("rel") or []
         rel = rel if isinstance(rel, list) else [rel]
@@ -908,7 +885,6 @@ def _process_standalone_html(html_str: str) -> bool:
         s.string = css
         link.replace_with(s)
 
-    # scripts -> inline
     for sc in soup.find_all("script", src=True):
         got = _asset_bytes(sc["src"], base, cache)
         if not got:
@@ -919,7 +895,6 @@ def _process_standalone_html(html_str: str) -> bool:
         del sc["src"]
         sc.string = js
 
-    # img src
     for img in soup.find_all("img", src=True):
         got = _asset_bytes(img["src"], base, cache)
         if got:
@@ -942,7 +917,6 @@ def _process_standalone_html(html_str: str) -> bool:
             parts.append(f"{uri} {rest}".strip())
         tag["srcset"] = ", ".join(parts)
 
-    # style tags
     for st in soup.find_all("style"):
         css = st.get_text() or ""
         if css:
@@ -950,7 +924,6 @@ def _process_standalone_html(html_str: str) -> bool:
             css = re.sub(r"\s*-->\s*$", "", css)
             st.string = _rewrite_css(css, base, cache)
 
-    # style attrs
     for tag in soup.find_all(style=True):
         if tag["style"]:
             tag["style"] = _rewrite_css(tag["style"], base, cache)
@@ -1000,9 +973,6 @@ def cmd_standalone(args: argparse.Namespace) -> int:
     return 0 if ok == len(files) else 1
 
 
-# ======================================================================
-# SUBCOMMAND: mhtml  (pymht.py + pymhtml.py)
-# ======================================================================
 def _decode_data_uri_to_file(uri: str, dest_dir: Path) -> str | None:
     dec = decode_data_uri(uri)
     if not dec:
@@ -1123,9 +1093,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
     return 0
 
 
-# ======================================================================
-# SUBCOMMAND: css  (standalone_css.py)
-# ======================================================================
 def _find_in_static(filename: str, static_root: Path) -> Path | None:
     if not static_root.is_dir():
         return None
@@ -1184,7 +1151,6 @@ def cmd_css(args: argparse.Namespace) -> int:
     css = inp.read_text(encoding="utf-8")
     static_root = Path(args.static_root)
 
-    # resolve @import recursively
     imports = [m.group(1) for m in CSS_IMPORT_RE.finditer(css)]
     for imp in imports:
         css = css.replace(f'@import url("{imp}");', "")
@@ -1230,9 +1196,6 @@ def cmd_css(args: argparse.Namespace) -> int:
     return 0
 
 
-# ======================================================================
-# CLI
-# ======================================================================
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="htmltool.py",

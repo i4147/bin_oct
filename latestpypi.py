@@ -17,17 +17,14 @@ def fetch_latest_packages(url: str = RSS_URL) -> list[str]:
     root = ET.fromstring(data)
     names: list[str] = []
 
-    # RSS items look like: <item><title>pkgname 1.0.0</title><link>...</link></item>
     for item in root.findall("./channel/item"):
         title = item.findtext("title", default="").strip()
         link = item.findtext("link", default="").strip()
 
-        # Prefer extracting the name from the link: https://pypi.org/project/<name>/
         name = ""
         if "/project/" in link:
             name = link.rstrip("/").rsplit("/project/", 1)[-1]
         elif title:
-            # Title is usually "<name> <version>", so strip the trailing version
             name = title.rsplit(" ", 1)[0]
 
         if name:

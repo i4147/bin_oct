@@ -30,16 +30,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-# ---------------------------------------------------------------------------
-# Optional third-party imports — each degrades gracefully.
-#
-# NOTE on type checkers: we assign through *non-Optional* local aliases inside
-# each `if X is not None:` block.  Pyright/ruff do not narrow module-level
-# Optional unions across function boundaries or inside closures, so we must
-# capture the module into a fresh local before using it.  This also makes the
-# runtime behavior identical while silencing the "attribute on None" errors.
-# ---------------------------------------------------------------------------
-
 try:
     import brotli as _brotli_mod
 except ImportError:
@@ -106,9 +96,6 @@ except ImportError:
     _lzo_mod = None
 
 
-# ===========================================================================
-# STAGE 1 — Magic-byte sniffing
-# ===========================================================================
 @dataclass
 class Detection:
     name: str
@@ -117,10 +104,7 @@ class Detection:
     confidence: str = "medium"  # "high" | "medium" | "low"
 
 
-# Ordered (signature, offset, Detection) tuples.  Specific → generic so that
-# short prefixes (e.g. `PK\x03\x04`) don't shadow longer ones.
 _MAGIC_TABLE: list[tuple[bytes, int, Detection]] = [
-    # ----- archives (STAGE 2 material) -----
     (b"PK\x03\x04", 0, Detection("zip", "archive", "application/zip", "high")),
     (b"PK\x05\x06", 0, Detection("zip (empty)", "archive", "application/zip", "high")),
     (b"PK\x07\x08", 0, Detection("zip (split)", "archive", "application/zip", "high")),
@@ -161,7 +145,6 @@ _MAGIC_TABLE: list[tuple[bytes, int, Detection]] = [
         0x8001,
         Detection("iso9660", "archive", "application/x-iso9660-image", "high"),
     ),
-    # ----- raw decompression streams (STAGE 3 material) -----
     (b"\x1f\x8b", 0, Detection("gzip", "stream", "application/gzip", "high")),
     (
         b"\x1f\x9d",
@@ -187,7 +170,6 @@ _MAGIC_TABLE: list[tuple[bytes, int, Detection]] = [
         0,
         Detection("snappy (framed)", "stream", "application/x-snappy-framed", "high"),
     ),
-    # ----- serialized Python (untrusted input caveat!) -----
     (
         b"\x80\x04",
         0,
@@ -215,13 +197,6 @@ def sniff_magic(data: bytes) -> Detection:
     return best or Detection("unknown", "unknown", "application/octet-stream", "low")
 
 
-# ===========================================================================
-# Recognition registry
-#
-# Every successful recognizer appends (label, extractor) here.  The extractor
-# takes the source Path, so we never need a module-level global to remember
-# the current filename.
-# ===========================================================================
 _RECOGNIZED: list[tuple[str, Callable[[Path], None]]] = []
 
 
@@ -229,9 +204,6 @@ def _register(name: str, extractor: Callable[[Path], None]) -> None:
     _RECOGNIZED.append((name, extractor))
 
 
-# ===========================================================================
-# Safety: block zip-slip / tar-slip / absolute paths
-# ===========================================================================
 def _safe_member_path(base: Path, member: str) -> Path | None:
     try:
         p = (base / member).resolve()
@@ -241,9 +213,6 @@ def _safe_member_path(base: Path, member: str) -> Path | None:
     return p
 
 
-# ===========================================================================
-# STAGE 2 — libarchive catch-all
-# ===========================================================================
 def try_libarchive(filename: str) -> bool:
     libarchive = _libarchive_mod
     if libarchive is None:
@@ -270,9 +239,6 @@ def try_libarchive(filename: str) -> bool:
         return False
 
 
-# ===========================================================================
-# STAGE 3 — Individual byte-level decompressors
-# ===========================================================================
 def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
     methods: dict[str, Callable[[bytes], bytes]] = {
         "zlib": zlib.decompress,
@@ -282,12 +248,10 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         "lzma": lzma.decompress,
     }
 
-    # -------- brotli (standalone) --------
     brotli = _brotli_mod
     if brotli is not None:
         methods["brotli"] = lambda d: brotli.decompress(d)  # type: ignore[misc]
 
-    # -------- zstandard (standalone) --------
     zstd = _zstd_mod
     if zstd is not None:
 
@@ -296,10 +260,8 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
 
         methods["zstandard"] = _zstd_dec
 
-    # -------- cramjam bundle --------
     cramjam = _cramjam_mod
     if cramjam is not None:
-        # Bind submodules to locals so the checker is happy inside lambdas.
         snappy = cramjam.snappy
         lz4 = cramjam.lz4
         cj_zstd = cramjam.zstd
@@ -314,7 +276,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         methods["cramjam-brotli"] = lambda d: bytes(cj_brotli.decompress(d))
         methods["cramjam-bzip2"] = lambda d: bytes(cj_bzip2.decompress(d))
 
-    # -------- pylzma: raw 7-zip LZMA / LZMA2 --------
     pylzma = _pylzma_mod
     if pylzma is not None:
 
@@ -324,7 +285,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
 
         methods["pylzma (raw lzma/lzma2)"] = _pylzma_dec
 
-    # -------- pyppmd: raw PPMd7 --------
     pyppmd = _pyppmd_mod
     if pyppmd is not None:
 
@@ -338,12 +298,10 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
 
         methods["ppmd7 (raw)"] = _ppmd_dec
 
-    # -------- bzip3 --------
     bz3 = _bz3_mod
     if bz3 is not None:
         methods["bzip3"] = lambda d: bz3.decompress(d)  # type: ignore[misc]
 
-    # -------- LZO --------
     lzo = _lzo_mod
     if lzo is not None:
         methods["lzo"] = lambda d: lzo.decompress(d, False, len(d) * 20)  # type: ignore[misc]
@@ -404,9 +362,6 @@ def try_stream_decompressors(data: bytes, hint: Detection) -> bool:
     return success
 
 
-# ===========================================================================
-# Targeted archive recognizers (stdlib + specialized libs)
-# ===========================================================================
 def try_tarfile(filename: str) -> bool:
     if not tarfile.is_tarfile(filename):
         return False
@@ -575,9 +530,6 @@ def try_pickle(data: bytes) -> bool:
         return False
 
 
-# ===========================================================================
-# EXTRACTION — runs only for formats registered during recognition
-# ===========================================================================
 def extract_tar(src: Path) -> None:
     with tarfile.open(src, "r") as tar:
         for m in tar.getmembers():
@@ -754,9 +706,6 @@ def run_extraction(src: Path) -> None:
     _RECOGNIZED.clear()
 
 
-# ===========================================================================
-# Orchestrator
-# ===========================================================================
 def process(filename: str) -> bool:
     print(f"═══ Analyzing: {filename} ═══\n")
     _RECOGNIZED.clear()
@@ -772,7 +721,6 @@ def process(filename: str) -> bool:
 
     print(f"File size: {len(data)} bytes\n")
 
-    # -------- STAGE 1 --------
     hint = sniff_magic(data)
     print(
         f"[STAGE 1] Magic sniff → {hint.name} "
@@ -782,7 +730,6 @@ def process(filename: str) -> bool:
 
     success = False
 
-    # -------- STAGE 2 --------
     print("[STAGE 2] libarchive catch-all")
     if hint.kind == "stream":
         print(f"  SKIP: magic says {hint.name} is a raw stream, not a container.\n")
@@ -799,7 +746,6 @@ def process(filename: str) -> bool:
         success |= try_cabarchive(filename)
         success |= try_pycdlib(filename)
 
-    # -------- STAGE 3 --------
     print("[STAGE 3] Byte-stream decompressors")
     if try_stream_decompressors(data, hint):
         success = True
@@ -807,7 +753,6 @@ def process(filename: str) -> bool:
     if hint.kind == "serialized":
         success |= try_pickle(data)
 
-    # -------- Verdict + extraction --------
     if success:
         print("✔ At least one format was successfully recognized.\n")
         run_extraction(Path(filename))
@@ -816,9 +761,6 @@ def process(filename: str) -> bool:
     return success
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print(f"Usage: {Path(argv[0]).name} <filename>\n")

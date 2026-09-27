@@ -46,7 +46,6 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 from urllib import request as urlrequest
 
-# --- third-party imports (declared explicitly per requirement 8) -----------
 try:
     import requests  # type: ignore
     from colorama import Fore, Style
@@ -66,13 +65,6 @@ except ImportError:
 
     Fore = _DummyColors()  # type: ignore
     Style = _DummyStyle()  # type: ignore
-
-# Rich is only needed by `signal`; import lazily inside that command.
-# pycurl is only needed by `show-ip --engine=pycurl`; imported lazily too.
-
-# ==========================================================================
-#  Common helpers
-# ==========================================================================
 
 
 def get_public_ip() -> Optional[str]:
@@ -118,18 +110,12 @@ def read_dns_servers(path: Path) -> list[str]:
     except Exception as e:
         return [f"Error retrieving DNS: {e}"]
 
-    # dedupe, preserve order
     seen, uniq = set(), []
     for s in servers:
         if s not in seen:
             seen.add(s)
             uniq.append(s)
     return uniq
-
-
-# ==========================================================================
-#  1) proxy-test  (from proxy_tester.py)
-# ==========================================================================
 
 
 def _probe_one(
@@ -203,11 +189,6 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
     Path(out_path).write_text("\n".join(valid) + "\n", encoding="utf-8")
     print(f"Valid proxies saved to {out_path}")
     return 0
-
-
-# ==========================================================================
-#  2) net-info  (from pynet.py)
-# ==========================================================================
 
 
 def _speed_download(url: str, timeout: float) -> Optional[float]:
@@ -289,10 +270,6 @@ def cmd_net_info(args: argparse.Namespace) -> int:
 
     return 0
 
-
-# ==========================================================================
-#  3) ping  (from pyng.py)
-# ==========================================================================
 
 _PING_HOST_RE = re.compile(r"PING\s+(\S+)\s+\(([^)]+)\)")
 _PING_RESP_RE = re.compile(r"bytes from.*icmp_seq=(\d+).*time=([0-9.]+)\s*ms")
@@ -418,10 +395,6 @@ def cmd_ping(args: argparse.Namespace) -> int:
     return 0 if stats.packet_loss_percent < 100 else 1
 
 
-# ==========================================================================
-#  4) set-dns  (from set_dns.py)
-# ==========================================================================
-
 DNS_PROVIDERS: dict[str, list[str]] = {
     "DNS.Watch": ["84.200.69.80", "84.200.70.40"],
     "Comodo Secure DNS": ["8.26.56.26", "8.20.247.20"],
@@ -466,11 +439,6 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
         return 1
 
 
-# ==========================================================================
-#  5) show-ip  (from show_ip.py)
-# ==========================================================================
-
-
 def _public_ip_urllib() -> str:
     ip = get_public_ip()
     return ip if ip else "Unable to determine public IP"
@@ -505,11 +473,6 @@ def cmd_show_ip(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-#  6) signal  (from signal_meter.py)
-# ==========================================================================
-
-
 class SignalMeter:
     def __init__(self) -> None:
         self.wifi_strength: Optional[int] = None
@@ -518,7 +481,6 @@ class SignalMeter:
         self.cellular_status: Optional[str] = None
         self.is_airplane_mode: bool = False
 
-    # -- readers -----------------------------------------------------------
     def read_wifi(self) -> Optional[int]:
         try:
             r = subprocess.run(
@@ -573,7 +535,6 @@ class SignalMeter:
             self.is_airplane_mode = False
         return self.is_airplane_mode
 
-    # -- helpers -----------------------------------------------------------
     @staticmethod
     def strength_to_bars(
         strength: Optional[int], top: int = -30, bottom: int = -120
@@ -651,11 +612,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-#  CLI
-# ==========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_net_tools.py",
@@ -673,7 +629,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- proxy-test ------------------------------------------------------
     p_proxy = sub.add_parser("proxy-test", help="Test HTTP proxies concurrently")
     p_proxy.add_argument(
         "-f",
@@ -708,7 +663,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_proxy.set_defaults(func=cmd_proxy_test)
 
-    # --- net-info --------------------------------------------------------
     p_net = sub.add_parser(
         "net-info", help="Show public IP, local IP, DNS; run speed test"
     )
@@ -734,7 +688,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_net.set_defaults(func=cmd_net_info)
 
-    # --- ping ------------------------------------------------------------
     p_ping = sub.add_parser("ping", help="Ping a host and parse the results")
     p_ping.add_argument("host", help="Hostname or IP address to ping")
     p_ping.add_argument(
@@ -766,7 +719,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ping.set_defaults(func=cmd_ping)
 
-    # --- set-dns ---------------------------------------------------------
     p_dns = sub.add_parser("set-dns", help="Switch DNS to a public provider")
     p_dns.add_argument(
         "-n", "--name", help="Provider name (see --list). Omit for random choice."
@@ -781,7 +733,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_dns.set_defaults(func=cmd_set_dns)
 
-    # --- show-ip ---------------------------------------------------------
     p_ip = sub.add_parser("show-ip", help="Show local and public IP")
     p_ip.add_argument(
         "--engine",
@@ -791,7 +742,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ip.set_defaults(func=cmd_show_ip)
 
-    # --- signal ----------------------------------------------------------
     p_sig = sub.add_parser("signal", help="Monitor Wi-Fi/cellular signal (Android)")
     p_sig.add_argument(
         "--interval",

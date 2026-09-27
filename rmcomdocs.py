@@ -41,9 +41,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
 
-# ---------------------------------------------------------------------------
-# Third-party imports (guarded)
-# ---------------------------------------------------------------------------
 try:
     import tree_sitter_python as _tspython
     from tree_sitter import Language, Node, Parser, Query, QueryCursor
@@ -55,13 +52,8 @@ except ImportError as _exc:  # pragma: no cover
     )
     raise SystemExit(2)
 
-# ---------------------------------------------------------------------------
-# Constants (configurable via CLI where sensible)
-# ---------------------------------------------------------------------------
-
 _LANGUAGE = Language(_tspython.language())
 
-# Query mirroring gemc.py / t5.py.
 _DOCSTRING_QUERY = """
 (comment) @comment
 (block
@@ -72,14 +64,9 @@ _DOCSTRING_QUERY = """
     (string)) @docstring)
 """
 
-# Prefixes preserved by every original script.
 _BASE_KEEP_PREFIXES: tuple[str, ...] = ("#!", "# type:", "# fmt:")
-# Extra prefixes preserved by t5.py.
-_TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 
-# ---------------------------------------------------------------------------
-# Dataclasses
-# ---------------------------------------------------------------------------
+_TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 
 
 @dataclass
@@ -112,11 +99,6 @@ class FileResult:
     elapsed: float = 0.0
 
 
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
-
-
 def _make_parser() -> Parser:
     return Parser(_LANGUAGE)
 
@@ -142,11 +124,6 @@ def _remove_blank_lines(text: str) -> str:
         out.append(line)
         prev_blank = blank
     return "\n".join(out)
-
-
-# ---------------------------------------------------------------------------
-# Engine A: tree-sitter *query* (gemc.py / t5.py / tsrmc.py semantics)
-# ---------------------------------------------------------------------------
 
 
 def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
@@ -193,17 +170,11 @@ def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, 
     return edits, n_comments, n_docstrings
 
 
-# ---------------------------------------------------------------------------
-# Engine B: tree-sitter *cursor walk* (grmc_ts.py semantics)
-# ---------------------------------------------------------------------------
-
-
 def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
     parser = _make_parser()
     tree = parser.parse(source)
     root = tree.root_node
 
-    # Detect a module-level docstring (first statement is a bare string).
     module_doc: Node | None = None
     if root.child_count > 0:
         first = root.child(0)
@@ -249,7 +220,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
             if walker.goto_next_sibling():
                 break
 
-    # Handle module docstring if asked to remove it.
     if module_doc is not None and not cfg.keep_module_docstring:
         if cfg.docstring_action == "pass" and root.named_child_count == 1:
             edits.append(Edit(module_doc.start_byte, module_doc.end_byte, b"pass"))
@@ -258,11 +228,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
         n_docstrings += 1
 
     return edits, n_comments, n_docstrings
-
-
-# ---------------------------------------------------------------------------
-# Engine C: line-based AST/comment stripper (tsrmc.py AST fallback)
-# ---------------------------------------------------------------------------
 
 
 def _strip_line_comment(line: str) -> str:
@@ -294,11 +259,6 @@ def _strip_via_ast_line(source: bytes) -> bytes:
     return stripped.encode("utf-8")
 
 
-# ---------------------------------------------------------------------------
-# Edit application
-# ---------------------------------------------------------------------------
-
-
 def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> bytes:
     edits = sorted(edits, key=lambda e: e.start)
     if not edits:
@@ -315,7 +275,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
                 buf[edit.start : edit.end] = b" " * (edit.end - edit.start)
         return bytes(buf)
 
-    # Splice mode: rebuild the byte string front-to-back.
     out = bytearray()
     cursor = 0
     for edit in edits:
@@ -324,11 +283,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
         cursor = edit.end
     out.extend(source[cursor:])
     return bytes(out)
-
-
-# ---------------------------------------------------------------------------
-# Per-file worker
-# ---------------------------------------------------------------------------
 
 
 def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResult:
@@ -384,7 +338,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             elapsed=time.perf_counter() - t0,
         )
 
-    # Safety net: reject any change that breaks the AST.
     try:
         ast.parse(new_source, filename=str(path))
     except SyntaxError as exc:
@@ -420,11 +373,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
     )
 
 
-# ---------------------------------------------------------------------------
-# File discovery / summary helpers
-# ---------------------------------------------------------------------------
-
-
 def _discover_python_files(paths: Sequence[str]) -> list[Path]:
     if not paths:
         paths = ["."]
@@ -446,7 +394,6 @@ def _parallel_map(
 
     ctx = mp.get_context("spawn")
     with ctx.Pool(processes=workers) as pool:
-        # starmap keeps ordering stable for pretty per-file reporting.
         return pool.starmap(_process_file, [(f, cfg, write) for f in files])
 
 
@@ -473,18 +420,13 @@ def _print_summary(results: list[FileResult], label: str, total_time: float) -> 
     print(f"Reduction       : {saved:,} bytes ({pct:.1f}%)")
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: strip
-# ---------------------------------------------------------------------------
-
-
 def _build_keep_prefixes(args: argparse.Namespace) -> tuple[str, ...]:
     prefixes = list(_BASE_KEEP_PREFIXES)
     if getattr(args, "keep_todo", False):
         prefixes.extend(_TODO_KEEP_PREFIXES)
     if getattr(args, "keep_prefix", None):
         prefixes.extend(args.keep_prefix)
-    # De-duplicate while preserving order.
+
     seen: set[str] = set()
     unique: list[str] = []
     for p in prefixes:
@@ -541,11 +483,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: compare  (tsrmc.py --compare)
-# ---------------------------------------------------------------------------
-
-
 def cmd_compare(args: argparse.Namespace) -> int:
     files = _discover_python_files(args.paths)
     if not files:
@@ -585,11 +522,6 @@ def cmd_compare(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="rmcomdocs",
@@ -598,7 +530,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- strip -------------------------------------------------------------
     sp = sub.add_parser(
         "strip", help="Rewrite Python files to drop comments/docstrings."
     )
@@ -673,7 +604,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_strip)
 
-    # --- compare -----------------------------------------------------------
     cp = sub.add_parser("compare", help="Dry-run: compare tree-sitter vs AST engines.")
     cp.add_argument(
         "paths",

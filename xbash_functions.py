@@ -42,10 +42,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Protocol
 
-# ---------------------------------------------------------------------------
-# Constants (defaults match the original scripts)
-# ---------------------------------------------------------------------------
-
 EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset(
     {
         ".py",
@@ -91,10 +87,6 @@ DEFAULT_OUTPUT_DIR: Final[Path] = Path("extracted_functions")
 IS_TERMUX: Final[bool] = (
     "TERMUX_VERSION" in os.environ or "com.termux" in os.environ.get("PREFIX", "")
 )
-
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 
 
 class _LoggerProtocol(Protocol):
@@ -142,11 +134,6 @@ def make_logger(use_loguru: bool, verbose: bool) -> _LoggerProtocol:
     return _PrintLogger(verbose)
 
 
-# ---------------------------------------------------------------------------
-# File detection
-# ---------------------------------------------------------------------------
-
-
 def is_shell_script(
     path: Path,
     *,
@@ -177,11 +164,6 @@ def is_shell_script(
         return False
     lowered = first_line.lower()
     return any(tok in lowered for tok in SHELL_SHEBANG_TOKENS)
-
-
-# ---------------------------------------------------------------------------
-# Directory walking (two implementations, selected by --walker)
-# ---------------------------------------------------------------------------
 
 
 def _iter_directory_scandir(
@@ -336,11 +318,6 @@ def collect_scripts(
             yield s
 
 
-# ---------------------------------------------------------------------------
-# Function extraction
-# ---------------------------------------------------------------------------
-
-
 def extract_functions(path: Path, log: _LoggerProtocol) -> Iterator[tuple[str, str]]:
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as fh:
@@ -375,11 +352,6 @@ def extract_functions(path: Path, log: _LoggerProtocol) -> Iterator[tuple[str, s
                 path,
             )
         i = j
-
-
-# ---------------------------------------------------------------------------
-# Writing output files
-# ---------------------------------------------------------------------------
 
 
 def write_function(
@@ -424,11 +396,6 @@ def write_function(
     return target
 
 
-# ---------------------------------------------------------------------------
-# Worker (used by multiprocessing.Pool)
-# ---------------------------------------------------------------------------
-
-
 def _process_one(
     task: tuple[Path, Path, bool, bool, bool, bool],
 ) -> tuple[Path, list[Path]]:
@@ -452,11 +419,6 @@ def _process_one(
                 target.chmod(target.stat().st_mode | 0o111)
         written.append(target)
     return path, written
-
-
-# ---------------------------------------------------------------------------
-# Top-level pipeline
-# ---------------------------------------------------------------------------
 
 
 def _process_scripts(
@@ -542,11 +504,6 @@ def run(args: argparse.Namespace) -> int:
         with contextlib.suppress(BaseException):
             args.output.chmod(args.output.stat().st_mode | 0o755)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

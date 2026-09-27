@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 from __future__ import annotations
 
-# ---------------------------------------------------------------------------
-# Standard library
-# ---------------------------------------------------------------------------
 import argparse
 import ast
 import bz2
@@ -19,9 +16,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies (degrade gracefully if missing)
-# ---------------------------------------------------------------------------
 try:
     from loguru import logger
 
@@ -54,9 +48,6 @@ except ImportError:
         brotli = None  # type: ignore
         _HAS_BROTLI = False
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 ARCHIVE_SUFFIXES = (
     ".zip",
     ".whl",
@@ -74,17 +65,11 @@ PYTHON_SUFFIX = ".py"
 KIND_ORDER = ("func", "class", "const")
 KIND_TO_FILE_DEFAULT = {"func": "funcs.py", "class": "classes.py", "const": "const.py"}
 
-# Assignments whose RHS is a call to one of these names are treated as
-# constants even if the target name is not upper-case.
 TYPEVAR_NAMES = {"TypeVar", "NewType", "ParamSpec", "TypeVarTuple"}
 
-# Directories that are always skipped during the scan.
 SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".venv", "venv", "node_modules"}
 
 
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
 @dataclass
 class Source:
     origin: str
@@ -105,9 +90,6 @@ class Definition:
     path: Optional[Path] = None
 
 
-# ---------------------------------------------------------------------------
-# Logging helpers
-# ---------------------------------------------------------------------------
 def _success(msg: str, *args) -> None:
     if _HAS_LOGURU:
         logger.success(msg, *args)
@@ -137,9 +119,6 @@ def _setup_logging(level: str, verbose: bool) -> None:
         logging.getLogger().setLevel(lvl if lvl in valid else "INFO")
 
 
-# ---------------------------------------------------------------------------
-# Scanning — file / archive / compressed sources
-# ---------------------------------------------------------------------------
 def _safe_read_text(path: Path) -> Optional[str]:
     try:
         return path.read_text(encoding="utf-8")
@@ -235,7 +214,7 @@ def _iter_compressed(path: Path) -> Iterator[Source]:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         text = raw.decode("latin-1")
-    # Heuristic: only treat as Python if the name hints at it or the body looks Pythonic.
+
     if ".py" in path.name or "def " in text or "class " in text:
         yield Source(origin=str(path), text=text, path=None)
 
@@ -250,13 +229,13 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
             resolved = path.resolve()
         except OSError:
             continue
-        # Skip anything under <root>/utils/
+
         try:
             resolved.relative_to(utils_dir)
             continue
         except ValueError:
             pass
-        # Skip junk dirs
+
         if any(part in SKIP_DIRS for part in path.relative_to(root).parts[:-1]):
             continue
 
@@ -281,9 +260,6 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
             yield from _iter_compressed(path)
 
 
-# ---------------------------------------------------------------------------
-# AST extraction
-# ---------------------------------------------------------------------------
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -439,9 +415,6 @@ def _collect_all(
     return out
 
 
-# ---------------------------------------------------------------------------
-# Grouping
-# ---------------------------------------------------------------------------
 def group_duplicates(
     defs: Iterable[Definition],
     min_occurs: int = 2,
@@ -454,9 +427,6 @@ def group_duplicates(
     return {k: v for k, v in groups.items() if len(v) >= min_occurs}
 
 
-# ---------------------------------------------------------------------------
-# Writing to utils/
-# ---------------------------------------------------------------------------
 def _read_existing_hashes(path: Path) -> set[str]:
     if not path.exists():
         return set()
@@ -500,7 +470,6 @@ def write_utils(
             logger.info(f"no new objects for {target}")
             continue
 
-        # Avoid name collisions inside the same generated file.
         deduped: list[Definition] = []
         seen_names: set[str] = set()
         for r in new_reps:
@@ -514,7 +483,6 @@ def write_utils(
         if not deduped:
             continue
 
-        # Collect imports for a fresh file, deduped in order.
         if not (target.exists() and target.stat().st_size > 0):
             imports: list[str] = []
             for r in deduped:
@@ -551,9 +519,6 @@ def write_utils(
     return written
 
 
-# ---------------------------------------------------------------------------
-# Patching originals on 'move'
-# ---------------------------------------------------------------------------
 def _insert_imports(lines: list[str], imports: list[str]) -> list[str]:
     if not imports:
         return lines
@@ -590,7 +555,7 @@ def _patch_file(
         return
 
     lines = text.splitlines(keepends=True)
-    # Remove definitions from bottom to top so line numbers stay valid.
+
     for d in sorted(defs, key=lambda x: x.lineno, reverse=True):
         start = d.lineno - 1
         end = d.end_lineno
@@ -599,7 +564,6 @@ def _patch_file(
             continue
         del lines[start:end]
 
-    # Build one import per kind.
     names_by_kind: dict[str, list[str]] = defaultdict(list)
     for d in defs:
         names_by_kind[d.kind].append(d.name)
@@ -660,9 +624,6 @@ def patch_originals(
         _patch_file(path, defs, utils_rel, file_map, dry_run)
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def _add_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--dir",
@@ -775,9 +736,6 @@ def _extract_and_group(
     return defs, groups
 
 
-# ---------------------------------------------------------------------------
-# Subcommand implementations
-# ---------------------------------------------------------------------------
 def cmd_report(args: argparse.Namespace) -> int:
     _, groups = _extract_and_group(args)
     if not groups:
@@ -843,9 +801,6 @@ def cmd_move(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
     )
 
-    # Only patch originals for kinds whose representative was actually
-    # written into utils/. Otherwise the injected import would point at
-    # a module that doesn't contain the symbol.
     patchable: dict[str, list[Definition]] = {
         key: group for key, group in groups.items() if group[0].kind in written
     }
@@ -866,9 +821,6 @@ def cmd_move(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Parser / entry point
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pydedup",
@@ -930,7 +882,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         logger.warning("interrupted by user")
         return 130
     except BrokenPipeError:
-        # stdout was closed (e.g. piped into `head`); exit quietly.
         return 0
     except Exception as exc:  # noqa: BLE001
         if _HAS_LOGURU:

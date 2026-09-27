@@ -46,9 +46,6 @@ except ImportError:
     except ImportError:  # pragma: no cover
         sys.exit("PyMuPDF is required:  pip install pymupdf")
 
-# ---------------------------------------------------------------------------
-# ANSI escape sequences
-# ---------------------------------------------------------------------------
 RESET = "\x1b[0m"
 HOME = "\x1b[H"
 CLEAR = "\x1b[2J"
@@ -61,9 +58,6 @@ REVERSE = "\x1b[7m"
 HALF_BLOCK = "\u2580"
 
 
-# ---------------------------------------------------------------------------
-# Low level keyboard input
-# ---------------------------------------------------------------------------
 def read_key(fd: int, timeout: float | None = None) -> str | None:
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
@@ -75,7 +69,6 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
     if first != b"\x1b":
         return first.decode("utf-8", "replace")
 
-    # Possible escape sequence: keep reading until a final byte arrives.
     seq = bytearray(first)
     while len(seq) < 8:
         ready, _, _ = select.select([fd], [], [], 0.03)
@@ -87,9 +80,6 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
     return seq.decode("latin-1")
 
 
-# ---------------------------------------------------------------------------
-# Viewer
-# ---------------------------------------------------------------------------
 class Viewer:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 8.0
@@ -109,7 +99,6 @@ class Viewer:
         self.running = True
         self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
 
-    # -- geometry ----------------------------------------------------------
     def term_size(self) -> tuple[int, int]:
         size = shutil.get_terminal_size((80, 24))
         return size.columns, size.lines
@@ -129,7 +118,6 @@ class Viewer:
         scale = width / rect.width if rect.width else 1.0
         return width, max(1, int(math.ceil(rect.height * scale)))
 
-    # -- rasterising -------------------------------------------------------
     def pixmap(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
         hit = self._cache.get(key)
@@ -150,7 +138,6 @@ class Viewer:
         self._cache[key] = data
         return data
 
-    # -- painting ----------------------------------------------------------
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
         bottom = top + 1
@@ -220,7 +207,6 @@ class Viewer:
 
         w, h, data = self.pixmap(self.page_index, width)
 
-        # Clamp scrolling into range.
         max_y = max(0, h - rows * 2)
         self.y = max(0, min(self.y, max_y))
         max_x = max(0, w - cols)
@@ -238,7 +224,6 @@ class Viewer:
         sys.stdout.write("".join(buf))
         sys.stdout.flush()
 
-    # -- navigation --------------------------------------------------------
     def goto_page(self, index: int) -> None:
         if 0 <= index < self.doc.page_count:
             self.page_index = index
@@ -278,7 +263,6 @@ class Viewer:
         _, new_h = self.page_px_size()
         self.y = int(frac * new_h)
 
-    # -- key dispatch ------------------------------------------------------
     def handle(self, key: str) -> None:
         if key in ("q", "Q", "\x03") or key == "\x1b":
             self.running = False
@@ -315,7 +299,6 @@ class Viewer:
             self.zoom = 1.0
             self.x = self.y = 0
 
-    # -- main loop ---------------------------------------------------------
     def run(self, fd: int) -> None:
         dirty = True
         last_size = (0, 0)
@@ -338,9 +321,6 @@ class Viewer:
             dirty = True
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="tpv",

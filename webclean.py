@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-# -*- coding: utf-8 -*-
+
 """
 webclean.py — Unified comment stripper for web files (HTML, CSS, JS, TS).
 
@@ -38,10 +38,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional
 
-# ============================================================================
-#  Constants
-# ============================================================================
-
 DEFAULT_WORKERS: int = 8
 
 EXT_TO_LANG: dict[str, str] = {
@@ -62,17 +58,12 @@ LANG_TO_EXTS: dict[str, set[str]] = {}
 for _ext, _lang in EXT_TO_LANG.items():
     LANG_TO_EXTS.setdefault(_lang, set()).add(_ext)
 
-# Default newline-preservation policy per language (matches originals).
 DEFAULT_PRESERVE_NEWLINES: dict[str, bool] = {
     "css": True,
     "js": True,
     "ts": True,
     "html": False,
 }
-
-# ============================================================================
-#  Tree-sitter parser factory (lazy, per-process cache)
-# ============================================================================
 
 _PARSER_CACHE: dict[str, object] = {}
 
@@ -132,10 +123,6 @@ def ts_comment_ranges(text: bytes, parser) -> list[tuple[int, int]]:
     ranges.sort()
     return ranges
 
-
-# ---------------------------------------------------------------------------
-#  HTML embedded <script>/<style> handling
-# ---------------------------------------------------------------------------
 
 _NO_STRIP_SCRIPT_TYPES = (
     b"application/json",
@@ -221,10 +208,6 @@ def find_embedded_blocks(text: bytes, html_parser) -> list[tuple[int, int, str]]
     return out
 
 
-# ============================================================================
-#  Regex / state-machine comment scanners
-# ============================================================================
-
 _RE_CSS_COMMENT = re.compile(rb"/\*.*?\*/", re.DOTALL)
 _RE_HTML_ALL = re.compile(rb"<!--.*?-->", re.DOTALL)
 _RE_HTML_SAFE = re.compile(rb"<!--(?!\[if).*?-->", re.DOTALL)
@@ -283,11 +266,6 @@ def regex_js_ranges(text: bytes) -> list[tuple[int, int]]:
                 continue
         i += 1
     return ranges
-
-
-# ============================================================================
-#  Range removal + post-processing
-# ============================================================================
 
 
 def remove_ranges(
@@ -364,11 +342,6 @@ def apply_removal(
     return new_text, n
 
 
-# ============================================================================
-#  Job / Result dataclasses
-# ============================================================================
-
-
 @dataclass(frozen=True)
 class Job:
     path: str
@@ -391,11 +364,6 @@ class Result:
     error: Optional[str] = None
 
 
-# ============================================================================
-#  Core strip dispatch
-# ============================================================================
-
-
 def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes, int]:
     preserve = opts.preserve_newlines
     if preserve is None:
@@ -409,7 +377,6 @@ def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes,
         ranges = ts_comment_ranges(text, parser)
         return apply_removal(text, lang, ranges, preserve, opts)
 
-    # regex / state-machine approach
     if lang == "css":
         ranges = regex_css_ranges(text)
     elif lang == "html":
@@ -426,7 +393,6 @@ def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
         ranges = ts_comment_ranges(text, html_parser)
         return apply_removal(text, "html", ranges, preserve, opts)
 
-    # 1) inner embed stripping
     embeds = find_embedded_blocks(text, html_parser)
     replacements: list[tuple[int, int, bytes]] = []
     total = 0
@@ -446,15 +412,9 @@ def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
     for s, e, new in sorted(replacements, key=lambda x: x[0], reverse=True):
         result = result[:s] + new + result[e:]
 
-    # 2) outer HTML comments (positions recomputed on the modified text)
     ranges = ts_comment_ranges(result, html_parser)
     result, n = apply_removal(result, "html", ranges, preserve, opts)
     return result, total + n
-
-
-# ============================================================================
-#  File I/O
-# ============================================================================
 
 
 def atomic_write(path: Path, data: bytes) -> None:
@@ -501,11 +461,6 @@ def process_job(job: Job) -> Result:
     return Result(job.path, True, n)
 
 
-# ============================================================================
-#  File discovery
-# ============================================================================
-
-
 def discover_files(
     paths: list[str], extensions: set[str], follow_symlinks: bool
 ) -> list[Path]:
@@ -540,11 +495,6 @@ def discover_files(
             print(f"warning: cannot scan {root}: {exc}", file=sys.stderr)
     out.sort(key=lambda p: str(p))
     return out
-
-
-# ============================================================================
-#  Multi-file orchestration
-# ============================================================================
 
 
 def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
@@ -591,12 +541,6 @@ def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
         print(f"Errors        : {errors}")
     return 1 if errors else 0
 
-
-# ============================================================================
-#  ---------------------------------------------------------------------------
-#  inline subcommand  (cleanhtmlre.py port)
-#  ---------------------------------------------------------------------------
-# ============================================================================
 
 _RE_LINK_STYLESHEET = re.compile(
     r'<link\b[^>]*rel=["\']stylesheet["\'][^>]*>', re.IGNORECASE
@@ -675,7 +619,7 @@ def _js_strip_str(js: str) -> str:
 
 
 def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
-    # 1) <link rel=stylesheet> -> <style>
+
     def repl_link(m: re.Match) -> str:
         tag = m.group(0)
         hm = _RE_HREF.search(tag)
@@ -688,7 +632,6 @@ def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
 
     src = _RE_LINK_STYLESHEET.sub(repl_link, src)
 
-    # 2) <script src=...></script> -> <script>...</script>
     def repl_script_src(m: re.Match) -> str:
         pre, src_url, post = m.groups()
         js = _load_asset(src_url, base_dir)
@@ -700,21 +643,18 @@ def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
 
     src = _RE_SCRIPT_SRC.sub(repl_script_src, src)
 
-    # 3) inline <style>...</style> bodies
     def repl_style(m: re.Match) -> str:
         head = m.group(0).split(">", 1)[0] + ">"
         return f"{head}{_RE_CSS_COMMENT_STR.sub('', m.group(1))}</style>"
 
     src = _RE_STYLE_BLOCK.sub(repl_style, src)
 
-    # 4) inline <script>...</script> bodies
     def repl_script_inline(m: re.Match) -> str:
         attrs, body = m.groups()
         return f"<script{attrs}>{_js_strip_str(body)}</script>"
 
     src = _RE_SCRIPT_INLINE.sub(repl_script_inline, src)
 
-    # 5) outer HTML comments
     rx = (
         _RE_HTML_COMMENT_SAFE_STR
         if keep_conditional
@@ -722,7 +662,6 @@ def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
     )
     src = rx.sub("", src)
 
-    # 6) tidy blank lines
     return re.sub(r"\n\s*\n+", "\n\n", src)
 
 
@@ -753,11 +692,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
         return 1
     print(f"Cleaned file written to: {out_path}")
     return 0
-
-
-# ============================================================================
-#  CLI
-# ============================================================================
 
 
 def _add_common_flags(p: argparse.ArgumentParser) -> None:
@@ -840,7 +774,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # ---- language subcommands ------------------------------------------------
     for name, help_text in (
         ("css", "Strip CSS comments."),
         ("js", "Strip JavaScript comments."),
@@ -863,7 +796,6 @@ def build_parser() -> argparse.ArgumentParser:
             help="Override the set of file extensions to scan.",
         )
 
-    # ---- regex subcommand ----------------------------------------------------
     sp = sub.add_parser(
         "regex", help="Regex/state-machine stripping across extensions."
     )
@@ -875,7 +807,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extensions to process (default: all supported).",
     )
 
-    # ---- inline subcommand ---------------------------------------------------
     sp = sub.add_parser(
         "inline",
         help="Inline external CSS/JS in an HTML file and strip "
@@ -894,9 +825,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     return p
-
-
-# ---- command handlers --------------------------------------------------------
 
 
 def _make_job(path: Path, lang: str, args: argparse.Namespace) -> Job:
@@ -964,7 +892,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
     for f in files:
         lang = EXT_TO_LANG.get(f.suffix.lower())
         if lang is None:
-            # Unknown extension -> fall back to regex HTML behavior
             lang = "html"
         args_approach = "regex"
         job = Job(

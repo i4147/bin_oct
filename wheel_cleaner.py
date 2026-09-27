@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-# -*- coding: utf-8 -*-
+
 """
 wheel_cleaner.py
 ================
@@ -88,19 +88,10 @@ from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 __all__ = ["main"]
 
-# ---------------------------------------------------------------------------
-# Constants / configuration
-# ---------------------------------------------------------------------------
-
 DEFAULT_DEST = "empty_wheels"
 DEFAULT_DETECTOR = "dist-info-only"
 
-#: File extensions that make a wheel "non-empty" for the ``no-code`` detector.
 _CODE_SUFFIXES: tuple[str, ...] = (".py", ".so", ".pyi")
-
-# ---------------------------------------------------------------------------
-# Detectors -- each returns True when the wheel looks "empty"
-# ---------------------------------------------------------------------------
 
 
 def _dist_info_prefix(names: Sequence[str]) -> Optional[str]:
@@ -199,11 +190,6 @@ def resolve_detectors(raw: Optional[Iterable[str]]) -> list[str]:
     return chosen or [DEFAULT_DETECTOR]
 
 
-# ---------------------------------------------------------------------------
-# Generic helpers
-# ---------------------------------------------------------------------------
-
-
 def wheel_is_empty(path: Path, detectors: Sequence[str], quiet: bool = False) -> bool:
     try:
         with zipfile.ZipFile(path, "r") as zf:
@@ -258,11 +244,6 @@ def parse_wheel_name(path: Path) -> tuple[Optional[str], Optional[str]]:
 
 def default_site_packages() -> Path:
     return Path(sysconfig.get_paths()["purelib"])
-
-
-# ---------------------------------------------------------------------------
-# Installed-package inspection (pip based) -- from ewhl2.py
-# ---------------------------------------------------------------------------
 
 
 def installed_packages() -> dict[str, str]:
@@ -329,11 +310,6 @@ def pip_show_location_and_files(name: str) -> tuple[Optional[str], bool]:
     return location, has_files
 
 
-# ---------------------------------------------------------------------------
-# Empty installed packages (site-packages) -- from emptypkg.py
-# ---------------------------------------------------------------------------
-
-
 def is_empty_dist_info(dist_info: Path) -> bool:
     record = dist_info / "RECORD"
     if not record.is_file():
@@ -370,11 +346,6 @@ def find_empty_installed_packages(site_packages: Path) -> list[str]:
         ):
             found.append(str(entry))
     return found
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: wheels
-# ---------------------------------------------------------------------------
 
 
 def cmd_wheels(args: argparse.Namespace) -> int:
@@ -434,7 +405,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
                 print("  installation appears incomplete!")
         conflicts.append((wheel, package, version))
 
-    # -- summary ---------------------------------------------------------
     print("-" * 40)
     print("SUMMARY")
     print("-" * 40)
@@ -469,7 +439,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
             print(f"  {wheel.name}")
         return 0
 
-    # -- decide what to move --------------------------------------------
     installed_paths = {wheel for wheel, _, _ in conflicts}
     moveable = [w for w in empty if w not in installed_paths]
 
@@ -518,11 +487,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: installed
-# ---------------------------------------------------------------------------
-
-
 def cmd_installed(args: argparse.Namespace) -> int:
     site_packages = Path(args.path) if args.path else default_site_packages()
     if not site_packages.is_dir():
@@ -541,11 +505,6 @@ def cmd_installed(args: argparse.Namespace) -> int:
     for path in found:
         print(f"  {path}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: scan  (emptypkg.py behaviour)
-# ---------------------------------------------------------------------------
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
@@ -586,11 +545,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Argument parser
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wheel_cleaner.py",
@@ -618,7 +572,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="{wheels,installed,scan}",
     )
 
-    # -- wheels ----------------------------------------------------------
     wheels = subparsers.add_parser(
         "wheels",
         help="scan a directory for empty .whl files",
@@ -687,7 +640,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     wheels.set_defaults(func=cmd_wheels)
 
-    # -- installed -------------------------------------------------------
     installed = subparsers.add_parser(
         "installed",
         help="find empty *.dist-info directories in site-packages",
@@ -700,7 +652,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     installed.set_defaults(func=cmd_installed)
 
-    # -- scan ------------------------------------------------------------
     scan = subparsers.add_parser(
         "scan",
         help="report empty installed packages AND empty wheels (emptypkg.py)",
@@ -739,11 +690,6 @@ def build_parser() -> argparse.ArgumentParser:
     scan.set_defaults(func=cmd_scan)
 
     return parser
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

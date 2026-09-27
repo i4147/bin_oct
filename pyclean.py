@@ -47,9 +47,6 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependency
-# ---------------------------------------------------------------------------
 try:
     import libcst as cst
 
@@ -60,22 +57,15 @@ except ImportError:
 
 LOG = logging.getLogger("pyclean")
 
-# ---------------------------------------------------------------------------
-# Constants (all overridable via CLI)
-# ---------------------------------------------------------------------------
 DEFAULT_WORKERS = 8
 DEFAULT_TOP_LINES = 5
 
-# ANSI colors for the `check` reporter
 GREEN = "\x1b[92m"
 WHITE = "\x1b[97m"
 YELLOW = "\x1b[93m"
 RESET = "\x1b[0m"
 
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 def _is_docstring_node(node: ast.AST) -> bool:
     return (
         isinstance(node, ast.Expr)
@@ -131,10 +121,6 @@ def _default_paths(raw: Sequence[str]) -> list[Path]:
     return [Path(r).expanduser() for r in raw]
 
 
-# ===========================================================================
-# Engines: docstring / comment stripping
-# ===========================================================================
-# ---- engine 1: AST + text splice (brmc.py) --------------------------------
 def strip_ast_rewrite(
     source: str, *, preserve_module_docstring: bool = True
 ) -> tuple[str, int]:
@@ -188,7 +174,6 @@ def strip_ast_rewrite(
     return "".join(lines), len(spans)
 
 
-# ---- engine 2: AST + unparse (brmc2.py) -----------------------------------
 class _DocstringStripper(ast.NodeTransformer):
     def __init__(self, preserve_module_docstring: bool = True) -> None:
         super().__init__()
@@ -260,7 +245,6 @@ def strip_ast_unparse(
         return None, 0
 
 
-# ---- engine 3: line-number deletion + regex fallback (remc.py) ------------
 def _regex_fallback(source: str) -> tuple[str, int]:
     lines = source.split("\n")
     out: list[str] = []
@@ -342,7 +326,6 @@ def _tidy(source: str) -> str:
     return "\n".join(line.rstrip() for line in source.split("\n"))
 
 
-# ---- engine 4: libcst (rmccst.py + rmcst.py) ------------------------------
 def _libcst_is_docstring_line(node) -> bool:  # noqa: ANN001
     if not isinstance(node, cst.SimpleStatementLine):
         return False
@@ -374,7 +357,6 @@ class _LibCSTStripper(cst.CSTTransformer):
             return False
         return text.lstrip().startswith(("#!", "# fmt", "# type"))
 
-    # --- comments ----------------------------------------------------------
     def leave_EmptyLine(self, orig, updated):  # noqa: ANN001
         if self.remove_comments and updated.comment is not None:
             if not self._keep_comment(updated.comment.value):
@@ -389,7 +371,6 @@ class _LibCSTStripper(cst.CSTTransformer):
                 return updated.with_changes(comment=None)
         return updated
 
-    # --- docstrings --------------------------------------------------------
     @staticmethod
     def _fix_empty(body):
         if not body:
@@ -469,9 +450,6 @@ def strip_libcst(
     return out, stripper.comments_removed, stripper.docstrings_removed
 
 
-# ===========================================================================
-# Per-file processing (worker-safe)
-# ===========================================================================
 def _process_strip(
     path_str: str, opts: dict
 ) -> Optional[tuple[str, int, int, bool, Optional[str]]]:
@@ -526,9 +504,6 @@ def _process_strip(
     return (path_str, comments, docstrings, True, None)
 
 
-# ===========================================================================
-# Subcommand: strip
-# ===========================================================================
 def cmd_strip(args: argparse.Namespace) -> int:
     paths = _default_paths(args.paths)
     files = _collect_py_files(paths)
@@ -594,9 +569,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
     return 0 if failures == 0 else 1
 
 
-# ===========================================================================
-# Subcommand: check  (check_rmc.py)
-# ===========================================================================
 def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bool]]]:
     path = Path(path_str)
     findings: list[tuple[int, str, bool]] = []
@@ -702,9 +674,6 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: clean-module-doc  (rm_moduledoc.py)
-# ===========================================================================
 def _default_module_pattern(name: str) -> re.Pattern[str]:
     return re.compile(rf'^\s*"""\s*Module for\s+{re.escape(name)}\s*\.?\s*"""\s*$')
 
@@ -791,9 +760,6 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pyclean.py",
@@ -803,7 +769,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # -- strip --------------------------------------------------------------
     p = sub.add_parser("strip", help="Remove docstrings and/or comments.")
     p.add_argument("paths", nargs="*", help="Files/directories (default: cwd)")
     p.add_argument(
@@ -854,7 +819,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_strip)
 
-    # -- check --------------------------------------------------------------
     p = sub.add_parser("check", help="Find comments and docstrings (check_rmc.py).")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument(
@@ -868,7 +832,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_check)
 
-    # -- clean-module-doc ---------------------------------------------------
     p = sub.add_parser(
         "clean-module-doc",
         help="Remove the auto-generated 'Module for X.' docstring (rm_moduledoc.py).",

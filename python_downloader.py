@@ -31,12 +31,7 @@ CHUNK_PARTS = 4
 UA = f"dl/{__version__} (pip-style download manager)"
 FULL, HEAD, EMPTY = "━", "╸", " "
 
-# Global interrupt flag; workers poll this to bail out fast.
 STOP = threading.Event()
-
-# ---------------------------------------------------------------------------
-# formatting helpers (pip-flavoured)
-# ---------------------------------------------------------------------------
 
 
 def fmt_size(n: float | None) -> str:
@@ -85,11 +80,6 @@ def fmt_bar(fraction: float | None, width: int, spin: int = 0) -> str:
 def shorten(url: str, n: int = 42) -> str:
     name = Path(urllib.parse.urlparse(url).path).name or url
     return name if len(name) <= n else name[: n - 1] + "…"
-
-
-# ---------------------------------------------------------------------------
-# progress bars
-# ---------------------------------------------------------------------------
 
 
 class Bar:
@@ -233,11 +223,6 @@ class Progress:
             self.stream.flush()
 
 
-# ---------------------------------------------------------------------------
-# backends
-# ---------------------------------------------------------------------------
-
-
 class StreamResponse:
     status: int = 0
     headers: dict = {}
@@ -260,9 +245,6 @@ class Backend:
         timeout: float = 30.0,
     ) -> StreamResponse:
         raise NotImplementedError
-
-
-# ---- pure python (urllib) -------------------------------------------------
 
 
 class _UrllibStream(StreamResponse):
@@ -298,9 +280,6 @@ class PureBackend(Backend):
         req = urllib.request.Request(url, headers=headers)
         resp = urllib.request.urlopen(req, timeout=timeout)
         return _UrllibStream(resp)
-
-
-# ---- requests -------------------------------------------------------------
 
 
 class _RequestsStream(StreamResponse):
@@ -340,9 +319,6 @@ class RequestsBackend(Backend):
             url, headers=headers, stream=True, timeout=timeout, allow_redirects=True
         )
         return _RequestsStream(r)
-
-
-# ---- pycurl ---------------------------------------------------------------
 
 
 class _PycurlStream(StreamResponse):
@@ -425,7 +401,6 @@ class _PycurlStream(StreamResponse):
             try:
                 self._queue.put_nowait(None)  # sentinel
             except queue.Full:
-                # Drainer is slow; force it through.
                 try:
                     self._queue.get_nowait()
                     self._queue.put_nowait(None)
@@ -485,10 +460,6 @@ def make_backend(name: str) -> Backend:
     raise ValueError(f"unknown backend: {name}")
 
 
-# ---------------------------------------------------------------------------
-# filename helpers
-# ---------------------------------------------------------------------------
-
 _CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.I)
 _CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.I)
 _CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.I)
@@ -510,11 +481,6 @@ def guess_filename(url: str, headers: dict) -> str:
                     return name
     path = urllib.parse.urlparse(url).path
     return _sanitize(urllib.parse.unquote(Path(path).name)) or "index.html"
-
-
-# ---------------------------------------------------------------------------
-# probing
-# ---------------------------------------------------------------------------
 
 
 class Probe:
@@ -551,11 +517,6 @@ def probe(backend: Backend, url: str, timeout: float) -> Probe:
         )
     finally:
         stream.close()
-
-
-# ---------------------------------------------------------------------------
-# download core
-# ---------------------------------------------------------------------------
 
 
 def _simple_download(
@@ -629,7 +590,6 @@ def _chunked_download(
     with ThreadPoolExecutor(max_workers=nchunks) as pool:
         parts = list(pool.map(lambda r: fetch(*r), ranges))
 
-    # Concatenate parts into the .part file, then drop the chunk files.
     with open(part, "wb") as out:
         for cp in parts:
             with open(cp, "rb") as f:
@@ -647,7 +607,6 @@ def download_one(
     skip_existing: bool = True,
 ) -> tuple[Path, bool]:
     try:
-        # Figure out where this is going and how big it is.
         try:
             p = probe(backend, url, timeout)
         except Exception:
@@ -656,7 +615,6 @@ def download_one(
         final = dest if dest is not None else (Path.cwd() / p.filename)
         bar.label = final.name
 
-        # Skip if the file already exists and is non-empty.
         if skip_existing and final.exists() and final.stat().st_size > 0:
             with bar._lock:
                 bar.done = final.stat().st_size
@@ -673,7 +631,6 @@ def download_one(
             if resume and part.exists():
                 offset = part.stat().st_size
                 if p.size and offset >= p.size:
-                    # Partial file is already complete.
                     part.replace(final)
                     with bar._lock:
                         bar.done = p.size
@@ -690,11 +647,6 @@ def download_one(
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
         raise
-
-
-# ---------------------------------------------------------------------------
-# cli
-# ---------------------------------------------------------------------------
 
 
 def read_urls_from_file(path: Path) -> list[str]:
@@ -797,7 +749,6 @@ def main(argv=None) -> int:
         final=not args.quiet,
     )
 
-    # Register bars up front so the ordering is deterministic.
     bars: list[Bar] = [Bar(shorten(u)) for u in urls]
     for b in bars:
         progress.add(b)

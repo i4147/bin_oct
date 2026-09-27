@@ -33,10 +33,6 @@ from dh import STDLIB
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")
 
-# --------------------------------------------------------------------------
-# helpers
-# --------------------------------------------------------------------------
-
 
 def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).strip().lower()
@@ -92,11 +88,6 @@ def unique_target(path: Path) -> Path:
         n += 1
 
 
-# --------------------------------------------------------------------------
-# main
-# --------------------------------------------------------------------------
-
-
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Detect and optionally fix filename conflicts "
@@ -139,12 +130,10 @@ def main() -> int:
         print(f"error: {root} is not a directory", file=sys.stderr)
         return 2
 
-    # --- stdlib lookup ---------------------------------------------------
     stdlib_lookup: dict[str, str] = {}
     for n in STDLIB:
         stdlib_lookup.setdefault(normalize(n), n)
 
-    # --- pypi lookup -----------------------------------------------------
     pypi = load_pypi_names(PIP_JSON)
     if args.installed_only:
         installed = installed_distributions()
@@ -183,7 +172,6 @@ def main() -> int:
                 }
             )
 
-    # --- autofix ---------------------------------------------------------
     renamed = 0
     if args.autofix:
         for c in conflicts:
@@ -206,7 +194,6 @@ def main() -> int:
         for c in conflicts:
             c["fixed"] = False
 
-    # --- report ----------------------------------------------------------
     report = {
         "scanned_dir": str(root),
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -222,7 +209,6 @@ def main() -> int:
     with args.output.open("w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
 
-    # --- human summary to stdout ----------------------------------------
     print(f"Scanned {checked} importable item(s) in {root}")
     if args.installed_only:
         print("PyPI filter: installed-only")

@@ -36,10 +36,6 @@ from textual.widgets import (
     Switch,
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Core Logic
-# ─────────────────────────────────────────────────────────────────────────────
-
 
 @dataclass
 class FileEntry:
@@ -88,9 +84,8 @@ def compute_file_hash(path: Path, chunk_size: int = 8192) -> str:
 def normalize_filename(filename: str) -> list[str]:
     import re
 
-    # Remove extension
     name = Path(filename).stem.lower()
-    # Split on common separators and non-alphanumeric
+
     words = re.split(r"[\s\-_.]+", name)
     return [w for w in words if w]
 
@@ -101,7 +96,6 @@ def fuzzy_match_score(
     if not words1 or not words2:
         return 0.0
 
-    # Count matching words (using sequence matcher for fuzzy word matching)
     matches = 0
     for w1 in words1:
         for w2 in words2:
@@ -109,7 +103,6 @@ def fuzzy_match_score(
                 matches += 1
                 break
 
-    # Calculate score: (2 * matches) / (total words) * 100
     total = len(words1) + len(words2)
     if total == 0:
         return 0.0
@@ -171,14 +164,13 @@ class DuplicateFinder:
         return self.duplicates
 
     def _find_by_filename(self, progress_callback=None) -> None:
-        # Group by normalized filename
+
         groups: dict[str, list[FileEntry]] = defaultdict(list)
 
         for file in self.files:
             key = file.filename_normalized
             groups[key].append(file)
 
-        # Find exact filename matches
         for key, files in groups.items():
             if len(files) > 1:
                 self.duplicates.append(
@@ -187,7 +179,6 @@ class DuplicateFinder:
                     )
                 )
 
-        # Fuzzy matching between different filename groups
         if self.fuzzy_threshold > 0:
             keys = list(groups.keys())
             checked = set()
@@ -221,12 +212,11 @@ class DuplicateFinder:
                         )
 
     def _find_by_contents(self, progress_callback=None) -> None:
-        # First group by size (quick filter)
+
         by_size: dict[int, list[FileEntry]] = defaultdict(list)
         for file in self.files:
             by_size[file.size].append(file)
 
-        # Only check files with matching sizes
         candidates = [files for files in by_size.values() if len(files) > 1]
 
         total_candidates = sum(len(c) for c in candidates)
@@ -255,11 +245,6 @@ class DuplicateFinder:
                             files=files, match_score=100.0, reason="contents"
                         )
                     )
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# TUI Widgets
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class ScanSettings(Widget):
@@ -420,7 +405,6 @@ class ScanProgress(ModalScreen):
             progress.progress = 0
 
         if message:
-            # Truncate long paths
             if len(message) > 50:
                 message = "…" + message[-47:]
             status.update(f"[bold]{current}/{total}[/bold] {message}")
@@ -428,11 +412,6 @@ class ScanProgress(ModalScreen):
     @on(Button.Pressed, "#cancel-btn")
     def on_cancel(self) -> None:
         self.app.pop_screen()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main Application
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 class DupeGuruApp(App):
@@ -575,24 +554,20 @@ class DupeGuruApp(App):
             fuzzy_threshold=settings.fuzzy_threshold,
         )
 
-        # Show progress modal
         progress_screen = ScanProgress()
         self.push_screen(progress_screen)
 
         def progress_cb(current: int, total: int, message: str = "") -> None:
-            # Use call_after_refresh to update UI safely
+
             self.call_after_refresh(
                 progress_screen.update_progress, current, total, message
             )
 
         try:
-            # Scan phase
             self.finder.scan_directory(self.selected_path, progress_cb)
 
-            # Find phase
             self.finder.find_duplicates(progress_cb)
 
-            # Update results
             self.call_after_refresh(self._display_results)
 
         finally:
@@ -602,7 +577,6 @@ class DupeGuruApp(App):
         results = self.query_one("#results", ResultsTable)
         results.update_results(self.finder.duplicates)
 
-        # Update stats
         total_files = len(self.finder.files)
         total_dupes = len(self.finder.duplicates)
         wasted = sum(g.total_size for g in self.finder.duplicates)
@@ -630,11 +604,6 @@ class DupeGuruApp(App):
             self._display_results()
         else:
             self.notify("No results to refresh", severity="warning")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CLI Entry Point
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def main() -> None:

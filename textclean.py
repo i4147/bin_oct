@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-# -*- coding: utf-8 -*-
+
 """
 textclean.py — unified text-file cleaning toolkit.
 
@@ -51,17 +51,13 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-# --------------------------------------------------------------------------- #
-# Constants (all previously hard-coded; exposed as CLI flags where useful)
-# --------------------------------------------------------------------------- #
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8
 DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
     {".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
 )
 DEFAULT_HEADER_REGEX: str = r"^# Author\s*:.*\n# Email\s*:.*\n# Time\s*:.*\n\n?"
-# (kept as reference for the historical default of
-#  remove_lines_containing_str_from_files.py)
+
 HISTORICAL_LINE_PATTERNS: tuple[str, ...] = (
     "dist-info",
     ".so",
@@ -81,10 +77,6 @@ _ANSI = {
 }
 
 
-# --------------------------------------------------------------------------- #
-# Shared helpers (replaces dh.cprint, binaryornot.is_binary, dh.get_nobinary,
-# dh.get_files, dh.gsz, dh.mpf3) — factored out so no sub-command duplicates.
-# --------------------------------------------------------------------------- #
 def cprint(msg: str, color: str | None = None, *, end: str = "\n") -> None:
     if color and color in _ANSI and sys.stdout.isatty():
         sys.stdout.write(f"{_ANSI[color]}{msg}{_ANSI['reset']}{end}")
@@ -150,9 +142,6 @@ def human_size(n: int) -> str:
     return f"{n:.1f}PB"
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: empty-lines   (was del_empty_lines.py)
-# --------------------------------------------------------------------------- #
 def cmd_empty_lines(args: argparse.Namespace) -> int:
     roots = args.paths or [Path.cwd()]
     files = list(iter_text_files(roots, recursive=not args.no_recursive))
@@ -189,9 +178,6 @@ def cmd_empty_lines(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: invisible    (was delinvis.py)
-# --------------------------------------------------------------------------- #
 def _find_unprintable(text: str) -> list[tuple[int, int, str, int]]:
     hits: list[tuple[int, int, str, int]] = []
     row, col = 1, 1
@@ -232,11 +218,8 @@ def cmd_invisible(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: pattern      (was detect_multiline_text.py + todel.py)
-# --------------------------------------------------------------------------- #
 def cmd_pattern(args: argparse.Namespace) -> int:
-    # 1. Resolve the pattern
+
     if args.inline is not None:
         pattern = args.inline
         src_desc = "<inline>"
@@ -257,7 +240,6 @@ def cmd_pattern(args: argparse.Namespace) -> int:
         f"({len(pattern)} chars, {len(pattern.splitlines())} lines)"
     )
 
-    # 2. Enumerate candidate files
     roots = args.paths or [Path.cwd()]
     files = list(iter_text_files(roots, recursive=not args.no_recursive))
     if not files:
@@ -267,7 +249,6 @@ def cmd_pattern(args: argparse.Namespace) -> int:
 
     apply_changes = args.apply and not args.dry_run
 
-    # 3. Dry-run listing only
     if not apply_changes:
         print("\nDRY RUN — files that contain the pattern:")
         for f in files:
@@ -279,7 +260,6 @@ def cmd_pattern(args: argparse.Namespace) -> int:
         print("\nUse --apply (or --auto-remove) to actually remove the pattern.")
         return 0
 
-    # 4. Parallel removal
     def _process(path: Path) -> tuple[Path, int, int, str | None]:
         try:
             text = read_text(path)
@@ -320,10 +300,6 @@ def cmd_pattern(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: lines        (was rm_lines_that_contains.py, rmlines_with.py,
-#                            rm_skipdirs.py, remove_lines_containing_str_from_files.py)
-# --------------------------------------------------------------------------- #
 def _build_line_predicate(
     patterns: Sequence[str],
     *,
@@ -422,9 +398,6 @@ def cmd_lines(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: header       (was rminfo.py)
-# --------------------------------------------------------------------------- #
 def cmd_header(args: argparse.Namespace) -> int:
     try:
         pat = re.compile(args.pattern, re.MULTILINE)
@@ -461,9 +434,6 @@ def cmd_header(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Sub-command: json-fields  (was remove_header.py)
-# --------------------------------------------------------------------------- #
 def cmd_json_fields(args: argparse.Namespace) -> int:
     fn: Path = args.path
     if not fn.is_file():
@@ -498,9 +468,6 @@ def cmd_json_fields(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def _add_common_walk_args(sp: argparse.ArgumentParser) -> None:
     sp.add_argument(
         "paths",
@@ -524,13 +491,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    # ---------- empty-lines ----------
     p = sub.add_parser("empty-lines", help="Remove blank/whitespace-only lines.")
     _add_common_walk_args(p)
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_empty_lines)
 
-    # ---------- invisible ----------
     p = sub.add_parser(
         "invisible", help="Strip non-printable chars from a single file."
     )
@@ -543,7 +508,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=cmd_invisible)
 
-    # ---------- pattern ----------
     p = sub.add_parser(
         "pattern",
         help="Remove a multi-line pattern (from a file) from many files.",
@@ -576,7 +540,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_pattern)
 
-    # ---------- lines ----------
     p = sub.add_parser("lines", help="Remove lines matching substrings (or regexes).")
     _add_common_walk_args(p)
     p.add_argument(
@@ -609,7 +572,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_lines)
 
-    # ---------- header ----------
     p = sub.add_parser("header", help="Remove a header block matching a regex.")
     _add_common_walk_args(p)
     p.add_argument(
@@ -632,7 +594,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_header)
 
-    # ---------- json-fields ----------
     p = sub.add_parser(
         "json-fields",
         help="Rewrite JSON list items so keys become field_1, field_2, ...",

@@ -9,7 +9,6 @@ import os
 import sys
 from pathlib import Path
 
-# Supported extensions
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 
 
@@ -57,12 +56,11 @@ def load_ppm(path: Path):
 def render_half_blocks(
     width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int
 ):
-    # Downsample width to fit terminal
+
     scale = max(1, width // max_width)
     scaled_w = width // scale
     scaled_h = height // scale
 
-    # Resample grid (nearest neighbor)
     grid = []
     for y in range(scaled_h):
         row = []
@@ -73,14 +71,13 @@ def render_half_blocks(
             row.append(pixels[idx] if idx < len(pixels) else (0, 0, 0))
         grid.append(row)
 
-    # Output using ANSI escape codes: \033[38;2;R;G;Bm (fg) and \033[48;2;R;G;Bm (bg)
     lines = []
     for y in range(0, scaled_h - 1, 2):
         row_str = []
         for x in range(scaled_w):
             top_r, top_g, top_b = grid[y][x]
             bot_r, bot_g, bot_b = grid[y + 1][x]
-            # Top half block char ▀ uses fg color for top pixel, bg color for bottom pixel
+
             cell = f"\033[38;2;{top_r};{top_g};{top_b}m\033[48;2;{bot_r};{bot_g};{bot_b}m▀\033[0m"
             row_str.append(cell)
         lines.append("".join(row_str))
@@ -91,7 +88,6 @@ def render_half_blocks(
 def render_file(path: Path, max_width: int):
     print(f"\n--- {path} ---")
 
-    # Try Pillow if installed for universal format support
     try:
         from PIL import Image
 
@@ -104,7 +100,6 @@ def render_file(path: Path, max_width: int):
     except ImportError:
         pass
 
-    # Native PPM fallback if Pillow isn't available
     if path.suffix.lower() == ".ppm":
         try:
             w, h, pixels = load_ppm(path)
@@ -122,7 +117,7 @@ def render_file(path: Path, max_width: int):
 
 def traverse_directory(root_dir: Path) -> list[Path]:
     images = []
-    # Path.rglob("*") traverses directory recursively
+
     for path in root_dir.rglob("*"):
         if is_image_file(path):
             images.append(path)
@@ -150,13 +145,11 @@ def main():
     args = parser.parse_args()
     max_width = args.width or get_terminal_width()
 
-    # Rule: If no CLI arguments provided, target current directory recursively
     if not args.paths:
         target_paths = [Path.cwd()]
     else:
         target_paths = args.paths
 
-    # Discover target image files using pathlib
     target_images: list[Path] = []
     for path in target_paths:
         if path.is_dir():
@@ -173,7 +166,6 @@ def main():
         print("No image files found.")
         sys.exit(0)
 
-    # Render discovered images
     for img_path in target_images:
         render_file(img_path, max_width)
 

@@ -34,7 +34,6 @@ except ImportError:  # pragma: no cover
     )
     sys.exit(1)
 
-# Module-level constants
 DEFAULT_CONFIDENCE: float = 0.85
 DEFAULT_MIN_LINE_LENGTH: int = 10
 DEFAULT_MAX_LINE_LENGTH: int = 1000

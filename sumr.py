@@ -47,10 +47,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-# ============================================================================
-# Shared helpers
-# ============================================================================
-
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
@@ -69,11 +65,6 @@ def preview(text: str, limit: int = 500) -> str:
     return text if len(text) <= limit else text[:limit] + "..."
 
 
-# ============================================================================
-# NLTK frequency-based summarizer
-# ============================================================================
-
-
 class NLTKFrequencySummarizer:
     VARIANTS = ("summa", "simple")
 
@@ -82,14 +73,12 @@ class NLTKFrequencySummarizer:
             raise ValueError(
                 f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}"
             )
-        # Lazy import so `--help` works without nltk installed.
+
         from nltk.corpus import stopwords  # type: ignore
 
         self.language: str = language
         self.variant: str = variant
         self.stop_words = set(stopwords.words(language))
-
-    # ---- public API --------------------------------------------------------
 
     def summarize_by_ratio(self, text: str, ratio: float = 0.3) -> str:
         if not text or not isinstance(text, str):
@@ -131,8 +120,6 @@ class NLTKFrequencySummarizer:
         scores = self._score_sentences(sentences, freqs)
         return {sentences[i]: s for i, s in scores.items()}
 
-    # ---- internals ---------------------------------------------------------
-
     @staticmethod
     def _preprocess(text: str) -> str:
         return re.sub(r"\s+", " ", text).strip()
@@ -169,13 +156,9 @@ class NLTKFrequencySummarizer:
         for i, sentence in enumerate(sentences):
             tokens = word_tokenize(sentence.lower())
             if self.variant == "simple":
-                # sumr_nltk.py: numerator = sum over all tokens (non-freq
-                # tokens contribute 0), denominator = len(all tokens).
                 score = sum(freqs.get(t, 0) for t in tokens)
                 n = len(tokens)
             else:
-                # summa.py: restrict both numerator and denominator to
-                # alnum non-stopword tokens.
                 relevant = [
                     t for t in tokens if t.isalnum() and t not in self.stop_words
                 ]
@@ -190,18 +173,13 @@ class NLTKFrequencySummarizer:
         return sorted(top)
 
 
-# ============================================================================
-# Sumy backend
-# ============================================================================
-
-
 def sumy_summarize(
     text: str,
     count: int = 5,
     method: str = "lexrank",
     language: str = "english",
 ) -> str:
-    # Lazy imports — sumy is optional.
+
     from sumy.nlp.stemmers import Stemmer  # type: ignore
     from sumy.nlp.tokenizers import Tokenizer  # type: ignore
     from sumy.parsers.plaintext import PlaintextParser  # type: ignore
@@ -227,15 +205,9 @@ def sumy_summarize(
     return " ".join(str(s) for s in sentences)
 
 
-# ============================================================================
-# Subcommand handlers
-# ============================================================================
-
-
 def cmd_summarize(args: argparse.Namespace) -> int:
     text = read_text(args.input)
 
-    # --- dispatch on backend ------------------------------------------------
     if args.backend == "sumy":
         count = args.count if args.count is not None else 5
         summary = sumy_summarize(
@@ -263,17 +235,14 @@ def cmd_summarize(args: argparse.Namespace) -> int:
         elif args.count is not None:
             summary = summarizer.summarize_by_count(text, count=args.count)
         else:
-            # Default: summa.py's default ratio.
             summary = summarizer.summarize_by_ratio(text, ratio=0.3)
 
-    # --- persistence --------------------------------------------------------
     if not args.no_save:
         out_path = args.output or default_summary_path(args.input)
         write_text(out_path, summary)
         if not args.quiet:
             print(f"Summary saved to '{out_path}'")
 
-    # --- console output -----------------------------------------------------
     if not args.quiet:
         print()
         print(preview(summary))
@@ -298,11 +267,6 @@ def cmd_scores(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Argument parser
-# ============================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="summarizer.py",
@@ -312,7 +276,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    # ---- summarize ---------------------------------------------------------
     p = sub.add_parser(
         "summarize",
         help="Produce a summary of a text file.",
@@ -375,7 +338,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Suppress the printed preview (still writes the output file).",
     )
 
-    # ---- scores ------------------------------------------------------------
     q = sub.add_parser(
         "scores",
         help="Print per-sentence scores (nltk backend only).",
@@ -404,11 +366,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-
-
-# ============================================================================
-# Entry point
-# ============================================================================
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

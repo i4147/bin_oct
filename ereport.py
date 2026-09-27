@@ -4,7 +4,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-# Tool command configurations
 TOOLS = {
     "mypy": ["mypy", "--ignore-missing-imports"],
     "ruff": ["ruff", "check", "--fix", "--unsafe-fixes"],
@@ -55,7 +54,6 @@ def analyze_file(py_file: Path, report_dir: Path) -> None:
     for tool_name, cmd_base in TOOLS.items():
         report_data["tools"][tool_name] = execute_tool(cmd_base, py_file)
 
-    # Output JSON path: report/<filename_stem>.json (e.g., report/fn.json)
     output_json = report_dir / f"{py_file.stem}.json"
     output_json.write_text(json.dumps(report_data, indent=2), encoding="utf-8")
     print(f"  -> Report saved: {output_json}")
@@ -66,10 +64,8 @@ def main() -> None:
     report_dir = current_dir / "report"
     report_dir.mkdir(exist_ok=True)
 
-    # Script filename to avoid self-analysis
     script_name = Path(__file__).name
 
-    # Find all .py files directly inside current directory
     py_files = sorted(
         [
             f

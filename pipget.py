@@ -55,19 +55,14 @@ import httpx
 from bs4 import BeautifulSoup
 from dh import cprint
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
 MIRRORS = {
     "runflare": "https://mirror-pypi.runflare.com",
     "pypi": "https://pypi.org/simple",
     "tsinghua": "https://pypi.tuna.tsinghua.edu.cn/simple",
 }
-# Default mirror is now official PyPI (previously "tsinghua").
+
 DEFAULT_MIRROR = "pypi"
 
-# Timeouts (seconds).  ``read`` applies per chunk, so long downloads are fine.
 PAGE_TIMEOUT = 30.0
 DOWNLOAD_TIMEOUT = 120.0
 
@@ -87,11 +82,9 @@ SDIST_EXTENSIONS = (
     ".tgz",
 )
 
-# Extensions we know how to validate, and which validator to use.
 TAR_EXTENSIONS = (".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz")
 ZIP_EXTENSIONS = (".zip", ".whl")
 
-# Matches wheel filenames like  <name>-<pyver>-<abi>-<platform>.whl
 WHEEL_PLATFORM_RE = re.compile(
     r"-(cp\d+|pp\d+|py\d+)"
     r"(-(cp\d+|pp\d+|py\d+))?"
@@ -99,7 +92,6 @@ WHEEL_PLATFORM_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Substrings indicating a platform / architecture-specific artifact.
 ARCH_TAGS = [
     "win32",
     "win_amd64",
@@ -153,23 +145,13 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
-# Serialises multi-line output so concurrent tasks don't garble each other.
 _PRINT_LOCK = asyncio.Lock()
-
-# ---------------------------------------------------------------------------
-# Custom exceptions
-# ---------------------------------------------------------------------------
 
 
 class FileTooLarge(Exception):
     def __init__(self, size: int):
         super().__init__(f"file is {size} bytes (limit: {MAX_FILE_SIZE})")
         self.size = size
-
-
-# ---------------------------------------------------------------------------
-# Package-spec parsing (pure, synchronous)
-# ---------------------------------------------------------------------------
 
 
 def _norm_sep(s: str) -> str:
@@ -183,11 +165,6 @@ def parse_package_spec(spec: str) -> tuple:
         name, version = name.strip(), version.strip()
         return name, (version or None)
     return spec, None
-
-
-# ---------------------------------------------------------------------------
-# URL / filename classification (pure, synchronous)
-# ---------------------------------------------------------------------------
 
 
 def is_windows_url(url: str) -> bool:
@@ -221,15 +198,8 @@ def is_pure_wheel(url: str) -> bool:
     return "py3-none-any" in lower or "py2.py3-none-any" in lower
 
 
-# ---------------------------------------------------------------------------
-# Archive integrity validation
-# ---------------------------------------------------------------------------
-
-
 def _validate_tar(path: Path) -> tuple:
     try:
-        # ``errorlevel=2`` makes tarfile raise on any recoverable
-        # corruption rather than silently producing garbage members.
         with tarfile.open(path, "r:*", errorlevel=2) as tf:
             for member in tf.getmembers():
                 if not member.isfile():
@@ -237,7 +207,7 @@ def _validate_tar(path: Path) -> tuple:
                 f = tf.extractfile(member)
                 if f is None:
                     continue
-                # Drain in chunks to avoid holding large members in RAM.
+
                 while True:
                     chunk = f.read(CHUNK_SIZE)
                     if not chunk:
@@ -267,24 +237,17 @@ def validate_archive(path: Path, filename: str) -> tuple:
     return True, ""
 
 
-# ---------------------------------------------------------------------------
-# Candidate selection
-# ---------------------------------------------------------------------------
-
-
 def select_best_url(links: list, pkg_name: str, version=None):
     sdist_candidates: list = []
     pure_wheel_candidates: list = []
     arch_skipped: list = []
 
     if version:
-        # ``aiohttp==3.5.16`` → prefix ``aiohttp_3_5_16``
         prefix = f"{_norm_sep(pkg_name)}_{_norm_sep(version)}"
 
         def version_match(filename: str) -> bool:
             fn = _norm_sep(filename)
-            # e.g. "aiohttp_3_5_16.tar.gz"  (fn startswith prefix + "_")
-            # or   "aiohttp_3_5_16"         (fn == prefix, unlikely but safe)
+
             return fn.startswith(prefix + "_") or fn == prefix
     else:
 
@@ -299,8 +262,6 @@ def select_best_url(links: list, pkg_name: str, version=None):
         url = href.split("#")[0]
         filename = link.get_text().strip() or url.split("/")[-1]
 
-        # Filter out non-matching versions *before* the sdist/wheel/arch
-        # classification so the priority logic only sees the target version.
         if not version_match(filename):
             continue
 
@@ -315,7 +276,6 @@ def select_best_url(links: list, pkg_name: str, version=None):
         if is_pure_wheel(url):
             pure_wheel_candidates.append((url, filename))
 
-    # Newest versions are usually last → take the tail.  SDists win.
     if sdist_candidates:
         url, filename = sdist_candidates[-1]
         return (url, filename, "download")
@@ -328,11 +288,6 @@ def select_best_url(links: list, pkg_name: str, version=None):
     return None
 
 
-# ---------------------------------------------------------------------------
-# Local filesystem helpers
-# ---------------------------------------------------------------------------
-
-
 def find_existing_package(pkg_name: str, version=None) -> bool:
     normalized = _norm_sep(pkg_name)
 
@@ -340,7 +295,6 @@ def find_existing_package(pkg_name: str, version=None) -> bool:
         prefix = f"{normalized}_{_norm_sep(version)}"
         pattern = re.compile(r"^" + re.escape(prefix) + r"(?:_|$)", re.IGNORECASE)
     else:
-        # Match any version: ``pkg_3``, ``pkg_v3``, ...
         pattern = re.compile(r"^" + re.escape(normalized) + r"_v?\d", re.IGNORECASE)
 
     for f in DOWNLOAD_DIR.iterdir():
@@ -350,11 +304,6 @@ def find_existing_package(pkg_name: str, version=None) -> bool:
         if pattern.match(fname):
             return True
     return False
-
-
-# ---------------------------------------------------------------------------
-# Async network layer
-# ---------------------------------------------------------------------------
 
 
 async def fetch_package_page(
@@ -400,7 +349,6 @@ async def download_file(
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     output_path = DOWNLOAD_DIR / filename
 
-    # Already there and non-empty → nothing to do.
     if output_path.exists() and output_path.stat().st_size > 0:
         return True
 
@@ -427,20 +375,14 @@ async def download_file(
                     print(f"[{pkg_name}]  HTTP {r.status_code}")
                 return False
 
-            # ---- Pre-flight size check -------------------------------
-            # ``r.headers`` is already populated; the body hasn't been
-            # consumed yet, so we can bail out with zero bytes read.
             try:
                 total = int(r.headers.get("content-length", "0") or 0)
             except ValueError:
                 total = 0
 
             if total > MAX_FILE_SIZE:
-                # Raising here exits the ``async with`` cleanly — httpx
-                # closes the connection without us pulling the body.
                 raise FileTooLarge(total)
 
-            # ---- Stream the body -------------------------------------
             downloaded = 0
             next_milestone = 25
 
@@ -448,10 +390,6 @@ async def download_file(
                 async for chunk in r.aiter_bytes(chunk_size=CHUNK_SIZE):
                     downloaded += len(chunk)
 
-                    # Mid-stream safety net: server lied about
-                    # Content-Length, or used chunked encoding with no
-                    # advertised length.  Abort as soon as we exceed
-                    # the cap.
                     if downloaded > MAX_FILE_SIZE:
                         raise FileTooLarge(downloaded)
 
@@ -467,9 +405,6 @@ async def download_file(
                                 )
                             next_milestone = (pct // 25 + 1) * 25
 
-        # ---- Integrity check (default, no CLI toggle) -----------------
-        # Runs in a worker thread so blocking disk reads / decompression
-        # don't stall the event loop for other concurrent downloads.
         ok, msg = await asyncio.to_thread(validate_archive, output_path, filename)
         if not ok:
             print(f"[{pkg_name}]  Integrity check failed: {msg}")
@@ -482,8 +417,6 @@ async def download_file(
         return True
 
     except FileTooLarge:
-        # Clean up any partial file, then let the signal propagate to
-        # the caller so it can be tagged as "too_large".
         if output_path.exists():
             try:
                 output_path.unlink()
@@ -572,8 +505,6 @@ async def process_package(
                 return (spec, "ok" if ok else "failed")
 
             except FileTooLarge as e:
-                # Report the actual size we saw (Content-Length or
-                # bytes-received-so-far) plus the configured limit.
                 size_mib = e.size / (1024 * 1024)
                 cap_mib = MAX_FILE_SIZE / (1024 * 1024)
                 print(
@@ -587,11 +518,6 @@ async def process_package(
             return (spec, "failed")
 
 
-# ---------------------------------------------------------------------------
-# Input helpers
-# ---------------------------------------------------------------------------
-
-
 def load_packages_from_file(file_path: str) -> list:
     path = Path(file_path)
     if not path.is_file():
@@ -602,18 +528,15 @@ def load_packages_from_file(file_path: str) -> list:
     try:
         with open(path, "r", encoding="utf-8") as f:
             for raw_line in f:
-                # Strip trailing comments, then whitespace.
                 line = raw_line.split("#", 1)[0].strip()
                 if not line:
                     continue
-                # Accept optional spaces around ``==`` so ``pkg == 1.2``
-                # also works.  Allow the usual version characters.
+
                 m = re.match(
                     r"^([A-Za-z0-9_.\-]+(?:\s*==\s*[A-Za-z0-9_.\-+!]+)?)",
                     line,
                 )
                 if m:
-                    # Normalise ``pkg == 1.2`` → ``pkg==1.2``.
                     packages.append(re.sub(r"\s+", "", m.group(1)))
     except OSError as e:
         print(f"Error reading file {file_path}: {e}", file=sys.stderr)
@@ -622,17 +545,9 @@ def load_packages_from_file(file_path: str) -> list:
     return packages
 
 
-# ---------------------------------------------------------------------------
-# Async driver
-# ---------------------------------------------------------------------------
-
-
 async def run(args) -> int:
     global DOWNLOAD_DIR, MAX_FILE_SIZE
 
-    # ---- resolve mirror --------------------------------------------------
-    # Order of precedence: explicit -p / -c / -m, otherwise DEFAULT_MIRROR
-    # (which is now "pypi").  -p / -c / -m are mutually exclusive.
     if args.pypi:
         mirror_key = "pypi"
     elif args.china:
@@ -643,11 +558,9 @@ async def run(args) -> int:
         mirror_key = DEFAULT_MIRROR
 
     mirror_base = MIRRORS[mirror_key]
-    # Only PyPI-style mirrors expose the ``/simple/<pkg>/`` layout;
-    # the runflare mirror uses a slightly different path.
+
     is_simple_index = mirror_key in ("pypi", "tsinghua")
 
-    # ---- resolve download directory --------------------------------------
     if args.directory:
         DOWNLOAD_DIR = Path(args.directory).expanduser().resolve()
         if not DOWNLOAD_DIR.is_dir():
@@ -657,11 +570,9 @@ async def run(args) -> int:
             )
             return 1
 
-    # ---- apply optional size-cap override -------------------------------
     if args.max_size is not None:
         MAX_FILE_SIZE = int(args.max_size * 1024 * 1024)
 
-    # ---- collect packages ------------------------------------------------
     packages = list(args.packages)
     if args.file:
         file_pkgs = load_packages_from_file(args.file)
@@ -671,8 +582,6 @@ async def run(args) -> int:
     if not packages:
         return 2
 
-    # Deduplicate case-insensitively while preserving order.  Note that
-    # ``name`` and ``name==1.2`` are distinct keys, so both would survive.
     seen, unique = set(), []
     for p in packages:
         key = p.lower()
@@ -720,7 +629,6 @@ async def run(args) -> int:
 
     elapsed = time.time() - start_time
 
-    # ---- summarise -------------------------------------------------------
     buckets = {"ok": [], "exists": [], "skipped": [], "too_large": [], "failed": []}
     for pkg, status in results:
         buckets.setdefault(status, []).append(pkg)
@@ -756,11 +664,6 @@ async def run(args) -> int:
     )
 
     return 1 if buckets["failed"] else 0
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
 
 
 def main():

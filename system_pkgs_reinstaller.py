@@ -24,9 +24,6 @@ from dh import runcmd
 PROGRESS_SUFFIX: str = ".progress"
 APT_ARCHIVES: Path = Path("/data/data/com.termux/cache/apt/archives")
 
-# apt prints "WARNING: apt does not have a stable CLI interface..." to stderr
-# whenever it detects a non-tty. Setting this env var tells apt to behave and
-# skip the warning. We also force quiet-ish output via -q.
 APT_ENV: dict[str, str] = {**os.environ, "APT_CONFIG": os.environ.get("APT_CONFIG", "")}
 
 

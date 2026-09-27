@@ -39,10 +39,6 @@ LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {m
 
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
 
-# ---------------------------------------------------------------------------
-# discovery & parsing
-# ---------------------------------------------------------------------------
-
 
 def collect_python_files(root: Path) -> list[Path]:
     if root.is_file():
@@ -99,11 +95,6 @@ def parse_merged_file(path: Path) -> list[tuple[str, ast.Module]]:
     return modules
 
 
-# ---------------------------------------------------------------------------
-# AST helpers
-# ---------------------------------------------------------------------------
-
-
 def is_relative_import(node: ast.AST) -> bool:
     return isinstance(node, ast.ImportFrom) and bool(node.level)
 
@@ -155,11 +146,6 @@ def _module_has_import_from_src(module: ast.Module, src_fragment: str) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
-# merge
-# ---------------------------------------------------------------------------
-
-
 def merge_modules(modules: list[tuple[str, ast.Module]]) -> list[ast.stmt]:
     merged: list[ast.stmt] = []
     seen_imports: set[str] = set()
@@ -187,10 +173,6 @@ def merge_modules(modules: list[tuple[str, ast.Module]]) -> list[ast.stmt]:
             merged.append(node)
     return merged
 
-
-# ---------------------------------------------------------------------------
-# transform: six removal
-# ---------------------------------------------------------------------------
 
 SIX_ATTR_MAP: dict[str, str] = {
     "text_type": "str",
@@ -278,10 +260,6 @@ class SixTransformer(ast.NodeTransformer):
             return ast.Name(id="str", ctx=ast.Load())
         return node
 
-
-# ---------------------------------------------------------------------------
-# transform: os.path -> pathlib
-# ---------------------------------------------------------------------------
 
 OSPATH_PROPERTY_MAP: dict[str, str] = {
     "exists": "exists",
@@ -401,10 +379,6 @@ class OsPathTransformer(ast.NodeTransformer):
         )
 
 
-# ---------------------------------------------------------------------------
-# transform: ProcessPoolExecutor -> mp.Pool.imap_unordered
-# ---------------------------------------------------------------------------
-
 _EXECUTOR_NAMES = {"ProcessPoolExecutor", "ThreadPoolExecutor"}
 
 
@@ -489,11 +463,6 @@ class ExecutorTransformer(ast.NodeTransformer):
 
         try_node = ast.Try(body=new_body, handlers=[], orelse=[], finalbody=cleanup)
         return [pool_assign, try_node]
-
-
-# ---------------------------------------------------------------------------
-# transform: logging -> loguru
-# ---------------------------------------------------------------------------
 
 
 class LoggingTransformer(ast.NodeTransformer):
@@ -594,10 +563,6 @@ class LoggingTransformer(ast.NodeTransformer):
         return node
 
 
-# ---------------------------------------------------------------------------
-# docstring stripping
-# ---------------------------------------------------------------------------
-
 _DEF_NODES = (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
 
 
@@ -616,10 +581,6 @@ def strip_docstrings(tree: ast.AST) -> None:
                 node.body = body[1:] or [ast.Pass()]
 
 
-# ---------------------------------------------------------------------------
-# standard imports
-# ---------------------------------------------------------------------------
-
 _STANDARD_HEADER = [
     "import sys",
     "import multiprocessing as mp",
@@ -635,11 +596,6 @@ def inject_standard_imports(module: ast.Module) -> ast.Module:
             prefix.extend(ast.parse(line).body)
     module.body = prefix + module.body
     return module
-
-
-# ---------------------------------------------------------------------------
-# pipeline
-# ---------------------------------------------------------------------------
 
 
 def _module_imports_path_bare(module: ast.Module) -> bool:
@@ -694,11 +650,6 @@ def refactor(
         "Note: PEP 484 annotations were preserved but not inferred; "
         "add missing ones by hand."
     )
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def main(argv: Optional[list[str]] = None) -> int:

@@ -41,10 +41,6 @@ import sys
 from pathlib import Path
 from typing import Iterator, List, Optional
 
-# ---------------------------------------------------------------------------
-# Page extraction helpers
-# ---------------------------------------------------------------------------
-
 
 def _extract_pages_pypdf2(pdf_path: Path) -> Iterator[str]:
     import PyPDF2
@@ -77,11 +73,6 @@ def extract_pages(pdf_path: Path, engine: str, encoding: str) -> Iterator[str]:
         raise ValueError(f"Unsupported engine: {engine}")
 
 
-# ---------------------------------------------------------------------------
-# Output helpers
-# ---------------------------------------------------------------------------
-
-
 def write_text(path: Path, text: str, encoding: str) -> None:
     path.write_text(text, encoding=encoding)
 
@@ -92,11 +83,6 @@ def default_concat_output(pdf_path: Path) -> Path:
 
 def default_split_output_dir(pdf_path: Path) -> Path:
     return Path(pdf_path.stem)
-
-
-# ---------------------------------------------------------------------------
-# Modes
-# ---------------------------------------------------------------------------
 
 
 def concat_text(
@@ -150,11 +136,6 @@ def split_text(
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
-
-
 def run_concat(args: argparse.Namespace) -> int:
     return concat_text(
         pdf_path=args.pdf,
@@ -189,7 +170,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extraction mode",
     )
 
-    # Common arguments shared by both subcommands.
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         "pdf",
@@ -214,7 +194,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    # concat subcommand: original pdf2text.py
     concat = subparsers.add_parser(
         "concat",
         parents=[common],
@@ -229,7 +208,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     concat.set_defaults(func=run_concat, engine="pypdf2")
 
-    # split subcommand: original pdftotxt.py
     split = subparsers.add_parser(
         "split",
         parents=[common],
@@ -259,11 +237,6 @@ def build_parser() -> argparse.ArgumentParser:
     split.set_defaults(func=run_split, engine="pdfplumber")
 
     return parser
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main(argv: Optional[list[str]] = None) -> int:

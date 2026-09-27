@@ -54,10 +54,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
-
 try:
     from tqdm import tqdm as _tqdm
 except Exception:  # pragma: no cover
@@ -74,10 +70,6 @@ def _hash_bytes(data: bytes) -> str:
     except Exception:
         return hashlib.sha256(data).hexdigest()
 
-
-# ---------------------------------------------------------------------------
-# Constants / defaults
-# ---------------------------------------------------------------------------
 
 DEFAULT_PIP_FILE = "/sdcard/data/pip.txt"
 DEFAULT_CACHE_FILE = ".reqcache.json"
@@ -113,7 +105,6 @@ ARCHIVE_SUFFIXES = (
     ".tar.zst",
 )
 
-# Fallback stdlib list — used only when sys.stdlib_module_names is missing.
 _STDLIB_FALLBACK: set[str] = {
     "abc",
     "aifc",
@@ -331,7 +322,6 @@ _STDLIB_FALLBACK: set[str] = {
     "__main__",
 }
 
-# Names that are never real PyPI packages (blocklist inherited from imports4).
 _BLOCKLIST: set[str] = {
     "pip",
     "setuptools",
@@ -347,10 +337,6 @@ _BLOCKLIST: set[str] = {
     "__init__",
 }
 
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
-
 
 def norm(name: str) -> str:
     return name.strip().lower().replace("_", "-")
@@ -362,11 +348,6 @@ def is_valid_module_name(name: str) -> bool:
     if name.startswith("__") and name.endswith("__"):
         return False
     return norm(name) not in {norm(b) for b in _BLOCKLIST}
-
-
-# ---------------------------------------------------------------------------
-# Loading resources: pip list, mapping, stdlib
-# ---------------------------------------------------------------------------
 
 
 def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
@@ -382,7 +363,7 @@ def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-            # Split off any version / environment marker.
+
             head = re.split(r"[=!<>;\[\s@]", line, maxsplit=1)[0].strip()
             if head:
                 out.add(norm(head))
@@ -426,10 +407,6 @@ def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> set[str]:
                         mods.add(line.split(".", 1)[0])
     return mods
 
-
-# ---------------------------------------------------------------------------
-# File discovery
-# ---------------------------------------------------------------------------
 
 _SHEBANG_RE = re.compile(r"^#!.*python", re.IGNORECASE)
 
@@ -487,10 +464,6 @@ def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[
                 local.add(Path(name).stem)
     return {n for n in local if n}
 
-
-# ---------------------------------------------------------------------------
-# Import extraction
-# ---------------------------------------------------------------------------
 
 _EMPTY_RESULT = lambda: {  # noqa: E731
     "imports": set(),
@@ -574,11 +547,6 @@ def extract_imports(source: str, extractor: str = "ast") -> dict[str, set[str]]:
     if extractor == "regex":
         return extract_regex(source)
     return extract_ast(source)
-
-
-# ---------------------------------------------------------------------------
-# Per-file / per-archive extraction
-# ---------------------------------------------------------------------------
 
 
 def _merge_into(dst: dict[str, set[str]], src: dict[str, set[str]]) -> None:
@@ -687,11 +655,6 @@ def process_path(
     return _EMPTY_RESULT()
 
 
-# ---------------------------------------------------------------------------
-# Cache (imz.py / imz2.py behaviour)
-# ---------------------------------------------------------------------------
-
-
 def _file_cache_key(path: Path) -> tuple[float, str]:
     try:
         st = path.stat()
@@ -726,10 +689,6 @@ def _result_from_json(obj: dict[str, list[str]]) -> dict[str, set[str]]:
     return {k: set(v) for k, v in obj.items()}
 
 
-# ---------------------------------------------------------------------------
-# Parallel worker
-# ---------------------------------------------------------------------------
-
 _WORKER_STATE: dict[str, Any] = {}
 
 
@@ -759,11 +718,6 @@ def _worker_one(path_str: str) -> tuple[str, dict[str, set[str]]]:
     return path_str, process_path(p, extractor)
 
 
-# ---------------------------------------------------------------------------
-# Filtering
-# ---------------------------------------------------------------------------
-
-
 def filter_packages(
     imports: set[str],
     stdlib: set[str],
@@ -790,7 +744,6 @@ def filter_packages(
         if installed_n and n in installed_n:
             continue
 
-        # Resolve via mapping (also try un-normalised).
         target = mapping.get(n) or mapping.get(imp)
         cand_n = norm(target) if target else n
 
@@ -802,11 +755,6 @@ def filter_packages(
         else:
             out.add(target if target else imp)
     return out
-
-
-# ---------------------------------------------------------------------------
-# Command: scan
-# ---------------------------------------------------------------------------
 
 
 def run_scan(args: argparse.Namespace) -> int:
@@ -845,14 +793,12 @@ def run_scan(args: argparse.Namespace) -> int:
                 f"[i] {len(installed)} packages installed via `{args.pip_cmd} freeze`"
             )
 
-    # Load cache if requested.
     cache: dict[str, Any] = {}
     cache_path = Path(args.cache) if args.cache else None
     if cache_path and not args.no_cache and cache_path.exists():
         cache = load_cache(cache_path)
         print(f"[i] Loaded cache ({len(cache)} entries)")
 
-    # Process (parallel if workers > 1).
     results: list[tuple[str, dict[str, set[str]]]] = []
     workers = max(1, args.workers)
     if workers > 1 and len(files) > 1:
@@ -872,17 +818,12 @@ def run_scan(args: argparse.Namespace) -> int:
         for f in _tqdm(files, desc="Processing"):
             results.append(_worker_one(str(f)))
 
-    # Merge.
     all_imports: set[str] = set()
     all_relative: set[str] = set()
     for _, res in results:
         all_imports |= res.get("imports", set())
         all_imports |= {d.split(".", 1)[0] for d in res.get("dynamic", set())}
         all_relative |= res.get("relative", set())
-
-    # Do NOT trace star imports here; they are already covered by `imports`
-    # from the target module when the source is local. Star module names
-    # themselves are skipped (they may refer to local packages).
 
     print(f"[i] {len(all_imports)} unique imports found")
 
@@ -897,7 +838,6 @@ def run_scan(args: argparse.Namespace) -> int:
     )
 
     if args.format == "flat":
-        # imz3.py style: write every non-stdlib import.
         flat = sorted(all_imports - all_relative, key=str.lower)
         _write_lines(args.output, flat)
         print(f"[✓] Wrote {len(flat)} imports to {args.output} (flat)")
@@ -911,7 +851,6 @@ def run_scan(args: argparse.Namespace) -> int:
             _write_lines(args.output, pkgs)
             print(f"[✓] Wrote {len(pkgs)} packages to {args.output}")
 
-    # Update cache.
     if cache_path and not args.no_cache:
         for path_str, res in results:
             p = Path(path_str)
@@ -955,10 +894,6 @@ def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:
             out.add(norm(name))
     return out
 
-
-# ---------------------------------------------------------------------------
-# Command: metadata (reqr.py)
-# ---------------------------------------------------------------------------
 
 _METADATA_RE = re.compile(r"^Requires-Dist:\s*([^\s;]+)")
 
@@ -1004,11 +939,6 @@ def run_metadata(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def _add_common_ignore(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--ignore",
@@ -1029,7 +959,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = p.add_subparsers(dest="command", required=True)
 
-    # ---- scan -------------------------------------------------------------
     s = sub.add_parser("scan", help="Scan a tree for imports and write requirements.")
     s.add_argument("-d", "--directory", default=".", help="Root directory (default: .)")
     s.add_argument(
@@ -1130,7 +1059,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_ignore(s)
     s.set_defaults(func=_dispatch_scan)
 
-    # ---- metadata ---------------------------------------------------------
     md = sub.add_parser(
         "metadata", help="Extract Requires-Dist lines from METADATA files."
     )

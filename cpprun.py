@@ -53,8 +53,6 @@ def cpp_run(*args):
         print("Error: no compiler found. Run: pkg install clang", file=sys.stderr)
         return 1
 
-    # Android won't execute binaries from shared storage, so put the exe
-    # somewhere safe: $TMPDIR -> $PREFIX/tmp -> home.
     tmpdir = Path(
         os.environ.get("TMPDIR")
         or f"{os.environ.get('PREFIX', '/data/data/com.termux/files/usr')}/tmp"
@@ -63,7 +61,6 @@ def cpp_run(*args):
     tmpdir.mkdir(parents=True, exist_ok=True)
     exe = tmpdir / src.stem
 
-    # --- Compile ----------------------------------------------------------
     std_flag = "-std=c17" if ext == ".c" else "-std=c++17"
     compiler = sh.Command(compiler_name)
     try:
@@ -75,21 +72,17 @@ def cpp_run(*args):
             str(src),
             "-o",
             str(exe),
-            # Forward compiler stdout/stderr so the user sees errors.
             _out=sys.stdout,
             _err=sys.stderr,
         )
     except sh.ErrorReturnCode as e:
-        # Errors already printed; just propagate the exit status.
         return e.exit_code
     except sh.CommandNotFound:
         print(f"Error: {compiler_name} not found on PATH", file=sys.stderr)
         return 1
 
-    # Some Android filesystems strip the exec bit.
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
-    # --- Run --------------------------------------------------------------
     try:
         prog = sh.Command(str(exe))
         prog(

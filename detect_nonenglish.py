@@ -39,10 +39,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 
-# --------------------------------------------------------------------------- #
-# Constants / defaults
-# --------------------------------------------------------------------------- #
-
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset(
     {
         ".txt",
@@ -125,10 +121,6 @@ DEFAULT_MIN_CONFIDENCE = 0.5
 SAMPLE_CHARS = 10_000
 MIN_LINE_LEN = 3
 
-# --------------------------------------------------------------------------- #
-# Data model
-# --------------------------------------------------------------------------- #
-
 
 @dataclass
 class LineFinding:
@@ -147,11 +139,6 @@ class FileResult:
     error: Optional[str] = None
 
 
-# --------------------------------------------------------------------------- #
-# Backend interface & implementations
-# --------------------------------------------------------------------------- #
-
-
 class Backend:
     name: str = "base"
 
@@ -165,7 +152,6 @@ class Gcld3Backend(Backend):
     def __init__(self) -> None:
         import gcld3  # type: ignore
 
-        # Larger max_num_bytes avoids silent truncation on longer inputs.
         self._det = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=10_000)
 
     def detect(self, text: str) -> tuple[str, float, bool]:
@@ -276,7 +262,6 @@ class FastLangdetectBackend(Backend):
         )
 
 
-# Registry — exposed names to backend classes.
 BACKEND_REGISTRY: dict[str, type[Backend]] = {
     Gcld3Backend.name: Gcld3Backend,
     Pycld2Backend.name: Pycld2Backend,
@@ -284,10 +269,6 @@ BACKEND_REGISTRY: dict[str, type[Backend]] = {
     LinguaBackend.name: LinguaBackend,
     FastLangdetectBackend.name: FastLangdetectBackend,
 }
-
-# --------------------------------------------------------------------------- #
-# Backend caching (one instance per backend per process)
-# --------------------------------------------------------------------------- #
 
 _BACKEND_CACHE: dict[str, Backend] = {}
 
@@ -310,11 +291,6 @@ def _backend_status(name: str) -> str:
         return f"error: {exc}"
 
 
-# --------------------------------------------------------------------------- #
-# Detection helpers
-# --------------------------------------------------------------------------- #
-
-
 def _is_finding(lang: str, confidence: float, min_confidence: float) -> bool:
     if not lang:
         return False
@@ -335,17 +311,11 @@ def _read_text(path: Path) -> Optional[str]:
     return None
 
 
-# --------------------------------------------------------------------------- #
-# Per-file worker (executed inside a process pool)
-# --------------------------------------------------------------------------- #
-
-
 def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     path_str, backend_name, detailed, min_conf, max_bytes = task
     path = Path(path_str)
     result = FileResult(path=path_str)
 
-    # -------- size / accessibility --------
     try:
         if path.stat().st_size > max_bytes:
             result.error = f"file too large (> {max_bytes // (1024 * 1024)} MB)"
@@ -354,7 +324,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
         result.error = f"cannot access file: {exc}"
         return result
 
-    # -------- read --------
     text = _read_text(path)
     if text is None:
         result.error = "cannot decode file"
@@ -362,7 +331,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
 
     backend = _get_backend(backend_name)
 
-    # -------- whole-file detection --------
     sample = text[:SAMPLE_CHARS]
     if len(sample.strip()) < MIN_LINE_LEN:
         return result
@@ -376,7 +344,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
             result.confidence = conf
         return result
 
-    # -------- detailed: scan each line --------
     findings: list[LineFinding] = []
     for idx, raw in enumerate(text.splitlines(), 1):
         stripped = raw.strip()
@@ -399,17 +366,10 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
         result.confidence = max(f.confidence for f in findings)
         result.non_english_lines = findings
     elif file_is_non_english:
-        # File-level detection triggered, but individual lines didn't reach the
-        # threshold — still report the file as a finding.
         result.language = lang
         result.confidence = conf
 
     return result
-
-
-# --------------------------------------------------------------------------- #
-# File discovery
-# --------------------------------------------------------------------------- #
 
 
 def _discover_files(
@@ -439,11 +399,6 @@ def _discover_files(
                 continue
             found.add(candidate.resolve())
     return sorted(found)
-
-
-# --------------------------------------------------------------------------- #
-# Report building & writing
-# --------------------------------------------------------------------------- #
 
 
 def _build_report(
@@ -517,11 +472,6 @@ def _write_text_report(output_path: Path, report: dict) -> None:
 def _write_json_report(output_path: Path, report: dict) -> None:
     with output_path.open("w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2, ensure_ascii=False)
-
-
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -611,18 +561,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
-    # ------------------------------------------------------------------ #
-    # --list-backends
-    # ------------------------------------------------------------------ #
     if args.list_backends:
         print("Available backends:")
         for name in sorted(BACKEND_REGISTRY):
             print(f"  {name:<16} {_backend_status(name)}")
         return 0
 
-    # ------------------------------------------------------------------ #
-    # Argument validation
-    # ------------------------------------------------------------------ #
     if not args.backend:
         parser.error("--backend is required (use --list-backends to see options).")
     if not args.paths:
@@ -630,7 +574,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not 0.0 <= args.min_confidence <= 1.0:
         parser.error("--min-confidence must be between 0.0 and 1.0.")
 
-    # Fail fast if the backend can't be imported/initialized.
     try:
         _get_backend(args.backend)
     except Exception as exc:
@@ -640,9 +583,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         )
         return 2
 
-    # ------------------------------------------------------------------ #
-    # Discovery
-    # ------------------------------------------------------------------ #
     extensions = set(DEFAULT_EXTENSIONS)
     extensions.update(ext.lower() for ext in args.extensions)
     exclude_dirs = set(DEFAULT_EXCLUDE_DIRS) | set(args.exclude_dirs)
@@ -651,9 +591,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     files = _discover_files(args.paths, extensions, exclude_dirs)
     print(f"Found {len(files)} candidate files.", file=sys.stderr)
 
-    # ------------------------------------------------------------------ #
-    # Parallel processing
-    # ------------------------------------------------------------------ #
     max_bytes = args.max_size_mb * 1024 * 1024
     tasks = [
         (str(f), args.backend, args.detailed, args.min_confidence, max_bytes)
@@ -692,9 +629,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     results.sort(key=lambda r: r.path)
     errors.sort(key=lambda r: r.path)
 
-    # ------------------------------------------------------------------ #
-    # Report
-    # ------------------------------------------------------------------ #
     report = _build_report(
         backend_name=args.backend,
         paths=args.paths,
@@ -705,7 +639,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         detailed=args.detailed,
     )
 
-    # Determine output path & format
     output = args.output
     fmt = args.format
     if fmt is None:
@@ -722,9 +655,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     else:
         _write_text_report(output_path, report)
 
-    # ------------------------------------------------------------------ #
-    # Console summary
-    # ------------------------------------------------------------------ #
     bar = "=" * 60
     print(bar)
     print(f"Backend          : {args.backend}")

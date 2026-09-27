@@ -65,7 +65,7 @@ class HTMLExtractor(html.parser.HTMLParser):
 
         elif tag_lower == "script":
             attrs_dict = dict(attrs)
-            # Only process inline scripts (no src attribute)
+
             if "src" not in attrs_dict:
                 self.in_script = True
                 self.script_has_src = False
@@ -131,26 +131,21 @@ def extract_assets_from_html(
         parser.feed(html_content)
         parser.close()
     except Exception:
-        # Return original content on parse failure
         return html_content, 0, 0
 
     if not parser.extractions:
         return html_content, 0, 0
 
-    # Create asset directories
     css_dir = assets_base_dir / CSS_SUBDIR
     js_dir = assets_base_dir / JS_SUBDIR
     css_dir.mkdir(parents=True, exist_ok=True)
     js_dir.mkdir(parents=True, exist_ok=True)
 
-    # Calculate relative path from HTML file to assets
     try:
         rel_assets_path = assets_base_dir.relative_to(html_path.parent)
     except ValueError:
-        # assets dir is not under html's parent, use relative path
         rel_assets_path = Path(*[".."] * len(html_path.parent.parts)) / assets_base_dir
 
-    # Prepare replacements
     replacements: list[tuple[str, str]] = []
     css_count = 0
     js_count = 0
@@ -174,28 +169,23 @@ def extract_assets_from_html(
             rel_path = rel_assets_path / JS_SUBDIR
             js_count += 1
 
-        # Generate unique filename
         filename = get_unique_filename(base_name, extension, target_dir)
         asset_file = target_dir / filename
 
-        # Write asset file
         try:
             asset_file.write_text(content, encoding="utf-8")
         except Exception:
-            # Skip this extraction on write failure
             if asset_type == "css":
                 css_count -= 1
             else:
                 js_count -= 1
             continue
 
-        # Build replacement tag
         rel_path = rel_path / filename
-        # Normalize path separators for HTML
+
         href = str(rel_path).replace("\\", "/")
 
         if asset_type == "css":
-            # Preserve other attributes except the ones we're replacing
             other_attrs = " ".join(
                 f'{k}="{v}"' if v else k
                 for k, v in attrs.items()
@@ -206,7 +196,6 @@ def extract_assets_from_html(
             else:
                 replacement = f'<link rel="stylesheet" href="{href}">'
         else:
-            # For scripts, preserve non-src attributes
             other_attrs = " ".join(
                 f'{k}="{v}"' if v else k for k, v in attrs.items() if k != "src"
             )
@@ -217,21 +206,13 @@ def extract_assets_from_html(
 
         replacements.append((content, replacement))
 
-    # Apply replacements in reverse order to maintain positions
-    # (important when content might appear multiple times)
     modified_html = html_content
 
     for original_content, replacement in replacements:
-        # Escape special regex characters in the original content
-        # Use a more targeted approach: find the full tag containing this content
-        # This is a simplified approach - for production, consider using a proper HTML parser
         escaped_content = re.escape(original_content)
 
-        # Pattern to match the tag with this exact content
         patterns = [
-            # Style tag patterns
             rf"(<style[^>]*>)\s*{escaped_content}\s*(</style>)",
-            # Script tag patterns
             rf"(<script[^>]*>)\s*{escaped_content}\s*(</script>)",
         ]
 
@@ -239,7 +220,6 @@ def extract_assets_from_html(
             try:
                 match = re.search(pattern, modified_html, re.DOTALL | re.IGNORECASE)
                 if match:
-                    # Check if it's a style or script based on the tag
                     if "<style" in match.group(1).lower():
                         modified_html = (
                             modified_html[: match.start()]
@@ -261,11 +241,9 @@ def extract_assets_from_html(
 
 def process_html_file(path: Path) -> ExtractionResult:
     try:
-        # Read file with size check
         if not path.is_file():
             return ExtractionResult(path=path, success=False, error="Not a file")
 
-        # Check file size (skip extremely large files by default)
         MAX_FILE_SIZE = 50 * 1024 * 1024
         file_size = path.stat().st_size
 
@@ -279,26 +257,20 @@ def process_html_file(path: Path) -> ExtractionResult:
         if file_size == 0:
             return ExtractionResult(path=path, success=True, error="Empty file")
 
-        # Read HTML content
         html_content = path.read_text(encoding="utf-8", errors="replace")
 
-        # Create assets directory relative to HTML file
         assets_dir = path.parent / ASSETS_DIR_NAME
 
-        # Extract assets
         modified_html, css_count, js_count = extract_assets_from_html(
             html_content, path, assets_dir
         )
 
-        # Only write back if changes were made
         if css_count > 0 or js_count > 0:
-            # Write to temporary file first for atomic operation
             temp_path = path.with_suffix(path.suffix + ".tmp")
             try:
                 temp_path.write_text(modified_html, encoding="utf-8")
                 temp_path.replace(path)
             except Exception:
-                # Clean up temp file on failure
                 if temp_path.exists():
                     temp_path.unlink()
                 raise
@@ -391,14 +363,11 @@ Examples:
 def main() -> int:
     args = parse_arguments()
 
-    # Update global configuration
     global MIN_INLINE_SIZE
     MIN_INLINE_SIZE = args.min_size
 
-    # Determine paths to process
     paths = args.paths if args.paths else get_default_paths()
 
-    # Find all HTML files
     if not args.quiet:
         print("Scanning for HTML files...", file=sys.stderr)
 
@@ -411,7 +380,6 @@ def main() -> int:
     if not args.quiet:
         print(f"Found {len(html_files)} HTML file(s) to process.", file=sys.stderr)
 
-    # Process files using multiprocessing
     num_workers = min(args.workers, len(html_files), mp.cpu_count() * 2)
     num_workers = max(1, num_workers)
 
@@ -423,7 +391,6 @@ def main() -> int:
     total_processed = 0
     total_errors = 0
 
-    # Use imap_unordered for better throughput
     with mp.Pool(processes=num_workers) as pool:
         try:
             for result in pool.imap_unordered(
@@ -453,7 +420,6 @@ def main() -> int:
             pool.terminate()
             return 130
 
-    # Print summary
     print(
         f"\nSummary: {total_processed} file(s) processed, "
         f"{total_css} CSS and {total_js} JS extracted, "

@@ -33,10 +33,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 SUPPORTED_EXTS = {
     ".jpg",
     ".jpeg",
@@ -52,7 +48,6 @@ SUPPORTED_EXTS = {
     ".svg",
 }
 
-# Default Hamming thresholds per method (mirrors each original's hardcoded value).
 DEFAULT_THRESHOLDS: dict[str, float] = {
     "dct-phash": 4,
     "dhash-custom": 4,
@@ -68,10 +63,8 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
 
 METHODS = tuple(DEFAULT_THRESHOLDS.keys())
 
-# folderimg.py weights for the composite "multihash" distance.
 MULTIHASH_W = {"phash": 0.5, "dhash": 0.3, "ahash": 0.2}
 
-# The imagehash-based methods share a single dispatcher.
 _IMAGEHASH_METHODS = {
     "ahash",
     "phash",
@@ -81,10 +74,6 @@ _IMAGEHASH_METHODS = {
     "colorhash",
     "crop-resistant",
 }
-
-# ---------------------------------------------------------------------------
-# Logging helpers (uniform across subcommands)
-# ---------------------------------------------------------------------------
 
 
 def info(msg: str) -> None:
@@ -109,11 +98,6 @@ def _require(modname: str, method: str) -> bool:
             f"Install with: pip install {modname}"
         )
         return False
-
-
-# ---------------------------------------------------------------------------
-# Feature extraction
-# ---------------------------------------------------------------------------
 
 
 def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
@@ -177,7 +161,6 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
             if method == "whash-db4":
                 return imagehash.whash(im, hash_size=hash_size, mode="db4")
             if method == "colorhash":
-                # imagehash.colorhash has a different signature; skip hash_size.
                 return imagehash.colorhash(im)
             if method == "crop-resistant":
                 return imagehash.crop_resistant_hash(im)
@@ -247,11 +230,6 @@ def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
     raise ValueError(f"Unknown method: {method!r}")
 
 
-# ---------------------------------------------------------------------------
-# Distance functions
-# ---------------------------------------------------------------------------
-
-
 def hamming_str(a: Any, b: Any) -> int:
     if a is None or b is None:
         return 10**9
@@ -302,11 +280,6 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Image collection & feature computation
-# ---------------------------------------------------------------------------
-
-
 def collect_images(
     root: Path, recursive: bool, exclude_parts: Iterable[str]
 ) -> list[Path]:
@@ -334,7 +307,7 @@ def compute_features(
             if f is not None:
                 items.append((p, f))
         return items
-    # ThreadPool: mirrors dupimg.py; cv2 releases the GIL for its heavy ops.
+
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [(p, ex.submit(extract_feature, p, method, hash_size)) for p in paths]
         for p, fut in futures:
@@ -342,11 +315,6 @@ def compute_features(
             if f is not None:
                 items.append((p, f))
     return items
-
-
-# ---------------------------------------------------------------------------
-# Grouping
-# ---------------------------------------------------------------------------
 
 
 def group_items(
@@ -387,11 +355,6 @@ def group_items(
     return groups
 
 
-# ---------------------------------------------------------------------------
-# Helpers shared by pipeline subcommands
-# ---------------------------------------------------------------------------
-
-
 def file_size_mb(p: Path) -> float:
     try:
         return p.stat().st_size / 1048576
@@ -421,7 +384,6 @@ def _pipeline(args: argparse.Namespace):
 
     exclude = set()
     if getattr(args, "out", None):
-        # Avoid re-scanning the output prefix from a previous run.
         exclude.add(str(args.out).split("/")[0])
     for e in getattr(args, "exclude", None) or []:
         exclude.add(e)
@@ -456,11 +418,6 @@ def _pipeline(args: argparse.Namespace):
     return root, multi, threshold
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: scan
-# ---------------------------------------------------------------------------
-
-
 def cmd_scan(args: argparse.Namespace) -> int:
     res = _pipeline(args)
     if res is None:
@@ -491,11 +448,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: organize
-# ---------------------------------------------------------------------------
-
-
 def cmd_organize(args: argparse.Namespace) -> int:
     res = _pipeline(args)
     if res is None:
@@ -520,13 +472,12 @@ def cmd_organize(args: argparse.Namespace) -> int:
     for i, g in enumerate(sorted(multi, key=len, reverse=True), 1):
         folder = root / f"{out_prefix}_{i:03d}"
         if not dry:
-            # parents=True handles `--out _similar_groups/group`.
             folder.mkdir(parents=True, exist_ok=True)
         info(f"{'[DRY RUN] ' if dry else ''}Folder: {folder.name}")
         created += 1
         for p in g:
             dst = folder / p.name
-            # Avoid clobbering on filename collision (as in folderize_images.py).
+
             if dst.exists() and dst != p:
                 stem, suffix = p.stem, p.suffix
                 k = 1
@@ -555,11 +506,6 @@ def cmd_organize(args: argparse.Namespace) -> int:
         print(f"✓ Created {created} folder(s) and {action}d {moved} file(s).")
     print(f"{'=' * 44}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: dedup
-# ---------------------------------------------------------------------------
 
 
 def cmd_dedup(args: argparse.Namespace) -> int:
@@ -596,11 +542,6 @@ def cmd_dedup(args: argparse.Namespace) -> int:
         print(f"✓ Kept {kept} file(s), deleted {deleted} duplicate(s).")
     print(f"{'=' * 44}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: keep-one
-# ---------------------------------------------------------------------------
 
 
 def cmd_keep_one(args: argparse.Namespace) -> int:
@@ -654,11 +595,6 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: cluster  (organize_images.py)
-# ---------------------------------------------------------------------------
-
-
 def cmd_cluster(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -701,7 +637,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
             return 0.0
         return float(np.dot(a, b) / (na * nb))
 
-    # Greedy agglomerative merge, faithful to organize_images.py.
     n = len(feats_arr)
     clusters: dict[int, list[int]] = {i: [i] for i in range(n)}
     centroids: dict[int, Any] = {i: feats_arr[i].copy() for i in range(n)}
@@ -759,11 +694,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
     print(f"\nDone! Photos organized in: {out_dir}")
     print(f"Organized {len(valid)} images into {num_groups} groups")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI wiring
-# ---------------------------------------------------------------------------
 
 
 def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
@@ -828,14 +758,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # scan ----------------------------------------------------------------
     sp = sub.add_parser(
         "scan", help="Find & report similar/duplicate groups (no file changes)"
     )
     _add_pipeline_args(sp)
     sp.set_defaults(func=cmd_scan)
 
-    # organize ------------------------------------------------------------
     sp = sub.add_parser("organize", help="Group similar images into folders")
     _add_pipeline_args(sp)
     sp.add_argument(
@@ -862,7 +790,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(dry_run=True)
     sp.set_defaults(func=cmd_organize)
 
-    # dedup ---------------------------------------------------------------
     sp = sub.add_parser("dedup", help="Delete duplicates, keeping first per group")
     _add_pipeline_args(sp)
     grp = sp.add_mutually_exclusive_group()
@@ -878,7 +805,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(dry_run=True)
     sp.set_defaults(func=cmd_dedup)
 
-    # keep-one ------------------------------------------------------------
     sp = sub.add_parser(
         "keep-one", help="Keep one image per group_*/similar_*/duplicates_* folder"
     )
@@ -902,7 +828,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_keep_one)
 
-    # cluster -------------------------------------------------------------
     sp = sub.add_parser(
         "cluster", help="HSV-histogram agglomerative clustering into N groups"
     )

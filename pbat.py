@@ -45,10 +45,6 @@ from pygments.lexers import (
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
 
-# --------------------------------------------------------------------------
-# ANSI / box-drawing constants
-# --------------------------------------------------------------------------
-
 RESET = "\x1b[0m"
 GRID_COLOR = "\x1b[38;5;238m"
 HEADER_COLOR = "\x1b[38;5;81m"
@@ -62,10 +58,6 @@ BOX_H, BOX_V = "─", "│"
 BOX_TL, BOX_TR, BOX_BL, BOX_BR = "╭", "╮", "╰", "╯"
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
-
-# --------------------------------------------------------------------------
-# Configuration
-# --------------------------------------------------------------------------
 
 
 @dataclass
@@ -90,11 +82,6 @@ class BatConfig:
             self.show_grid = False
             self.show_header = False
             self.show_changes = False
-
-
-# --------------------------------------------------------------------------
-# Git integration (approximation of bat's libgit2-based diff markers)
-# --------------------------------------------------------------------------
 
 
 class GitDiffCalculator:
@@ -179,11 +166,6 @@ class GitDiffCalculator:
         return self.removed_before.get(line_no, 0)
 
 
-# --------------------------------------------------------------------------
-# Printer
-# --------------------------------------------------------------------------
-
-
 class Printer:
     def __init__(self, config: BatConfig):
         self.config = config
@@ -218,8 +200,6 @@ class Printer:
             out.write(f"{GRID_COLOR}{BOX_H * width}{RESET}\n")
 
         return out.getvalue()
-
-    # -- highlighting -----------------------------------------------------
 
     def _get_lexer(self, path, content):
         if self.config.language:
@@ -270,8 +250,6 @@ class Printer:
             return max(1, s), min(total, e)
         return 1, total
 
-    # -- rendering ----------------------------------------------------------
-
     def _print_header(self, out, path, width):
         name = str(path) if path else "STDIN"
         title = f" {name} "
@@ -312,11 +290,6 @@ class Printer:
         )
 
         out.write(f"{prefix} {line_out}\n" if prefix else f"{line_out}\n")
-
-
-# --------------------------------------------------------------------------
-# CLI helpers
-# --------------------------------------------------------------------------
 
 
 def parse_line_range(s: str):

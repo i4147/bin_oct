@@ -19,7 +19,6 @@ import sys
 import time
 from pathlib import Path
 
-# ── Configuration ──────────────────────────────────────────
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024
 COLORS = {
@@ -33,7 +32,6 @@ COLORS = {
     "cyan": "\033[36m",
     "gray": "\033[90m",
 }
-# ──────────────────────────────────────────────────────────
 
 
 def supports_color() -> bool:
@@ -56,16 +54,14 @@ def color(text: str, color_name: str = "reset", bold: bool = False) -> str:
 def expand_glob_args(args: list[str]) -> list[str]:
     expanded = []
     for arg in args:
-        # Skip if it's an option or contains no glob chars
         if not any(ch in arg for ch in "*?["):
             expanded.append(arg)
             continue
-        # Try glob expansion
+
         matches = glob.glob(arg)
         if matches:
             expanded.extend(sorted(matches))
         else:
-            # Keep original if no matches (bash behavior)
             expanded.append(arg)
     return expanded
 
@@ -152,32 +148,26 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
 def main() -> None:
     name, command_args, opts = parse_args(sys.argv[1:])
 
-    # Expand glob patterns in arguments
     command_args = expand_glob_args(command_args)
 
-    # Build full command list
     command = [name, *command_args]
 
-    # Setup logging (unless disabled)
     log_file = None
     if not opts.no_log:
         log_file = create_log_file(name)
         write_log_header(log_file, command, os.getcwd())
 
-    # Run command
     exit_code = 1
-    # Buffer for clipboard (None if disabled or exceeded size limit)
+
     output_buffer = [] if not opts.no_clipboard else None
     output_size = 0
 
     try:
-        # Open log file for appending if logging is enabled
         with (
             open(log_file, "a", encoding="utf-8")
             if log_file
             else nullcontext() as log_f
         ):
-            # Start subprocess with stdout piped for real-time reading
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
@@ -186,9 +176,7 @@ def main() -> None:
                 bufsize=1,  # Line-buffered
             )
 
-            # Read output line by line in real-time
             for line in process.stdout:
-                # Colorize lines that look like errors/warnings
                 if line.startswith(("Error:", "error:", "WARNING:", "warning:")):
                     output = color(line, "yellow")
                 elif line.startswith(("Fatal:", "fatal:", "Traceback")):
@@ -196,25 +184,21 @@ def main() -> None:
                 else:
                     output = line
 
-                # Optional timestamp prefix
                 if opts.timestamp:
                     ts = datetime.datetime.now().strftime("%H:%M:%S")
                     output = color(f"[{ts}] ", "gray") + output
 
-                # Write to stdout (real-time display)
                 sys.stdout.write(output)
                 sys.stdout.flush()
 
-                # Write to log file if logging enabled
                 if log_f:
                     log_f.write(line)
                     log_f.flush()
 
-                # Buffer for clipboard (track cumulative size)
                 if output_buffer is not None:
                     output_buffer.append(line)
                     output_size += len(line.encode("utf-8"))
-                    # If exceeds 1MB limit, disable clipboard copying
+
                     if output_size > CLIPBOARD_MAX_BYTES:
                         output_buffer = None
                         print(
@@ -225,16 +209,13 @@ def main() -> None:
                             file=sys.stderr,
                         )
 
-            # Wait for process to complete and get exit code
             process.wait()
             exit_code = process.returncode
 
     except KeyboardInterrupt:
-        # Handle Ctrl+C gracefully
         exit_code = 130
         print(color("\nInterrupted by user", "red", bold=True), file=sys.stderr)
     except FileNotFoundError:
-        # Command not found in PATH
         exit_code = 127
         msg = color(f"Error: command '{name}' not found", "red", bold=True)
         print(msg, file=sys.stderr)
@@ -242,7 +223,6 @@ def main() -> None:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"Error: command '{name}' not found\n")
     except Exception as exc:
-        # Catch-all for other errors
         exit_code = 1
         error_msg = color(f"Error running command: {exc}", "red", bold=True)
         print(error_msg, file=sys.stderr)
@@ -250,17 +230,14 @@ def main() -> None:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"Error: {exc}\n")
 
-    # Copy to clipboard if enabled, within size limit, and command succeeded
     if output_buffer is not None:
         clipboard_text = "".join(output_buffer)
         copy_to_clipboard(clipboard_text)
 
-    # Finalize logging
     if log_file:
         write_log_footer(log_file, exit_code)
         print(color(f"Log saved to: {log_file}", "cyan"), file=sys.stderr)
 
-    # Exit with the wrapped command's exit code
     raise SystemExit(exit_code)
 
 

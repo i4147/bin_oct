@@ -49,9 +49,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
-# --------------------------------------------------------------------------
-# Optional third-party imports
-# --------------------------------------------------------------------------
 try:
     import tree_sitter
     import tree_sitter_python
@@ -74,9 +71,6 @@ try:
 except Exception:  # pragma: no cover
     HAS_ZSTD = False
 
-# --------------------------------------------------------------------------
-# Logging & constants
-# --------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
@@ -107,9 +101,6 @@ DEFAULT_SKIP_DIRS = {
 DEFAULT_SKIP_TESTS = {"test", "tests", "examples"}
 
 
-# --------------------------------------------------------------------------
-# Data model
-# --------------------------------------------------------------------------
 @dataclass
 class Entity:
     name: str
@@ -125,9 +116,6 @@ class Entity:
     decorators: list[str] = field(default_factory=list)
 
 
-# --------------------------------------------------------------------------
-# File discovery / archive iteration
-# --------------------------------------------------------------------------
 def _content_looks_python(text: str) -> bool:
     head = text[:512]
     if head.startswith("#!") and "python" in head.split("\n", 1)[0].lower():
@@ -195,7 +183,6 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
             log.error("bad zip %s: %s", archive, e)
         return
 
-    # tar-flavored (incl. .tar.zst)
     try:
         if n.endswith(".zst"):
             if not HAS_ZSTD:
@@ -223,9 +210,6 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
                 continue
 
 
-# --------------------------------------------------------------------------
-# AST backend
-# --------------------------------------------------------------------------
 def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
     start = node.lineno - 1
     decs = getattr(node, "decorator_list", None) or []
@@ -257,7 +241,6 @@ class _ASTExtractor(ast.NodeVisitor):
         self._class_stack: list[str] = []
         self._scope_stack: list[str] = []
 
-    # -- helpers -----------------------------------------------------------
     def _slice(self, node: ast.AST) -> str:
         return _slice_ast_node(node, self.source_lines)
 
@@ -269,7 +252,6 @@ class _ASTExtractor(ast.NodeVisitor):
         if src not in self.imports:
             self.imports.append(src)
 
-    # -- visitors ----------------------------------------------------------
     def visit_Import(self, node: ast.Import) -> None:
         self._record_import(node)
 
@@ -381,9 +363,6 @@ def extract_ast(
     return ex.entities, ex.imports
 
 
-# --------------------------------------------------------------------------
-# libcst backend
-# --------------------------------------------------------------------------
 def _extract_libcst_impl(
     source: str, path: str, include_nested: bool, constants_only: bool
 ) -> tuple[list[Entity], list[str]]:
@@ -490,9 +469,6 @@ def extract_libcst(
     return _extract_libcst_impl(source, path, include_nested, constants_only)
 
 
-# --------------------------------------------------------------------------
-# tree-sitter backend
-# --------------------------------------------------------------------------
 _TS_PARSER = None
 
 
@@ -622,9 +598,6 @@ def extract_treesitter(
     return entities, imports
 
 
-# --------------------------------------------------------------------------
-# Parser dispatch
-# --------------------------------------------------------------------------
 def _extract(
     source: str, path: str, parser_name: str, include_nested: bool, constants_only: bool
 ) -> tuple[list[Entity], list[str]]:
@@ -637,9 +610,6 @@ def _extract(
     raise ValueError(f"unknown parser: {parser_name}")
 
 
-# --------------------------------------------------------------------------
-# Deduplication
-# --------------------------------------------------------------------------
 def _dedupe_entities(entities: list[Entity]) -> list[Entity]:
     seen: set[tuple[str, str, str]] = set()
     out: list[Entity] = []
@@ -652,9 +622,6 @@ def _dedupe_entities(entities: list[Entity]) -> list[Entity]:
     return out
 
 
-# --------------------------------------------------------------------------
-# Writers
-# --------------------------------------------------------------------------
 def _safe_name(s: str) -> str:
     return re.sub(r"[^\w\-.]", "_", s) or "unnamed"
 
@@ -837,9 +804,6 @@ def write_imports_file(imports: Iterable[str], out_dir: Path) -> None:
     (out_dir / "global_imports.py").write_text(body, encoding="utf-8")
 
 
-# --------------------------------------------------------------------------
-# Multiprocessing worker
-# --------------------------------------------------------------------------
 def _worker(item: tuple) -> tuple:
     path_str, parser_name, include_nested, constants_only, is_archive = item
     p = Path(path_str)
@@ -867,11 +831,8 @@ def _worker(item: tuple) -> tuple:
     return path_str, entities, imports, err
 
 
-# --------------------------------------------------------------------------
-# Subcommand: extract
-# --------------------------------------------------------------------------
 def cmd_extract(args: argparse.Namespace) -> int:
-    # ---- validate parser --------------------------------------------------
+
     if args.parser == "treesitter" and not HAS_TS:
         log.error("--parser treesitter requires tree-sitter & tree-sitter-python")
         return 2
@@ -879,7 +840,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
         log.error("--parser libcst requires libcst")
         return 2
 
-    # ---- determine inputs -------------------------------------------------
     roots: list[Path] = []
     if args.paths:
         roots = [p for p in args.paths if p.exists()]
@@ -891,13 +851,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
         log.error("no valid input paths")
         return 2
 
-    # ---- output dir -------------------------------------------------------
     out_dir = Path(args.output).resolve()
     if args.clean and out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # ---- discovery --------------------------------------------------------
     skip = set(DEFAULT_SKIP_DIRS) | set(args.exclude or [])
     py_files: list[Path] = []
     archives: list[Path] = []
@@ -916,7 +874,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
         log.warning("nothing to process")
         return 0
 
-    # ---- work list --------------------------------------------------------
     work: list[tuple] = [
         (str(p), args.parser, args.include_nested, args.constants_only, False)
         for p in py_files
@@ -956,7 +913,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     all_entities.sort(key=lambda e: (e.type, e.full_name, e.path))
     log.info("total entities: %d", len(all_entities))
 
-    # ---- layouts ----------------------------------------------------------
     if args.layout == "per-entity":
         write_per_entity(all_entities, out_dir, write_metadata=args.metadata)
     elif args.layout == "by-type":
@@ -971,7 +927,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if args.imports_file and args.layout != "lists":
         write_imports_file(all_imports, out_dir)
 
-    # ---- summary ----------------------------------------------------------
     print("=" * 40)
     print("EXTRACTION SUMMARY")
     print("-" * 40)
@@ -985,9 +940,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------
-# Subcommand: nodes  (ex_nodes.py)
-# --------------------------------------------------------------------------
 NODE_KINDS: dict[str, set[str]] = {
     "class": {"class_definition"},
     "func": {"function_definition"},
@@ -1053,9 +1005,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------
-# Subcommand: sexpr  (gen_s_expr.py)
-# --------------------------------------------------------------------------
 def _node_to_sexpr(node, data: bytes) -> str:
     if node.child_count == 0:
         txt = data[node.start_byte : node.end_byte].decode("utf-8", "replace")
@@ -1075,9 +1024,6 @@ def cmd_sexpr(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------
-# Subcommand: funcnames  (getfuncnames.py)
-# --------------------------------------------------------------------------
 def cmd_funcnames(args: argparse.Namespace) -> int:
     p = Path(args.file)
     try:
@@ -1098,9 +1044,6 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pyextract",
@@ -1111,7 +1054,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # extract ---------------------------------------------------------------
     e = sub.add_parser("extract", help="Extract code entities.")
     e.add_argument(
         "paths",
@@ -1207,7 +1149,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     e.set_defaults(func=cmd_extract)
 
-    # nodes -----------------------------------------------------------------
     n = sub.add_parser("nodes", help="Dump top-level tree-sitter nodes per folder.")
     n.add_argument(
         "paths", nargs="*", type=Path, help="Files/dirs (default: current directory)."
@@ -1226,12 +1167,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     n.set_defaults(func=cmd_nodes)
 
-    # sexpr -----------------------------------------------------------------
     s = sub.add_parser("sexpr", help="Print tree-sitter S-expression for a file.")
     s.add_argument("file", type=Path)
     s.set_defaults(func=cmd_sexpr)
 
-    # funcnames -------------------------------------------------------------
     f = sub.add_parser("funcnames", help="List function names in a Python file.")
     f.add_argument("file", type=Path)
     f.add_argument(

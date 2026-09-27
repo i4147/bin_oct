@@ -49,13 +49,7 @@ try:
 except ImportError:
     HAS_ZSTD = False
 
-#: Fixed size of the multiprocessing pool.  Kept as a module constant
-#: because the CLI no longer exposes a ``--workers`` flag.
 WORKERS = 8
-
-# ---------------------------------------------------------------------------
-# Data containers
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -87,11 +81,6 @@ class AutoflakeReport:
         return bool(self.diff)
 
 
-# ---------------------------------------------------------------------------
-# ANSI color helper
-# ---------------------------------------------------------------------------
-
-
 class Colors:
     BOLD = "\x1b[1m"
     CYAN = "\x1b[36m"
@@ -107,11 +96,6 @@ class Colors:
                 setattr(cls, attr, "")
 
 
-# ---------------------------------------------------------------------------
-# AST visitors (built-in engine)
-# ---------------------------------------------------------------------------
-
-
 class ImportVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.imports: dict[str, tuple[int, int, str]] = {}
@@ -120,8 +104,6 @@ class ImportVisitor(ast.NodeVisitor):
         self.all_export: set[str] = set()
         self.star_imports: set[str] = set()
         self._in_type_checking: bool = False
-
-    # -- control-flow context ------------------------------------------------
 
     def visit_If(self, node: ast.If) -> None:
         is_tc = (
@@ -136,13 +118,11 @@ class ImportVisitor(ast.NodeVisitor):
             for child in node.body:
                 self.visit(child)
             self._in_type_checking = previous
-            # ``else`` branch is *not* under TYPE_CHECKING.
+
             for child in node.orelse:
                 self.visit(child)
         else:
             self.generic_visit(node)
-
-    # -- import handling -----------------------------------------------------
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module == "__future__":
@@ -168,15 +148,12 @@ class ImportVisitor(ast.NodeVisitor):
     def visit_Import(self, node: ast.Import) -> None:
         statement = self._build_import_statement(node)
         for alias in node.names:
-            # ``import a.b.c`` binds the top-level name ``a``.
             name = alias.asname or alias.name.split(".")[0]
             if self._in_type_checking:
                 self.type_checking_imports.add(name)
             else:
                 self.imports[name] = (node.lineno, node.col_offset, statement)
         self.generic_visit(node)
-
-    # -- ``__all__`` re-exports ---------------------------------------------
 
     def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
@@ -189,8 +166,6 @@ class ImportVisitor(ast.NodeVisitor):
                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                         self.all_export.add(elt.value)
         self.generic_visit(node)
-
-    # -- helpers -------------------------------------------------------------
 
     @staticmethod
     def _build_import_statement(node: ast.AST) -> str:
@@ -218,11 +193,6 @@ class NameVisitor(ast.NodeVisitor):
             identifiers = re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", node.value)
             self.used_names.update(identifiers)
         self.generic_visit(node)
-
-
-# ---------------------------------------------------------------------------
-# Built-in analysis
-# ---------------------------------------------------------------------------
 
 
 def analyze_imports(
@@ -279,11 +249,6 @@ def analyze_imports(
                     break
 
     return (unused, None)
-
-
-# ---------------------------------------------------------------------------
-# File / archive readers
-# ---------------------------------------------------------------------------
 
 
 def process_py_file(path: str) -> FileReport:
@@ -370,10 +335,6 @@ def process_archive_member(virtual_path: str, source: str) -> FileReport:
     )
 
 
-# ---------------------------------------------------------------------------
-# autoflake engine
-# ---------------------------------------------------------------------------
-
 _AUTOFLACE_BASE = [
     "autoflake",
     "--remove-all-unused-imports",
@@ -452,9 +413,6 @@ def autoflake_process_source(virtual_path: str, source: str) -> AutoflakeReport:
     )
 
 
-# -- multiprocessing workers ------------------------------------------------
-
-
 def _process_py_file_worker(path: str) -> FileReport:
     return process_py_file(path)
 
@@ -471,11 +429,6 @@ def _process_py_file_autoflake_worker(path: str) -> AutoflakeReport:
 def _process_archive_autoflake_worker(args: tuple[str, str]) -> AutoflakeReport:
     virtual_path, source = args
     return autoflake_process_source(virtual_path, source)
-
-
-# ---------------------------------------------------------------------------
-# Discovery
-# ---------------------------------------------------------------------------
 
 
 def discover_files(
@@ -531,11 +484,6 @@ def _collect_from_file(
         for vpath, source in extract_py_files_from_tar_zst(str(path)).items():
             if not should_exclude(vpath):
                 archive_members.append((vpath, source))
-
-
-# ---------------------------------------------------------------------------
-# AST-engine autofix — line-based rewriting
-# ---------------------------------------------------------------------------
 
 
 def remove_unused_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]:
@@ -642,11 +590,6 @@ def autofix_file(
         return (False, f"Write error: {exc}")
 
     return (True, None)
-
-
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
 
 
 def print_report(
@@ -766,11 +709,6 @@ def print_autoflake_report(
             print(f"Skipped {skipped_count} file(s).")
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description=(
@@ -840,11 +778,6 @@ def build_parser() -> ArgumentParser:
     return parser
 
 
-# ---------------------------------------------------------------------------
-# Mode runners
-# ---------------------------------------------------------------------------
-
-
 def _run_ast_mode(
     py_files: list[str],
     archive_members: list[tuple[str, str]],
@@ -901,7 +834,6 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    # ``--dry-run`` implies ``--autofix`` but suppresses writes.
     if args.dry_run:
         args.autofix = True
 

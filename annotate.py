@@ -40,9 +40,6 @@ from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 
 
-# =========================================================================== #
-#  ANNOTATE MODE  (LibCST + .pyi stub)
-# =========================================================================== #
 class TypeshedSanitizer(cst.CSTTransformer):
     def leave_ImportFrom(self, original_node, updated_node):
         if (
@@ -113,11 +110,6 @@ def apply_type_annotations(
     return annotated_cst.code
 
 
-# =========================================================================== #
-#  REMOVE MODE  (tree-sitter)
-# =========================================================================== #
-#  Loaded lazily so `annotate` mode does not require tree-sitter installed.
-# --------------------------------------------------------------------------- #
 _PY_LANGUAGE = None
 _TS_PARSER_FACTORY = None  # type: ignore[var-annotated]
 
@@ -248,7 +240,6 @@ def strip_annotations_from_bytes(
 
         remove_ranges.append((removed_prefix_start, e))
 
-    # `# type: ...` comments
     type_comment_ranges: list[tuple[int, int]] = []
     lines = src_bytes.splitlines(keepends=True)
     offset = 0
@@ -273,9 +264,6 @@ def strip_annotations_from_bytes(
     return new_bytes, warnings, None
 
 
-# =========================================================================== #
-#  Shared helpers
-# =========================================================================== #
 def validate_python_code(code: str, filename: str) -> None:
     try:
         ast.parse(code, filename=filename)
@@ -299,9 +287,6 @@ def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, text=True, capture_output=True, check=False)
 
 
-# =========================================================================== #
-#  Options / Results
-# =========================================================================== #
 @dataclass
 class Options:
     # shared
@@ -311,7 +296,7 @@ class Options:
     quiet: bool = False
     validate_compile: bool = False
     validate_mypy: bool = False
-    # annotate-mode only
+
     overwrite_existing: bool = True
     use_future_annotations: bool = False
     stub_file: Optional[str] = None
@@ -330,9 +315,6 @@ class Result:
     mode: str = "annotate"
 
 
-# =========================================================================== #
-#  Workers
-# =========================================================================== #
 def _annotate_file(path: Path, options: Options) -> Result:
     result = Result(path=path, mode="annotate")
 
@@ -438,7 +420,6 @@ def _strip_file(path: Path, options: Options) -> Result:
             original_text = src_bytes.decode("utf-8", errors="replace")
         result.diff = compute_diff(original_text, new_text, str(path))
 
-    # Store new text for writer (avoids re-running tree-sitter)
     result._new_text = new_text  # type: ignore[attr-defined]
     return result
 
@@ -473,15 +454,11 @@ def process_file(path_str: str, options: Options) -> Result:
         except Exception as e:
             result.warnings.append(f"failed to create backup: {e}")
 
-    # Atomic in-place write (uses _new_text when present, otherwise reads file)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
         if hasattr(result, "_new_text"):
             tmp_path.write_text(result._new_text, encoding="utf-8")  # type: ignore[attr-defined]
         else:
-            # annotate path already computed text; recompute from file + diff is not safe,
-            # so re-apply by calling the annotate function on the original contents.
-            # Simpler: write via shutil from a fresh transform (cheap enough).
             original = path.read_text(encoding="utf-8")
             stub_path = (
                 Path(options.stub_file)
@@ -497,7 +474,6 @@ def process_file(path_str: str, options: Options) -> Result:
             )
             tmp_path.write_text(new_text, encoding="utf-8")
 
-        # preserve mode bits for stripped files
         try:
             st = path.stat()
             os.chmod(tmp_path, stat.S_IMODE(st.st_mode))
@@ -521,9 +497,6 @@ def process_file(path_str: str, options: Options) -> Result:
     return result
 
 
-# =========================================================================== #
-#  File gathering
-# =========================================================================== #
 def gather_py_files(paths: list[str]) -> list[Path]:
     out: list[Path] = []
     provided = list(paths) if paths else ["."]
@@ -543,9 +516,6 @@ def gather_py_files(paths: list[str]) -> list[Path]:
     return sorted({p for p in out})
 
 
-# =========================================================================== #
-#  CLI
-# =========================================================================== #
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="batch_annotate",
@@ -672,7 +642,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         remove=args.remove,
     )
 
-    # Warm-up check for tree-sitter in remove mode (fail fast before pool)
     if options.remove:
         try:
             _ensure_tree_sitter()
@@ -688,9 +657,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         results = [process_file(str(f), options) for f in files]
 
-    # ------------------------------------------------------------------ #
-    #  Report
-    # ------------------------------------------------------------------ #
     changed = [r for r in results if r.changed and not r.error]
     unchanged = [r for r in results if not r.changed and not r.error]
     failed = [r for r in results if r.error]

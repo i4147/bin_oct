@@ -66,13 +66,6 @@ from typing import Final, Iterator, NamedTuple, Sequence
 from dh import cprint, rrs
 from fastwalk import walk_files
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
-
-#: Directory names that are pruned during discovery. Because ``walk_files``
-#: cannot prune on the Rust side, the filter is enforced here in Python on
-#: the paths it returns.
 SKIP_DIRS: Final[frozenset[str]] = frozenset(
     {
         ".git",
@@ -96,41 +89,21 @@ SKIP_DIRS: Final[frozenset[str]] = frozenset(
     }
 )
 
-#: Accepted JavaScript suffixes, all lower-case. Matching is done on
-#: ``path.suffix.lower()`` so ``.js``, ``.JS``, ``.Mjs`` and every other
-#: casing qualifies. ``.mjs`` is the canonical ES-module extension and
-#: ``.cjs`` the CommonJS one; terser handles both.
-#: Extend this set to recognise further extensions (e.g. ``.jsx``, though
-#: JSX needs a custom parser plugin and so is deliberately not enabled here).
 JS_SUFFIXES: Final[frozenset[str]] = frozenset({".js", ".mjs", ".cjs"})
 
-#: Slice size used when iterating the list returned by ``walk_files``.
 WALK_CHUNK: Final[int] = 512
 
-#: Fixed size of the worker pool (no CLI flag by design).
 DEFAULT_WORKERS: Final[int] = 8
 
-#: ``imap_unordered`` chunksize; small enough to keep the parent responsive.
 IMAP_CHUNKSIZE: Final[int] = 4
 
-#: Default per-file terser timeout, in seconds.
 DEFAULT_TIMEOUT: Final[float] = 300.0
 
-#: Chunk size used for the streaming byte-identity comparison.
 COMPARE_CHUNK: Final[int] = 1 << 16
 
-#: terser's exit code for a successful run. Any non-zero is treated as an
-#: error.
 TERSER_SUCCESS: Final[int] = 0
 
-#: Minimum byte saving required before we actually rewrite the file. A saving
-#: of 0 bytes (same-size-different-bytes) or 1 byte is treated as "no change":
-#: the inode churn, mtime bump, and crash-window risk dwarf the benefit.
 MIN_SAVINGS_BYTES: Final[int] = 2
-
-# --------------------------------------------------------------------------- #
-# Result record
-# --------------------------------------------------------------------------- #
 
 
 class ProcessResult(NamedTuple):
@@ -144,11 +117,6 @@ class ProcessResult(NamedTuple):
     error: str | None
 
 
-# --------------------------------------------------------------------------- #
-# Formatting helpers
-# --------------------------------------------------------------------------- #
-
-
 def format_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     value = float(abs(n))
@@ -158,7 +126,7 @@ def format_bytes(n: int) -> str:
                 return f"{sign}{int(value)} B"
             return f"{sign}{value:.2f} {unit}"
         value /= 1024.0
-    # Unreachable, but keeps static analysers happy.
+
     return f"{sign}{value:.2f} TiB"
 
 
@@ -169,17 +137,10 @@ def display_path(path: Path) -> str:
         return str(path)
 
 
-# --------------------------------------------------------------------------- #
-# Discovery
-# --------------------------------------------------------------------------- #
-
-
 def _dedupe(path: Path, seen: set[Path]) -> bool:
     try:
         key = path.resolve()
     except OSError:
-        # ``resolve`` can fail on weird filesystems; fall back to the raw path
-        # so we still avoid processing an obviously repeated entry.
         key = path
     if key in seen:
         return False
@@ -198,11 +159,9 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
         for entry in found[start : start + WALK_CHUNK]:
             path = Path(entry)
 
-            # Cheap: extension check (case-insensitive).
             if path.suffix.lower() not in JS_SUFFIXES:
                 continue
 
-            # Cheap: prune anything inside a SKIP_DIRS component.
             try:
                 rel = path.relative_to(root)
             except ValueError:
@@ -210,14 +169,12 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
             if any(part in SKIP_DIRS for part in rel.parts[:-1]):
                 continue
 
-            # Expensive: never touch symlinks found during the walk.
             try:
                 if path.is_symlink():
                     continue
             except OSError:
                 continue
 
-            # Expensive: dedupe via resolve().
             if not _dedupe(path, seen):
                 continue
 
@@ -237,8 +194,6 @@ def iter_js_files(roots: Sequence[Path]) -> Iterator[Path]:
                 continue
 
             if raw_root.is_file():
-                # Never process a symlinked file: terser would read the
-                # target but os.replace would then clobber the link itself.
                 if raw_root.is_symlink():
                     print(
                         f"warning: skipping symlink: {raw_root}",
@@ -250,9 +205,6 @@ def iter_js_files(roots: Sequence[Path]) -> Iterator[Path]:
                 continue
 
             if raw_root.is_dir():
-                # Explicit directory roots may be symlinks; the user asked
-                # for them, so follow the link and walk the real directory.
-                # Symlinks *inside* the walk are still skipped.
                 try:
                     root = raw_root.resolve()
                 except OSError as exc:
@@ -273,11 +225,6 @@ def iter_js_files(roots: Sequence[Path]) -> Iterator[Path]:
                 f"warning: cannot inspect {raw_root}: {exc}",
                 file=sys.stderr,
             )
-
-
-# --------------------------------------------------------------------------- #
-# Worker
-# --------------------------------------------------------------------------- #
 
 
 def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
@@ -329,9 +276,7 @@ def _build_terser_cmd(
         cmd.append("--mangle")
     if compress:
         cmd.append("--compress")
-    # ``--toplevel`` only changes mangle/compress behaviour; emit it only
-    # when either pass is enabled, otherwise it is a no-op that would just
-    # confuse the resulting command line.
+
     if toplevel and (mangle or compress):
         cmd.append("--toplevel")
     if module:
@@ -356,15 +301,12 @@ def process_file(
     timeout: float,
     dry_run: bool,
 ) -> ProcessResult:
-    # --- Resolve symlinks so os.replace targets the real file. ------------
-    # Discovery normally filters symlinks, but hardlinks / bind mounts /
-    # unusual setups can bypass that filter; resolving here is defensive.
+
     try:
         target = path.resolve(strict=True)
     except OSError as exc:
         return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
 
-    # --- Snapshot original size and mode bits. ----------------------------
     try:
         st = target.stat()
     except OSError as exc:
@@ -374,10 +316,6 @@ def process_file(
 
     tmp_path: Path | None = None
     try:
-        # --- Allocate a sibling temp file. --------------------------------
-        # Derive the suffix from the target's original extension so a
-        # ``app.MJS`` produces ``app.<rand>.MJS.tmp`` — cosmetic, but it
-        # makes in-progress directory listings self-explanatory.
         try:
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
@@ -401,7 +339,6 @@ def process_file(
                 f"cannot create temp file: {exc}",
             )
 
-        # --- Build and run the terser command. ----------------------------
         cmd = _build_terser_cmd(
             terser,
             target,
@@ -415,7 +352,6 @@ def process_file(
         )
         completed, run_error = _run_terser(cmd, timeout)
         if completed is None:
-            # Original untouched; tmp cleaned up in ``finally``.
             return ProcessResult(
                 path, original_size, 0, "", "", False, False, run_error
             )
@@ -424,7 +360,6 @@ def process_file(
         stderr = completed.stderr.decode("utf-8", errors="replace")
 
         if completed.returncode != TERSER_SUCCESS:
-            # Original untouched; report the error and skip the write.
             return ProcessResult(
                 path,
                 original_size,
@@ -436,10 +371,6 @@ def process_file(
                 f"terser exited with status {completed.returncode}",
             )
 
-        # --- Validate terser's output. ------------------------------------
-        # A successful terser run implies the input parsed and the AST was
-        # serialised; the only cheap check left is that something was
-        # actually written.
         try:
             new_size = tmp_path.stat().st_size
         except OSError as exc:
@@ -466,10 +397,6 @@ def process_file(
                 "terser produced an empty file",
             )
 
-        # --- Byte-identity short-circuit (runs before the size compare). --
-        # When terser's transforms happen to leave the source unchanged —
-        # or when the input was already minified — this is the normal
-        # "nothing to do" path.
         try:
             identical = _files_identical(target, tmp_path, original_size, new_size)
         except OSError as exc:
@@ -485,7 +412,6 @@ def process_file(
             )
 
         if identical:
-            # No write at all: no inode churn, no mtime bump.
             return ProcessResult(
                 path,
                 original_size,
@@ -497,7 +423,6 @@ def process_file(
                 None,
             )
 
-        # --- Output larger than input: keep the original. -----------------
         if new_size > original_size:
             return ProcessResult(
                 path,
@@ -510,10 +435,6 @@ def process_file(
                 None,
             )
 
-        # --- Trivial savings: treat as no change and skip the write. ------
-        # Saves of 0 (same size, different bytes) or 1 byte are not worth a
-        # new inode, a new mtime, and a crash window in the middle of
-        # ``os.replace``.
         if original_size - new_size < MIN_SAVINGS_BYTES:
             return ProcessResult(
                 path,
@@ -526,7 +447,6 @@ def process_file(
                 None,
             )
 
-        # --- Strictly smaller by MIN_SAVINGS_BYTES or more: write. --------
         if dry_run:
             return ProcessResult(
                 path,
@@ -554,7 +474,6 @@ def process_file(
                 f"failed to replace original: {exc}",
             )
 
-        # Ownership of the temp file has moved to ``target``.
         tmp_path = None
         return ProcessResult(
             path,
@@ -568,17 +487,11 @@ def process_file(
         )
 
     finally:
-        # Per-file cleanup; a failure here must never mask the real result.
         if tmp_path is not None:
             try:
                 tmp_path.unlink()
             except OSError:
                 pass
-
-
-# --------------------------------------------------------------------------- #
-# Classification & reporting
-# --------------------------------------------------------------------------- #
 
 
 def _classify(result: ProcessResult, dry_run: bool) -> str:
@@ -628,8 +541,6 @@ def _print_status(result: ProcessResult, tag: str) -> None:
             f"(would save {format_bytes(saved)}, {pct:.1f}%)"
         )
     elif tag == "NOCHG":
-        # ``new_size`` is presented as ``original_size`` for this tag, so
-        # there is nothing interesting to show beyond the size.
         print(f"[NOCHG]   {shown}  {format_bytes(orig)}  (no meaningful change)")
     elif tag == "SKIP":
         growth = new - orig
@@ -675,11 +586,6 @@ def _print_summary(
         print("  Bytes     : no size changes")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="terser-optimize",
@@ -705,8 +611,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run and validate, but do not modify any files.",
     )
-    # ``BooleanOptionalAction`` gives us both ``--mangle`` and ``--no-mangle``
-    # (likewise for ``--compress``) from a single declaration.
+
     parser.add_argument(
         "--mangle",
         action=argparse.BooleanOptionalAction,
@@ -770,8 +675,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     roots = [Path(p) for p in args.paths] if args.paths else [Path(".")]
 
-    # Bind the worker options with functools.partial so ``process_file``
-    # stays a top-level, picklable function.
     worker = partial(
         process_file,
         terser=args.terser,
@@ -806,7 +709,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 tag = _classify(result, args.dry_run)
                 counters[tag] += 1
 
-                # Only OK and DRY-RUN represent an actual / potential saving.
                 if tag in ("OK", "DRY-RUN"):
                     total_before += result.original_size
                     total_after += result.new_size

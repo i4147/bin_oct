@@ -39,9 +39,6 @@ import sys
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party import
-# ---------------------------------------------------------------------------
 try:
     from bs4 import BeautifulSoup  # type: ignore[import-untyped]
 
@@ -52,9 +49,6 @@ except ImportError:
 
 LOG = logging.getLogger("htmlstrip")
 
-# ---------------------------------------------------------------------------
-# Constants (all overridable via CLI)
-# ---------------------------------------------------------------------------
 DEFAULT_TAG_EXTS: tuple[str, ...] = (".html", ".txt")
 DEFAULT_META_EXTS: tuple[str, ...] = (".html",)
 DEFAULT_META_PATTERN: str = r"<meta[^>]*>"
@@ -62,9 +56,6 @@ DEFAULT_PRESERVE_MARKERS: tuple[str, ...] = ("<:", ">:")
 ALL_TAGS_REGEX = re.compile(r"<[^>]*>")
 
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
@@ -90,9 +81,6 @@ def _normalize_exts(raw: Sequence[str], default: Sequence[str]) -> list[str]:
     return [e.lower() if e.startswith(".") else "." + e.lower() for e in raw]
 
 
-# ===========================================================================
-# Subcommand: tag  (remove_tag.py)
-# ===========================================================================
 def _remove_tag_from_file(path: Path, tag: str) -> bool:
     try:
         src = _read_text(path)
@@ -145,9 +133,6 @@ def cmd_tag(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: meta  (rmeta.py)
-# ===========================================================================
 _META_RX_CACHE: dict[str, re.Pattern[str]] = {}
 
 
@@ -198,9 +183,6 @@ def cmd_meta(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: all  (strip_tags.py)
-# ===========================================================================
 def _strip_all_tags(
     source: str,
     preserve_markers: Sequence[str],
@@ -253,9 +235,6 @@ def cmd_all(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="htmlstrip.py",
@@ -265,7 +244,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # -- tag ----------------------------------------------------------------
     p = sub.add_parser(
         "tag", help="Remove a named tag using BeautifulSoup (remove_tag.py)."
     )
@@ -281,7 +259,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_tag)
 
-    # -- meta ---------------------------------------------------------------
     p = sub.add_parser("meta", help="Remove <meta ...> tags via regex (rmeta.py).")
     p.add_argument(
         "directory", nargs="?", default=".", help="Root directory (default: .)"
@@ -299,7 +276,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_meta)
 
-    # -- all ----------------------------------------------------------------
     p = sub.add_parser(
         "all", help="Strip every <...> tag from one file (strip_tags.py)."
     )

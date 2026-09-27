@@ -76,10 +76,6 @@ DEFAULT_DEB_EXCLUDES = frozenset(
     }
 )
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
 
 def run_cmd(
     cmd: Sequence[str],
@@ -140,11 +136,6 @@ def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[st
 def ensure_parent(path: Path) -> None:
     if path.parent and path.parent != Path("."):
         path.parent.mkdir(parents=True, exist_ok=True)
-
-
-# ---------------------------------------------------------------------------
-# check-system-bin
-# ---------------------------------------------------------------------------
 
 
 def cmd_check_system_bin(args: argparse.Namespace) -> int:
@@ -219,11 +210,6 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
         print("✅ No matching files found.")
     print("-" * 40)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# missing-files
-# ---------------------------------------------------------------------------
 
 
 def get_dpkg_installed_packages() -> list[str]:
@@ -379,7 +365,6 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
         print(f"  Total missing: {sum(len(v) for v in data.values())}")
         return 0
 
-    # audit style
     output_path = Path(args.output or (Path.home() / "pkg_audit_report.json"))
     payload = {
         "timestamp": datetime.now().isoformat(),
@@ -396,11 +381,6 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
     print(f"\nReport: {payload['summary']}")
     print(f"Saved to: {output_path}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# copy-pkg-files
-# ---------------------------------------------------------------------------
 
 
 def get_package_files(pkg: str) -> list[str]:
@@ -444,11 +424,6 @@ def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
     print(f"Copied files:  {copied}")
     print(f"Skipped:       {skipped} (missing or non-file entries)")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# orphan-libs-debian
-# ---------------------------------------------------------------------------
 
 
 def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
@@ -523,11 +498,6 @@ def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
     for pkg in orphans:
         print(pkg)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# orphan-pkgs-termux
-# ---------------------------------------------------------------------------
 
 
 def load_keep_file(path: Path) -> set[str]:
@@ -633,11 +603,6 @@ def cmd_orphan_pkgs_termux(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# list-installed-sizes
-# ---------------------------------------------------------------------------
-
-
 def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(["apt", "list", "--installed"], check=False)
@@ -678,11 +643,6 @@ def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(f"{'TOTAL':<30} {human_size(total):>20}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# make-deb
-# ---------------------------------------------------------------------------
 
 
 def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
@@ -805,11 +765,6 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# suggest-removals
-# ---------------------------------------------------------------------------
-
-
 def cmd_suggest_removals(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(
@@ -876,11 +831,6 @@ def cmd_suggest_removals(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# save-deb-names
-# ---------------------------------------------------------------------------
-
-
 def cmd_save_deb_names(args: argparse.Namespace) -> int:
     try:
         result = run_cmd(
@@ -902,11 +852,6 @@ def cmd_save_deb_names(args: argparse.Namespace) -> int:
     output_path.write_text(result.stdout, encoding="utf-8")
     print(f"Installed package names saved to '{output_path}'")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# show-big-packages
-# ---------------------------------------------------------------------------
 
 
 def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
@@ -1084,11 +1029,6 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# sort-csv
-# ---------------------------------------------------------------------------
-
-
 def cmd_sort_csv(args: argparse.Namespace) -> int:
     csv_path = Path(args.csvfile)
 
@@ -1110,11 +1050,6 @@ def cmd_sort_csv(args: argparse.Namespace) -> int:
 
     print(f"File '{csv_path}' sorted by Installed-Size and overwritten.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

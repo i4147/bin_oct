@@ -192,7 +192,6 @@ def process_file(path_str: str, remove_module_docstring: bool) -> FileResult:
         try:
             updated_module: cst.Module = wrapper.visit(transformer)
         except Exception:
-            # Fall back to a non-metadata transform if metadata access fails.
             transformer = _Transformer(remove_module_docstring)
             updated_module = module.visit(transformer)
 

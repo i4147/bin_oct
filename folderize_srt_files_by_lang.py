@@ -13,7 +13,6 @@ def detect_language(file_path: Path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Extract only the subtitle text (skip timing and sequence numbers)
         lines = content.split("\n")
         subtitle_text = "\n".join(
             line
@@ -24,8 +23,6 @@ def detect_language(file_path: Path):
         if not subtitle_text.strip():
             return None
 
-        # pycld2 needs a decent amount of text; combine into a single string
-        # and let it detect. isReliable + confidence come back in the result.
         _is_reliable, _text_bytes_found, details = cld2.detect(subtitle_text)
 
         if not details or not details[0]:
@@ -34,7 +31,6 @@ def detect_language(file_path: Path):
         # details[0] = (language_name, language_code, percent, score)
         lang_name, lang_code, _percent, _score = details[0]
 
-        # pycld2 returns "un" for unknown
         if lang_code == "un" or lang_name.lower() == "unknown":
             return None
 

@@ -47,9 +47,6 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Iterator, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party imports
-# ---------------------------------------------------------------------------
 try:
     import py7zr
 except ImportError:
@@ -70,9 +67,6 @@ try:
 except ImportError:
     keyboard = None
 
-# ---------------------------------------------------------------------------
-# Constants (all overridable via CLI where meaningful)
-# ---------------------------------------------------------------------------
 TEXT_EXT_DEFAULT: set[str] = {
     ".txt",
     ".md",
@@ -115,9 +109,6 @@ CYAN = "\x1b[5;96m"
 RED = "\x1b[91m"
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 def is_binary(path: Path, sample: int = 1024) -> bool:
     try:
         with path.open("rb") as f:
@@ -204,9 +195,6 @@ def highlight(line: str, spans: Sequence[tuple[int, int]], enabled: bool) -> str
     return "".join(parts)
 
 
-# ===========================================================================
-# Subcommand: names  (exnames.py)
-# ===========================================================================
 def _load_names(path: Path) -> list[tuple[str, re.Pattern[str]]]:
     out: list[tuple[str, re.Pattern[str]]] = []
     with path.open("r", encoding="utf-8") as f:
@@ -278,9 +266,6 @@ def cmd_names(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: fast  (fdrg.py)
-# ===========================================================================
 _pause_event: Optional[threading.Event] = None
 
 
@@ -373,9 +358,6 @@ def cmd_fast(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: find  (pfind.py)
-# ===========================================================================
 def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     needle = pattern.lower()
@@ -473,9 +455,6 @@ def cmd_find(args: argparse.Namespace) -> int:
     return 0 if total else 1
 
 
-# ===========================================================================
-# Subcommand: grep  (prg.py + pyrg.py + pyrgtxt.py)
-# ===========================================================================
 def _grep_worker(
     job: tuple[str, str, bool, bool, bool],
 ) -> tuple[str, list[tuple[int, str, list[tuple[int, int]]]]]:
@@ -585,9 +564,6 @@ def cmd_grep(args: argparse.Namespace) -> int:
     return 0 if found_any else 1
 
 
-# ===========================================================================
-# Subcommand: info  (pyfinfo.py)
-# ===========================================================================
 def _collect_stems(root: Path) -> Iterator[str]:
     stack = [root]
     while stack:
@@ -683,9 +659,6 @@ def cmd_info(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: regex  (pygrex.py)
-# ===========================================================================
 def cmd_regex(args: argparse.Namespace) -> int:
     src = Path(args.filename)
     if not src.exists():
@@ -697,9 +670,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: strings  (stringr.py)
-# ===========================================================================
 def _strings_worker(job: tuple[str, str]) -> Optional[tuple[str, str]]:
     path_str, _ = job
     path = Path(path_str)
@@ -755,9 +725,6 @@ def cmd_strings(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Argument parser
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_search.py",
@@ -766,7 +733,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # -- names --------------------------------------------------------------
     p = sub.add_parser("names", help="Search person names inside files (exnames.py)")
     p.add_argument("names_file", help="File with one name per line")
     p.add_argument("directory", nargs="?", default=".", help="Root directory")
@@ -778,7 +744,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_names)
 
-    # -- fast ---------------------------------------------------------------
     p = sub.add_parser("fast", help="Fast recursive search (fdrg.py)")
     p.add_argument("search_string")
     p.add_argument(
@@ -803,14 +768,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_fast)
 
-    # -- find ---------------------------------------------------------------
     p = sub.add_parser("find", help="Search filenames incl. archives (pfind.py)")
     p.add_argument("pattern")
     p.add_argument("directories", nargs="*", default=["."])
     p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_find)
 
-    # -- grep ---------------------------------------------------------------
     p = sub.add_parser("grep", help="ripgrep-like content search")
     p.add_argument("pattern", nargs="?")
     p.add_argument("paths", nargs="*", default=["."])
@@ -836,7 +799,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-color", action="store_true")
     p.set_defaults(func=cmd_grep)
 
-    # -- info ---------------------------------------------------------------
     p = sub.add_parser("info", help="Filename stats + similar groups (pyfinfo.py)")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument("-t", "--top", type=int, default=100)
@@ -844,12 +806,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-r", "--ratio", type=float, default=0.8)
     p.set_defaults(func=cmd_info)
 
-    # -- regex --------------------------------------------------------------
     p = sub.add_parser("regex", help="Emit regex from filename list (pygrex.py)")
     p.add_argument("filename")
     p.set_defaults(func=cmd_regex)
 
-    # -- strings ------------------------------------------------------------
     p = sub.add_parser("strings", help="Extract strings from binaries (stringr.py)")
     p.add_argument("files", nargs="*")
     p.add_argument("-o", "--output", default="all_strings.txt")

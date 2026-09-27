@@ -82,15 +82,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 log = logging.getLogger("renamekit")
 
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 def iter_paths(
     paths: Sequence[Path],
     *,
@@ -166,9 +160,6 @@ def _common_suffix(strings: Sequence[str]) -> str:
     return _common_prefix([s[::-1] for s in strings])[::-1]
 
 
-# ===========================================================================
-# lowercase subcommand
-# ===========================================================================
 def _lowercase_name(
     paths: Sequence[Path], *, recursive: bool, dry_run: bool, verbose: bool
 ) -> int:
@@ -253,9 +244,6 @@ def cmd_lowercase(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# images subcommand
-# ===========================================================================
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".gif", ".webp"}
 DIM_IN_NAME = re.compile(r"\d+[xX]\d+")
 
@@ -328,9 +316,6 @@ def cmd_images(args: argparse.Namespace) -> int:
     return 0 if failed == 0 else 1
 
 
-# ===========================================================================
-# clean-names subcommand
-# ===========================================================================
 DEFAULT_JUNK_PATTERNS = (
     r"\bOutcast\b",
     r"\bS\d{2}\b",
@@ -398,9 +383,6 @@ def cmd_clean_names(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# jscss subcommand
-# ===========================================================================
 _QUERY_ANY_RE = re.compile(r"(\.(?:js|css))([?#].*)?$", re.IGNORECASE)
 _QUERY_PARAM_RE = re.compile(r"\?[a-zA-Z0-9_-]+=[^\"'\s>]+", re.IGNORECASE)
 _JS_CSS_REF_RE = re.compile(
@@ -421,7 +403,6 @@ def _strip_query_in_html(text: str) -> str:
 def cmd_jscss(args: argparse.Namespace) -> int:
     renamed = 0
     for path in iter_paths(args.paths, recursive=True):
-        # Filename cleanup: only act on .js/.css files with junk after them.
         if path.suffix.lower() in {".js", ".css"}:
             new_name = _strip_query(path.name, args.query_style)
             if new_name != path.name:
@@ -431,7 +412,6 @@ def cmd_jscss(args: argparse.Namespace) -> int:
                 if safe_rename(path, target, dry_run=args.dry_run):
                     renamed += 1
 
-        # Content cleanup: HTML/JS files may embed query-stringed references.
         if args.also_html and path.suffix.lower() in {".html", ".htm", ".js"}:
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")
@@ -450,9 +430,6 @@ def cmd_jscss(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# suggest-names subcommand
-# ===========================================================================
 _MEANINGLESS_STEMS = {"main", "run", "test", "script", "app"}
 _STOP_WORDS = {
     "this",
@@ -607,9 +584,6 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# pnr subcommand
-# ===========================================================================
 SKIP_PARTS = {".git"}
 
 
@@ -725,9 +699,6 @@ def cmd_pnr(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def _add_paths(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths",
@@ -751,7 +722,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- lowercase --------------------------------------------------------
     lc = sub.add_parser(
         "lowercase",
         help="Lowercase names, extensions, or file content.",
@@ -788,7 +758,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Accepted for uniformity; unused by this subcommand.",
     )
 
-    # --- images -----------------------------------------------------------
     im = sub.add_parser(
         "images",
         help="Rename image files to include WxH dimensions.",
@@ -810,7 +779,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--workers", type=int, default=8, help="Worker processes (default: 8)."
     )
 
-    # --- clean-names ------------------------------------------------------
     cn = sub.add_parser(
         "clean-names",
         help="Strip common prefix/suffix and junk patterns from media files.",
@@ -830,7 +798,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cn.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
 
-    # --- jscss ------------------------------------------------------------
     js = sub.add_parser(
         "jscss",
         help="Normalize .js/.css filenames and optionally HTML content.",
@@ -851,7 +818,6 @@ def build_parser() -> argparse.ArgumentParser:
     js.add_argument("--dry-run", action="store_true", help="Preview only.")
     js.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
 
-    # --- suggest-names ----------------------------------------------------
     sn = sub.add_parser(
         "suggest-names",
         help="Suggest meaningful names for .py files from their docstrings.",
@@ -862,7 +828,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--workers", type=int, default=8, help="Worker processes (default: 8)."
     )
 
-    # --- pnr --------------------------------------------------------------
     pnr = sub.add_parser("pnr", help="Remove / replace / template-number names.")
     group = pnr.add_mutually_exclusive_group(required=True)
     group.add_argument("-r", "--remove", metavar="STR", help="Remove STR from names.")

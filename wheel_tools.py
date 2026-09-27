@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-# -*- coding: utf-8 -*-
+
 """
 wheel_tools.py
 ==============
@@ -98,10 +98,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
-
 try:
     from packaging.tags import parse_tag
     from packaging.utils import canonicalize_name
@@ -130,10 +126,6 @@ try:
 except ImportError:  # pragma: no cover
     _HAVE_RICH = False
     Console = None  # type: ignore
-
-# ===========================================================================
-# Common helpers
-# ===========================================================================
 
 
 def human_size(num_bytes: float) -> str:
@@ -217,10 +209,6 @@ def parse_metadata_version(value: str):
         return (value,)
 
 
-# ===========================================================================
-# Subcommand: check  (check_wheels.py)
-# ===========================================================================
-
 _BAD_ROOT_SUFFIXES = (".py", ".pyc", ".pyd", ".so", ".dll")
 
 
@@ -276,11 +264,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         f"to './{args.dest}/' out of {len(wheels)} total checked."
     )
     return 0
-
-
-# ===========================================================================
-# Subcommand: entry-points  (have_script.py)
-# ===========================================================================
 
 
 def wheel_has_entry_points(whl: Path) -> tuple[bool, Optional[str]]:
@@ -354,11 +337,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: pypi  (ispure.py)
-# ===========================================================================
-
-
 def _query_pypi(name: str, timeout: float) -> int:
     url = f"https://pypi.org/pypi/{name}/json"
     try:
@@ -394,11 +372,6 @@ def cmd_pypi(args: argparse.Namespace) -> int:
     for pkg in args.packages:
         rc |= _query_pypi(pkg, timeout=args.timeout)
     return rc
-
-
-# ===========================================================================
-# Subcommand: prune  (mip.py)
-# ===========================================================================
 
 
 def cmd_prune(args: argparse.Namespace) -> int:
@@ -446,10 +419,6 @@ def cmd_prune(args: argparse.Namespace) -> int:
             )
     return 0
 
-
-# ===========================================================================
-# Subcommand: strip  (strep.py)
-# ===========================================================================
 
 _SO_RE = re.compile(r"\.so(\.\d+)*$")
 
@@ -537,11 +506,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: validate  (valwheel.py)
-# ===========================================================================
-
-#: Literal regex from valwheel.py (expects 6 hyphen-separated components).
 _WHEEL_NAME_RE = re.compile(
     r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])"
     r"-([^-]+)-(\d[^-]*)-([^-]+)-([^-]+)-([^-]+)\.whl$",
@@ -615,11 +579,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
     if invalid_count == 0:
         print(f"All {len(wheels)} wheel name(s) are valid.")
     return 0
-
-
-# ===========================================================================
-# Subcommand: size  (whl_unpacked_size.py)
-# ===========================================================================
 
 
 def _wheel_unpacked_size(whl: Path) -> tuple[Path, int, Optional[str]]:
@@ -736,11 +695,6 @@ def cmd_size(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Argument parser
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wheel_tools.py",
@@ -765,7 +719,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="{check,entry-points,pypi,prune,strip,validate,size}",
     )
 
-    # -- check ----------------------------------------------------------
     p = sub.add_parser(
         "check",
         help="find wheels that dump code into site-packages root",
@@ -789,7 +742,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_check)
 
-    # -- entry-points ---------------------------------------------------
     p = sub.add_parser(
         "entry-points",
         help="find wheels that contain entry_points.txt",
@@ -812,7 +764,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_entry_points)
 
-    # -- pypi -----------------------------------------------------------
     p = sub.add_parser(
         "pypi",
         help="query PyPI for 'pure' info about packages (requires requests)",
@@ -827,7 +778,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_pypi)
 
-    # -- prune ----------------------------------------------------------
     p = sub.add_parser(
         "prune",
         help="delete wheels already installed at >= version",
@@ -845,7 +795,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_prune)
 
-    # -- strip ----------------------------------------------------------
     p = sub.add_parser(
         "strip",
         help="strip .so files (requires the 'strip' binary)",
@@ -872,7 +821,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_strip)
 
-    # -- validate -------------------------------------------------------
     p = sub.add_parser(
         "validate",
         help="validate wheel filenames (requires packaging)",
@@ -898,7 +846,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_validate)
 
-    # -- size -----------------------------------------------------------
     p = sub.add_parser(
         "size",
         help="report total unpacked size of .whl files",
@@ -962,11 +909,6 @@ python wheel_tools.py size -d ./wheels -r --json -s size
 
 """
     print(usage)
-
-
-# ===========================================================================
-# Entry point
-# ===========================================================================
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

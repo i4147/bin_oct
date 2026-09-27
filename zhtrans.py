@@ -55,12 +55,6 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
 
-# --------------------------------------------------------------------------- #
-# Constants                                                                    #
-# --------------------------------------------------------------------------- #
-
-# Matches CJK ideographs (BMP + extensions B–F) and compatibility ideographs.
-# Union of the regexes used by the original scripts.
 CHINESE_RE = re.compile(
     "[\u4e00-\u9fff"
     "\u3400-\u4dbf"
@@ -82,10 +76,6 @@ DEFAULT_EXTENSIONS = (
     ".xml",
     ".csv",
 )
-
-# --------------------------------------------------------------------------- #
-# Shared helpers                                                               #
-# --------------------------------------------------------------------------- #
 
 
 def has_chinese(text: str) -> bool:
@@ -166,11 +156,6 @@ def write_inplace(path: Path, original: Sequence[str], translations: dict) -> No
             fh.write(f"{translations.get(line, line)}\n")
 
 
-# --------------------------------------------------------------------------- #
-# Multiprocessing workers (must be top-level for pickling)                     #
-# --------------------------------------------------------------------------- #
-
-
 def _worker_chunked_chunk(task):
     chunk, retries, retry_delay, source, target = task
     text = "\n".join(chunk)
@@ -226,7 +211,6 @@ def _worker_walk_file(task):
                     out.append(line)
                     continue
 
-                # Preserve leading indentation and trailing newline/whitespace.
                 leading = line[: len(line) - len(line.lstrip())]
                 trailing = line[len(line.rstrip()) :]
                 translated = translate_with_retries(
@@ -258,11 +242,6 @@ def _worker_walk_file(task):
         stats["errors"] += 1
 
     return stats
-
-
-# --------------------------------------------------------------------------- #
-# Subcommand: chunked  (was chintrans.py)                                      #
-# --------------------------------------------------------------------------- #
 
 
 def cmd_chunked(args: argparse.Namespace) -> int:
@@ -345,11 +324,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Subcommand: line  (was transchin.py)                                         #
-# --------------------------------------------------------------------------- #
-
-
 def cmd_line(args: argparse.Namespace) -> int:
     input_path = Path(args.input_file.strip())
     if not input_path.exists():
@@ -407,11 +381,6 @@ def cmd_line(args: argparse.Namespace) -> int:
         logger.error("Error updating input file: {}", exc)
         return 1
     return 0
-
-
-# --------------------------------------------------------------------------- #
-# Subcommand: walk  (was dtransline_chinese.py)                                #
-# --------------------------------------------------------------------------- #
 
 
 def _collect_walk_files(
@@ -482,11 +451,6 @@ def cmd_walk(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Subcommand: whole  (was tchin.py)                                            #
-# --------------------------------------------------------------------------- #
-
-
 def _translate_long_text(
     text: str, translator: GoogleTranslator, chunk_size: int
 ) -> str:
@@ -510,7 +474,6 @@ def _translate_python_source(
     for line in lines:
         stripped = line.strip()
 
-        # Start of a triple-quoted string at the beginning of a line.
         if not in_doc and stripped.startswith(('"""', "'''")):
             in_doc = True
             delim = stripped[:3]
@@ -555,7 +518,6 @@ def cmd_whole(args: argparse.Namespace) -> int:
     text = input_path.read_text(encoding="utf-8")
     suffix = input_path.suffix.lower()
 
-    # Language detection / selection
     source_lang = args.lang
     if source_lang == "auto":
         try:
@@ -566,7 +528,6 @@ def cmd_whole(args: argparse.Namespace) -> int:
 
     translator = build_translator(source_lang, args.target)
 
-    # Decide whether to apply .py-aware handling.
     if args.code_mode == "auto":
         use_code_mode = suffix == ".py"
     else:
@@ -587,11 +548,6 @@ def cmd_whole(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# Argument parser                                                              #
-# --------------------------------------------------------------------------- #
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_translate.py",
@@ -609,7 +565,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- chunked -----------------------------------------------------------
     p = sub.add_parser(
         "chunked",
         help="In-place translate; batch lines into <=N-char chunks (was chintrans.py).",
@@ -637,7 +592,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_chunked)
 
-    # ---- line --------------------------------------------------------------
     p = sub.add_parser(
         "line",
         help="In-place translate one line per API call (was transchin.py).",
@@ -659,7 +613,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_line)
 
-    # ---- walk --------------------------------------------------------------
     p = sub.add_parser(
         "walk",
         help="Walk files/directories and translate Chinese lines in place "
@@ -714,7 +667,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_walk)
 
-    # ---- whole -------------------------------------------------------------
     p = sub.add_parser(
         "whole",
         help="Translate an entire file to <stem>_eng<suffix> (was tchin.py).",
@@ -745,11 +697,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_whole)
 
     return parser
-
-
-# --------------------------------------------------------------------------- #
-# Entry point                                                                  #
-# --------------------------------------------------------------------------- #
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

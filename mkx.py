@@ -59,10 +59,10 @@ def chmod_x(p):
 
 
 def should_execute(p):
-    # suffix-mode rule: whitelisted suffix (or none) + shebang
+
     if has_shebang(p):
         return True
-    # heuristic-mode rules
+
     if p.parent.name in BIN_DIRS:
         return True
     if SO_RE.match(p.name):

@@ -57,10 +57,6 @@ try:
 except ImportError:  # pragma: no cover - optional progress display
     tqdm = None
 
-# ---------------------------------------------------------------------------
-# Shared constants
-# ---------------------------------------------------------------------------
-
 DEFAULT_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".tif"}
 DEFAULT_PNG_EXTS = {".png"}
 DEFAULT_EMBED_EXTS = {".css", ".html", ".htm", ".js"}
@@ -99,10 +95,6 @@ EMBED_KIND_MIME = {
 EMBED_DATA_RE = re.compile(
     r"data:(?P<mime>image/(?:png|jpe?g|webp|svg\+xml)|text/css|(?:application|text)/javascript);base64,(?P<data>[A-Za-z0-9+/=]+)"
 )
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def human_size(n: int) -> str:
@@ -231,11 +223,6 @@ def _import_pil():
         raise SystemExit("Pillow is required for this command") from exc
 
 
-# ---------------------------------------------------------------------------
-# auto-enhance
-# ---------------------------------------------------------------------------
-
-
 def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
     path, verbose = task
     cv2, np = _import_cv2()
@@ -305,11 +292,6 @@ def cmd_auto_enhance(args: argparse.Namespace) -> int:
     ok = sum(1 for r in results if r is True)
     print(f"[FINISHED] Done. Success: {ok}/{len(files)}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# downscale
-# ---------------------------------------------------------------------------
 
 
 def _downscale_one(task: tuple[Path, float]) -> tuple[Path, bool, str]:
@@ -390,11 +372,6 @@ def cmd_downscale(args: argparse.Namespace) -> int:
     print("\n" + "=" * 40)
     print("PROCESS COMPLETE - Images updated in-place")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# embed-optimize
-# ---------------------------------------------------------------------------
 
 
 def _run_embed_tool(cmd: list[str], name: str, timeout: int) -> bool:
@@ -661,11 +638,6 @@ def cmd_embed_optimize(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# optimize-png
-# ---------------------------------------------------------------------------
-
-
 def _optimize_png_one(
     task: tuple[Path, str, str, str, bool],
 ) -> tuple[Path, bool, str | int]:
@@ -752,11 +724,6 @@ def cmd_optimize_png(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# pil-enhance
-# ---------------------------------------------------------------------------
-
-
 def _pil_enhance_one(
     task: tuple[Path, float, float, float, float],
 ) -> bool:
@@ -796,11 +763,6 @@ def cmd_pil_enhance(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# resize
-# ---------------------------------------------------------------------------
-
-
 def _resize_one(task: tuple[Path, float, int]) -> bool:
     path, scale, quality = task
     Image, _ = _import_pil()
@@ -833,11 +795,6 @@ def cmd_resize(args: argparse.Namespace) -> int:
     parallel_map(_resize_one, tasks, workers=workers, desc="Resizing")
     print("All images processed!")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# strip-exif
-# ---------------------------------------------------------------------------
 
 
 def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
@@ -992,11 +949,6 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# upscale
-# ---------------------------------------------------------------------------
-
-
 def _upscale_one(path: Path) -> bool:
     cv2, _ = _import_cv2()
 
@@ -1047,11 +999,6 @@ def cmd_upscale(args: argparse.Namespace) -> int:
         print(f"{i}/{len(files)}")
         _upscale_one(f)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

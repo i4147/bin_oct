@@ -34,9 +34,6 @@ SHEBANG_PREFIXES: tuple[bytes, ...] = (
     b"#!/bin/zsh",
 )
 
-# Matches 2+ consecutive newline-only "blank" lines (allowing trailing
-# whitespace on otherwise-empty lines) and collapses them to a single blank
-# line. Works on bytes since we operate on raw file content.
 _BLANK_RUN_RE = re.compile(rb"(?:[ \t]*\n){3,}")
 
 

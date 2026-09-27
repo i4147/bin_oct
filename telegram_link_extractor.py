@@ -27,7 +27,6 @@ from typing import Iterator
 from dotenv import load_dotenv
 from telethon import TelegramClient
 
-# --- Regex Pattern Presets ---
 PATTERN_PRESETS: dict[str, str] = {
     "coc": r"https://link\.clashofclans\.com/[a-zA-Z0-9\?\=\&_]+",
     "general": r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
@@ -48,7 +47,7 @@ def extract_matches(text: str, pattern: str) -> Iterator[str]:
 
 
 async def run_extractor(args: argparse.Namespace) -> None:
-    # Resolve API credentials
+
     env_file = Path(args.env).expanduser()
     env_api_id, env_api_hash = load_credentials(env_file)
 
@@ -62,10 +61,8 @@ async def run_extractor(args: argparse.Namespace) -> None:
         )
         sys.exit(1)
 
-    # Determine Regex Pattern
     pattern = args.pattern if args.pattern else PATTERN_PRESETS[args.pattern_preset]
 
-    # Initialize Telegram Client
     client = TelegramClient(args.session, api_id, api_hash)
     if args.phone:
         await client.start(phone=args.phone)
@@ -77,7 +74,6 @@ async def run_extractor(args: argparse.Namespace) -> None:
         channel_name = getattr(entity, "title", args.channel)
         print(f"Searching for links in '{channel_name}'...")
 
-        # Build kwargs for iter_messages dynamically
         iter_kwargs: dict = {}
         if args.limit is not None:
             iter_kwargs["limit"] = args.limit
@@ -193,7 +189,6 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    # Default fallback for t.me1.py pattern if not explicitly chosen
     asyncio.run(run_extractor(args))
 
 

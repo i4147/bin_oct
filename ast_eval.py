@@ -32,19 +32,11 @@ from typing import Any, Final
 from dh import get_pyfiles
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Module-level constants
-# ---------------------------------------------------------------------------
-
 POOL_SIZE: Final[int] = 8
 """Fixed number of worker processes used for concurrent file processing."""
 
 ERROR_DIR_NAME: Final[str] = "error"
 """Name of the subdirectory where invalid Python files are copied."""
-
-# ---------------------------------------------------------------------------
-# Worker function
-# ---------------------------------------------------------------------------
 
 
 def process_file(args: tuple[Path, int, int, bool]) -> None:
@@ -84,11 +76,6 @@ def process_file(args: tuple[Path, int, int, bool]) -> None:
             logger.error(f"  ❌ Failed to move {path}: {move_error}")
 
 
-# ---------------------------------------------------------------------------
-# File discovery
-# ---------------------------------------------------------------------------
-
-
 def get_files_to_process(paths: list[str]) -> list[Path]:
     files: list[Path] = []
     if paths:
@@ -113,11 +100,6 @@ def get_files_to_process(paths: list[str]) -> list[Path]:
     return unique_files
 
 
-# ---------------------------------------------------------------------------
-# Concurrency driver
-# ---------------------------------------------------------------------------
-
-
 def process_files(files: list[Path], dry_run: bool = False) -> None:
     total: int = len(files)
     if total == 0:
@@ -136,11 +118,6 @@ def process_files(files: list[Path], dry_run: bool = False) -> None:
                 result.get()
             except Exception as e:  # noqa: BLE001
                 logger.error(f"  ❌ Unexpected error in worker: {e}")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -15,10 +15,6 @@ import os
 from pathlib import Path
 from typing import Iterator, Optional, Tuple
 
-# --------------------------------------------------------------------------
-# Shared helpers (duplicated from the original compressed script)
-# --------------------------------------------------------------------------
-
 
 def format_size(num_bytes: int) -> str:
     value = float(num_bytes)
@@ -28,13 +24,9 @@ def format_size(num_bytes: int) -> str:
                 return f"{int(value)}B"
             return f"{value:.1f}{unit}"
         value /= 1024
-    # Unreachable: the loop always returns on the last iteration.
 
 
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
-    # Stack of (path, top_level_name) pairs. top_level_name is None for
-    # the root itself; for subdirectories it's the name of the first-level
-    # subdirectory under root that contains them.
 
     stack: list[tuple[str, Optional[str]]] = [(str(root), None)]
 
@@ -50,23 +42,12 @@ def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
                     if entry.is_file(follow_symlinks=False):
                         yield entry, top_level
                     elif entry.is_dir(follow_symlinks=False):
-                        # Propagate top_level: if we're at the root, the first
-                        # subdirectory's own name becomes the top_level for its
-                        # contents; deeper subdirectories keep the same top_level.
-
                         child_top_level = (
                             top_level if top_level is not None else entry.name
                         )
                         stack.append((entry.path, child_top_level))
         except OSError:
-            # Unreadable directory (permissions, vanished mid-scan, etc.):
-            # skip it silently, matching the original behavior.
             continue
-
-
-# --------------------------------------------------------------------------
-# Argument parsing
-# --------------------------------------------------------------------------
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
@@ -80,11 +61,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         help="show total size per directory",
     )
     return parser.parse_args(argv)
-
-
-# --------------------------------------------------------------------------
-# Output formatting
-# --------------------------------------------------------------------------
 
 
 def print_directory_listing(
@@ -110,17 +86,9 @@ def print_directory_listing(
     print(total_line)
 
 
-# --------------------------------------------------------------------------
-# Main
-# --------------------------------------------------------------------------
-
-
 def main(argv: Optional[list[str]] = None) -> None:
     args = parse_args(argv)
     root = Path.cwd()
-
-    # Collect top-level directory names (non-recursive scandir of the root,
-    # skipping symlinks and .git, matching the original behavior).
 
     dir_names: list[str] = []
     try:
@@ -135,11 +103,6 @@ def main(argv: Optional[list[str]] = None) -> None:
     except OSError:
         pass
     dir_names.sort()
-
-    # If sizes are requested, walk all files once and accumulate sizes per
-    # top-level directory. This is a separate pass from the name collection
-    # above (the original script did both in one pass, but here we only
-    # need sizes when -s is given, so we skip the walk entirely otherwise).
 
     dir_sizes: dict[str, int] = {}
     if args.size:

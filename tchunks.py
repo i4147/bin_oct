@@ -43,10 +43,6 @@ from tenacity import (
     wait_exponential,
 )
 
-# --------------------------------------------------------------------------
-# Custom exceptions
-# --------------------------------------------------------------------------
-
 
 class TranslationFailedError(Exception):
     pass
@@ -60,18 +56,6 @@ class NoBackendAvailableError(Exception):
     pass
 
 
-# --------------------------------------------------------------------------
-# Language code mapping
-# --------------------------------------------------------------------------
-# Each backend has its own expected language-code dialect (some want
-# ISO 639-1 lowercase, some want upper-case, DeepL wants specific
-# regional variants for a few languages). We normalize user input (assumed
-# ISO 639-1, e.g. "en", "fr") to whatever each backend expects, rather than
-# passing the raw CLI value straight through.
-
-# DeepL requires upper-case target codes, and a few targets need a region
-# suffix (e.g. "EN-US" vs "EN-GB"). We default ambiguous ones to a sane
-# variant; users needing a specific region can extend this table.
 _DEEPL_TARGET_OVERRIDES: dict[str, str] = {
     "en": "EN-US",
     "pt": "PT-PT",
@@ -106,21 +90,6 @@ def _lang_for_pygoogletranslation(code: str, *, is_target: bool) -> str:
     return code.strip().lower()
 
 
-# --------------------------------------------------------------------------
-# Backend factories
-# --------------------------------------------------------------------------
-# Each factory takes (source, target) in raw user-provided form and returns
-# a callable `translate(text: str) -> str`. The callable is expected to
-# raise on failure; retry/backoff is applied by the caller via tenacity, not
-# inside the factory itself, so factories stay simple and backend-agnostic.
-#
-# Clients are constructed fresh inside the returned callable (per call) for
-# stateless/cheap-to-construct backends, which sidesteps thread-safety
-# questions entirely. The two backends known to wrap a persistent,
-# undocumented-thread-safety HTTP session (googletrans, pygoogletranslation)
-# instead build one client at factory time and serialize access with a lock.
-
-
 def _make_deepl(source: str, target: str) -> Callable[[str], str]:
     import deepl  # type: ignore[import-untyped]
 
@@ -145,8 +114,7 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
     tgt = _lang_for_deep_translator(target, is_target=True)
 
     def translate(text: str) -> str:
-        # Build a fresh translator per call: GoogleTranslator is cheap to
-        # construct and this avoids any doubt about thread-safety.
+
         client = GoogleTranslator(source=src, target=tgt)
         result = client.translate(text)
         if result is None:
@@ -189,9 +157,6 @@ def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
     return translate
 
 
-# googletrans's Translator wraps an httpx/requests-like session whose
-# thread-safety is not documented/guaranteed, so all calls through it are
-# serialized with this lock rather than trusting concurrent access.
 _googletrans_lock = threading.Lock()
 
 
@@ -212,7 +177,6 @@ def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
     return translate
 
 
-# Same thread-safety caveat as googletrans; this is a fork of it.
 _pygoogletranslation_lock = threading.Lock()
 
 
@@ -233,12 +197,6 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
     return translate
 
 
-# Registry mapping CLI-facing backend names to their factory functions.
-# Tier 3 cloud backends (boto3/baidu/alibaba/watson/azure) are intentionally
-# not wired in here: each requires its own account setup, credential
-# format, and API shape that a single generic factory can't cover safely
-# without guessing at credentials env-var names. Add a `_make_<name>`
-# factory following the pattern above and register it below to enable one.
 BACKEND_FACTORIES: dict[str, Callable[[str, str], Callable[[str], str]]] = {
     "deepl": _make_deepl,
     "deep_translator": _make_deep_translator,
@@ -248,9 +206,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Callable[[str], str]]] = {
     "pygoogletranslation": _make_pygoogletranslation,
 }
 
-# Order used when --backend is not given: prefer deepl only if an API key
-# is present (checked at selection time), then fall back through
-# progressively more fragile free backends.
 FALLBACK_ORDER: tuple[str, ...] = (
     "deepl",
     "deep_translator",
@@ -295,11 +250,6 @@ def select_backend(
     )
 
 
-# --------------------------------------------------------------------------
-# Chunking
-# --------------------------------------------------------------------------
-
-
 def chunk_text(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
@@ -311,35 +261,24 @@ def chunk_text(text: str, chunk_size: int) -> list[str]:
     while pos < length:
         end = min(pos + chunk_size, length)
         if end < length:
-            # Not at the end of the text: try to avoid splitting mid-word
-            # by backing up to the last whitespace character in [pos, end).
             split_at = text.rfind(" ", pos, end)
-            # Also consider newlines/tabs as valid break points.
+
             for ws_char in ("\n", "\t"):
                 candidate = text.rfind(ws_char, pos, end)
                 if candidate > split_at:
                     split_at = candidate
             if split_at > pos:
                 end = split_at
-            # else: no whitespace found in the window; hard-cut at chunk_size.
 
         piece = text[pos:end].strip()
         if piece:
             chunks.append(piece)
         pos = end
 
-        # Skip over the whitespace we just split on so the next chunk
-        # doesn't start with it (strip() above already handles this for
-        # the piece itself, but pos must also advance past it).
         while pos < length and text[pos] in " \t\n\r":
             pos += 1
 
     return chunks
-
-
-# --------------------------------------------------------------------------
-# Identity-translation detection
-# --------------------------------------------------------------------------
 
 
 def _normalize_for_comparison(s: str) -> str:
@@ -354,11 +293,6 @@ def looks_untranslated(
     return _normalize_for_comparison(source_text) == _normalize_for_comparison(
         translated_text
     )
-
-
-# --------------------------------------------------------------------------
-# Retry wrapper
-# --------------------------------------------------------------------------
 
 
 def translate_with_retry(
@@ -397,11 +331,6 @@ def translate_with_retry(
     return _attempt()
 
 
-# --------------------------------------------------------------------------
-# Atomic JSON persistence
-# --------------------------------------------------------------------------
-
-
 def load_existing_results(output_path: Path) -> dict[str, str]:
     if not output_path.exists():
         return {}
@@ -427,8 +356,6 @@ def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
             os.fsync(f.fileno())
         tmp_path.replace(output_path)
     finally:
-        # If replace() succeeded, tmp_path no longer exists. If it failed,
-        # clean up the leftover temp file so it doesn't linger.
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
 
@@ -438,24 +365,12 @@ def append_failed_index(failed_path: Path, index: int) -> None:
         f.write(f"{index}\n")
 
 
-# --------------------------------------------------------------------------
-# Graceful shutdown handling
-# --------------------------------------------------------------------------
-
-# Set by the SIGINT handler; checked between chunk submissions/completions
-# so Ctrl+C is honored promptly without needing to interrupt an in-flight
-# network call.
 _shutdown_requested = threading.Event()
 
 
 def _handle_sigint(signum: int, frame: FrameType | None) -> None:
     logger.info("Ctrl+C received, finishing in-flight chunks and saving...")
     _shutdown_requested.set()
-
-
-# --------------------------------------------------------------------------
-# Main translation loop
-# --------------------------------------------------------------------------
 
 
 def run_translation(
@@ -496,8 +411,6 @@ def run_translation(
             )
             future_to_index[future] = idx
 
-        # as_completed-style draining, but written manually so we can check
-        # _shutdown_requested between results rather than only at the end.
         remaining = set(future_to_index)
         while remaining:
             if _shutdown_requested.is_set():
@@ -514,7 +427,6 @@ def run_translation(
                     done_now.add(fut)
 
             if not done_now:
-                # Avoid a busy-spin; short sleep between polling passes.
                 time.sleep(0.1)
                 continue
 
@@ -538,16 +450,9 @@ def run_translation(
                         f"Progress saved ({len(results)}/{len(chunks)} chunks)"
                     )
 
-    # Final save covers both a clean finish and a shutdown-triggered break,
-    # so no completed work is ever lost.
     save_results_atomic(output_path, results)
     logger.info(f"Saved {len(results)}/{len(chunks)} chunk(s) to {output_path}")
     return results
-
-
-# --------------------------------------------------------------------------
-# Logging setup
-# --------------------------------------------------------------------------
 
 
 def configure_logging(log_file: Path) -> None:
@@ -562,11 +467,6 @@ def configure_logging(log_file: Path) -> None:
         backtrace=True,
         diagnose=False,
     )
-
-
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -629,8 +529,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
-    # Hard memory constraint from the spec: never exceed 4 worker threads
-    # regardless of what's requested on the CLI.
     workers = max(1, min(args.workers, 4))
 
     log_file = args.output.with_suffix(".log")

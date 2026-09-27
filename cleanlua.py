@@ -29,7 +29,7 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         node: Node = stack.pop()
         if node.type == "comment":
             text: bytes = content[node.start_byte : node.end_byte]
-            # Preserve LDoc / LuaLS annotation comments starting with `---`
+
             if not text.startswith(b"---"):
                 ranges.append((node.start_byte, node.end_byte))
             continue
@@ -108,7 +108,6 @@ def main() -> int:
     files_changed: int = 0
     errors: int = 0
 
-    # Fixed 8 workers pool
     tasks: list[tuple[Path, Path]] = [(p, base) for p in files]
     with mp.Pool(processes=8) as pool:
         for rel, count, err in pool.imap(process_file_worker, tasks):

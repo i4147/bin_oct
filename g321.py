@@ -21,10 +21,6 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-# ===========================================================================
-# Environment loading
-# ===========================================================================
-
 
 def _load_env_file(path: Path | None = None) -> None:
     path = path or (Path.home() / ".env")
@@ -34,7 +30,7 @@ def _load_env_file(path: Path | None = None) -> None:
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
-        # Strip optional "export " prefix.
+
         if line.startswith("export "):
             line = line[len("export ") :].lstrip()
         key, _, val = line.partition("=")
@@ -44,18 +40,11 @@ def _load_env_file(path: Path | None = None) -> None:
             os.environ.setdefault(key, val)
 
 
-# ===========================================================================
-# Backends
-# ===========================================================================
-
-
 class SubprocessBackend:
     name = "subprocess"
 
     def __init__(self) -> None:
         pass
-
-    # -- low-level runner --------------------------------------------------
 
     def _run(
         self,
@@ -70,8 +59,6 @@ class SubprocessBackend:
             check=check,
             env=env,
         )
-
-    # -- read operations ---------------------------------------------------
 
     def is_repo(self) -> bool:
         try:
@@ -91,8 +78,6 @@ class SubprocessBackend:
 
     def commit_message(self, commit: str) -> str:
         return self._run(["log", "-1", "--format=%B", commit]).stdout
-
-    # -- write operations --------------------------------------------------
 
     def rebase_interactive(self, count: int, todo_content: str) -> tuple[bool, str]:
         with tempfile.NamedTemporaryFile(
@@ -124,7 +109,7 @@ class SubprocessBackend:
             Path(editor_path).unlink(missing_ok=True)
 
     def amend_date(self, date_str: str) -> tuple[bool, str]:
-        # --date takes the date as its own argument; no `-m` in between.
+
         result = self._run(
             ["commit", "--amend", "--no-edit", "--date", date_str],
             check=False,
@@ -154,7 +139,6 @@ class SubprocessBackend:
 
         stderr = result.stderr
         if token:
-            # Scrub the token from any error output git might echo back.
             stderr = stderr.replace(token, "***")
         return result.returncode == 0, stderr
 
@@ -163,9 +147,6 @@ class SubprocessBackend:
             self._run(["rebase", "--abort"], check=False)
         except Exception:
             pass
-
-
-# --- GitPython ------------------------------------------------------------
 
 
 class GitPythonBackend(SubprocessBackend):
@@ -193,9 +174,6 @@ class GitPythonBackend(SubprocessBackend):
 
     def commit_message(self, commit: str) -> str:
         return self._repo.commit(commit).message
-
-
-# --- libgit2 (pygit2) -----------------------------------------------------
 
 
 class Libgit2Backend(SubprocessBackend):
@@ -230,9 +208,6 @@ class Libgit2Backend(SubprocessBackend):
         return c.message
 
 
-# --- dulwich --------------------------------------------------------------
-
-
 class DulwichBackend(SubprocessBackend):
     name = "dulwich"
 
@@ -262,9 +237,6 @@ class DulwichBackend(SubprocessBackend):
         return c.message.decode(errors="replace")
 
 
-# --- PyGithub (remote-only) ----------------------------------------------
-
-
 class PyGithubBackend(SubprocessBackend):
     name = "pygithub"
 
@@ -273,10 +245,7 @@ class PyGithubBackend(SubprocessBackend):
             import github  # type: ignore[import-not-found]  # noqa: F401
         except ImportError as exc:
             raise RuntimeError("PyGithub not installed") from exc
-        # Remote-API-only; falls back to subprocess silently.
 
-
-# --- registry & factory ---------------------------------------------------
 
 _BACKEND_REGISTRY: dict[str, type[SubprocessBackend]] = {
     "subprocess": SubprocessBackend,
@@ -293,7 +262,6 @@ def build_backend(name: str) -> SubprocessBackend:
     if norm == "subprocess":
         return SubprocessBackend()
 
-    # Not-a-backend / typo handling.
     if norm == "typer":
         norm = "subprocess"
     if norm == "dulwitch":
@@ -311,11 +279,6 @@ def build_backend(name: str) -> SubprocessBackend:
             file=sys.stderr,
         )
         return SubprocessBackend()
-
-
-# ===========================================================================
-# Core operation
-# ===========================================================================
 
 
 def squash_commits(backend: SubprocessBackend, count: int) -> bool:
@@ -338,8 +301,6 @@ def squash_commits(backend: SubprocessBackend, count: int) -> bool:
         )
         return False
 
-    # Build the interactive rebase todo list, oldest -> newest.
-    # First line is `pick`, every following line is `squash`.
     todo: list[str] = []
     for i in range(count):
         h = backend.rev_parse(f"HEAD~{count - 1 - i}")
@@ -354,14 +315,12 @@ def squash_commits(backend: SubprocessBackend, count: int) -> bool:
         backend.abort_rebase()
         return False
 
-    # Stamp the squashed commit's author date with "now" (UTC).
     formatted = datetime.now(timezone.utc).strftime("%a,%d%b%Y%H:%M:%S%z")
     ok, err = backend.amend_date(formatted)
     if not ok:
         print(f"error: failed to amend commit date: {err}", file=sys.stderr)
         return False
 
-    # Force-push with lease (uses GITHUB_TOKEN if present).
     ok, err = backend.push_force_with_lease()
     if not ok:
         print(f"error: push failed: {err}", file=sys.stderr)
@@ -370,14 +329,8 @@ def squash_commits(backend: SubprocessBackend, count: int) -> bool:
     return True
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def main(argv: list[str] | None = None) -> int:
-    # Load GITHUB_TOKEN (and anything else) from ~/.env before we do
-    # anything that might push.
+
     _load_env_file()
 
     parser = argparse.ArgumentParser(

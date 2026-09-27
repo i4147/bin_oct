@@ -46,10 +46,6 @@ try:
 except ImportError:
     HAS_BROTLI = False
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 SUPPORTED_FORMATS = frozenset({"ttf", "otf", "woff", "woff2"})
 
 SFNT_VERSIONS = {
@@ -67,10 +63,6 @@ DEFAULT_WORKERS = 8
 
 CFF_TABLES = frozenset({"CFF ", "CFF2"})
 TRUETYPE_TABLE = "glyf"
-
-# ---------------------------------------------------------------------------
-# Result model
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -92,11 +84,6 @@ class ConversionResult:
     @property
     def failed(self) -> bool:
         return not self.success and not self.skipped
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def detect_format(path: Path) -> Optional[str]:
@@ -123,11 +110,6 @@ def _outline_kind(font: TTFont) -> str:
     return "unknown"
 
 
-# ---------------------------------------------------------------------------
-# Conversion
-# ---------------------------------------------------------------------------
-
-
 def convert_font(
     input_path: Path,
     output_format: str,
@@ -148,7 +130,6 @@ def convert_font(
         result.input_format = input_format
         result.input_size = input_path.stat().st_size
 
-        # Already target format: skip.
         if input_format == output_format:
             result.skipped = True
             result.skipped_reason = f"already .{output_format}"
@@ -163,7 +144,6 @@ def convert_font(
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # lazy=True avoids loading unnecessary data; recalc flags preserve original.
         font = TTFont(
             str(input_path),
             lazy=True,
@@ -175,11 +155,9 @@ def convert_font(
             kind = _outline_kind(font)
             warning: Optional[str] = None
 
-            # WOFF / WOFF2 are wrappers: set flavor only.
             if output_format in FLAVORS:
                 font.flavor = FLAVORS[output_format]
 
-            # TTF / OTF are sfnt containers: set flavor None and sfntVersion.
             else:
                 font.flavor = None
 
@@ -254,7 +232,6 @@ def convert_font(
             result.success = True
             result.warning = warning
 
-            # Remove original only after a successful save and non-empty output.
             if (
                 remove_original
                 and input_path.resolve() != output_path.resolve()
@@ -277,7 +254,6 @@ def convert_font(
     except Exception as exc:
         result.error = str(exc)
 
-        # Remove a partially-written new output, but never delete a pre-existing file.
         if (
             result.output is not None
             and not output_existed_before
@@ -291,11 +267,6 @@ def convert_font(
         result.time = time.perf_counter() - start
 
     return result
-
-
-# ---------------------------------------------------------------------------
-# File discovery
-# ---------------------------------------------------------------------------
 
 
 def find_font_files(paths: Sequence[Path]) -> list[Path]:
@@ -316,7 +287,6 @@ def find_font_files(paths: Sequence[Path]) -> list[Path]:
         else:
             logger.warning("path not found: {}", path)
 
-    # Deduplicate by resolved path while preserving order.
     seen = set()
     unique: list[Path] = []
     for f in files:
@@ -326,11 +296,6 @@ def find_font_files(paths: Sequence[Path]) -> list[Path]:
             unique.append(f)
 
     return unique
-
-
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
 
 
 def print_file_stats(result: ConversionResult) -> None:
@@ -398,11 +363,6 @@ def print_summary(results: Sequence[ConversionResult]) -> None:
             print(f"  Avg per file    : {total_time / total:.3f}s")
 
     print("=" * 40)
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -493,11 +453,6 @@ Examples:
     return parser.parse_args(argv)
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
 
@@ -569,13 +524,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     all_results: list[ConversionResult] = []
 
-    # Single file: run in-process to keep output simple and avoid pool overhead.
     if len(worker_args) == 1:
         result = convert_font(*worker_args[0])
         all_results.append(result)
         print_file_stats(result)
 
-    # Multiple files: use a process pool.
     else:
         workers = max(1, min(args.workers, len(worker_args)))
         pool = Pool(processes=workers)
@@ -597,7 +550,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 pool.terminate()
                 pool.join()
 
-                # Collect any already-finished results before exiting.
                 for ar in async_results:
                     if ar.ready():
                         try:

@@ -41,10 +41,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-# ===========================================================================
-# Common helpers
-# ===========================================================================
-
 
 def human_size(n: int) -> str:
     if n < 0:
@@ -111,11 +107,6 @@ def unique_path(p: Path) -> Path:
 
 def _safe_folder_name(name: str) -> str:
     return "".join(c for c in name if c not in '<>:"/\\|?*')
-
-
-# ===========================================================================
-# Analysis: info  (dirinfo.py)
-# ===========================================================================
 
 
 def cmd_info(args: argparse.Namespace) -> int:
@@ -204,11 +195,6 @@ def cmd_info(args: argparse.Namespace) -> int:
         finally:
             plt.close(fig)
     return 0
-
-
-# ===========================================================================
-# Analysis: subdirs  (dirinfo2.py + visdir.py)
-# ===========================================================================
 
 
 def cmd_subdirs(args: argparse.Namespace) -> int:
@@ -302,11 +288,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Analysis: list  (pddd.py)
-# ===========================================================================
-
-
 def cmd_list(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -335,11 +316,6 @@ def cmd_list(args: argparse.Namespace) -> int:
 
     print(f"total size : \x1b[5;94m{human_size(total)}\x1b[0m")
     return 0
-
-
-# ===========================================================================
-# Analysis: tree  (pytree.py)
-# ===========================================================================
 
 
 def cmd_tree(args: argparse.Namespace) -> int:
@@ -385,11 +361,6 @@ def cmd_tree(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Folderize: split-range  (foldesiz.py)
-# ===========================================================================
-
-
 def cmd_split_range(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -413,7 +384,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
 
     files.sort(key=lambda x: x[1])
 
-    # -- Determine number of folders ------------------------------------------
     if args.dirs and args.dirs > 0:
         n_dirs = args.dirs
     else:
@@ -425,11 +395,9 @@ def cmd_split_range(args: argparse.Namespace) -> int:
             if span <= 0:
                 n_dirs = 1
             else:
-                # Original: 100 buckets over the span, clamped to file count.
                 n_dirs = max(1, min(100, len(sizes)))
     print(f"{n_dirs} dirs will be created")
 
-    # -- Compute size-range buckets ------------------------------------------
     all_sizes = sorted(s for _, s in files)
     buckets: list[tuple[int, int, str]] = []
     per = len(all_sizes) // n_dirs
@@ -446,7 +414,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
                 (root / name).mkdir(exist_ok=True, parents=True)
         idx = end
 
-    # -- Move files into their matching bucket -------------------------------
     moved = 0
     for p, sz in files:
         matched = False
@@ -470,11 +437,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Folderize: split-count  (foldesize.py)
-# ===========================================================================
-
-# Files-per-folder thresholds from the original foldesize.py `a()` helper.
 _COUNT_THRESHOLDS: tuple[tuple[int, int], ...] = (
     (100, 10),
     (500, 25),
@@ -516,7 +478,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
 
     files.sort(key=lambda f: f["size"])
 
-    # -- Partition ------------------------------------------------------------
     if args.max_mb:
         max_bytes = int(args.max_mb * 1024 * 1024)
         chunks: list[list[dict]] = []
@@ -539,7 +500,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
         n_dirs = math.ceil(len(files) / per_folder) if per_folder else 1
         chunks = [files[i * per_folder : (i + 1) * per_folder] for i in range(n_dirs)]
 
-    # -- Create + move --------------------------------------------------------
     for i, chunk in enumerate(chunks, 1):
         if not chunk:
             continue
@@ -573,11 +533,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Folderize: split-greedy  (foldsize.py)
-# ===========================================================================
-
-
 def cmd_split_greedy(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -607,7 +562,6 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
 
     sorted_files = sorted(files, key=lambda p: sizes_by_path[p], reverse=True)
 
-    # Greedy allocation ------------------------------------------------------
     bins: list[dict] = [{"files": [], "size": 0} for _ in range(n_dirs)]
     for f in sorted_files:
         sz = sizes_by_path[f]
@@ -615,7 +569,6 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
         bins[i]["files"].append(f)
         bins[i]["size"] += sz
 
-    # Create directories -----------------------------------------------------
     existing = {p.name for p in root.iterdir() if p.is_dir()}
     created: list[tuple[str, int, int]] = []
     for b in bins:
@@ -655,18 +608,12 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Folderize: split-even  (foldsize2.py)
-# ===========================================================================
-
-
 def cmd_split_even(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
 
-    # NOTE: original used glob('*') — non-recursive.
     files = iter_files(
         root,
         recursive=False,
@@ -709,7 +656,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
         print(f"Created dir '{name}' for files [{start},{end})")
         idx = end
 
-    # Move files into their assigned directories -----------------------------
     for name, start, end in plan:
         target = root / name
         for i in range(start, min(end, n)):
@@ -734,11 +680,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dir_tools.py",
@@ -759,7 +700,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- info --------------------------------------------------------------
     p = sub.add_parser(
         "info", help="Directory report + optional bar chart by extension"
     )
@@ -776,7 +716,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_info)
 
-    # ---- subdirs -----------------------------------------------------------
     p = sub.add_parser("subdirs", help="Chart top-level directory size distribution")
     p.add_argument(
         "-d", "--directory", default=".", help="Directory to scan (default: .)"
@@ -808,12 +747,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_subdirs)
 
-    # ---- list --------------------------------------------------------------
     p = sub.add_parser("list", help="du-style listing of current directory entries")
     p.add_argument("-d", "--directory", default=".", help="Directory (default: .)")
     p.set_defaults(func=cmd_list)
 
-    # ---- tree --------------------------------------------------------------
     p = sub.add_parser("tree", help="Tree view of a directory")
     p.add_argument("-d", "--directory", default=".", help="Directory (default: .)")
     p.add_argument("-s", "--sizes", action="store_true", help="Show sizes")
@@ -829,7 +766,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_tree)
 
-    # ---- split-range -------------------------------------------------------
     p = sub.add_parser("split-range", help="Folderize by size ranges (foldesiz.py)")
     p.add_argument(
         "-d", "--directory", default=".", help="Source directory (default: .)"
@@ -846,7 +782,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_range)
 
-    # ---- split-count -------------------------------------------------------
     p = sub.add_parser(
         "split-count",
         help="Folderize by fixed count or max-MB per folder (foldesize.py)",
@@ -872,7 +807,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_count)
 
-    # ---- split-greedy ------------------------------------------------------
     p = sub.add_parser(
         "split-greedy", help="Greedy bin-pack into ~N folders (foldsize.py)"
     )
@@ -885,7 +819,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_greedy)
 
-    # ---- split-even --------------------------------------------------------
     p = sub.add_parser(
         "split-even", help="Even count split into N folders (foldsize2.py)"
     )

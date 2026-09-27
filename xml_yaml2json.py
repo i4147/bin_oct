@@ -20,7 +20,6 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TextIO, Tuple
 
-# --- Optional Third-Party Imports ---
 try:
     import toml
 except ImportError:
@@ -40,10 +39,6 @@ try:
     import yaml
 except ImportError:
     yaml = None
-
-# ==========================================
-# Common Helpers
-# ==========================================
 
 
 def write_json_file(
@@ -66,11 +61,6 @@ def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
     return files
 
 
-# ==========================================
-# TOML Processor
-# ==========================================
-
-
 def process_toml(filepath: Path) -> None:
     if toml is None:
         print(
@@ -90,11 +80,6 @@ def process_toml(filepath: Path) -> None:
         print(f"Error: The file '{filepath}' was not found.", file=sys.stderr)
     except Exception as e:
         print(f"An error occurred: {e}", file=sys.stderr)
-
-
-# ==========================================
-# XML Processors
-# ==========================================
 
 
 def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
@@ -160,11 +145,6 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
         print(f"Error parsing XML file '{filepath}': {e}", file=sys.stderr)
 
 
-# ==========================================
-# YAML Processor
-# ==========================================
-
-
 def convert_yaml_to_json_str(
     yaml_str: str,
     indent: Optional[int] = None,
@@ -183,7 +163,6 @@ def convert_yaml_to_json_str(
         raise yaml.YAMLError(f"YAML parsing error: {e}") from e
 
     try:
-        # Pre-check serializability
         json.dumps(data, ensure_ascii=ensure_ascii, allow_nan=False)
     except (TypeError, ValueError) as e:
         raise ValueError(f"Data cannot be serialized to JSON: {e}") from e
@@ -204,11 +183,6 @@ def convert_yaml_to_json_str(
         raise ValueError(f"JSON serialization error: {e}") from e
 
 
-# ==========================================
-# Main CLI Application
-# ==========================================
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Convert configuration and data files to JSON.",
@@ -216,11 +190,9 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # --- TOML Parser ---
     toml_parser = subparsers.add_parser("toml", help="Convert TOML files to JSON")
     toml_parser.add_argument("inputs", nargs="+", type=Path, help="Input TOML file(s)")
 
-    # --- XML Parser ---
     xml_parser = subparsers.add_parser("xml", help="Convert XML files to JSON")
     xml_parser.add_argument(
         "inputs", nargs="*", type=Path, help="Input XML file(s) or directories"
@@ -249,7 +221,6 @@ def main() -> int:
         help="Extensions to process if scanning a directory (default: .xml .svg)",
     )
 
-    # --- YAML Parser ---
     yaml_parser = subparsers.add_parser(
         "yaml", help="Convert YAML files/streams to JSON"
     )
@@ -316,13 +287,11 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    # --- Dispatch: TOML ---
     if args.command == "toml":
         for filepath in args.inputs:
             process_toml(filepath)
         return 0
 
-    # --- Dispatch: XML ---
     elif args.command == "xml":
         target_files: list[Path] = []
 
@@ -349,7 +318,6 @@ def main() -> int:
             concurrent.futures.wait(futures)
         return 0
 
-    # --- Dispatch: YAML ---
     elif args.command == "yaml":
         if yaml is None:
             print(

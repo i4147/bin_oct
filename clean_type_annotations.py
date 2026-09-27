@@ -33,20 +33,12 @@ import libcst as cst
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
 
-# ---------------------------------------------------------------------------
-# CST transformer
-# ---------------------------------------------------------------------------
-
 
 class TypeAnnotationRemover(cst.CSTTransformer):
-    # -- parameters -----------------------------------------------------
-
     def leave_Param(self, original_node, updated_node):
         if updated_node.annotation is None:
             return updated_node
         return updated_node.with_changes(annotation=None)
-
-    # -- functions / classes --------------------------------------------
 
     def leave_FunctionDef(self, original_node, updated_node):
         changes = {}
@@ -63,20 +55,15 @@ class TypeAnnotationRemover(cst.CSTTransformer):
             return updated_node.with_changes(type_parameters=None)
         return updated_node
 
-    # -- annotated assignments ------------------------------------------
-
     def leave_AnnAssign(self, original_node, updated_node):
         if updated_node.value is None:
-            # ``x: int`` -> drop the whole statement.
             return cst.RemoveFromParent()
-        # ``x: int = value`` -> ``x = value``
+
         return cst.Assign(
             targets=[cst.AssignTarget(target=updated_node.target)],
             value=updated_node.value,
             semicolon=updated_node.semicolon,
         )
-
-    # -- repair bodies emptied by removals ------------------------------
 
     def leave_SimpleStatementLine(self, original_node, updated_node):
         if not updated_node.body:
@@ -84,23 +71,18 @@ class TypeAnnotationRemover(cst.CSTTransformer):
         return updated_node
 
     def leave_SimpleStatementSuite(self, original_node, updated_node):
-        # ``if x: y: int`` style suites.
+
         if not updated_node.body:
             return updated_node.with_changes(body=[cst.Pass()])
         return updated_node
 
     def leave_IndentedBlock(self, original_node, updated_node):
-        # A class/if/for body must contain at least one statement.
+
         if not updated_node.body:
             return updated_node.with_changes(
                 body=[cst.SimpleStatementLine(body=[cst.Pass()])]
             )
         return updated_node
-
-
-# ---------------------------------------------------------------------------
-# File IO helpers
-# ---------------------------------------------------------------------------
 
 
 def _read_source(path: Path) -> tuple[str, str]:
@@ -116,7 +98,6 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
         try:
             os.chmod(tmp, path.stat().st_mode)
         except OSError:
-            # Best effort — permissions are not worth failing the run.
             pass
         os.replace(tmp, path)
     finally:
@@ -125,11 +106,6 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
                 tmp.unlink()
             except OSError:
                 pass
-
-
-# ---------------------------------------------------------------------------
-# Per-file worker
-# ---------------------------------------------------------------------------
 
 
 def process_file(path_str: str) -> tuple[str, str | None, bool]:
@@ -155,7 +131,6 @@ def process_file(path_str: str) -> tuple[str, str | None, bool]:
     if new_code == source:
         return path_str, None, False
 
-    # Validate BEFORE touching the file on disk.
     try:
         compile(new_code, str(path), "exec")
     except (SyntaxError, ValueError) as exc:
@@ -167,11 +142,6 @@ def process_file(path_str: str) -> tuple[str, str | None, bool]:
         return path_str, f"write failed: {exc}", False
 
     return path_str, None, True
-
-
-# ---------------------------------------------------------------------------
-# Input discovery
-# ---------------------------------------------------------------------------
 
 
 def _iter_python_files(root: Path) -> Iterable[Path]:
@@ -210,14 +180,8 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
             seen.add(key)
             files.append(path)
 
-    # Deterministic ordering => predictable logs and chunk distribution.
     files.sort(key=lambda p: str(p))
     return files
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -234,7 +198,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     tasks = [(str(p),) for p in files]
-    # Aim for a handful of chunks per worker to keep the queue balanced.
+
     chunksize = max(1, len(tasks) // (WORKERS * 4))
 
     with mp.Pool(processes=WORKERS) as pool:

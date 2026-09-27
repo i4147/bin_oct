@@ -36,10 +36,6 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
-# ---------------------------------------------------------------------------
-# Configuration constants (originally hardcoded in both scripts)
-# ---------------------------------------------------------------------------
-
 LANGUAGE_EXTENSIONS: dict[str, list[str]] = {
     "python": [".py", ".pyi"],
     "javascript": [".js"],
@@ -79,10 +75,6 @@ SHEBANG_PATTERNS: dict[str, list[str]] = {
 }
 
 DEFAULT_EXCLUDES: list[str] = [".git"]
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def is_binary(path: Path) -> bool:
@@ -176,7 +168,6 @@ def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
 
         suffix = path.suffix.lower()
 
-        # Extensionless files: try shebang detection.
         if not suffix:
             lang = detect_shebang(path, excludes)
             if lang:
@@ -184,7 +175,6 @@ def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
                 _add(stats, lang, c, m, b)
                 continue
 
-        # Extension-based detection.
         for lang, exts in LANGUAGE_EXTENSIONS.items():
             if suffix in exts:
                 c, m, b = count_file(path, lang, excludes)
@@ -206,11 +196,6 @@ def print_report(stats: dict[str, Any]) -> None:
             print(f"  Code lines:{counts['code']}")
             print(f"  Comment lines:{counts['comments']}")
             print(f"  Blank lines:{counts['blank']}")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

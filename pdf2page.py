@@ -56,12 +56,6 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# Backend extractors — each receives a PDF path, a list of 0-based page
-# indices, and an `opts` dict of primitives (picklable for ProcessPool),
-# and returns a list of (1-based page number, text) tuples.
-# ---------------------------------------------------------------------------
-
 
 def _extract_plumber(
     pdf_path: str, page_indices: Sequence[int], opts: dict
@@ -194,8 +188,6 @@ def _extract_pdfminer(
     return out
 
 
-# Map backend name -> worker function.  Module-level so ProcessPool can
-# pickle both the callable and the arguments.
 _BACKENDS = {
     "plumber": _extract_plumber,
     "fitz": _extract_fitz,
@@ -204,7 +196,6 @@ _BACKENDS = {
     "pdfminer": _extract_pdfminer,
 }
 
-# Backends where the original scripts used joblib's *threading* backend.
 _THREAD_BACKENDS = {"fitz", "plumber"}
 
 
@@ -212,11 +203,6 @@ def _extract_chunk(
     pdf_path: str, page_indices: Sequence[int], backend: str, opts: dict
 ) -> list[tuple[int, str]]:
     return _BACKENDS[backend](pdf_path, page_indices, opts)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
@@ -311,13 +297,8 @@ def _build_opts(args: argparse.Namespace) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Core pipeline
-# ---------------------------------------------------------------------------
-
-
 def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
-    # 1. Page count
+
     try:
         total = _page_count(str(pdf), args.backend, args.password or "")
     except Exception as exc:  # noqa: BLE001
@@ -328,7 +309,6 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         print(f"Skipping empty PDF: {pdf}")
         return 0
 
-    # 2. Which pages (0-based indices)
     if args.page_numbers:
         page_indices = [p - 1 for p in args.page_numbers if 1 <= p <= total]
     else:
@@ -339,13 +319,11 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         print(f"Nothing to extract from {pdf.name}")
         return 0
 
-    # 3. Output dir
     out_dir = _build_out_dir(pdf, args)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Processing {pdf.name} ({len(page_indices)}/{total} pages) -> {out_dir}")
 
-    # 4. Filter skip-existing
     to_process: list[int] = []
     skipped = 0
     for idx in page_indices:
@@ -359,7 +337,6 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
     if not to_process:
         return 0
 
-    # 5. Chunk the workload
     workers = max(1, args.workers)
     if len(to_process) <= workers:
         chunks: list[list[int]] = [[idx] for idx in to_process]
@@ -372,7 +349,6 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
 
     opts = _build_opts(args)
 
-    # 6. Choose parallel mode
     parallel = args.parallel
     if parallel == "auto":
         parallel = "thread" if args.backend in _THREAD_BACKENDS else "process"
@@ -402,11 +378,10 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
             raise ValueError(f"Unknown parallel mode: {parallel}")
     except Exception as exc:  # noqa: BLE001
         print(f"Error processing {pdf}: {exc}", file=sys.stderr)
-        # Fall through and write whatever results we already have.
+
         if not results:
             return 0
 
-    # 7. Write out
     written = 0
     for page_1based, text in sorted(results):
         name = _format_name(args.name_template, pdf.stem, page_1based, total)
@@ -414,11 +389,6 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         written += 1
     print(f"  Wrote {written} page file(s)")
     return written
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

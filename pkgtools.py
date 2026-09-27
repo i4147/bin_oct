@@ -58,10 +58,6 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Sequence
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
-
 logger = logging.getLogger("pkgtool")
 
 
@@ -73,11 +69,6 @@ def configure_logging(verbose: bool = False) -> None:
         stream=sys.stderr,
     )
     logger.setLevel(level)
-
-
-# ---------------------------------------------------------------------------
-# Basic helpers
-# ---------------------------------------------------------------------------
 
 
 def get_user_site() -> Path:
@@ -231,11 +222,6 @@ def has_entry_points(dist: importlib.metadata.Distribution) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# RECORD-based copying / moving
-# ---------------------------------------------------------------------------
-
-
 def copy_record_files(
     dist_info: Path,
     source_root: Path,
@@ -359,11 +345,6 @@ def copy_package_tree(
         return pkg, False, f"Error: {exc}"
 
 
-# ---------------------------------------------------------------------------
-# Wheel-style repacking
-# ---------------------------------------------------------------------------
-
-
 def generate_wheel_tags(purelib: bool) -> tuple[str, str, str]:
     if purelib:
         return "py3", "none", "any"
@@ -449,11 +430,6 @@ def repack_package(
     shutil.copy2(record, dist_info_dest / "RECORD")
 
     return wheel_dir
-
-
-# ---------------------------------------------------------------------------
-# Subcommand implementations
-# ---------------------------------------------------------------------------
 
 
 def cmd_record(args: argparse.Namespace) -> int:
@@ -617,7 +593,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
         site_paths = [get_user_site()]
         user_site_only = True
 
-    # Gather distributions that live in the selected site paths.
     selected: list[tuple[str, importlib.metadata.Distribution]] = []
     for dist in importlib.metadata.distributions():
         try:
@@ -642,12 +617,10 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
             ):
                 continue
         elif not args.all:
-            # Without patterns, require --all to process everything.
             continue
 
         selected.append((name, dist))
 
-    # Deduplicate by lower-case name.
     seen: set[str] = set()
     unique: list[tuple[str, importlib.metadata.Distribution]] = []
     for name, dist in selected:
@@ -724,11 +697,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pkgtool.py",
@@ -744,7 +712,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # -- record -------------------------------------------------------------
     p_record = subparsers.add_parser(
         "record",
         help="Copy/move files listed in RECORD from cwd dist-info.",
@@ -811,7 +778,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of worker threads (default: 1).",
     )
 
-    # -- site-copy ----------------------------------------------------------
     p_site = subparsers.add_parser(
         "site-copy",
         help="Copy installed package directories from site-packages.",
@@ -847,7 +813,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not skip .pyc files.",
     )
 
-    # -- repack -------------------------------------------------------------
     p_repack = subparsers.add_parser(
         "repack",
         help="Repack installed packages into wheel-like directory structure.",
@@ -880,7 +845,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of worker threads (default: 1).",
     )
 
-    # -- entry-points -------------------------------------------------------
     p_ep = subparsers.add_parser(
         "entry-points",
         help="Extract packages that declare entry points.",

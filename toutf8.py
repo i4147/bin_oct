@@ -95,7 +95,6 @@ def main() -> int:
     input_paths: list[str] = list(args.paths) if args.paths else ["."]
     cwd: Path = Path.cwd()
 
-    # Honor explicit CLI paths when provided, otherwise scan CWD via dh.
     if args.paths:
         files: list[Path] = list(collect_files(input_paths))
     else:

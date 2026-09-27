@@ -43,11 +43,6 @@ from typing import Any, Iterator
 
 __version__ = "2.0.0"
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Adaptive chunk sizes: bigger files -> bigger reads, fewer syscalls.
 CHUNK_SMALL: int = 64 * 1024
 CHUNK_MEDIUM: int = 256 * 1024
 CHUNK_LARGE: int = 1024 * 1024
@@ -56,15 +51,9 @@ HUGE_FILE_THRESHOLD: int = 100 * 1024 * 1024
 
 USER_AGENT: str = f"dl/{__version__} (pip-style download manager)"
 
-# Progress-bar glyphs (pip-like).
 FULL, HEAD, EMPTY = "━", "╸", " "
 
-# Set by Ctrl-C so worker threads bail out promptly.
 STOP = threading.Event()
-
-# ---------------------------------------------------------------------------
-# Formatting helpers
-# ---------------------------------------------------------------------------
 
 
 def fmt_size(n: float | None) -> str:
@@ -126,11 +115,6 @@ def pick_chunk_size(total: int | None) -> int:
     return CHUNK_SMALL
 
 
-# ---------------------------------------------------------------------------
-# Progress bars
-# ---------------------------------------------------------------------------
-
-
 class Bar:
     def __init__(self, label: str, total: int | None = None) -> None:
         self.label: str = label
@@ -145,8 +129,6 @@ class Bar:
         self.start: float = time.monotonic()
         self._last_t: float = self.start
         self._last_d: int = 0
-
-    # -- helpers -----------------------------------------------------------
 
     @property
     def elapsed(self) -> float:
@@ -165,8 +147,6 @@ class Bar:
         if not self.total or self.speed <= 0:
             return None
         return max(self.total - self.done, 0) / self.speed
-
-    # -- rendering ---------------------------------------------------------
 
     def render(self, width: int) -> str:
         if self.skipped:
@@ -223,8 +203,6 @@ class Progress:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    # -- lifecycle ---------------------------------------------------------
-
     def add(self, bar: Bar) -> None:
         with self.lock:
             self.bars.append(bar)
@@ -242,8 +220,6 @@ class Progress:
     def _loop(self) -> None:
         while not self._stop.wait(0.1):
             self.refresh()
-
-    # -- drawing -----------------------------------------------------------
 
     def refresh(self) -> None:
         with self.lock:
@@ -287,11 +263,6 @@ class Progress:
                 for b in self.bars:
                     self.stream.write(b.render(width) + "\n")
             self.stream.flush()
-
-
-# ---------------------------------------------------------------------------
-# HTTP backends
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -420,7 +391,6 @@ class PycurlBackend(Backend):
         headers_ready = threading.Event()
         stop_flag = threading.Event()
 
-        # Shared state between the curl worker thread and the consumer.
         state: dict[str, Any] = {
             "status": None,
             "headers": {},
@@ -443,7 +413,6 @@ class PycurlBackend(Backend):
                 except (IndexError, ValueError):
                     pass
             elif line == "":
-                # End of one response block.  Ignore redirect hops (3xx).
                 st = state["status"]
                 if st is not None and not (300 <= st < 400):
                     headers_ready.set()
@@ -531,10 +500,6 @@ def get_backend(name: str) -> Backend:
     raise SystemExit(f"unknown backend: {name}")
 
 
-# ---------------------------------------------------------------------------
-# Filename resolution
-# ---------------------------------------------------------------------------
-
 _CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.I)
 _CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.I)
 _CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.I)
@@ -586,11 +551,6 @@ def part_path(outdir: Path, url: str) -> Path:
     return outdir / f".dl-{digest}.part"
 
 
-# ---------------------------------------------------------------------------
-# The download itself
-# ---------------------------------------------------------------------------
-
-
 def download_one(
     progress: Progress,
     backend: Backend,
@@ -610,11 +570,9 @@ def download_one(
         with backend.open(url, offset, timeout) as response:
             info, chunks = response
 
-            # Reject hard errors early.
             if not (200 <= info.status < 300):
                 raise RuntimeError(f"HTTP {info.status}")
 
-            # Server ignored our Range header -> restart from scratch.
             if offset > 0 and info.status != 206:
                 offset = 0
                 try:
@@ -622,18 +580,16 @@ def download_one(
                 except FileNotFoundError:
                     pass
 
-            # Figure out the final destination.
             if dest_hint is not None:
                 final = dest_hint if dest_hint.is_absolute() else outdir / dest_hint
             else:
                 final = outdir / filename_from_info(info, url)
 
-            # Skip already-downloaded files (unless size == 0).
             if final.exists() and final.stat().st_size > 0:
                 bar.done = final.stat().st_size
                 bar.total = bar.done
                 bar.skipped = True
-                # Discard any orphaned .part file if we're not resuming.
+
                 if part.exists() and offset > 0:
                     try:
                         part.unlink()
@@ -648,7 +604,6 @@ def download_one(
             bar.total = total
             bar.done = offset
 
-            # Stream the body straight into the .part file.
             mode = "r+b" if offset > 0 else "wb"
             with part.open(mode) as fh:
                 if offset > 0:
@@ -666,7 +621,6 @@ def download_one(
             if total is not None and bar.done < total:
                 raise IOError(f"truncated download ({bar.done}/{total} bytes)")
 
-        # Atomic move from .part to the final name.
         part.replace(final)
         bar.finished = True
         return final, False
@@ -675,11 +629,6 @@ def download_one(
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
         raise
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -780,7 +729,6 @@ def main(argv: list[str] | None = None) -> int:
     if args.jobs < 1:
         parser.error("-j/--jobs must be >= 1")
 
-    # Files always land in the current working directory — no subdir creation.
     outdir = Path.cwd()
 
     dest_hint: Path | None = None
@@ -809,7 +757,6 @@ def main(argv: list[str] | None = None) -> int:
     pool = ThreadPoolExecutor(max_workers=min(args.jobs, len(urls)))
     try:
         with progress:
-            # Submit every URL; only the first may use the -o hint.
             futures = {
                 pool.submit(
                     download_one,

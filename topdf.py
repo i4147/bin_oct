@@ -52,10 +52,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
-# ============================================================================
-# Shared helpers
-# ============================================================================
-
 
 def die(msg: str, code: int = 1) -> "None":
     print(f"Error: {msg}", file=sys.stderr)
@@ -107,9 +103,6 @@ def render_pdf_from_html(
     doc.write_pdf(str(output), stylesheets=sheets)
 
 
-# ============================================================================
-# Inline CSS used by md_to_pdf.py / md_to_pdf2.py
-# ============================================================================
 _INLINE_CSS_TEMPLATE = """
 @page {
     size: A4;
@@ -213,11 +206,6 @@ def inline_css(mode: str) -> str:
     )
 
 
-# ============================================================================
-# Subcommand: svg  (cairosvg2pdf.py)
-# ============================================================================
-
-
 def cmd_svg(args: argparse.Namespace) -> int:
     inp = require_input(args.input, check_suffix=".svg")
     out = resolve_output(inp, args.output)
@@ -233,9 +221,6 @@ def cmd_svg(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Subcommand: chm  (chm2pdf.py + chm2pdf_reportlab.py)
-# ============================================================================
 class _CHMHtmlExtractor(HTMLParser):
     SKIP_TAGS = {"script", "style", "meta", "link", "iframe"}
 
@@ -542,7 +527,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
         _chm_reportlab_convert(inp, out)
         return 0
 
-    # ---- weasyprint backend (chm2pdf.py) ----------------------------------
     try:
         html_text = _chm_weasyprint_extract(inp)
     except Exception as exc:  # noqa: BLE001
@@ -550,7 +534,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
     if not html_text:
         die("no content extracted from CHM file")
 
-    # Wrap with the same print-style CSS the original used.
     wrapped = (
         '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n'
         "<style>\n"
@@ -586,11 +569,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Subcommand: html  (html2pdf.py)
-# ============================================================================
-
-
 def cmd_html(args: argparse.Namespace) -> int:
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
@@ -608,10 +586,6 @@ def cmd_html(args: argparse.Namespace) -> int:
     info(f"PDF created: {out}")
     return 0
 
-
-# ============================================================================
-# Subcommand: md  (md2pdf.py + md2pdf2.py + md_to_pdf.py + md_to_pdf2.py)
-# ============================================================================
 
 _MARKDOWN2_SIMPLE_EXTRAS = ["cuddled-lists", "tables"]
 _MARKDOWN2_FULL_EXTRAS = [
@@ -727,10 +701,6 @@ def cmd_markdown(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Subcommand: dict  (dic2pdf.py)
-# ============================================================================
-
 _DICT_TAG_RX = re.compile(r"</?[a-zA-Z][^>]*>")
 _DICT_X_RX = re.compile(r"<x [^>]*>")
 _DICT_M_RX = re.compile(r"<[A-Z]\s+M=\"[^\"]+\"\s*/?>")
@@ -795,9 +765,6 @@ def cmd_dict(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Subcommand: compile-css  (compile_precise.py)
-# ============================================================================
 _PRECISE_FONTS = [
     ("Inter", "normal", 400, "Inter-Regular.ttf"),
     ("Inter", "normal", 700, "Inter-Bold.ttf"),
@@ -910,11 +877,6 @@ def cmd_compile_css(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# CLI
-# ============================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pdfkit.py",
@@ -924,13 +886,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    # ---- svg --------------------------------------------------------------
     a = sub.add_parser("svg", help="SVG -> PDF (cairosvg).")
     a.add_argument("input", help="Input .svg file.")
     a.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     a.set_defaults(func=cmd_svg)
 
-    # ---- chm --------------------------------------------------------------
     b = sub.add_parser("chm", help="CHM -> PDF.")
     b.add_argument("input", help="Input .chm file.")
     b.add_argument(
@@ -943,7 +903,6 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     b.set_defaults(func=cmd_chm)
 
-    # ---- html -------------------------------------------------------------
     c = sub.add_parser("html", help="HTML -> PDF (WeasyPrint).")
     c.add_argument("input", help="Input .html file.")
     c.add_argument(
@@ -952,7 +911,6 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     c.set_defaults(func=cmd_html)
 
-    # ---- markdown ---------------------------------------------------------
     d = sub.add_parser("md", help="Markdown -> PDF.")
     d.add_argument("input", help="Input .md file.")
     d.add_argument(
@@ -983,7 +941,6 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     d.set_defaults(func=cmd_markdown)
 
-    # ---- dict -------------------------------------------------------------
     e = sub.add_parser("dict", help="Dictionary .txt -> PDF (WeasyPrint).")
     e.add_argument(
         "input",
@@ -997,7 +954,6 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     e.set_defaults(func=cmd_dict)
 
-    # ---- compile-css ------------------------------------------------------
     f = sub.add_parser(
         "compile-css", help="Write a print-style CSS with embedded fonts."
     )

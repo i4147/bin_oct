@@ -9,14 +9,10 @@ from typing import Any, Final, Optional
 
 from dh import fsz
 
-# Module-level cache for the tree-sitter parser. Each worker process
-# builds its own parser lazily on first use (important under "fork").
 _parser: Optional[Any] = None
 
-# Fixed worker count; no CLI flag for this by design.
 _WORKERS: Final[int] = 8
 
-# Number of characters reserved for the filename column in the report.
 _NAME_WIDTH: Final[int] = 50
 
 
@@ -36,7 +32,6 @@ def remove_toml_comments(content: str) -> str:
     source: bytes = content.encode("utf-8")
     tree: Any = parser.parse(source)
 
-    # Collect (start_byte, end_byte) for every `comment` node in the AST.
     ranges: list[tuple[int, int]] = []
     stack: list[Any] = [tree.root_node]
     while stack:
@@ -50,10 +45,10 @@ def remove_toml_comments(content: str) -> str:
         return content
 
     result: bytearray = bytearray(source)
-    # Delete from the end backwards so earlier byte offsets remain valid.
+
     for start, end in sorted(ranges, reverse=True):
         s: int = start
-        # Swallow spaces/tabs that immediately preceded the comment.
+
         while s > 0 and result[s - 1] in (0x20, 0x09):
             s -= 1
         del result[s:end]

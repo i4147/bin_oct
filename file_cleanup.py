@@ -43,10 +43,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
-# ===========================================================================
-# Common helpers
-# ===========================================================================
-
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000
 DEFAULT_ENCODING = "utf-8"
@@ -139,7 +135,6 @@ def sort_lines(
     if len(lines) <= chunk_size:
         return sorted(lines, key=key, reverse=reverse)
 
-    # External sort — same idea as sonic.py: sort chunks on disk, then merge.
     tmp_dir = Path(tempfile.gettempdir())
     chunk_files: list[Path] = []
     for i in range(0, len(lines), chunk_size):
@@ -157,11 +152,6 @@ def sort_lines(
             h.close()
         for cf in chunk_files:
             cf.unlink(missing_ok=True)
-
-
-# ===========================================================================
-# Subcommand: analyze   (sonic.py's --analyze)
-# ===========================================================================
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
@@ -199,11 +189,6 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: sort-dedupe   (sonic.py + soniq.py + soniq2.py)
-# ===========================================================================
-
-
 def cmd_sort_dedupe(args: argparse.Namespace) -> int:
     input_path = Path(args.file)
     if not input_path.is_file():
@@ -211,12 +196,10 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         return 1
     output_path = Path(args.output) if args.output else input_path
 
-    # --- Read ---------------------------------------------------------------
     all_lines = read_lines(input_path, args.encoding, args.skip_empty)
     original_count = len(all_lines)
     original_size = input_path.stat().st_size
 
-    # --- Range mode (soniq.py) ---------------------------------------------
     range_mode = args.start_line is not None or args.end_line is not None
     if range_mode:
         if args.start_line is None or args.end_line is None:
@@ -233,7 +216,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
     else:
         before, middle, after = [], all_lines, []
 
-    # --- Sort ---------------------------------------------------------------
     key = (lambda x: x.lower()) if args.case_insensitive else None
     if args.sort:
         middle = sort_lines(
@@ -244,7 +226,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             workers=args.workers,
         )
 
-    # --- Dedupe -------------------------------------------------------------
     removed: list[str] = []
     if args.unique:
         middle, removed = dedupe_preserving_order(middle)
@@ -252,7 +233,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
     final_lines = before + middle + after
     removed_count = len(removed)
 
-    # --- Stats --------------------------------------------------------------
     stats = {
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input_file": str(input_path),
@@ -271,14 +251,13 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         stats["original_size_bytes"] - stats["after_size_bytes"]
     )
 
-    # --- Write (or dry-run) -------------------------------------------------
     if args.dry_run:
         info("DRY RUN — no files modified.")
     else:
         if args.backup and output_path == input_path:
             bak = backup_file(input_path)
             info(f"Backup created: {bak.name}")
-        # Atomic replace when overwriting input (soniq2.py behavior).
+
         if output_path == input_path:
             fd, tmp_name = tempfile.mkstemp(dir=str(input_path.parent))
             os.close(fd)
@@ -293,7 +272,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             write_lines(output_path, final_lines, args.encoding)
         info(f"Output written: {output_path}")
 
-    # --- Report to stdout ---------------------------------------------------
     print("=" * 44)
     print(f"Input file: {input_path}")
     print(f"Output file: {output_path}")
@@ -315,7 +293,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         print("  (Use without --quiet to see the actual duplicate lines)")
     print("=" * 44)
 
-    # --- Optional JSON report ----------------------------------------------
     if args.report:
         try:
             Path(args.report).write_text(
@@ -327,11 +304,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             err(f"Error saving report: {e}")
             return 1
     return 0
-
-
-# ===========================================================================
-# Subcommand: dedupe-seq   (detect_repeated_lines.py)
-# ===========================================================================
 
 
 def cmd_dedupe_seq(args: argparse.Namespace) -> int:
@@ -351,7 +323,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     def blank(s: str) -> bool:
         return s.strip() == ""
 
-    # Find adjacent-duplicate indices (1-based, matching the original output).
     dupes: list[tuple[int, str]] = []
     i = 0
     while i < len(lines) - 1:
@@ -378,7 +349,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
         print(f"\n[DRY RUN] Would remove {len(dupes)} duplicate line(s).")
         return 0
 
-    # Interactive consent
     apply = args.yes
     if not args.yes:
         ans = (
@@ -395,7 +365,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
         print("  ⏭️  Skipped")
         return 0
 
-    # Remove duplicates (last-first to keep indices valid).
     new_lines = lines[:]
     for lineno, _ in reversed(dupes):
         del new_lines[lineno]
@@ -405,11 +374,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     path.write_text("".join(new_lines), encoding=args.encoding)
     print(f"  ✅ Fixed (backup: {bak.name}, {len(dupes)} line(s) removed)")
     return 0
-
-
-# ===========================================================================
-# Subcommand: drop-same-char   (samecharlines.py)
-# ===========================================================================
 
 
 def _is_same_char_line(line: str) -> bool:
@@ -443,11 +407,6 @@ def cmd_drop_same_char(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: dedupe-json   (juniq.py + sort_quotes.py)
-# ===========================================================================
-
-
 def cmd_dedupe_json(args: argparse.Namespace) -> int:
     path = Path(args.file)
     if not path.is_file():
@@ -464,7 +423,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
         err("Top-level JSON value must be a list.")
         return 1
 
-    # --- Dedup --------------------------------------------------------------
     seen: set = set()
     unique: list[Any] = []
     for item in data:
@@ -472,7 +430,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
             if args.key:
                 raw = item.get(args.key, "")
             else:
-                # juniq.py fallback: full-dict identity via sorted JSON.
                 raw = json.dumps(item, sort_keys=True, ensure_ascii=False)
             dedupe_key = raw.lower().strip() if args.lower else raw
         else:
@@ -482,7 +439,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
         seen.add(dedupe_key)
         unique.append(item)
 
-    # --- Optional sort ------------------------------------------------------
     if args.sort_by:
 
         def sort_key(x: Any) -> str:
@@ -493,7 +449,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
 
         unique.sort(key=sort_key)
 
-    # --- Write back ---------------------------------------------------------
     if args.dry_run:
         info(
             f"[DRY RUN] {len(data)} → {len(unique)} entries "
@@ -510,11 +465,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
         f"({len(data) - len(unique)} removed)."
     )
     return 0
-
-
-# ===========================================================================
-# CLI
-# ===========================================================================
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -536,7 +486,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # analyze ---------------------------------------------------------------
     p = sub.add_parser("analyze", help="Show line statistics for a text file")
     p.add_argument("file", help="Text file to analyze")
     p.add_argument(
@@ -546,7 +495,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_analyze)
 
-    # sort-dedupe -----------------------------------------------------------
     p = sub.add_parser(
         "sort-dedupe", help="Sort and/or remove duplicate lines in a text file"
     )
@@ -632,7 +580,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_sort_dedupe)
 
-    # dedupe-seq ------------------------------------------------------------
     p = sub.add_parser(
         "dedupe-seq", help="Remove sequential (adjacent) duplicate lines"
     )
@@ -662,7 +609,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_dedupe_seq)
 
-    # drop-same-char --------------------------------------------------------
     p = sub.add_parser(
         "drop-same-char", help="Remove lines made of a single repeated character"
     )
@@ -677,7 +623,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_drop_same_char)
 
-    # dedupe-json -----------------------------------------------------------
     p = sub.add_parser("dedupe-json", help="Deduplicate a JSON list of dicts")
     p.add_argument("file", help="JSON file containing a list")
     p.add_argument(

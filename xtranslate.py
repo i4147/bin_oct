@@ -62,10 +62,6 @@ except ImportError:  # pragma: no cover
     sys.stderr.write("Missing dependency: pip install deep-translator\n")
     raise
 
-# ---------------------------------------------------------------------------
-# Constants (originally scattered as module-level magic values)
-# ---------------------------------------------------------------------------
-
 DEFAULT_EXTENSIONS: tuple[str, ...] = (
     ".txt",
     ".md",
@@ -103,10 +99,6 @@ DEFAULT_RETRIES = 3
 DEFAULT_DELAY = 0.5
 
 log = logging.getLogger("xtranslate")
-
-# ---------------------------------------------------------------------------
-# Generic helpers (factored from all scripts)
-# ---------------------------------------------------------------------------
 
 
 def is_binary(path: Path) -> bool:
@@ -233,11 +225,6 @@ def iter_files(
             yield f
 
 
-# ---------------------------------------------------------------------------
-# Translator wrapper (one place for retry / backoff)
-# ---------------------------------------------------------------------------
-
-
 class Translator:
     def __init__(
         self,
@@ -272,11 +259,6 @@ class Translator:
         return text
 
 
-# ---------------------------------------------------------------------------
-# Module-level workers (must be top-level so multiprocessing can pickle them)
-# ---------------------------------------------------------------------------
-
-
 def _chunk_worker(task: tuple[str, str, str, int, float]) -> str:
     text, source, target, retries, delay = task
     return Translator(source, target, retries, delay).translate(text)
@@ -290,11 +272,6 @@ def _inline_file_worker(task: tuple) -> str:
 def _marked_file_worker(task: tuple) -> str:
     path, opts = task
     return _marked_process_one(Path(path), opts)
-
-
-# ---------------------------------------------------------------------------
-# Line / segment helpers shared by inline + marked modes
-# ---------------------------------------------------------------------------
 
 
 def _translate_one_line(line: str, translator: Translator, opts: dict[str, Any]) -> str:
@@ -375,11 +352,6 @@ def _marked_process_one(path: Path, opts: dict[str, Any]) -> str:
     return f"✓ {path} ({changed} lines, backup={backup.name})"
 
 
-# ---------------------------------------------------------------------------
-# Command implementations
-# ---------------------------------------------------------------------------
-
-
 def _run_workers(
     worker,
     tasks: list[tuple],
@@ -421,7 +393,6 @@ def mode_inline(args: argparse.Namespace) -> int:
     opts["use_file_api"] = getattr(args, "use_file_api", False)
 
     if opts["use_file_api"]:
-        # ultratranslator.py behaviour: whole-file translate via library.
         return _run_file_api_mode(files, opts, args.workers)
 
     tasks = [(str(f), opts) for f in files]
@@ -659,7 +630,6 @@ def _segment_one(
 
     lines = text.splitlines(keepends=True)
 
-    # Collect (line_idx, start, end, original_segment) tuples.
     tasks: list[tuple[int, int, int, str]] = []
     for i, line in enumerate(lines):
         for m in pattern.finditer(line):
@@ -696,7 +666,6 @@ def _segment_one(
         print(f"[dry-run] would write {path} and {progress_path.name}")
         return
 
-    # Rebuild each line from its cached segments.
     rebuilt: list[str] = []
     for i, line in enumerate(lines):
         cache = progress.get(str(i))
@@ -720,8 +689,6 @@ def _segment_one(
     atomic_write(progress_path, json.dumps(progress, ensure_ascii=False, indent=2))
     print(f"✓ {path}")
 
-
-# --- resume mode (translate2.py) -------------------------------------------
 
 _shutdown = False
 
@@ -857,11 +824,6 @@ def _resume_flush(
     atomic_write(meta_path, json.dumps(meta, indent=2))
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths",
@@ -935,7 +897,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="mode", required=True)
 
-    # inline ---------------------------------------------------------------
     p_inline = sub.add_parser("inline", help="Line-by-line in-place translation.")
     _add_common(p_inline)
     p_inline.add_argument(
@@ -948,7 +909,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_inline.set_defaults(func=mode_inline)
 
-    # copy -----------------------------------------------------------------
     p_copy = sub.add_parser("copy", help="Chunked translation to a new file.")
     _add_common(p_copy)
     p_copy.add_argument(
@@ -980,7 +940,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_copy.set_defaults(func=mode_copy)
 
-    # json -----------------------------------------------------------------
     p_json = sub.add_parser("json", help="Chunked translation to a JSON file.")
     _add_common(p_json)
     p_json.add_argument(
@@ -991,7 +950,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_json.set_defaults(func=mode_json)
 
-    # pair -----------------------------------------------------------------
     p_pair = sub.add_parser("pair", help="Side-by-side translation of one file.")
     _add_common(p_pair)
     p_pair.add_argument(
@@ -1002,7 +960,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_pair.set_defaults(func=mode_pair)
 
-    # marked ---------------------------------------------------------------
     p_marked = sub.add_parser("marked", help="In-place with [TRANSLATION: …] markers.")
     _add_common(p_marked)
     p_marked.add_argument(
@@ -1017,7 +974,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_marked.set_defaults(func=mode_marked)
 
-    # segment --------------------------------------------------------------
     p_seg = sub.add_parser("segment", help="Regex-segment in-place translation.")
     _add_common(p_seg)
     p_seg.add_argument(
@@ -1032,7 +988,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_seg.set_defaults(func=mode_segment)
 
-    # resume ---------------------------------------------------------------
     p_res = sub.add_parser("resume", help="Resumable batch translation with meta JSON.")
     _add_common(p_res)
     p_res.add_argument(

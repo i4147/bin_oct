@@ -39,12 +39,8 @@ from typing import Callable, Iterable
 
 from loguru import logger
 
-# A translator callable accepts one source-language string and returns the
-# translated string.
 Translator = Callable[[str], str]
 
-# The requested fallback order.  DeepL is considered only when its API key is
-# available because the DeepL client cannot work without one.
 FALLBACK_BACKENDS = (
     "deepl",
     "deep_translator",
@@ -54,8 +50,6 @@ FALLBACK_BACKENDS = (
     "pygoogletranslation",
 )
 
-# These aliases make common language names usable while preserving the user's
-# language-code interface.
 LANGUAGE_ALIASES: dict[str, str] = {
     "auto": "auto",
     "zh-cn": "zh-CN",
@@ -88,7 +82,6 @@ class RequestLimiter:
             if wait_for > 0:
                 time.sleep(wait_for)
 
-            # Reserve the next request slot while still holding the lock.
             self._next_request_time = time.monotonic() + self.delay
 
 
@@ -118,7 +111,6 @@ def _deep_translator_language(language: str) -> str:
 def _deepl_language(language: str) -> str:
     code = normalize_language(language).upper()
 
-    # DeepL uses these language names/codes for common variants.
     return {
         "EN": "EN-US",
         "PT": "PT-PT",
@@ -155,8 +147,7 @@ def _make_deepl(source: str, target: str) -> Translator:
     target_code = _deepl_language(target)
 
     def translate(text: str) -> str:
-        # DeepL's Python API does not require the source language for ordinary
-        # text translation; source is retained here for factory consistency.
+
         del source
         result = client.translate_text(text, target_lang=target_code)
         return str(result.text if hasattr(result, "text") else result)
@@ -171,7 +162,7 @@ def _make_translate(source: str, target: str) -> Translator:
     target_code = normalize_language(target)
 
     def translate_text(text: str) -> str:
-        # A fresh client per call avoids sharing sessions between workers.
+
         client = TranslateClient(
             from_lang=source_code,
             to_lang=target_code,
@@ -206,7 +197,7 @@ def _make_googletrans(source: str, target: str) -> Translator:
     target_code = _google_language(target)
 
     def translate_text(text: str) -> str:
-        # A fresh client per call avoids stale or cross-thread sessions.
+
         client = GoogleTransClient()
         result = client.translate(text, src=source_code, dest=target_code)
         return str(result.text)
@@ -224,7 +215,6 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
         client = PyGoogleTranslator()
         result = client.translate(text, src=source_code, dest=target_code)
 
-        # Some versions return a string; others return an object with ``text``.
         return str(getattr(result, "text", result))
 
     return SerializedTranslator(translate_text)
@@ -276,7 +266,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
         else:
             boundary = remaining.rfind(None if False else " ", 0, chunk_size + 1)
 
-            # Also consider tabs and newlines as word boundaries.
             whitespace_boundary = max(
                 boundary,
                 remaining.rfind("\t", 0, chunk_size + 1),
@@ -288,7 +277,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
                 candidate = remaining[:whitespace_boundary]
                 remaining = remaining[whitespace_boundary:]
             else:
-                # No boundary was found.  This is normally a very long word.
                 candidate = remaining[:chunk_size]
                 remaining = remaining[chunk_size:]
 
@@ -296,8 +284,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
         if candidate:
             chunks.append(candidate)
 
-        # Discard whitespace between chunks.  Leading and trailing whitespace
-        # is intentionally not part of translated chunks.
         remaining = remaining.lstrip()
 
     return chunks
@@ -316,8 +302,6 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
     if not isinstance(data, dict):
         raise RuntimeError(f"existing output {path} must contain a JSON object")
 
-    # Keep only string keys and values.  This prevents malformed resume files
-    # from causing unexpected output.
     return {
         str(index): str(value)
         for index, value in data.items()
@@ -457,7 +441,6 @@ def translate_one(
             )
 
             if attempt < attempts:
-                # 1, 2, 4 seconds between failed attempts.
                 time.sleep(2 ** (attempt - 1))
 
     raise TranslationError(
@@ -577,8 +560,6 @@ def run(args: argparse.Namespace) -> int:
         continue_run=not args.no_continue,
     )
 
-    # Remove out-of-range entries when starting with an accidentally mismatched
-    # output file.  Valid existing chunks are retained for resume.
     translations = {
         index: value
         for index, value in translations.items()
@@ -606,8 +587,6 @@ def run(args: argparse.Namespace) -> int:
     backend = choose_backend(None if args.backend == "auto" else args.backend)
     logger.debug("Using backend {}", backend)
 
-    # Constructing the callable can fail if a dependency is partially
-    # installed, credentials are invalid, or a backend has incompatible APIs.
     translator = BACKEND_FACTORIES[backend](
         normalize_language(args.source),
         normalize_language(args.target),
@@ -660,9 +639,6 @@ def run(args: argparse.Namespace) -> int:
             for future in future_to_index:
                 future.cancel()
 
-            # shutdown(wait=False) is not used here because the context
-            # manager performs a clean worker shutdown.  Completed results
-            # already collected above are preserved.
             raise
 
     atomic_save(output_path, translations)

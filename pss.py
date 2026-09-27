@@ -39,11 +39,9 @@ DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20
 TRIGRAM_MIN = 3
 
-# ----------------------------------------------------------- introspection ---
-
 
 def get_table_info(con: sqlite3.Connection):
-    # Find all user tables (exclude SQLite internal ones)
+
     cur = con.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
     )
@@ -51,7 +49,6 @@ def get_table_info(con: sqlite3.Connection):
     if not tables:
         sys.exit("No tables found in database.")
 
-    # Prefer a table with exactly two columns
     chosen = None
     for t in tables:
         cur = con.execute(f'PRAGMA table_info("{t}")')
@@ -61,7 +58,6 @@ def get_table_info(con: sqlite3.Connection):
             break
 
     if chosen is None:
-        # Fallback: take the first table and hope it has at least two columns
         t = tables[0]
         cur = con.execute(f'PRAGMA table_info("{t}")')
         cols = [c[1] for c in cur.fetchall()]
@@ -72,7 +68,6 @@ def get_table_info(con: sqlite3.Connection):
     table, col_names = chosen
     name_col, dl_col = col_names[0], col_names[1]
 
-    # Is it an FTS5 virtual table?
     cur = con.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
         (table,),
@@ -81,9 +76,6 @@ def get_table_info(con: sqlite3.Connection):
     is_fts5 = bool(row and row[0] and "fts5" in row[0].lower())
 
     return table, name_col, dl_col, is_fts5
-
-
-# --------------------------------------------------------------- search ---
 
 
 def search(
@@ -97,13 +89,12 @@ def search(
 ):
     kw = keyword.lower()
 
-    # Quote identifiers to be safe with any names
     q_table = f'"{table}"'
     q_name = f'"{name_col}"'
     q_dl = f'"{dl_col}"'
 
     def run_like():
-        # Escape the LIKE metacharacters (\ % _) so "a_b" is literal.
+
         escaped = kw.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
         sql = (
             f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} LIKE ? ESCAPE '\\'"
@@ -112,25 +103,16 @@ def search(
 
     cur = None
     if is_fts5 and len(kw) >= TRIGRAM_MIN:
-        # Double-quote the keyword so FTS5 treats it as a literal phrase
-        # rather than interpreting MATCH operators (AND, OR, NEAR, *, etc.).
-        # Inner double quotes are escaped by doubling them, per FTS5 rules.
         fts_query = '"' + kw.replace('"', '""') + '"'
         sql = f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} MATCH ?"
         try:
             cur = con.execute(sql, (fts_query,))
         except sqlite3.OperationalError:
-            # Fallback: e.g. the column is UNINDEXED in FTS5, or MATCH failed
             cur = run_like()
     else:
         cur = run_like()
 
-    # Streaming top-N: the cursor is consumed lazily, one row at a time,
-    # and only a size-`limit` heap is retained.
     return heapq.nlargest(limit, cur, key=lambda r: r[1])
-
-
-# ----------------------------------------------------------------- main ---
 
 
 def main() -> None:

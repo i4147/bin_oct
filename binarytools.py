@@ -53,10 +53,6 @@ import time
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# Configuration / constants
-# ---------------------------------------------------------------------------
-
 SKIP_DIR_NAMES = {
     ".git",
     ".hg",
@@ -89,10 +85,6 @@ _ANSI = {
     "cyan": "\033[36m",
     "reset": "\033[0m",
 }
-
-# ---------------------------------------------------------------------------
-# Tiny shared helpers
-# ---------------------------------------------------------------------------
 
 
 def cprint(msg: str, color: Optional[str] = None) -> None:
@@ -194,11 +186,6 @@ def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
     return logger
 
 
-# ---------------------------------------------------------------------------
-# .so verification (used by verify-so and strip)
-# ---------------------------------------------------------------------------
-
-
 def verify_so_load(path: Path) -> tuple[bool, str]:
     if not path.exists():
         return False, "File does not exist"
@@ -231,11 +218,6 @@ def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
     return len(lines) > 0, len(lines), "ok"
 
 
-# ===========================================================================
-# Subcommand: sort  (ex-binortxt.py)
-# ===========================================================================
-
-
 def cmd_sort(args: argparse.Namespace) -> int:
     src = Path(args.directory).resolve()
     dst = Path(args.dest)
@@ -263,11 +245,6 @@ def cmd_sort(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: sanity  (ex-binsanity.py)
-# ===========================================================================
-
-
 def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
     for probe in PROBE_ARGS:
         try:
@@ -291,7 +268,6 @@ def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
                 return path, "Exec format error (wrong architecture)"
             return path, str(e)
 
-    # final no-arg attempt
     try:
         res = subprocess.run([str(path)], capture_output=True, text=True, timeout=1.0)
         if res.stderr:
@@ -399,11 +375,6 @@ def cmd_sanity(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
-# ===========================================================================
-# Subcommand: verify-so  (ex-soverify.py)
-# ===========================================================================
-
-
 def _collect_so_files(inputs: Sequence[str]) -> list[Path]:
     if not inputs:
         return list(iter_files(Path.cwd(), ext=[".so"]))
@@ -462,11 +433,6 @@ def cmd_verify_so(args: argparse.Namespace) -> int:
     print(f"Verification complete: {valid} valid, {len(bad)} errors")
     print(f"Log: {log_path}")
     return 1 if bad else 0
-
-
-# ===========================================================================
-# Subcommand: strip  (ex-stripsofiles.py)
-# ===========================================================================
 
 
 class SoStripper:
@@ -571,8 +537,6 @@ class SoStripper:
                 shutil.move(str(backup), str(target))
         except OSError:
             pass
-
-    # -- selection strategies ------------------------------------------------
 
     def strip_by_size(self, root: Path, min_mb: float) -> dict:
         print(f"\nStripping .so files larger than {min_mb} MB under {root} ...")
@@ -686,11 +650,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
     return 1 if stripper.stats["failed"] else 0
 
 
-# ===========================================================================
-# Argument parser
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="binarytoolkit.py",
@@ -698,7 +657,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=False)
 
-    # -- sort ----------------------------------------------------------------
     p_sort = sub.add_parser("sort", help="Move binary files into a subfolder")
     p_sort.add_argument(
         "directory", nargs="?", default=".", help="Directory to scan (default: cwd)"
@@ -712,7 +670,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_sort.add_argument("-v", "--verbose", action="store_true")
     p_sort.set_defaults(func=cmd_sort)
 
-    # -- sanity --------------------------------------------------------------
     p_sanity = sub.add_parser(
         "sanity", help="Test executables and move broken ones aside"
     )
@@ -738,7 +695,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sanity.set_defaults(func=cmd_sanity)
 
-    # -- verify-so -----------------------------------------------------------
     p_ver = sub.add_parser("verify-so", help="Verify .so files load via ctypes")
     p_ver.add_argument(
         "paths", nargs="*", help="Files or directories (default: cwd, *.so only)"
@@ -760,7 +716,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_ver.add_argument("-v", "--verbose", action="store_true")
     p_ver.set_defaults(func=cmd_verify_so)
 
-    # -- strip ---------------------------------------------------------------
     p_strip = sub.add_parser("strip", help="Batch-strip .so files")
     strip_sub = p_strip.add_subparsers(dest="strip_mode", required=True)
 
@@ -799,11 +754,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_strip.set_defaults(func=cmd_strip)
     return parser
-
-
-# ===========================================================================
-# Entry point
-# ===========================================================================
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

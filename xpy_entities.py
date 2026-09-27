@@ -47,9 +47,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
 try:
     import libcst as cst  # type: ignore
 
@@ -76,9 +73,6 @@ except ImportError:
     zstd = None  # type: ignore
     HAS_ZSTD = False
 
-# ---------------------------------------------------------------------------
-# Module-level constants
-# ---------------------------------------------------------------------------
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 
 SKIP_DIRS: set[str] = {
@@ -104,7 +98,6 @@ ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".zst",
 )
 
-# Names → import lines inferred from entity source text.
 STDLIB_IMPORTS: dict[str, str] = {
     "List": "from typing import List",
     "Dict": "from typing import Dict",
@@ -204,9 +197,6 @@ STDLIB_IMPORTS: dict[str, str] = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
 @dataclass
 class Entity:
     name: str
@@ -223,9 +213,6 @@ class Entity:
     value: str = ""
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def infer_imports(source: str) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
@@ -261,9 +248,6 @@ def parse_kinds(spec: str) -> set[str]:
     return kinds
 
 
-# ---------------------------------------------------------------------------
-# Backend: ast
-# ---------------------------------------------------------------------------
 class ASTExtractor(ast.NodeVisitor):
     def __init__(self, source: str, path: str, scope: str = "all") -> None:
         self.source = source
@@ -274,7 +258,6 @@ class ASTExtractor(ast.NodeVisitor):
         self.imports: list[str] = []
         self._class_stack: list[str] = []
 
-    # --- slicing --------------------------------------------------------
     def _slice(self, node: ast.AST) -> str:
         start = getattr(node, "lineno", 1) - 1
         end = getattr(node, "end_lineno", None) or getattr(node, "lineno", 1)
@@ -288,7 +271,6 @@ class ASTExtractor(ast.NodeVisitor):
                 out.append(line)
         return "".join(out)
 
-    # --- imports --------------------------------------------------------
     def _record_import(self, node: ast.AST) -> None:
         try:
             src = ast.unparse(node)
@@ -303,7 +285,6 @@ class ASTExtractor(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self._record_import(node)
 
-    # --- classes --------------------------------------------------------
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         parent = self._class_stack[-1] if self._class_stack else ""
         src = self._slice(node)
@@ -329,7 +310,6 @@ class ASTExtractor(ast.NodeVisitor):
                 self.visit(child)
             self._class_stack.pop()
 
-    # --- functions ------------------------------------------------------
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._handle_function(node)
 
@@ -356,12 +336,11 @@ class ASTExtractor(ast.NodeVisitor):
                 decorators=[ast.unparse(d) for d in node.decorator_list],
             )
         )
-        # Recurse into nested defs only when scope='all' AND we are at module level.
+
         if self.scope == "all" and not in_class:
             for child in node.body:
                 self.visit(child)
 
-    # --- constants ------------------------------------------------------
     def visit_Assign(self, node: ast.Assign) -> None:
         if self._class_stack:
             return
@@ -428,9 +407,6 @@ def extract_with_ast(
     return v.entities, v.imports
 
 
-# ---------------------------------------------------------------------------
-# Backend: tree-sitter
-# ---------------------------------------------------------------------------
 _TS_PARSER = None
 
 
@@ -491,7 +467,7 @@ def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list
                     )
                 )
                 continue
-            # Module-level UPPER_CASE = ...
+
             if t == "expression_statement":
                 for sub in child.children:
                     if sub.type == "assignment":
@@ -515,9 +491,6 @@ def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list
     return out, []
 
 
-# ---------------------------------------------------------------------------
-# Backend: libcst
-# ---------------------------------------------------------------------------
 def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]]:
     if not HAS_LIBCST:
         raise RuntimeError("libcst not installed")
@@ -583,9 +556,6 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
     return entities, imports
 
 
-# ---------------------------------------------------------------------------
-# Dispatcher
-# ---------------------------------------------------------------------------
 def extract_entities(
     source: str, path: str, backend: str, scope: str
 ) -> tuple[list[Entity], list[str]]:
@@ -598,9 +568,6 @@ def extract_entities(
     raise ValueError(f"unknown backend: {backend}")
 
 
-# ---------------------------------------------------------------------------
-# File discovery & archive readers
-# ---------------------------------------------------------------------------
 def find_python_files(
     roots: Iterable[Path],
     include_archives: bool = False,
@@ -681,9 +648,6 @@ def read_archive_members(path: Path) -> Iterator[tuple[str, str]]:
         yield from read_tar_members(path)
 
 
-# ---------------------------------------------------------------------------
-# Writers
-# ---------------------------------------------------------------------------
 def write_py_entity(
     entity: Entity,
     out_dir: Path,
@@ -810,9 +774,6 @@ def write_global_imports(imports: Iterable[str], out_dir: Path) -> Path:
     return out
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: extract
-# ---------------------------------------------------------------------------
 def cmd_extract(args: argparse.Namespace) -> int:
     roots = [p.resolve() for p in (args.paths or [Path.cwd()])]
     roots = [p for p in roots if p.exists()]
@@ -849,7 +810,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
     print(f"Extracted {len(all_entities)} entities.", file=sys.stderr)
 
-    # --- write outputs --------------------------------------------------
     if args.format in ("py", "py+json"):
         for e in all_entities:
             py_path = write_py_entity(e, out_dir, args.layout)
@@ -879,7 +839,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 f.write(f"{e.type:9} {e.full_name}   ({e.path})\n")
         print(f"TOC -> {toc}", file=sys.stderr)
 
-    # --- summary --------------------------------------------------------
     counts: dict[str, int] = defaultdict(int)
     for e in all_entities:
         counts[e.type] += 1
@@ -893,9 +852,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: nodes  (ex_nodes.py / extcode.py)
-# ---------------------------------------------------------------------------
 NODE_KIND_MAP: dict[str, set[str]] = {
     "class": {"class_definition"},
     "func": {"function_definition"},
@@ -914,7 +870,6 @@ def _extract_nodes(source: bytes, kind: str) -> list[str]:
 
     results: list[str] = []
     if kind == "docstrings":
-        # First string literal inside each function/class body.
         stack = [root]
         while stack:
             n = stack.pop()
@@ -974,9 +929,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: sexpr  (gen_s_expr.py)
-# ---------------------------------------------------------------------------
 def cmd_sexpr(args: argparse.Namespace) -> int:
     if not HAS_TS:
         print("tree-sitter required for 'sexpr'.", file=sys.stderr)
@@ -995,9 +947,6 @@ def cmd_sexpr(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: funcnames  (getfuncnames.py)
-# ---------------------------------------------------------------------------
 def cmd_funcnames(args: argparse.Namespace) -> int:
     try:
         tree = ast.parse(args.file.read_text(encoding="utf-8"))
@@ -1025,9 +974,6 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: constants  (ex_const.py / exconst.py)
-# ---------------------------------------------------------------------------
 def cmd_constants(args: argparse.Namespace) -> int:
     roots = [p.resolve() for p in (args.paths or [Path.cwd()])]
     pys, _ = find_python_files(roots)
@@ -1047,7 +993,6 @@ def cmd_constants(args: argparse.Namespace) -> int:
         print(f"\nTotal constants found: {len(found)}")
         return 0
 
-    # format == 'py'  -> write a consolidated const.py
     out_dir = args.output.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "const.py"
@@ -1065,9 +1010,6 @@ def cmd_constants(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Argument parser
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="merged.py",
@@ -1088,7 +1030,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
-    # --- extract --------------------------------------------------------
     ep = sub.add_parser("extract", help="Extract entities from files/dirs/archives")
     ep.add_argument(
         "paths", nargs="*", type=Path, help="Files or directories (default: cwd)"
@@ -1152,7 +1093,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ep.set_defaults(func=cmd_extract)
 
-    # --- nodes ----------------------------------------------------------
     np = sub.add_parser("nodes", help="Extract tree-sitter node bodies")
     np.add_argument("paths", nargs="*", type=Path)
     np.add_argument(
@@ -1163,12 +1103,10 @@ def build_parser() -> argparse.ArgumentParser:
     np.add_argument("-o", "--output", type=Path, default=Path("output"))
     np.set_defaults(func=cmd_nodes)
 
-    # --- sexpr ----------------------------------------------------------
     sp = sub.add_parser("sexpr", help="Print tree-sitter S-expression")
     sp.add_argument("file", type=Path)
     sp.set_defaults(func=cmd_sexpr)
 
-    # --- funcnames ------------------------------------------------------
     fp = sub.add_parser("funcnames", help="List function names in a file")
     fp.add_argument("file", type=Path)
     fp.add_argument(
@@ -1179,7 +1117,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fp.set_defaults(func=cmd_funcnames)
 
-    # --- constants ------------------------------------------------------
     cp = sub.add_parser("constants", help="Extract module-level UPPER_CASE constants")
     cp.add_argument("paths", nargs="*", type=Path)
     cp.add_argument("--format", choices=["py", "list"], default="py")
@@ -1189,9 +1126,6 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     return args.func(args)

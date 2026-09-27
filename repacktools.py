@@ -81,9 +81,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
 try:
     from wheel.wheelfile import WheelFile  # type: ignore
 
@@ -105,10 +102,6 @@ except ImportError:  # pragma: no cover
 
 log = logging.getLogger("repack_tool")
 
-# ===========================================================================
-# Generic helpers
-# ===========================================================================
-
 
 def _b64_nopad(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
@@ -128,11 +121,6 @@ def _hash_bytes(data: bytes) -> str:
 
 def _human_size(n: int) -> str:
     return f"{n / (1024 * 1024):.2f} MB"
-
-
-# ---------------------------------------------------------------------------
-# Wheel tag helpers
-# ---------------------------------------------------------------------------
 
 
 def py_version_tag() -> str:
@@ -179,11 +167,6 @@ def _has_binary(root: Path) -> bool:
         if p.is_file() and p.suffix.lower() in BINARY_SUFFIXES:
             return True
     return False
-
-
-# ---------------------------------------------------------------------------
-# Metadata / RECORD parsing
-# ---------------------------------------------------------------------------
 
 
 def _read_metadata(dist_info: Path) -> dict[str, str]:
@@ -247,11 +230,6 @@ def _console_script_names(dist_info: Path) -> list[str]:
     return names
 
 
-# ===========================================================================
-# Package discovery
-# ===========================================================================
-
-
 @dataclass
 class PackageInfo:
     name: str
@@ -288,7 +266,6 @@ def resolve_source(source: str, explicit: Optional[Path]) -> Path:
         except Exception:
             return Path(sysconfig.get_paths()["purelib"]).resolve()
     if source == "auto":
-        # Prefer the site-packages adjacent to sys.executable.
         candidates = [
             Path(sysconfig.get_paths()["purelib"]).resolve(),
             Path(site.getusersitepackages()).resolve(),
@@ -360,20 +337,15 @@ def _guess_top_level(site_packages: Path, dist_info: Path, name: str) -> str:
         if first:
             return first[0].strip()
     underscored = name.lower().replace("-", "_").replace(".", "_")
-    # Prefer a directory match.
+
     for cand in (
         site_packages / underscored,
         site_packages / f"{underscored}.py",
     ):
         if cand.exists():
             return underscored
-    # Fall back to dist-info stem.
+
     return _parse_dist_info_stem(dist_info)[0].replace("-", "_").lower()
-
-
-# ===========================================================================
-# Wheel builders
-# ===========================================================================
 
 
 def _write_wheel_metadata(
@@ -419,11 +391,6 @@ def _zip_directory(src: Path, dest: Path) -> None:
                 zf.write(f, f.relative_to(src).as_posix())
 
 
-# ---------------------------------------------------------------------------
-# Method: simple (whole-dir copy)
-# ---------------------------------------------------------------------------
-
-
 def build_wheel_simple(
     pkg: PackageInfo, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
@@ -435,7 +402,6 @@ def build_wheel_simple(
             tmp_p = Path(tmp)
             sp = pkg.site_packages
 
-            # Copy the package source (dir or single .py).
             src_dir = sp / pkg.top_level
             src_file = sp / f"{pkg.top_level}.py"
             if src_dir.is_dir():
@@ -443,27 +409,22 @@ def build_wheel_simple(
             elif src_file.exists():
                 shutil.copy2(src_file, tmp_p / src_file.name)
             else:
-                # Fall back to dist-info derived name.
                 fallback_dir = sp / pkg.name.lower().replace("-", "_")
                 if fallback_dir.is_dir():
                     shutil.copytree(fallback_dir, tmp_p / fallback_dir.name)
                 else:
                     return False, f"source files for {pkg.name} not found", None
 
-            # Copy the dist-info as-is.
             dst_di = tmp_p / pkg.dist_info.name
             shutil.copytree(pkg.dist_info, dst_di)
 
-            # Ensure WHEEL / METADATA exist and rewrite WHEEL tag.
             _write_wheel_metadata(dst_di, pkg, tag)
 
-            # Ensure top_level.txt.
             if not (dst_di / "top_level.txt").exists():
                 (dst_di / "top_level.txt").write_text(
                     pkg.top_level + "\n", encoding="utf-8"
                 )
 
-            # Build RECORD.
             (dst_di / "RECORD").write_text(
                 _compute_record(tmp_p, pkg.dist_info.name), encoding="utf-8"
             )
@@ -480,11 +441,6 @@ def build_wheel_simple(
     except Exception as e:
         log.debug("build_wheel_simple failed", exc_info=True)
         return False, f"error: {e}", None
-
-
-# ---------------------------------------------------------------------------
-# Method: record (RECORD-driven, accurate)
-# ---------------------------------------------------------------------------
 
 
 def build_wheel_from_record(
@@ -527,9 +483,7 @@ def build_wheel_from_record(
             return False, f"copied to {missing_dir}: {msg}", None
         if on_missing == "warn" and verbose:
             log.warning("  %s: %s", pkg.name, msg)
-        # fall through with what we have (skip mode default)
 
-    # Determine wheel tag: pure if no binaries in resolved set, else use sys tag.
     has_bin = any(s.suffix.lower() in BINARY_SUFFIXES for s, _ in resolved)
     if has_bin:
         tag = "-".join(current_sys_tag())
@@ -556,7 +510,6 @@ def build_wheel_from_record(
                 else:
                     shutil.copy2(src, target)
 
-            # Console scripts -> {name}-{ver}.data/scripts/
             scripts = _console_script_names(pkg.dist_info)
             if scripts:
                 scripts_dst = tmp_p / data_dir_name / "scripts"
@@ -602,11 +555,6 @@ def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Method: wheel pack subprocess (builder=wheelpack)
-# ---------------------------------------------------------------------------
-
-
 def build_wheel_via_subprocess(
     src_unpacked: Path, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
@@ -626,18 +574,13 @@ def build_wheel_via_subprocess(
         return False, "wheel module not available", None
     if res.returncode != 0:
         return False, f"wheel pack failed: {res.stderr.strip()[:200]}", None
-    # Find newest wheel in output dir.
+
     wheels = sorted(
         output_dir.glob("*.whl"), key=lambda p: p.stat().st_mtime, reverse=True
     )
     if verbose and wheels:
         log.info("  wheelpack: %s", wheels[0].name)
     return True, "ok", wheels[0] if wheels else None
-
-
-# ===========================================================================
-# Repack orchestration
-# ===========================================================================
 
 
 @dataclass
@@ -696,8 +639,6 @@ class Repacker:
         else:
             return False, f"unknown method {self.method!r}", None
 
-        # Optional post-pass: hand the unpacked tree to `wheel pack`
-        # (rarely needed but preserved as an alternative builder).
         if ok and self.builder == "wheelpack" and path is not None:
             with tempfile.TemporaryDirectory() as tmp:
                 tmp_p = Path(tmp)
@@ -778,11 +719,6 @@ def _worker_repack(args_tuple: tuple[dict[str, Any], PackageInfo]) -> dict[str, 
         "wheel": path.name if path else None,
         "message": msg,
     }
-
-
-# ===========================================================================
-# Subcommand: pack-dirs
-# ===========================================================================
 
 
 def _find_dist_info_dir(root: Path) -> Optional[Path]:
@@ -942,11 +878,6 @@ def run_pack_dirs(
     return 0 if failures == 0 else 1
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="repack_tool",
@@ -1061,11 +992,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--workers", type=int, default=None, help="worker count (parallel mode)"
     )
     return p
-
-
-# ---------------------------------------------------------------------------
-# Command implementations
-# ---------------------------------------------------------------------------
 
 
 def cmd_repack(args: argparse.Namespace) -> int:
@@ -1200,11 +1126,6 @@ def cmd_pack_dirs(args: argparse.Namespace) -> int:
     )
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -1231,7 +1152,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    # Required for multiprocessing on Windows / spawn start method.
     from multiprocessing import freeze_support
 
     freeze_support()

@@ -57,7 +57,6 @@ def check_file(path: Path):
         cmd = ["clang", "-std=c11", "-Wall", "-Wextra", "-fsyntax-only", str(path)]
         rc, out = run(cmd)
     elif ext in HEADER_CPP_EXTS:
-        # echo '#include "file.hpp"' | clang++ -x c++ -fsyntax-only -
         include_line = f'#include "{path.name}"\n'.encode()
         cmd = ["clang++", "-x", "c++", "-fsyntax-only", "-", "-I", str(path.parent)]
         rc, out = run(cmd, input_bytes=include_line)
@@ -74,7 +73,6 @@ def check_file(path: Path):
 def gather_files(paths):
     files = []
     if not paths:
-        # current dir, non-recursive
         cwd = Path.cwd()
         for p in sorted(cwd.iterdir()):
             if p.is_file() and p.suffix.lower() in ALL_EXTS:

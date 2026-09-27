@@ -19,7 +19,6 @@ from typing import Final
 from dh import is_binary, should_skip
 from loguru import logger
 
-# Module-level constants
 ANSI_RESET: Final[str] = "\x1b[0m"
 ANSI_BOLD: Final[str] = "\x1b[1m"
 ANSI_DIM: Final[str] = "\x1b[2m"
@@ -315,7 +314,6 @@ def main() -> int:
     start_time: float = time.time()
     processed_count: int = 0
 
-    # Use multiprocessing.Pool with apply_async
     with Pool(processes=NUM_WORKERS) as pool:
         async_results: list[AsyncResult[FileResult]] = []
         for path in files:

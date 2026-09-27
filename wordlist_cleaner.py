@@ -32,7 +32,6 @@ def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[st
             f"[Info] Large file detected ({size_bytes / (1024 * 1024):.2f} MB). Using mmap..."
         )
         with file_path.open("r+b") as f:
-            # Note: mmap requires the file descriptor
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 content = mm.read().decode("utf-8", errors="ignore")
                 return [line.strip() for line in content.splitlines() if line.strip()]
@@ -52,13 +51,11 @@ def process_similar(
     words = read_lines_dynamically(file_path, mmap_threshold_mb)
     pattern_groups = defaultdict(list)
 
-    # Group words by wildcard patterns (e.g., 'test' -> '*est', 't*st', 'te*t', 'tes*')
     for word in words:
         for idx in range(len(word)):
             pattern = word[:idx] + "*" + word[idx + 1 :]
             pattern_groups[pattern].append(word)
 
-    # Identify words that fall into groups larger than 1 (meaning they have similar counterparts)
     similar_words: set[str] = set()
     for group in pattern_groups.values():
         if len(group) > 1:
@@ -69,15 +66,12 @@ def process_similar(
         print("No similar items found.")
         return
 
-    # Keep only words that are not in the similar set
     clean_words = [word for word in words if word not in similar_words]
 
-    # Append similar words to the designated output file
     with similar_out_file.open("a", encoding="utf-8") as sf:
         for word in sorted(similar_words):
             sf.write(word + "\n")
 
-    # Overwrite the original file with the clean words
     with file_path.open("w", encoding="utf-8") as f:
         for word in clean_words:
             f.write(word + "\n")
@@ -95,7 +89,6 @@ def process_repeats(file_path: Path, pattern: str) -> None:
 
     regex = re.compile(pattern, re.IGNORECASE)
 
-    # Create a temporary file to stream results into safely
     fd, temp_path = tempfile.mkstemp(prefix="wordlist_", suffix=".tmp")
     temp_file = Path(temp_path)
 
@@ -111,19 +104,16 @@ def process_repeats(file_path: Path, pattern: str) -> None:
                 total_count += 1
                 clean_line = line.rstrip("\n")
 
-                # If it doesn't match the repeating chars regex, keep it
                 if not regex.fullmatch(clean_line):
                     out_f.write(line)
                 else:
                     removed_count += 1
 
-        # Safely replace the original file with the filtered temp file
         temp_file.replace(file_path)
         print(f"[Success] Filtered {removed_count} out of {total_count} lines.")
         print(f"[Success] Updated {file_path} in-place.")
 
     except Exception:
-        # Cleanup temporary file if something goes wrong
         if temp_file.exists():
             with contextlib.suppress(OSError):
                 temp_file.unlink()
@@ -137,7 +127,6 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # --- 'similar' subcommand ---
     parser_similar = subparsers.add_parser(
         "similar",
         help="Remove and isolate words that differ by a single character.",
@@ -157,7 +146,6 @@ def main() -> int:
         help="File to append removed similar words to.",
     )
 
-    # --- 'repeats' subcommand ---
     parser_repeats = subparsers.add_parser(
         "repeats",
         help="Rapidly stream and remove words containing repeated single characters.",

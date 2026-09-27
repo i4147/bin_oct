@@ -10,9 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import BytesIO
 from pathlib import Path
 
-# Regex to safely split Python string literals into (prefix, quote, content)
 STRING_RE = re.compile(r'^([rufbRUFB]*)([\'"]{3}|[\'"]{1})(.*)\2$', flags=re.DOTALL)
-# Regex to safely split comments into (prefix, whitespace, content)
+
 COMMENT_RE = re.compile(r"^(#+)(\s*)(.*)$", flags=re.DOTALL)
 
 STATE_FILE = Path(".translation_state.json")
@@ -114,17 +113,15 @@ def batch_translate(items, translate_func):
                 idx = futures[future]
                 batch_results[idx] = future.result()
 
-        # Update items with translated text
         for item, translated_content in zip(batch, batch_results):
             item["translated_content"] = translated_content
 
-        # Anti-rate-limit sleep
         time.sleep(1.0)
 
 
 def apply_replacements(source_code, replacements):
     lines = source_code.splitlines(keepends=True)
-    # Sort descending by row and col
+
     replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
 
     for start_row, start_col, end_row, end_col, new_text in replacements:
@@ -136,7 +133,7 @@ def apply_replacements(source_code, replacements):
         else:
             start_line, end_line = lines[r1], lines[r2]
             lines[r1] = start_line[:start_col] + new_text + end_line[end_col:]
-            # Clear intermediate lines that were absorbed by the multi-line replacement
+
             for i in range(r1 + 1, r2 + 1):
                 lines[i] = ""
 
@@ -156,15 +153,12 @@ def process_file(filepath, translate_func):
         print(f"  -> Skipping (Original file has syntax errors)")
         return False
 
-    # Find the lines containing print statements or docstrings
     finder = TargetFinder()
     finder.visit(tree)
 
-    # Tokenize the source code
     tokens = list(tokenize.tokenize(BytesIO(source_code.encode("utf-8")).readline))
     items = []
 
-    # Extract target text from tokens
     for tok in tokens:
         if tok.type == tokenize.COMMENT:
             m = COMMENT_RE.match(tok.string)
@@ -180,7 +174,6 @@ def process_file(filepath, translate_func):
                     }
                 )
         elif tok.type == tokenize.STRING:
-            # Check if this string belongs to a docstring or print statement
             if tok.start[0] in finder.target_lines:
                 m = STRING_RE.match(tok.string)
                 if m:
@@ -227,7 +220,6 @@ def process_file(filepath, translate_func):
     new_source = apply_replacements(source_code, replacements)
 
     if new_source != source_code:
-        # Validate translated code integrity before saving
         try:
             ast.parse(new_source)
             filepath.write_text(new_source, encoding="utf-8")
@@ -277,7 +269,6 @@ def main():
         elif p.is_dir():
             files_to_process.extend(p.rglob("*.py"))
 
-    # Resolve paths fully and deduplicate
     files_to_process = sorted(list(set(p.resolve() for p in files_to_process)))
 
     if not files_to_process:

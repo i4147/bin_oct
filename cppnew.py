@@ -27,7 +27,6 @@ def cppnew(*args):
 
     file = Path(args[0]).expanduser()
 
-    # Refuse to clobber an existing file (cat > would silently overwrite).
     if file.exists():
         print(f"Error: {file} already exists", file=sys.stderr)
         return 1
@@ -35,7 +34,6 @@ def cppnew(*args):
     file.write_text(TEMPLATE)
     print(f"Created {file} with basic C++ template")
 
-    # Open in an editor. Prefer $EDITOR, else nano (Termux default).
     editor = (
         subprocess.run(
             ["sh", "-c", 'printf %s "$EDITOR"'], capture_output=True, text=True

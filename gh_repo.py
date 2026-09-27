@@ -49,10 +49,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
-
 DEFAULT_GITHUB_USERNAME = "unforgivenii147"
 DEFAULT_GIT_EMAIL = "adnanonagh@gmail.com"
 DEFAULT_GIT_USER = "unforgivenii147"
@@ -73,10 +69,6 @@ BACKEND_CHOICES = [
     "dulwich",
     "libgit2",
 ]
-
-# ---------------------------------------------------------------------------
-# Utilities
-# ---------------------------------------------------------------------------
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -113,11 +105,6 @@ def run_cli(
         capture_output=True,
         text=True,
     )
-
-
-# ---------------------------------------------------------------------------
-# Git backends (local operations)
-# ---------------------------------------------------------------------------
 
 
 class GitBackend(ABC):
@@ -543,11 +530,6 @@ class Pygit2Git(GitBackend):
             branch.rename(new_name)
 
 
-# ---------------------------------------------------------------------------
-# GitHub backends (repo creation / existence)
-# ---------------------------------------------------------------------------
-
-
 class GitHubBackend(ABC):
     @abstractmethod
     def repo_exists(self, owner: str, name: str) -> bool: ...
@@ -586,7 +568,6 @@ class GhCliGitHub(GitHubBackend):
             cmd += ["--description", description]
         r = run_cli(cmd)
         if r.returncode != 0:
-            # Repo may already exist; check
             if owner and self.repo_exists(owner, name):
                 return {"ssh_url": f"git@github.com:{owner}/{name}.git"}
             return None
@@ -724,11 +705,6 @@ class Github3GitHub(GitHubBackend):
             return None
 
 
-# ---------------------------------------------------------------------------
-# Backend factory
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class Backend:
     name: str
@@ -770,11 +746,6 @@ def resolve_backend(args: argparse.Namespace) -> Backend:
     return make_backend(args.backend, token, getattr(args, "github_username", None))
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: api  (mkghrepo.py)
-# ---------------------------------------------------------------------------
-
-
 def cmd_api(args: argparse.Namespace) -> int:
     backend = resolve_backend(args)
     owner = args.github_username
@@ -794,11 +765,6 @@ def cmd_api(args: argparse.Namespace) -> int:
     )
     print(f"📝 Clone URL: {data.get('clone_url', data.get('ssh_url', ''))}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: api-push  (new_repo.py)
-# ---------------------------------------------------------------------------
 
 
 def cmd_api_push(args: argparse.Namespace) -> int:
@@ -847,11 +813,6 @@ def cmd_api_push(args: argparse.Namespace) -> int:
 
     print(f"✅ Repository '{repo_name}' is now on GitHub!")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: gh-create  (new_repo2.py)
-# ---------------------------------------------------------------------------
 
 
 def cmd_gh_create(args: argparse.Namespace) -> int:
@@ -919,11 +880,6 @@ def cmd_gh_create(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: gh-cli  (newrepo.py)
-# ---------------------------------------------------------------------------
-
-
 def cmd_gh_cli(args: argparse.Namespace) -> int:
     backend = resolve_backend(args)
     cwd = Path.cwd()
@@ -949,7 +905,7 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
             return 1
     else:
         print("Remote 'origin' already exists. Checking if repo exists on GitHub...")
-        # Best-effort: rely on gh CLI for fetch if available; otherwise warn.
+
         fetch = run_cli(["git", "fetch", "origin"], cwd=cwd)
         if fetch.returncode == 0:
             print("GitHub repository exists. Will push changes.")
@@ -981,11 +937,6 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: gh-managed  (pynewrepo.py)
-# ---------------------------------------------------------------------------
-
-
 class GitHubRepoManager:
     def __init__(
         self,
@@ -1005,14 +956,12 @@ class GitHubRepoManager:
         self.branch = branch
         self.repo_url = f"https://github.com/{github_username}/{self.repo_name}.git"
 
-    # --- checks ---
     def _check_gh_cli_installed(self) -> bool:
         return run_cli(["gh", "--version"]).returncode == 0
 
     def _check_gh_authenticated(self) -> bool:
         return run_cli(["gh", "auth", "status"]).returncode == 0
 
-    # --- actions ---
     def _init_local_repo(self) -> None:
         print(f"\n📦 Initializing local git repository in {self.cwd}...")
         self.backend.git.init_repo(self.cwd)
@@ -1201,11 +1150,6 @@ def cmd_gh_managed(args: argparse.Namespace) -> int:
         print(f"\nUnexpected error: {exc}")
         traceback.print_exc()
         return 1
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def add_common_backend_args(p: argparse.ArgumentParser) -> None:

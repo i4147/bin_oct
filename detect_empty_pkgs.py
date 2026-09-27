@@ -28,16 +28,11 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Tunables
-# ---------------------------------------------------------------------------
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300
 
-# Archive formats we know how to open.  `.whl` is a zip file.
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
 
-# Names that are "pure metadata", i.e. not actual shipped code.
 METADATA_NAMES = {
     "PKG-INFO",
     "METADATA",
@@ -70,7 +65,6 @@ METADATA_NAMES = {
     "WHEEL",
 }
 
-# Top-level directories that are not "real code".
 NON_CODE_PREFIXES = (
     "docs/",
     "doc/",
@@ -84,9 +78,6 @@ NON_CODE_PREFIXES = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Uniform archive accessor  (tar.gz / zip / whl)
-# ---------------------------------------------------------------------------
 class _Member:
     __slots__ = ("name", "size", "_read")
 
@@ -130,7 +121,7 @@ class Archive:
             for m in fh.getmembers():
                 if not m.isfile():
                     continue
-                # bind m/fh into the closure so late binding doesn't break
+
                 yield _Member(
                     m.name,
                     m.size,
@@ -147,9 +138,6 @@ class Archive:
                 )
 
 
-# ---------------------------------------------------------------------------
-# Small member helpers
-# ---------------------------------------------------------------------------
 def _is_py(member: _Member) -> bool:
     return member.name.endswith(".py")
 
@@ -158,10 +146,6 @@ def _basename(member: _Member) -> str:
     return member.name.replace("\\", "/").rsplit("/", 1)[-1]
 
 
-# ---------------------------------------------------------------------------
-# Individual checks.  Each returns a human-readable reason string if the
-# archive should be moved, or None if this heuristic doesn't fire.
-# ---------------------------------------------------------------------------
 def _check_no_files(members):
     if not members:
         return "no files in archive"
@@ -276,7 +260,6 @@ def _check_tiny(members):
     return None
 
 
-# Order matters: cheaper / more definitive checks first.
 _CHECKS = (
     _check_no_files,
     _check_no_py,
@@ -290,9 +273,6 @@ _CHECKS = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Worker
-# ---------------------------------------------------------------------------
 def analyze(path: Path):
     try:
         with Archive(path) as ar:
@@ -306,9 +286,6 @@ def analyze(path: Path):
         return path, f"invalid archive ({type(e).__name__})"
 
 
-# ---------------------------------------------------------------------------
-# Destination naming
-# ---------------------------------------------------------------------------
 def _split_archive_name(name: str):
     lower = name.lower()
     for compound in (".tar.gz",):
@@ -331,9 +308,6 @@ def _unique_dest(directory: Path, name: str) -> Path:
         i += 1
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def parse_args():
     ap = argparse.ArgumentParser(
         description=(
@@ -350,20 +324,15 @@ def parse_args():
     return ap.parse_args()
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def main():
     args = parse_args()
 
     cwd = Path.cwd()
     empty_dir = cwd / "empty"
 
-    # Only create ./empty/ when we're going to use it.
     if args.apply:
         empty_dir.mkdir(exist_ok=True)
 
-    # Collect targets across all supported extensions.
     targets = sorted(
         {
             p
@@ -380,7 +349,6 @@ def main():
     moved = 0
 
     with mp.Pool(WORKERS) as pool:
-        # chunksize=1 gives the best load-balancing for uneven work
         for path, reason in pool.imap_unordered(analyze, targets, chunksize=1):
             if reason is None:
                 continue

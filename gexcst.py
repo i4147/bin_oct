@@ -67,18 +67,15 @@ class EntityExtractor(cst.CSTVisitor):
             if not code_lines:
                 return ""
 
-            # Handle single-line case
             if start_line == end_line - 1:
                 return code_lines[0][start_col:end_col]
 
-            # Handle multi-line case
             code_lines[0] = code_lines[0][start_col:]
             if end_col > 0 and len(code_lines) > 1:
                 code_lines[-1] = code_lines[-1][:end_col]
 
             return "".join(code_lines)
         except Exception:
-            # Fallback: try to use the code attribute if available
             if hasattr(node, "body") and isinstance(
                 node.body, cst.SimpleStatementSuite
             ):
@@ -108,14 +105,14 @@ class EntityExtractor(cst.CSTVisitor):
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "function", node.name.value)
-            # Don't visit children of top-level functions to avoid nested entities
+
             return False
         return True
 
     def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "class", node.name.value)
-            # Don't visit children of top-level classes to avoid nested entities
+
             return False
         return True
 
@@ -124,7 +121,7 @@ class EntityExtractor(cst.CSTVisitor):
             target = node.targets[0].target
             if isinstance(target, cst.Name):
                 target_name = target.value
-                # Check if it's a constant (all uppercase with underscores)
+
                 if re.match(r"^[A-Z_][A-Z0-9_]*$", target_name):
                     self._extract_and_save(node, "constant", target_name)
         return True

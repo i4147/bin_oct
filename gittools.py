@@ -48,10 +48,6 @@ from urllib.parse import urlparse
 import requests
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
 
 def _load_repo_list(file_path: Path) -> list[str]:
     if not file_path.exists():
@@ -155,11 +151,6 @@ def _gh_size_mb(owner: str, repo: str, token: Optional[str] = None) -> Optional[
     return None
 
 
-# ---------------------------------------------------------------------------
-# clone  (originally clone_repos.py)
-# ---------------------------------------------------------------------------
-
-
 def _git_clone_one(slug: str, output_dir: Path) -> tuple[str, bool, str]:
     from git import GitCommandError, Repo
     from git.exc import InvalidGitRepositoryError
@@ -235,11 +226,6 @@ def cmd_clone(args: argparse.Namespace) -> int:
 
     _print_summary(counters["ok"], counters["existed"], counters["failed"], len(repos))
     return 0
-
-
-# ---------------------------------------------------------------------------
-# zip  (originally clonerepos.py)
-# ---------------------------------------------------------------------------
 
 
 def _zip_download_one(
@@ -333,11 +319,6 @@ def cmd_zip(args: argparse.Namespace) -> int:
         success_label="Successfully downloaded",
     )
     return 0
-
-
-# ---------------------------------------------------------------------------
-# dulwich  (originally clonerepos_dulwich.py)
-# ---------------------------------------------------------------------------
 
 
 def _dulwich_size_check(slug: str, max_bytes: int) -> tuple[bool, int]:
@@ -454,11 +435,6 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
     if not args.no_cleanup and success_slugs:
         print(f"  📝 Remaining in {repo_file}: {len(_load_repo_list(repo_file))}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# fork  (originally forklone.py)
-# ---------------------------------------------------------------------------
 
 
 def _ensure_env_template() -> bool:
@@ -578,11 +554,6 @@ def cmd_fork(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# gclone  (originally gclone1.py)
-# ---------------------------------------------------------------------------
-
-
 def _parse_gh_slug(text: str) -> tuple[Optional[str], Optional[str]]:
     text = text.strip()
     if "/" in text and not text.startswith("http"):
@@ -655,11 +626,6 @@ def cmd_gclone(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# get-zip  (originally get_zipped_repo.py)
-# ---------------------------------------------------------------------------
-
-
 def _download_zip_with_progress(
     owner: str, repo: str, branch: str, output: Optional[str]
 ) -> str:
@@ -696,7 +662,7 @@ def _download_zip_with_progress(
 
 
 def cmd_get_zip(args: argparse.Namespace) -> int:
-    # Preserve original behaviour: dotenv is loaded at module import time.
+
     try:
         from dotenv import load_dotenv
 
@@ -711,11 +677,6 @@ def cmd_get_zip(args: argparse.Namespace) -> int:
         sys.exit(1)
     _download_zip_with_progress(owner, repo, args.branch, args.output)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# sparse  (originally sparse_clone.py)
-# ---------------------------------------------------------------------------
 
 
 def _sparse_clone_one(
@@ -781,11 +742,6 @@ def cmd_sparse(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI wiring
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="repotools",
@@ -804,7 +760,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # clone --------------------------------------------------------------
     p_clone = sub.add_parser("clone", help="Parallel git clone (GitPython).")
     p_clone.add_argument(
         "file",
@@ -825,7 +780,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_clone.set_defaults(func=cmd_clone)
 
-    # zip ----------------------------------------------------------------
     p_zip = sub.add_parser("zip", help="Parallel ZIP download via GitHub API.")
     p_zip.add_argument("file", nargs="?", default="repos.txt")
     p_zip.add_argument("-o", "--output", default="repos")
@@ -836,7 +790,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_zip.add_argument("--dry-run", action="store_true")
     p_zip.set_defaults(func=cmd_zip)
 
-    # dulwich ------------------------------------------------------------
     p_dul = sub.add_parser(
         "dulwich", help="Pure-Python clone via dulwich with size limit."
     )
@@ -854,12 +807,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_dul.add_argument("--dry-run", action="store_true")
     p_dul.set_defaults(func=cmd_dulwich)
 
-    # fork ---------------------------------------------------------------
     p_fork = sub.add_parser("fork", help="Fork a repo on GitHub and clone the fork.")
     p_fork.add_argument("repo", help="user/repo or full GitHub URL")
     p_fork.set_defaults(func=cmd_fork)
 
-    # gclone -------------------------------------------------------------
     p_gc = sub.add_parser(
         "gclone", help="Size-filtered clone of every entry in repos.txt."
     )
@@ -880,7 +831,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_gc.set_defaults(func=cmd_gclone)
 
-    # get-zip ------------------------------------------------------------
     p_gz = sub.add_parser("get-zip", help="Download one repo as a ZIP archive.")
     p_gz.add_argument("repo", help="user/repo")
     p_gz.add_argument(
@@ -894,7 +844,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_gz.set_defaults(func=cmd_get_zip)
 
-    # sparse -------------------------------------------------------------
     p_sp = sub.add_parser(
         "sparse", help="Sparse checkout clone filtered by extensions."
     )

@@ -14,10 +14,8 @@ from typing import Any
 
 def hash_node(node: ast.AST) -> str:
     try:
-        # ast.unparse is available in Python 3.9+
         source = ast.unparse(node)
     except AttributeError:
-        # Fallback: dump the AST structure
         source = ast.dump(node)
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
@@ -41,7 +39,6 @@ def extract_definitions(path: Path) -> dict[str, Any] | None:
             classes[node.name] = hash_node(node)
 
         elif isinstance(node, ast.Assign):
-            # Module-level constants: UPPER_CASE simple names
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id.isupper():
                     constants[target.id] = hash_node(node)
@@ -119,28 +116,22 @@ def main() -> None:
         )
         return
 
-    # Fixed pool of 8 workers
     with mp.Pool(processes=8) as pool:
-        # Parse files in parallel
         parse_results = [pool.apply_async(extract_definitions, (f,)) for f in py_files]
         parsed = [r.get() for r in parse_results]
 
-        # Filter out files that failed to parse
         valid = [p for p in parsed if p and "error" not in p]
         errors = [p for p in parsed if p and "error" in p]
 
-        # Build all unique pairs
         pairs = [
             (valid[i], valid[j])
             for i in range(len(valid))
             for j in range(i + 1, len(valid))
         ]
 
-        # Compare pairs in parallel
         compare_results = [pool.apply_async(compare_pair, (p,)) for p in pairs]
         comparisons = [r.get() for r in compare_results]
 
-    # Sort by similarity (most similar first)
     comparisons.sort(key=lambda x: x["similarity"], reverse=True)
 
     report = {

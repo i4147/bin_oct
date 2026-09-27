@@ -39,9 +39,6 @@ import sys
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# Optional third-party imports
-# ---------------------------------------------------------------------------
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     from fontTools.ttLib import TTFont, woff2
@@ -49,10 +46,6 @@ try:
     HAS_FONTTOOLS = True
 except ImportError:
     HAS_FONTTOOLS = False
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def unique_path(path: Path) -> Path:
@@ -96,7 +89,6 @@ def collect_files(
         else:
             print(f"Warning: path not found: {p}", file=sys.stderr)
 
-    # Remove duplicates while preserving order
     seen = set()
     unique: list[Path] = []
     for f in result:
@@ -116,11 +108,6 @@ def run_parallel(
         return [func(item, *args) for item in items]
     with multiprocessing.Pool(processes=workers) as pool:
         return pool.starmap(func, [(item, *args) for item in items])
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: convert (font_convert.py)
-# ---------------------------------------------------------------------------
 
 
 def _convert_worker(src: Path, target_ext: str, remove_source: bool) -> None:
@@ -164,7 +151,6 @@ def cmd_convert(args: argparse.Namespace) -> int:
     extensions = [".ttf", ".otf", ".woff", ".woff2"]
     files = collect_files(args.paths, extensions)
 
-    # Filter out files already in the target format
     target_suffix = f".{args.to}"
     files = [f for f in files if f.suffix.lower() != target_suffix]
 
@@ -174,11 +160,6 @@ def cmd_convert(args: argparse.Namespace) -> int:
 
     run_parallel(_convert_worker, files, args.workers, args.to, args.rm)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: otf2ttf (otf2ttf.py) — pure fontTools
-# ---------------------------------------------------------------------------
 
 
 def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
@@ -292,11 +273,6 @@ def cmd_otf2ttf(args: argparse.Namespace) -> int:
     return 0 if summary["failed"] == 0 else 1
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: otf2ttf-fontforge (otf_to_ttf.py)
-# ---------------------------------------------------------------------------
-
-
 def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
     try:
         import fontforge
@@ -355,11 +331,6 @@ def cmd_otf2ttf_fontforge(args: argparse.Namespace) -> int:
     return 0 if summary["error"] == 0 else 1
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: tottf (tottf.py) — FontForge CLI
-# ---------------------------------------------------------------------------
-
-
 def _tottf_worker(src: Path, remove_source: bool) -> bool:
     dst = src.with_suffix(".ttf")
     cmd = [
@@ -400,11 +371,6 @@ def cmd_tottf(args: argparse.Namespace) -> int:
 
     print(f"\nConverted {success}/{len(files)} files.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: woff22ttf (woff22ttf.py)
-# ---------------------------------------------------------------------------
 
 
 def _woff22ttf_worker(src: Path, keep_source: bool) -> bool:
@@ -449,11 +415,6 @@ def cmd_woff22ttf(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI setup
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="font_toolkit.py",
@@ -463,7 +424,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # --- convert ---
     p_convert = subparsers.add_parser(
         "convert",
         help="Convert TTF/OTF/WOFF/WOFF2 fonts to another container flavour.",
@@ -489,7 +449,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_convert.set_defaults(func=cmd_convert)
 
-    # --- otf2ttf ---
     p_otf2ttf = subparsers.add_parser(
         "otf2ttf",
         help="Convert OTF to TTF using fontTools (pure Python).",
@@ -512,7 +471,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_otf2ttf.set_defaults(func=cmd_otf2ttf)
 
-    # --- otf2ttf-fontforge ---
     p_otf2ttf_ff = subparsers.add_parser(
         "otf2ttf-fontforge",
         help="Convert OTF to TTF using FontForge Python bindings.",
@@ -528,7 +486,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_otf2ttf_ff.set_defaults(func=cmd_otf2ttf_fontforge)
 
-    # --- tottf ---
     p_tottf = subparsers.add_parser(
         "tottf",
         help="Convert SVG/WOFF/EOT/OTF/TTC to TTF using FontForge CLI.",
@@ -544,7 +501,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_tottf.set_defaults(func=cmd_tottf)
 
-    # --- woff22ttf ---
     p_woff22 = subparsers.add_parser(
         "woff22ttf",
         help="Decompress WOFF2 to TTF using fontTools.",

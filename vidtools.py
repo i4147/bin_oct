@@ -75,7 +75,6 @@ def cut_video(
         )
         raise SystemExit(1)
 
-    # Resolve time-conversion factors. Original cutvid.py defaults are preserved.
     if time_mode == "correct":
         if minute_factor is None:
             minute_factor = 60
@@ -231,7 +230,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # cut subcommand: replaces cutvid.py
     cut = sub.add_parser("cut", help="Cut a segment from a video (cutvid.py).")
     cut.add_argument("input", help="Input video file, e.g. input.mkv")
     cut.add_argument("start", help="Start time hh:mm:ss")
@@ -282,7 +280,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Advanced: milliseconds per second for frame conversion. Default: 1000",
     )
 
-    # reverse subcommand: replaces reverse_video.py
     rev = sub.add_parser(
         "reverse",
         help="Reverse a video with ffmpeg (reverse_video.py).",

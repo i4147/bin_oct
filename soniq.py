@@ -38,7 +38,6 @@ def sort_uniq(
     if not original_count:
         return (0, [])
 
-    # Slice range if start and end are provided (1-based line indexing)
     if start is not None and end is not None:
         start_idx = max(0, start - 1)
         end_idx = min(original_count, end)
@@ -77,7 +76,6 @@ def sort_uniq(
     unique_sorted = sorted(seen)
     lines_removed = len(target_lines) - len(unique_sorted)
 
-    # Reconstruct full file content
     final_lines = head + unique_sorted + tail
 
     if lines_removed > 0 or all_lines != unique_sorted:
@@ -92,7 +90,6 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     quiet = "--quiet" in args or "-q" in args
 
-    # Positional arguments excluding flags
     pos_args = [a for a in args if not a.startswith("-")]
 
     if not pos_args:

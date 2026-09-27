@@ -49,7 +49,6 @@ MAX_FILE_SIZE: int = 50 * 1024 * 1024
 MIN_TITLE_LENGTH: int = 2
 MAX_FILENAME_LENGTH: int = 200
 
-# Configure loguru
 logger.remove()
 logger.add(
     sys.stderr,
@@ -68,7 +67,6 @@ logger.add(
     diagnose=True,
 )
 
-# Transliteration maps
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",
     "ب": "b",
@@ -325,7 +323,6 @@ class LanguageTransliterator:
         if not text:
             return "english"
 
-        # Count characters in each script range
         persian_count: int = sum(1 for c in text if "\u0600" <= c <= "\u06ff")
         cyrillic_count: int = sum(1 for c in text if "\u0400" <= c <= "\u04ff")
         greek_count: int = sum(1 for c in text if "\u0370" <= c <= "\u03ff")
@@ -401,7 +398,6 @@ class HtmlTitleExtractor:
             logger.error(f"Failed to read {path}: {e}")
             return None
 
-        # Try tree-sitter first, then fall back to regex
         if self.parser and self.parser.available:
             title: str | None = self._extract_with_tree_sitter(content)
             if title:
@@ -491,9 +487,6 @@ class TreeSitterParser:
 
     def _init_parser(self) -> None:
         try:
-            # This is a placeholder - actual implementation would need language pack
-            # self.parser = Parser()
-            # self.parser.set_language(Language(...))
             pass
         except Exception as e:
             logger.debug(f"Could not initialize tree-sitter parser: {e}")

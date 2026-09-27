@@ -15,7 +15,6 @@ import tarfile
 from collections.abc import Iterable
 from pathlib import Path
 
-# Number of worker processes used for concurrent deletion.
 _WORKERS: int = 8
 
 

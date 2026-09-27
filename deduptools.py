@@ -42,10 +42,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
 
 def iter_py_files(
     root: Path, *, exclude_names: set[str] | None = None
@@ -80,11 +76,6 @@ class Declaration:
     end_lineno: int
     source: str
     content_hash: str
-
-
-# ---------------------------------------------------------------------------
-# AST utilities (used by `ast` and `refactor` subcommands)
-# ---------------------------------------------------------------------------
 
 
 class _NameStripper(ast.NodeTransformer):
@@ -153,11 +144,6 @@ def collect_ast_declarations(
     return out
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: `const`  (check_const.py)
-# ---------------------------------------------------------------------------
-
-
 def cmd_const(args: argparse.Namespace) -> int:
     target: Path = args.file
     if not target.exists():
@@ -199,11 +185,6 @@ def cmd_const(args: argparse.Namespace) -> int:
     print(f"Moved {len(dup_lines)} duplicate declarations to {out_path}")
     print(f"Updated {target} in place.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: `ast`  (check_dups.py)
-# ---------------------------------------------------------------------------
 
 
 def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
@@ -314,11 +295,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
     else:
         print(f"Total duplicate block(s) moved: {moved_total}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: `ts`  (diduper.py + tsdeduper.py)
-# ---------------------------------------------------------------------------
 
 
 def _ts_make_parser():
@@ -449,11 +425,6 @@ def cmd_ts(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: `refactor`  (refactorer.py)
-# ---------------------------------------------------------------------------
-
-
 def _append(path: Path, text: str) -> None:
     with path.open("a", encoding="utf-8") as f:
         f.write(text + "\n\n")
@@ -508,11 +479,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dedup_tool",
@@ -521,7 +487,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # const ----------------------------------------------------------------
     p_const = sub.add_parser(
         "const",
         help="Regex-based duplicate-constant removal in a single file.",
@@ -534,7 +499,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_const.set_defaults(func=cmd_const)
 
-    # ast ------------------------------------------------------------------
     p_ast = sub.add_parser(
         "ast",
         help="AST-based dedup across one or more paths (default: cwd).",
@@ -552,7 +516,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ast.set_defaults(func=cmd_ast)
 
-    # ts -------------------------------------------------------------------
     p_ts = sub.add_parser(
         "ts",
         help="Tree-sitter content dedup (diduper/tsdeduper).",
@@ -579,7 +542,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ts.set_defaults(func=cmd_ts)
 
-    # refactor -------------------------------------------------------------
     p_ref = sub.add_parser(
         "refactor",
         help="Extract top-level defs/classes/consts into a package.",

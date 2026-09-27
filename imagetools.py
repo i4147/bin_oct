@@ -38,9 +38,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
-# ============================================================================
-# Optional dependency imports
-# ============================================================================
 try:
     from PIL import Image, UnidentifiedImageError  # type: ignore
 
@@ -98,9 +95,6 @@ except ImportError:  # pragma: no cover
     convert_from_bytes = None  # type: ignore
     _HAS_PDF2IMAGE = False
 
-# ============================================================================
-# Logging
-# ============================================================================
 LOG = logging.getLogger("imgtool")
 
 
@@ -113,9 +107,6 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-# ============================================================================
-# Constants (defaults preserved from the original scripts)
-# ============================================================================
 DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
     {
         ".git",
@@ -133,7 +124,6 @@ DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
     }
 )
 
-# to_jpg.py / tojpg.py union plus avif & heif
 JPG_INPUT_EXTS: frozenset[str] = frozenset(
     {
         ".png",
@@ -153,7 +143,6 @@ JPG_INPUT_EXTS: frozenset[str] = frozenset(
     }
 )
 
-# to_png.py union plus svg
 PNG_INPUT_EXTS: frozenset[str] = frozenset(
     {
         ".jpg",
@@ -170,7 +159,6 @@ PNG_INPUT_EXTS: frozenset[str] = frozenset(
     }
 )
 
-# neg.py default extension set
 INVERT_EXTS: frozenset[str] = frozenset(
     {
         ".jpg",
@@ -185,9 +173,6 @@ INVERT_EXTS: frozenset[str] = frozenset(
 )
 
 
-# ============================================================================
-# Generic helpers
-# ============================================================================
 def find_files(
     roots: Sequence[Path],
     extensions: Optional[Iterable[str]] = None,
@@ -281,9 +266,6 @@ def _run_parallel(
     return results
 
 
-# ============================================================================
-# Image helpers
-# ============================================================================
 def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
     if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
         im = im.convert("RGBA")
@@ -296,7 +278,7 @@ def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
 
 
 def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") -> None:
-    # Optional fast path with OpenCV (matches to_jpg.py / tojpg.py behaviour)
+
     if backend in ("auto", "cv2") and _HAS_CV2:
         img = cv2.imread(str(src), cv2.IMREAD_UNCHANGED)
         if img is not None:
@@ -324,7 +306,7 @@ def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") ->
 def save_png(
     src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool = False
 ) -> None:
-    # SVG requires a dedicated renderer
+
     if src.suffix.lower() == ".svg":
         if not _HAS_CAIROSVG:
             raise RuntimeError("cairosvg is required to render SVG files")
@@ -357,9 +339,6 @@ def save_png(
         im.save(dst, "PNG")
 
 
-# ============================================================================
-# Worker functions (module level for ProcessPoolExecutor pickling)
-# ============================================================================
 def _worker_jpg(task):
     src, dst, quality, backend, delete_source = task
     try:
@@ -428,7 +407,6 @@ def _extract_gif_frames(
     frames: list = []
     try:
         with Image.open(path) as img:
-            # Non-animated image disguised as .gif
             if not hasattr(img, "n_frames"):
                 canvas = Image.new("RGB", img.size, (255, 255, 255))
                 if img.mode in ("RGBA", "P"):
@@ -492,9 +470,6 @@ def _worker_gif(task):
     return (str(src), True, f"{src.name}: {written} frame(s) -> JPG")
 
 
-# ============================================================================
-# Subcommand implementations
-# ============================================================================
 def cmd_to_jpg(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     exts = {e.lower() for e in args.ext} if args.ext else set(JPG_INPUT_EXTS)
@@ -656,7 +631,6 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
     paths = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     out_dir = Path(args.output) if args.output else None
 
-    # Collect .html files (or raw HTML strings passed directly)
     inputs: list[str] = []
     for p in paths:
         if isinstance(p, Path) and p.is_dir():
@@ -693,9 +667,6 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ============================================================================
-# Argument parser
-# ============================================================================
 def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths", nargs="*", help="Files or directories (default: current directory)."
@@ -752,7 +723,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command")
 
-    # --- to-jpg ------------------------------------------------------------
     p = sub.add_parser("to-jpg", aliases=["jpg"], help="Convert images to JPEG.")
     _add_common(p)
     p.add_argument(
@@ -777,7 +747,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_to_jpg)
 
-    # --- to-png ------------------------------------------------------------
     p = sub.add_parser("to-png", aliases=["png"], help="Convert images to PNG.")
     _add_common(p)
     p.add_argument(
@@ -804,7 +773,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_to_png)
 
-    # --- gif-to-jpg --------------------------------------------------------
     p = sub.add_parser(
         "gif-to-jpg", aliases=["gif"], help="Extract GIF frames as JPEGs."
     )
@@ -833,7 +801,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_gif_to_jpg)
 
-    # --- invert ------------------------------------------------------------
     p = sub.add_parser("invert", help="Invert image colours (negative) in place.")
     _add_common(p)
     p.add_argument(
@@ -849,7 +816,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_invert)
 
-    # --- html-to-png -------------------------------------------------------
     p = sub.add_parser(
         "html-to-png",
         aliases=["html"],
@@ -891,9 +857,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# ============================================================================
-# Entry point
-# ============================================================================
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -902,7 +865,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         parser.print_help()
         return 2
 
-    # Resolve worker count now that the parser knows about it
     if hasattr(args, "workers") and (args.workers is None or args.workers <= 0):
         try:
             import os

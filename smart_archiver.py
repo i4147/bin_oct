@@ -641,7 +641,6 @@ Examples:
 
 
 if __name__ == "__main__":
-    # Configure loguru for console output
     logger.remove()
     logger.add(
         sys.stderr,

@@ -17,7 +17,7 @@ def make_parser() -> Parser:
 
 def has_syntax_error(parser: Parser, source: bytes) -> bool:
     tree = parser.parse(source)
-    # Walk the tree and look for ERROR or MISSING nodes
+
     stack = [tree.root_node]
     while stack:
         node = stack.pop()
@@ -31,7 +31,7 @@ def move_to_error_dir(path: Path) -> None:
     error_dir = path.parent / "error"
     error_dir.mkdir(exist_ok=True)
     target = error_dir / path.name
-    # Avoid overwriting: append a numeric suffix if needed
+
     if target.exists():
         i = 1
         while True:
@@ -49,7 +49,6 @@ def main() -> None:
     cwd = Path.cwd()
 
     for lua_file in cwd.rglob("*.lua"):
-        # Skip files already inside an 'error' directory
         if "error" in lua_file.parts:
             continue
         try:

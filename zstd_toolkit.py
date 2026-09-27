@@ -39,9 +39,6 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 
 import zstandard as zstd
 
-# ---------------------------------------------------------------------------
-# Optional logging backend
-# ---------------------------------------------------------------------------
 try:
     from loguru import logger  # type: ignore
 except ImportError:  # pragma: no cover
@@ -50,9 +47,6 @@ except ImportError:  # pragma: no cover
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("zstd_toolkit")
 
-# ---------------------------------------------------------------------------
-# Defaults / constants
-# ---------------------------------------------------------------------------
 DEFAULT_LEVEL: int = 19
 DEFAULT_THREADS: int = 4
 DEFAULT_WORKERS: int = min(os.cpu_count() or 4, 8)
@@ -60,7 +54,6 @@ DEFAULT_ARCHIVE_LEVEL: int = 3
 ZST_EXT: str = ".zst"
 TAR_ZST_EXT: str = ".tar.zst"
 
-# Extensions we never try to compress again (already compressed / incompressible)
 SKIP_EXTENSIONS: frozenset[str] = frozenset(
     {
         ".zst",
@@ -118,7 +111,6 @@ SKIP_EXTENSIONS: frozenset[str] = frozenset(
     }
 )
 
-# Directories we never descend into by default
 SKIP_DIRS: frozenset[str] = frozenset(
     {
         ".git",
@@ -135,9 +127,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
 )
 
 
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
 def parse_size(value: str) -> int:
     s = value.strip().upper().replace(" ", "")
     units = {
@@ -191,9 +180,6 @@ def _safe_extractall(tar: tarfile.TarFile, path: Path) -> None:
         tar.extractall(path)
 
 
-# ---------------------------------------------------------------------------
-# Result object
-# ---------------------------------------------------------------------------
 @dataclass(slots=True)
 class TaskResult:
     path: Path
@@ -216,9 +202,6 @@ class TaskResult:
         return (self.processed_size / self.original_size - 1) * 100
 
 
-# ---------------------------------------------------------------------------
-# Parallel runner with progress bar
-# ---------------------------------------------------------------------------
 def run_parallel(
     tasks: Sequence[Path],
     worker,
@@ -275,9 +258,6 @@ def run_parallel(
     return results
 
 
-# ---------------------------------------------------------------------------
-# Core operations
-# ---------------------------------------------------------------------------
 def compress_file(
     src: Path,
     level: int,
@@ -378,11 +358,9 @@ def tar_compress_dir(
     try:
         original = dir_size(src_dir)
 
-        # 1) build the tar
         with tarfile.open(tmp_tar, "w") as tar:
             tar.add(src_dir, arcname=src_dir.name)
 
-        # 2) stream the tar through zstd
         cctx = zstd.ZstdCompressor(level=level, threads=threads)
         with tmp_tar.open("rb") as fin, dst.open("wb") as fout:
             with cctx.stream_writer(fout) as writer:
@@ -488,7 +466,6 @@ def decompress_file(
         )
 
 
-# --- Picklable worker wrappers (used by multiprocessing.Pool) --------------
 def _compress_file_task(
     path: Path, *, level: int, threads: int, keep: bool, only_if_smaller: bool
 ) -> TaskResult:
@@ -505,9 +482,6 @@ def _decompress_task(path: Path, *, keep: bool, untar: bool) -> TaskResult:
     return decompress_file(path, keep=keep, untar=untar)
 
 
-# ---------------------------------------------------------------------------
-# Target discovery
-# ---------------------------------------------------------------------------
 def _should_skip_path(p: Path) -> bool:
     return any(part in SKIP_DIRS for part in p.parts)
 
@@ -555,9 +529,6 @@ def discover_targets(
     return files, dirs
 
 
-# ---------------------------------------------------------------------------
-# Summaries
-# ---------------------------------------------------------------------------
 def print_summary(results: Sequence[TaskResult], operation: str) -> None:
     total = len(results)
     ok = [r for r in results if r.success]
@@ -585,9 +556,6 @@ def print_summary(results: Sequence[TaskResult], operation: str) -> None:
         logger.warning(f"FAIL {r.path}: {r.error}")
 
 
-# ---------------------------------------------------------------------------
-# Subcommands
-# ---------------------------------------------------------------------------
 def cmd_compress(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not root.is_dir():
@@ -766,7 +734,6 @@ def cmd_split(args: argparse.Namespace) -> int:
     with src.open("rb") as f:
         tar_bytes = dctx.stream_reader(f).read()
 
-    # Count members
     with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r|") as tar:
         total_members = sum(1 for _ in tar)
     print(f"Total members: {total_members}")
@@ -814,9 +781,6 @@ def cmd_split(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="zstd_toolkit.py",
@@ -825,7 +789,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- compress -------------------------------------------------------
     p_c = sub.add_parser("compress", help="Compress files and/or directories")
     p_c.add_argument(
         "directory", nargs="?", default=".", help="Root directory (default: current)"
@@ -900,7 +863,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_c.set_defaults(func=cmd_compress)
 
-    # ---- decompress -----------------------------------------------------
     p_d = sub.add_parser("decompress", help="Decompress .zst / .tar.zst files")
     p_d.add_argument(
         "directory", nargs="?", default=".", help="Root directory (default: current)"
@@ -934,7 +896,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_d.set_defaults(func=cmd_decompress)
 
-    # ---- archive-cwd ----------------------------------------------------
     p_a = sub.add_parser(
         "archive-cwd", help="Archive the current directory into its parent"
     )
@@ -968,7 +929,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_a.set_defaults(func=cmd_archive_cwd)
 
-    # ---- split ----------------------------------------------------------
     p_s = sub.add_parser("split", help="Split a .tar.zst archive into N parts")
     p_s.add_argument("input", help="Path to a .tar.zst file")
     p_s.add_argument("parts", type=int, help="Number of parts to create")

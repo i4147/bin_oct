@@ -25,10 +25,6 @@ from typing import Final
 from dh import fsz
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 POOL_SIZE: Final[int] = 8
 
 RST_IMAGE_PATTERNS: Final[list[re.Pattern[str]]] = [
@@ -93,10 +89,6 @@ _LINKED_BADGE_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 _MD_LINK_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[([^\]]*)\]\(([^\)]+)\)")
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
-
 
 @dataclass
 class FileStats:
@@ -107,11 +99,6 @@ class FileStats:
     size_after: int
     removed_lines: int
     removed_refs: int
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def has_badge_domain(line: str) -> bool:
@@ -312,11 +299,6 @@ def print_stats(all_stats: Sequence[FileStats], base_path: Path) -> None:
             f"{((total_size_before - total_size_after) / total_size_before * 100):.1f}%"
         )
     print("-" * 40)
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:

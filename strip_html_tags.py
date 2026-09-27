@@ -50,8 +50,6 @@ BLOCK_TAGS = {
 }
 RAWTEXT_TAGS = {"script", "style", "textarea", "title"}
 
-# ---------- Phase 1: find safe split offsets ----------
-
 
 def _find_safe_splits(path: Path, n: int) -> list[int]:
     size = path.stat().st_size
@@ -66,7 +64,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
     pos = 0
     ti = 0
 
-    # We scan byte-by-byte-ish but in chunks to avoid syscall overhead.
     CHUNK = 1 << 20
     with path.open("rb") as f:
         buf = b""
@@ -81,7 +78,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
             pos += 1
 
             if raw_until_close is not None:
-                # Look for the closing tag; cheap check against a small window.
                 if b == ord("<"):
                     # peek
                     end = buf_start + len(buf)
@@ -97,7 +93,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                 continue
 
             if b == ord("<"):
-                # Determine tag name cheaply
                 end = buf_start + len(buf)
                 window = buf[pos - 1 - buf_start : pos - 1 - buf_start + 16]
                 if window.startswith(b"</"):
@@ -106,7 +101,7 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                     while j < len(window) and window[j : j + 1].isalpha():
                         name += window[j : j + 1]
                         j += 1
-                    # closing tag end
+
                     in_tag = True
                 else:
                     j = 1
@@ -120,19 +115,13 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                     in_tag = True
                 continue
 
-            # Here: outside any tag, outside raw-text.
-            # Is `pos` (current, right after byte we just read) a target?
             while ti < len(targets) and pos >= targets[ti]:
                 splits.append(pos)
                 ti += 1
 
-    # Pad in case the file is shorter than expected
     while len(splits) < n - 1:
         splits.append(size)
     return splits
-
-
-# ---------- Phase 2: parse a slice ----------
 
 
 class _TextExtractor(HTMLParser):
@@ -187,9 +176,6 @@ def _parse_slice(args: tuple[str, int, int]) -> str:
     return parser.get_text()
 
 
-# ---------- Driver ----------
-
-
 def process_file(path: Path, workers: int | None = None) -> bool:
     if workers is None:
         workers = min(4, os.cpu_count() or 1)
@@ -203,14 +189,12 @@ def process_file(path: Path, workers: int | None = None) -> bool:
     ranges = [(str(path), bounds[i], bounds[i + 1]) for i in range(len(bounds) - 1)]
 
     try:
-        # 'fork' avoids re-importing on Termux; fall back if it fails.
         try:
             ctx = mp.get_context("fork")
         except ValueError:
             ctx = mp.get_context()
 
         with ctx.Pool(processes=workers) as pool:
-            # Pool.map preserves order.
             pieces = pool.map(_parse_slice, ranges)
 
         text = " ".join(p for p in pieces if p)

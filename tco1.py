@@ -76,7 +76,6 @@ class BackendError(RuntimeError):
 
 TranslationFunction = Callable[[str], str]
 
-# These names are rejected before any import is attempted.
 _FORBIDDEN_BACKENDS = {
     "argostranslate",
     "libretranslate",
@@ -95,7 +94,6 @@ _FORBIDDEN_BACKENDS = {
     "mistralai",
 }
 
-# The default chain is intentionally limited to Termux-viable backends.
 _DEFAULT_CHAIN = [
     "deepl",
     "deep_translator",
@@ -142,7 +140,6 @@ _LANG_MAP = {
     "azure": {},
 }
 
-# Separate locks are intentional: slow console output must not block file I/O.
 _console_lock = threading.Lock()
 _results_lock = threading.Lock()
 _failed_lock = threading.Lock()
@@ -682,7 +679,6 @@ def _translate_one(
 
     for attempt in range(1, 4):
         try:
-            # Delay before every network request, including retries.
             if delay:
                 time.sleep(delay)
 
@@ -818,7 +814,7 @@ def main() -> int:
             return 0
 
         completed = 0
-        # The executor bounds the number of active requests and keeps memory use low.
+
         with ThreadPoolExecutor(
             max_workers=args.workers,
             thread_name_prefix="translator",
@@ -872,7 +868,6 @@ def main() -> int:
         return 0
 
     except KeyboardInterrupt:
-        # This outer handler covers interrupts during startup/backend selection.
         if "results" in locals():
             with _results_lock:
                 _atomic_save(output_path, results)

@@ -20,13 +20,6 @@ from pathlib import Path
 
 import minify_html as mh
 
-# --------------------------------------------------------------------------
-# Backend registry
-# --------------------------------------------------------------------------
-# Each backend is a callable taking the original HTML string and returning
-# the minified HTML string. Registered here so new backends (e.g. htmlmin)
-# can be added without touching the rest of the script.
-
 
 def _minify_html_backend(data: str) -> str:
     return mh.minify(data)
@@ -36,14 +29,6 @@ BACKENDS: dict[str, Callable[[str], str]] = {
     "minify-html": _minify_html_backend,
 }
 DEFAULT_BACKEND: str = "minify-html"
-
-# --------------------------------------------------------------------------
-# Pool method registry
-# --------------------------------------------------------------------------
-# Maps a CLI-selectable name to the mp.Pool method used to dispatch work.
-# "imap_unordered" is the default: it streams results back as soon as any
-# worker finishes, without waiting for the whole batch or preserving order,
-# which is ideal for independent, I/O-bound per-file tasks like this one.
 
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "apply_async", "imap_unordered")
 DEFAULT_POOL_METHOD: str = "imap_unordered"
@@ -101,9 +86,7 @@ def run_pool(
     with mp.Pool(processes=processes) as pool:
         if pool_method == "map":
             args_iter = ((f, backend) for f in files)
-            # map only supports single-arg callables, so wrap via a small
-            # lambda-free helper: use starmap semantics through a tuple
-            # unpack in a thin wrapper instead of a lambda (picklable).
+
             results = pool.starmap(process_file, args_iter)
             yield from results
 

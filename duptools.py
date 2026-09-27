@@ -42,10 +42,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-# ===========================================================================
-# Optional third-party imports (all graceful)
-# ===========================================================================
-
 try:
     import xxhash  # type: ignore
 
@@ -72,10 +68,6 @@ try:
 except ImportError:
     _HAS_XORHASH = False
 
-# ===========================================================================
-# Constants (defaults from the originals)
-# ===========================================================================
-
 CHUNK_SIZE = 8192
 BIG_CHUNK_SIZE = 32768
 QUICK_HEAD = 4096
@@ -91,10 +83,6 @@ DEFAULT_EXCLUDES = (
 DEFAULT_SYMLINK_MANIFEST = Path.home() / ".symlink_backup.json"
 DEFAULT_STASH_DIR = Path.home() / "dups"
 
-# ===========================================================================
-# Logging helpers
-# ===========================================================================
-
 
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
@@ -108,23 +96,16 @@ def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
 
 
-# ===========================================================================
-# Hashing
-# ===========================================================================
-
-
 def _new_hasher(algorithm: str):
     if algorithm == "xxhash" and _HAS_XXHASH:
         return xxhash.xxh64()
     if algorithm == "blake2b" or algorithm == "xxhash":
-        # blake2b is our xxhash stand-in when the lib isn't available.
         return hashlib.blake2b(digest_size=16)
     if algorithm == "sha256":
         return hashlib.sha256()
     if algorithm == "md5":
         return hashlib.md5()
     if algorithm == "xorhash":
-        # Byte-level XOR folding of the file's content, hex-encoded.
         return _XorHasher()
     if algorithm == "ppdeep":
         return _PPDeepHasher()
@@ -160,10 +141,6 @@ class _PPDeepHasher:
 
     def hexdigest(self) -> str:
         if _HAS_PPDEEP:
-            # Can't call ppdeep incrementally; fall back to prefix hash.
-            # (This path is only used when the caller mistakenly selects
-            # 'ppdeep' with a stream; whole-file hashing via hash_file_ppdeep
-            # is preferred.)
             return self._h.hexdigest()
         return self._h.hexdigest()
 
@@ -213,11 +190,6 @@ def quick_hash(path: Path, head: int = QUICK_HEAD) -> Optional[str]:
         return None
 
 
-# ===========================================================================
-# File collection
-# ===========================================================================
-
-
 def collect_files(
     root: Path,
     *,
@@ -245,11 +217,6 @@ def collect_files(
     return out
 
 
-# ===========================================================================
-# Hashing pipeline
-# ===========================================================================
-
-
 def _hash_worker(args: tuple[Path, str, int]) -> tuple[Path, Optional[str]]:
     path, algorithm, chunk_size = args
     return path, hash_file(path, algorithm, chunk_size)
@@ -267,7 +234,7 @@ def find_duplicates(
     quick_first: bool,
     chunk_size: int,
 ) -> dict[str, list[Path]]:
-    # Phase 1 — group by size
+
     by_size: dict[int, list[Path]] = defaultdict(list)
     for p in files:
         try:
@@ -279,7 +246,6 @@ def find_duplicates(
     if not candidates:
         return {}
 
-    # Phase 2 — optional quick-hash
     if quick_first:
         by_quick: dict[str, list[Path]] = defaultdict(list)
         with ThreadPoolExecutor(max_workers=workers) as ex:
@@ -290,7 +256,6 @@ def find_duplicates(
         if not candidates:
             return {}
 
-    # Phase 3 — full hash
     by_hash: dict[str, list[Path]] = defaultdict(list)
     jobs = [(p, algorithm, chunk_size) for p in candidates]
     if workers <= 1:
@@ -311,11 +276,6 @@ def find_duplicates(
     return {h: g for h, g in by_hash.items() if len(g) > 1}
 
 
-# ===========================================================================
-# Keeper selection
-# ===========================================================================
-
-
 def select_keeper(group: list[Path], policy: str) -> Path:
     if not group:
         raise ValueError("empty group")
@@ -328,11 +288,6 @@ def select_keeper(group: list[Path], policy: str) -> Path:
     if policy == "shortest-name":
         return min(group, key=lambda p: (len(str(p)), str(p)))
     return min(group, key=str)
-
-
-# ===========================================================================
-# Delete helpers
-# ===========================================================================
 
 
 def _trash_available() -> bool:
@@ -349,11 +304,6 @@ def _delete_file(path: Path, use_trash: bool) -> bool:
     except (OSError, subprocess.CalledProcessError) as e:
         warn(f"could not delete {path}: {e}")
         return False
-
-
-# ===========================================================================
-# Subcommand: report   (dupf / findupy / xordup)
-# ===========================================================================
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -413,11 +363,6 @@ def cmd_report(args: argparse.Namespace) -> int:
             err(f"could not write {args.json}: {e}")
             return 1
     return 0
-
-
-# ===========================================================================
-# Subcommand: delete   (dupefix / dupfx / fsimz / xordup -y)
-# ===========================================================================
 
 
 def cmd_delete(args: argparse.Namespace) -> int:
@@ -480,11 +425,6 @@ def cmd_delete(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: symlink   (dedupsym / symdups)
-# ===========================================================================
-
-
 @dataclass
 class SymlinkOp:
     symlink: str
@@ -523,7 +463,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     if not args.dry_run:
         stash.mkdir(parents=True, exist_ok=True)
 
-    # Load any pre-existing manifest to append to.
     manifest: dict = {}
     if manifest_path.exists():
         try:
@@ -533,7 +472,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     operations: list[dict] = manifest.get("operations", [])
     stash_map: dict[str, dict] = manifest.get("stash", {})
 
-    # ---- Phase: move masters to stash --------------------------------------
     info(f"{len(groups)} duplicate group(s)")
     for h, group in groups.items():
         keeper = select_keeper(group, args.prefer)
@@ -561,7 +499,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
                 except OSError as e:
                     warn(f"could not remove {keeper}: {e}")
 
-        # ---- Phase: replace siblings with symlinks ------------------------
         for p in group:
             if p == keeper:
                 continue
@@ -613,11 +550,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: restore   (dedupsym / symdups --reverse)
-# ===========================================================================
-
-
 def cmd_restore(args: argparse.Namespace) -> int:
     manifest_path = Path(args.manifest).expanduser()
     if not manifest_path.exists():
@@ -633,7 +565,6 @@ def cmd_restore(args: argparse.Namespace) -> int:
     stash_map: dict = manifest.get("stash", {})
     operations: list[dict] = manifest.get("operations", [])
 
-    # Restore each recorded symlink back to a real copy.
     restored = 0
     for op in operations:
         link = Path(op["symlink"])
@@ -653,7 +584,6 @@ def cmd_restore(args: argparse.Namespace) -> int:
             except OSError as e:
                 warn(f"could not restore {link}: {e}")
 
-    # Optionally clear the stash.
     if not args.dry_run:
         for stash_path in stash_map:
             try:
@@ -670,11 +600,6 @@ def cmd_restore(args: argparse.Namespace) -> int:
             pass
     print(f"\nRestored {restored} symlink(s).")
     return 0
-
-
-# ===========================================================================
-# CLI
-# ===========================================================================
 
 
 def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> None:
@@ -753,7 +678,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- report -----------------------------------------------------------
     p = sub.add_parser("report", help="Show duplicate groups (no changes)")
     _add_scan_args(p, recursive_default=True)
     p.add_argument(
@@ -761,7 +685,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_report)
 
-    # ---- delete -----------------------------------------------------------
     p = sub.add_parser("delete", help="Delete duplicates, keep one per group")
     _add_scan_args(p, recursive_default=True)
     p.add_argument(
@@ -790,7 +713,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_delete)
 
-    # ---- symlink ----------------------------------------------------------
     p = sub.add_parser(
         "symlink", help="Move master copies to a stash and symlink the rest"
     )
@@ -818,7 +740,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_symlink)
 
-    # ---- restore ----------------------------------------------------------
     p = sub.add_parser("restore", help="Reverse the symlink operation from a manifest")
     p.add_argument(
         "--manifest",

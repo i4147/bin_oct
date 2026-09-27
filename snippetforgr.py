@@ -57,11 +57,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-# =====================================================================
-# Shared constants and helpers
-# =====================================================================
-
-#: Extensions treated as "source code" by the ``head`` subcommand.
 SOURCE_CODE_EXTS: frozenset[str] = frozenset(
     {
         ".py",
@@ -76,8 +71,6 @@ SOURCE_CODE_EXTS: frozenset[str] = frozenset(
     }
 )
 
-#: Fenced-code language tag → file extension. Merged from all three
-#: markdown extractors. Empty string means "no extension" (e.g. Dockerfile).
 LANG_TO_EXT: dict[str, str] = {
     "python": ".py",
     "py": ".py",
@@ -125,19 +118,15 @@ LANG_TO_EXT: dict[str, str] = {
     "markdown": ".md",
 }
 
-#: Regex that finds ```lang\n...\n``` fenced blocks (as used by excode/extcode_md).
 FENCE_RE = re.compile(
     r"```(?P<lang>[A-Za-z0-9_+\-.]*)[ \t]*\n(?P<code>.*?)(?<=\n)```",
     re.DOTALL | re.IGNORECASE,
 )
 
-#: Matches an opening ```lang line.
 FENCE_OPEN_RE = re.compile(r"^```+(\w*)")
 
-#: Metadata filenames that count as "targets" in wide modes.
 PKG_FILENAMES: frozenset[str] = frozenset({"PKGINFO", "METADATA", "PKG-INFO"})
 
-#: File extensions treated as text/markdown targets by ``pytext``.
 PYTEXT_EXTS: frozenset[str] = frozenset({".md", ".txt", ".html"})
 
 
@@ -161,11 +150,6 @@ def slug(text: str, max_len: int = 200) -> str:
 
 def normalize_exts(exts: Iterable[str]) -> frozenset[str]:
     return frozenset(e if e.startswith(".") else "." + e for e in exts)
-
-
-# =====================================================================
-# Subcommand: head   (was 23line.py)
-# =====================================================================
 
 
 def _head_collect(
@@ -202,11 +186,6 @@ def cmd_head(args: argparse.Namespace) -> int:
     print(f"Unique snippets saved → {out}")
     print(f"Total unique blocks: {len(unique)}")
     return 0
-
-
-# =====================================================================
-# Subcommand: md-blocks   (was excode.py, exmd.py, extcode_md.py)
-# =====================================================================
 
 
 def _parse_fenced_regex(text: str) -> Iterator[tuple[str, str]]:
@@ -324,11 +303,6 @@ def cmd_md_blocks(args: argparse.Namespace) -> int:
     return 0
 
 
-# =====================================================================
-# Subcommand: snips   (was code_snip_extractor.py)
-# =====================================================================
-
-
 def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
     lines = text.split("\n")
     i, n = 0, len(lines)
@@ -336,7 +310,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
     while i < n:
         stripped = lines[i].strip()
 
-        # ----- Fenced block -----
         if stripped.startswith("```"):
             m = re.match(r"^```+(\w*)", stripped)
             if m:
@@ -352,7 +325,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
                 i += 1
                 continue
 
-        # ----- Doctest block -----
         if stripped.startswith(">>>"):
             start_line = i + 1
             buf = []
@@ -473,10 +445,6 @@ def cmd_snips(args: argparse.Namespace) -> int:
     return 0
 
 
-# =====================================================================
-# Subcommand: pytext   (was xpy_code.py)
-# =====================================================================
-
 PY_FENCE_RE = re.compile(r"```python\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 PY_DOCTEST_RE = re.compile(
     r"(?:^|\n)((?:>>>|\.\.\.).*?)(?=\n\s*\n|\Z)",
@@ -506,7 +474,6 @@ def _doctest_to_code(block: str) -> str:
 def _pytext_extract(text: str, filename: str) -> list[str]:
     blocks: list[str] = []
 
-    # 1. ```python fences
     for m in PY_FENCE_RE.finditer(text):
         code = m.group(1).strip()
         if code:
@@ -514,13 +481,11 @@ def _pytext_extract(text: str, filename: str) -> list[str]:
                 code = _doctest_to_code(code)
             blocks.append(code)
 
-    # 2. Bare ``>>>`` doctests
     for m in PY_DOCTEST_RE.finditer(text):
         code = _doctest_to_code(m.group(1))
         if code.strip():
             blocks.append(code)
 
-    # 3. Fallback for metadata files: top-level statements
     if not blocks and filename in PKG_FILENAMES:
         for m in PY_TOPLEVEL_RE.finditer(text):
             code = m.group(1).strip()
@@ -606,10 +571,6 @@ def cmd_pytext(args: argparse.Namespace) -> int:
     return 0
 
 
-# =====================================================================
-# Subcommand: html   (was pycodex.py) — requires requests / bs4 / loguru
-# =====================================================================
-
 HTML_PY_HINTS: tuple[str, ...] = (
     "def ",
     "class ",
@@ -675,7 +636,6 @@ class HtmlCodeExtractor:
         self.session.mount("https://", adapter)
         self.timeout = timeout
 
-    # ---- HTTP ----
     def fetch(self, url: str) -> str | None:
         from loguru import logger
 
@@ -690,7 +650,6 @@ class HtmlCodeExtractor:
     def close(self) -> None:
         self.session.close()
 
-    # ---- Parsing ----
     def extract_from_html(self, html: str, source: str) -> list[CodeBlock]:
         from bs4 import BeautifulSoup
 
@@ -782,7 +741,6 @@ class HtmlCodeExtractor:
             found.append(obj)
         return found
 
-    # ---- Heuristics ----
     @staticmethod
     def _is_python(text: str) -> bool:
         if not text.strip():
@@ -946,11 +904,6 @@ def cmd_html(args: argparse.Namespace) -> int:
     return 0
 
 
-# =====================================================================
-# Argument parsing
-# =====================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="snippetforge.py",
@@ -960,7 +913,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---------- head ----------
     p_head = sub.add_parser(
         "head",
         help="Extract first N lines of source files, dedupe (was 23line.py)",
@@ -986,7 +938,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_head.set_defaults(func=cmd_head)
 
-    # ---------- md-blocks ----------
     p_md = sub.add_parser(
         "md-blocks",
         help="Extract fenced code blocks from Markdown (excode / exmd / extcode_md)",
@@ -1017,7 +968,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_md.set_defaults(func=cmd_md_blocks)
 
-    # ---------- snips ----------
     p_snips = sub.add_parser(
         "snips",
         help="Extract fenced + doctest snippets with line numbers "
@@ -1044,7 +994,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_snips.set_defaults(func=cmd_snips)
 
-    # ---------- pytext ----------
     p_py = sub.add_parser(
         "pytext",
         help="Extract Python blocks from md/txt/html/PKGINFO (xpy_code.py)",
@@ -1065,7 +1014,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_py.set_defaults(func=cmd_pytext)
 
-    # ---------- html ----------
     p_html = sub.add_parser(
         "html",
         help="Extract Python blocks from HTML files or URLs (pycodex.py). "

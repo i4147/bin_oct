@@ -22,18 +22,10 @@ from pathlib import Path
 from fontTools.ttLib import TTFont
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Module-level constants
-# ---------------------------------------------------------------------------
-
 WORKERS: int = 8
 DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")
 FONT_EXTENSIONS: frozenset[str] = frozenset({".ttf", ".woff", ".woff2"})
 APK_TIMEOUT_SECONDS: int = 600
-
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -44,11 +36,6 @@ class FontInfo:
     is_italic: bool
     extension: str
     original_path: Path = field(default_factory=lambda: Path(""))
-
-
-# ---------------------------------------------------------------------------
-# Extractor
-# ---------------------------------------------------------------------------
 
 
 class APKFontExtractor:
@@ -64,8 +51,6 @@ class APKFontExtractor:
             WORKERS,
         )
 
-    # -- discovery ---------------------------------------------------------
-
     def _find_apk_files(self, paths: list[Path]) -> list[Path]:
         apk_files: list[Path] = []
         for path in paths:
@@ -78,8 +63,6 @@ class APKFontExtractor:
                     logger.debug("Found APK file: {}", apk_path)
         print("Found {} APK file(s) to process", len(apk_files))
         return apk_files
-
-    # -- extraction --------------------------------------------------------
 
     def _extract_fonts_from_apk(self, apk_path: Path) -> list[tuple[Path, bytes, str]]:
         fonts: list[tuple[Path, bytes, str]] = []
@@ -116,8 +99,6 @@ class APKFontExtractor:
         except Exception as exc:  # noqa: BLE001
             logger.error("Error processing {}: {}", apk_path, exc)
         return fonts
-
-    # -- metadata ----------------------------------------------------------
 
     def _get_font_metadata(self, font_data: bytes) -> FontInfo | None:
         font: TTFont | None = None
@@ -187,8 +168,6 @@ class APKFontExtractor:
                 except Exception:  # noqa: BLE001
                     pass
 
-    # -- filename generation ----------------------------------------------
-
     def _generate_font_filename(self, font_info: FontInfo) -> str:
         family_name = re.sub(r"[^\w\s-]", "", font_info.family_name)
         family_name = re.sub(r"\s+", "-", family_name.strip())
@@ -209,8 +188,6 @@ class APKFontExtractor:
             style_str = f"{style_str}-Italic"
 
         return f"{family_name}-{style_str}{font_info.extension}"
-
-    # -- duplicate handling -----------------------------------------------
 
     def _handle_duplicate_filename(
         self, filename: str, source_apk: Path, font_data: bytes
@@ -242,8 +219,6 @@ class APKFontExtractor:
         key = f"{source_apk.name}-{existing_size}"
         return key in self.processed_fonts
 
-    # -- saving ------------------------------------------------------------
-
     def _save_font(
         self, font_data: bytes, filename: str, source_apk: Path
     ) -> Path | None:
@@ -260,8 +235,6 @@ class APKFontExtractor:
             logger.error("Failed to save font {}: {}", final_filename, exc)
             return None
 
-    # -- per-APK worker ----------------------------------------------------
-
     def _process_apk(self, apk_path: Path) -> int:
         print("Processing APK: {}", apk_path.name)
         fonts = self._extract_fonts_from_apk(apk_path)
@@ -271,8 +244,7 @@ class APKFontExtractor:
             font_info = self._get_font_metadata(font_data)
             if font_info is not None:
                 font_info.original_path = original_path
-                # Keep the actual file extension (ttf/woff/woff2) rather than
-                # whatever the container sniffing guessed, so only requested
+
                 # types are emitted with their correct suffixes.
                 font_info.extension = extension
                 filename = self._generate_font_filename(font_info)
@@ -284,8 +256,6 @@ class APKFontExtractor:
 
         print("Extracted {} font(s) from {}", extracted_count, apk_path.name)
         return extracted_count
-
-    # -- driver ------------------------------------------------------------
 
     def process(self, input_paths: list[Path] | None = None) -> int:
         if input_paths is None:
@@ -321,11 +291,6 @@ class APKFontExtractor:
 
         print("Total fonts extracted: {}", total_extracted)
         return total_extracted
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def parse_arguments() -> argparse.Namespace:

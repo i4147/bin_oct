@@ -32,9 +32,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
-# --------------------------------------------------------------------------
-# Optional third-party imports
-# --------------------------------------------------------------------------
 try:
     import cv2
 
@@ -106,9 +103,6 @@ except ImportError:
 
     logger = _FallbackLogger()  # type: ignore[assignment]
 
-# --------------------------------------------------------------------------
-# Constants (hard-coded values lifted into CLI defaults)
-# --------------------------------------------------------------------------
 IMAGE_EXTENSIONS: set[str] = {
     ".png",
     ".jpg",
@@ -135,9 +129,6 @@ class AppError(RuntimeError):
     pass
 
 
-# --------------------------------------------------------------------------
-# Generic helpers (replacements for the dh.* helpers used by originals)
-# --------------------------------------------------------------------------
 def _fmt_size(n: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024:
@@ -221,9 +212,6 @@ def _write_csv(rows: list[dict[str, Any]], path: Path) -> None:
         writer.writerows(rows)
 
 
-# ==========================================================================
-# Subcommand: enhance  (image2text.py)
-# ==========================================================================
 def _enhance_cv(path: Path, suffix: str) -> bool:
     img = cv2.imread(str(path))
     if img is None:
@@ -276,7 +264,6 @@ def cmd_enhance(args: argparse.Namespace) -> int:
 
     variants = args.variants
     if variants == "auto":
-        # Original: single file -> only 'pil' variant; multiple -> both.
         variants = "pil" if len(files) == 1 else "both"
 
     before = _dir_size(Path.cwd())
@@ -295,9 +282,6 @@ def cmd_enhance(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-# Subcommand: prepare  (ocr_prepare.py)
-# ==========================================================================
 def _prepare_cv(path: Path) -> bool:
     try:
         img = cv2.imread(str(path))
@@ -362,9 +346,6 @@ def cmd_prepare(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ==========================================================================
-# Subcommand: grid-variants  (ocrgrid.py)
-# ==========================================================================
 def _resize_scale(bgr: "np.ndarray", scale: float) -> "np.ndarray":
     h, w = bgr.shape[:2]
     return cv2.resize(
@@ -461,9 +442,6 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-# Subcommand: grid-search  (ocrgrid2.py)
-# ==========================================================================
 def _grid_search_preprocess(path: Path) -> "np.ndarray":
     img = cv2.imread(str(path))
     if img is None:
@@ -473,7 +451,7 @@ def _grid_search_preprocess(path: Path) -> "np.ndarray":
     bw = cv2.adaptiveThreshold(
         denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2
     )
-    # Deskew using minAreaRect on the binary image.
+
     coords = cv2.findNonZero(bw)
     if coords is not None:
         rect = cv2.minAreaRect(coords)
@@ -538,9 +516,6 @@ def cmd_grid_search(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-# Subcommand: ocr  (pyocr.py + ruimg.py)
-# ==========================================================================
 def _ocr_single(path: Path, lang: str | None) -> bool:
     if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
         print(f"error: '{path.name}' is not a supported image file")
@@ -607,7 +582,6 @@ def cmd_ocr(args: argparse.Namespace) -> int:
         print("no images found")
         return 1
 
-    # Single-file fast path (pyocr.py)
     if len(files) == 1:
         return 0 if _ocr_single(files[0], args.lang) else 1
 
@@ -652,9 +626,6 @@ def cmd_ocr(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ==========================================================================
-# Subcommand: translate  (transocr.py)
-# ==========================================================================
 def _translate_preprocess_pil(img: "Image.Image") -> "Image.Image":
     img = img.convert("L")
     img = ImageEnhance.Contrast(img).enhance(2.0)
@@ -718,9 +689,6 @@ def cmd_translate(args: argparse.Namespace) -> int:
     return 0
 
 
-# ==========================================================================
-# CLI
-# ==========================================================================
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ocr_toolkit.py",
@@ -740,7 +708,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- enhance ---------------------------------------------------------
     pe = sub.add_parser(
         "enhance",
         help="Binarise/enhance images, saving alongside originals (image2text.py).",
@@ -759,7 +726,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pe.add_argument("--workers", type=int, default=None)
     pe.set_defaults(func=cmd_enhance)
 
-    # ---- prepare ---------------------------------------------------------
     pp = sub.add_parser(
         "prepare", help="Prepare images for Tesseract OCR, in-place (ocr_prepare.py)."
     )
@@ -780,7 +746,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--workers", type=int, default=DEFAULT_PREPARE_WORKERS)
     pp.set_defaults(func=cmd_prepare)
 
-    # ---- grid-variants ---------------------------------------------------
     pv = sub.add_parser(
         "grid-variants", help="Tesseract grid over 5 image variants (ocrgrid.py)."
     )
@@ -797,7 +762,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     pv.set_defaults(func=cmd_grid_variants)
 
-    # ---- grid-search -----------------------------------------------------
     ps = sub.add_parser(
         "grid-search",
         help="Tesseract grid over oem/psm on preprocessed images (ocrgrid2.py).",
@@ -811,7 +775,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ps.set_defaults(func=cmd_grid_search)
 
-    # ---- ocr -------------------------------------------------------------
     po = sub.add_parser("ocr", help="Extract text from image(s) (pyocr.py / ruimg.py).")
     po.add_argument("paths", nargs="*", type=Path)
     po.add_argument(
@@ -840,7 +803,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     po.set_defaults(func=cmd_ocr)
 
-    # ---- translate -------------------------------------------------------
     pt = sub.add_parser(
         "translate",
         help="OCR a text/image file and translate it to English (transocr.py).",

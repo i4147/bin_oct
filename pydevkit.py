@@ -51,9 +51,6 @@ from email.parser import Parser
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional TOML support
-# ---------------------------------------------------------------------------
 try:
     import tomllib  # type: ignore[import]
 except ModuleNotFoundError:  # pragma: no cover
@@ -62,9 +59,6 @@ except ModuleNotFoundError:  # pragma: no cover
     except ModuleNotFoundError:
         tomllib = None  # type: ignore[assignment]
 
-# ===========================================================================
-# Common helpers
-# ===========================================================================
 README_SUFFIXES = {".md", ".markdown", ".mdown", ".mkdn"}
 BINARY_SUFFIXES = (".so", ".pyd", ".dll")
 
@@ -120,7 +114,7 @@ def load_user_info() -> dict[str, str]:
     if not info_path.exists():
         return {}
     text = info_path.read_text(encoding="utf-8")
-    # Try JSON first
+
     try:
         data = json.loads(text)
         if isinstance(data, dict):
@@ -138,9 +132,6 @@ def load_user_info() -> dict[str, str]:
     return out
 
 
-# ===========================================================================
-# Cargo.lock -> Cargo.toml (create_cargo_toml.py)
-# ===========================================================================
 def parse_cargo_lock(text: str) -> dict[str, Any]:
     m = re.search(r"^version\s*=\s*(\d+)", text, re.MULTILINE)
     version = int(m.group(1)) if m else 3
@@ -253,9 +244,6 @@ def cmd_cargo_toml(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# pyproject.toml / poetry metadata extraction
-# ===========================================================================
 @dataclass
 class Author:
     name: str | None = None
@@ -443,9 +431,6 @@ def parse_setup_cfg(path: Path) -> configparser.ConfigParser:
     return cfg
 
 
-# ===========================================================================
-# setup.py renderers
-# ===========================================================================
 def render_package_finder(package_name: str | None) -> str:
     if package_name:
         return (
@@ -530,7 +515,6 @@ def _setup_kwargs_simple(
     if entry_points:
         lines.append(f"    entry_points={entry_points!r},")
     if not meta.scripts and not meta.gui_scripts and not meta.entry_points:
-        # create_setuppy fallback: if no entry points but there's a package with __main__
         pass
     lines.append("    packages=packages,")
     lines.append("    package_dir=package_dir,")
@@ -564,7 +548,7 @@ def render_setup_py_detailed(
     with_cfg: bool = False,
 ) -> str:
     cfg = cfg or configparser.ConfigParser()
-    # detect extensions / backend
+
     backend = _detect_ext_backend(meta)
     author_names = ", ".join(a.name for a in meta.authors if a.name)
     author_mails = ", ".join(a.email for a in meta.authors if a.email)
@@ -754,9 +738,6 @@ def render_setup_py_runtime(meta: ProjectMeta) -> str:
     )
 
 
-# ===========================================================================
-# mk_setup.py: generate setup.py for an existing directory
-# ===========================================================================
 def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, str]]:
     entry: list[dict[str, str]] = []
     pkg_main = project_dir / package_name / "__main__.py"
@@ -868,9 +849,6 @@ def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
     )
 
 
-# ===========================================================================
-# mksetup.py: from wheel
-# ===========================================================================
 def _read_wheel_metadata(root: Path) -> dict[str, Any]:
     dist_info = next(root.glob("*.dist-info"), None)
     if dist_info is None:
@@ -951,9 +929,6 @@ def render_setup_py_from_wheel(
     )
 
 
-# ===========================================================================
-# Project scaffolding templates (init subcommand)
-# ===========================================================================
 GITIGNORE_DEFAULT = (
     "__pycache__/\n*.py[cod]\n*.egg-info/\ndist/\nbuild/\n.venv/\nvenv/\nenv/\n"
     ".mypy_cache/\n.ruff_cache/\n.pytest_cache/\n.coverage\n"
@@ -1298,9 +1273,6 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# make-setup subcommand
-# ===========================================================================
 def cmd_make_setup(args: argparse.Namespace) -> int:
     source = args.source
     target = Path(args.path).expanduser().resolve()
@@ -1383,9 +1355,6 @@ def cmd_make_setup(args: argparse.Namespace) -> int:
     return 1
 
 
-# ===========================================================================
-# dev subcommand (py_dev.py)
-# ===========================================================================
 PRE_COMMIT_CONFIG = textwrap.dedent(
     """\
     repos:
@@ -1500,7 +1469,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
     info("  Python Development Environment Setup")
     info("=" * 40)
 
-    # Project layout
     layout = {
         "src": None,
         "tests": ["__init__.py", "conftest.py"],
@@ -1532,7 +1500,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
         encoding="utf-8",
     )
 
-    # .gitignore
     gitignore = project / ".gitignore"
     if not gitignore.exists():
         gitignore.write_text(GITIGNORE_DEV, encoding="utf-8")
@@ -1557,9 +1524,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# new-script subcommand
-# ===========================================================================
 NEW_SCRIPT_TEMPLATE = '''#!/usr/bin/env python3
 """Standalone script scaffold."""
 from pathlib import Path
@@ -1605,9 +1569,6 @@ def cmd_new_script(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Argument parser
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pydevkit",

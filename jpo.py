@@ -46,49 +46,24 @@ from dh import SKIP_DIRS
 from fastwalk import walk_files
 
 cwd = Path.cwd().resolve()
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
 
-#: Accepted JPEG suffixes, all lower-case. Matching is done on
-#: ``path.suffix.lower()`` so ``.jpg``, ``.JPG``, ``.Jpeg`` and every other
-#: casing qualifies, and both the short and long forms are recognised.
-#: Extend this set to recognise further extensions (e.g. ``.jpe``, ``.jfif``).
 JPEG_SUFFIXES: Final[frozenset[str]] = frozenset({".jpeg", ".jpg"})
 
-#: JPEG start-of-image marker. Real JPEG files always begin with the two-byte
-#: SOI marker ``FF D8``; almost all in the wild follow it with ``FF`` (the
-#: start of the next marker). Checking three bytes is a bit more
-#: discriminating than the bare SOI without ruling out any well-formed file.
 JPEG_MAGIC: Final[bytes] = b"\xff\xd8\xff"
 
-#: Slice size used when iterating the list returned by ``walk_files``.
 WALK_CHUNK: Final[int] = 512
 
-#: Fixed size of the worker pool (no CLI flag by design).
 DEFAULT_WORKERS: Final[int] = 8
 
-#: ``imap_unordered`` chunksize; small enough to keep the parent responsive.
 IMAP_CHUNKSIZE: Final[int] = 4
 
-#: Default per-file jpegoptim timeout, in seconds.
 DEFAULT_TIMEOUT: Final[float] = 300.0
 
-#: Chunk size used for the streaming byte-identity comparison.
 COMPARE_CHUNK: Final[int] = 1 << 16
 
-#: jpegoptim's exit code for a successful run. Any non-zero is treated as an
-#: error. When jpegoptim decides the file cannot be improved it leaves the
-#: working copy untouched and still exits 0; the byte-identical short-circuit
-#: below catches that case.
 JPEGOPTIM_SUCCESS: Final[int] = 0
 
-#: Valid quality values accepted by jpegoptim's ``-m`` / ``--max`` option.
 QUALITY_RANGE: Final[range] = range(0, 101)
-
-# --------------------------------------------------------------------------- #
-# Result record
-# --------------------------------------------------------------------------- #
 
 
 class ProcessResult(NamedTuple):
@@ -102,11 +77,6 @@ class ProcessResult(NamedTuple):
     error: str | None
 
 
-# --------------------------------------------------------------------------- #
-# Formatting helpers
-# --------------------------------------------------------------------------- #
-
-
 def format_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     value = float(abs(n))
@@ -116,21 +86,14 @@ def format_bytes(n: int) -> str:
                 return f"{sign}{int(value)} B"
             return f"{sign}{value:.2f} {unit}"
         value /= 1024.0
-    # Unreachable, but keeps static analysers happy.
+
     return f"{sign}{value:.2f} TiB"
-
-
-# --------------------------------------------------------------------------- #
-# Discovery
-# --------------------------------------------------------------------------- #
 
 
 def _dedupe(path: Path, seen: set[Path]) -> bool:
     try:
         key = path.resolve()
     except OSError:
-        # ``resolve`` can fail on weird filesystems; fall back to the raw path
-        # so we still avoid processing an obviously repeated entry.
         key = path
     if key in seen:
         return False
@@ -149,11 +112,9 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
         for entry in found[start : start + WALK_CHUNK]:
             path = Path(entry)
 
-            # Cheap: extension check (case-insensitive).
             if path.suffix.lower() not in JPEG_SUFFIXES:
                 continue
 
-            # Cheap: prune anything inside a SKIP_DIRS component.
             try:
                 rel = path.relative_to(root)
             except ValueError:
@@ -161,14 +122,12 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
             if any(part in SKIP_DIRS for part in rel.parts[:-1]):
                 continue
 
-            # Expensive: never touch symlinks found during the walk.
             try:
                 if path.is_symlink():
                     continue
             except OSError:
                 continue
 
-            # Expensive: dedupe via resolve().
             if not _dedupe(path, seen):
                 continue
 
@@ -188,8 +147,6 @@ def iter_jpeg_files(roots: Sequence[Path]) -> Iterator[Path]:
                 continue
 
             if raw_root.is_file():
-                # Never process a symlinked file: jpegoptim would read the
-                # target but os.replace would then clobber the link itself.
                 if raw_root.is_symlink():
                     print(
                         f"warning: skipping symlink: {raw_root}",
@@ -201,9 +158,6 @@ def iter_jpeg_files(roots: Sequence[Path]) -> Iterator[Path]:
                 continue
 
             if raw_root.is_dir():
-                # Explicit directory roots may be symlinks; the user asked
-                # for them, so follow the link and walk the real directory.
-                # Symlinks *inside* the walk are still skipped.
                 try:
                     root = raw_root.resolve()
                 except OSError as exc:
@@ -224,11 +178,6 @@ def iter_jpeg_files(roots: Sequence[Path]) -> Iterator[Path]:
                 f"warning: cannot inspect {raw_root}: {exc}",
                 file=sys.stderr,
             )
-
-
-# --------------------------------------------------------------------------- #
-# Worker
-# --------------------------------------------------------------------------- #
 
 
 def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
@@ -267,15 +216,12 @@ def process_file(
     timeout: float,
     dry_run: bool,
 ) -> ProcessResult:
-    # --- Resolve symlinks so os.replace targets the real file. ------------
-    # Discovery normally filters symlinks, but hardlinks / bind mounts /
-    # unusual setups can bypass that filter; resolving here is defensive.
+
     try:
         target = path.resolve(strict=True)
     except OSError as exc:
         return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
 
-    # --- Snapshot original size and mode bits. ----------------------------
     try:
         st = target.stat()
     except OSError as exc:
@@ -285,10 +231,6 @@ def process_file(
 
     tmp_path: Path | None = None
     try:
-        # --- Allocate a sibling temp file. --------------------------------
-        # Derive the suffix from the target's original extension so a
-        # ``photo.JPG`` produces ``photo.<rand>.JPG.tmp`` — cosmetic, but it
-        # makes in-progress directory listings self-explanatory.
         try:
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
@@ -312,10 +254,6 @@ def process_file(
                 f"cannot create temp file: {exc}",
             )
 
-        # --- Stage the input as a working copy for jpegoptim. -------------
-        # ``copy2`` preserves mode bits and mtime; jpegoptim then rewrites the
-        # copy in place. If it decides nothing can be improved, the copy stays
-        # byte-identical and we detect that below.
         try:
             shutil.copy2(target, tmp_path)
         except OSError as exc:
@@ -330,11 +268,6 @@ def process_file(
                 f"cannot stage temp copy: {exc}",
             )
 
-        # --- Build and run the jpegoptim command. -------------------------
-        # jpegoptim syntax: ``jpegoptim [options] file...``. It edits the
-        # named file(s) in place; there is no ``--output`` flag. ``--``
-        # terminates option parsing so a path beginning with ``-`` stays
-        # positional (getopt_long treats it as end-of-options).
         cmd: list[str] = [jpegoptim]
         if max_quality is not None:
             cmd += ["-m", str(max_quality)]
@@ -404,7 +337,6 @@ def process_file(
                 f"jpegoptim exited with status {completed.returncode}",
             )
 
-        # --- Validate jpegoptim's output. ---------------------------------
         try:
             new_size = tmp_path.stat().st_size
         except OSError as exc:
@@ -444,10 +376,6 @@ def process_file(
                 sig_err,
             )
 
-        # --- Byte-identity short-circuit (runs before the size compare). --
-        # When jpegoptim decides the file is already optimal it leaves the
-        # working copy untouched, so this branch is the normal "nothing to
-        # do" path.
         try:
             identical = _files_identical(target, tmp_path, original_size, new_size)
         except OSError as exc:
@@ -463,7 +391,6 @@ def process_file(
             )
 
         if identical:
-            # No write at all: no inode churn, no mtime bump.
             return ProcessResult(
                 path,
                 original_size,
@@ -475,7 +402,6 @@ def process_file(
                 None,
             )
 
-        # --- Output larger than input: keep the original. -----------------
         if new_size > original_size:
             return ProcessResult(
                 path,
@@ -488,7 +414,6 @@ def process_file(
                 None,
             )
 
-        # --- Same size but different bytes: keep the original. ------------
         if new_size == original_size:
             return ProcessResult(
                 path,
@@ -501,7 +426,6 @@ def process_file(
                 None,
             )
 
-        # --- Strictly smaller: this is the only path that writes. ---------
         if dry_run:
             return ProcessResult(
                 path,
@@ -529,7 +453,6 @@ def process_file(
                 f"failed to replace original: {exc}",
             )
 
-        # Ownership of the temp file has moved to ``target``.
         tmp_path = None
         return ProcessResult(
             path,
@@ -543,17 +466,11 @@ def process_file(
         )
 
     finally:
-        # Per-file cleanup; a failure here must never mask the real result.
         if tmp_path is not None:
             try:
                 tmp_path.unlink()
             except OSError:
                 pass
-
-
-# --------------------------------------------------------------------------- #
-# Classification & reporting
-# --------------------------------------------------------------------------- #
 
 
 def _classify(result: ProcessResult, dry_run: bool) -> str:
@@ -562,8 +479,6 @@ def _classify(result: ProcessResult, dry_run: bool) -> str:
     if result.no_change:
         return "NOCHG"
     if result.skipped:
-        # ``skipped`` covers both "larger" (SKIP) and "same size, different
-        # bytes" (SAME); the size delta distinguishes them.
         return "SAME" if result.new_size == result.original_size else "SKIP"
     if dry_run:
         return "DRY-RUN"
@@ -661,11 +576,6 @@ def _print_summary(
         print("  Bytes     : no size changes")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="jpegoptim-optimize",
@@ -746,9 +656,6 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
 
-    # ``--progressive`` and ``--normal`` are mutually exclusive in spirit;
-    # argparse does not model that directly, so reject the combination here
-    # rather than silently picking one.
     if args.progressive and args.normal:
         print(
             "error: --progressive and --normal are mutually exclusive",
@@ -758,8 +665,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     roots = [Path(p) for p in args.paths] if args.paths else [Path(".")]
 
-    # Bind the worker options with functools.partial so ``process_file``
-    # stays a top-level, picklable function.
     worker = partial(
         process_file,
         jpegoptim=args.jpegoptim,
@@ -794,7 +699,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 tag = _classify(result, args.dry_run)
                 counters[tag] += 1
 
-                # Only OK and DRY-RUN represent an actual / potential saving.
                 if tag in ("OK", "DRY-RUN"):
                     total_before += result.original_size
                     total_after += result.new_size

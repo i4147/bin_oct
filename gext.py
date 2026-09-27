@@ -85,7 +85,6 @@ def extract_from_file(path: str):
                 classes[node.name] = src
 
         elif isinstance(node, ast.FunctionDef):
-            # Skip methods: functions whose immediate parent is a class body.
             if isinstance(parent, ast.ClassDef):
                 continue
             src = ast.get_source_segment(source, node)
@@ -93,7 +92,6 @@ def extract_from_file(path: str):
                 funcs[node.name] = src
 
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
-            # Only top-level constants.
             if not isinstance(parent, ast.Module):
                 continue
 

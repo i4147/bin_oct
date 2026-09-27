@@ -51,10 +51,6 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
-
 
 def info(msg: str) -> None:
     print(f"[INFO] {msg}")
@@ -88,11 +84,6 @@ def _collect_by_ext(
     return [p for p in iterator if p.is_file() and p.suffix.lower() in exts]
 
 
-# ===========================================================================
-# Subcommand: chat-export   (export_chat.py)
-# ===========================================================================
-
-
 def cmd_chat_export(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.is_file():
@@ -115,7 +106,7 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
             f.write(f"# {title}\n\n")
             for msg in chat.get("messages", []):
                 role = msg.get("author", {}).get("role", "unknown")
-                # Original used [0] of `parts`; keep behavior.
+
                 parts = msg.get("content", {}).get("parts", [""])
                 content = parts[0] if parts else ""
                 f.write(f"## {role.capitalize()}\n\n")
@@ -125,17 +116,11 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: info-to-md   (info2md.py)
-# ===========================================================================
-
-
 def _convert_one_info(src: Path) -> Optional[Path]:
-    # Strip the `.info` / `.info-NN` suffix from the filename.
+
     stem = re.sub(r"\.info(-\d+)?$", "", src.name)
     dest = src.parent / f"{stem}.md"
     if dest.exists():
-        # Append `_k` until a free slot is found.
         k = 1
         while (src.parent / f"{stem}_{k}.md").exists():
             k += 1
@@ -179,11 +164,6 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: man-to-md   (man2md.py)
-# ===========================================================================
-
-
 def _render_roff(text: str) -> str:
     lines = text.splitlines()
     out: list[str] = []
@@ -207,7 +187,6 @@ def _render_roff(text: str) -> str:
             out.append(f"## {name.title()}")
             continue
 
-        # .B / .I inline emphasis
         raw = _bold.sub(r"**\1**", raw)
         raw = _ital.sub(r"*\1*", raw)
 
@@ -308,11 +287,6 @@ def cmd_man_to_md(args: argparse.Namespace) -> int:
     dest.write_text(rendered, encoding="utf-8")
     print(f"Converted {src} -> {dest}")
     return 0
-
-
-# ===========================================================================
-# Subcommand: md-to-html   (md2html.py)
-# ===========================================================================
 
 
 def _apply_tailwind_classes(html: str) -> str:
@@ -416,16 +390,11 @@ def cmd_md_to_html(args: argparse.Namespace) -> int:
     )
     tmp_html.write_text(final_html, encoding="utf-8")
 
-    # Copy to cwd-relative path next to the source (original behavior).
     local = src.with_suffix(".html")
     shutil.copy(tmp_html, local)
     print(f"Output saved in {local}")
     return 0
 
-
-# ===========================================================================
-# Subcommand: rst-to-html   (mk_html.py)
-# ===========================================================================
 
 _MD_HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 _MD_CODE = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
@@ -534,7 +503,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
         err(f"Not a directory: {root}")
         return 1
 
-    # --- Style.css cache-busting --------------------------------------------
     stylesheet: Optional[str] = None
     style_src = root / "style.css"
     if style_src.exists():
@@ -544,12 +512,10 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
             shutil.copy(style_src, style_dest)
         stylesheet = hashed
 
-    # --- Discover sources ---------------------------------------------------
     sources: list[Path] = []
     for ext in (".rst", ".txt", ".md"):
         sources.extend(root.rglob(f"*{ext}"))
     if args.force:
-        # Force re-conversion: drop mtime shortcut by not skipping any.
         pass
     if not sources:
         print(f"No source files found in {root}")
@@ -581,11 +547,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
 
     print(f"\nConversion complete: {converted} converted, {failures} errors")
     return 0
-
-
-# ===========================================================================
-# Subcommand: mobi-to-html   (mobi2html.py)
-# ===========================================================================
 
 
 def cmd_mobi_to_html(args: argparse.Namespace) -> int:
@@ -622,14 +583,8 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
 
     print(f"HTML saved to: {dest_html}")
 
-    # Clean up the extraction directory.
     shutil.rmtree(temp_dir, ignore_errors=True)
     return 0
-
-
-# ===========================================================================
-# Subcommand: pptx-to-txt   (pptx2txt.py)
-# ===========================================================================
 
 
 def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
@@ -669,11 +624,6 @@ def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: rst-to-md   (rst2md2.py)
-# ===========================================================================
-
-
 def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
     if not src.exists():
         err(f"{src} not found")
@@ -708,7 +658,7 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
 
 
 def cmd_rst_to_md(args: argparse.Namespace) -> int:
-    # Verify pandoc is installed.
+
     try:
         subprocess.run(["pandoc", "--version"], capture_output=True, check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -748,11 +698,6 @@ def cmd_rst_to_md(args: argparse.Namespace) -> int:
     return 0 if any_processed else 1
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="doc_convert.py",
@@ -772,7 +717,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- chat-export -----------------------------------------------------
     p = sub.add_parser(
         "chat-export", help="JSON conversations -> per-chat Markdown files"
     )
@@ -785,7 +729,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_chat_export)
 
-    # ---- info-to-md ------------------------------------------------------
     p = sub.add_parser("info-to-md", help="Convert .info files to .md via `info` CLI")
     p.add_argument(
         "-d", "--directory", default=".", help="Directory to scan (default: .)"
@@ -795,12 +738,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_info_to_md)
 
-    # ---- man-to-md -------------------------------------------------------
     p = sub.add_parser("man-to-md", help="Convert a man page (roff) to Markdown")
     p.add_argument("input", help="Man page file (e.g. /usr/share/man/man1/ls.1)")
     p.set_defaults(func=cmd_man_to_md)
 
-    # ---- md-to-html ------------------------------------------------------
     p = sub.add_parser("md-to-html", help="Markdown -> styled HTML (Tailwind/KaTeX)")
     p.add_argument("input", help="Input Markdown file")
     p.add_argument(
@@ -815,7 +756,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_md_to_html)
 
-    # ---- rst-to-html -----------------------------------------------------
     p = sub.add_parser("rst-to-html", help=".rst / .txt / .md -> HTML via docutils")
     p.add_argument(
         "-d", "--directory", default=".", help="Root directory to process (default: .)"
@@ -828,17 +768,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_rst_to_html)
 
-    # ---- mobi-to-html ----------------------------------------------------
     p = sub.add_parser("mobi-to-html", help="Extract a .mobi to HTML")
     p.add_argument("input", help="Input .mobi file")
     p.set_defaults(func=cmd_mobi_to_html)
 
-    # ---- pptx-to-txt -----------------------------------------------------
     p = sub.add_parser("pptx-to-txt", help="Extract text from a .pptx")
     p.add_argument("input", help="Input .pptx file")
     p.set_defaults(func=cmd_pptx_to_txt)
 
-    # ---- rst-to-md -------------------------------------------------------
     p = sub.add_parser("rst-to-md", help="Convert .rst files to .md via pandoc")
     p.add_argument("paths", nargs="+", help="Files or directories to convert")
     p.add_argument(

@@ -60,9 +60,6 @@ from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party packages (all already required by at least one original)
-# ---------------------------------------------------------------------------
 try:
     from deep_translator import GoogleTranslator
 except ImportError:  # pragma: no cover - optional dependency
@@ -106,9 +103,6 @@ try:
 except ImportError:  # pragma: no cover - platform dependent
     _HAVE_READLINE = False
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 log = logging.getLogger("merged_translator")
 
 
@@ -120,9 +114,6 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-# ---------------------------------------------------------------------------
-# Persian text detection (identical regex to the originals)
-# ---------------------------------------------------------------------------
 PERSIAN_RE = re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]"
 )
@@ -132,9 +123,6 @@ def is_persian(text: str) -> bool:
     return bool(PERSIAN_RE.search(text))
 
 
-# ---------------------------------------------------------------------------
-# JSON helpers
-# ---------------------------------------------------------------------------
 def load_json_dict(path: Path) -> dict[str, str]:
     with path.open(encoding="utf-8") as fh:
         data = json.load(fh)
@@ -151,10 +139,6 @@ def save_json(data: Any, path: Path) -> None:
     tmp.replace(path)
 
 
-# ---------------------------------------------------------------------------
-# Translation backends — uniform signature
-#   (text, source, target, retries, delay) -> Optional[str]
-# ---------------------------------------------------------------------------
 def translate_google(
     text: str,
     source: str = "auto",
@@ -253,10 +237,6 @@ def get_backend(name: str):
         ) from None
 
 
-# ---------------------------------------------------------------------------
-# Worker used by BOTH thread- and process-pools.
-# Must be module-level so it can be pickled by ProcessPoolExecutor.
-# ---------------------------------------------------------------------------
 def _translate_item(
     item: tuple[str, str, str, str, int, float],
 ) -> tuple[str, Optional[str]]:
@@ -272,9 +252,6 @@ def _translate_item(
     return text, result
 
 
-# ---------------------------------------------------------------------------
-# `file` subcommand helpers
-# ---------------------------------------------------------------------------
 def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, str]]:
     chunks: list[tuple[int, int, str]] = []
     buf: list[str] = []
@@ -316,7 +293,6 @@ def cmd_file(args: argparse.Namespace) -> int:
         print(f"No lines found in {input_path.name}")
         return 0
 
-    # Optional Persian-only filtering (fa_trans behavior)
     if args.persian_only:
         pending = [ln for ln in lines if is_persian(ln)]
         skipped = len(lines) - len(pending)
@@ -329,7 +305,6 @@ def cmd_file(args: argparse.Namespace) -> int:
         print("Nothing to translate.")
         return 0
 
-    # --- build units of work ---
     backend_name = args.backend
     source, target = args.source, args.target
     retries, delay = args.retries, args.delay
@@ -367,7 +342,6 @@ def cmd_file(args: argparse.Namespace) -> int:
         print("Interrupted by user.")
         return 130
 
-    # --- collapse results into {orig_line: translated_line} ---
     translations: dict[str, str] = {}
     if args.mode == "line":
         for orig, trans in results:
@@ -392,7 +366,6 @@ def cmd_file(args: argparse.Namespace) -> int:
         log.error("No translations were produced.")
         return 1
 
-    # --- write JSON output ---
     output_path = Path(args.output) if args.output else input_path.with_suffix(".json")
 
     if args.output_format == "chunks" and args.mode == "chunk":
@@ -425,7 +398,6 @@ def cmd_file(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001
         log.error("Error saving JSON: %s", exc)
 
-    # --- optional in-place rewrite ---
     if args.in_place:
         try:
             out_lines = [translations.get(ln, ln) for ln in lines]
@@ -438,9 +410,6 @@ def cmd_file(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# `words` subcommand
-# ---------------------------------------------------------------------------
 def cmd_words(args: argparse.Namespace) -> int:
     input_path = Path(args.input)
     if not input_path.is_file():
@@ -449,7 +418,6 @@ def cmd_words(args: argparse.Namespace) -> int:
 
     output_path = Path(args.output)
 
-    # --- read + optional dedupe ---
     seen: set[str] = set()
     words: list[str] = []
     for raw in input_path.read_text(encoding="utf-8").splitlines():
@@ -467,7 +435,6 @@ def cmd_words(args: argparse.Namespace) -> int:
 
     print(f"Loaded {len(words)} words from {input_path}")
 
-    # --- optional resume ---
     existing: dict[str, str] = {}
     if args.resume and output_path.exists():
         try:
@@ -543,9 +510,6 @@ def cmd_words(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# `lookup` subcommand
-# ---------------------------------------------------------------------------
 def _setup_readline(candidates: list[str]) -> None:
     if not _HAVE_READLINE:
         return
@@ -655,7 +619,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         print(f"No close matches found for: {args.fuzzy}")
         return 1
 
-    # positional word(s)
     if args.word:
         word = " ".join(args.word).strip()
         hit = fwd.get(word) or rev.get(word)
@@ -672,7 +635,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
             print("Not found", file=sys.stderr)
         return 1
 
-    # Interactive: try fzf first unless disabled
     if not args.no_fzf:
         selected = _fzf_select(candidates)
         if selected:
@@ -680,15 +642,11 @@ def cmd_lookup(args: argparse.Namespace) -> int:
             print(f"{selected} → {hit}")
             return 0
         if shutil.which("fzf"):
-            # fzf was available and user cancelled → exit cleanly
             return 0
 
     return _interactive_loop(fwd, rev)
 
 
-# ---------------------------------------------------------------------------
-# CLI wiring
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_translator.py",
@@ -708,7 +666,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- file ----
     p_file = sub.add_parser(
         "file",
         help="Translate a text file (line-by-line or chunked).",
@@ -781,7 +738,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_file.set_defaults(func=cmd_file)
 
-    # ---- words ----
     p_words = sub.add_parser(
         "words", help="Translate a word list into a JSON dictionary."
     )
@@ -842,7 +798,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_words.set_defaults(func=cmd_words)
 
-    # ---- lookup ----
     p_lookup = sub.add_parser(
         "lookup", help="Offline dictionary lookup (with optional fzf)."
     )

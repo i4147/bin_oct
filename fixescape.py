@@ -8,7 +8,6 @@ import sys
 import tokenize
 import warnings
 
-# ANSI color codes
 RED = "\033[91m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
@@ -32,7 +31,6 @@ def check_and_fix_file(args):
     has_warning = False
     has_syntax_error = False
 
-    # Fast path: check if the whole file emits the warning
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always", SyntaxWarning)
         try:
@@ -44,15 +42,12 @@ def check_and_fix_file(args):
 
         has_warning = any("invalid escape sequence" in str(warn.message) for warn in w)
 
-    # If the file compiled cleanly and had no warnings, skip it entirely
     if not has_warning and not has_syntax_error:
         return filepath_str, False, [], None
 
-    # Tokenize the file to find exact string literals
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source_text).readline))
     except tokenize.TokenError:
-        # If tokenization crashes, we just process what we were able to parse
         pass
 
     issues = []
@@ -60,7 +55,6 @@ def check_and_fix_file(args):
 
     for tok in tokens:
         if tok.type == tokenize.STRING:
-            # Check if this specific token triggers the warning
             with warnings.catch_warnings(record=True) as w2:
                 warnings.simplefilter("always", SyntaxWarning)
                 try:
@@ -69,14 +63,12 @@ def check_and_fix_file(args):
                     pass
 
                 if any("invalid escape sequence" in str(warn.message) for warn in w2):
-                    # Separate the prefix (e.g., f, b, u) from the quotes and content
                     m = re.match(r'^([a-zA-Z_]*)(["\'].*)$', tok.string, re.DOTALL)
                     if m:
                         prefix = m.group(1)
                         rest = m.group(2)
 
                         if "r" not in prefix.lower():
-                            # Remove outdated 'u' prefix if present and convert to raw string 'r'
                             prefix = prefix.replace("u", "").replace("U", "")
                             new_string = prefix + "r" + rest
 
@@ -98,7 +90,6 @@ def check_and_fix_file(args):
     output = []
     output.append(f"{CYAN}File: {filepath}{RESET}")
 
-    # Display the lines with context
     issue_lines = sorted(list(set(line_num for line_num, _, _ in issues)))
     for lineno in issue_lines:
         idx = lineno - 1
@@ -106,7 +97,6 @@ def check_and_fix_file(args):
         if idx - 1 >= 0:
             output.append(f"  {idx}: {lines[idx - 1].rstrip('\n')}")
 
-        # Target line with issue in color
         output.append(f"{RED}> {idx + 1}: {lines[idx].rstrip('\n')}{RESET}")
 
         if idx + 1 < len(lines):
@@ -116,7 +106,6 @@ def check_and_fix_file(args):
 
     new_content = None
     if fix and replacements:
-        # Sort replacements bottom-up (reverse order) so column indices remain valid after modification
         replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
         text_lines = source_text.splitlines(keepends=True)
 
@@ -131,7 +120,7 @@ def check_and_fix_file(args):
                 first_line = text_lines[r1]
                 last_line = text_lines[r2]
                 text_lines[r1] = first_line[:c_start] + new_string + last_line[c_end:]
-                # Delete the intermediate lines that were swallowed by the replacement
+
                 for i in range(r2, r1, -1):
                     del text_lines[i]
 
@@ -163,7 +152,6 @@ def main():
     if base_path.is_file():
         files = [base_path]
     else:
-        # Ignore hidden folders like .git and virtual environments
         files = [
             f
             for f in base_path.rglob("*.py")
@@ -179,7 +167,6 @@ def main():
     tasks = [(str(f), args.apply) for f in files]
 
     with mp.Pool(8) as pool:
-        # Use imap_unordered to process files as quickly as possible with 8 workers
         for filepath_str, has_issues, output_lines, new_content in pool.imap_unordered(
             check_and_fix_file, tasks
         ):

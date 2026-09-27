@@ -25,17 +25,14 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
         return definitions
 
     for node in tree.body:
-        # Functions (ignore private ones starting with _)
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if not node.name.startswith("_"):
                 definitions["functions"].append(node.name)
 
-        # Classes (ignore private ones starting with _)
         elif isinstance(node, ast.ClassDef):
             if not node.name.startswith("_"):
                 definitions["classes"].append(node.name)
 
-        # Constants: module-level assignments with UPPER_CASE names
         elif isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name):
@@ -43,8 +40,6 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
                     if name.isupper() and not name.startswith("_"):
                         definitions["constants"].append(name)
 
-        # Augmented assignments (e.g., counter += 1) - skip, not constants
-        # AnnAssign (type-annotated) constants
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             name = node.target.id
             if name.isupper() and not name.startswith("_"):
@@ -68,7 +63,6 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
         return exported
 
     for node in tree.body:
-        # Collect from __all__ = [...]
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == "__all__":
@@ -79,20 +73,16 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
                             ):
                                 exported.add(elt.value)
 
-        # Collect from `from .module import name` and `from . import name`
         elif isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 if alias.name == "*":
-                    # Wildcard import - can't determine specific names
                     logger.warning(f"Wildcard import found in {init_path}")
                     continue
-                # The exported name is the alias if set, otherwise original name
+
                 exported.add(alias.asname or alias.name)
 
-        # Collect from `import module` (though unusual in __init__)
         elif isinstance(node, ast.Import):
             for alias in node.names:
-                # For `import x.y`, name is x, asname could override
                 name = alias.asname or alias.name.split(".")[0]
                 exported.add(name)
 
@@ -134,11 +124,9 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
 
         for category, names in definitions.items():
             for name in names:
-                # Check if exported directly or via module namespace
                 if name not in exported and module_name not in exported:
                     file_missing[category].append(name)
 
-        # Only include file if something is missing
         if any(file_missing.values()):
             missing[py_file.name] = file_missing
 

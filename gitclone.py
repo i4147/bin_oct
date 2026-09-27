@@ -58,8 +58,6 @@ def git_clone2(*args):
     print(f"🔍 Default branch: {branch}")
     print(f"📦 Cloning only '{branch}' (with submodules) from {url} into {target} ...")
 
-    # --recurse-submodules on a bare clone creates bare submodule repos
-    # in the same relative paths. Requires git >= 2.13.
     rc = subprocess.run(
         [
             "git",

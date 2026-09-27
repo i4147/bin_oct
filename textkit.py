@@ -62,9 +62,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional NLTK import (never fatal)
-# ---------------------------------------------------------------------------
 try:  # pragma: no cover
     import nltk
     from nltk.corpus import stopwords as _nltk_stopwords
@@ -73,10 +70,6 @@ try:  # pragma: no cover
     _HAS_NLTK = True
 except ImportError:  # pragma: no cover
     _HAS_NLTK = False
-
-# ===========================================================================
-# 1. File classification (ported from collect_chars.py + dh.py helpers)
-# ===========================================================================
 
 TEXT_EXTS: set[str] = {
     ".txt",
@@ -233,10 +226,6 @@ def iter_text_files(root: Path) -> list[Path]:
     return out
 
 
-# ===========================================================================
-# 2. Tokenization
-# ===========================================================================
-
 _WORD_RE = re.compile(r"[a-z]+")
 _ALNUM_RE = re.compile(r"[a-zA-Z0-9]+")
 
@@ -261,11 +250,6 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
 
     # default: "regex"
     return [t for t in _WORD_RE.findall(text) if len(t) >= min_length]
-
-
-# ===========================================================================
-# 3. Stopwords
-# ===========================================================================
 
 
 def load_stopwords(source: str, path: Path | None) -> set[str]:
@@ -301,11 +285,6 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
     return words
 
 
-# ===========================================================================
-# 4. Multiprocessing workers (module-level so they pickle)
-# ===========================================================================
-
-
 def _worker_word_counts(
     task: tuple[str, int, str, set[str]],
 ) -> tuple[str, Counter, str | None]:
@@ -332,11 +311,6 @@ def _worker_collect_chars(path_str: str) -> set[str]:
             return chars
     except OSError:
         return set()
-
-
-# ===========================================================================
-# 5. Shared helpers
-# ===========================================================================
 
 
 def _resolve_files(raw: Sequence[Path]) -> list[Path]:
@@ -400,11 +374,6 @@ def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
             print(f"{word:<15} {count}")
 
 
-# ===========================================================================
-# 6. Subcommand implementations
-# ===========================================================================
-
-
 def cmd_words(args: argparse.Namespace) -> int:
     files = _resolve_files(args.files)
     if not files:
@@ -427,7 +396,6 @@ def cmd_words(args: argparse.Namespace) -> int:
         if err:
             print(f"Warning: could not read {path_str}: {err}", file=sys.stderr)
 
-    # ----- per-file mode (20most.py) -------------------------------------
     if args.per_file:
         for path_str, counter, err in results:
             if err:
@@ -449,7 +417,6 @@ def cmd_words(args: argparse.Namespace) -> int:
             )
         return 0
 
-    # ----- aggregate mode (scripts 1, 6, 7, 8) ---------------------------
     total: Counter = Counter()
     for _, counter, _ in results:
         total.update(counter)
@@ -467,7 +434,6 @@ def cmd_chars(args: argparse.Namespace) -> int:
         print(f"Error: File '{path}' not found.", file=sys.stderr)
         return 1
     if path.is_symlink() or not is_text_file(path):
-        # charcount.py silently skipped symlinks/binaries
         return 0
 
     text = path.read_text(encoding="utf-8", errors="ignore")
@@ -561,11 +527,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# 7. Argument parsing
-# ===========================================================================
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="textkit",
@@ -585,7 +546,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # -------- words ------------------------------------------------------
     p_words = sub.add_parser(
         "words",
         help="Word-frequency analysis (aggregate or per-file).",
@@ -667,7 +627,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_words.set_defaults(func=cmd_words)
 
-    # -------- chars ------------------------------------------------------
     p_chars = sub.add_parser(
         "chars",
         help="Character count of a single file.",
@@ -681,7 +640,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_chars.set_defaults(func=cmd_chars)
 
-    # -------- collect-chars ---------------------------------------------
     p_cc = sub.add_parser(
         "collect-chars",
         help="Collect unique characters across a directory tree.",
@@ -710,11 +668,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_cc.set_defaults(func=cmd_collect_chars)
 
     return parser
-
-
-# ===========================================================================
-# 8. Entry point
-# ===========================================================================
 
 
 def main(argv: Sequence[str] | None = None) -> int:

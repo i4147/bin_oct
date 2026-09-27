@@ -63,10 +63,6 @@ import py7zr
 import zstandard as zstd
 from loguru import logger
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 CHUNK: int = 1024 * 1024
 """Read/write block size for streaming codecs (matches originals)."""
 
@@ -76,10 +72,8 @@ DEFAULT_WORKERS: int = 8
 DEFAULT_LEVEL: int = 9
 """Default compression level for codecs that accept one."""
 
-# Codecs understood by `tar-codec` (archive_convert.py).
 TAR_CODECS: frozenset[str] = frozenset({"gz", "zst", "xz", "bz2", "lz4", "br", "7z"})
 
-# Archive formats understood by `archive-convert` (archive_converter.py).
 TAR_FORMATS: frozenset[str] = frozenset(
     {
         ".tar",
@@ -95,12 +89,11 @@ TAR_FORMATS: frozenset[str] = frozenset(
 )
 ZIP_FORMATS: frozenset[str] = frozenset({".zip", ".whl"})
 ARCHIVE_FORMATS: frozenset[str] = TAR_FORMATS | ZIP_FORMATS
-# Longest suffix first so `.tar.xz` matches before `.xz` (if ever added).
+
 _ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(
     sorted(ARCHIVE_FORMATS, key=len, reverse=True)
 )
 
-# Wheel-unpack metadata conventions (whl2txz.py).
 WHEEL_SCRIPT_SUFFIXES: tuple[str, ...] = (".sh", ".py", ".exe")
 TAR_DEFAULT_MODE: int = 0o644  # r4 = 420
 TAR_SCRIPT_MODE: int = 0o755  # s4 = 493
@@ -109,10 +102,6 @@ TAR_UID: int = 0
 TAR_GID: int = 0
 TAR_UNAME: str = "root"
 TAR_GNAME: str = "root"
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def fmt_size(n: float) -> str:
@@ -188,11 +177,6 @@ def _copy_stream(src: BinaryIO, dst: BinaryIO) -> int:
     return total
 
 
-# ---------------------------------------------------------------------------
-# Generic codec openers (shared by tar-codec, archive-convert, gz2xz, xz2gz)
-# ---------------------------------------------------------------------------
-
-
 @contextlib.contextmanager
 def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
     if codec == "gz":
@@ -212,7 +196,6 @@ def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
         with lz4.frame.open(src, "rb") as f:
             yield f
     elif codec == "br":
-        # brotli has no native file object; buffer (same as archive_converter.py).
         yield io.BytesIO(brotli.decompress(src.read_bytes()))
     elif codec == "sz":
         yield io.BytesIO(bytes(cramjam.snappy.decompress(src.read_bytes())))
@@ -241,7 +224,6 @@ def open_compressor(
         with lz4.frame.open(dst, "wb") as f:
             yield f
     elif codec == "br":
-        # brotli streams, but simplest is to buffer then flush.
         buf = io.BytesIO()
         yield buf
         dst.write_bytes(brotli.compress(buf.getvalue(), quality=11))
@@ -251,11 +233,6 @@ def open_compressor(
         dst.write_bytes(bytes(cramjam.snappy.compress(buf.getvalue())))
     else:
         raise ValueError(f"Unsupported target codec: {codec}")
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: tar-codec  (archive_convert.py)
-# ---------------------------------------------------------------------------
 
 
 def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
@@ -303,13 +280,12 @@ def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
 
     tmp = src.with_name(f".__tmp_tar_conv_{os.getpid()}_{stem}.tar")
     try:
-        # 1) unpack src codec into a plain tar
         if src_codec == "7z":
             _extract_7z_to_tar(src, tmp)
         else:
             with open_decompressed(src, src_codec) as i, tmp.open("wb") as o:
                 _copy_stream(i, o)
-        # 2) pack the tar with the target codec
+
         if target == "7z":
             with py7zr.SevenZipFile(dst, mode="w") as z:
                 z.write(tmp, arcname=tmp.name)
@@ -367,11 +343,6 @@ def run_tar_codec(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: archive-convert  (archive_converter.py)
-# ---------------------------------------------------------------------------
-
-
 def detect_archive_ext(p: Path) -> Optional[str]:
     name = p.name.lower()
     for ext in _ARCHIVE_SUFFIXES:
@@ -401,7 +372,6 @@ def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
                         continue
                     yield m.name, f.read()
         elif codec == "7z":
-            # src is `.tar.7z`; py7zr's stream API returns one tar
             with py7zr.SevenZipFile(str(src), mode="r") as z:
                 payload = z.readall()
                 for bio in payload.values():
@@ -559,11 +529,6 @@ def run_archive_convert(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: br2zst  (br2zst.py)
-# ---------------------------------------------------------------------------
-
-
 def run_br2zst(args: argparse.Namespace) -> int:
     root: Path = args.root
     files = sorted(p for p in root.rglob("*.json.br") if p.is_file())
@@ -611,11 +576,6 @@ def run_br2zst(args: argparse.Namespace) -> int:
         f"{fmt_size(total_out):>12} {fmt_size(diff):>12}  {pct:>6.2f}%"
     )
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Subcommands: gz2xz / xz2gz  (gz2xz.py, xz2gz.py)
-# ---------------------------------------------------------------------------
 
 
 def _single_transcode(
@@ -713,7 +673,7 @@ def run_xz2gz(args: argparse.Namespace) -> int:
     if not files:
         print("No .xz files found to convert.")
         return 0
-    # Skip symlinks (xz2gz.py explicit behavior).
+
     good_files = []
     for p in files:
         if p.is_symlink():
@@ -733,11 +693,6 @@ def run_xz2gz(args: argparse.Namespace) -> int:
         )
     )
     return _report_single_transcode(results)
-
-
-# ---------------------------------------------------------------------------
-# Subcommand: whl-txz  (whl2txz.py + txz2whl.py)
-# ---------------------------------------------------------------------------
 
 
 def _zip_dt_to_ts(date_time: tuple[int, ...]) -> float:
@@ -1000,11 +955,6 @@ def run_whl_txz(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_archive_tools",
@@ -1013,7 +963,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- tar-codec ------------------------------------------------------
     p = sub.add_parser(
         "tar-codec", help="Change the codec of *.tar.<codec> files (recursive)."
     )
@@ -1030,7 +979,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_tar_codec)
 
-    # ---- archive-convert ------------------------------------------------
     p = sub.add_parser(
         "archive-convert", help="Convert archives between tar/zip/whl formats."
     )
@@ -1051,13 +999,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_archive_convert)
 
-    # ---- br2zst ---------------------------------------------------------
     p = sub.add_parser("br2zst", help="Recursively convert *.json.br -> *.json.zst.")
     p.add_argument("--root", type=Path, default=Path.cwd())
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_br2zst)
 
-    # ---- gz2xz / xz2gz --------------------------------------------------
     for name, fn in (("gz2xz", run_gz2xz), ("xz2gz", run_xz2gz)):
         p = sub.add_parser(
             name, help=f"Convert *.{name[:2]} -> *.{name[3:]} in --root."
@@ -1072,7 +1018,6 @@ def build_parser() -> argparse.ArgumentParser:
         )
         p.set_defaults(func=fn)
 
-    # ---- whl-txz --------------------------------------------------------
     p = sub.add_parser("whl-txz", help="Bidirectional .whl <-> .tar.xz converter.")
     p.add_argument(
         "paths",

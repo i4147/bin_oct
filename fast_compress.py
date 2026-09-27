@@ -74,9 +74,6 @@ except ImportError:  # pragma: no cover - fallback for standalone use
             value /= 1024.0
         return f"{value:.1f} PB"
 
-# ---------------------------------------------------------------------------
-# Constants / defaults
-# ---------------------------------------------------------------------------
 
 DEFAULT_ZSTD_LEVEL = 3
 DEFAULT_ZSTD_THREADS = 4
@@ -266,10 +263,6 @@ XZ_EXCLUDED_DIR_NAMES = frozenset(
     {".git", "__pycache__", ".venv", "venv", ".env", "node_modules"}
 )
 
-# ---------------------------------------------------------------------------
-# Data structures
-# ---------------------------------------------------------------------------
-
 
 @dataclass
 class Stats:
@@ -299,11 +292,6 @@ class ScanStats:
     skipped_dirs: int = 0
     skipped_media: int = 0
     skipped_existing: int = 0
-
-
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 
 
 def resolve_directory(positional: str | None, flag: str | None) -> Path | None:
@@ -355,11 +343,6 @@ def is_editable_package_dir(path: Path) -> bool:
         return False
     except (PermissionError, OSError):
         return False
-
-
-# ---------------------------------------------------------------------------
-# zstd implementation
-# ---------------------------------------------------------------------------
 
 
 def collect_zstd_tasks(
@@ -723,11 +706,6 @@ def run_zstd(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# xz implementation
-# ---------------------------------------------------------------------------
-
-
 def collect_xz_tasks(
     root: Path,
     compress: bool,
@@ -883,11 +861,6 @@ def run_xz(args: argparse.Namespace) -> int:
     return 0 if not errors else 1
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Recursively compress/decompress files with zstd or xz.",
@@ -902,7 +875,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # ---- zstd subcommand ----
     zstd_parser = subparsers.add_parser(
         "zstd",
         help="Compress/decompress using zstandard",
@@ -1025,7 +997,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override excluded directory glob patterns",
     )
 
-    # ---- xz subcommand ----
     xz_parser = subparsers.add_parser(
         "xz",
         help="Compress/decompress using lzma_mt",

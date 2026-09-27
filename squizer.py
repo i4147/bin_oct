@@ -36,9 +36,6 @@ from typing import Callable, Iterator, Sequence
 
 from dh import cprint
 
-# ─────────────────────────────────────────────────────────────────────
-# Names that must never be shortened (builtins, dunders, magic args).
-# ─────────────────────────────────────────────────────────────────────
 PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
     "__file__",
     "__name__",
@@ -49,9 +46,6 @@ PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Stdlib discovery
-# ─────────────────────────────────────────────────────────────────────
 def get_stdlib_modules() -> set[str]:
     if hasattr(sys, "stdlib_module_names"):
         return set(sys.stdlib_module_names)
@@ -72,17 +66,10 @@ def get_stdlib_modules() -> set[str]:
 
 
 STDLIB_MODULES: set[str] = get_stdlib_modules()
-# `__future__` is deliberately *not* kept. It must appear at the very top
-# of a file, but the minified output concatenates many files and is
-# `exec`ed mid-stub — so any surviving `__future__` import would raise
-# SyntaxError at runtime. All type hints are stripped anyway, so the
-# import is a no-op in the compressed output.
+
 STDLIB_KEEP: frozenset[str] = frozenset()
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Pass 1 – strip docstrings & type annotations
-# ─────────────────────────────────────────────────────────────────────
 class StripDocstringsAndTypes(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         node.returns = None
@@ -128,9 +115,6 @@ def _remove_docstring(node: ast.AST) -> None:
         body.pop(0)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Pass 2 – strip stdlib imports (records them for a trailing notice)
-# ─────────────────────────────────────────────────────────────────────
 class StdlibImportStripper(ast.NodeTransformer):
     def __init__(self) -> None:
         self.removed: list[str] = []
@@ -172,9 +156,6 @@ class FutureImportGuard(ast.NodeTransformer):
         return self.generic_visit(node)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Pass 3 – identifier shortening
-# ─────────────────────────────────────────────────────────────────────
 def generate_short_names() -> Iterator[str]:
     letters = string.ascii_lowercase
     idx = 0
@@ -248,17 +229,12 @@ class NameRenamer(ast.NodeTransformer):
         node.id = self._map(node.id)
         return node
 
-    # Rename keyword arguments too, so `f(timeout=1)` keeps working
-    # after `timeout` -> `a` in the function definition.
     def visit_keyword(self, node: ast.keyword) -> ast.keyword:
         if node.arg is not None:
             node.arg = self._map(node.arg)
         return node
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Pass 4 – peephole optimizations
-# ─────────────────────────────────────────────────────────────────────
 _BIN_OPS: dict[type[ast.operator], Callable[[object, object], object]] = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
@@ -309,7 +285,6 @@ def _is_const(node: ast.AST | None, value: object) -> bool:
 
 
 class PeepholeOptimizer(ast.NodeTransformer):
-    # ── statement-list traversal ─────────────────────────────────────
     def generic_visit(self, node: ast.AST) -> ast.AST:
         super().generic_visit(node)
         for field in ("body", "orelse", "finalbody"):
@@ -331,14 +306,13 @@ class PeepholeOptimizer(ast.NodeTransformer):
         return stmts
 
     def _opt_pass(self, stmts: list[ast.stmt]) -> list[ast.stmt]:
-        # (a) Drop unreachable code after a terminator.
+
         live: list[ast.stmt] = []
         for s in stmts:
             if live and isinstance(live[-1], _TERMINATORS):
                 break
             live.append(s)
 
-        # (b) `if c: <terminator> ... else: X` -> hoist X after the if.
         flattened: list[ast.stmt] = []
         for s in live:
             if (
@@ -352,7 +326,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
             else:
                 flattened.append(s)
 
-        # (c) `if x: return True` + `return False` -> `return bool(x)`.
         out: list[ast.stmt] = []
         i = 0
         while i < len(flattened):
@@ -389,10 +362,9 @@ class PeepholeOptimizer(ast.NodeTransformer):
             i += 1
         return out
 
-    # ── node-level rewrites ──────────────────────────────────────────
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
         self.generic_visit(node)
-        # `x = x <op> y`  ->  `x <op>= y`
+
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
@@ -411,7 +383,7 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
     def visit_If(self, node: ast.If) -> ast.AST:
         self.generic_visit(node)
-        # Merge `if a:\n if b: X` into `if a and b: X`.
+
         if (
             not node.orelse
             and len(node.body) == 1
@@ -427,7 +399,7 @@ class PeepholeOptimizer(ast.NodeTransformer):
                 ),
                 node,
             )
-        # `if True:` -> `if 1:`, `if False:` -> `if 0:`.
+
         if isinstance(node.test, ast.Constant):
             if node.test.value is True:
                 node.test = ast.copy_location(ast.Constant(value=1), node.test)
@@ -443,7 +415,7 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
     def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
         self.generic_visit(node)
-        # Constant-fold when both operands are literals, only if shorter.
+
         if not (
             isinstance(node.left, ast.Constant) and isinstance(node.right, ast.Constant)
         ):
@@ -451,7 +423,7 @@ class PeepholeOptimizer(ast.NodeTransformer):
         op_fn = _BIN_OPS.get(type(node.op))
         if op_fn is None:
             return node
-        # Guard against 2**10**9 blowing up during compile.
+
         if (
             isinstance(node.op, (ast.Pow, ast.LShift))
             and isinstance(node.right.value, int)
@@ -490,9 +462,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
         return node
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Pass 5 – post-unparse `;` joining of adjacent simple statements
-# ─────────────────────────────────────────────────────────────────────
 def _is_simple_line(line: str) -> bool:
     s = line.strip()
     if not s or s.startswith("#") or s.endswith(":"):
@@ -535,9 +504,6 @@ def join_simple_lines(text: str) -> str:
     return "\n".join(out)
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Payload wrapping – zlib + base85 stub
-# ─────────────────────────────────────────────────────────────────────
 _STUB_HEADER = "import base64 as _b,zlib as _z\nexec(_z.decompress(_b.b85decode(_p)))\n"
 
 
@@ -546,10 +512,9 @@ def wrap_payload(source: str, *, level: int = 9) -> str:
     packed = zlib.compress(raw, level)
     b85 = base64.b85encode(packed).decode("ascii")
 
-    # Split into fixed-width chunks so the artifact stays printable.
     chunk = 100
     lines = [b85[k : k + chunk] for k in range(0, len(b85), chunk)]
-    # Adjacent string literals inside parentheses implicitly concatenate.
+
     payload_literal = "_p=(" + "\n".join(f'"{ln}"' for ln in lines) + ")"
 
     header = (
@@ -561,9 +526,6 @@ def wrap_payload(source: str, *, level: int = 9) -> str:
     return f"{header}{payload_literal}\n\n{_STUB_HEADER}"
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Driver
-# ─────────────────────────────────────────────────────────────────────
 def _render_file(filepath: str, tree: ast.AST) -> str:
     tree = FutureImportGuard().visit(tree)
     ast.fix_missing_locations(tree)
@@ -580,7 +542,6 @@ def compress_files(file_paths: Sequence[str]) -> None:
     parsed_trees: list[tuple[str, ast.AST]] = []
     removed_imports: list[str] = []
 
-    # ── First pass: parse + strip types/docstrings + collect names ──
     for filepath in file_paths:
         path = Path(filepath)
         if not path.exists():
@@ -604,7 +565,6 @@ def compress_files(file_paths: Sequence[str]) -> None:
         cprint("Nothing to compress.")
         return
 
-    # ── Second pass: rename + peephole + unparse ────────────────────
     blocks: list[str] = []
     for filepath, tree in parsed_trees:
         tree = NameRenamer(name_map).visit(tree)
@@ -615,7 +575,6 @@ def compress_files(file_paths: Sequence[str]) -> None:
 
     compressed = "\n\n".join(blocks)
 
-    # Trailing notice about stripped stdlib imports.
     if removed_imports:
         uniq = sorted(set(removed_imports))
         compressed += (
@@ -624,9 +583,7 @@ def compress_files(file_paths: Sequence[str]) -> None:
             + "\n".join(f"#   {imp}" for imp in uniq)
         )
 
-    # ── Output routing ──────────────────────────────────────────────
     if len(parsed_trees) == 1:
-        # Single file  ->  <stem>_compressed.py + <stem>_compressed.txt
         src = Path(parsed_trees[0][0])
         stub_path = src.with_name(f"{src.stem}_compressed.py")
         txt_path = src.with_name(f"{src.stem}_compressed.txt")
@@ -636,7 +593,6 @@ def compress_files(file_paths: Sequence[str]) -> None:
 
         target = stub_path
     else:
-        # Multiple files  ->  compressed.txt + compressed_stub.py in cwd
         txt_path = Path("compressed.txt")
         stub_path = Path("compressed_stub.py")
 
@@ -645,7 +601,6 @@ def compress_files(file_paths: Sequence[str]) -> None:
 
         target = stub_path
 
-    # ── Report ──────────────────────────────────────────────────────
     raw_sz = len(compressed.encode("utf-8"))
     stub_sz = target.stat().st_size
     ratio = raw_sz / stub_sz if stub_sz else 0.0

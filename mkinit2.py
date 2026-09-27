@@ -87,14 +87,12 @@ def main():
     init_file = cwd / "__init__.py"
 
     if init_file.exists():
-        # Create backup
         backup_file = init_file.with_suffix(".py.bak")
         shutil.copy2(init_file, backup_file)
         print(f"\nBackup created: {backup_file}")
 
         existing_imports, existing_all, original_lines = parse_existing_init(init_file)
 
-        # Strip trailing empty lines for clean append
         while original_lines and original_lines[-1].strip() == "":
             original_lines.pop()
 
@@ -111,9 +109,8 @@ def main():
                 existing_imports.update(missing)
                 appended_any = True
 
-        # Merge __all__
         merged_all = sorted(existing_all | existing_imports)
-        # Remove any prior __all__ assignment from original lines
+
         cleaned_lines = []
         skip = False
         for line in new_lines:

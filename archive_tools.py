@@ -51,9 +51,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional third-party dependencies
-# ---------------------------------------------------------------------------
 try:
     import py7zr  # type: ignore
 except ImportError:
@@ -74,14 +71,10 @@ try:
 except ImportError:
     lz4frame = None  # type: ignore
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 DEFAULT_JOBS: int = 8
 DEFAULT_TIMEOUT: int = 300
 CHUNK: int = 1024 * 1024
 
-# External-CLI handlers (copied from ar_extract.py)
 CLI_COMMANDS: dict[str, list[str]] = {
     ".7z": ["7z", "x", "-y"],
     ".zip": ["unzip", "-o"],
@@ -104,8 +97,6 @@ CLI_COMMANDS: dict[str, list[str]] = {
     ".ace": ["unace", "x"],
 }
 
-# Extensions recognised when scanning directories (longest first so that
-# `.tar.gz` wins over `.gz`).
 ALL_EXTENSIONS: tuple[str, ...] = tuple(
     sorted(
         {
@@ -140,9 +131,6 @@ ALL_EXTENSIONS: tuple[str, ...] = tuple(
 )
 
 
-# ---------------------------------------------------------------------------
-# Result dataclass
-# ---------------------------------------------------------------------------
 @dataclass
 class ExtractResult:
     archive_path: Path
@@ -167,9 +155,6 @@ class ExtractResult:
         return out
 
 
-# ---------------------------------------------------------------------------
-# Small helpers
-# ---------------------------------------------------------------------------
 def count_files(p: Path) -> int:
     try:
         return sum(1 for f in p.rglob("*") if f.is_file())
@@ -260,14 +245,10 @@ def _safe_extract_tar(tar: tarfile.TarFile, dest: Path) -> None:
         tar.extractall(path=dest)
 
 
-# ---------------------------------------------------------------------------
-# Pure-Python extraction engine
-# ---------------------------------------------------------------------------
 def _extract_tar_python(archive: Path, dest: Path) -> None:
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
 
-    # .tar.{zst,br,lz4} — decompress to a temp .tar first
     for sfx, kind in ((".tar.zst", "zst"), (".tar.br", "br"), (".tar.lz4", "lz4")):
         if name.endswith(sfx):
             with tempfile.NamedTemporaryFile(suffix=".tar", delete=False) as tf:
@@ -280,7 +261,6 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
                 tmp.unlink(missing_ok=True)
             return
 
-    # .tar, .tar.gz/.tgz, .tar.bz2/.tbz2, .tar.xz/.txz — tarfile handles directly
     if name.endswith((".tar.gz", ".tgz")):
         mode = "r:gz"
     elif name.endswith((".tar.bz2", ".tbz2")):
@@ -328,7 +308,6 @@ def extract_with_python(archive: Path, dest: Path) -> None:
             sz.extractall(path=dest)
         return
 
-    # Single-file compression: strip the extension for the output name
     for ext, kind in (
         (".gz", "gz"),
         (".bz2", "bz2"),
@@ -346,9 +325,6 @@ def extract_with_python(archive: Path, dest: Path) -> None:
     raise ValueError(f"python engine does not support: {archive.name}")
 
 
-# ---------------------------------------------------------------------------
-# External-CLI extraction engine  (ar_extract.py behaviour)
-# ---------------------------------------------------------------------------
 def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
     ext = detect_extension(archive)
     if not ext or ext not in CLI_COMMANDS:
@@ -410,7 +386,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
         return
 
     if ext in (".gz", ".bz2", ".xz", ".lzma", ".zst", ".lz4"):
-        # Copy into dest, run in-place, delete the copy (ar_extract logic)
         local = dest / archive.name
         shutil.copy2(archive, local)
         cmd.append(local.name)
@@ -427,7 +402,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
             local.unlink(missing_ok=True)
         return
 
-    # Fallback (cab/arj/ace): most take `tool archive [dest]`
     cmd.append(str(archive))
     if dest != cwd:
         cmd.append(str(dest))
@@ -463,13 +437,9 @@ def _try_extract(archive: Path, dest: Path, engine: str) -> None:
         raise ValueError(f"unknown engine: {engine}")
 
 
-# ---------------------------------------------------------------------------
-# Single-root detection (ar_extract.py's _check_if_single_file_archive)
-# ---------------------------------------------------------------------------
 def should_use_subdir(archive: Path) -> bool:
     name = archive.name.lower()
 
-    # Plain single-file compression (not a .tar.* wrapper)
     for ext in (".gz", ".bz2", ".xz", ".lz4", ".lzma", ".zst", ".br"):
         if name.endswith(ext) and ".tar." not in name:
             return True
@@ -494,9 +464,6 @@ def should_use_subdir(archive: Path) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# Integrity check (xtar.py + xxx.py)
-# ---------------------------------------------------------------------------
 def check_integrity(archive: Path) -> tuple[bool, str]:
     name = archive.name.lower()
     try:
@@ -556,14 +523,11 @@ def check_integrity(archive: Path) -> tuple[bool, str]:
     return True, f"Skipped check: {archive.name}"
 
 
-# ---------------------------------------------------------------------------
-# Archive discovery
-# ---------------------------------------------------------------------------
 def find_archives(
     roots: Iterable[Path], recursive: bool, formats: Optional[set[str]] = None
 ) -> list[Path]:
     exts = formats if formats else set(ALL_EXTENSIONS)
-    # Sort longest-first so ".tar.gz" is preferred over ".gz"
+
     ordered = sorted(exts, key=len, reverse=True)
 
     found: list[Path] = []
@@ -587,9 +551,6 @@ def find_archives(
     return sorted(found)
 
 
-# ---------------------------------------------------------------------------
-# extract_one — the core routine
-# ---------------------------------------------------------------------------
 def extract_one(
     archive: Path,
     *,
@@ -623,7 +584,6 @@ def extract_one(
     if subdir_truncate > 0:
         stem = stem[:subdir_truncate]
 
-    # ----- decide destination ------------------------------------------------
     use_subdir = False
     if organize == "flat":
         if single_file_subdir and should_use_subdir(archive):
@@ -664,15 +624,11 @@ def extract_one(
     return res
 
 
-# ---- top-level worker for multiprocessing --------------------------------
 def _worker(payload: tuple[Path, dict]) -> ExtractResult:
     archive, opts = payload
     return extract_one(archive, **opts)
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: extract
-# ---------------------------------------------------------------------------
 def _parse_formats(s: Optional[str]) -> Optional[set[str]]:
     if not s:
         return None
@@ -763,9 +719,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
     return 0 if all(r.status != "failed" for r in results) else 1
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: fix  (fixextract.py)
-# ---------------------------------------------------------------------------
 def fix_misextracted(root: Path, do_fix: bool, verbose: bool) -> int:
     count = 0
     dirs = sorted(
@@ -814,9 +767,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: whl  (uzz.py)
-# ---------------------------------------------------------------------------
 def cmd_whl(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     wheels: list[Path] = []
@@ -851,9 +801,6 @@ def cmd_whl(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ---------------------------------------------------------------------------
-# Subcommand: check  (xxx.py integrity phase)
-# ---------------------------------------------------------------------------
 def cmd_check(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     archives = find_archives(roots, args.recursive, _parse_formats(args.formats))
@@ -878,9 +825,6 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="archive_tool.py",
@@ -900,7 +844,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    # ----- extract ----------------------------------------------------------
     pe = sub.add_parser("extract", help="Extract archives.")
     pe.add_argument(
         "paths",
@@ -980,7 +923,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pe.set_defaults(func=cmd_extract)
 
-    # ----- fix --------------------------------------------------------------
     pf = sub.add_parser("fix", help="Fix mis-extracted dir/file name collisions.")
     pf.add_argument(
         "root", nargs="?", default=".", help="Root directory to scan (default: cwd)."
@@ -995,7 +937,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pf.set_defaults(func=cmd_fix)
 
-    # ----- whl --------------------------------------------------------------
     pw = sub.add_parser("whl", help="Extract .whl wheels into version-stripped dirs.")
     pw.add_argument(
         "paths",
@@ -1014,7 +955,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pw.set_defaults(func=cmd_whl)
 
-    # ----- check ------------------------------------------------------------
     pc = sub.add_parser("check", help="Integrity-check archives without extracting.")
     pc.add_argument(
         "paths",

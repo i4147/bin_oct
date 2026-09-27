@@ -60,14 +60,11 @@ SKIP_PATTERNS: set[str] = {
     ".env.example",
 }
 
-# Signatures used to detect and skip known files from the scan.
 SKIP_CONTENT_SIGNATURES: tuple[str, ...] = (
-    # Zip brute-forcer signatures
     "Optimized Zip Brute-Forcer for Python 3.12",
     "def brute_force_zip(",
     "def check_password_batch(",
     "CrackResult",
-    # pdfminer extraction tool signatures
     "extract_text_from_page",
     "extract_pages",
     "no-laparams",

@@ -53,10 +53,6 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
 DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",
     ".js": "application/javascript",
@@ -74,12 +70,7 @@ DEFAULT_MIME_TYPES: dict[str, str] = {
 
 DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Monolith/1.0"
 
-# Matches url(...) with optional single/double quotes around the target.
 CSS_URL_RE = re.compile(r"""url\(\s*['"]?([^)'"]+?)['"]?\s*\)""")
-
-# ---------------------------------------------------------------------------
-# Core archiver
-# ---------------------------------------------------------------------------
 
 
 class Monolith:
@@ -111,8 +102,6 @@ class Monolith:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
         self._cache: dict[str, bytes] = {}
-
-    # -- low-level helpers --------------------------------------------------
 
     def fetch(self, url: str) -> bytes:
         if url in self._cache:
@@ -150,8 +139,6 @@ class Monolith:
             scheme = urlparse(self.base_url).scheme or "http"
             return f"{scheme}:{url}"
         return urljoin(self.base_url, url)
-
-    # -- resource inlining --------------------------------------------------
 
     def replace_css_urls(self, css: str, base_url: str) -> str:
 
@@ -210,7 +197,7 @@ class Monolith:
                 data = self.fetch(url)
                 if not data:
                     continue
-                # Remove the src attribute and inject the code as text.
+
                 del script["src"]
                 script.string = data.decode("utf-8", errors="ignore")
             except Exception as exc:  # noqa: BLE001
@@ -242,7 +229,6 @@ class Monolith:
                     raise
                 print(f"⚠ Skipping image: {url} ({exc})", file=sys.stderr)
 
-        # srcset (monolithei-only feature — merged in)
         for tag in soup.find_all(srcset=True):
             entries = []
             for item in tag.get("srcset", "").split(","):
@@ -293,8 +279,6 @@ class Monolith:
             if html is not None:
                 html.insert(0, new_head)
 
-    # -- top-level entry points --------------------------------------------
-
     def process_html(self, html: str, base_url: str) -> str:
         self.base_url = base_url
         soup = BeautifulSoup(html, "html.parser")
@@ -313,7 +297,7 @@ class Monolith:
         print(f"📥 Fetching {url}...", file=sys.stderr)
         resp = self.session.get(url, timeout=self.timeout)
         resp.raise_for_status()
-        # Honour the server-declared encoding when available.
+
         if not resp.encoding:
             resp.encoding = self.encoding
         return self.process_html(resp.text, url)
@@ -323,11 +307,6 @@ class Monolith:
         print(f"📂 Loading {resolved}...", file=sys.stderr)
         html = resolved.read_text(encoding=self.encoding, errors="ignore")
         return self.process_html(html, resolved.as_uri())
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

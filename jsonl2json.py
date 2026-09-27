@@ -172,7 +172,6 @@ def destination_for(
         relative_parent = source.relative_to(root).parent
         return output_dir / relative_parent / output_name
 
-    # A standalone input file outside a supplied directory.
     return output_dir / output_name
 
 
@@ -265,7 +264,6 @@ def convert_one(job: Job) -> Result:
             output.flush()
             os.fsync(output.fileno())
 
-        # Atomic replacement after a complete and successfully flushed output.
         os.replace(temp_path, destination)
         temp_path = None
 
@@ -309,13 +307,11 @@ def main() -> int:
         try:
             resolved_roots.append(item.resolve(strict=True))
         except (FileNotFoundError, OSError):
-            # iter_jsonl_files reports the problem consistently.
             pass
 
     input_roots = tuple(resolved_roots)
     sources = iter_jsonl_files(raw_inputs)
 
-    # This generator avoids materializing every discovered file in memory.
     def jobs() -> Iterator[Job]:
         destinations: set[Path] = set()
 
@@ -326,7 +322,6 @@ def main() -> int:
                 input_roots=input_roots,
             ).resolve()
 
-            # Two unrelated input files may map to one output-dir/name.
             if destination in destinations:
                 print(
                     f"warning: skipping {source}; output collision at {destination}",
@@ -349,8 +344,6 @@ def main() -> int:
     records = 0
     skipped_invalid = 0
 
-    # chunksize=1 is deliberate: file sizes can vary widely, and one file is
-    # one unit of work. It provides better load balancing than large batches.
     with mp.Pool(processes=WORKERS) as pool:
         for result in pool.imap_unordered(convert_one, jobs(), chunksize=1):
             completed += 1

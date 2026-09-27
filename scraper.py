@@ -65,10 +65,6 @@ from urllib.robotparser import RobotFileParser
 import requests
 from bs4 import BeautifulSoup
 
-# --------------------------------------------------------------------------- #
-# Shared helpers                                                              #
-# --------------------------------------------------------------------------- #
-
 DEFAULT_UA = "Mozilla/5.0 (compatible; MergedTools/1.0)"
 _COLORS = {
     "red": "\033[31m",
@@ -161,11 +157,6 @@ def build_robots(session: requests.Session, base_url: str) -> RobotFileParser | 
     except Exception as e:
         print(f"⚠️  Could not load robots.txt ({e}). Proceeding with caution.")
         return None
-
-
-# --------------------------------------------------------------------------- #
-# 1. pkg-updates  (cforyou.py)                                                #
-# --------------------------------------------------------------------------- #
 
 
 def _latest_from_mirror(pkg: str, mirror: str, timeout: float) -> str | None:
@@ -272,11 +263,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# 2. import-check  (checksite.py)                                             #
-# --------------------------------------------------------------------------- #
-
-
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
 
@@ -346,10 +332,6 @@ def cmd_import_check(args: argparse.Namespace) -> int:
     print(f"Done. OK={ok} FAIL={fail} TOTAL={ok + fail}")
     return 1 if fail else 0
 
-
-# --------------------------------------------------------------------------- #
-# 3. coc-links  (coc_link.py)                                                 #
-# --------------------------------------------------------------------------- #
 
 _COC_KEYWORDS = ["th18", "town hall 18", "townhall 18", "th-18"]
 _COC_HTML_HEAD = """<!DOCTYPE html>
@@ -488,10 +470,6 @@ def cmd_coc_links(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# 4. coc-youtube  (coclink.py)                                                #
-# --------------------------------------------------------------------------- #
-
 _DEFAULT_CHANNELS = {
     "Blueprint_CoC": "UCQJJGSWnPUCb8uKV_MoJeOA",
     "iTzu": "UCLKKvlo0yK8OgWvjCiZQ3sA",
@@ -620,10 +598,6 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# 5. movie-crawl  (crawler.py / scrap_site.py / scrapr.py)                    #
-# --------------------------------------------------------------------------- #
-
 _SIZE_RE = re.compile(r"([\d.]+)\s*([KMG]?)i?B?")
 
 
@@ -668,9 +642,6 @@ def _wanted_movie(
     if size_mb is None or size_mb >= max_mb:
         return False
     return True
-
-
-# ---- engine: basic (crawler.py) -------------------------------------------- #
 
 
 def _movie_basic(args: argparse.Namespace) -> int:
@@ -756,9 +727,6 @@ def _movie_basic(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- engine: simple (scrap_site.py) ---------------------------------------- #
-
-
 def _movie_simple(args: argparse.Namespace) -> int:
     base = args.url or "https://dls2.aparatchi-dlcenter.top/DonyayeSerial/"
     movies_file = Path(args.movies_file)
@@ -836,8 +804,6 @@ def _movie_simple(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- engine: parallel (scrapr.py) ------------------------------------------ #
-
 _STOP = False
 
 
@@ -903,7 +869,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
     movies_file = Path(args.movies_file)
     json_out = Path(args.json_out)
 
-    # Resume support
     visited: set[str] = set()
     queue: list[str] = []
     if state_file.exists():
@@ -976,11 +941,6 @@ def cmd_movie_crawl(args: argparse.Namespace) -> int:
         return _movie_parallel(args)
     print(f"Unknown engine: {args.engine}")
     return 2
-
-
-# --------------------------------------------------------------------------- #
-# 6. image-hunt  (download_images.py)                                         #
-# --------------------------------------------------------------------------- #
 
 
 def _img_urls_from_soup(soup: BeautifulSoup, base: str) -> set[str]:
@@ -1126,11 +1086,6 @@ def cmd_image_hunt(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# 7. image-save  (saveimages.py)                                              #
-# --------------------------------------------------------------------------- #
-
-
 def cmd_image_save(args: argparse.Namespace) -> int:
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1155,11 +1110,6 @@ def cmd_image_save(args: argparse.Namespace) -> int:
         except Exception as e:
             print(f"Failed to download {full}: {e}")
     return 0
-
-
-# --------------------------------------------------------------------------- #
-# 8. link-crawl  (findlinks / findpdflinks / search_site)                     #
-# --------------------------------------------------------------------------- #
 
 
 def _crawl_site(
@@ -1219,7 +1169,6 @@ def _crawl_site(
 
         ctype = r.headers.get("Content-Type", "").lower()
 
-        # Direct hits
         if mode == "pdf" and "pdf" in ctype:
             results.add(url)
             print(f"  📄 PDF (via Content-Type): {url}")
@@ -1281,10 +1230,6 @@ def cmd_link_crawl(args: argparse.Namespace) -> int:
     print(f"\n✅ Saved {len(out)} URLs to '{args.output}'")
     return 0
 
-
-# --------------------------------------------------------------------------- #
-# 9. video-info  (ex_video_link.py)                                           #
-# --------------------------------------------------------------------------- #
 
 _ZZZ_ID_RE = re.compile(r"zzztube\.com/(\d+)")
 
@@ -1353,11 +1298,6 @@ def cmd_video_info(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# 10. google-search  (gcli.py)                                                #
-# --------------------------------------------------------------------------- #
-
-
 def cmd_google_search(args: argparse.Namespace) -> int:
     from googlesearch import search as gsearch
 
@@ -1365,10 +1305,6 @@ def cmd_google_search(args: argparse.Namespace) -> int:
         print(result)
     return 0
 
-
-# --------------------------------------------------------------------------- #
-# 11. web-size  (get_websize.py)                                              #
-# --------------------------------------------------------------------------- #
 
 _WEBSIZE_TAGS = {
     "link": ["href"],
@@ -1481,11 +1417,6 @@ def cmd_web_size(args: argparse.Namespace) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI                                                                         #
-# --------------------------------------------------------------------------- #
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="merged_tools.py",
@@ -1503,7 +1434,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--state", default="/sdcard/c4u.json")
     sp.set_defaults(func=cmd_pkg_updates)
 
-    # import-check
     sp = sub.add_parser(
         "import-check", help="Try importing every .py in site-packages."
     )

@@ -53,11 +53,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Optional
 
-# ---------------------------------------------------------------------------
-# Shared constants / helpers
-# ---------------------------------------------------------------------------
-
-# MIME -> extension table (superset of the one used by the original `dh` module)
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",
     "image/jpeg": ".jpg",
@@ -88,7 +83,6 @@ MIME2EXT: dict[str, str] = {
     "application/octet-stream": ".bin",
 }
 
-# Directories to always skip while walking
 DEFAULT_SKIP_DIRS = {
     ".git",
     ".svn",
@@ -117,7 +111,6 @@ DEFAULT_SKIP_DIRS = {
     "output",
 }
 
-# Text-ish extensions used by the "find all text files" helper
 TEXTY_EXT = {
     ".css",
     ".js",
@@ -142,16 +135,13 @@ TEXTY_EXT = {
     ".less",
 }
 
-# Regex fragment for base64 payloads
 _B64 = r"[A-Za-z0-9+/=\s]+"
 
-# Generic data-URI matcher (non-capturing of surrounding syntax)
 DATA_URI_RE = re.compile(
     r"data:(?P<mime>[^;,)\s\"']+)(?:;[^,)\"']*)?;base64\s*,\s*(?P<data>" + _B64 + r")",
     re.IGNORECASE,
 )
 
-# CSS `url(...)` with a data URI inside
 CSS_URL_DATA_RE = re.compile(
     r"""url\(\s*([\"']?)data:(?P<mime>[^;,)\s\"']+)(?:;charset=[^;]+)?;base64,\s*(?P<data>"""
     + _B64
@@ -159,7 +149,6 @@ CSS_URL_DATA_RE = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
-# Image-only matcher (used by `extract-images`)
 IMAGE_DATA_RE = re.compile(
     r"data:image/(?P<ext>[a-zA-Z0-9+.\-]+);base64,(?P<data>[A-Za-z0-9+/=\n\r]+)"
 )
@@ -256,7 +245,7 @@ def detect_mime_from_bytes(
         return ("image/bmp", ".bmp", "images")
     if blob.startswith((b"\x00\x00\x00\x18ftypmp42", b"\x00\x00\x00 ftypmp42")):
         return ("video/mp4", ".mp4", "videos")
-    # crude text heuristic
+
     sample = blob[:256]
     if sample:
         printable = sum(1 for b in sample if 32 <= b < 127 or b in (9, 10, 13))
@@ -280,15 +269,7 @@ def relurl(target: Path, from_dir: Path) -> str:
     try:
         return target.relative_to(from_dir).as_posix()
     except ValueError:
-        # not under from_dir — fall back to a relative path via os.path.relpath
         return Path(os.path.relpath(target, from_dir)).as_posix()
-
-
-# ---------------------------------------------------------------------------
-# Subcommand implementations
-# ---------------------------------------------------------------------------
-
-# ---- extract-cleanuri (cleanuri.py) ---------------------------------------
 
 
 def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
@@ -299,7 +280,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
     algo = args.hash
     digest_len = args.hash_len
 
-    # Map URI-text -> filename so repeated identical URIs across files share assets
     seen: dict[str, str] = {}
 
     def replace(match: re.Match) -> str:
@@ -323,7 +303,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
                 print(f"OK   saved asset: {target}")
             seen[key] = name
 
-        # Rewrite relative to the containing file
         return (
             relurl(out / name, match.string_dir)
             if False
@@ -338,7 +317,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
         if text is None:
             continue
 
-        # Per-file closure so we can compute relative URL correctly
         def repl(m: re.Match, _f: Path = f) -> str:
             uri = m.group(0)
             mime = m.group("mime") or None
@@ -371,9 +349,6 @@ def cmd_extract_cleanuri(args: argparse.Namespace) -> int:
 
     print(f"Done. Files changed: {changed_files}, unique assets: {len(seen)}")
     return 0
-
-
-# ---- extract-images (ex64.py) ---------------------------------------------
 
 
 def cmd_extract_images(args: argparse.Namespace) -> int:
@@ -409,9 +384,6 @@ def cmd_extract_images(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- ttf-to-base64 (f2base64.py) ------------------------------------------
-
-
 def cmd_ttf_to_base64(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     pattern = args.pattern
@@ -431,9 +403,6 @@ def cmd_ttf_to_base64(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- file-to-base64 (file_to_base64.py) -----------------------------------
-
-
 def cmd_file_to_base64(args: argparse.Namespace) -> int:
     src = Path(args.file).expanduser().resolve()
     if not src.is_file():
@@ -450,9 +419,6 @@ def cmd_file_to_base64(args: argparse.Namespace) -> int:
         out.write_text(b64, encoding="utf-8")
         print(f"{out.name} created.")
     return 0
-
-
-# ---- extract-css (ucss.py) ------------------------------------------------
 
 
 def cmd_extract_css(args: argparse.Namespace) -> int:
@@ -502,9 +468,6 @@ def cmd_extract_css(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- extract-assets (xbase64_assets.py) -----------------------------------
-
-# A broader matcher that also captures src=, href=, background:url(...)
 _ASSET_PATTERNS = {
     "url": re.compile(
         r"""url\(\s*["']?data:(?P<mime>[^;,)\s"']+)(?:;[^,)]*)?;base64\s*,\s*(?P<data>"""
@@ -601,7 +564,6 @@ def _process_asset_file(
         if not ext:
             ext = guess_extension(mime)
         if not category:
-            # crude category from mime
             if mime.startswith("image/"):
                 category = "images"
             elif mime.startswith("font/") or "font" in mime:
@@ -622,7 +584,7 @@ def _process_asset_file(
             extracted += 1
 
         url = relurl(target, path.parent)
-        # Shape the replacement according to what we matched
+
         if path.suffix.lower() == ".css":
             repl = f"url('{url}')"
         elif path.suffix.lower() in {".html", ".htm"}:
@@ -638,7 +600,7 @@ def _process_asset_file(
         new_text = text
         for old, new in replacements:
             new_text = new_text.replace(old, new)
-        # atomic write
+
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(new_text, encoding="utf-8")
         tmp.replace(path)
@@ -711,9 +673,6 @@ def cmd_extract_assets(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---- extract-elements (xembedded_elements.py) -----------------------------
-
-
 def cmd_extract_elements(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.out).resolve()
@@ -750,9 +709,6 @@ def cmd_extract_elements(args: argparse.Namespace) -> int:
 
     print(f"{count} elements extracted.")
     return 0
-
-
-# ---- extract-html (xembedded_elements2.py) --------------------------------
 
 
 def cmd_extract_html(args: argparse.Namespace) -> int:
@@ -825,7 +781,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
         soup = BeautifulSoup(raw, "html.parser")
         stem = html.stem
 
-        # Inline <style> -> external css file
         for i, tag in enumerate(soup.find_all("style")):
             if not tag.string:
                 continue
@@ -837,7 +792,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
             )
             tag.replace_with(link)
 
-        # Inline <script> -> external js file
         for i, tag in enumerate(soup.find_all("script")):
             if tag.get("src"):
                 src = tag["src"]
@@ -853,7 +807,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
             new = soup.new_tag("script", src=str(target.relative_to(output)))
             tag.replace_with(new)
 
-        # <img src=...>
         for tag in soup.find_all("img"):
             src = tag.get("src", "")
             if src.startswith("data:"):
@@ -865,7 +818,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
                 if target:
                     tag["src"] = str(target.relative_to(output))
 
-        # inline style="...url(data:...)..."
         css_url_re = re.compile(r'url\("(data:.*?)"\)')
         for tag in soup.find_all(style=True):
             style = tag["style"]
@@ -877,7 +829,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
                         m.group(1), str(target.relative_to(output))
                     )
 
-        # Inline <svg> -> external .svg file
         for i, svg in enumerate(soup.find_all("svg")):
             target = save_asset(
                 str(svg).encode("utf-8"), "image/svg+xml", f"{stem}_svg{i}"
@@ -897,7 +848,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
                     txt = txt.replace(m, str(target.relative_to(output)))
             style_tag.string.replace_with(txt)
 
-        # <link href=...>
         for tag in soup.find_all("link", href=True):
             href = tag["href"]
             if href.startswith("http") and download_remote:
@@ -912,9 +862,6 @@ def cmd_extract_html(args: argparse.Namespace) -> int:
 
     print(f"\nAll done — extracted assets saved to {output}")
     return 0
-
-
-# ---- list-lines (xlines_contains_base64.py) -------------------------------
 
 
 def cmd_list_lines(args: argparse.Namespace) -> int:
@@ -947,11 +894,6 @@ def cmd_list_lines(args: argparse.Namespace) -> int:
                 fh.write("\n")
                 fh.write("\n".join(blobs) + "\n")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

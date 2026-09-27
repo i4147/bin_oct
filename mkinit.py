@@ -96,7 +96,6 @@ def build_init_content(project_dir: Path) -> str:
         if tree is None:
             continue
 
-        # Skip modules that exist only as a `main` entry point.
         if has_only_main(tree):
             continue
 
@@ -104,7 +103,6 @@ def build_init_content(project_dir: Path) -> str:
         functions = get_public_functions(tree)
         classes = get_public_classes(tree)
 
-        # Preserve source order while removing duplicates.
         names = list(dict.fromkeys(classes + functions))
 
         if names:
@@ -115,14 +113,13 @@ def build_init_content(project_dir: Path) -> str:
             exported_names.extend(names)
         else:
             import_lines.append(f"from . import {module_name}")
-            # Re-export the module itself when it has no public members.
+
             exported_names.append(module_name)
 
     for pkg in subpackages:
         import_lines.append(f"from . import {pkg.name}")
         exported_names.append(pkg.name)
 
-    # Deduplicate __all__ while preserving order.
     exported_names = list(dict.fromkeys(exported_names))
 
     parts: list[str] = []

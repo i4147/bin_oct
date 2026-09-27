@@ -43,9 +43,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-# ---------------------------------------------------------------------------
-# Optional third-party backends (soft imports — feature degrades gracefully)
-# ---------------------------------------------------------------------------
 try:
     import zstandard as zstd
 except ImportError:
@@ -74,9 +71,6 @@ except ImportError:
 log = logging.getLogger("compressor")
 
 
-# ---------------------------------------------------------------------------
-# Codec registry
-# ---------------------------------------------------------------------------
 @dataclass(frozen=True)
 class Codec:
     name: str
@@ -235,9 +229,6 @@ ARCHIVE_SUFFIXES: frozenset[str] = frozenset(
 )
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
 def human(n: int) -> str:
     for u in ("B", "KiB", "MiB", "GiB", "TiB"):
         if n < 1024 or u == "TiB":
@@ -288,10 +279,6 @@ def sha256_file(p: Path, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
-# ---------------------------------------------------------------------------
-# `bench` — try every codec, keep the smallest (auto_comp / autoco / autocomp
-# / best_compression)
-# ---------------------------------------------------------------------------
 def _mp_chunk_worker(args: tuple[str, bytes]) -> bytes:
     name, chunk = args
     return CODECS[name].compress(chunk, CODECS[name].default_level)
@@ -313,7 +300,6 @@ def cmd_bench(args: argparse.Namespace) -> int:
             print(f"SHA256(input) = {sha256_file(src)}")
     print()
 
-    # -- which codecs? ------------------------------------------------------
     names: Sequence[str] = args.algos or list(CODECS.keys())
     level_override: Optional[int] = args.level
 
@@ -329,7 +315,6 @@ def cmd_bench(args: argparse.Namespace) -> int:
         try:
             t0 = time.perf_counter()
             if args.mp_chunks and name in CODECS:
-                # Parallel chunked mode (best_compression.py mp path).
                 chunk_size = args.chunk_size * 1024 * 1024
                 chunks = [
                     payload[i : i + chunk_size] for i in range(0, total, chunk_size)
@@ -375,9 +360,6 @@ def cmd_bench(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# `archive` — per-file exhaustive search (auto_archive.py)
-# ---------------------------------------------------------------------------
 def _archive_one_file(job: tuple[str, str, list[str], bool]) -> Optional[str]:
     fpath, out_dir, codecs, keep_all = job
     p = Path(fpath)
@@ -444,9 +426,6 @@ def cmd_archive(args: argparse.Namespace) -> int:
     return 1
 
 
-# ---------------------------------------------------------------------------
-# `compress` — single codec (xxr.py, cramer.py, compsub.py -c)
-# ---------------------------------------------------------------------------
 def _compress_one_file(
     src: Path,
     codec: Codec,
@@ -540,7 +519,6 @@ def cmd_compress(args: argparse.Namespace) -> int:
 
     # Directory
     if args.recursive:
-        # cramer.py behaviour: every file individually
         targets = [
             p for p in sorted(src.rglob("*")) if p.is_file() and not is_archive(p)
         ]
@@ -562,7 +540,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
         with mp.Pool(processes=min(workers, len(targets))) as pool:
             pool.map(_compress_worker, jobs)
         return 0
-    # xxr.py behaviour: tar the directory
+
     return (
         0
         if _compress_dir_as_tar(src, codec, level, args.keep, args.verify, out_dir)
@@ -577,12 +555,9 @@ def _compress_worker(job: tuple[str, str, int, bool, bool, Optional[str]]):
     )
 
 
-# ---------------------------------------------------------------------------
-# `decompress`
-# ---------------------------------------------------------------------------
 def _guess_codec_from_name(name: str) -> Optional[Codec]:
     n = name.lower()
-    # longest suffix first (so .tar.zst beats .zst)
+
     for c in sorted(CODECS.values(), key=lambda c: len(c.ext), reverse=True):
         if n.endswith(c.ext):
             return c
@@ -603,13 +578,12 @@ def _decompress_one_file(
         log.error("read %s: %s", src, e)
         return None
 
-    # tar-container handling for .tar.<codec> and .7z (multi-member)
     if codec.name == "7z" and py7zr is not None:
         try:
             with tempfile.TemporaryDirectory() as td:
                 with py7zr.SevenZipFile(src, "r") as z:
                     z.extractall(path=td)
-                # move top-level entries into place
+
                 entries = list(Path(td).iterdir())
                 if len(entries) == 1:
                     shutil.move(str(entries[0]), str(dst))
@@ -627,7 +601,7 @@ def _decompress_one_file(
             log.error("decompress %s: %s", src, e)
             return None
         dst.write_bytes(out)
-        # if it was a tar -> unpack to a directory with the tar's stem
+
         if dst.name.endswith(".tar"):
             target = dst.with_suffix("")
             try:
@@ -665,10 +639,8 @@ def cmd_decompress(args: argparse.Namespace) -> int:
         log.error("Unknown codec: %s", args.algo)
         return 1
 
-    # Collect archive candidates
     if src.is_file():
         if args.algo == "zlib":
-            # streaming path (decompress_zlib.py behaviour)
             dst = (out_dir or src.parent) / (src.name + ".decompressed")
             try:
                 with src.open("rb") as fin, dst.open("wb") as fout:
@@ -714,9 +686,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# `subdirs` — compress every subdirectory as tar+codec (compsub.py)
-# ---------------------------------------------------------------------------
 def _subdir_compress(job: tuple[str, str, int]) -> bool:
     dpath, cname, level = job
     src = Path(dpath)
@@ -742,7 +711,7 @@ def _subdir_decompress(job: tuple[str, bool]) -> bool:
     codec = _guess_codec_from_name(src.name)
     if codec is None:
         return False
-    # .tar.<ext> -> strip both suffixes
+
     name = src.name
     if name.endswith(f".tar{codec.ext}"):
         base = name[: -len(f".tar{codec.ext}")]
@@ -816,9 +785,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
 def _common_workers(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--workers",
@@ -849,7 +815,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("-q", "--quiet", action="store_true", help="quiet logging")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    # ---- bench -----------------------------------------------------------
     p = sub.add_parser("bench", help="try every codec at its best level; keep best")
     p.add_argument("path")
     _common_output(p)
@@ -876,7 +841,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_workers(p)
     p.set_defaults(func=cmd_bench)
 
-    # ---- archive ---------------------------------------------------------
     p = sub.add_parser("archive", help="recursively best-codec every non-archive file")
     p.add_argument("path")
     _common_output(p)
@@ -887,7 +851,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_workers(p)
     p.set_defaults(func=cmd_archive)
 
-    # ---- compress --------------------------------------------------------
     p = sub.add_parser("compress", help="compress a file or directory with ONE codec")
     p.add_argument("path")
     p.add_argument(
@@ -920,7 +883,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_workers(p)
     p.set_defaults(func=cmd_compress)
 
-    # ---- decompress ------------------------------------------------------
     p = sub.add_parser(
         "decompress", help="decompress a file or all archives under a directory"
     )
@@ -942,7 +904,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_workers(p)
     p.set_defaults(func=cmd_decompress)
 
-    # ---- subdirs ---------------------------------------------------------
     p = sub.add_parser("subdirs", help="compress/decompress each direct subdirectory")
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument(

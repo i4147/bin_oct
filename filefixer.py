@@ -47,10 +47,6 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Callable
 
-# ---------------------------------------------------------------------------
-# Optional dependencies and dh fallbacks
-# ---------------------------------------------------------------------------
-
 try:
     import puremagic  # type: ignore
 except Exception:  # pragma: no cover
@@ -80,10 +76,6 @@ except Exception:  # pragma: no cover
     DH_TXT_EXT = None
     dh_get_files = None
     dh_is_binary = None
-
-# ---------------------------------------------------------------------------
-# Built-in maps / constants
-# ---------------------------------------------------------------------------
 
 ALIASES: dict[str, str] = {
     ".jpeg": ".jpg",
@@ -275,7 +267,6 @@ DEFAULT_PROTECT_EXT: set[str] = {
 
 DEFAULT_IGNORE_EXT: set[str] = set()
 
-# Built-in magic signatures from V1/V2.
 SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (lambda b: b.startswith(b"\x89PNG\r\n\x1a\n"), ".png", "PNG image"),
     (lambda b: b.startswith(b"\xff\xd8\xff"), ".jpg", "JPEG image"),
@@ -334,7 +325,6 @@ SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (lambda b: b.startswith(b"MZ"), ".exe", "PE/EXE binary"),
 ]
 
-# `file -b` description mapping from fixext3.
 FILE_DESC2EXT: dict[str, str] = {
     "xz compressed data": ".xz",
     "jpeg image data": ".jpg",
@@ -377,10 +367,6 @@ FILE_DESC2EXT: dict[str, str] = {
 
 LOG = logging.getLogger("filefixer")
 
-# ---------------------------------------------------------------------------
-# Data classes
-# ---------------------------------------------------------------------------
-
 
 @dataclass
 class Detection:
@@ -400,11 +386,6 @@ class FixResult:
     target: Path | None = None
     reason: str | None = None
     engine: str | None = None
-
-
-# ---------------------------------------------------------------------------
-# Basic helpers
-# ---------------------------------------------------------------------------
 
 
 def eprint(*args: Any, **kwargs: Any) -> None:
@@ -517,11 +498,6 @@ def is_binary_file(path: Path, sample_size: int = 8192) -> bool | None:
         return True
 
 
-# ---------------------------------------------------------------------------
-# File walking
-# ---------------------------------------------------------------------------
-
-
 def iter_files(
     root: Path,
     *,
@@ -594,11 +570,6 @@ def collect_files(
         else:
             eprint(f"Warning: not found or unsupported: {path}")
     return list(dict.fromkeys(files))
-
-
-# ---------------------------------------------------------------------------
-# Detection engines
-# ---------------------------------------------------------------------------
 
 
 def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
@@ -843,11 +814,6 @@ def detect_extension(
     return None
 
 
-# ---------------------------------------------------------------------------
-# Rename helpers
-# ---------------------------------------------------------------------------
-
-
 def rename_with_policy(
     src: Path,
     dst: Path,
@@ -900,11 +866,6 @@ def rename_with_policy(
                     return src, False, str(exc)
 
     return src, False, "failed to find non-conflicting name"
-
-
-# ---------------------------------------------------------------------------
-# Fix mode
-# ---------------------------------------------------------------------------
 
 
 def process_fix_file(
@@ -1125,11 +1086,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
     return 1 if any(r.action == "error" for r in results) else 0
 
 
-# ---------------------------------------------------------------------------
-# Validate mode
-# ---------------------------------------------------------------------------
-
-
 def validate_one(path: Path, kind: str) -> tuple[Path, bool | None, str]:
     binary = is_binary_file(path)
     if binary is None:
@@ -1204,10 +1160,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 1 if mismatches else 0
 
 
-# ---------------------------------------------------------------------------
-# Extract-python mode (fpy.py)
-# ---------------------------------------------------------------------------
-
 PY_KEYWORDS = {"def", "class", "import", "from", "lambda", "yield", "async", "await"}
 
 
@@ -1266,11 +1218,6 @@ def cmd_extract_python(args: argparse.Namespace) -> int:
 
     print(f"Wrote {len(kept)} lines to {output}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Argument parser
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

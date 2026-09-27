@@ -99,7 +99,7 @@ def main() -> None:
         if not ans == "y":
             sys.exit(0)
     output_path = Path(filename)
-    # Only treat as a script directory if the extension is one of the script types
+
     is_script_dir = (
         Path.cwd() in SCRIPT_DIRS or Path.cwd().name == "bin"
     ) and output_path.suffix.lower() in SCRIPT_EXTENSIONS

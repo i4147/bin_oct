@@ -50,10 +50,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-# ===========================================================================
-# Data structures & logging
-# ===========================================================================
-
 
 @dataclass
 class CommitInfo:
@@ -91,18 +87,12 @@ def _parse_commit_ts(ts: int) -> datetime:
     return datetime.fromtimestamp(ts, tz=timezone.utc)
 
 
-# ===========================================================================
-# Backends
-# ===========================================================================
-
-
 class GitBackend:
     name = "subprocess"
 
     def __init__(self, repo: Path) -> None:
         self.repo = Path(repo).resolve()
 
-    # --- Low-level subprocess helpers ------------------------------------
     def _run(
         self, *args: str, check: bool = True, input: Optional[str] = None
     ) -> subprocess.CompletedProcess:
@@ -118,7 +108,6 @@ class GitBackend:
     def _git(self, *args: str) -> str:
         return self._run(*args).stdout.strip()
 
-    # --- Repository state -------------------------------------------------
     def is_repo(self) -> bool:
         r = self._run("rev-parse", "--is-inside-work-tree", check=False)
         return r.returncode == 0 and r.stdout.strip() == "true"
@@ -142,7 +131,6 @@ class GitBackend:
     def status_porcelain(self) -> list[str]:
         return self._run("status", "--porcelain", check=False).stdout.splitlines()
 
-    # --- History ----------------------------------------------------------
     def log(
         self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False
     ) -> list[CommitInfo]:
@@ -171,7 +159,6 @@ class GitBackend:
             )
         return commits
 
-    # --- Mutations --------------------------------------------------------
     def checkout(self, ref: str) -> None:
         self._git("checkout", ref)
 
@@ -210,7 +197,6 @@ class GitBackend:
         args.extend([remote, refspec])
         self._git(*args)
 
-    # --- History diffs ----------------------------------------------------
     def deleted_files_in_history(self) -> dict[str, str]:
         out = self._run(
             "log",
@@ -459,10 +445,6 @@ BACKEND_CHOICES = (
     "typer",
 )
 
-# ===========================================================================
-# Subcommand: checkout-previous
-# ===========================================================================
-
 
 def cmd_checkout_previous(args: argparse.Namespace) -> int:
     root = Path(args.repo).resolve()
@@ -518,11 +500,6 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
     if not found:
         print("No git repositories found.")
     return 0
-
-
-# ===========================================================================
-# Subcommand: rm-commits
-# ===========================================================================
 
 
 def cmd_rm_commits(args: argparse.Namespace) -> int:
@@ -589,11 +566,6 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: cut
-# ===========================================================================
-
-
 def cmd_cut(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
@@ -634,25 +606,22 @@ def cmd_cut(args: argparse.Namespace) -> int:
     branch = be.current_branch()
 
     if args.method == "squash":
-        # Simplest faithful behavior: reset --hard drops all older commits.
         be.reset(oldest_kept.sha, "hard")
         print(f"\n✓ Old commits removed (reset --hard to {oldest_kept.short}).")
         if branch:
             print(f"Force push needed: git push --force origin {branch}")
         return 0
 
-    # --- orphan method ----------------------------------------------------
     if branch is None:
         err("Cannot use orphan method on a detached HEAD")
         return 1
     new_branch = f"cleaned_{branch}"
     print(f"\nCreating orphan branch {new_branch}...")
-    # `checkout --orphan` has no direct backend equivalent — use subprocess.
+
     subprocess.run(
         ["git", "checkout", "--orphan", new_branch], cwd=str(repo), check=True
     )
 
-    # Cherry-pick kept commits oldest-first.
     for c in reversed(keep):
         try:
             be.cherry_pick(c.sha, allow_empty=True)
@@ -666,11 +635,6 @@ def cmd_cut(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: del-remote-commits
-# ===========================================================================
-
-
 def cmd_del_remote_commits(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
@@ -679,7 +643,7 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
         return 1
 
     branch = args.branch
-    # Prefer main if master isn't there and origin/main exists.
+
     try:
         refs = subprocess.run(
             ["git", "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin"],
@@ -734,11 +698,6 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: list-added
-# ===========================================================================
-
-
 def cmd_list_added(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
@@ -756,11 +715,6 @@ def cmd_list_added(args: argparse.Namespace) -> int:
         except ValueError:
             print(path)
     return 0
-
-
-# ===========================================================================
-# Subcommand: restore-deleted
-# ===========================================================================
 
 
 def cmd_restore_deleted(args: argparse.Namespace) -> int:
@@ -797,7 +751,6 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
             )
             restored += 1
         except subprocess.CalledProcessError:
-            # fall back to the deletion commit itself
             try:
                 subprocess.run(
                     ["git", "checkout", sha, "--", p],
@@ -826,11 +779,6 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
     else:
         print("❌ No files were successfully restored.")
     return 0
-
-
-# ===========================================================================
-# Subcommand: stage-deleted / squash-deletions
-# ===========================================================================
 
 
 def _pending_deletions_matching_history(be: GitBackend) -> list[str]:
@@ -907,11 +855,6 @@ def cmd_squash_deletions(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: age-filter
-# ===========================================================================
-
-
 def cmd_age_filter(args: argparse.Namespace) -> int:
     age_bin = args.age_bin
     if not age_bin:
@@ -957,11 +900,6 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
-
-
 def _add_backend_arg(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "-b",
@@ -993,7 +931,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- checkout-previous -----------------------------------------------
     p = sub.add_parser(
         "checkout-previous",
         help="Checkout HEAD^ in repos whose HEAD subject matches a prefix",
@@ -1015,7 +952,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_checkout_previous)
 
-    # ---- rm-commits ------------------------------------------------------
     p = sub.add_parser(
         "rm-commits",
         help="Reset branch to drop commits older than N days (creates a backup branch)",
@@ -1031,7 +967,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_rm_commits)
 
-    # ---- cut -------------------------------------------------------------
     p = sub.add_parser("cut", help="Rewrite branch dropping commits older than N days")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
@@ -1050,7 +985,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_cut)
 
-    # ---- del-remote-commits ---------------------------------------------
     p = sub.add_parser(
         "del-remote-commits",
         help="Reset branch and force-push (deletes commits on remote)",
@@ -1074,7 +1008,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_del_remote_commits)
 
-    # ---- list-added ------------------------------------------------------
     p = sub.add_parser("list-added", help="List files added in the last N commits")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
@@ -1083,7 +1016,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_list_added)
 
-    # ---- restore-deleted -------------------------------------------------
     p = sub.add_parser(
         "restore-deleted", help="Restore every file ever deleted in history"
     )
@@ -1097,7 +1029,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_restore_deleted)
 
-    # ---- stage-deleted ---------------------------------------------------
     p = sub.add_parser(
         "stage-deleted", help="Stage pending deletions that match history, then commit"
     )
@@ -1111,7 +1042,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_stage_deleted)
 
-    # ---- squash-deletions ------------------------------------------------
     p = sub.add_parser(
         "squash-deletions", help="Amend last commit with pending historical deletions"
     )
@@ -1119,7 +1049,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_squash_deletions)
 
-    # ---- age-filter ------------------------------------------------------
     p = sub.add_parser(
         "age-filter",
         help="age-based git clean/smudge filter (reads/writes stdin/stdout)",

@@ -29,7 +29,6 @@ REPO_DIR = os.path.join(HOME, "dotfiles.git")
 GITATTRIBUTES = os.path.join(HOME, ".gitattributes")
 GITIGNORE = os.path.join(HOME, ".gitignore")
 
-# Files/folders you want encrypted in git.
 SECRET_PATTERNS = [
     "secrets/**",
     "*.secret",
@@ -37,7 +36,6 @@ SECRET_PATTERNS = [
     "*.token",
 ]
 
-# Never commit these.
 IGNORE_PATTERNS = [
     ".config/age/",
     "dotfiles.git/",
@@ -70,7 +68,7 @@ def ensure_age_key() -> str:
     os.makedirs(AGE_DIR, mode=0o700, exist_ok=True)
     if not os.path.exists(AGE_KEY):
         print("Generating age keypair...")
-        # age-keygen writes private key (with public key as comment) to file
+
         out = subprocess.run(
             [which("age-keygen") or "age-keygen", "-o", AGE_KEY],
             capture_output=True,
@@ -79,7 +77,7 @@ def ensure_age_key() -> str:
             print(out.stderr.decode(), file=sys.stderr)
             sys.exit(1)
         os.chmod(AGE_KEY, 0o600)
-    # Extract public key from the private key file's comment line
+
     pubkey = None
     with open(AGE_KEY) as f:
         for line in f:
@@ -183,7 +181,7 @@ def init_repo() -> None:
     if not os.path.isdir(REPO_DIR):
         run(["git", "init", "--bare", REPO_DIR])
         print(f"initialized bare repo: {REPO_DIR}")
-    # Register filters only for this repo (avoid global side effects)
+
     git("config", "filter.age.clean", FILTER_PATH + " clean")
     git("config", "filter.age.smudge", FILTER_PATH + " smudge")
     git("config", "filter.age.required", "true")

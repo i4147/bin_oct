@@ -28,27 +28,16 @@ from pathlib import Path
 
 from translate import Translator
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
 SAVE_EVERY = 50
 SLEEP_BETWEEN = 0.5
 MAX_RETRIES = 5
 BACKOFF_BASE = 1.5
 
-# Defaults — Chinese → English
 DEFAULT_SOURCE = "zh"
 DEFAULT_TARGET = "en"
 
-# Hard limit imposed by the translation backend (~500 chars per query).
-# We stay a bit under to leave headroom for URL-encoding overhead.
 MAX_CHARS = 450
 CHUNK_SIZE = MAX_CHARS
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def progress_path(target: Path) -> Path:
@@ -91,7 +80,6 @@ def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
     pieces: list[str] = []
     remaining = line
 
-    # Priority-ordered separators.  Each pass tries harder cuts.
     soft_seps = ["。", "！", "？", "；", ".", "!", "?", ";", "\n"]
     hard_seps = ["，", "、", ",", ":", "：", " "]
 
@@ -99,14 +87,13 @@ def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
         window = remaining[:max_chars]
 
         cut = -1
-        # Try soft separators first, from the end of the window backwards.
+
         for sep in soft_seps:
             pos = window.rfind(sep)
             if pos > 0:
                 cut = pos + len(sep)
                 break
 
-        # Then try hard separators.
         if cut <= 0:
             for sep in hard_seps:
                 pos = window.rfind(sep)
@@ -114,7 +101,6 @@ def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
                     cut = pos + len(sep)
                     break
 
-        # Last resort: hard cut at max_chars.
         if cut <= 0:
             cut = max_chars
 
@@ -143,11 +129,6 @@ def chunk_lines(lines: list[str], max_chars: int = CHUNK_SIZE) -> list[list[str]
     if current:
         chunks.append(current)
     return chunks
-
-
-# ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
 
 
 def parse_args() -> argparse.Namespace:
@@ -191,11 +172,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-# ---------------------------------------------------------------------------
-# Chunked mode (default)
-# ---------------------------------------------------------------------------
-
-
 def run_chunked(
     in_path: Path,
     out_path: Path,
@@ -203,7 +179,7 @@ def run_chunked(
     source: str,
     target: str,
 ) -> int:
-    # Never exceed the backend limit.
+
     if chunk_size > MAX_CHARS:
         print(
             f"  ! --chunk-size capped at {MAX_CHARS} (backend limit)", file=sys.stderr
@@ -241,7 +217,6 @@ def run_chunked(
         for idx in range(start_chunk, total):
             chunk = chunks[idx]
 
-            # Split any over-long line inside this chunk.
             sub_pieces: list[str] = []
             for line in chunk:
                 sub_pieces.extend(split_long_line(line, chunk_size))
@@ -274,11 +249,6 @@ def run_chunked(
     prog_path.write_text(str(total), encoding="utf-8")
     print(f"\n✔ Done. Output written to {out_path}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Line-by-line mode (-l)
-# ---------------------------------------------------------------------------
 
 
 def load_pairs(json_path: Path, src_key: str, tgt_key: str) -> list[dict[str, str]]:
@@ -338,7 +308,6 @@ def run_line_mode(
     for idx in range(start_line, total):
         raw = src_lines[idx].rstrip("\n")
 
-        # ---- Split into <=MAX_CHARS pieces, translate each, then re-join ----
         pieces = split_long_line(raw, MAX_CHARS)
         translated_pieces: list[str] = []
 
@@ -365,13 +334,10 @@ def run_line_mode(
                 )
             time.sleep(SLEEP_BETWEEN)
 
-        # Re-join pieces.  Space is a safe joiner for both zh and latin
-        # output; strip any double spaces introduced at boundaries.
         translated_full = " ".join(p.strip() for p in translated_pieces).strip()
 
         pairs.append({source: raw, target: translated_full})
 
-        # ---- Show translation immediately ----
         preview_src = raw if len(raw) <= 120 else raw[:117] + "…"
         preview_tgt = (
             translated_full
@@ -385,7 +351,6 @@ def run_line_mode(
             print(f"  (line split into {len(pieces)} pieces)")
         print()
 
-        # ---- Persist JSON every SAVE_EVERY lines ----
         if (idx + 1) % SAVE_EVERY == 0 or (idx + 1) == total:
             out_path.write_text(
                 json.dumps(pairs, ensure_ascii=False, indent=2),
@@ -401,11 +366,6 @@ def run_line_mode(
     prog_path.write_text(str(total), encoding="utf-8")
     print(f"✔ Done. {len(pairs)} pairs saved to {out_path}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main() -> int:

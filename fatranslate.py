@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-# --- File: fa_translate.py ---
+
 """
 Merged Persian/English translation tool.
 
@@ -36,7 +36,6 @@ from typing import Final, Sequence
 from deep_translator import GoogleTranslator
 from loguru import logger
 
-# Persian/Arabic script ranges used by fa_trans.py to decide which lines need translation.
 PERSIAN_RE: Final = re.compile(
     r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]"
 )
@@ -373,9 +372,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    # ------------------------------------------------------------------
-    # `lines` subcommand: fa_trans.py
-    # ------------------------------------------------------------------
     lines_parser = subparsers.add_parser(
         "lines",
         help=(
@@ -440,9 +436,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     lines_parser.set_defaults(func=cmd_lines)
 
-    # ------------------------------------------------------------------
-    # `words` subcommand: tfa.py and trans_fa_mp.py
-    # ------------------------------------------------------------------
     words_parser = subparsers.add_parser(
         "words",
         help="Translate a word list to English and write a JSON dictionary.",

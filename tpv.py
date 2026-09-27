@@ -47,9 +47,6 @@ import tempfile
 import termios
 import tty
 
-# ---------------------------------------------------------------------------
-# ANSI escape sequences
-# ---------------------------------------------------------------------------
 RESET = "\x1b[0m"
 HOME = "\x1b[H"
 CLEAR = "\x1b[2J"
@@ -67,9 +64,6 @@ PAGES_RE = re.compile(rb"^Pages:\s*(\d+)", re.MULTILINE)
 NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
 
-# ---------------------------------------------------------------------------
-# PPM (P6) parsing
-# ---------------------------------------------------------------------------
 def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
     if len(data) < 2 or data[:2] != b"P6":
         raise RuntimeError("renderer did not produce a P6 PPM image")
@@ -78,7 +72,6 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
     n = len(data)
     fields: list[int] = []
 
-    # Read the three header integers, skipping whitespace and comments.
     while len(fields) < 3:
         while pos < n and data[pos] in WHITESPACE:
             pos += 1
@@ -108,9 +101,6 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
     return w, h, raster
 
 
-# ---------------------------------------------------------------------------
-# Backends
-# ---------------------------------------------------------------------------
 class RenderError(RuntimeError):
     pass
 
@@ -118,7 +108,7 @@ class RenderError(RuntimeError):
 class Renderer:
     CACHE_LIMIT = 6
     BACKENDS = ("gs", "pdftoppm", "mutool")
-    # A short hint used when a chosen backend is missing on PATH.
+
     INSTALL_HINT = {
         "gs": "ghostscript",
         "pdftoppm": "poppler",
@@ -129,13 +119,12 @@ class Renderer:
         self.path = path
         self.tool = self._detect_tool(backend)
         self._tmp = tempfile.mkdtemp(prefix="tpv-")
-        # (page_index, pixel_width) -> (w, h, rgb_bytes)
+
         self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
-        # page_index -> (width_points, height_points); only gs needs this
+
         self._pt_cache: dict[int, tuple[float, float]] = {}
         self._count: int | None = None
 
-    # -- setup -------------------------------------------------------------
     @classmethod
     def _detect_tool(cls, backend: str | None) -> str:
         if backend:
@@ -151,7 +140,6 @@ class Renderer:
                 )
             return backend
 
-        # No explicit choice: first one found on PATH wins.
         for name in cls.BACKENDS:
             if shutil.which(name):
                 return name
@@ -167,12 +155,10 @@ class Renderer:
     def close(self) -> None:
         shutil.rmtree(self._tmp, ignore_errors=True)
 
-    # -- page count --------------------------------------------------------
     def page_count(self) -> int:
         if self._count is not None:
             return self._count
 
-        # 1. pdfinfo -- trivial and fast, but requires poppler.
         if shutil.which("pdfinfo"):
             try:
                 res = subprocess.run(
@@ -188,9 +174,6 @@ class Renderer:
             except (OSError, subprocess.SubprocessError):
                 pass
 
-        # 2. Ghostscript -- works even on a gs-only install, as long as
-        #    the sandbox permits reading the file.  See _gs_page_points
-        #    for why --permit-file-read is required on gs >= 9.50.
         if shutil.which("gs"):
             script = (
                 f"{self._ps_string(self.path)} (r) file runpdfbegin "
@@ -217,7 +200,6 @@ class Renderer:
             except (OSError, subprocess.SubprocessError, ValueError):
                 pass
 
-        # 3. mutool info -- parse "Pages: N" out of the human-readable dump.
         if shutil.which("mutool"):
             try:
                 res = subprocess.run(
@@ -235,7 +217,6 @@ class Renderer:
 
         raise RenderError("could not determine the page count")
 
-    # -- Ghostscript helpers ----------------------------------------------
     @staticmethod
     def _ps_string(s: str) -> str:
         return "(" + "".join("\\" + c if c in "()\\" else c for c in s) + ")"
@@ -247,8 +228,7 @@ class Renderer:
 
         p = index + 1
         pdf = self._ps_string(self.path)
-        # Emit the four CropBox (or MediaBox) coordinates, then the
-        # /Rotate value, each via `==` which appends a newline.
+
         script = (
             f"{pdf} (r) file runpdfbegin "
             f"{p} pdfgetpage "
@@ -281,7 +261,7 @@ class Renderer:
         lines = [
             ln.strip() for ln in res.stdout.decode("latin-1").splitlines() if ln.strip()
         ]
-        # We expect at least 5 numbers: four box coordinates + rotation.
+
         nums = [float(v) for v in NUMBER_RE.findall(" ".join(lines))]
         if len(nums) < 5:
             raise RenderError("gs page query returned unexpected output")
@@ -299,7 +279,6 @@ class Renderer:
         self._pt_cache[index] = (w, h)
         return w, h
 
-    # -- rendering ---------------------------------------------------------
     def _wipe_tmp(self) -> None:
         for name in os.listdir(self._tmp):
             try:
@@ -361,7 +340,6 @@ class Renderer:
                 res.stderr.decode("utf-8", "replace").strip() or "pdftoppm failed"
             )
 
-        # -singlefile names the output "<root>.ppm" ... in theory.
         out = root + ".ppm"
         if not os.path.exists(out):
             leftovers = [
@@ -399,7 +377,6 @@ class Renderer:
         except OSError:
             raise RenderError("mutool draw produced no output") from None
 
-    # -- dispatch ----------------------------------------------------------
     def page(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
         hit = self._cache.get(key)
@@ -424,9 +401,6 @@ class Renderer:
         return result
 
 
-# ---------------------------------------------------------------------------
-# Keyboard input
-# ---------------------------------------------------------------------------
 def read_key(fd: int, timeout: float | None = None) -> str | None:
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
@@ -449,9 +423,6 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
     return seq.decode("latin-1")
 
 
-# ---------------------------------------------------------------------------
-# Viewer
-# ---------------------------------------------------------------------------
 class Viewer:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 8.0
@@ -473,7 +444,6 @@ class Viewer:
         self.y = 0
         self.running = True
 
-    # -- geometry ----------------------------------------------------------
     def term_size(self) -> tuple[int, int]:
         size = shutil.get_terminal_size((80, 24))
         return size.columns, size.lines
@@ -490,7 +460,6 @@ class Viewer:
         w, h, _ = self.renderer.page(self.page_index, self.render_width())
         return w, h
 
-    # -- painting ----------------------------------------------------------
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
         bottom = top + 1
@@ -576,7 +545,6 @@ class Viewer:
             w = h = 1
             data = b"\x00\x00\x00"
 
-        # Clamp scrolling into range.
         if error is None:
             max_y = max(0, h - rows * 2)
             self.y = max(0, min(self.y, max_y))
@@ -592,7 +560,7 @@ class Viewer:
         else:
             for row in range(rows):
                 buf.append(self._paint_row(data, w, h, self.y + row * 2, self.x, cols))
-                # Raw mode: \n moves down but keeps the column, so we need CR.
+
                 buf.append("\r\n")
 
         buf.append(RESET)
@@ -600,7 +568,6 @@ class Viewer:
         sys.stdout.write("".join(buf))
         sys.stdout.flush()
 
-    # -- navigation --------------------------------------------------------
     def goto_page(self, index: int) -> None:
         if 0 <= index < self.page_count:
             self.page_index = index
@@ -637,11 +604,10 @@ class Viewer:
         frac = self.y / old_h if old_h else 0.0
         self.zoom = value
         new_w = self.render_width()
-        # Cheap proportional estimate; draw() clamps it exactly afterwards.
+
         new_h = max(1, round(old_h * new_w / old_w))
         self.y = int(frac * new_h)
 
-    # -- key dispatch ------------------------------------------------------
     def handle(self, key: str) -> None:
         if key in ("q", "Q", "\x03") or key == "\x1b":
             self.running = False
@@ -678,7 +644,6 @@ class Viewer:
             self.zoom = 1.0
             self.x = self.y = 0
 
-    # -- main loop ---------------------------------------------------------
     def run(self, fd: int) -> None:
         dirty = True
         last_size = (0, 0)
@@ -687,7 +652,7 @@ class Viewer:
             size = self.term_size()
             if size != last_size:
                 last_size = size
-                # The render width changed, so the cached rasters are stale.
+
                 self.renderer._cache.clear()
                 self.renderer._pt_cache.clear()
                 dirty = True
@@ -703,9 +668,6 @@ class Viewer:
             dirty = True
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="tpv",
@@ -755,7 +717,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         pass
     finally:
-        # Always restore the terminal, even on an unexpected exception.
         termios.tcsetattr(fd, termios.TCSADRAIN, saved)
         sys.stdout.write(RESET + SHOW_CURSOR + LEAVE_ALT)
         sys.stdout.flush()

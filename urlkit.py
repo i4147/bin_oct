@@ -49,9 +49,6 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import unquote, urlparse
 
-# ---------------------------------------------------------------------------
-# Optional third-party imports (kept soft so --help works without them)
-# ---------------------------------------------------------------------------
 try:
     from loguru import logger as _loguru_logger
 except ImportError:
@@ -71,9 +68,6 @@ except ImportError:
     chardet = None  # type: ignore
 
 
-# ---------------------------------------------------------------------------
-# Logging helpers
-# ---------------------------------------------------------------------------
 def log_info(msg: str) -> None:
     if _loguru_logger:
         _loguru_logger.info(msg)
@@ -95,9 +89,6 @@ def log_error(msg: str) -> None:
         print(f"ERROR: {msg}", file=sys.stderr)
 
 
-# ---------------------------------------------------------------------------
-# Shared constants / defaults
-# ---------------------------------------------------------------------------
 URL_RE = re.compile(r'https?://[^\s<>"\'\)\]\}]+', re.IGNORECASE)
 GITHUB_RE = re.compile(
     r'https?://(?:www\.)?github\.com/[^\s<>"\'\)\]\}]+',
@@ -113,8 +104,6 @@ DEFAULT_GIT_HOSTS = (
     "codeberg.org,gitbucket.org,gogs.io"
 )
 
-# Best-effort extension lists (originally from `dh.TXT_EXT` / `dh.BIN_EXT`).
-# Override via --file-exts if you have the real values.
 DEFAULT_FILE_EXTS = ",".join(
     sorted(
         {
@@ -189,10 +178,8 @@ TAR_SUFFIXES = (
 )
 SEVENZ_SUFFIXES = (".7z",)
 
-# xfile_urls.py target extensions
 FETCH_EXTS = (".css", ".ttf", ".woff", ".woff2", ".pdf")
 
-# split_urls.py known extensions (by-ext mode)
 BY_EXT_KNOWN = [
     "htm",
     "html",
@@ -235,9 +222,6 @@ BY_EXT_KNOWN = [
 ]
 
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 def _write_urls(path: Path, urls: Iterable[str], append: bool = False) -> None:
     mode = "a" if append else "w"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -295,7 +279,6 @@ def _extract_urls(text: str) -> set[str]:
     return set(URL_RE.findall(text))
 
 
-# ---- Archive content extractors -------------------------------------------
 def _extract_from_tar(path: Path) -> set[str]:
     urls: set[str] = set()
     try:
@@ -368,7 +351,6 @@ def _classify_git(url: str, git_hosts: tuple[str, ...]) -> bool:
     return any(h in lower for h in git_hosts)
 
 
-# ---- Scan worker -----------------------------------------------------------
 def _scan_worker(task: tuple) -> set[str]:
     path_str, max_size, archives_only, files_only = task
     path = Path(path_str)
@@ -399,9 +381,6 @@ def _scan_worker(task: tuple) -> set[str]:
     return urls
 
 
-# ===========================================================================
-# Subcommand: clean  (clean_urls.py)
-# ===========================================================================
 def cmd_clean(args: argparse.Namespace) -> int:
     domains: set[str] = set()
     git_urls: list[str] = []
@@ -431,9 +410,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: scan  (exlinks.py + furl.py + urlzz.py)
-# ===========================================================================
 def cmd_scan(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     skip_dirs = {s for s in args.skip_dirs.split(",") if s}
@@ -478,9 +454,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: split  (file_urls.py  +  split_urls.py)
-# ===========================================================================
 def _split_grouped(args: argparse.Namespace) -> int:
     group_map = {
         "html": (".html", ".htm"),
@@ -572,9 +545,6 @@ def cmd_split(args: argparse.Namespace) -> int:
     return _split_by_ext(args)
 
 
-# ===========================================================================
-# Subcommand: filter-jscss  (filter_jscss_links.py)
-# ===========================================================================
 def cmd_filter_jscss(args: argparse.Namespace) -> int:
     pattern = re.compile(r"\.(min\.)?(js|css)$", re.IGNORECASE)
     src = Path(args.input)
@@ -596,9 +566,6 @@ def cmd_filter_jscss(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: prune  (process_urls.py + process_urls_aggresive.py)
-# ===========================================================================
 def _normalize_url(url: str) -> str:
     url = url.strip()
     if not url:
@@ -701,9 +668,6 @@ def cmd_prune(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: move-gitlinks  (move_gitlinks.py)
-# ===========================================================================
 def cmd_move_gitlinks(args: argparse.Namespace) -> int:
     src = Path(args.input)
     if not src.exists():
@@ -730,9 +694,6 @@ def cmd_move_gitlinks(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: save-page  (saveurl.py)
-# ===========================================================================
 def cmd_save_page(args: argparse.Namespace) -> int:
     try:
         from pywebcopy import save_webpage  # type: ignore
@@ -752,9 +713,6 @@ def cmd_save_page(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# Subcommand: fetch-files  (xfile_urls.py)
-# ===========================================================================
 def _strip_url_punct(url: str) -> str:
     return url.strip().strip("\"'<>(),;")
 
@@ -832,9 +790,6 @@ def cmd_fetch_files(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="urlkit",
@@ -846,14 +801,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # --- clean ---------------------------------------------------------
     pc = sub.add_parser("clean", help="Dedupe domains; split github URLs.")
     pc.add_argument("--input", default="urls.txt")
     pc.add_argument("--domains-out", default="cleaned_urls")
     pc.add_argument("--git-out", default="git_urls")
     pc.set_defaults(func=cmd_clean)
 
-    # --- scan ----------------------------------------------------------
     ps = sub.add_parser(
         "scan",
         help="Extract URLs from files/archives (exlinks + furl + urlzz).",
@@ -890,7 +843,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ps.set_defaults(func=cmd_scan)
 
-    # --- split ---------------------------------------------------------
     psp = sub.add_parser(
         "split",
         help="Split URLs by group or by file extension (file_urls + split_urls).",
@@ -915,7 +867,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     psp.set_defaults(func=cmd_split)
 
-    # --- filter-jscss --------------------------------------------------
     pj = sub.add_parser(
         "filter-jscss", help="Keep only .js/.css URLs (filter_jscss_links.py)."
     )
@@ -923,7 +874,6 @@ def build_parser() -> argparse.ArgumentParser:
     pj.add_argument("-o", "--output", default="filtered_urls.txt")
     pj.set_defaults(func=cmd_filter_jscss)
 
-    # --- prune ---------------------------------------------------------
     pp = sub.add_parser(
         "prune",
         help="Normalize and prune redundant URLs "
@@ -937,7 +887,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pp.set_defaults(func=cmd_prune)
 
-    # --- move-gitlinks -------------------------------------------------
     pm = sub.add_parser(
         "move-gitlinks",
         help="Move github.com lines from a file into gitlinks.txt (move_gitlinks.py).",
@@ -946,7 +895,6 @@ def build_parser() -> argparse.ArgumentParser:
     pm.add_argument("-g", "--git-output", default="gitlinks.txt")
     pm.set_defaults(func=cmd_move_gitlinks)
 
-    # --- save-page -----------------------------------------------------
     psv = sub.add_parser(
         "save-page", help="Save a webpage with pywebcopy (saveurl.py)."
     )
@@ -967,7 +915,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     psv.set_defaults(func=cmd_save_page)
 
-    # --- fetch-files ---------------------------------------------------
     pf = sub.add_parser(
         "fetch-files",
         help="Extract css/font/pdf URLs and optionally download them (xfile_urls.py).",

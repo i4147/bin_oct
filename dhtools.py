@@ -54,14 +54,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 log = logging.getLogger("dh_tools")
 
-# ---------------------------------------------------------------------------
-# Defaults (originally hardcoded in the individual scripts)
-# ---------------------------------------------------------------------------
 DEFAULT_DH_PATH: Path = Path.home() / "projects" / "py" / "dh" / "src" / "dh"
 DEFAULT_BIN_DIR: Path = Path.home() / "bin"
 DEFAULT_REPORT_PATH: Path = Path.home() / "dh_usage.txt"
@@ -69,9 +63,6 @@ DEFAULT_WORKERS: int = 8
 DEFAULT_SKIP: frozenset[str] = frozenset({"dh_reverse.py"})
 
 
-# ===========================================================================
-# Small shared helpers
-# ===========================================================================
 def _iter_py_files(
     paths: Iterable[Path], skip: frozenset[str] = frozenset()
 ) -> list[Path]:
@@ -95,9 +86,6 @@ def _read_and_parse(path: Path) -> tuple[str, ast.Module] | tuple[None, None]:
         return None, None
 
 
-# ===========================================================================
-# Hashing helpers (reverse subcommand)
-# ===========================================================================
 def _strip_docstring_and_unparse(node: ast.FunctionDef) -> str:
     body = [
         stmt
@@ -139,9 +127,6 @@ def _function_hash(source: str, node: ast.FunctionDef, match: str) -> str:
     return _normalized_hash(node) if match == "normalized" else _raw_hash(source, node)
 
 
-# ===========================================================================
-# reverse subcommand
-# ===========================================================================
 def _build_dh_map(dh_path: Path, match: str) -> dict[str, tuple[str, str]]:
     result: dict[str, tuple[str, str]] = {}
     for py_file in sorted(dh_path.glob("**/*.py")):
@@ -170,7 +155,6 @@ def _insert_dh_imports(
 
     lines = source.splitlines(keepends=True)
 
-    # Locate the insertion point: after shebang + last leading import.
     insert_at = 1 if (lines and lines[0].startswith("#!")) else 0
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -179,7 +163,6 @@ def _insert_dh_imports(
             break
 
     if style == "flat":
-        # Merge into an existing `from dh import ...` if one exists.
         for node in tree.body:
             if not isinstance(node, (ast.Import, ast.ImportFrom)):
                 break
@@ -249,7 +232,6 @@ def _apply_reverse_to_file(
     if tree is None or source is None:
         return (path, False, "")
 
-    # --- find matching function names -------------------------------------
     matched: dict[str, str] = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef):
@@ -269,7 +251,6 @@ def _apply_reverse_to_file(
     if not matched:
         return (path, False, "")
 
-    # --- remove top-level FunctionDefs with matched names ------------------
     lines = source.splitlines(keepends=True)
     remove_ranges: list[tuple[int, int]] = []
     for node in tree.body:
@@ -279,10 +260,8 @@ def _apply_reverse_to_file(
         del lines[start:end]
     new_source = "".join(lines)
 
-    # --- add imports -------------------------------------------------------
     new_source = _insert_dh_imports(new_source, matched, import_style)
 
-    # --- optionally prune unused imports (fixdh.py behaviour) --------------
     if prune:
         new_source = _prune_unused_imports(new_source)
 
@@ -349,9 +328,6 @@ def cmd_reverse(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# inline subcommand
-# ===========================================================================
 def _build_dh_export_map(dh_path: Path) -> dict[str, Path]:
     init = dh_path / "__init__.py"
     if not init.exists():
@@ -408,7 +384,6 @@ def _collect_inline_source(
     if func_name not in defined:
         return ([], [])
 
-    # BFS over same-module references.
     seen: set[str] = set()
     queue: list[str] = [func_name]
     while queue:
@@ -490,7 +465,6 @@ def _inline_file(
     insert_lines.extend(source_blocks)
     insertion = "\n\n" + "\n\n".join(insert_lines) + "\n\n"
 
-    # Determine where to insert.
     insert_at = 1 if (lines and lines[0].startswith("#!")) else 0
     try:
         new_tree = ast.parse("".join(lines))
@@ -559,9 +533,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# usage subcommand
-# ===========================================================================
 def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
     source, tree = _read_and_parse(py_file)
     if tree is None:
@@ -569,7 +540,7 @@ def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
         return []
 
     names: list[str] = []
-    # from dh import x, y  /  from dh.sub import z
+
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.ImportFrom)
@@ -579,7 +550,6 @@ def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
             for alias in node.names:
                 names.append(alias.asname or alias.name)
 
-    # import dh / import dh.sub — record bound names so we can spot dh.foo()
     imported_roots: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -701,9 +671,6 @@ def cmd_usage(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dh_tools",
@@ -728,7 +695,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- reverse -----------------------------------------------------------
     r = sub.add_parser(
         "reverse",
         help="Replace locally-copied dh functions with `from dh import ...`.",
@@ -784,7 +750,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(f"Filename to skip (can repeat). Default: {sorted(DEFAULT_SKIP)}."),
     )
 
-    # --- inline ------------------------------------------------------------
     i = sub.add_parser(
         "inline",
         help="Inline `from dh import X` imports into the file source.",
@@ -809,7 +774,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Path to the dh package (default: {DEFAULT_DH_PATH}).",
     )
 
-    # --- usage -------------------------------------------------------------
     u = sub.add_parser(
         "usage",
         help="Scan a directory of Python scripts and report dh usage.",

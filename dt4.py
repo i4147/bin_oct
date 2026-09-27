@@ -29,7 +29,6 @@ DEFAULT_SAVE_EVERY = 10
 MAX_RETRIES = 3
 BACKOFF_BASE = 2
 
-# Language code mappings for each backend
 LANG_MAPPING = {
     "deep_translator": {
         "en": "english",
@@ -105,7 +104,6 @@ LANG_MAPPING = {
     },
 }
 
-# Global flag for graceful shutdown
 shutdown_flag = False
 
 
@@ -132,8 +130,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     while start < length:
         end = min(start + chunk_size, length)
 
-        # If we're not at the end and the next character isn't whitespace,
-        # find the last space before end
         if end < length and not text[end].isspace():
             last_space = text.rfind(" ", start, end)
             if last_space > start:
@@ -170,7 +166,7 @@ def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
 
 
 def is_identity_translation(text: str, translated: str) -> bool:
-    # Normalize both texts for comparison
+
     norm_orig = text.lower().strip()
     norm_trans = translated.lower().strip()
     return norm_orig == norm_trans
@@ -415,7 +411,6 @@ def process_chunks(
                     results[str(chunk_index)] = translated
                     logger.info(f"Translated chunk {chunk_index}")
 
-                    # Periodic save
                     if len(results) % save_every == 0:
                         save_json_atomic(results, output_path)
                         logger.info(f"Periodic save after {len(results)} chunks")
@@ -426,11 +421,9 @@ def process_chunks(
                 failed_indices.add(index)
                 logger.error(f"Unexpected error processing chunk {index}: {e}")
 
-    # Save final results
     if results and not shutdown_flag:
         save_json_atomic(results, output_path)
 
-    # Save failed indices
     if failed_indices:
         with failed_path.open("a", encoding="utf-8") as f:
             for index in sorted(failed_indices):
@@ -484,19 +477,15 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Validate workers
     if args.workers < 1 or args.workers > 2:
         parser.error("Workers must be between 1 and 2")
 
-    # Setup logging
     setup_logging()
     logger.info(f"Starting translation with args: {vars(args)}")
 
-    # Setup signal handler
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    # Process paths
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
@@ -505,13 +494,11 @@ def main() -> None:
         logger.error(f"Input file {input_path} does not exist")
         sys.exit(1)
 
-    # Load existing output if not --no-continue
     existing_output = {}
     if not args.no_continue and output_path.exists():
         existing_output = load_existing_output(output_path)
         logger.info(f"Loaded existing output with {len(existing_output)} chunks")
 
-    # Read input file
     try:
         with input_path.open("r", encoding="utf-8") as f:
             text = f.read()
@@ -520,11 +507,9 @@ def main() -> None:
         logger.error(f"Failed to read input file: {e}")
         sys.exit(1)
 
-    # Split into chunks
     chunks = split_into_chunks(text, args.chunk_size)
     logger.info(f"Split text into {len(chunks)} chunks")
 
-    # Skip already translated chunks
     if existing_output:
         chunks = [
             chunk for i, chunk in enumerate(chunks) if str(i) not in existing_output
@@ -537,7 +522,6 @@ def main() -> None:
         logger.info("No new chunks to process")
         return
 
-    # Select backend
     try:
         translator = select_backend(args.source, args.target, args.backend)
         logger.info(f"Using {translator.__module__} backend")
@@ -545,7 +529,6 @@ def main() -> None:
         logger.error(f"Failed to initialize translator: {e}")
         sys.exit(1)
 
-    # Process chunks
     try:
         process_chunks(
             chunks=chunks,

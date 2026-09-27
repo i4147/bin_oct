@@ -327,8 +327,6 @@ def encode_literal(value: str, original_token: str) -> str:
     prefix, quote, closing_quote = literal_parts(original_token)
 
     if "f" in prefix.lower():
-        # Replacing f-string expressions safely requires a full f-string
-        # parser. Preserve such strings rather than corrupting expressions.
         raise ValueError("Formatted string literals are not rewritten")
 
     if "r" in prefix.lower():

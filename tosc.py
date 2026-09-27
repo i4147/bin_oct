@@ -12,7 +12,7 @@ dest = Path.home() / "isaac" / "may" / "scripts"
 
 
 def expand(arg: str) -> list[Path]:
-    # Let the shell do its thing first; if nothing matched, try globbing ourselves.
+
     p = Path(arg)
     if p.exists():
         return [p]

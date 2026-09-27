@@ -32,7 +32,6 @@ required by the "chunked" subcommand. Everything else runs on stdlib alone.
 
 from __future__ import annotations
 
-# --- stdlib -----------------------------------------------------------------
 import argparse
 import contextlib
 import hashlib
@@ -51,7 +50,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-# --- third-party (soft for pycurl) ------------------------------------------
 import requests
 from tqdm import tqdm
 
@@ -63,7 +61,6 @@ except ImportError:  # pragma: no cover
     pycurl = None  # type: ignore
     _HAS_PYCURL = False
 
-# loguru / rich are imported lazily so `wget`, `size`, `check` work without them.
 try:
     from loguru import logger as _logger
 except ImportError:  # pragma: no cover
@@ -78,10 +75,6 @@ except ImportError:  # pragma: no cover
     _logger = _LoggerShim()  # type: ignore
 
 logger = _logger
-
-# ============================================================================
-# Shared helpers
-# ============================================================================
 
 _DEFAULT_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -211,11 +204,6 @@ def remote_size_pycurl(url: str, timeout: float = 15.0) -> Optional[int]:
         c.close()
 
 
-# ============================================================================
-# Single-file download primitives
-# ============================================================================
-
-
 def _download_urllib(
     url: str,
     dest: Path,
@@ -313,11 +301,6 @@ def _download_pycurl(
     return dest
 
 
-# ============================================================================
-# Subcommand: wget  (from pywget.py)
-# ============================================================================
-
-
 def cmd_wget(args: argparse.Namespace) -> int:
     url = args.url
     out: Optional[Path] = Path(args.output) if args.output else None
@@ -342,11 +325,6 @@ def cmd_wget(args: argparse.Namespace) -> int:
         return 1
 
 
-# ============================================================================
-# Subcommand: check  (from download_checker.py)
-# ============================================================================
-
-
 def cmd_check(args: argparse.Namespace) -> int:
     url = args.url
     print(f"Checking remote link: {url}")
@@ -363,7 +341,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         print("\nUse --download to download the file.")
         return 0
     if not _HAS_PYCURL:
-        # fall back to urllib
         out = Path(args.output) if args.output else Path(filename_from_url(url))
         out = unique_path(out)
         _download_urllib(url, out, timeout=args.timeout)
@@ -414,11 +391,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         c.close()
     print(f"\n\nDownload complete! Saved to: {out}")
     return 0
-
-
-# ============================================================================
-# Subcommand: size  (from dsize.py + dsized.py)
-# ============================================================================
 
 
 def _process_size_url(
@@ -491,10 +463,6 @@ def _parse_size(s: str) -> int:
     mult = {"": 1, "K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4}[m.group(2)]
     return int(n * mult)
 
-
-# ============================================================================
-# Subcommand: batch  (from cget / pycurl_downloader / url_downloader / rget)
-# ============================================================================
 
 _EXT_WHITELIST = [
     r"\.ttf$",
@@ -643,11 +611,6 @@ def cmd_batch(args: argparse.Namespace) -> int:
     return 0 if not failed else 1
 
 
-# ============================================================================
-# Subcommand: threaded  (from ghost_downloader.py)
-# ============================================================================
-
-
 def _threaded_worker(
     url: str,
     start: int,
@@ -759,11 +722,6 @@ def cmd_threaded(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# Subcommand: chunked  (from gget.py) — resumable, state file, SHA-256
-# ============================================================================
-
-
 def _download_chunk(
     url: str, dest: Path, start: int, end: int, timeout: float, ua: str
 ) -> None:
@@ -822,7 +780,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     dest = Path(filename)
     state_file = dest.with_suffix(dest.suffix + ".progress")
 
-    # load state
     completed: set[int] = set()
     if state_file.exists() and args.resume:
         try:
@@ -832,7 +789,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
         except Exception as e:
             logger.warning(f"Bad state file, ignoring: {e}")
 
-    # prepare destination
     if not dest.exists():
         with dest.open("wb") as f:
             f.truncate(size)
@@ -889,7 +845,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
         logger.warning("Not all chunks completed. Re-run to resume.")
         return 1
 
-    # all done: verify + cleanup
     h = hashlib.sha256()
     with dest.open("rb") as f:
         for block in iter(lambda: f.read(1024 * 1024), b""):
@@ -911,11 +866,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# CLI
-# ============================================================================
-
-
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="dl.py",
@@ -925,7 +875,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # wget ---------------------------------------------------------------
     pw = sub.add_parser("wget", help="Single-URL download with progress (pywget.py).")
     pw.add_argument("url")
     pw.add_argument("-o", "--output", help="Output file or directory")
@@ -936,7 +885,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pw.add_argument("-q", "--quiet", action="store_true")
     pw.set_defaults(func=cmd_wget)
 
-    # check --------------------------------------------------------------
     pc = sub.add_parser(
         "check", help="Check remote size, optionally download (download_checker.py)."
     )
@@ -948,7 +896,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--timeout", type=float, default=15.0)
     pc.set_defaults(func=cmd_check)
 
-    # size ---------------------------------------------------------------
     ps = sub.add_parser("size", help="Show remote size (dsize.py / dsized.py).")
     ps.add_argument("input", help="URL or file of URLs")
     ps.add_argument(
@@ -965,7 +912,6 @@ def _build_parser() -> argparse.ArgumentParser:
     ps.add_argument("--timeout", type=float, default=10.0)
     ps.set_defaults(func=cmd_size)
 
-    # batch --------------------------------------------------------------
     pb = sub.add_parser(
         "batch",
         help="Batch download URLs from a file "
@@ -995,7 +941,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pb.add_argument("--user-agent", default=_DEFAULT_UA)
     pb.set_defaults(func=cmd_batch)
 
-    # threaded -----------------------------------------------------------
     pt = sub.add_parser(
         "threaded", help="Multi-chunk threaded downloader (ghost_downloader.py)."
     )
@@ -1006,7 +951,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pt.add_argument("--timeout", type=float, default=30.0)
     pt.set_defaults(func=cmd_threaded)
 
-    # chunked ------------------------------------------------------------
     pk = sub.add_parser(
         "chunked", help="Resumable chunked downloader with SHA-256 (gget.py)."
     )

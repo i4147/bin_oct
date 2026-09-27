@@ -66,9 +66,6 @@ import zipfile
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-# --------------------------------------------------------------------------- #
-# Optional third-party dependencies
-# --------------------------------------------------------------------------- #
 try:
     import py7zr  # type: ignore
 except ImportError:
@@ -95,9 +92,6 @@ except ImportError:
     brotli = None
 
 
-# --------------------------------------------------------------------------- #
-# Shared helpers
-# --------------------------------------------------------------------------- #
 def fsz(n: float) -> str:
     n = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
@@ -116,9 +110,6 @@ BANNER = """
   [ INTEGRITY VALIDATION & EXTRACTED SIZE SCANNER v1.4.2 ]
 """
 
-# --------------------------------------------------------------------------- #
-# Archive registry used by the `scan` command (25 extensions)
-# --------------------------------------------------------------------------- #
 ARCHIVE_TYPES: dict[str, str] = {
     ".tar": "TAR Archive (.tar)",
     ".tar.gz": "GZip Tarball (.tar.gz)",
@@ -147,7 +138,6 @@ ARCHIVE_TYPES: dict[str, str] = {
     ".lz4": "LZ4 Frame (.lz4)",
 }
 
-# Match longest extension first so ".tar.gz" wins over ".gz".
 _SORTED_EXTS: tuple[str, ...] = tuple(sorted(ARCHIVE_TYPES, key=len, reverse=True))
 
 
@@ -159,9 +149,6 @@ def detect_archive(path: Path) -> tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-# --------------------------------------------------------------------------- #
-# `scan` command — mirrors xreport.py / xreport2.py
-# --------------------------------------------------------------------------- #
 def _gzip_stream_size(path: Path) -> int:
     try:
         with open(path, "rb") as f:
@@ -200,7 +187,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
     err = ""
 
     try:
-        # ---- ZIP / wheel ----------------------------------------------------
         if ext in (".zip", ".whl"):
             with zipfile.ZipFile(path, "r") as zf:
                 infos = zf.infolist()
@@ -208,7 +194,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                 count = len(infos)
                 integrity = zf.testzip() is None
 
-        # ---- TAR family (incl. compressed tarballs) -------------------------
         elif ext and (
             ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")
         ):
@@ -226,7 +211,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                     count = len(members)
                     integrity = True
             except Exception as te:
-                # Special-case .tar.zst / .tzst (tarfile can't open zstd).
                 if zstd is not None and ext in (".tar.zst", ".tzst"):
                     dec = zstd.ZstdDecompressor()
                     with (
@@ -240,7 +224,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                     extracted = int(size * 3.5)
                     integrity, err = False, str(te)
 
-        # ---- 7-Zip ----------------------------------------------------------
         elif ext == ".7z":
             if py7zr is not None:
                 with py7zr.SevenZipFile(path, "r") as sz:
@@ -250,7 +233,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
             else:
                 extracted, integrity = int(size * 4.1), True
 
-        # ---- Single-stream formats -----------------------------------------
         elif ext == ".gz":
             extracted, count, integrity = _gzip_stream_size(path), 1, True
         elif ext == ".zst":
@@ -269,7 +251,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
             extracted = int(size * ratios.get(ext, 3.0))
             count, integrity = 1, True
 
-        # ---- Fallback -------------------------------------------------------
         else:
             extracted, count, integrity = int(size * 2.5), 1, True
 
@@ -322,7 +303,6 @@ def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
                 shutil.copyfileobj(src, dst)
             return True, str(dest)
 
-        # Fallback: raw copy (same as the originals' "decompressed" placeholder).
         shutil.copyfile(path, dest / f"{path.name}.decompressed")
         return True, str(dest)
 
@@ -374,7 +354,6 @@ def cmd_scan(
                 f"->Ext:{fsz(info['extracted_size'])}|{status}"
             )
 
-    # --- table header ---
     print("-" * 40)
     print(
         f"\x1b[1;37m{'FILENAME':<32} {'ARCHIVE TYPE':<26} "
@@ -426,9 +405,6 @@ def cmd_scan(
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# `sizes` command — mirrors zreport.py
-# --------------------------------------------------------------------------- #
 SKIP_DIRS = frozenset(
     {"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
 )
@@ -444,7 +420,6 @@ def _count_stream(reader) -> int:
     return total
 
 
-# Each handler: (path) -> (uncompressed_size | None, error | None)
 _SizeHandler = Callable[[Path], tuple[Optional[int], Optional[str]]]
 
 
@@ -608,9 +583,6 @@ def cmd_sizes(directory: str) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="archive_report.py",
@@ -628,7 +600,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command")
 
-    # ---- scan --------------------------------------------------------------
     sp_scan = sub.add_parser(
         "scan",
         help="Full archive scan with integrity check + auto-extract "
@@ -646,8 +617,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Extract every discovered archive into <dir>/extracted_archives.",
     )
-    # NOTE: name kept for backward compatibility with xreport*.py, where
-    # --test-integrity actually toggles the banner.
+
     sp_scan.add_argument(
         "-t",
         "--test-integrity",
@@ -673,7 +643,6 @@ def build_parser() -> argparse.ArgumentParser:
         )
     )
 
-    # ---- sizes -------------------------------------------------------------
     sp_sizes = sub.add_parser(
         "sizes",
         help="Report *accurately measured* uncompressed sizes and disk-space "
@@ -693,8 +662,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Iterable[str]] = None) -> int:
     argv_list = list(sys.argv[1:] if argv is None else argv)
 
-    # Default to `scan` when the user does not name a subcommand (so bare
-    # `python archive_report.py DIR -a` keeps working like the originals).
     known = {"scan", "sizes", "-h", "--help"}
     if not argv_list or argv_list[0] not in known:
         argv_list = ["scan", *argv_list]

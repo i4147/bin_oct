@@ -48,9 +48,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
-# --------------------------------------------------------------------------- #
-# Optional third-party imports (each mode checks for its own dependencies)
-# --------------------------------------------------------------------------- #
 try:
     import requests
 except ImportError:  # pragma: no cover
@@ -82,17 +79,12 @@ try:
 except ImportError:  # pragma: no cover
     BeautifulSoup = None  # type: ignore[assignment]
 
-# --------------------------------------------------------------------------- #
-# Constants — defaults match the originals
-# --------------------------------------------------------------------------- #
-# pip_get.py: three JSON mirrors tried in order (with per-mirror retries)
 JSON_MIRRORS: tuple[str, ...] = (
     "https://pypi.org/pypi",
     "https://pypi.tuna.tsinghua.edu.cn/pypi",
     "https://mirror-pypi.runflare.com/pypi",
 )
 
-# pipget.py: named /simple mirrors
 SIMPLE_MIRRORS: dict[str, str] = {
     "runflare": "https://mirror-pypi.runflare.com/simple",
     "pypi": "https://pypi.org/simple",
@@ -110,9 +102,6 @@ DEFAULT_USER_AGENT = (
 )
 
 
-# --------------------------------------------------------------------------- #
-# Small helpers
-# --------------------------------------------------------------------------- #
 def _require(mod: Any, pkg_name: str, mode: str) -> None:
     if mod is None:
         sys.exit(
@@ -135,9 +124,6 @@ def _clean_spec(spec: str) -> str:
     return spec.split("==")[0].split(">=")[0].split("<=")[0].strip()
 
 
-# --------------------------------------------------------------------------- #
-# Metadata fetching — two flavours preserved from the originals
-# --------------------------------------------------------------------------- #
 def fetch_json_multi_mirror(pkg_name: str) -> dict:
     for mirror in JSON_MIRRORS:
         url = f"{mirror}/{pkg_name}/json"
@@ -171,9 +157,6 @@ def fetch_json_urlopen(pkg_name: str, timeout: int = 10) -> Optional[dict]:
         return None
 
 
-# --------------------------------------------------------------------------- #
-# File-picking strategies — one per original script (they differ subtly)
-# --------------------------------------------------------------------------- #
 def pick_py3_any_wheel_or_sdist(files: list[dict]) -> Optional[dict]:
     for f in files:
         if f.get("packagetype") == "bdist_wheel":
@@ -257,9 +240,6 @@ def pick_scored_wheel(meta: dict, python_version: str) -> Optional[tuple[str, in
     return best["url"], best["size"]
 
 
-# --------------------------------------------------------------------------- #
-# Simple download primitives (each kept from its original script)
-# --------------------------------------------------------------------------- #
 def download_requests_simple(url: str, target: Path) -> None:
     r = requests.get(url)
     r.raise_for_status()
@@ -313,9 +293,6 @@ def download_urlopen_progress(
         return False, f"Failed: {exc!s}"
 
 
-# --------------------------------------------------------------------------- #
-# Hash verification (pip_get.py)
-# --------------------------------------------------------------------------- #
 def verify_hash(path: Path, digests: dict) -> bool:
     if "sha256" in digests:
         algo, expected = "sha256", digests["sha256"]
@@ -345,9 +322,6 @@ def verify_hash(path: Path, digests: dict) -> bool:
     return False
 
 
-# =========================================================================== #
-# Subcommand:  basic   (pd.py)
-# =========================================================================== #
 def cmd_basic(args: argparse.Namespace) -> int:
     _require(requests, "requests", "basic")
     meta = fetch_json_pypi(args.package)
@@ -370,9 +344,6 @@ def cmd_basic(args: argparse.Namespace) -> int:
     return 0
 
 
-# =========================================================================== #
-# Subcommand:  download   (pdown.py)
-# =========================================================================== #
 def cmd_download(args: argparse.Namespace) -> int:
     _require(requests, "requests", "download")
     print(f"Fetching {args.package} (version: {args.version or 'latest'})...")
@@ -403,9 +374,6 @@ def cmd_download(args: argparse.Namespace) -> int:
     return 0
 
 
-# =========================================================================== #
-# Subcommand:  wheels   (pdown2.py)
-# =========================================================================== #
 def _download_wheel_worker(
     pkg: str, out_dir: Path, python_version: str
 ) -> tuple[str, bool, str]:
@@ -448,9 +416,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
     return 0
 
 
-# =========================================================================== #
-# Subcommand:  mirror   (pip_get.py)
-# =========================================================================== #
 def _progress_bar() -> Any:
     return Progress(
         TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
@@ -618,7 +583,7 @@ def _mirror_process_spec(spec: str, backend: str, output_dir: Path) -> None:
 
 
 def cmd_mirror(args: argparse.Namespace) -> int:
-    # Backend-specific dependency check
+
     if args.backend == "pycurl":
         _require(pycurl, "pycurl", "mirror")
         _require(_rich_console, "rich", "mirror")
@@ -649,10 +614,6 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     return 0
 
 
-# =========================================================================== #
-# Subcommand:  scrape   (pipget.py)
-# =========================================================================== #
-# pipget.py's heuristic patterns for "not-our-architecture" filenames
 _ARCH_RE = re.compile(
     r"-(cp\d+|pp\d+|py\d+)(-(cp\d+|pp\d+|py\d+))?"
     r"-(manylinux|musllinux|win|macosx|linux|darwin)",
@@ -854,7 +815,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
     _require(pycurl, "pycurl", "scrape")
     _require(BeautifulSoup, "beautifulsoup4", "scrape")
 
-    # -- mirror selection --------------------------------------------------- #
     if args.pypi:
         mirror_name = "pypi"
     elif args.china:
@@ -866,7 +826,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
     mirror_url = SIMPLE_MIRRORS[mirror_name]
     trailing_slash = mirror_name in ("pypi", "tsinghua")
 
-    # -- output directory --------------------------------------------------- #
     if args.directory:
         out_dir = Path(args.directory).expanduser().resolve()
         if not out_dir.is_dir():
@@ -877,7 +836,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
     else:
         out_dir = Path.cwd()
 
-    # -- package list (dedup case-insensitively) --------------------------- #
     packages: list[str] = list(args.packages)
     if args.file:
         loaded = _read_pkg_names_from_file(Path(args.file))
@@ -958,9 +916,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
     return 1 if fail_list else 0
 
 
-# =========================================================================== #
-# CLI wiring
-# =========================================================================== #
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pypi_dl",
@@ -978,7 +933,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ----- basic (pd.py) --------------------------------------------------- #
     p = sub.add_parser(
         "basic", help="Simple API download, prefers py3-none-any wheel (pd.py)"
     )
@@ -991,7 +945,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_basic)
 
-    # ----- download (pdown.py) --------------------------------------------- #
     p = sub.add_parser("download", help="Version-aware streaming download (pdown.py)")
     p.add_argument("package", help="Package name")
     p.add_argument(
@@ -1005,7 +958,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_download)
 
-    # ----- wheels (pdown2.py) ---------------------------------------------- #
     p = sub.add_parser(
         "wheels", help="Parallel wheel downloads scored by Python version (pdown2.py)"
     )
@@ -1024,7 +976,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_wheels)
 
-    # ----- mirror (pip_get.py) --------------------------------------------- #
     p = sub.add_parser(
         "mirror", help="Multi-mirror + hash-verified downloads (pip_get.py)"
     )
@@ -1053,7 +1004,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_mirror)
 
-    # ----- scrape (pipget.py) ---------------------------------------------- #
     p = sub.add_parser("scrape", help="HTML /simple index scraper (pipget.py)")
     p.add_argument("packages", nargs="*", help="Package names")
     p.add_argument(

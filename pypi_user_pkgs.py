@@ -52,9 +52,6 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-# --------------------------------------------------------------------------
-# Constants
-# --------------------------------------------------------------------------
 PYPI_BASE = "https://pypi.org"
 USER_AGENT = "pypi-user-packages/1.3"
 DEFAULT_MAX_MIB = 10.0
@@ -63,14 +60,10 @@ ARIA2C_BIN = "aria2c"
 DEFAULT_BACKEND = "httpx"
 DEFAULT_JOBS = 8
 
-# Patterns for scraping the profile page.
 _PROJECT_RE = re.compile(r"^/project/([^/?#]+)/?$")
 _PAGE_RE = re.compile(r"[?&]page=(\d+)")
 
 
-# --------------------------------------------------------------------------
-# HTML parsing
-# --------------------------------------------------------------------------
 class _ProfileParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -84,12 +77,10 @@ class _ProfileParser(HTMLParser):
         attrs = dict(attrs)
         href = attrs.get("href") or ""
 
-        # Record pagination link numbers (e.g. "?page=2").
         m = _PAGE_RE.search(href)
         if m:
             self.page_numbers.add(int(m.group(1)))
 
-        # Record project links.
         if _PROJECT_RE.match(href):
             self._all_project_hrefs.append(href)
             classes = (attrs.get("class") or "").split()
@@ -120,9 +111,6 @@ def _with_page(url: str, page: int) -> str:
     return f"{url.split('?', 1)[0]}?page={page}"
 
 
-# --------------------------------------------------------------------------
-# HTTP backends: httpx (default), urllib, requests, pycurl, aria2c
-# --------------------------------------------------------------------------
 def check_backend(backend: str) -> None:
     if backend == "requests":
         try:
@@ -219,9 +207,6 @@ def _fetch_pycurl(url: str, timeout: float):
     return buf.getvalue(), effective
 
 
-# --------------------------------------------------------------------------
-# Downloads
-# --------------------------------------------------------------------------
 class FileTooLarge(Exception):
     pass
 
@@ -381,9 +366,6 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
     return size
 
 
-# --------------------------------------------------------------------------
-# Async parallel downloader (httpx only)
-# --------------------------------------------------------------------------
 async def _download_one_async(
     client,
     url: str,
@@ -401,7 +383,6 @@ async def _download_one_async(
             async with client.stream("GET", url) as resp:
                 resp.raise_for_status()
 
-                # Pre-flight size check from Content-Length when present.
                 declared = resp.headers.get("Content-Length")
                 if declared and int(declared) > max_bytes:
                     raise FileTooLarge(f"Content-Length {declared} > {max_bytes}")
@@ -433,9 +414,6 @@ async def _download_all_async(
 
     sem = asyncio.Semaphore(jobs)
 
-    # No connection cap: the semaphore already limits concurrency. This
-    # avoids httpx queueing requests internally while our semaphore is
-    # already holding the "slot".
     limits = httpx.Limits(
         max_connections=None,
         max_keepalive_connections=None,
@@ -469,7 +447,6 @@ def download_all(
         )
         return
 
-    # Sequential fallback for all other backends.
     for url, dest in tasks:
         try:
             written = download_file(url, dest, backend, max_bytes, timeout=timeout)
@@ -479,9 +456,6 @@ def download_all(
             on_event("done", dest, written, None)
 
 
-# --------------------------------------------------------------------------
-# Package discovery
-# --------------------------------------------------------------------------
 def resolve_profile_url(target: str) -> str:
     target = target.strip()
     if "://" in target:
@@ -492,9 +466,8 @@ def resolve_profile_url(target: str) -> str:
 def extract_username(target: str) -> str:
     target = target.strip().rstrip("/")
     if "://" in target:
-        # Take the last path segment of the URL.
         target = target.rsplit("/", 1)[-1]
-    # Sanitise anything that isn't safe for a filename.
+
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", target)
     return safe or "pypi_user"
 
@@ -545,9 +518,6 @@ def _mib(n: int) -> str:
     return f"{n / (1024 * 1024):.2f} MiB"
 
 
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pypi_user_packages.py",
@@ -619,7 +589,6 @@ def main(argv=None) -> int:
     if not args.quiet:
         print(f"Fetching {profile_url} ...", file=sys.stderr)
 
-    # ---- Discover the package list ------------------------------------
     try:
         names, final_url = collect_packages(
             profile_url, args.backend, args.timeout, args.quiet
@@ -635,7 +604,6 @@ def main(argv=None) -> int:
         print("No packages found on that profile page.", file=sys.stderr)
         return 1
 
-    # ---- Always persist the list to <user>.txt ------------------------
     list_path = save_package_list(names, username)
     print(f"{len(names)} package(s) -> {list_path}")
     for name in names:
@@ -644,7 +612,6 @@ def main(argv=None) -> int:
     if not args.download:
         return 0
 
-    # ---- Download each package's latest release -----------------------
     outdir: Path = args.output
     outdir.mkdir(parents=True, exist_ok=True)
     parallel = args.backend == "httpx"
@@ -655,8 +622,6 @@ def main(argv=None) -> int:
         + ")"
     )
 
-    # Build the full task list first so the async runner can fan out
-    # across *all* files from *all* packages at once.
     tasks: list[tuple[str, Path]] = []
     have_count = 0
 
@@ -678,7 +643,6 @@ def main(argv=None) -> int:
             size = int(entry.get("size") or 0)
             url = entry["url"]
 
-            # Pre-flight size check from the JSON metadata.
             if size and size > max_bytes:
                 print(f"    skip {filename} ({_mib(size)} > limit)")
                 continue
@@ -691,7 +655,6 @@ def main(argv=None) -> int:
 
             tasks.append((url, dest))
 
-    # ---- Run the (possibly parallel) downloads ------------------------
     total_files = 0
     failures = 0
 

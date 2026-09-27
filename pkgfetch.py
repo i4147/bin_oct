@@ -97,7 +97,6 @@ SOURCE_SUFFIXES = (
     ".tar",
 )
 
-# Higher number means stronger/preferred digest when multiple hashes are present.
 HASH_PREFERENCE = {
     "sha512": 6,
     "sha384": 5,
@@ -679,8 +678,6 @@ def verify_archive_integrity(path: Path) -> bool:
                         pass
                 return True
             except tarfile.ReadError:
-                # Some uncommon formats may not be supported by Python's tarfile.
-                # A hash validation, if supplied, still verifies exact bytes.
                 logger.debug(
                     "Could not inspect {} as a tar archive; skipping tar read check",
                     path.name,

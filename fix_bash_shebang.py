@@ -15,12 +15,10 @@ def process_file(path: Path) -> None:
         if not lines:
             return
         if lines[0].startswith("#!"):
-            # Update existing shebang
             lines[0] = TARGET_SHEBANG + "\n"
             if len(lines) > 1 and lines[1].strip() != "":
                 lines.insert(1, "\n")
         else:
-            # Add new shebang to file without one
             lines.insert(0, TARGET_SHEBANG + "\n")
             if len(lines) > 1 and lines[1].strip() != "":
                 lines.insert(1, "\n")

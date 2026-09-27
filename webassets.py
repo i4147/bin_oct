@@ -52,9 +52,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-# ============================================================================
-# Optional third-party dependencies (pure-Python backends)
-# ============================================================================
 try:
     from rcssmin import cssmin as _rcssmin  # type: ignore
 except ImportError:  # pragma: no cover
@@ -65,9 +62,6 @@ try:
 except ImportError:  # pragma: no cover
     _rjsmin = None
 
-# ============================================================================
-# Shared helpers (previously in the `dh` module used by originals)
-# ============================================================================
 _NONE_TYPE = type(None)
 
 _ANSI = {
@@ -160,9 +154,6 @@ def require_tool(tool: str, hint: str = "") -> None:
         raise RuntimeError(msg)
 
 
-# ============================================================================
-# Result record
-# ============================================================================
 @dataclass
 class Result:
     path: Path
@@ -233,11 +224,6 @@ def print_summary(results: Sequence[Result], title: str = "Summary") -> None:
     print("=" * 40)
 
 
-# ============================================================================
-# HTML minification
-# ============================================================================
-# Preserved verbatim from hmin.py — passed to html-minifier-terser as a
-# JSON config file.
 HTML_HMIN_CONFIG: dict[str, Any] = {
     "collapseBooleanAttributes": True,
     "collapseInlineTagWhitespace": True,
@@ -268,7 +254,6 @@ HTML_HMIN_CONFIG: dict[str, Any] = {
     "useShortDoctype": True,
 }
 
-# Preserved verbatim from htmin.py — passed as raw CLI flags.
 HTML_HTMIN_FLAGS: list[str] = [
     "--collapse-whitespace",
     "--remove-comments",
@@ -290,7 +275,6 @@ HTML_HTMIN_FLAGS: list[str] = [
     "--decode-entities",
 ]
 
-# Inline tags whose adjacent whitespace hmin.py collapses.
 _INLINE_TAGS = "span|a|strong|em|b|i|code|label"
 _RE_DOCTYPE_LOWER = re.compile(r"<!(doctype)(html)", re.IGNORECASE)
 _RE_DOCTYPE_UPPER = re.compile(r"<!(DOCTYPE)(HTML)")
@@ -391,9 +375,6 @@ def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
         return Result(path, orig, orig, False, str(exc))
 
 
-# ============================================================================
-# CSS minification
-# ============================================================================
 def minify_css_csso(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -433,9 +414,6 @@ def minify_css_rcssmin(path: Path) -> Result:
         return Result(path, orig, orig, False, str(exc))
 
 
-# ============================================================================
-# JS minification
-# ============================================================================
 def minify_js_rjsmin(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -454,9 +432,6 @@ def minify_js_rjsmin(path: Path) -> Result:
         return Result(path, orig, orig, False, str(exc))
 
 
-# ============================================================================
-# JSON minification  (jm2.py + mjb.py merged)
-# ============================================================================
 def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
     path = Path(path)
     orig = file_size(path)
@@ -485,9 +460,6 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
         return Result(path, orig, orig, False, f"cannot write: {exc}")
 
 
-# ============================================================================
-# SVG minification  (pysvg2.py)
-# ============================================================================
 def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> Result:
     path = Path(path)
     if any(s in path.parts for s in skip_parts) or not path.exists():
@@ -524,9 +496,6 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
                 pass
 
 
-# ============================================================================
-# Truncate at last closing tag  (fixsvg.py)
-# ============================================================================
 DEFAULT_TRUNCATE_TAGS: tuple[str, ...] = (
     "</svg>",
     "</html>",
@@ -564,9 +533,6 @@ def truncate_at_last_tag(
     return Result(path, orig, file_size(path), True)
 
 
-# ============================================================================
-# Mixed-mode minifier  (minjch.py)
-# ============================================================================
 _RE_HTML_TAG_GAP = re.compile(r">\s+<")
 _RE_HTML_MULTI_WS = re.compile(r"\s{2,}")
 
@@ -598,9 +564,6 @@ def minify_mixed(path: Path) -> tuple[Path, str]:
         return path, f"ERR ({path}): {exc}"
 
 
-# ============================================================================
-# Meson JSON-docs schema validator  (jsonvalidator.py)
-# ============================================================================
 _MESON_DB: dict[str, Any] = {}
 
 
@@ -807,9 +770,6 @@ def validate_meson_json(doc_file: Path) -> int:
     return 0
 
 
-# ============================================================================
-# CLI: subcommand handlers
-# ============================================================================
 def _collect_files(paths: Sequence[str], extensions: Sequence[str]) -> list[Path]:
     files: list[Path] = []
     for p in paths:
@@ -945,9 +905,6 @@ def cmd_validate_meson_json(args: argparse.Namespace) -> int:
     return 0
 
 
-# ============================================================================
-# CLI: argument parser
-# ============================================================================
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="webassets.py",
@@ -957,7 +914,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    # ---------------- html ----------------
     ph = sub.add_parser("html", help="Minify HTML files.")
     ph.add_argument(
         "paths",
@@ -990,7 +946,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ph.set_defaults(func=cmd_html)
 
-    # ---------------- css ----------------
     pc = sub.add_parser("css", help="Minify CSS files.")
     pc.add_argument("paths", nargs="*", default=["."])
     pc.add_argument(
@@ -1012,7 +967,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pc.set_defaults(func=cmd_css)
 
-    # ---------------- js ----------------
     pj = sub.add_parser("js", help="Minify JS files (rjsmin).")
     pj.add_argument("paths", nargs="*", default=["."])
     pj.add_argument("-j", "--processes", type=int, default=None)
@@ -1021,7 +975,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pj.set_defaults(func=cmd_js)
 
-    # ---------------- json ----------------
     pq = sub.add_parser("json", help="Minify JSON files.")
     pq.add_argument("paths", nargs="*", default=["."])
     pq.add_argument(
@@ -1037,7 +990,6 @@ def build_parser() -> argparse.ArgumentParser:
     pq.add_argument("--ext", default=".json")
     pq.set_defaults(func=cmd_json)
 
-    # ---------------- svg ----------------
     ps = sub.add_parser("svg", help="Optimise SVG files (svgcleaner).")
     ps.add_argument("paths", nargs="*", default=["."])
     ps.add_argument(
@@ -1050,7 +1002,6 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("--ext", default=".svg")
     ps.set_defaults(func=cmd_svg)
 
-    # ---------------- truncate ----------------
     pt = sub.add_parser(
         "truncate", help="Truncate files at their last closing tag (fixsvg.py)."
     )
@@ -1070,7 +1021,6 @@ def build_parser() -> argparse.ArgumentParser:
     pt.add_argument("-j", "--processes", type=int, default=None)
     pt.set_defaults(func=cmd_truncate)
 
-    # ---------------- mixed ----------------
     pm = sub.add_parser(
         "mixed", help="Dispatch CSS/JSON/HTML by extension (minjch.py)."
     )
@@ -1079,7 +1029,6 @@ def build_parser() -> argparse.ArgumentParser:
     pm.add_argument("-j", "--processes", type=int, default=None)
     pm.set_defaults(func=cmd_mixed)
 
-    # ---------------- validate-meson-json ----------------
     pv = sub.add_parser("validate-meson-json", help="Validate a Meson JSON-docs file.")
     pv.add_argument(
         "doc_file", type=Path, help="Path to the JSON docs file to validate."
@@ -1089,9 +1038,6 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-# ============================================================================
-# Entry point
-# ============================================================================
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)

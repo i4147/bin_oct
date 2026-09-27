@@ -29,10 +29,9 @@ class TypeAnnotationStripper(ast.NodeTransformer):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
         if node.value is not None:
-            # Convert `variable: type = value` -> `variable = value`
             new_node = ast.Assign(targets=[node.target], value=node.value)
             return ast.copy_location(new_node, node)
-        # If no value (e.g., just `variable: type`), replace with `pass` to avoid empty body syntax errors
+
         pass_node = ast.Pass()
         return ast.copy_location(pass_node, node)
 
@@ -53,7 +52,6 @@ def process_file(path: str | Path) -> tuple[str, str] | None:
         code = p.read_text(encoding="utf-8")
         parsed = ast.parse(code)
 
-        # Strip type annotations for pure logic comparison
         stripper = TypeAnnotationStripper()
         parsed = stripper.visit(parsed)
         ast.fix_missing_locations(parsed)
@@ -62,7 +60,6 @@ def process_file(path: str | Path) -> tuple[str, str] | None:
         digest = xxh64_hexdigest(unparsed.encode("utf-8"))
         return digest, str(p)
     except Exception:
-        # Safely ignore files that raise SyntaxError or UnicodeDecodeError
         return None
 
 
@@ -72,7 +69,6 @@ def main() -> None:
 
     file_dict: dict[str, list[str]] = {}
 
-    # Run in parallel and filter out None results from un-parsable files
     raw_results = mpf(process_file, files)
     results: list[tuple[str, str]] = [res for res in raw_results if res is not None]
 
@@ -90,7 +86,6 @@ def main() -> None:
         if len(paths) <= 1:
             continue
 
-        # Keep the first file, delete the duplicates
         for path in paths[1:]:
             file_path = Path(path)
             if file_path.exists():

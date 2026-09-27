@@ -54,9 +54,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, NamedTuple, Sequence
 
-# ---------------------------------------------------------------------------
-# Optional dependencies
-# ---------------------------------------------------------------------------
 try:
     import libcst as cst
     from libcst import matchers as _m
@@ -92,9 +89,6 @@ except ImportError:  # pragma: no cover
         print(f"WARNING: {msg}", file=sys.stderr)
 
 
-# ---------------------------------------------------------------------------
-# Constants (defaults match original scripts)
-# ---------------------------------------------------------------------------
 DEFAULT_WORKERS: int = 8
 DEFAULT_EXCLUDES: frozenset[str] = frozenset(
     {
@@ -115,9 +109,6 @@ DEFAULT_EXCLUDES: frozenset[str] = frozenset(
 FILE_COMMENT_KEYWORDS: tuple[str, ...] = ("coding", "encoding", "type:", "fmt:")
 
 
-# ---------------------------------------------------------------------------
-# Common helpers: file discovery, IO, error handling
-# ---------------------------------------------------------------------------
 def _looks_like_python_script(path: Path) -> bool:
     try:
         with path.open("r", encoding="utf-8") as fh:
@@ -190,9 +181,6 @@ def run_parallel(
     return results
 
 
-# ---------------------------------------------------------------------------
-# Shebang / leading-comment extraction (used by ast-based strippers)
-# ---------------------------------------------------------------------------
 def split_leading_comments(src: str) -> tuple[str, str]:
     lines = src.splitlines(keepends=True)
     header: list[str] = []
@@ -216,10 +204,6 @@ def split_leading_comments(src: str) -> tuple[str, str]:
     return "".join(header), "".join(lines[i:]) if i < len(lines) else ""
 
 
-# ===========================================================================
-# SUBCOMMAND: libcst
-#   Covers: aremci.py, cleanpy2.py, grmc.py, rrmc.py
-# ===========================================================================
 if _HAS_LIBCST:
 
     def _is_plain_string(stmt: "cst.BaseStatement", binary_check: bool) -> bool:
@@ -254,7 +238,6 @@ if _HAS_LIBCST:
             self.comments_removed = 0
             self.docstrings_removed = 0
 
-        # ---- comments -----------------------------------------------------
         def leave_Comment(
             self, original: "cst.Comment", updated: "cst.Comment"
         ) -> "cst.Comment | cst.RemovalSentinel":
@@ -270,7 +253,6 @@ if _HAS_LIBCST:
             self.comments_removed += 1
             return cst.RemoveFromParent()
 
-        # ---- docstrings ---------------------------------------------------
         def _strip_body(
             self, body: Sequence["cst.BaseStatement"]
         ) -> tuple["cst.BaseStatement", ...]:
@@ -390,7 +372,6 @@ if _HAS_LIBCST:
         new_module = module.visit(stripper)
         out = new_module.code
 
-        # Reattach shebang if libcst dropped it (defensive).
         if preserve_shebang and src.startswith("#!") and not out.startswith("#!"):
             first_line = src.splitlines(keepends=True)[0]
             out = first_line + out
@@ -445,7 +426,7 @@ if _HAS_LIBCST:
         ]
 
         total_c = total_d = total_changed = total_err = 0
-        # Run in ProcessPool when multiprocessing is available; else serial.
+
         try:
             ctx = mp.get_context("spawn")
             with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
@@ -492,10 +473,6 @@ if _HAS_LIBCST:
             print(f"Errors              : {errs}")
 
 
-# ===========================================================================
-# SUBCOMMAND: ast (ast.unparse / astor)
-#   Covers: cormc.py, rmco.py
-# ===========================================================================
 class _DocstringStripper(ast.NodeTransformer):
     def __init__(self) -> None:
         super().__init__()
@@ -597,13 +574,11 @@ def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTRes
     if not src.strip():
         return _ASTResult(path, False, None, 0, 0)
 
-    # Split & save header (shebang / coding / fmt / type)
     if preserve_shebang or preserve_file_comments:
         header, _body = split_leading_comments(src)
     else:
         header = ""
 
-    # Preserve inline type/fmt/noqa comments.
     kept_comments, comment_count = _extract_kept_comments(src, keep_noqa)
 
     try:
@@ -696,10 +671,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
     return 2 if errs else 0
 
 
-# ===========================================================================
-# SUBCOMMAND: regex
-#   Covers: pyjtc.py, rmmc.py
-# ===========================================================================
 _LANG_EXTS: dict[str, str] = {
     "c": "c",
     "cpp": "cpp",
@@ -775,7 +746,7 @@ def cmd_regex(args: argparse.Namespace) -> int:
         files = gather_python_files(
             args.paths, args.exclude, include_shebang_scripts=True
         )
-        # also pick up other extensions
+
         for p in args.paths:
             root = Path(p).resolve()
             if root.is_dir():
@@ -823,10 +794,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
     return 2 if errs else 0
 
 
-# ===========================================================================
-# SUBCOMMAND: unused
-#   Covers: clean_py.py
-# ===========================================================================
 class _UnusedCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.func_defs: set[str] = set()
@@ -984,10 +951,6 @@ def cmd_unused(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# SUBCOMMAND: jtc (just-the-code wrapper)
-#   Covers: jtc.py, jtc2.py
-# ===========================================================================
 def _detect_jtc_language(path: Path, override: str) -> str | None:
     if override == "python":
         return "python"
@@ -1087,9 +1050,6 @@ def cmd_jtc(args: argparse.Namespace) -> int:
     return 2 if errs else 0
 
 
-# ===========================================================================
-# CLI construction
-# ===========================================================================
 def _add_common_options(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths", nargs="*", default=["."], help="Files or directories (default: cwd)."
@@ -1118,7 +1078,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # ---- libcst ----------------------------------------------------------
     p_libcst = sub.add_parser(
         "libcst",
         help="Strip comments/docstrings using libcst (aremci/cleanpy2/grmc/rrmc).",
@@ -1150,7 +1109,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_libcst.set_defaults(func=cmd_libcst)
 
-    # ---- ast -------------------------------------------------------------
     p_ast = sub.add_parser(
         "ast",
         help="Strip comments/docstrings using ast + ast.unparse (cormc) or astor (rmco).",
@@ -1175,7 +1133,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ast.set_defaults(func=cmd_ast)
 
-    # ---- regex -----------------------------------------------------------
     p_reg = sub.add_parser(
         "regex",
         help="Regex-based stripping (pyjtc for multi-lang, rmmc for '#...' only).",
@@ -1199,14 +1156,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_reg.set_defaults(func=cmd_regex)
 
-    # ---- unused ----------------------------------------------------------
     p_un = sub.add_parser(
         "unused", help="Remove unused functions/classes/variables/imports (clean_py)."
     )
     _add_common_options(p_un)
     p_un.set_defaults(func=cmd_unused)
 
-    # ---- jtc -------------------------------------------------------------
     p_jtc = sub.add_parser("jtc", help="Run 'just-the-code' on files (jtc / jtc2).")
     _add_common_options(p_jtc)
     p_jtc.add_argument(
@@ -1220,14 +1175,10 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# ===========================================================================
-# Entry point
-# ===========================================================================
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # Normalise `paths` if user passed nothing.
     if not getattr(args, "paths", None):
         args.paths = ["."]
 

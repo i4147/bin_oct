@@ -18,7 +18,6 @@ def main():
     with json_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Support both dict {orig: translated} and list of {"orig": ..., "translated": ...}
     if isinstance(data, dict):
         items = list(data.items())
     elif isinstance(data, list):
@@ -36,7 +35,6 @@ def main():
         else:
             good.append((orig, translated))
 
-    # Rebuild in same structure as input
     if isinstance(data, dict):
         good_data = dict(good)
     else:
@@ -47,7 +45,6 @@ def main():
 
     print(f"Kept {len(good)} records in {json_path}")
 
-    # Only write failed.txt if there are failures
     if not failed:
         print("No failed records — skipped creating failed.txt")
         return
@@ -55,7 +52,6 @@ def main():
     failed_path = json_path.with_name("failed.txt")
 
     if failed_path.exists():
-        # Append, ensuring we start on a new line
         existing = failed_path.read_text(encoding="utf-8")
         with failed_path.open("a", encoding="utf-8") as f:
             if existing and not existing.endswith("\n"):

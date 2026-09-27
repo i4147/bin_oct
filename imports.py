@@ -29,7 +29,6 @@ from typing import List, Set, Tuple
 
 from dh import STDLIB, get_installed_pkgs
 
-# Constants for multiprocessing
 NUM_WORKERS = 8
 
 SKIP_DIRS: set[str] = {
@@ -118,7 +117,6 @@ def find_imports_for_directory(
 
     all_imports: set[str] = set()
 
-    # Use multiprocessing Pool for parallel processing
     with Pool(processes=NUM_WORKERS) as pool:
         results = pool.map(_process_file, files)
 
@@ -350,7 +348,6 @@ def main() -> None:
             if show_progress:
                 start_time = time.time()
 
-            # Process files in parallel using Pool
             with Pool(processes=NUM_WORKERS) as pool:
                 results = pool.map(_process_file, dir_files)
 

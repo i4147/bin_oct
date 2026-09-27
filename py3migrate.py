@@ -74,14 +74,8 @@ from functools import partial
 from pathlib import Path
 from typing import Iterable, Sequence
 
-# ---------------------------------------------------------------------------
-# Logging
-# ---------------------------------------------------------------------------
 log = logging.getLogger("py3migrate")
 
-# ---------------------------------------------------------------------------
-# Defaults (from the originals)
-# ---------------------------------------------------------------------------
 DEFAULT_EXT: tuple[str, ...] = (".py",)
 DEFAULT_WORKERS: int = 8
 DEFAULT_FIXER_MODULE: str = "lib2to3.fixes"
@@ -91,7 +85,6 @@ DEFAULT_TAG: str = "Tag:py2-none-any"
 DEFAULT_TARGETS: tuple[str, ...] = ("WHEEL",)
 ARCHIVE_EXTS: tuple[str, ...] = (".zip", ".whl", ".tar.gz", ".tgz", ".tar")
 
-# Fallback list from 2232.py, used if lib2to3.fixes cannot be imported.
 FALLBACK_FIXERS: tuple[str, ...] = (
     "lib2to3.fixes.fix_apply",
     "lib2to3.fixes.fix_asserts",
@@ -146,9 +139,6 @@ FALLBACK_FIXERS: tuple[str, ...] = (
 )
 
 
-# ===========================================================================
-# Shared helpers
-# ===========================================================================
 def iter_files(
     paths: Iterable[Path],
     exts: Sequence[str] = DEFAULT_EXT,
@@ -193,9 +183,6 @@ def _write(path: Path, text: str, *, backup: bool) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-# ===========================================================================
-# Fixer discovery (refactor subcommand)
-# ===========================================================================
 def discover_fixers(fixer_module: str = DEFAULT_FIXER_MODULE) -> list[str]:
     try:
         import importlib
@@ -218,9 +205,6 @@ def resolve_fixers(spec: str, fixer_module: str) -> list[str]:
     return [f.strip() for f in spec.split(",") if f.strip()]
 
 
-# ===========================================================================
-# lib2to3 refactoring core
-# ===========================================================================
 def _import_refactoring_tool():
     try:
         from lib2to3.refactor import RefactoringTool  # type: ignore
@@ -345,9 +329,6 @@ def _refactor_file(
     return (path, True, f"✓ {path.name}: changed{detail}{log_block}")
 
 
-# ===========================================================================
-# detect subcommand (is2or3.py)
-# ===========================================================================
 def detect_file(path: Path) -> tuple[Path, int | None, str]:
     try:
         text = read_text(path)
@@ -412,9 +393,6 @@ def cmd_detect(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# refactor subcommand
-# ===========================================================================
 def cmd_refactor(args: argparse.Namespace) -> int:
     fixers = resolve_fixers(args.fixers, args.fixer_module)
     if not fixers:
@@ -463,9 +441,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
     return 0 if failed == 0 else 1
 
 
-# ===========================================================================
-# fixprint subcommand (f23.py + 2to3ruff.py)
-# ===========================================================================
 PRINT_BARE_RE = re.compile(r"^(\s*)print\s*$")
 PRINT_REDIRECT_RE = re.compile(r"^(\s*)print\s+>>\s*(\w+)\s*,\s*(.+?)(\s*#.*)?$")
 PRINT_PLAIN_RE = re.compile(r"^(\s*)print\s+(?!\()(.+?)(\s*#.*)?$")
@@ -588,9 +563,6 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# run2to3 subcommand (run223.py)
-# ===========================================================================
 def _run_2to3_cli(path: Path) -> tuple[Path, bool, str]:
     if not path.is_file():
         return (path, False, f"✗ {path.name}: file not found")
@@ -621,9 +593,6 @@ def cmd_run2to3(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# strip-tag subcommand (nopy2.py)
-# ===========================================================================
 def _strip_tag_from_text(text: str, tag: str) -> str:
     out = "\n".join(l for l in text.splitlines() if not l.startswith(tag))
     if text.endswith("\n"):
@@ -749,9 +718,6 @@ def cmd_strip_tag(args: argparse.Namespace) -> int:
     return 0
 
 
-# ===========================================================================
-# CLI
-# ===========================================================================
 def _add_common_opts(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "paths",
@@ -785,7 +751,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # --- detect -----------------------------------------------------------
     d = sub.add_parser("detect", help="Detect Py2 vs Py3 in source files.")
     _add_common_opts(d)
     d.add_argument(
@@ -795,7 +760,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File extensions to scan (default: {list(DEFAULT_EXT)}).",
     )
 
-    # --- refactor ---------------------------------------------------------
     r = sub.add_parser(
         "refactor",
         help="Rewrite Py2 → Py3 using lib2to3 fixers (dry-run by default).",
@@ -862,7 +826,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Capture and print the RefactoringTool log (2232.py).",
     )
 
-    # --- fixprint ---------------------------------------------------------
     f = sub.add_parser(
         "fixprint",
         help="Line-based fixes for `print x` and (with --all) `except X, e:` etc.",
@@ -898,14 +861,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not write backups (f23.py -f).",
     )
 
-    # --- run2to3 ----------------------------------------------------------
     r2 = sub.add_parser(
         "run2to3",
         help="Shell out to the external `2to3 -w -n -f all` CLI (run223.py).",
     )
     _add_common_opts(r2)
 
-    # --- strip-tag --------------------------------------------------------
     s = sub.add_parser(
         "strip-tag",
         help="Strip a `Tag:py2-none-any` line from WHEEL members in archives.",
