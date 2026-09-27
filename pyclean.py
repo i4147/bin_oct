@@ -77,7 +77,6 @@ RESET = "\x1b[0m"
 # Shared helpers
 # ===========================================================================
 def _is_docstring_node(node: ast.AST) -> bool:
-    """True if `node` is a bare string-literal expression (a docstring candidate)."""
     return (
         isinstance(node, ast.Expr)
         and isinstance(node.value, ast.Constant)
@@ -94,7 +93,6 @@ def _is_valid_python(source: str) -> bool:
 
 
 def _read_source(path: Path) -> Optional[str]:
-    """Read text with utf-8 then latin-1 fallback; returns None on failure."""
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -107,7 +105,6 @@ def _read_source(path: Path) -> Optional[str]:
 
 
 def _collect_py_files(paths: Sequence[Path], recursive: bool = True) -> list[Path]:
-    """Return all `.py` files under `paths` (files passed through, dirs walked)."""
     out: list[Path] = []
     seen: set[Path] = set()
     for p in paths:
@@ -141,11 +138,6 @@ def _default_paths(raw: Sequence[str]) -> list[Path]:
 def strip_ast_rewrite(
     source: str, *, preserve_module_docstring: bool = True
 ) -> tuple[str, int]:
-    """
-    Remove docstrings via AST line/col spans, splicing the original text.
-
-    Preserves comments, formatting, and everything else.
-    """
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -198,8 +190,6 @@ def strip_ast_rewrite(
 
 # ---- engine 2: AST + unparse (brmc2.py) -----------------------------------
 class _DocstringStripper(ast.NodeTransformer):
-    """NodeTransformer that removes docstrings, optionally preserving module one."""
-
     def __init__(self, preserve_module_docstring: bool = True) -> None:
         super().__init__()
         self.preserve_module_docstring = preserve_module_docstring
@@ -255,7 +245,6 @@ def _count_docstrings(tree: ast.AST, preserve_module: bool) -> int:
 def strip_ast_unparse(
     source: str, *, preserve_module_docstring: bool = True
 ) -> tuple[Optional[str], int]:
-    """Remove docstrings by re-unparsing the tree (loses comments/formatting)."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -273,7 +262,6 @@ def strip_ast_unparse(
 
 # ---- engine 3: line-number deletion + regex fallback (remc.py) ------------
 def _regex_fallback(source: str) -> tuple[str, int]:
-    """Triple-quote-aware regex stripper used when `ast.parse` fails."""
     lines = source.split("\n")
     out: list[str] = []
     count = 0
@@ -324,7 +312,6 @@ def _regex_fallback(source: str) -> tuple[str, int]:
 def strip_text_fallback(
     source: str, *, preserve_module_docstring: bool = True
 ) -> tuple[str, int]:
-    """AST-driven whole-line deletion of docstrings, with regex fallback."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -351,7 +338,6 @@ def strip_text_fallback(
 
 
 def _tidy(source: str) -> str:
-    """Collapse blank-line runs and strip trailing whitespace (remc.py)."""
     source = re.sub(r"\n\n+", "\n", source)
     return "\n".join(line.rstrip() for line in source.split("\n"))
 
@@ -369,8 +355,6 @@ def _libcst_is_docstring_line(node) -> bool:  # noqa: ANN001
 
 
 class _LibCSTStripper(cst.CSTTransformer):
-    """Removes comments and non-module docstrings using libcst."""
-
     def __init__(
         self,
         *,
@@ -454,11 +438,6 @@ def strip_libcst(
     preserve_shebang: bool = True,
     preserve_fmt_type: bool = True,
 ) -> tuple[Optional[str], int, int]:
-    """
-    Strip docstrings (and optionally comments) with libcst.
-
-    Returns (new_source, comments_removed, docstrings_removed) or (None, 0, 0).
-    """
     if not HAS_LIBCST:
         return None, 0, 0
 
@@ -496,7 +475,6 @@ def strip_libcst(
 def _process_strip(
     path_str: str, opts: dict
 ) -> Optional[tuple[str, int, int, bool, Optional[str]]]:
-    """Run the selected engine on one file.  Returns a result tuple or None."""
     path = Path(path_str)
     src = _read_source(path)
     if src is None:
@@ -620,7 +598,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
 # Subcommand: check  (check_rmc.py)
 # ===========================================================================
 def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bool]]]:
-    """Return (path, [(lineno0, line_text, is_docstring)])."""
     path = Path(path_str)
     findings: list[tuple[int, str, bool]] = []
 
@@ -735,7 +712,6 @@ def _default_module_pattern(name: str) -> re.Pattern[str]:
 def _clean_module_doc_worker(
     job: tuple[str, int, Optional[str]],
 ) -> Optional[tuple[str, bool, Optional[int]]]:
-    """Return (path, changed, removed_lineno1) or None if nothing to do."""
     path_str, top_n, pattern_str = job
     path = Path(path_str)
 

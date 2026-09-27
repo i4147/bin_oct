@@ -17,15 +17,12 @@ DRY_RUN: Final[bool] = "-d" in sys.argv
 
 
 class MoveResult(NamedTuple):
-    """Outcome of moving a single `tests` directory."""
-
     path: Path
     success: bool
     message: str
 
 
 def _is_excluded(path: Path) -> bool:
-    """Return ``True`` if ``path`` lies under any package listed in :data:`EXCLUDED`."""
     parts: tuple[str, ...] = path.parts
     return any(name in parts for name in EXCLUDED)
 
@@ -36,11 +33,6 @@ def move_tests_folder(
     base_dst: Path,
     dry_run: bool = DRY_RUN,
 ) -> MoveResult:
-    """Move one `tests` directory from ``base_src`` into the mirrored ``base_dst`` path.
-
-    Returns a :class:`MoveResult` describing the outcome. When ``dry_run`` is
-    ``True`` no filesystem changes are made.
-    """
     if _is_excluded(tests_path):
         return MoveResult(tests_path, False, f"excluded path: {tests_path}")
 
@@ -65,11 +57,6 @@ def move_tests_recursive(
     destination_dir: Path = DEST,
     dry_run: bool = DRY_RUN,
 ) -> int:
-    """Move all `tests` directories discovered under ``source_dir`` in parallel.
-
-    Returns the number of directories successfully moved (or that would be
-    moved, when ``dry_run`` is enabled).
-    """
     source: Path = source_dir.resolve()
     destination: Path = destination_dir
 
@@ -110,7 +97,6 @@ def move_tests_recursive(
 
 
 def main() -> None:
-    """CLI entry point."""
     move_tests_recursive()
 
 

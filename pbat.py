@@ -98,9 +98,6 @@ class BatConfig:
 
 
 class GitDiffCalculator:
-    """Determine per-line git status (added / modified / removed) for a file
-    by shelling out to `git diff`."""
-
     def __init__(self, path: Path):
         self.path = path
         self.added: set = set()

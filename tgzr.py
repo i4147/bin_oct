@@ -20,14 +20,6 @@ _WORKERS: int = 8
 
 
 def _remove_item(path: Path) -> None:
-    """Remove a single filesystem entry.
-
-    Directories (including symlinks to directories are treated as files first)
-    are removed recursively; everything else is unlinked.
-
-    Args:
-        path: The filesystem entry to remove.
-    """
     if path.is_dir() and not path.is_symlink():
         shutil.rmtree(path)
     else:
@@ -35,14 +27,6 @@ def _remove_item(path: Path) -> None:
 
 
 def remove_items_fast(items: Iterable[Path]) -> None:
-    """Remove multiple filesystem entries concurrently.
-
-    Uses a fixed-size :class:`multiprocessing.Pool` with ``apply_async`` to
-    delete each item in parallel and blocks until all deletions complete.
-
-    Args:
-        items: An iterable of :class:`Path` objects to delete.
-    """
     item_list: list[Path] = list(items)
     if not item_list:
         return
@@ -54,15 +38,6 @@ def remove_items_fast(items: Iterable[Path]) -> None:
 
 
 def compress_and_cleanup(root: Path = Path()) -> None:
-    """Archive ``root`` into a tarball and delete its contents.
-
-    The archive is written to ``root.parent / f"{root.name}.tar.gz"`` and is
-    itself excluded from the cleanup step.
-
-    Args:
-        root: Directory to archive and clean up. Defaults to the current
-            working directory.
-    """
     root = root.resolve()
     archive_name: str = f"{root.name}.tar.gz"
     archive_path: Path = root.parent / archive_name

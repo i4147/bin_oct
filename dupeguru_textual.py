@@ -43,8 +43,6 @@ from textual.widgets import (
 
 @dataclass
 class FileEntry:
-    """Represents a file with its metadata."""
-
     path: Path
     size: int
     hash: str | None = None
@@ -56,8 +54,6 @@ class FileEntry:
 
 @dataclass
 class DuplicateGroup:
-    """A group of duplicate files."""
-
     files: list[FileEntry] = field(default_factory=list)
     match_score: float = 100.0
     reason: str = "exact"
@@ -74,7 +70,6 @@ class DuplicateGroup:
 
 
 def format_size(size_bytes: int) -> str:
-    """Format bytes into human-readable string."""
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.2f} {unit}"
@@ -83,7 +78,6 @@ def format_size(size_bytes: int) -> str:
 
 
 def compute_file_hash(path: Path, chunk_size: int = 8192) -> str:
-    """Compute SHA-256 hash of file contents."""
     sha256 = hashlib.sha256()
     with path.open("rb") as f:
         while chunk := f.read(chunk_size):
@@ -92,10 +86,6 @@ def compute_file_hash(path: Path, chunk_size: int = 8192) -> str:
 
 
 def normalize_filename(filename: str) -> list[str]:
-    """
-    Normalize filename for fuzzy matching.
-    Splits into words, removes common separators, lowercases.
-    """
     import re
 
     # Remove extension
@@ -108,11 +98,6 @@ def normalize_filename(filename: str) -> list[str]:
 def fuzzy_match_score(
     words1: list[str], words2: list[str], similarity_threshold: float = 0.8
 ) -> float:
-    """
-    Calculate fuzzy match score between two word lists.
-    Uses a combination of word matching and sequence similarity.
-    Returns percentage (0-100).
-    """
     if not words1 or not words2:
         return 0.0
 
@@ -133,8 +118,6 @@ def fuzzy_match_score(
 
 
 class DuplicateFinder:
-    """Core duplicate detection engine."""
-
     def __init__(
         self,
         scan_mode: str = "contents",  # "filename" or "contents"
@@ -149,7 +132,6 @@ class DuplicateFinder:
         self.progress_callback = None
 
     def scan_directory(self, root: Path, progress_callback=None) -> None:
-        """Scan directory tree for files."""
         self.progress_callback = progress_callback
         self.files = []
 
@@ -179,7 +161,6 @@ class DuplicateFinder:
                 continue
 
     def find_duplicates(self, progress_callback=None) -> list[DuplicateGroup]:
-        """Find duplicate files based on scan mode."""
         self.duplicates = []
 
         if self.scan_mode == "filename":
@@ -190,7 +171,6 @@ class DuplicateFinder:
         return self.duplicates
 
     def _find_by_filename(self, progress_callback=None) -> None:
-        """Find duplicates by filename with fuzzy matching."""
         # Group by normalized filename
         groups: dict[str, list[FileEntry]] = defaultdict(list)
 
@@ -241,7 +221,6 @@ class DuplicateFinder:
                         )
 
     def _find_by_contents(self, progress_callback=None) -> None:
-        """Find duplicates by file contents (SHA-256)."""
         # First group by size (quick filter)
         by_size: dict[int, list[FileEntry]] = defaultdict(list)
         for file in self.files:
@@ -284,8 +263,6 @@ class DuplicateFinder:
 
 
 class ScanSettings(Widget):
-    """Configuration panel for scan settings."""
-
     DEFAULT_CSS = """
     ScanSettings {
         width: 100%;
@@ -350,8 +327,6 @@ class ScanSettings(Widget):
 
 
 class ResultsTable(Widget):
-    """Display duplicate groups in a table."""
-
     DEFAULT_CSS = """
     ResultsTable {
         width: 100%;
@@ -404,8 +379,6 @@ class ResultsTable(Widget):
 
 
 class ScanProgress(ModalScreen):
-    """Modal screen showing scan progress."""
-
     DEFAULT_CSS = """
     ScanProgress {
         align: center middle;
@@ -463,8 +436,6 @@ class ScanProgress(ModalScreen):
 
 
 class DupeGuruApp(App):
-    """Main Textual application for dupeguru-ng."""
-
     TITLE = "dupeguru-ng"
     SUB_TITLE = "Duplicate File Finder"
 
@@ -564,13 +535,11 @@ class DupeGuruApp(App):
 
     @on(DirectoryTree.FileSelected)
     def on_file_selected(self, event: DirectoryTree.FileSelected) -> None:
-        """Handle file selection in tree (navigate to parent)."""
         self.selected_path = event.path.parent
         self._update_path_display()
 
     @on(DirectoryTree.DirectorySelected)
     def on_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
-        """Handle directory selection."""
         self.selected_path = event.path
         self._update_path_display()
 
@@ -596,7 +565,6 @@ class DupeGuruApp(App):
         self.action_clear()
 
     def action_scan(self) -> None:
-        """Start scanning for duplicates."""
         if not self.selected_path:
             return
 
@@ -631,7 +599,6 @@ class DupeGuruApp(App):
             self.call_after_refresh(self.pop_screen)
 
     def _display_results(self) -> None:
-        """Display scan results in table."""
         results = self.query_one("#results", ResultsTable)
         results.update_results(self.finder.duplicates)
 
@@ -649,7 +616,6 @@ class DupeGuruApp(App):
         self.notify(f"Found {total_dupes} duplicate groups", severity="information")
 
     def action_clear(self) -> None:
-        """Clear results."""
         results = self.query_one("#results", ResultsTable)
         results.update_results([])
 
@@ -660,7 +626,6 @@ class DupeGuruApp(App):
         self.notify("Results cleared", severity="information")
 
     def action_refresh(self) -> None:
-        """Refresh current scan."""
         if self.finder.duplicates:
             self._display_results()
         else:
@@ -673,7 +638,6 @@ class DupeGuruApp(App):
 
 
 def main() -> None:
-    """Main entry point."""
     import argparse
 
     parser = argparse.ArgumentParser(

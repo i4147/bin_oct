@@ -24,16 +24,6 @@ ConvertResult = tuple[Path, bool, str]
 
 
 def detect_encoding(file_path: Path) -> str:
-    """
-    Detect the encoding of ``file_path`` using chardet on a leading sample.
-
-    Args:
-        file_path: File whose encoding should be detected.
-
-    Returns:
-        The detected encoding name, defaulting to ``"utf-8"`` on failure or
-        when chardet returns no encoding.
-    """
     try:
         with file_path.open("rb") as f:
             raw_data: bytes = f.read(SAMPLE_SIZE)
@@ -47,16 +37,6 @@ def detect_encoding(file_path: Path) -> str:
 
 
 def convert_file(file_path: Path) -> ConvertResult:
-    """
-    Convert a single file to UTF-8 in place if it is not already UTF-8.
-
-    Args:
-        file_path: Path to the file to process.
-
-    Returns:
-        A tuple ``(path, success, message)`` where ``success`` is ``True`` for
-        converted or already-UTF8 files, ``False`` for skipped or errored files.
-    """
     try:
         if is_binary(file_path):
             return file_path, False, "Skipped (binary/unsupported)"
@@ -76,16 +56,6 @@ def convert_file(file_path: Path) -> ConvertResult:
 
 
 def collect_files(paths: list[str]) -> Generator[Path, None, None]:
-    """
-    Yield resolved file paths from the given files and directories.
-
-    Args:
-        paths: File or directory path strings.
-
-    Yields:
-        Resolved ``Path`` objects. Directories are traversed recursively.
-        Non-existent paths are logged as warnings and skipped.
-    """
     for path_str in paths:
         path: Path = Path(path_str).resolve()
         if path.is_file():
@@ -99,7 +69,6 @@ def collect_files(paths: list[str]) -> Generator[Path, None, None]:
 
 
 def main() -> int:
-    """Parse CLI arguments and convert files in parallel."""
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Convert non-UTF8 files to UTF8 encoding (in-place)",
         formatter_class=argparse.RawDescriptionHelpFormatter,

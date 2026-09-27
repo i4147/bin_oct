@@ -163,13 +163,6 @@ def err(msg: str) -> None:
 
 @dataclass
 class Occurrence:
-    """One place a block was found in a file.
-
-    `start` / `end` are 0-based inclusive line indices in the original file.
-    `raw_lines` holds the block's original lines with their newline characters
-    (used for removal). `normalized` is the string used as the group key.
-    """
-
     path: Path
     start: int
     end: int
@@ -183,7 +176,6 @@ class Occurrence:
 
 
 def _is_binary(path: Path) -> bool:
-    """mlic2.py's binary check: presence of a NUL byte in the first KiB."""
     try:
         with path.open("rb") as f:
             chunk = f.read(1024)
@@ -193,7 +185,6 @@ def _is_binary(path: Path) -> bool:
 
 
 def _is_probably_text(path: Path) -> bool:
-    """mlic2.py's heuristic for extensionless files: >80% printable bytes."""
     try:
         with path.open("rb") as f:
             chunk = f.read(1024)
@@ -208,13 +199,6 @@ def _is_probably_text(path: Path) -> bool:
 def collect_files(
     root: Path, *, block_mode: str, extensions: Optional[set[str]]
 ) -> list[Path]:
-    """Return candidate files under `root` for the chosen block-mode.
-
-    paragraph  -- extension whitelist (mlic/mlic2), plus heuristic for
-                  extensionless files and binary blacklist.
-    comment    -- `.py` files only (pylic).
-    segment    -- any non-binary file (tlic).
-    """
     if block_mode == "comment":
         wanted = extensions or {".py"}
     elif block_mode == "segment":
@@ -253,14 +237,12 @@ def collect_files(
 
 
 def _normalize(lines: Sequence[str]) -> str:
-    """Join lines with newline, strip trailing whitespace on each, strip whole."""
     return "\n".join(l.rstrip() for l in lines).strip()
 
 
 def extract_paragraph_blocks(
     lines: list[str], min_lines: int, min_chars: int
 ) -> list[Occurrence]:
-    """mlic/mlic2: consecutive non-blank lines form a block."""
     blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
@@ -290,7 +272,6 @@ def extract_paragraph_blocks(
 
 
 def _is_generic_comment(line: str) -> bool:
-    """pylic.py: a `#`-comment that isn't a shebang / directive / tool marker."""
     s = line.strip()
     if not s.startswith("#"):
         return False
@@ -298,7 +279,6 @@ def _is_generic_comment(line: str) -> bool:
 
 
 def extract_comment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]:
-    """pylic.py: runs of consecutive generic `#` lines become blocks."""
     blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
@@ -328,7 +308,6 @@ def extract_comment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]
 
 
 def extract_segment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]:
-    """tlic.py: segments are delimited by lines starting with `#!`."""
     blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
@@ -360,7 +339,6 @@ def extract_segment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]
 def extract_blocks(
     path: Path, block_mode: str, min_lines: int, min_chars: int
 ) -> list[Occurrence]:
-    """Dispatch to the right extractor for the given mode."""
     try:
         with path.open("r", encoding="utf-8", errors="replace") as f:
             lines = f.readlines()
@@ -401,7 +379,6 @@ def scan_directory(
     extensions: Optional[set[str]],
     workers: int,
 ) -> dict[str, list[Occurrence]]:
-    """Group occurrences of identical blocks across all files under `root`."""
     files = collect_files(root, block_mode=block_mode, extensions=extensions)
     if not files:
         info("No text files found.")
@@ -443,7 +420,6 @@ def _preview(text: str, limit: int = 200) -> str:
 
 
 def print_report(groups: dict[str, list[Occurrence]]) -> None:
-    """Print the found blocks to stdout (mirrors mlic/mlic2/pylic/tlic)."""
     if not groups:
         print("No repeated multiline blocks found.")
         return
@@ -463,7 +439,6 @@ def print_report(groups: dict[str, list[Occurrence]]) -> None:
 
 
 def save_report(groups: dict[str, list[Occurrence]], path: Path) -> None:
-    """Write a plain-text report (mlic/mlic2 behavior)."""
     try:
         with path.open("w", encoding="utf-8") as f:
             f.write("Repeated Multiline Blocks Report\n")
@@ -489,11 +464,6 @@ def save_report(groups: dict[str, list[Occurrence]], path: Path) -> None:
 def _remove_lines(
     path: Path, line_indices: set[int], validate_python: bool
 ) -> tuple[int, bool]:
-    """Remove 0-based line indices from `path`.
-
-    Returns (lines_removed, success). When `validate_python` is True and
-    `path` ends in .py, the modified text is re-parsed with ast before writing.
-    """
     try:
         with path.open("r", encoding="utf-8", errors="replace") as f:
             lines = f.readlines()
@@ -525,10 +495,6 @@ def _remove_lines(
 def remove_blocks(
     groups: dict[str, list[Occurrence]], validate_python: bool
 ) -> tuple[int, int]:
-    """Remove every occurrence of every block in `groups`.
-
-    Files are updated once (union of all line indices). Returns (files, lines).
-    """
     per_file: dict[Path, set[int]] = defaultdict(set)
     for occ_list in groups.values():
         for o in occ_list:
@@ -553,7 +519,6 @@ def remove_blocks(
 
 
 def _parse_extensions(raw: Optional[Sequence[str]]) -> Optional[set[str]]:
-    """Normalise a list of extensions into a lowercase set with leading dots."""
     if not raw:
         return None
     out: set[str] = set()
@@ -569,7 +534,6 @@ def _default_min_lines(block_mode: str) -> int:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    """`scan` subcommand: find blocks and print/save a report."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Directory {root} does not exist")
@@ -613,7 +577,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
 
 def cmd_remove(args: argparse.Namespace) -> int:
-    """`remove` subcommand: find blocks and remove them from every file."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Directory {root} does not exist")
@@ -663,7 +626,6 @@ def cmd_remove(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser with `scan` and `remove` subcommands."""
     parser = argparse.ArgumentParser(
         prog="repeated_blocks.py",
         description="Find and remove repeated multiline blocks in text files.",

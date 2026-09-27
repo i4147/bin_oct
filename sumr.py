@@ -53,26 +53,19 @@ from typing import Dict, List, Optional, Sequence
 
 
 def read_text(path: Path) -> str:
-    """Read a UTF-8 text file. Raises FileNotFoundError on missing input."""
     return path.read_text(encoding="utf-8")
 
 
 def write_text(path: Path, content: str) -> None:
-    """Write a UTF-8 text file (creating parents if needed)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
 
 
 def default_summary_path(input_path: Path) -> Path:
-    """
-    Derive the default output filename: <stem>_summary.txt (matches
-    `sumr.py` / `sumr_nltk.py`).
-    """
     return input_path.with_name(input_path.stem + "_summary.txt")
 
 
 def preview(text: str, limit: int = 500) -> str:
-    """Truncate long summaries for terminal display."""
     return text if len(text) <= limit else text[:limit] + "..."
 
 
@@ -82,22 +75,6 @@ def preview(text: str, limit: int = 500) -> str:
 
 
 class NLTKFrequencySummarizer:
-    """
-    Frequency-based extractive summarizer using NLTK.
-
-    Two variants are supported so both original behaviors remain reachable:
-
-    * ``variant="summa"``  — mirrors `summa.py`:
-        - word frequencies normalized by the total number of alnum,
-          non-stopword tokens;
-        - sentence score = sum(freq) / (#alnum non-stopword tokens).
-
-    * ``variant="simple"`` — mirrors `sumr_nltk.py`:
-        - raw (unnormalized) word counts;
-        - sentence score = sum(freq) / (#all tokens, including
-          punctuation and stopwords).
-    """
-
     VARIANTS = ("summa", "simple")
 
     def __init__(self, language: str = "english", variant: str = "summa") -> None:
@@ -115,7 +92,6 @@ class NLTKFrequencySummarizer:
     # ---- public API --------------------------------------------------------
 
     def summarize_by_ratio(self, text: str, ratio: float = 0.3) -> str:
-        """Keep the top ``ratio`` fraction of sentences (nltk/summa only)."""
         if not text or not isinstance(text, str):
             return ""
         if not 0 < ratio <= 1:
@@ -133,7 +109,6 @@ class NLTKFrequencySummarizer:
         return " ".join(sentences[i] for i in top)
 
     def summarize_by_count(self, text: str, count: int = 3) -> str:
-        """Keep the top ``count`` sentences, preserving original order."""
         if not text or not isinstance(text, str):
             return ""
         if count < 1:
@@ -150,7 +125,6 @@ class NLTKFrequencySummarizer:
         return " ".join(sentences[i] for i in top)
 
     def get_scores(self, text: str) -> dict[str, float]:
-        """Return a mapping {sentence -> score}, ordered by original text."""
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
         freqs = self._word_frequencies(sentences)
@@ -161,20 +135,14 @@ class NLTKFrequencySummarizer:
 
     @staticmethod
     def _preprocess(text: str) -> str:
-        """Collapse all whitespace into single spaces (summa.py behavior)."""
         return re.sub(r"\s+", " ", text).strip()
 
     def _tokenize_sentences(self, text: str) -> list[str]:
-        """Sentence-tokenize and drop sentences with <= 2 words."""
         from nltk.tokenize import sent_tokenize  # type: ignore
 
         return [s.strip() for s in sent_tokenize(text) if len(s.split()) > 2]
 
     def _word_frequencies(self, sentences: Sequence[str]) -> dict[str, float]:
-        """
-        Count alnum non-stopword tokens. If variant == "summa", normalize
-        each count by the grand total (summa.py behavior).
-        """
         from nltk.tokenize import word_tokenize  # type: ignore
 
         counter: Counter = Counter()
@@ -195,9 +163,6 @@ class NLTKFrequencySummarizer:
         sentences: Sequence[str],
         freqs: dict[str, float],
     ) -> dict[int, float]:
-        """
-        Score each sentence using the variant-appropriate denominator.
-        """
         from nltk.tokenize import word_tokenize  # type: ignore
 
         scores: dict[int, float] = {}
@@ -221,7 +186,6 @@ class NLTKFrequencySummarizer:
 
     @staticmethod
     def _select_top(scores: dict[int, float], k: int) -> list[int]:
-        """Return the indices of the k highest-scoring sentences, in order."""
         top = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)[:k]
         return sorted(top)
 
@@ -237,12 +201,6 @@ def sumy_summarize(
     method: str = "lexrank",
     language: str = "english",
 ) -> str:
-    """
-    Summarize ``text`` using the sumy library.
-
-    Mirrors ``sumr.py`` but accepts text directly (no intermediate file),
-    so we don't need to write/read a temp file for in-memory operation.
-    """
     # Lazy imports — sumy is optional.
     from sumy.nlp.stemmers import Stemmer  # type: ignore
     from sumy.nlp.tokenizers import Tokenizer  # type: ignore
@@ -275,7 +233,6 @@ def sumy_summarize(
 
 
 def cmd_summarize(args: argparse.Namespace) -> int:
-    """Handle ``summarizer.py summarize ...``."""
     text = read_text(args.input)
 
     # --- dispatch on backend ------------------------------------------------
@@ -325,7 +282,6 @@ def cmd_summarize(args: argparse.Namespace) -> int:
 
 
 def cmd_scores(args: argparse.Namespace) -> int:
-    """Handle ``summarizer.py scores ...`` (nltk backend only)."""
     text = read_text(args.input)
     summarizer = NLTKFrequencySummarizer(
         language=args.language,
@@ -348,7 +304,6 @@ def cmd_scores(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the top-level argument parser with subcommands."""
     parser = argparse.ArgumentParser(
         prog="summarizer.py",
         description="Unified text summarizer (NLTK / NLTK-simple / Sumy).",
@@ -457,7 +412,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """CLI entry point. Returns a shell exit code."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

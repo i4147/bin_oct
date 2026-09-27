@@ -28,7 +28,6 @@ HashResult: TypeAlias = tuple[str | None, Path]
 
 
 def should_skip(path: Path) -> bool:
-    """Return True when *path* should be excluded from duplicate scanning."""
     if path.is_symlink():
         return True
 
@@ -42,7 +41,6 @@ def should_skip(path: Path) -> bool:
 
 
 def get_hash_file(path: Path) -> HashResult:
-    """Return the xxh64 hex digest for *path*, or ``None`` on stat/read failure."""
     try:
         if not path.exists() or path.stat().st_size == 0:
             return (None, path)
@@ -58,7 +56,6 @@ def get_hash_file(path: Path) -> HashResult:
 
 
 def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
-    """Hash *paths* with a fixed 8-worker multiprocessing Pool using *method*."""
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(get_hash_file, paths)
@@ -79,7 +76,6 @@ def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
 
 
 def find_duplicates(pool_method: str = "map") -> None:
-    """Scan CWD and log duplicate file groups and total bytes in duplicate groups."""
     cwd = Path.cwd()
     files_by_hash: defaultdict[str, list[Path]] = defaultdict(list)
 
@@ -125,7 +121,6 @@ def find_duplicates(pool_method: str = "map") -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--pool-method",
@@ -137,7 +132,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     find_duplicates(pool_method)

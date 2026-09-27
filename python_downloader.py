@@ -93,8 +93,6 @@ def shorten(url: str, n: int = 42) -> str:
 
 
 class Bar:
-    """State + rendering for one download. Thread-safe `done` counter."""
-
     def __init__(self, label: str, total: int | None = None):
         self.label = label
         self.total = total
@@ -161,8 +159,6 @@ class Bar:
 
 
 class Progress:
-    """Renders N bars in place using ANSI cursor movement."""
-
     def __init__(self, stream=None, enabled: bool | None = None, final: bool = True):
         self.stream = stream if stream is not None else sys.stdout
         if enabled is None:
@@ -243,8 +239,6 @@ class Progress:
 
 
 class StreamResponse:
-    """Uniform view over a streaming HTTP response."""
-
     status: int = 0
     headers: dict = {}
 
@@ -292,8 +286,6 @@ class _UrllibStream(StreamResponse):
 
 
 class PureBackend(Backend):
-    """Uses the standard library; no third-party dependencies."""
-
     name = "pure"
 
     def open(self, url, start=None, end=None, timeout=30.0):
@@ -354,8 +346,6 @@ class RequestsBackend(Backend):
 
 
 class _PycurlStream(StreamResponse):
-    """Wraps pycurl (callback-driven) as an iterator of chunks."""
-
     def __init__(self, pycurl_mod, url, start, end, timeout):
         self._pycurl = pycurl_mod
         self.status: int | None = None
@@ -538,7 +528,6 @@ class Probe:
 
 
 def probe(backend: Backend, url: str, timeout: float) -> Probe:
-    """Ask the server for metadata without downloading the body."""
     stream = backend.open(url, start=0, end=0, timeout=timeout)
     try:
         size: int | None = None
@@ -572,7 +561,6 @@ def probe(backend: Backend, url: str, timeout: float) -> Probe:
 def _simple_download(
     backend: Backend, url: str, part: Path, bar: Bar, timeout: float, offset: int = 0
 ) -> None:
-    """Single-stream chunked download, resumable via HTTP Range."""
     stream = backend.open(url, start=offset if offset else None, timeout=timeout)
     try:
         if offset and stream.status != 206:
@@ -604,7 +592,6 @@ def _chunked_download(
     size: int,
     nchunks: int = CHUNK_PARTS,
 ) -> None:
-    """Parallel ranged download for big files; each chunk is resumable."""
     chunk_size = size // nchunks
     ranges = []
     for i in range(nchunks):
@@ -659,7 +646,6 @@ def download_one(
     resume: bool = True,
     skip_existing: bool = True,
 ) -> tuple[Path, bool]:
-    """Download a single URL. Returns (final_path, was_skipped)."""
     try:
         # Figure out where this is going and how big it is.
         try:

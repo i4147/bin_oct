@@ -55,7 +55,6 @@ FormatResult: TypeAlias = tuple[bool, str]
 
 
 def has_shell_shebang(path: Path) -> bool:
-    """Return True when *path* begins with a bash/sh shebang line."""
     try:
         # Read only the first line, capped at SHEBANG_READ_BYTES, so we do not
         # touch the whole file just to detect the interpreter.
@@ -70,12 +69,6 @@ def has_shell_shebang(path: Path) -> bool:
 
 
 def is_shell_file(path: Path) -> bool:
-    """Return True when *path* qualifies as a shell file for the CWD scan.
-
-    A file qualifies when it is a regular file, is not binary, and either:
-      * has a ``.sh`` suffix, or
-      * has no suffix and starts with a bash/sh shebang.
-    """
     if not path.is_file():
         return False
     if path.suffix == ".sh" or (not path.suffix and has_shell_shebang(path)):
@@ -84,12 +77,6 @@ def is_shell_file(path: Path) -> bool:
 
 
 def is_formattable_file(path: Path) -> bool:
-    """Return True when *path* can be handed to ``shfmt`` explicitly.
-
-    Unlike :func:`is_shell_file`, this does NOT require a ``.sh`` suffix or a
-    shebang. Used for the single-file fast path where the user has explicitly
-    named the target, so we trust their intent and only guard against binaries.
-    """
     if not path.is_file():
         return False
     return not is_binary(path)
@@ -101,7 +88,6 @@ def is_formattable_file(path: Path) -> bool:
 
 
 def process_file(path_str: str) -> FormatResult:
-    """Run ``shfmt -w`` on *path_str*; return ``(success, path_str)``."""
     path = Path(path_str)
     logger.info(f"Formatting:  {path.name}")
 
@@ -113,11 +99,6 @@ def process_file(path_str: str) -> FormatResult:
 
 
 def _process_file_tuple(item: tuple[str]) -> FormatResult:
-    """Tuple-argument wrapper around :func:`process_file` for ``Pool.map``.
-
-    ``Pool.map`` only passes a single positional argument, so we wrap the path
-    in a 1-tuple and unwrap it here.
-    """
     return process_file(item[0])
 
 
@@ -127,11 +108,6 @@ def _process_file_tuple(item: tuple[str]) -> FormatResult:
 
 
 def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
-    """Format *paths* with a fixed 8-worker Pool using *method*.
-
-    ``starmap`` is the default and expects 1-tuples of ``(path,)``; the other
-    methods are kept for parity / benchmarking.
-    """
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "starmap":
             # starmap unpacks each tuple as positional args -> process_file(p)
@@ -162,7 +138,6 @@ def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
 
 
 def collect_shell_files(cwd: Path) -> list[Path]:
-    """Return non-binary shell files under *cwd* (``*.sh`` or shebang-based)."""
     files = [
         p
         for p in get_files(cwd)
@@ -178,12 +153,6 @@ def collect_shell_files(cwd: Path) -> list[Path]:
 
 
 def move_failed_files(failed: Sequence[Path], cwd: Path) -> list[Path]:
-    """Move *failed* files into ``cwd/error``; return the moved destination paths.
-
-    Files already located inside the error directory are skipped. Missing source
-    files are skipped with a warning. Name collisions are resolved by appending
-    a numeric suffix (``name.1.sh``, ``name.2.sh``, ...).
-    """
     error_dir: Path = cwd / ERROR_DIR_NAME
     error_dir.mkdir(exist_ok=True)
 
@@ -232,7 +201,6 @@ def move_failed_files(failed: Sequence[Path], cwd: Path) -> list[Path]:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
 
     # Optional positional path(s). If exactly one is given, we format it
@@ -271,7 +239,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     move_errors: bool = args.move

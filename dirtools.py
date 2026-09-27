@@ -47,11 +47,6 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 def human_size(n: int) -> str:
-    """Compact human-readable size: B / k / M / G / T (base-1000).
-
-    Format matches foldsize.py's original `O()` helper so folder names and
-    CLI output remain recognisable. Used by every subcommand.
-    """
     if n < 0:
         return "-" + human_size(-n)
     if n < 1_000:
@@ -71,11 +66,6 @@ def iter_files(
     include_hidden: bool = False,
     exclude_names: Iterable[str] = (),
 ) -> list[Path]:
-    """Return files under `root` respecting hidden/exclude rules.
-
-    Rule used by every folderize original: skip files starting with '.'
-    and skip a small name-blacklist (originally `folderize.py` itself).
-    """
     exclude = set(exclude_names)
     it = root.rglob("*") if recursive else root.glob("*")
     out: list[Path] = []
@@ -91,7 +81,6 @@ def iter_files(
 
 
 def dir_size(path: Path, include_hidden: bool = False) -> int:
-    """Recursively total the byte size of a directory (skips symlinks)."""
     total = 0
     try:
         for p in path.rglob("*"):
@@ -109,7 +98,6 @@ def dir_size(path: Path, include_hidden: bool = False) -> int:
 
 
 def unique_path(p: Path) -> Path:
-    """Return a non-existing path derived from `p` (adds _1, _2, ...)."""
     if not p.exists():
         return p
     stem, suffix = p.stem, p.suffix
@@ -122,7 +110,6 @@ def unique_path(p: Path) -> Path:
 
 
 def _safe_folder_name(name: str) -> str:
-    """Strip characters that are illegal in Windows/most FS folder names."""
     return "".join(c for c in name if c not in '<>:"/\\|?*')
 
 
@@ -132,11 +119,6 @@ def _safe_folder_name(name: str) -> str:
 
 
 def cmd_info(args: argparse.Namespace) -> int:
-    """Print (and optionally save / chart) a size report for a directory.
-
-    Aggregates per-extension byte totals, file/folder counts, and — when
-    --chart is passed — renders the classic skyblue matplotlib bar chart.
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -230,12 +212,6 @@ def cmd_info(args: argparse.Namespace) -> int:
 
 
 def cmd_subdirs(args: argparse.Namespace) -> int:
-    """Chart the size distribution of a directory's top-level entries.
-
-    Unifies dirinfo2.py (bar/pie/donut with top-N and min-size) and
-    visdir.py (pie over all subdirs) — the latter is reached with
-    `--chart pie --top-n 0 --min-kb 0`.
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -332,7 +308,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    """`du`-style listing with ANSI colors (directories blue, files green)."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -368,7 +343,6 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_tree(args: argparse.Namespace) -> int:
-    """Tree view of a directory; optional size annotations and dirs-only."""
     root = Path(args.directory).resolve()
     if not root.exists():
         print(f"Error: {root} does not exist", file=sys.stderr)
@@ -417,11 +391,6 @@ def cmd_tree(args: argparse.Namespace) -> int:
 
 
 def cmd_split_range(args: argparse.Namespace) -> int:
-    """Create ~N folders named `<min>-<max>` and move files into them.
-
-    Auto mode reproduces foldesiz.py's heuristic: 100 buckets over the
-    size span, capped at len(files). If the span is zero, one folder.
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -515,7 +484,6 @@ _COUNT_THRESHOLDS: tuple[tuple[int, int], ...] = (
 
 
 def _files_per_folder(count: int) -> int:
-    """Threshold table for want-count mode (foldesize.py `a()` with n=None)."""
     for limit, per in _COUNT_THRESHOLDS:
         if count <= limit:
             return per
@@ -523,11 +491,6 @@ def _files_per_folder(count: int) -> int:
 
 
 def cmd_split_count(args: argparse.Namespace) -> int:
-    """Folderize by either fixed --dirs count or --max-mb per folder.
-
-    Folder names encode the min–max byte range of their contents, matching
-    foldesize.py; illegal characters are stripped before mkdir.
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -616,11 +579,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
 
 
 def cmd_split_greedy(args: argparse.Namespace) -> int:
-    """Greedy bin-packing: largest files first, into the currently-smallest bin.
-
-    Target count is derived from the original heuristic: whichever of
-    `files/1000` or `total_bytes/1MB` implies more bins, clamped to [2, 100].
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -703,10 +661,6 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
 
 
 def cmd_split_even(args: argparse.Namespace) -> int:
-    """Even count split into N directories (non-recursive, matches foldsize2.py).
-
-    Directory names follow the original `start_end` index convention.
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
@@ -786,7 +740,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser and register every subcommand."""
     parser = argparse.ArgumentParser(
         prog="dir_tools.py",
         description="Unified directory analysis & folderization toolkit.",
@@ -955,7 +908,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point: parse argv and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

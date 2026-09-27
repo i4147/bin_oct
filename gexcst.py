@@ -47,33 +47,15 @@ ALLOWED_PYTHON_EXTENSIONS = (".py", "")
 
 
 class EntityExtractor(cst.CSTVisitor):
-    """A CST visitor that extracts top-level entities from Python source code."""
-
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, source_content: str, original_path: Path):
-        """
-        Initialize the entity extractor.
-
-        Args:
-            source_content: The source code content as a string.
-            original_path: The original path of the source file.
-        """
         self.entities: list[dict[str, Any]] = []
         self.source_lines = source_content.splitlines(keepends=True)
         self.original_path = original_path
         self.scope_depth = 0
 
     def _get_source_slice(self, node: cst.CSTNode) -> str:
-        """
-        Extract the source code for a given CST node.
-
-        Args:
-            node: The CST node to extract source from.
-
-        Returns:
-            The source code string for the node.
-        """
         try:
             position = self.get_metadata(PositionProvider, node)
             start_line = position.start.line - 1
@@ -109,14 +91,6 @@ class EntityExtractor(cst.CSTVisitor):
             return ""
 
     def _extract_and_save(self, node: cst.CSTNode, entity_type: str, name: str):
-        """
-        Extract source code from a node and add it to the entities list.
-
-        Args:
-            node: The CST node to extract.
-            entity_type: The type of entity (function, class, constant).
-            name: The name of the entity.
-        """
         entity_code = self._get_source_slice(node)
         self.entities.append(
             {
@@ -132,15 +106,6 @@ class EntityExtractor(cst.CSTVisitor):
         )
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
-        """
-        Visit a function definition node.
-
-        Args:
-            node: The function definition node.
-
-        Returns:
-            True to continue visiting children if at top level, False otherwise.
-        """
         if self.scope_depth == 0:
             self._extract_and_save(node, "function", node.name.value)
             # Don't visit children of top-level functions to avoid nested entities
@@ -148,15 +113,6 @@ class EntityExtractor(cst.CSTVisitor):
         return True
 
     def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
-        """
-        Visit a class definition node.
-
-        Args:
-            node: The class definition node.
-
-        Returns:
-            True to continue visiting children if at top level, False otherwise.
-        """
         if self.scope_depth == 0:
             self._extract_and_save(node, "class", node.name.value)
             # Don't visit children of top-level classes to avoid nested entities
@@ -164,15 +120,6 @@ class EntityExtractor(cst.CSTVisitor):
         return True
 
     def visit_Assign(self, node: cst.Assign) -> bool | None:
-        """
-        Visit an assignment node to detect constants.
-
-        Args:
-            node: The assignment node.
-
-        Returns:
-            True to continue visiting, None otherwise.
-        """
         if self.scope_depth == 0 and len(node.targets) == 1:
             target = node.targets[0].target
             if isinstance(target, cst.Name):
@@ -183,15 +130,6 @@ class EntityExtractor(cst.CSTVisitor):
         return True
 
     def visit_AnnAssign(self, node: cst.AnnAssign) -> bool | None:
-        """
-        Visit an annotated assignment node to detect constants.
-
-        Args:
-            node: The annotated assignment node.
-
-        Returns:
-            True to continue visiting, None otherwise.
-        """
         if self.scope_depth == 0:
             target = node.target
             if isinstance(target, cst.Name):
@@ -201,25 +139,14 @@ class EntityExtractor(cst.CSTVisitor):
         return True
 
     def visit_IndentedBlock(self, node: cst.IndentedBlock) -> bool | None:
-        """Increment scope depth when entering an indented block."""
         self.scope_depth += 1
         return True
 
     def leave_IndentedBlock(self, original_node: cst.IndentedBlock) -> None:
-        """Decrement scope depth when leaving an indented block."""
         self.scope_depth -= 1
 
 
 def get_unique_path(base_path: Path) -> Path:
-    """
-    Get a unique file path by appending a number if the file already exists.
-
-    Args:
-        base_path: The desired base path.
-
-    Returns:
-        A unique file path that doesn't exist yet.
-    """
     if not base_path.exists():
         return base_path
     name = base_path.stem
@@ -233,12 +160,6 @@ def get_unique_path(base_path: Path) -> Path:
 
 
 def save_entity(entity: dict[str, Any]) -> None:
-    """
-    Save an extracted entity to a file.
-
-    Args:
-        entity: A dictionary containing entity information.
-    """
     filename_base = f"{entity['full_name']}.py"
     output_path_base = OUTPUT_DIR / entity["type"] / filename_base
     output_path_base.parent.mkdir(parents=True, exist_ok=True)
@@ -253,16 +174,6 @@ def save_entity(entity: dict[str, Any]) -> None:
 
 
 def extract_entities_from_content(content: str, path: Path) -> list[dict[str, Any]]:
-    """
-    Extract entities from Python source code content.
-
-    Args:
-        content: The Python source code as a string.
-        path: The path of the source file (may be virtual for archive members).
-
-    Returns:
-        A list of entity dictionaries.
-    """
     try:
         tree = cst.parse_module(content)
         wrapper = MetadataWrapper(tree)
@@ -277,15 +188,6 @@ def extract_entities_from_content(content: str, path: Path) -> list[dict[str, An
 
 
 def is_python_file_no_extension(path: Path) -> bool:
-    """
-    Check if a file without extension is likely a Python file.
-
-    Args:
-        path: The path to check.
-
-    Returns:
-        True if the file appears to be Python code, False otherwise.
-    """
     if path.suffix:
         return False
     try:
@@ -305,15 +207,6 @@ def is_python_file_no_extension(path: Path) -> bool:
 
 
 def process_single_file(path: Path) -> list[dict[str, Any]]:
-    """
-    Process a single file to extract entities.
-
-    Args:
-        path: The path to the file.
-
-    Returns:
-        A list of entity dictionaries.
-    """
     try:
         if path.suffix == ".py" or is_python_file_no_extension(path):
             content = path.read_text(encoding="utf-8", errors="ignore")
@@ -325,15 +218,6 @@ def process_single_file(path: Path) -> list[dict[str, Any]]:
 
 
 def process_archive(path: Path) -> list[dict[str, Any]]:
-    """
-    Process an archive file to extract entities from contained Python files.
-
-    Args:
-        path: The path to the archive file.
-
-    Returns:
-        A list of entity dictionaries.
-    """
     entities: list[dict[str, Any]] = []
 
     if path.suffix in (".zip", ".whl"):
@@ -388,15 +272,6 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
 
 
 def worker_process(path_str: str) -> list[dict[str, Any]]:
-    """
-    Worker function for multiprocessing.
-
-    Args:
-        path_str: String path to the file to process.
-
-    Returns:
-        A list of entity dictionaries.
-    """
     path = Path(path_str)
     if path.name.endswith(ARCHIVE_EXTENSIONS):
         return process_archive(path)
@@ -404,12 +279,6 @@ def worker_process(path_str: str) -> list[dict[str, Any]]:
 
 
 def main() -> int:
-    """
-    Main entry point for the entity extractor.
-
-    Returns:
-        Exit code (0 for success).
-    """
     print(f"Starting analysis in {Path.cwd()}...")
 
     if OUTPUT_DIR.exists():

@@ -61,7 +61,6 @@ log = logging.getLogger("merged")
 
 
 def _setup_logging(verbose: bool = False) -> None:
-    """Configure root logger once, at the desired verbosity."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -84,7 +83,6 @@ def _table_exists(cursor: sqlite3.Cursor, table: str) -> bool:
 
 
 def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
-    """Create the unified files table (superset of both original schemas)."""
     cursor.execute(
         f'CREATE TABLE IF NOT EXISTS "{table}" ('
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -97,7 +95,6 @@ def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
 
 
 def _compress_blob(data: bytes) -> str | None:
-    """Compress `data` with 7z and return a base64 string, or None on failure."""
     if py7zr is None:
         raise RuntimeError(
             "py7zr is required for --compress. Install with: pip install py7zr"
@@ -117,11 +114,6 @@ def _read_file(
     encodings: Sequence[str],
     max_chars: int | None = None,
 ) -> tuple[str | None, bool]:
-    """
-    Try each encoding in order.  Return (text, is_binary).
-
-    `text` is None when the file could not be decoded as text at all.
-    """
     for enc in encodings:
         try:
             with path.open("r", encoding=enc) as f:
@@ -142,7 +134,6 @@ def _collect_cwd_files(
     compress: bool,
     max_chars: int | None,
 ) -> list[dict[str, Any]]:
-    """Read every file in `folder` and build row dicts for the files table."""
     items: list[dict[str, Any]] = []
     for entry in sorted(folder.iterdir()):
         if not entry.is_file():
@@ -225,7 +216,6 @@ def _collect_cwd_files(
 
 
 def cmd_add_files(args: argparse.Namespace) -> int:
-    """Add every file in the current directory to a SQLite table."""
     folder = Path.cwd()
     default_table = folder.name
 
@@ -308,7 +298,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
 
 
 def _serialize_value(value: Any, blob_format: str) -> Any:
-    """Best-effort JSON-safe conversion of a SQLite value."""
     if value is None:
         return None
     if isinstance(value, (str, int, float, bool)):
@@ -400,7 +389,6 @@ def _dump_per_table(
 
 
 def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
-    """Convert a SQLite database to JSON (single file or one file per table)."""
     db: Path = args.database
     if not db.is_file():
         print(f"Error: database file not found: {db}", file=sys.stderr)
@@ -449,7 +437,6 @@ def _md_extract_section(body: str, label: str) -> str | None:
 
 
 def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
-    """Parse a ruff-style Markdown reference into a SQLite `ruff_rules` table."""
     md_path: Path = args.md
     db_path: Path = args.db
     if not md_path.is_file():
@@ -502,7 +489,6 @@ def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
 
 
 def cmd_search_rule(args: argparse.Namespace) -> int:
-    """Pretty-print a single ruff rule from a SQLite table."""
     db_path = Path(args.db)
     if not db_path.is_file():
         print(f"Error: database not found: {db_path}", file=sys.stderr)
@@ -708,7 +694,6 @@ def _mdb_collect(paths: Sequence[str]) -> list[Path]:
 
 
 def cmd_mdb_to_json(args: argparse.Namespace) -> int:
-    """Convert `.mdb` / `.accdb` files to JSON."""
     _setup_logging(args.verbose)
     inputs = args.inputs or ["."]
     files = _mdb_collect(inputs)
@@ -921,7 +906,6 @@ def _parse_sql_literal(tok: str) -> Any:
 
 
 def _iter_insert_statements(path: Path, encoding: str) -> Iterator[str]:
-    """Stream the file and yield complete `INSERT ... ;` statements."""
     decoder = codecs.getincrementaldecoder(encoding)(errors="replace")
     buf: list[str] = []
     quote: str | None = None
@@ -954,7 +938,6 @@ def _iter_insert_statements(path: Path, encoding: str) -> Iterator[str]:
 
 
 def _iter_tuple_bodies(body: str) -> Iterator[str]:
-    """Yield the text inside each top-level `(...)` group in `body`."""
     depth = 0
     quote: str | None = None
     start: int | None = None
@@ -1087,7 +1070,6 @@ def _sql_output_path(src: Path, outdir: Path | None) -> Path:
 
 
 def cmd_sql_to_json(args: argparse.Namespace) -> int:
-    """Convert SQL `INSERT` dumps into newline-delimited JSON."""
     _setup_logging(False)
     files = _collect_sql_inputs(args.inputs)
     if not files:

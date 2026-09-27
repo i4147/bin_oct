@@ -132,8 +132,6 @@ MIN_LINE_LEN = 3
 
 @dataclass
 class LineFinding:
-    """A single line of text detected as non-English."""
-
     line_num: int
     text: str
     lang: str
@@ -142,8 +140,6 @@ class LineFinding:
 
 @dataclass
 class FileResult:
-    """Result of analysing one file."""
-
     path: str
     language: Optional[str] = None
     confidence: float = 0.0
@@ -157,21 +153,6 @@ class FileResult:
 
 
 class Backend:
-    """Abstract language-detection backend.
-
-    A backend's :meth:`detect` must return a triple ``(lang_code, confidence,
-    reliable)`` where:
-
-    * ``lang_code`` is a lowercase ISO-639-1-like string, or ``"und"``/``"un"``
-      when the language cannot be determined.
-    * ``confidence`` is a float in ``[0.0, 1.0]``.
-    * ``reliable`` is a boolean hint (backend-specific; not used for filtering).
-
-    Backends are instantiated lazily on first use, per process, so imports of
-    heavy third-party libraries are deferred to the moment they are actually
-    needed.
-    """
-
     name: str = "base"
 
     def detect(self, text: str) -> tuple[str, float, bool]:  # pragma: no cover
@@ -179,8 +160,6 @@ class Backend:
 
 
 class Gcld3Backend(Backend):
-    """Google CLD3 via the ``gcld3`` package."""
-
     name = "gcld3"
 
     def __init__(self) -> None:
@@ -204,8 +183,6 @@ class Gcld3Backend(Backend):
 
 
 class Pycld2Backend(Backend):
-    """Compact Language Detector v2 via ``pycld2``."""
-
     name = "pycld2"
 
     def __init__(self) -> None:
@@ -227,8 +204,6 @@ class Pycld2Backend(Backend):
 
 
 class LangdetectBackend(Backend):
-    """``langdetect`` — deterministic port of Google's detector."""
-
     name = "langdetect"
 
     def __init__(self) -> None:
@@ -251,8 +226,6 @@ class LangdetectBackend(Backend):
 
 
 class LinguaBackend(Backend):
-    """``lingua`` — high-accuracy statistical detector."""
-
     name = "lingua"
 
     def __init__(self) -> None:
@@ -276,8 +249,6 @@ class LinguaBackend(Backend):
 
 
 class FastLangdetectBackend(Backend):
-    """``fast_langdetect`` — small, fast detector (optional dependency)."""
-
     name = "fast_langdetect"
 
     def __init__(self) -> None:
@@ -322,7 +293,6 @@ _BACKEND_CACHE: dict[str, Backend] = {}
 
 
 def _get_backend(name: str) -> Backend:
-    """Return a cached backend instance, creating it on first access."""
     backend = _BACKEND_CACHE.get(name)
     if backend is None:
         backend = BACKEND_REGISTRY[name]()
@@ -331,7 +301,6 @@ def _get_backend(name: str) -> Backend:
 
 
 def _backend_status(name: str) -> str:
-    """Human-readable availability status for ``--list-backends``."""
     try:
         BACKEND_REGISTRY[name]()
         return "available"
@@ -347,7 +316,6 @@ def _backend_status(name: str) -> str:
 
 
 def _is_finding(lang: str, confidence: float, min_confidence: float) -> bool:
-    """Return True if ``(lang, confidence)`` counts as non-English finding."""
     if not lang:
         return False
     base = lang.lower().split("-", 1)[0]
@@ -357,7 +325,6 @@ def _is_finding(lang: str, confidence: float, min_confidence: float) -> bool:
 
 
 def _read_text(path: Path) -> Optional[str]:
-    """Read ``path`` as text, trying common encodings."""
     for enc in ("utf-8", "latin-1", "cp1252"):
         try:
             return path.read_text(encoding=enc)
@@ -374,11 +341,6 @@ def _read_text(path: Path) -> Optional[str]:
 
 
 def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
-    """Analyse a single file.
-
-    ``task`` is ``(path, backend_name, detailed, min_confidence, max_bytes)``.
-    Must be a module-level function so it can be pickled to worker processes.
-    """
     path_str, backend_name, detailed, min_conf, max_bytes = task
     path = Path(path_str)
     result = FileResult(path=path_str)
@@ -455,7 +417,6 @@ def _discover_files(
     extensions: set[str],
     exclude_dirs: set[str],
 ) -> list[Path]:
-    """Walk the given paths and return a sorted list of candidate files."""
     found: set[Path] = set()
     for raw in paths:
         p = Path(raw)

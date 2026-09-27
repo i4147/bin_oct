@@ -80,14 +80,6 @@ DEFAULT_BACKEND: Final[str] = BACKEND_GH
 
 
 class CloneBackend(Protocol):
-    """Protocol describing a repository-cloning backend.
-
-    A backend must be able to clone a repository given a URL and branch,
-    optionally shallow (``depth``). Submodule initialization is best-effort:
-    backends that cannot perform it should raise :class:`NotImplementedError`,
-    and the caller will fall back to subprocess git.
-    """
-
     name: str
 
     def clone(
@@ -96,13 +88,9 @@ class CloneBackend(Protocol):
         target: Path,
         branch: str,
         depth: Optional[int],
-    ) -> None:
-        """Clone ``clone_url`` into ``target`` on ``branch``."""
-        ...
+    ) -> None: ...
 
-    def update_submodules(self, repo_root: Path) -> None:
-        """Initialize and update submodules under ``repo_root``."""
-        ...
+    def update_submodules(self, repo_root: Path) -> None: ...
 
 
 # ---------------------------------------------------------------------------
@@ -115,21 +103,6 @@ def _run_subprocess(
     cwd: Optional[Path] = None,
     check: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a subprocess command and capture output.
-
-    Args:
-        cmd: Command and arguments.
-        cwd: Optional working directory.
-        check: If ``True``, raise on non-zero exit code.
-
-    Returns:
-        The completed process.
-
-    Raises:
-        subprocess.CalledProcessError: If ``check`` is True and the command
-            exits with a non-zero status.
-        FileNotFoundError: If the executable is not found.
-    """
     logger.debug(f"Running: {' '.join(cmd)} (cwd={cwd})")
     return subprocess.run(
         cmd,
@@ -141,12 +114,10 @@ def _run_subprocess(
 
 
 def _git_available() -> bool:
-    """Return ``True`` if the ``git`` executable is on PATH."""
     return shutil.which("git") is not None
 
 
 def _gh_available() -> bool:
-    """Return ``True`` if the ``gh`` executable is on PATH."""
     return shutil.which("gh") is not None
 
 
@@ -156,21 +127,9 @@ def _gh_available() -> bool:
 
 
 class SubprocessBackend:
-    """Backend that shells out to ``git`` (and optionally ``gh``).
-
-    ``gh`` is attempted first when the subcommand ``gh repo clone`` is
-    available; otherwise plain ``git clone`` is used.
-    """
-
     name: str = BACKEND_GH
 
     def __init__(self, prefer_gh: bool = True) -> None:
-        """Initialize the backend.
-
-        Args:
-            prefer_gh: When True and ``gh`` is available, use ``gh repo
-                clone`` where possible. When False, always use ``git``.
-        """
         self.prefer_gh = prefer_gh and _gh_available()
 
     def clone(
@@ -180,7 +139,6 @@ class SubprocessBackend:
         branch: str,
         depth: Optional[int],
     ) -> None:
-        """Clone via ``gh repo clone`` or ``git clone``."""
         if target.exists() and any(target.iterdir()):
             raise Exception(
                 f"Target directory already exists and is not empty: {target}"
@@ -216,7 +174,6 @@ class SubprocessBackend:
         _run_subprocess(git_cmd)
 
     def update_submodules(self, repo_root: Path) -> None:
-        """Run ``git submodule update --init --recursive``."""
         if not _git_available():
             raise Exception("'git' is not available on PATH.")
         _run_subprocess(
@@ -231,8 +188,6 @@ class SubprocessBackend:
 
 
 class DulwichBackend:
-    """Pure-Python backend using :mod:`dulwich`."""
-
     name: str = BACKEND_DULWICH
 
     def clone(
@@ -242,7 +197,6 @@ class DulwichBackend:
         branch: str,
         depth: Optional[int],
     ) -> None:
-        """Clone via ``dulwich.porcelain.clone``."""
         from dulwich import porcelain
 
         porcelain.clone(
@@ -253,7 +207,6 @@ class DulwichBackend:
         )
 
     def update_submodules(self, repo_root: Path) -> None:
-        """Run ``dulwich.porcelain.submodule_update`` recursively."""
         from dulwich import porcelain
 
         porcelain.submodule_update(root=str(repo_root), recursive=True)
@@ -265,8 +218,6 @@ class DulwichBackend:
 
 
 class GitPythonBackend:
-    """Backend using :class:`git.Repo` from GitPython."""
-
     name: str = BACKEND_GITPYTHON
 
     def clone(
@@ -276,7 +227,6 @@ class GitPythonBackend:
         branch: str,
         depth: Optional[int],
     ) -> None:
-        """Clone via ``git.Repo.clone_from``."""
         from git import Repo
 
         kwargs: dict[str, object] = {"branch": branch}
@@ -286,7 +236,6 @@ class GitPythonBackend:
         Repo.clone_from(clone_url, str(target), **kwargs)
 
     def update_submodules(self, repo_root: Path) -> None:
-        """Update submodules via GitPython's ``Submodule.update``."""
         from git import Repo
 
         repo = Repo(str(repo_root))
@@ -300,8 +249,6 @@ class GitPythonBackend:
 
 
 class Libgit2Backend:
-    """Backend using :mod:`pygit2` (libgit2 bindings)."""
-
     name: str = BACKEND_LIBGIT2
 
     def clone(
@@ -311,14 +258,6 @@ class Libgit2Backend:
         branch: str,
         depth: Optional[int],
     ) -> None:
-        """Clone via ``pygit2.clone_repository``.
-
-        Note:
-            libgit2 does not support shallow clones via pygit2's high-level
-            API. When ``depth`` is not ``None`` this backend raises
-            :class:`NotImplementedError` so the caller can fall back to
-            subprocess git.
-        """
         if depth is not None:
             raise NotImplementedError(
                 "pygit2/libgit2 does not support shallow clones; "
@@ -329,7 +268,6 @@ class Libgit2Backend:
         pygit2.clone_repository(clone_url, str(target), checkout_branch=branch)
 
     def update_submodules(self, repo_root: Path) -> None:
-        """Submodule updates are not supported by pygit2's high-level API."""
         raise NotImplementedError(
             "pygit2 does not expose recursive submodule update; "
             "falling back to subprocess git."
@@ -342,13 +280,6 @@ class Libgit2Backend:
 
 
 class TyperBackend:
-    """Backend that drives the ``git`` CLI via :mod:`typer`'s runner.
-
-    Typer is a CLI framework, not a git library. This backend shells out to
-    ``git`` through ``typer.testing.CliRunner`` only when a small wrapper
-    command is available; otherwise it falls back to plain subprocess calls.
-    """
-
     name: str = BACKEND_TYPER
 
     def __init__(self) -> None:
@@ -363,11 +294,9 @@ class TyperBackend:
         branch: str,
         depth: Optional[int],
     ) -> None:
-        """Clone via subprocess git (typer wrapper delegates to git)."""
         self._fallback.clone(clone_url, target, branch, depth)
 
     def update_submodules(self, repo_root: Path) -> None:
-        """Update submodules via subprocess git."""
         self._fallback.update_submodules(repo_root)
 
 
@@ -377,17 +306,6 @@ class TyperBackend:
 
 
 def create_backend(name: str) -> CloneBackend:
-    """Instantiate a backend by name.
-
-    Args:
-        name: Backend identifier (one of :data:`KNOWN_BACKENDS`).
-
-    Returns:
-        A :class:`CloneBackend` instance.
-
-    Raises:
-        ValueError: If the backend name is unknown.
-    """
     name = name.lower()
     if name == BACKEND_GH:
         return SubprocessBackend(prefer_gh=True)
@@ -410,33 +328,12 @@ def create_backend(name: str) -> CloneBackend:
 
 
 def get_github_client(token: Optional[str] = None) -> Github:
-    """Return an authenticated or anonymous GitHub client.
-
-    Args:
-        token: Optional GitHub personal access token.
-
-    Returns:
-        A configured :class:`Github` instance.
-    """
     if token:
         return Github(token)
     return Github()
 
 
 def parse_repo_url(txt: str) -> tuple[str, str]:
-    """Parse a GitHub repository URL into ``(owner, repo_name)``.
-
-    Supports ``owner/repo``, HTTPS, and SSH URL formats.
-
-    Args:
-        txt: Repository identifier or URL.
-
-    Returns:
-        Tuple of owner and repository name.
-
-    Raises:
-        ValueError: If the input cannot be parsed.
-    """
     txt = txt.strip()
     txt = txt.removesuffix(".git")
     if txt.startswith(GITHUB_SSH_PREFIX):
@@ -450,19 +347,6 @@ def parse_repo_url(txt: str) -> tuple[str, str]:
 
 
 def get_repo(repo_url: str, github_client: Github) -> Repository:
-    """Fetch a GitHub repository object.
-
-    Args:
-        repo_url: Repository identifier or URL.
-        github_client: Authenticated or anonymous GitHub client.
-
-    Returns:
-        The :class:`Repository` object.
-
-    Raises:
-        ValueError: If the repository does not exist.
-        Exception: On other GitHub API errors.
-    """
     try:
         owner, repo_name = parse_repo_url(repo_url)
         print(f"Fetching repository: {owner}/{repo_name}")
@@ -477,14 +361,6 @@ def get_repo(repo_url: str, github_client: Github) -> Repository:
 
 
 def get_repo_size(repo: Repository) -> float:
-    """Return the repository size in megabytes.
-
-    Args:
-        repo: GitHub repository object.
-
-    Returns:
-        Size in MB, or ``0.0`` if unavailable.
-    """
     try:
         size_kb = repo.size
         size_mb = size_kb / 1024
@@ -496,14 +372,6 @@ def get_repo_size(repo: Repository) -> float:
 
 
 def get_default_branch(repo: Repository) -> str:
-    """Return the default branch name for a repository.
-
-    Args:
-        repo: GitHub repository object.
-
-    Returns:
-        Branch name, defaulting to ``"main"`` on failure.
-    """
     try:
         default_branch = repo.default_branch
         print(f"Default branch: {default_branch}")
@@ -514,26 +382,10 @@ def get_default_branch(repo: Repository) -> str:
 
 
 def build_clone_url(repo: Repository) -> str:
-    """Return the HTTPS clone URL for a repository.
-
-    Args:
-        repo: GitHub repository object.
-
-    Returns:
-        The clone URL.
-    """
     return repo.clone_url
 
 
 def resolve_clone_target(clone_url: str) -> Path:
-    """Derive the local target directory from a clone URL.
-
-    Args:
-        clone_url: URL of the repository to clone.
-
-    Returns:
-        Absolute path to the intended clone target.
-    """
     name = Path(clone_url.rstrip("/").removesuffix(".git")).name
     return Path.cwd() / name
 
@@ -549,25 +401,6 @@ def clone_repo(
     depth: Optional[int],
     backend: CloneBackend,
 ) -> Path:
-    """Clone a repository using the given backend with fallback to git.
-
-    If the backend raises :class:`NotImplementedError` (or any other failure
-    that suggests a missing capability), the function retries the clone with
-    a subprocess-based ``git`` backend.
-
-    Args:
-        clone_url: URL of the repository to clone.
-        branch: Branch name to check out.
-        depth: Optional shallow-clone depth. ``None`` means full history.
-        backend: The primary clone backend.
-
-    Returns:
-        Path to the cloned repository directory.
-
-    Raises:
-        Exception: If cloning fails with both the primary backend and the
-            subprocess fallback.
-    """
     depth_msg = f"depth={depth}" if depth is not None else "full history"
     print(
         f"Cloning repository from {clone_url} "
@@ -605,17 +438,6 @@ def clone_repo(
 
 
 def has_submodules(repo_path: Path) -> bool:
-    """Return ``True`` if the repository contains a ``.gitmodules`` file.
-
-    The check walks the repository tree so that submodules declared in
-    nested directories (not just the top level) are detected.
-
-    Args:
-        repo_path: Path to the cloned repository root.
-
-    Returns:
-        ``True`` if any ``.gitmodules`` file exists under ``repo_path``.
-    """
     if (repo_path / GITMODULES_FILENAME).is_file():
         return True
     try:
@@ -628,14 +450,6 @@ def has_submodules(repo_path: Path) -> bool:
 
 
 def _subprocess_update_submodules(repo_root: Path) -> None:
-    """Initialize and update submodules with ``git submodule update``.
-
-    Args:
-        repo_root: Path to the cloned repository root.
-
-    Raises:
-        Exception: If the git command fails.
-    """
     if not _git_available():
         raise Exception("'git' is not available for submodule update.")
     try:
@@ -648,20 +462,6 @@ def _subprocess_update_submodules(repo_root: Path) -> None:
 
 
 def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None:
-    """Recursively initialize and update submodules for a repository.
-
-    Handles nested submodules by re-scanning the tree after the initial
-    update: any newly materialized submodule that itself declares further
-    submodules is initialized in turn. Uses the backend's submodule method
-    when available, and falls back to subprocess git otherwise.
-
-    Args:
-        repo_root: Path to the cloned repository root.
-        backend: The clone backend to consult for submodule updates.
-
-    Raises:
-        Exception: If the submodule update fails.
-    """
     processed: set[Path] = set()
     pending: list[Path] = [repo_root]
 
@@ -708,15 +508,6 @@ def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None
 
 
 def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
-    """Prompt and initialize submodules if any are declared.
-
-    Args:
-        repo_path: Path to the cloned repository root.
-        backend: The clone backend to consult for submodule updates.
-
-    Raises:
-        Exception: If submodule update fails.
-    """
     if not has_submodules(repo_path):
         print("No submodules found.")
         return
@@ -738,14 +529,6 @@ def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
 
 
 def confirm_large_repo(size_mb: float) -> bool:
-    """Ask the user whether to proceed for repositories above the size threshold.
-
-    Args:
-        size_mb: Repository size in megabytes.
-
-    Returns:
-        ``True`` if the user confirms or the repo is small enough.
-    """
     if size_mb > LARGE_REPO_THRESHOLD_MB:
         logger.warning(f"Repository size is {size_mb:.2f} MB. Continue? (y/n)")
         return input().lower() == "y"
@@ -758,11 +541,6 @@ def confirm_large_repo(size_mb: float) -> bool:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Build the command-line argument parser.
-
-    Returns:
-        A configured :class:`argparse.ArgumentParser`.
-    """
     parser = argparse.ArgumentParser(
         prog="script.py",
         description=("Clone a GitHub repository using a pluggable backend."),
@@ -817,14 +595,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Entry point for the script.
-
-    Args:
-        argv: Optional argument list (defaults to ``sys.argv[1:]``).
-
-    Returns:
-        Exit code (``0`` on success, ``1`` on error).
-    """
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 

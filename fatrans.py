@@ -95,7 +95,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
 
 
 def read_text_any_encoding(path: Path) -> str:
-    """Read *path* trying a list of encodings (used by tofa.py)."""
     for enc in ("utf-8", "latin-1", "cp1252", "iso-8859-1"):
         try:
             return Path(path).read_text(encoding=enc)
@@ -105,12 +104,10 @@ def read_text_any_encoding(path: Path) -> str:
 
 
 def contains_farsi(text: str) -> bool:
-    """Return True if *text* contains at least one Farsi/Arabic codepoint."""
     return bool(FARSI_RE.search(text))
 
 
 def derive_output_path(src: Path, suffix: str) -> Path:
-    """`notes.txt` + suffix=`fa` → `notes_fa.txt`."""
     return src.parent / f"{src.stem}_{suffix}{src.suffix}"
 
 
@@ -121,12 +118,6 @@ def translate_with_retry(
     retries: int = 3,
     base_delay: float = 1.0,
 ) -> str:
-    """
-    Translate *text* with up to *retries* attempts.
-
-    Mirrors the retry loop from tofa.py: exponential-ish backoff
-    `base_delay + attempt`.
-    """
     last_error: Optional[Exception] = None
     for attempt in range(retries):
         try:
@@ -154,14 +145,6 @@ def chunk_by_markers(
     max_chars: int,
     markers: Sequence[str] = TOFA_MARKERS,
 ) -> list[str]:
-    """
-    tofa.py-style chunker.
-
-    For each window of *max_chars* characters, look for the first marker in
-    *markers* (priority order, not position order) and cut just after its
-    **last** occurrence inside the window.  Falls back to the last space,
-    then hard-cuts at *max_chars*.
-    """
     if len(text) <= max_chars:
         return [text]
 
@@ -196,11 +179,6 @@ def chunk_by_regex(
     max_chars: int,
     pattern: re.Pattern[str] = INPLACE_BREAK_RE,
 ) -> list[str]:
-    """
-    transfa2.py-style chunker.
-
-    Cut at the **last** regex match that falls entirely inside the window.
-    """
     if len(text) <= max_chars:
         return [text]
 
@@ -228,7 +206,6 @@ def collect_files(
     suffixes: Iterable[str],
     exclude: Iterable[str],
 ) -> list[Path]:
-    """Recursively gather files whose suffix is in *suffixes* (transfa2.py)."""
     suffix_set = {s.lower() for s in suffixes}
     exclude_set = set(exclude)
     found: list[Path] = []
@@ -246,7 +223,6 @@ def collect_files(
 
 
 def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
-    """transfa.py worker: translate a single Farsi line to English."""
     stripped = line.strip()
     if not stripped or not contains_farsi(stripped):
         return None
@@ -259,7 +235,6 @@ def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
 
 
 def _worker_chunk_to_en(payload: tuple[str, float]) -> str:
-    """transfa2.py worker: translate one chunk in place."""
     chunk, sleep_sec = payload
     if not contains_farsi(chunk):
         return chunk
@@ -276,7 +251,6 @@ def _worker_chunk_to_en(payload: tuple[str, float]) -> str:
 
 
 def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
-    """transfamp.py worker: translate one .txt file into a {orig: trans} map."""
     try:
         content = path.read_text(encoding="utf-8").strip()
         if not content:
@@ -320,12 +294,6 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
 
 
 def cmd_to_fa(args: argparse.Namespace) -> int:
-    """
-    Equivalent to ``tofa.py``.
-
-    Read a file (any of several encodings), translate it to Farsi, and write
-    ``<stem>_<output_suffix><suffix>``.  Large files are chunked.
-    """
     src = Path(args.input)
     if not src.exists():
         logger.error(f"File not found: {src}")
@@ -376,7 +344,6 @@ def _translate_file_to_target(
     chunk_size: int,
     retries: int,
 ) -> str:
-    """Chunk + translate a whole file; shared by to-fa."""
     if len(content) <= chunk_size:
         print(f"[INFO] Content fits in single request ({len(content)} chars)")
         print("[INFO] Translating...")
@@ -412,13 +379,6 @@ def _translate_file_to_target(
 
 
 def cmd_lines_to_en(args: argparse.Namespace) -> int:
-    """
-    Equivalent to ``transfa.py``.
-
-    Translate every Farsi line of a single file into English, writing
-    ``<stem>_<output_suffix><suffix>`` with lines of the form
-    ``original = translation``.
-    """
     src = Path(args.input)
     if not src.exists():
         logger.error(f"File not found: {src}")
@@ -456,12 +416,6 @@ def cmd_lines_to_en(args: argparse.Namespace) -> int:
 
 
 def cmd_inplace_to_en(args: argparse.Namespace) -> int:
-    """
-    Equivalent to ``transfa2.py``.
-
-    Recursively translate Farsi content in every supported file under *path*,
-    overwriting the originals in place.
-    """
     root = Path(args.path)
     if not root.exists():
         logger.error(f"Path does not exist: {root}")
@@ -491,7 +445,6 @@ def _inplace_translate_one(
     sleep: float,
     final_sleep: float,
 ) -> None:
-    """Translate a single file in place using a Pool of chunk workers."""
     try:
         content = path.read_text(encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
@@ -523,12 +476,6 @@ def _inplace_translate_one(
 
 
 def cmd_batch_json(args: argparse.Namespace) -> int:
-    """
-    Equivalent to ``transfamp.py``.
-
-    Translate every ``*.txt`` file in *directory* into a JSON mapping saved
-    under *out_dir* as ``<stem>_translations.json``.
-    """
     directory = Path(args.directory)
     files = sorted(directory.glob(args.glob))
     if not files:
@@ -573,7 +520,6 @@ def _save_translations(
     mapping: dict[str, str],
     out_dir: str,
 ) -> Path:
-    """Write a {orig: trans} mapping as JSON under *out_dir*."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     target = out / f"{src.stem}_translations.json"

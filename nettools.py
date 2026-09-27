@@ -76,7 +76,6 @@ except ImportError:
 
 
 def get_public_ip() -> Optional[str]:
-    """Return the public IP address by querying several well-known services."""
     endpoints = [
         ("https://api.ipify.org?format=json", "ip"),
         ("https://ipinfo.io/json", "ip"),
@@ -96,7 +95,6 @@ def get_public_ip() -> Optional[str]:
 
 
 def get_local_ip() -> str:
-    """Return the primary outbound local IP (falls back to hostname lookup)."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(2)
@@ -109,7 +107,6 @@ def get_local_ip() -> str:
 
 
 def read_dns_servers(path: Path) -> list[str]:
-    """Parse `nameserver` lines from a resolv.conf-style file (deduped)."""
     servers: list[str] = []
     try:
         if path.exists():
@@ -138,7 +135,6 @@ def read_dns_servers(path: Path) -> list[str]:
 def _probe_one(
     idx: int, total: int, proxy: str, timeout: float, delay: float
 ) -> tuple[str, Optional[str]]:
-    """Test a single proxy. Returns (colored_status_line, valid_proxy_or_None)."""
     proxy = proxy.strip()
     proxies = {"http": f"http://{proxy}", "https": f"https://{proxy}"}
     ok = False
@@ -156,7 +152,6 @@ def _probe_one(
 
 
 def cmd_proxy_test(args: argparse.Namespace) -> int:
-    """Test a list of HTTP proxies concurrently, print results, optionally save."""
     if requests is None:
         print(
             "Error: 'requests' package is required for proxy-test. `pip install requests`"
@@ -216,7 +211,6 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
 
 
 def _speed_download(url: str, timeout: float) -> Optional[float]:
-    """Return download throughput in Mbps, or None on error."""
     t0 = time.time()
     try:
         with urlrequest.urlopen(url, timeout=timeout) as resp:
@@ -230,7 +224,6 @@ def _speed_download(url: str, timeout: float) -> Optional[float]:
 def _speed_upload(
     url: str, size: int = 1024 * 1024, timeout: float = 20.0
 ) -> Optional[float]:
-    """Return upload throughput in Mbps, or None on error."""
     payload = "".join(
         random.choices(string.ascii_letters + string.digits, k=size)
     ).encode()
@@ -258,7 +251,6 @@ def _speed_upload(
 
 
 def cmd_net_info(args: argparse.Namespace) -> int:
-    """Print public IP, local IP, DNS servers, and (optionally) run a speed test."""
     print("-" * 40)
     print(" NETWORK STATES ")
     print("-" * 40)
@@ -313,8 +305,6 @@ _PING_RTT_RE = re.compile(
 
 
 class PingStats:
-    """Container holding parsed output of a single `ping` run."""
-
     def __init__(self) -> None:
         self.host: str = ""
         self.ip: str = ""
@@ -347,7 +337,6 @@ class PingStats:
 
 
 def parse_ping_output(text: str) -> PingStats:
-    """Parse raw `ping` stdout into a PingStats object."""
     st = PingStats()
     lines = text.splitlines()
     if lines:
@@ -384,7 +373,6 @@ def run_ping(
     size: int = 56,
     live: bool = True,
 ) -> Optional[PingStats]:
-    """Invoke the system `ping` binary and parse the result."""
     try:
         cmd = [
             "ping",
@@ -417,7 +405,6 @@ def run_ping(
 
 
 def cmd_ping(args: argparse.Namespace) -> int:
-    """Run an ICMP ping and print the parsed statistics."""
     stats = run_ping(
         args.host,
         count=args.count,
@@ -447,7 +434,6 @@ DNS_PROVIDERS: dict[str, list[str]] = {
 
 
 def cmd_set_dns(args: argparse.Namespace) -> int:
-    """Write a resolv.conf-style file selecting either a random or named provider."""
     if args.list:
         print("Available DNS providers:")
         for name, servers in DNS_PROVIDERS.items():
@@ -486,13 +472,11 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
 
 
 def _public_ip_urllib() -> str:
-    """Public IP via stdlib urllib (mirrors pynet.py's behavior)."""
     ip = get_public_ip()
     return ip if ip else "Unable to determine public IP"
 
 
 def _public_ip_pycurl() -> str:
-    """Public IP via pycurl (mirrors show_ip.py's original behavior)."""
     try:
         import pycurl  # type: ignore
     except ImportError:
@@ -513,7 +497,6 @@ def _public_ip_pycurl() -> str:
 
 
 def cmd_show_ip(args: argparse.Namespace) -> int:
-    """Print the local and public IP addresses."""
     print(f"Local IP: {get_local_ip()}")
     if args.engine == "pycurl":
         print(f"Public IP: {_public_ip_pycurl()}")
@@ -528,13 +511,6 @@ def cmd_show_ip(args: argparse.Namespace) -> int:
 
 
 class SignalMeter:
-    """
-    Read Android Wi-Fi / cellular / airplane-mode signal strength.
-
-    Note: this is Android/Termux-specific — it shells out to `dumpsys` and
-    `settings`. On other platforms most readings will be None.
-    """
-
     def __init__(self) -> None:
         self.wifi_strength: Optional[int] = None
         self.cellular_strength: Optional[int] = None
@@ -602,7 +578,6 @@ class SignalMeter:
     def strength_to_bars(
         strength: Optional[int], top: int = -30, bottom: int = -120
     ) -> tuple[str, int]:
-        """Return (bar string, percentage) — same formula as the original."""
         if strength is None:
             return ("N/A", 0)
         clamped = max(bottom, min(top, strength))
@@ -618,7 +593,6 @@ class SignalMeter:
 
 
 def cmd_signal(args: argparse.Namespace) -> int:
-    """Live-updating signal-strength monitor (Android only)."""
     try:
         from rich.align import Align  # type: ignore
         from rich.console import Console  # type: ignore
@@ -683,7 +657,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="merged_net_tools.py",
         description="Unified network toolkit (proxies, IP, ping, DNS, signal).",
@@ -835,7 +808,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point: parse args and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

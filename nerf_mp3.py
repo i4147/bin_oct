@@ -45,8 +45,6 @@ SECONDS_PER_MINUTE: Final[float] = 60.0
 
 
 class Colors:
-    """ANSI color escape codes used for terminal output."""
-
     HEADER: str = "\033[95m"
     CYAN: str = "\033[96m"
     GREEN: str = "\033[92m"
@@ -60,8 +58,6 @@ class Colors:
 
 @dataclass
 class ConversionStats:
-    """Statistics for a single MP3 bitrate conversion attempt."""
-
     path: Path
     original_bitrate: int
     new_bitrate: int
@@ -78,7 +74,6 @@ class ConversionStats:
 
 
 def check_ffmpeg() -> None:
-    """Ensure ffmpeg and ffprobe are installed; exit(1) if not."""
     try:
         ffmpeg.probe("dummy")  # type: ignore[no-untyped-call]
     except ffmpeg.Error:
@@ -89,7 +84,6 @@ def check_ffmpeg() -> None:
 
 
 def format_duration(seconds: float) -> str:
-    """Format a duration in seconds as a human-readable string."""
     if seconds < 1:
         return f"{seconds * MS_PER_SECOND:.0f}ms"
     if seconds < SECONDS_PER_MINUTE:
@@ -100,7 +94,6 @@ def format_duration(seconds: float) -> str:
 
 
 def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
-    """Return (bitrate_kbps, size_bytes) for an MP3, or (None, None) on failure."""
     try:
         result = subprocess_run(
             [
@@ -131,7 +124,6 @@ def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
 
 
 def subprocess_run(cmd: list[str]) -> str:
-    """Run a subprocess and return its stdout, raising on failure."""
     import subprocess
 
     completed = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -144,7 +136,6 @@ def subprocess_run(cmd: list[str]) -> str:
 
 
 def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
-    """Convert one MP3 file to half its original bitrate."""
     start_time = time.time()
     rel_path = mp3_file.relative_to(base_dir)
     original_bitrate, original_size = get_audio_info(mp3_file)
@@ -241,7 +232,6 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
 
 
 def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
-    """Log the result of a single file conversion."""
     if stat.success:
         size_saved = stat.original_size - stat.new_size
         size_percent = (
@@ -266,7 +256,6 @@ def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
 
 
 def print_final_summary(stats: list[ConversionStats], total_duration: float) -> None:
-    """Log the final conversion summary."""
     successful = [s for s in stats if s.success]
     failed = [s for s in stats if not s.success]
     total_original = sum(s.original_size for s in successful)
@@ -297,7 +286,6 @@ def print_final_summary(stats: list[ConversionStats], total_duration: float) -> 
 
 
 def find_mp3_files(directories: list[Path]) -> list[Path]:
-    """Recursively find unique MP3 files in the given directories."""
     mp3_files: list[Path] = []
     for directory in directories:
         if not directory.exists():
@@ -325,7 +313,6 @@ def find_mp3_files(directories: list[Path]) -> list[Path]:
 
 
 def process_directory(directory: Path) -> None:
-    """Process all MP3 files in a directory using a fixed pool of workers."""
     mp3_files = find_mp3_files([directory])
     if not mp3_files:
         logger.warning(f"No MP3 files found in {directory}")
@@ -365,7 +352,6 @@ def process_directory(directory: Path) -> None:
 
 
 def main() -> int:
-    """Parse CLI arguments and process each directory."""
     parser = argparse.ArgumentParser(
         description="Convert MP3 files to half their original bitrate",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -83,8 +83,6 @@ CSS_URL_RE = re.compile(r"""url\(\s*['"]?([^)'"]+?)['"]?\s*\)""")
 
 
 class Monolith:
-    """Fetch a page and inline every external resource it references."""
-
     def __init__(
         self,
         *,
@@ -117,11 +115,6 @@ class Monolith:
     # -- low-level helpers --------------------------------------------------
 
     def fetch(self, url: str) -> bytes:
-        """Return the raw bytes of *url*, with in-memory caching.
-
-        Supports ``file://`` URLs by reading from disk.  On error, either
-        re-raises (strict mode) or warns and returns ``b""`` (lenient mode).
-        """
         if url in self._cache:
             return self._cache[url]
         try:
@@ -141,19 +134,16 @@ class Monolith:
             return b""
 
     def to_data_uri(self, data: bytes, mime: str = "application/octet-stream") -> str:
-        """Encode *data* as a ``data:`` URI.  Returns ``""`` for empty input."""
         if not data:
             return ""
         b64 = base64.b64encode(data).decode("ascii")
         return f"data:{mime};base64,{b64}"
 
     def guess_mime(self, url: str, default: str = "application/octet-stream") -> str:
-        """Best-effort MIME type from the URL's file extension."""
         ext = Path(urlparse(url).path).suffix.lower()
         return self.mime_types.get(ext, default)
 
     def resolve_url(self, url: str) -> str:
-        """Resolve *url* against :attr:`base_url` (handles ``//host/x`` too)."""
         if url.startswith(("data:", "#")):
             return url
         if url.startswith("//"):
@@ -164,7 +154,6 @@ class Monolith:
     # -- resource inlining --------------------------------------------------
 
     def replace_css_urls(self, css: str, base_url: str) -> str:
-        """Rewrite every ``url(...)`` inside *css* to a ``data:`` URI."""
 
         def repl(match: "re.Match[str]") -> str:
             raw = match.group(1).strip()
@@ -186,7 +175,6 @@ class Monolith:
         return CSS_URL_RE.sub(repl, css)
 
     def inline_stylesheets(self, soup: BeautifulSoup) -> None:
-        """Handle every ``<link rel="stylesheet">`` according to *css_mode*."""
         for link in soup.find_all("link", rel="stylesheet"):
             href = link.get("href")
             if not href:
@@ -213,7 +201,6 @@ class Monolith:
                 print(f"⚠ Skipping CSS: {url} ({exc})", file=sys.stderr)
 
     def inline_scripts(self, soup: BeautifulSoup) -> None:
-        """Replace every external ``<script src=...>`` with inline code."""
         for script in soup.find_all("script", src=True):
             src = script.get("src")
             if not src:
@@ -232,10 +219,6 @@ class Monolith:
                 print(f"⚠ Skipping script: {url} ({exc})", file=sys.stderr)
 
     def inline_images(self, soup: BeautifulSoup) -> None:
-        """Embed ``<img>`` and ``srcset`` references as data-URIs.
-
-        If :attr:`no_images` is true, every ``<img>`` tag is removed instead.
-        """
         if self.no_images:
             for img in soup.find_all("img"):
                 img.decompose()
@@ -289,14 +272,12 @@ class Monolith:
                 tag["srcset"] = ", ".join(entries)
 
     def process_style_tags(self, soup: BeautifulSoup) -> None:
-        """Inline ``url(...)`` references inside existing ``<style>`` blocks."""
         for style in soup.find_all("style"):
             if not style.string:
                 continue
             style.string = self.replace_css_urls(style.string, self.base_url)
 
     def ensure_meta_charset(self, soup: BeautifulSoup) -> None:
-        """Ensure a ``<meta charset="...">`` element is present and set."""
         meta = soup.find("meta", charset=True)
         if meta is not None:
             meta["charset"] = self.encoding
@@ -315,7 +296,6 @@ class Monolith:
     # -- top-level entry points --------------------------------------------
 
     def process_html(self, html: str, base_url: str) -> str:
-        """Transform *html* into a self-contained document rooted at *base_url*."""
         self.base_url = base_url
         soup = BeautifulSoup(html, "html.parser")
 
@@ -330,7 +310,6 @@ class Monolith:
         return soup.prettify() if self.prettify else str(soup)
 
     def from_url(self, url: str) -> str:
-        """Fetch and process *url*."""
         print(f"📥 Fetching {url}...", file=sys.stderr)
         resp = self.session.get(url, timeout=self.timeout)
         resp.raise_for_status()
@@ -340,7 +319,6 @@ class Monolith:
         return self.process_html(resp.text, url)
 
     def from_file(self, path: str) -> str:
-        """Load and process a local HTML file (base URL becomes its ``file://`` URI)."""
         resolved = Path(path).resolve()
         print(f"📂 Loading {resolved}...", file=sys.stderr)
         html = resolved.read_text(encoding=self.encoding, errors="ignore")

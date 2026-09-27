@@ -52,8 +52,6 @@ POOL_SIZE: Final[int] = 8
 
 @dataclass
 class FileResult:
-    """Result of processing a single Python source file."""
-
     path: str
     is_error: bool = False
     error_message: str = ""
@@ -64,8 +62,6 @@ class FileResult:
 
 @dataclass
 class ProcessingStats:
-    """Aggregated statistics across all processed files."""
-
     total_files: int = 0
     changed_files: int = 0
     comments_removed: int = 0
@@ -75,16 +71,12 @@ class ProcessingStats:
 
 
 class CommentRemover:
-    """Remove inline comments from Python source while preserving special comments."""
-
     def __init__(self, source: str) -> None:
-        """Initialize the remover with the given source text."""
         self.source: str = source
         self.lines: list[str] = source.split("\n")
         self.comments_removed: int = 0
 
     def remove_comments(self) -> str:
-        """Return the source with inline comments removed."""
         result_lines: list[str] = []
         for line in self.lines:
             processed_line, removed = self._process_line(line)
@@ -93,7 +85,6 @@ class CommentRemover:
         return "\n".join(result_lines)
 
     def _process_line(self, line: str) -> tuple[str, int]:
-        """Process a single line, returning the new line and number of comments removed."""
         if self._is_shebang(line):
             return (line, 0)
         if self._is_encoding_declaration(line):
@@ -108,17 +99,14 @@ class CommentRemover:
 
     @staticmethod
     def _is_shebang(line: str) -> bool:
-        """Return True if the line is a shebang."""
         return line.startswith("#!")
 
     @staticmethod
     def _is_encoding_declaration(line: str) -> bool:
-        """Return True if the line is a PEP 263 encoding declaration."""
         return re.match(r"#.*?coding[:=]\s*([-\w.]+)", line) is not None
 
     @staticmethod
     def _is_type_comment(line: str) -> bool:
-        """Return True if the line contains a type comment or lint directive."""
         return (
             "# type:" in line
             or "# noqa" in line
@@ -128,7 +116,6 @@ class CommentRemover:
 
     @staticmethod
     def _strip_inline_comment(line: str) -> str:
-        """Strip an inline comment from a line, respecting string literals."""
         result: list[str] = []
         i = 0
         in_string = False
@@ -169,15 +156,11 @@ class CommentRemover:
 
 
 class DocstringRemover(ast.NodeTransformer):
-    """AST transformer that removes docstrings from functions, classes, and optionally modules."""
-
     def __init__(self, remove_module_docstring: bool = False) -> None:
-        """Initialize the transformer with the module docstring removal flag."""
         self.remove_module_docstring: bool = remove_module_docstring
         self.docstrings_removed: int = 0
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
-        """Remove the docstring from a function definition if present."""
         if (
             self._has_docstring(node)
             and (not self.remove_module_docstring or not self._is_module_level(node))
@@ -197,7 +180,6 @@ class DocstringRemover(ast.NodeTransformer):
     def visit_AsyncFunctionDef(
         self, node: ast.AsyncFunctionDef
     ) -> ast.AsyncFunctionDef:
-        """Remove the docstring from an async function definition if present."""
         if (
             self._has_docstring(node)
             and isinstance(node.body[0], ast.Expr)
@@ -212,7 +194,6 @@ class DocstringRemover(ast.NodeTransformer):
         return node
 
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
-        """Remove the docstring from a class definition if present."""
         if (
             self._has_docstring(node)
             and isinstance(node.body[0], ast.Expr)
@@ -227,7 +208,6 @@ class DocstringRemover(ast.NodeTransformer):
         return node
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
-        """Remove the module docstring if configured to do so."""
         if (
             self.remove_module_docstring
             and self._has_docstring(node)
@@ -244,7 +224,6 @@ class DocstringRemover(ast.NodeTransformer):
 
     @staticmethod
     def _has_docstring(node: ast.AST) -> bool:
-        """Return True if the node has a docstring as its first statement."""
         return (
             bool(getattr(node, "body", []))
             and isinstance(node.body[0], ast.Expr)
@@ -254,18 +233,12 @@ class DocstringRemover(ast.NodeTransformer):
 
     @staticmethod
     def _is_module_level(node: ast.AST) -> bool:
-        """Return True if the node is at module level (always False for nested nodes)."""
         return False
 
 
 def _remove_docstrings_from_source(
     source: str, remove_module_docstring: bool
 ) -> tuple[str, int]:
-    """Remove docstrings from source while preserving the original formatting.
-
-    Uses AST to identify docstring line ranges, then strips those lines directly
-    from the source text rather than re-rendering via ast.unparse.
-    """
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -364,7 +337,6 @@ def _remove_docstrings_from_source(
 def process_single_file(
     path: Path, remove_module_docstring: bool = False, dry_run: bool = False
 ) -> FileResult:
-    """Process a single Python file, removing comments and docstrings."""
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             original_source = f.read()
@@ -410,7 +382,6 @@ def process_single_file(
 def process_wheel_file(
     wheel_path: Path, remove_module_docstring: bool = False, dry_run: bool = False
 ) -> list[FileResult]:
-    """Process all Python files inside a wheel archive."""
     results: list[FileResult] = []
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -452,13 +423,11 @@ def process_wheel_file(
 
 
 def _worker_process_file(args: tuple[Path, bool, bool]) -> FileResult:
-    """Worker entry point for processing a single file in a subprocess."""
     path, remove_module_docstring, dry_run = args
     return process_single_file(path, remove_module_docstring, dry_run)
 
 
 def discover_files(start_path: str) -> tuple[list[Path], list[Path]]:
-    """Discover Python files and wheel archives under the given path."""
     start = Path(start_path).resolve()
     if not start.exists():
         logger.error(f"Path not found: {start}")
@@ -484,12 +453,10 @@ def discover_files(start_path: str) -> tuple[list[Path], list[Path]]:
 
 
 def print_header(python_count: int, wheel_count: int) -> None:
-    """Log a header with the number of discovered files."""
     print(f"Found: {python_count} Python files, {wheel_count} wheel files")
 
 
 def print_results(stats: ProcessingStats, base_dir: Path) -> None:
-    """Log per-file processing results."""
     results = sorted(stats.results, key=lambda r: r.path)
     for result in results:
         if result.is_error:
@@ -511,7 +478,6 @@ def print_results(stats: ProcessingStats, base_dir: Path) -> None:
 
 
 def print_summary(stats: ProcessingStats) -> None:
-    """Log the final processing summary."""
     print("=" * 40)
     print("Summary:")
     print(f"  Total files processed: {stats.total_files}")
@@ -524,7 +490,6 @@ def print_summary(stats: ProcessingStats) -> None:
 
 
 def _accumulate_result(stats: ProcessingStats, result: FileResult) -> None:
-    """Update aggregate statistics from a single file result."""
     stats.results.append(result)
     if result.is_error:
         stats.errors += 1
@@ -535,7 +500,6 @@ def _accumulate_result(stats: ProcessingStats, result: FileResult) -> None:
 
 
 def main() -> int:
-    """Entry point for the comment and docstring stripping utility."""
     parser = argparse.ArgumentParser(
         description="Strip comments and docstrings from Python source files",
         formatter_class=argparse.RawDescriptionHelpFormatter,

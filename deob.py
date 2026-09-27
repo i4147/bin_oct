@@ -36,7 +36,6 @@ _ASSIGN_RE = re.compile(
 
 
 def parse_assignments(src: str) -> dict[str, str]:
-    """Return {varname: value} for every assignment found in src."""
     out: dict[str, str] = {}
     for m in _ASSIGN_RE.finditer(src):
         name = m.group("name")

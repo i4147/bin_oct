@@ -116,7 +116,6 @@ def module_from_name(name: str) -> str:
 
 
 def load_user_info() -> dict[str, str]:
-    """Read ~/.myinfo (JSON or key=value). Used by `init`."""
     info_path = Path.home() / ".myinfo"
     if not info_path.exists():
         return {}
@@ -290,7 +289,6 @@ def _read_optional_file(p: Path) -> str:
 
 
 def _readme_content(readme: Any, root: Path) -> tuple[str, str]:
-    """Return (content, content_type) for a PEP 621 readme field."""
     if isinstance(readme, dict):
         content_type = readme.get("content-type", "text/markdown")
         if "file" in readme:
@@ -449,7 +447,6 @@ def parse_setup_cfg(path: Path) -> configparser.ConfigParser:
 # setup.py renderers
 # ===========================================================================
 def render_package_finder(package_name: str | None) -> str:
-    """Return the packages/package_dir setup snippet (create_setuppy.py style)."""
     if package_name:
         return (
             "from pathlib import Path\n"
@@ -541,7 +538,6 @@ def _setup_kwargs_simple(
 
 
 def render_setup_py_simple(meta: ProjectMeta, root: Path) -> str:
-    """Style used by create_setuppy.py."""
     finder = render_package_finder(meta.name)
     header = (
         '"""Generated setup.py.\n'
@@ -567,7 +563,6 @@ def render_setup_py_detailed(
     cfg: configparser.ConfigParser | None = None,
     with_cfg: bool = False,
 ) -> str:
-    """Style used by generate_setuppy.py / new2old.py."""
     cfg = cfg or configparser.ConfigParser()
     # detect extensions / backend
     backend = _detect_ext_backend(meta)
@@ -685,10 +680,6 @@ def _detect_ext_backend(meta: ProjectMeta) -> str:
 
 
 def render_setup_py_runtime(meta: ProjectMeta) -> str:
-    """
-    Style used by mksetuppy.py: a setup.py shim that dispatches at build time
-    to the configured backend (flit / poetry / setuptools).
-    """
     return textwrap.dedent(
         '''\
         #!/usr/bin/env python3

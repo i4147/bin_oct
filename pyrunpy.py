@@ -41,8 +41,6 @@ FILE_PATTERN: Final[str] = "*.py"
 
 
 class Outcome(str, Enum):
-    """The possible outcomes of running a single Python file."""
-
     SUCCESS = "success"
     MODULE_NOT_FOUND = "ModuleNotFoundError"
     IMPORT_ERROR = "ImportError"
@@ -57,16 +55,6 @@ class Outcome(str, Enum):
 
 @dataclass(slots=True)
 class FileResult:
-    """The result of executing a single Python file.
-
-    Attributes:
-        path: The file that was executed.
-        outcome: The classified outcome of the execution.
-        returncode: The process return code, if the run completed.
-        stderr: Captured standard error, if any.
-        duration: Wall-clock duration of the run in seconds.
-    """
-
     path: Path
     outcome: Outcome
     returncode: int | None = None
@@ -76,36 +64,21 @@ class FileResult:
 
 @dataclass(slots=True)
 class Summary:
-    """Aggregated results across all executed files.
-
-    Attributes:
-        results: All individual :class:`FileResult` instances.
-    """
-
     results: list[FileResult] = field(default_factory=list)
 
     @property
     def total(self) -> int:
-        """Return the total number of executed files."""
         return len(self.results)
 
     @property
     def succeeded(self) -> int:
-        """Return the number of successfully executed files."""
         return sum(1 for r in self.results if r.outcome is Outcome.SUCCESS)
 
     @property
     def failed(self) -> int:
-        """Return the number of files that failed for any reason."""
         return self.total - self.succeeded
 
     def counts_by_outcome(self) -> dict[Outcome, int]:
-        """Return a mapping of outcome to occurrence count.
-
-        Returns:
-            A dictionary whose keys are :class:`Outcome` members and whose
-            values are the number of files that produced that outcome.
-        """
         counts: dict[Outcome, int] = {}
         for result in self.results:
             counts[result.outcome] = counts.get(result.outcome, 0) + 1
@@ -118,30 +91,12 @@ class Summary:
 
 
 def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
-    """Find all Python files under ``directory``.
-
-    Args:
-        directory: The root directory to search.
-        recursive: If ``True``, descend into subdirectories.
-
-    Returns:
-        A sorted list of :class:`pathlib.Path` objects pointing to ``.py`` files.
-    """
     if recursive:
         return sorted(p for p in directory.rglob(FILE_PATTERN) if p.is_file())
     return sorted(p for p in directory.glob(FILE_PATTERN) if p.is_file())
 
 
 def _classify_failure(stderr: str, returncode: int) -> Outcome:
-    """Map captured stderr to an :class:`Outcome`.
-
-    Args:
-        stderr: The captured standard error text.
-        returncode: The process return code.
-
-    Returns:
-        The classified :class:`Outcome` for the failure.
-    """
     # Order matters: more specific exceptions first.
     checks: tuple[tuple[str, Outcome], ...] = (
         ("ModuleNotFoundError", Outcome.MODULE_NOT_FOUND),
@@ -160,15 +115,6 @@ def _classify_failure(stderr: str, returncode: int) -> Outcome:
 
 
 def run_file(path: Path, timeout: float) -> FileResult:
-    """Execute a single Python file in a subprocess with a timeout.
-
-    Args:
-        path: The Python file to execute.
-        timeout: Maximum wall-clock time in seconds.
-
-    Returns:
-        A :class:`FileResult` describing the outcome of the execution.
-    """
     import time
 
     start = time.monotonic()
@@ -218,12 +164,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
 
 
 def _log_result(result: FileResult, verbose: bool) -> None:
-    """Log a single file result at an appropriate level.
-
-    Args:
-        result: The result to log.
-        verbose: Whether verbose logging is enabled.
-    """
     if result.outcome is Outcome.SUCCESS:
         if verbose:
             logger.success(f"OK   {result.path} ({result.duration:.2f}s)")
@@ -237,11 +177,6 @@ def _log_result(result: FileResult, verbose: bool) -> None:
 
 
 def report_summary(summary: Summary) -> None:
-    """Print a final summary of all executions.
-
-    Args:
-        summary: The aggregated :class:`Summary` to report.
-    """
     print("=" * 60)
     print(
         f"Summary: {summary.total} file(s), "
@@ -261,11 +196,6 @@ def report_summary(summary: Summary) -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Construct the command-line argument parser.
-
-    Returns:
-        A configured :class:`argparse.ArgumentParser` instance.
-    """
     parser = argparse.ArgumentParser(
         prog="pyrunner",
         description=(
@@ -299,14 +229,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point for the CLI tool.
-
-    Args:
-        argv: Optional argument vector; defaults to ``sys.argv[1:]``.
-
-    Returns:
-        Process exit code: ``0`` if all files succeeded, ``1`` otherwise.
-    """
     parser = _build_parser()
     args = parser.parse_args(argv)
 

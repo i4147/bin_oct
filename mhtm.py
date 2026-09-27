@@ -29,7 +29,6 @@ import minify_html as mh
 
 
 def _minify_html_backend(data: str) -> str:
-    """Backend using the Rust-based `minify-html` library (fast, default)."""
     return mh.minify(data)
 
 
@@ -51,20 +50,6 @@ DEFAULT_POOL_METHOD: str = "imap_unordered"
 
 
 def process_file(path: Path, backend: str) -> tuple[str, bool, str]:
-    """Minify a single HTML file in place using the given backend.
-
-    Reads the file, runs it through the selected backend, and writes the
-    result back only if it differs from the original (avoids unnecessary
-    disk writes and mtime churn).
-
-    Args:
-        path: File to process.
-        backend: Key into BACKENDS selecting the minifier implementation.
-
-    Returns:
-        (relative_path, changed, error_message). `error_message` is empty
-        on success; `changed` is True only if the file was rewritten.
-    """
     rel = str(path)
     minify_fn = BACKENDS[backend]
     try:
@@ -89,13 +74,6 @@ def process_file(path: Path, backend: str) -> tuple[str, bool, str]:
 
 
 def iter_html_files(targets: Iterable[Path]) -> Generator[Path, None, None]:
-    """Yield unique, resolved .html/.htm file paths from a mix of file and
-    directory inputs. Directories are searched recursively.
-
-    Deduplicates via a set of resolved paths so the same file reached
-    through two different input arguments (e.g. a direct path and a parent
-    directory) is only processed once.
-    """
     seen: set[Path] = set()
     for target in targets:
         try:
@@ -120,20 +98,6 @@ def run_pool(
     pool_method: str,
     processes: int,
 ) -> Generator[tuple[str, bool, str], None, None]:
-    """Dispatch `process_file` over `files` using the selected pool method.
-
-    Each strategy behaves differently:
-        map            - blocks, preserves order, returns all results at once.
-        starmap        - like map, but unpacks (path, backend) tuples;
-                          used here since process_file takes two arguments.
-        apply_async    - non-blocking per-task submission; results are
-                          collected via AsyncResult.get() as they complete.
-        imap_unordered - lazy iterator, streams results as soon as any
-                          worker finishes, order not preserved (default).
-
-    Yields:
-        (relative_path, changed, error_message) tuples, one per file.
-    """
     with mp.Pool(processes=processes) as pool:
         if pool_method == "map":
             args_iter = ((f, backend) for f in files)
@@ -168,19 +132,12 @@ def run_pool(
 
 
 def _starmap_adapter(backend: str) -> Callable[[Path], tuple[str, bool, str]]:
-    """Build a single-argument callable binding `backend`, for use with
-    `imap_unordered`, which only accepts single-argument functions.
-
-    Uses functools.partial rather than a closure/lambda so the callable
-    remains picklable across process boundaries.
-    """
     from functools import partial
 
     return partial(process_file, backend=backend)
 
 
 def parse_args() -> argparse.Namespace:
-    """Define and parse command-line arguments."""
     ap = argparse.ArgumentParser(
         description="Minify HTML files in place using a pluggable backend.",
     )

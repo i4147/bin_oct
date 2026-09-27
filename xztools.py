@@ -74,8 +74,6 @@ except ImportError:
     _HAS_LOGURU = False
 
     class _FallbackLogger:
-        """Minimal stand-in for loguru.logger when loguru isn't installed."""
-
         def info(self, m: str) -> None:
             print(m)
 
@@ -217,7 +215,6 @@ else:
 
 
 def format_size(n: float) -> str:
-    """Return a human-readable byte size, e.g. ``1.23 MB``."""
     n = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if abs(n) < 1024.0 or unit == "TB":
@@ -227,7 +224,6 @@ def format_size(n: float) -> str:
 
 
 def dir_size(path: Path) -> int:
-    """Recursively sum file sizes under *path*, ignoring errors."""
     total = 0
     for p in path.rglob("*"):
         try:
@@ -239,12 +235,10 @@ def dir_size(path: Path) -> int:
 
 
 def _is_skipped_dir(path: Path, skip_dirs: set[str]) -> bool:
-    """True if any part of *path* names a directory we should ignore."""
     return any(part in skip_dirs for part in path.parts)
 
 
 def _matches_exclude(path: Path, patterns: Sequence[str]) -> bool:
-    """True if *path* contains any of the exclude substrings."""
     if not patterns:
         return False
     s = str(path)
@@ -262,13 +256,6 @@ def discover_files(
     recursive: bool = True,
     skip_symlinks: bool = True,
 ) -> list[Path]:
-    """
-    Collect files under *root* matching mode-specific filters.
-
-    mode == "compress": returns files that are not already compressed, not in
-                        skip_extensions, and (if --extensions given) in that set.
-    mode == "decompress": returns only ``*.xz`` files.
-    """
     skip_dirs = skip_dirs or DEFAULT_SKIP_DIRS
     exclude_patterns = list(exclude_patterns or [])
     ext_filter: set[str] = set()
@@ -312,15 +299,6 @@ def compress_bytes(
     threads: int = DEFAULT_THREADS,
     backend: str = "auto",
 ) -> bytes:
-    """
-    Compress *data* into an .xz stream.
-
-    backend ∈ {"auto", "lzma_mt", "lzmamt", "lzma"}.
-        auto     — prefer lzma_mt, fall back to stdlib.
-        lzma_mt  — force lzma_mt (raise if unavailable).
-        lzmamt   — alias for lzma_mt (originals used both names).
-        lzma     — stdlib only (single-threaded).
-    """
     if backend in ("auto", "lzma_mt", "lzmamt") and _HAS_LZMA_MT:
         return lzma_mt.compress(data, preset=preset, threads=threads)
     if backend in ("lzma_mt", "lzmamt"):
@@ -334,7 +312,6 @@ def compress_bytes(
 
 
 def decompress_bytes(data: bytes, *, backend: str = "auto") -> bytes:
-    """Inverse of :func:`compress_bytes`."""
     if backend in ("auto", "lzma_mt", "lzmamt") and _HAS_LZMA_MT:
         return lzma_mt.decompress(data)
     if backend in ("lzma_mt", "lzmamt"):
@@ -364,11 +341,6 @@ class FileResult:
 
 
 def _worker_compress_xz(args: tuple[str, int, int, str, bool, bool]) -> FileResult:
-    """
-    Compress a single file to ``<name>.xz``.
-
-    args = (path_str, preset, threads, backend, remove_original, dry_run)
-    """
     path_str, preset, threads, backend, remove_orig, dry_run = args
     src = Path(path_str)
     dst = src.with_name(src.name + XZ_SUFFIX)
@@ -402,12 +374,6 @@ def _worker_compress_xz(args: tuple[str, int, int, str, bool, bool]) -> FileResu
 
 
 def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
-    """
-    Decompress a single ``.xz`` file.
-
-    args = (path_str, remove_original, handle_tar_xz)
-        handle_tar_xz=True → ``*.tar.xz`` files are extracted into a directory.
-    """
     path_str, remove_orig, handle_tar_xz = args
     src = Path(path_str)
     t0 = time.monotonic()
@@ -453,11 +419,6 @@ def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
 
 
 def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
-    """
-    Create ``<dir>.tar.xz`` next to *dir*, verify, delete the source.
-
-    args = (dir_str, preset, verify, remove_original)
-    """
     dir_str, preset, verify, remove_orig = args
     src = Path(dir_str)
     dst = src.with_name(src.name + TAR_XZ_SUFFIX)
@@ -519,7 +480,6 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
 
 
 def _read_file_bytes(args: tuple[str]) -> tuple[str, bytes]:
-    """Helper for archive-cwd: read file bytes in a worker."""
     (path_str,) = args
     return (path_str, Path(path_str).read_bytes())
 
@@ -528,7 +488,6 @@ def _read_file_bytes(args: tuple[str]) -> tuple[str, bytes]:
 
 
 def _pylzma_compress_blob(data: bytes) -> bytes:
-    """pylzma compression with our standard filter set."""
     if not _HAS_PYLZMA:
         raise RuntimeError("pylzma is not installed (`pip install pylzma`).")
     return pylzma.compress(data, filters=_PYLZMA_FILTERS)
@@ -541,11 +500,6 @@ def _pylzma_decompress_blob(data: bytes) -> bytes:
 
 
 def _worker_pylzma_7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult:
-    """
-    Compress a file → ``.7z`` or a directory → ``.tar.7z``.
-
-    args = (path_str, keep_original, output_dir_str_or_None, tar_subdirs)
-    """
     path_str, keep, out_dir_str, _tar_subdirs = args
     src = Path(path_str)
     out_dir = Path(out_dir_str) if out_dir_str else None
@@ -597,7 +551,6 @@ def _worker_pylzma_7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult
 
 
 def _worker_pylzma_un7z(args: tuple[str, bool, Optional[str], bool]) -> FileResult:
-    """Inverse of :func:`_worker_pylzma_7z`."""
     path_str, keep, out_dir_str, _ = args
     src = Path(path_str)
     out_dir = Path(out_dir_str) if out_dir_str else None
@@ -649,19 +602,10 @@ def _worker_pylzma_un7z(args: tuple[str, bool, Optional[str], bool]) -> FileResu
 
 
 def _pylzma_compress_chunk(chunk: bytes) -> bytes:
-    """Worker: compress one chunk (called from the pool inside chunked path)."""
     return _pylzma_compress_blob(chunk)
 
 
 def _chunked_compress_file(src: Path, dst: Path, chunk_size: int, workers: int) -> bool:
-    """
-    Compress a large file to ``.lzma`` in chunks.
-
-    Layout of the output:
-        [4 bytes  n_chunks]
-        repeat n_chunks times:
-            [8 bytes  chunk_len] [chunk_len bytes  compressed chunk]
-    """
     data = src.read_bytes()
     total = len(data)
     n_chunks = (total + chunk_size - 1) // chunk_size
@@ -679,7 +623,6 @@ def _chunked_compress_file(src: Path, dst: Path, chunk_size: int, workers: int) 
 
 
 def _chunked_decompress_file(src: Path, dst: Path) -> bool:
-    """Read the format written by :func:`_chunked_compress_file`."""
     with src.open("rb") as fin, dst.open("wb") as fout:
         header = fin.read(4)
         if len(header) != 4:
@@ -698,7 +641,6 @@ def _chunked_decompress_file(src: Path, dst: Path) -> bool:
 
 
 def _worker_lzma_chunk_compress(args: tuple[str, int, int, bool]) -> FileResult:
-    """Compress one file → ``.lzma`` (chunked for large files)."""
     path_str, chunk_size, workers, remove_orig = args
     src = Path(path_str)
     dst = src.with_suffix(src.suffix + LZMA_SUFFIX)
@@ -737,7 +679,6 @@ def _worker_lzma_chunk_compress(args: tuple[str, int, int, bool]) -> FileResult:
 
 
 def _worker_lzma_chunk_decompress(args: tuple[str, bool]) -> FileResult:
-    """Decompress a ``.lzma`` file (auto-detects chunked format)."""
     path_str, remove_orig = args
     src = Path(path_str)
     if not src.name.endswith(LZMA_SUFFIX):
@@ -781,7 +722,6 @@ def _worker_lzma_chunk_decompress(args: tuple[str, bool]) -> FileResult:
 def _print_file_result(
     root: Path, r: FileResult, index: int = 0, total: int = 0
 ) -> None:
-    """Format one FileResult for stdout."""
     prefix = ""
     if total:
         pct = index / total * 100
@@ -799,7 +739,6 @@ def _print_file_result(
 
 
 def _print_summary(results: Sequence[FileResult]) -> None:
-    """Print aggregate stats after a batch."""
     ok = [r for r in results if r.success]
     fail = [r for r in results if not r.success]
     print("─" * 60)
@@ -829,12 +768,6 @@ def _print_summary(results: Sequence[FileResult]) -> None:
 
 
 def _tar_top_level_dirs(root: Path, preset: int, workers: int) -> list[dict[str, Any]]:
-    """
-    Implements the `--tar-subdirs` / `--auto-tar-dirs` portion: pack every
-    non-hidden top-level subdirectory into `<name>.tar.xz` (in place).
-
-    Used by lzmamter, xz_compressor and xzer variants.
-    """
     subdirs = [
         p
         for p in root.iterdir()
@@ -859,7 +792,6 @@ def _tar_top_level_dirs(root: Path, preset: int, workers: int) -> list[dict[str,
 
 
 def cmd_compress(args: argparse.Namespace) -> int:
-    """Recursive `.xz` compression of files (and optionally of subdirectories)."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         logger.error(f"{root} is not a directory")
@@ -938,7 +870,6 @@ def cmd_compress(args: argparse.Namespace) -> int:
 
 
 def cmd_decompress(args: argparse.Namespace) -> int:
-    """Recursive `.xz` decompression (optionally extract `*.tar.xz` to dirs)."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         logger.error(f"{root} is not a directory")
@@ -982,7 +913,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
 
 
 def cmd_tar_dirs(args: argparse.Namespace) -> int:
-    """Pack each top-level subdirectory into `<name>.tar.xz`, verify, delete."""
     root = Path(args.directory).expanduser().resolve()
     if not root.is_dir():
         logger.error(f"Not a directory: {root}")
@@ -1043,10 +973,6 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
 
 
 def cmd_archive_cwd(args: argparse.Namespace) -> int:
-    """
-    Archive the current working directory into `../<cwd_name>.tar.xz`,
-    verify the archive contents strictly, then delete the original directory.
-    """
     cwd = Path.cwd().resolve()
     parent = cwd.parent
     archive = parent / f"{cwd.name}{TAR_XZ_SUFFIX}"
@@ -1136,7 +1062,6 @@ def _collect_7z_targets(
     cwd: Path,
     output_dir: Optional[Path],
 ) -> list[Path]:
-    """Resolve which files/dirs the 7z command should process."""
     targets: list[Path] = []
 
     def add_compress_tree(base: Path) -> None:
@@ -1188,7 +1113,6 @@ def _collect_7z_targets(
 
 
 def cmd_7z(args: argparse.Namespace) -> int:
-    """pylzma-based `.7z` / `.tar.7z` compression / decompression."""
     if not _HAS_PYLZMA:
         logger.error(
             "pylzma is required for the `7z` subcommand. "
@@ -1233,7 +1157,6 @@ def cmd_7z(args: argparse.Namespace) -> int:
 
 
 def cmd_lzma_chunk(args: argparse.Namespace) -> int:
-    """pylzma chunked `.lzma` compression / decompression (max compression)."""
     if not _HAS_PYLZMA:
         logger.error("pylzma is required for the `lzma-chunk` subcommand.")
         return 1
@@ -1309,7 +1232,6 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
 
 
 def _add_common_xz_opts(p: argparse.ArgumentParser) -> None:
-    """Options shared between `compress` and `decompress`."""
     p.add_argument(
         "directory",
         nargs="?",

@@ -71,25 +71,16 @@ LANGUAGE_ALIASES: dict[str, str] = {
 
 
 class TranslationError(RuntimeError):
-    """Raised when a chunk cannot be translated."""
+    pass
 
 
 class RequestLimiter:
-    """
-    Process-wide request limiter.
-
-    A single limiter is shared by all worker threads, ensuring that the
-    configured delay applies between requests globally rather than separately
-    inside each worker.
-    """
-
     def __init__(self, delay: float) -> None:
         self.delay = max(0.0, delay)
         self._lock = threading.Lock()
         self._next_request_time = 0.0
 
     def wait(self) -> None:
-        """Wait until the next request is allowed to start."""
         with self._lock:
             now = time.monotonic()
             wait_for = self._next_request_time - now
@@ -102,14 +93,6 @@ class RequestLimiter:
 
 
 class SerializedTranslator:
-    """
-    Wrap a translator so only one call can use it at a time.
-
-    googletrans and pygoogletranslation can use shared internal state or
-    sessions that are not reliably thread-safe.  Serializing those calls
-    avoids concurrent access to one client.
-    """
-
     def __init__(self, translator: Translator) -> None:
         self._translator = translator
         self._lock = threading.Lock()
@@ -120,18 +103,11 @@ class SerializedTranslator:
 
 
 def normalize_language(language: str) -> str:
-    """Normalize a language code without changing unknown codes."""
     cleaned = language.strip()
     return LANGUAGE_ALIASES.get(cleaned.lower(), cleaned)
 
 
 def _deep_translator_language(language: str) -> str:
-    """
-    Return a language code accepted by deep_translator.
-
-    deep_translator accepts normal two-letter codes for most languages and
-    uses a few special values for Chinese variants.
-    """
     code = normalize_language(language)
     return {
         "zh-CN": "zh-CN",
@@ -140,7 +116,6 @@ def _deep_translator_language(language: str) -> str:
 
 
 def _deepl_language(language: str) -> str:
-    """Return a DeepL target-language code."""
     code = normalize_language(language).upper()
 
     # DeepL uses these language names/codes for common variants.
@@ -153,17 +128,10 @@ def _deepl_language(language: str) -> str:
 
 
 def _google_language(language: str) -> str:
-    """Return a Google-style language code."""
     return normalize_language(language).lower().replace("_", "-")
 
 
 def _make_deep_translator(source: str, target: str) -> Translator:
-    """
-    Create a deep_translator callable.
-
-    A new GoogleTranslator object is created for every request.  This keeps
-    worker interactions independent and avoids sharing mutable client state.
-    """
     from deep_translator import GoogleTranslator
 
     source_code = _deep_translator_language(source)
@@ -177,7 +145,6 @@ def _make_deep_translator(source: str, target: str) -> Translator:
 
 
 def _make_deepl(source: str, target: str) -> Translator:
-    """Create a DeepL API callable using DEEPL_API_KEY."""
     import deepl
 
     api_key = os.environ.get("DEEPL_API_KEY")
@@ -198,7 +165,6 @@ def _make_deepl(source: str, target: str) -> Translator:
 
 
 def _make_translate(source: str, target: str) -> Translator:
-    """Create a callable for the lightweight ``translate`` package."""
     from translate import Translator as TranslateClient
 
     source_code = normalize_language(source)
@@ -216,12 +182,6 @@ def _make_translate(source: str, target: str) -> Translator:
 
 
 def _make_translators_bing(source: str, target: str) -> Translator:
-    """
-    Create a callable for the ``translators`` package's Bing backend.
-
-    The package may require Node.js for its Bing implementation, as noted in
-    the command-line documentation.
-    """
     import translators
 
     source_code = _google_language(source)
@@ -240,7 +200,6 @@ def _make_translators_bing(source: str, target: str) -> Translator:
 
 
 def _make_googletrans(source: str, target: str) -> Translator:
-    """Create a serialized callable for googletrans."""
     from googletrans import Translator as GoogleTransClient
 
     source_code = _google_language(source)
@@ -256,12 +215,6 @@ def _make_googletrans(source: str, target: str) -> Translator:
 
 
 def _make_pygoogletranslation(source: str, target: str) -> Translator:
-    """
-    Create a serialized callable for pygoogletranslation.
-
-    The package has exposed Translator classes with this API in its commonly
-    used releases.
-    """
     from pygoogletranslation import Translator as PyGoogleTranslator
 
     source_code = _google_language(source)
@@ -288,7 +241,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
 
 
 def configure_logging() -> None:
-    """Configure DEBUG logging in a file and ERROR logging on stderr."""
     logger.remove()
 
     logger.add(
@@ -311,13 +263,6 @@ def configure_logging() -> None:
 
 
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
-    """
-    Split text into chunks no longer than ``chunk_size`` where possible.
-
-    The function scans backward from the limit for whitespace so it does not
-    split a word unnecessarily.  If a single word is longer than the limit,
-    a hard split is used to guarantee progress and bounded chunk size.
-    """
     if chunk_size <= 0:
         raise ValueError("chunk size must be greater than zero")
 
@@ -359,7 +304,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
 
 
 def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
-    """Load an existing JSON result, or return an empty result dictionary."""
     if not continue_run or not path.exists():
         return {}
 
@@ -382,12 +326,6 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
 
 
 def atomic_save(path: Path, translations: dict[str, str]) -> None:
-    """
-    Atomically save translations as UTF-8 JSON.
-
-    The temporary file is placed in the destination directory so os.replace()
-    remains atomic on the same filesystem.
-    """
     path.parent.mkdir(parents=True, exist_ok=True)
 
     temporary_name: str | None = None
@@ -424,7 +362,6 @@ def atomic_save(path: Path, translations: dict[str, str]) -> None:
 
 
 def append_failed(path: Path, chunk_index: int) -> None:
-    """Append a failed chunk index to the configured failure file."""
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with path.open("a", encoding="utf-8") as file:
@@ -432,23 +369,10 @@ def append_failed(path: Path, chunk_index: int) -> None:
 
 
 def is_identity_translation(source: str, translated: str) -> bool:
-    """
-    Detect an obviously untranslated result.
-
-    Comparison is case-insensitive and ignores surrounding whitespace.  This
-    intentionally errs on the side of retrying because a translation service
-    returning the original text may indicate a failed request.
-    """
     return source.strip().casefold() == translated.strip().casefold()
 
 
 def choose_backend(requested: str | None) -> str:
-    """
-    Select an explicitly requested backend or the first available fallback.
-
-    Availability is checked by importing the corresponding package.  A
-    backend-specific API-key check is performed for DeepL.
-    """
     if requested:
         if requested == "auto":
             requested = None
@@ -502,11 +426,6 @@ def translate_one(
     limiter: RequestLimiter,
     attempts: int = 3,
 ) -> tuple[int, str]:
-    """
-    Translate one chunk with retries and exponential backoff.
-
-    The request limiter is used before every attempt, including retries.
-    """
     last_error: Exception | None = None
 
     for attempt in range(1, attempts + 1):
@@ -547,7 +466,6 @@ def translate_one(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Translate a text file in resumable chunks."
     )
@@ -624,7 +542,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    """Validate resource and size limits before starting work."""
     if not 1 <= args.workers <= 2:
         raise ValueError("--workers must be between 1 and 2")
 
@@ -639,7 +556,6 @@ def validate_args(args: argparse.Namespace) -> None:
 
 
 def read_input(path: Path) -> str:
-    """Read the complete input file as UTF-8 text."""
     try:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -647,7 +563,6 @@ def read_input(path: Path) -> str:
 
 
 def run(args: argparse.Namespace) -> int:
-    """Run the translation pipeline."""
     validate_args(args)
 
     input_path = Path(args.input)
@@ -766,7 +681,6 @@ def run(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    """Program entry point with clean error and Ctrl+C handling."""
     configure_logging()
 
     try:

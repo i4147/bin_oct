@@ -55,17 +55,6 @@ CODE_EXTENSIONS = {".py", ".so", ".pyi", ".pyd", ".pyx"}
 
 
 def is_empty_wheel_basic(wheel_path: Path) -> bool:
-    """
-    Check if wheel is empty using basic method.
-
-    Checks for .py files OR any non-dist-info files.
-
-    Args:
-        wheel_path: Path to wheel file
-
-    Returns:
-        True if wheel is empty, False otherwise
-    """
     try:
         with zipfile.ZipFile(wheel_path, "r") as zf:
             file_list = zf.namelist()
@@ -86,18 +75,6 @@ def is_empty_wheel_basic(wheel_path: Path) -> bool:
 
 
 def is_empty_wheel_record(wheel_path: Path) -> bool:
-    """
-    Check if wheel is empty using RECORD file method.
-
-    Validates that all files in the wheel are within the dist-info directory
-    by checking the RECORD file entries.
-
-    Args:
-        wheel_path: Path to wheel file
-
-    Returns:
-        True if wheel is empty, False otherwise
-    """
     try:
         with zipfile.ZipFile(wheel_path, "r") as zf:
             # Find dist-info directory
@@ -131,18 +108,6 @@ def is_empty_wheel_record(wheel_path: Path) -> bool:
 
 
 def is_empty_wheel_ext(wheel_path: Path) -> bool:
-    """
-    Check if wheel is empty using extended file extension method.
-
-    Checks for any Python code files (.py, .so, .pyi, etc.).
-    More thorough than basic method, catches compiled extensions too.
-
-    Args:
-        wheel_path: Path to wheel file
-
-    Returns:
-        True if wheel is empty, False otherwise
-    """
     try:
         with zipfile.ZipFile(wheel_path, "r") as zf:
             for file_name in zf.namelist():
@@ -158,16 +123,6 @@ def is_empty_wheel_ext(wheel_path: Path) -> bool:
 
 
 def is_empty_wheel(wheel_path: Path, method: str = DEFAULT_METHOD) -> bool:
-    """
-    Unified wheel emptiness check dispatcher.
-
-    Args:
-        wheel_path: Path to wheel file
-        method: Detection method ("basic", "record", or "ext")
-
-    Returns:
-        True if wheel is empty according to specified method
-    """
     if method == "basic":
         return is_empty_wheel_basic(wheel_path)
     elif method == "record":
@@ -179,15 +134,6 @@ def is_empty_wheel(wheel_path: Path, method: str = DEFAULT_METHOD) -> bool:
 
 
 def parse_wheel_name(wheel_path: Path) -> tuple[Optional[str], Optional[str]]:
-    """
-    Extract package name and version from wheel filename.
-
-    Args:
-        wheel_path: Path to wheel file
-
-    Returns:
-        Tuple of (package_name, version) or (None, None) if parsing fails
-    """
     stem = wheel_path.stem
     parts = stem.split("-")
     if len(parts) >= 2:
@@ -198,12 +144,6 @@ def parse_wheel_name(wheel_path: Path) -> tuple[Optional[str], Optional[str]]:
 
 
 def get_installed_packages() -> dict[str, str]:
-    """
-    Get dictionary of installed packages (name.lower() -> version).
-
-    Returns:
-        Dictionary mapping package names (lowercase) to versions
-    """
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "list", "--format=freeze"],
@@ -223,15 +163,6 @@ def get_installed_packages() -> dict[str, str]:
 
 
 def get_package_info(package_name: str) -> Optional[PackageInfo]:
-    """
-    Get detailed info about an installed package using pip show.
-
-    Args:
-        package_name: Name of the package
-
-    Returns:
-        Dictionary of package info or None if not found
-    """
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "show", package_name],
@@ -251,15 +182,6 @@ def get_package_info(package_name: str) -> Optional[PackageInfo]:
 
 
 def get_package_location(package_name: str) -> tuple[Optional[str], bool]:
-    """
-    Get installation location and whether package has files outside dist-info.
-
-    Args:
-        package_name: Name of the package
-
-    Returns:
-        Tuple of (location, has_non_dist_info_files)
-    """
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "show", "-f", package_name],
@@ -286,16 +208,6 @@ def get_package_location(package_name: str) -> tuple[Optional[str], bool]:
 def check_installed_package(
     wheel_path: Path, installed_packages: dict[str, str]
 ) -> Optional[WheelInfo]:
-    """
-    Check if an empty wheel corresponds to an installed package.
-
-    Args:
-        wheel_path: Path to wheel file
-        installed_packages: Dictionary of installed packages
-
-    Returns:
-        WheelInfo dict if package is installed, None otherwise
-    """
     package_name, version = parse_wheel_name(wheel_path)
     if not package_name:
         return None
@@ -314,31 +226,11 @@ def check_installed_package(
 
 
 def find_wheels(directory: Path, recursive: bool = False) -> list[Path]:
-    """
-    Find all .whl files in directory (optionally recursively).
-
-    Args:
-        directory: Directory to search
-        recursive: Whether to search recursively
-
-    Returns:
-        List of wheel file paths
-    """
     pattern = "**/*.whl" if recursive else "*.whl"
     return [f for f in directory.glob(pattern) if f.is_file()]
 
 
 def move_wheel(wheel_path: Path, dest_dir: Path) -> Path:
-    """
-    Move a wheel file to destination directory, handling name conflicts.
-
-    Args:
-        wheel_path: Source wheel file
-        dest_dir: Destination directory
-
-    Returns:
-        New path of moved file
-    """
     dest_dir.mkdir(exist_ok=True)
     dest_path = dest_dir / wheel_path.name
     counter = 1
@@ -350,12 +242,6 @@ def move_wheel(wheel_path: Path, dest_dir: Path) -> Path:
 
 
 def scan_site_packages() -> list[Path]:
-    """
-    Scan site-packages for empty installed packages (using RECORD method).
-
-    Returns:
-        List of paths to empty installed packages
-    """
     site_packages = Path(sysconfig.get_paths()["purelib"])
     empty_packages = []
 
@@ -389,15 +275,6 @@ def scan_site_packages() -> list[Path]:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    """
-    Check wheels and list empty ones (no moving).
-
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code
-    """
     directory = Path(args.directory)
     wheels = find_wheels(directory, args.recursive)
 
@@ -431,15 +308,6 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def cmd_move(args: argparse.Namespace) -> int:
-    """
-    Move empty wheels to destination directory.
-
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code
-    """
     directory = Path(args.directory)
     dest_dir = directory / args.dest
     wheels = find_wheels(directory, args.recursive)
@@ -480,15 +348,6 @@ def cmd_move(args: argparse.Namespace) -> int:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    """
-    Scan site-packages for empty installed packages.
-
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code
-    """
     empty_packages = scan_site_packages()
     cwd_wheels = find_wheels(Path.cwd(), args.recursive)
 
@@ -514,15 +373,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
 
 def cmd_all(args: argparse.Namespace) -> int:
-    """
-    Full workflow: check wheels, warn about installed, move empty ones.
-
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code
-    """
     directory = Path(args.directory)
     dest_dir = directory / args.dest
     wheels = find_wheels(directory, args.recursive)
@@ -646,12 +496,6 @@ def cmd_all(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """
-    Build the command-line argument parser.
-
-    Returns:
-        Configured ArgumentParser instance
-    """
     parser = argparse.ArgumentParser(
         description="Wheel Inspector - Unified tool for detecting and managing empty Python wheels.",
         epilog="""\
@@ -802,12 +646,6 @@ Examples:
 
 
 def main() -> int:
-    """
-    Main entry point for the script.
-
-    Returns:
-        Exit code
-    """
     parser = build_parser()
     args = parser.parse_args()
 

@@ -84,8 +84,6 @@ _TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 
 @dataclass
 class StripConfig:
-    """All knobs that control the rewrite (parallel-safe / picklable)."""
-
     engine: str = "query"
     docstring_action: str = "pass"
     preserve_lines: bool = False
@@ -97,8 +95,6 @@ class StripConfig:
 
 @dataclass
 class Edit:
-    """A single byte-range replacement inside a file."""
-
     start: int
     end: int
     replacement: bytes
@@ -106,8 +102,6 @@ class Edit:
 
 @dataclass
 class FileResult:
-    """Outcome of processing one file (picklable)."""
-
     path: Path
     success: bool
     error: str = ""
@@ -124,25 +118,21 @@ class FileResult:
 
 
 def _make_parser() -> Parser:
-    """Create a fresh tree-sitter parser bound to the Python grammar."""
     return Parser(_LANGUAGE)
 
 
 def _comment_is_kept(text: str, keep_prefixes: Sequence[str]) -> bool:
-    """Return True if the comment should be preserved."""
     stripped = text.strip()
     return any(stripped.startswith(prefix) for prefix in keep_prefixes)
 
 
 def _eat_trailing_newlines(source: bytes, edits: list[Edit]) -> None:
-    """Extend an edit's end to swallow a single trailing '\\n' (t5.py)."""
     for edit in edits:
         if edit.end < len(source) and source[edit.end : edit.end + 1] == b"\n":
             edit.end += 1
 
 
 def _remove_blank_lines(text: str) -> str:
-    """Collapse runs of blank lines into a single blank line (t5.py)."""
     out: list[str] = []
     prev_blank = False
     for line in text.split("\n"):
@@ -160,7 +150,6 @@ def _remove_blank_lines(text: str) -> str:
 
 
 def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
-    """Collect (comments, docstrings) edits using a tree-sitter query."""
     parser = _make_parser()
     tree = parser.parse(source)
     query = Query(_LANGUAGE, _DOCSTRING_QUERY)
@@ -210,7 +199,6 @@ def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, 
 
 
 def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, int]:
-    """Collect edits by manually walking the tree-sitter tree."""
     parser = _make_parser()
     tree = parser.parse(source)
     root = tree.root_node
@@ -278,7 +266,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
 
 
 def _strip_line_comment(line: str) -> str:
-    """Remove the first '#' comment from a single source line."""
     in_string = False
     quote_char: str | None = None
     out: list[str] = []
@@ -302,7 +289,6 @@ def _strip_line_comment(line: str) -> str:
 
 
 def _strip_via_ast_line(source: bytes) -> bytes:
-    """Whole-file line-based strip (used by tsrmc.py's AST path)."""
     text = source.decode("utf-8", "replace")
     stripped = "\n".join(_strip_line_comment(line) for line in text.split("\n"))
     return stripped.encode("utf-8")
@@ -314,7 +300,6 @@ def _strip_via_ast_line(source: bytes) -> bytes:
 
 
 def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> bytes:
-    """Apply edits either by splicing or by blanking (preserve-lines)."""
     edits = sorted(edits, key=lambda e: e.start)
     if not edits:
         return source
@@ -347,7 +332,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
 
 
 def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResult:
-    """Strip a single file, validate, and (optionally) write it back."""
     t0 = time.perf_counter()
     try:
         source = path.read_bytes()
@@ -442,7 +426,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
 
 
 def _discover_python_files(paths: Sequence[str]) -> list[Path]:
-    """Turn a mix of files and directories into a sorted list of .py files."""
     if not paths:
         paths = ["."]
     found: set[Path] = set()
@@ -458,7 +441,6 @@ def _discover_python_files(paths: Sequence[str]) -> list[Path]:
 def _parallel_map(
     files: list[Path], cfg: StripConfig, write: bool, workers: int
 ) -> list[FileResult]:
-    """Run _process_file over files, in-process or via a spawn pool."""
     if workers <= 1 or len(files) <= 1:
         return [_process_file(f, cfg, write) for f in files]
 
@@ -469,7 +451,6 @@ def _parallel_map(
 
 
 def _print_summary(results: list[FileResult], label: str, total_time: float) -> None:
-    """Print the tsrmc.py-style aggregate report."""
     ok = [r for r in results if r.success and r.error != "no changes"]
     unchanged = [r for r in results if r.success and r.error == "no changes"]
     failed = [r for r in results if not r.success]

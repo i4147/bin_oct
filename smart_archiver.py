@@ -97,45 +97,17 @@ DEFAULT_SETTINGS: dict[str, dict[str, str | int]] = {
 
 
 def compress_zstd(data: bytes, level: int) -> bytes:
-    """Compress data using zstd algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        level: Compression level (1-22)
-
-    Returns:
-        Compressed bytes
-    """
     compressor = zstd.ZstdCompressor(level=level)
     return compressor.compress(data)
 
 
 def compress_brotli_standard(data: bytes, level: int) -> bytes:
-    """Compress data using standard brotli.
-
-    Args:
-        data: Raw bytes to compress
-        level: Quality level (0-11)
-
-    Returns:
-        Compressed bytes
-    """
     return brotli.compress(data, quality=level)
 
 
 def compress_brotli_streaming(
     data: bytes, level: int, chunk_size: int = 512 * 1024
 ) -> bytes:
-    """Compress data using streaming brotli for large files.
-
-    Args:
-        data: Raw bytes to compress
-        level: Quality level (0-11)
-        chunk_size: Size of chunks for streaming compression
-
-    Returns:
-        Compressed bytes
-    """
     compressor = brotli.Compressor(quality=level)
     result_parts: list[bytes] = []
     for i in range(0, len(data), chunk_size):
@@ -146,28 +118,10 @@ def compress_brotli_streaming(
 
 
 def compress_lzma(data: bytes, level: int) -> bytes:
-    """Compress data using lzma algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        level: Compression preset level
-
-    Returns:
-        Compressed bytes
-    """
     return lzma.compress(data, preset=level)
 
 
 def compress_gzip(data: bytes, level: int) -> bytes:
-    """Compress data using gzip algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        level: Compression level (1-9)
-
-    Returns:
-        Compressed bytes
-    """
     out = BytesIO()
     with gzip.GzipFile(fileobj=out, mode="wb", compresslevel=level) as gz:
         gz.write(data)
@@ -175,46 +129,14 @@ def compress_gzip(data: bytes, level: int) -> bytes:
 
 
 def compress_bz2(data: bytes, level: int) -> bytes:
-    """Compress data using bzip2 algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        level: Compression level (1-9)
-
-    Returns:
-        Compressed bytes
-    """
     return bz2.compress(data, compresslevel=level)
 
 
 def compress_lz4(data: bytes, level: int) -> bytes:
-    """Compress data using lz4 algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        level: Compression level
-
-    Returns:
-        Compressed bytes
-    """
     return lz4.frame.compress(data, compression_level=level)
 
 
 def compress_data(data: bytes, algo: str, level: int, is_large: bool = False) -> bytes:
-    """Compress data using specified algorithm.
-
-    Args:
-        data: Raw bytes to compress
-        algo: Compression algorithm name
-        level: Compression level
-        is_large: Whether to use streaming for large files
-
-    Returns:
-        Compressed bytes
-
-    Raises:
-        ValueError: If algorithm is unknown
-    """
     if algo == "zstd":
         return compress_zstd(data, level)
     elif algo == "brotli":
@@ -235,15 +157,6 @@ def compress_data(data: bytes, algo: str, level: int, is_large: bool = False) ->
 
 
 def is_already_compressed(data: bytes, sample_size: int = 4096) -> bool:
-    """Check if data appears to be already compressed.
-
-    Args:
-        data: Data to check
-        sample_size: Size of sample to check (unused, kept for API compatibility)
-
-    Returns:
-        True if data appears to be already compressed
-    """
     if len(data) < 4:
         return False
 
@@ -267,16 +180,6 @@ def choose_algorithm(
     data: bytes | None = None,
     file_size: int | None = None,
 ) -> dict[str, str | int]:
-    """Choose optimal compression algorithm for a file.
-
-    Args:
-        path: Path to the file
-        data: File content (if already read)
-        file_size: Size of the file
-
-    Returns:
-        Dictionary with algorithm and level
-    """
     ext = Path(path).suffix.lower()
     if ext in EXTENSION_MAP:
         return EXTENSION_MAP[ext]
@@ -315,17 +218,6 @@ def compress_single_file(
     remove_original: bool = False,
     verbose: bool = False,
 ) -> dict[str, Any]:
-    """Compress a single file.
-
-    Args:
-        path: Path to file to compress
-        output_path: Output path (directory or file)
-        remove_original: Whether to delete original after compression
-        verbose: Enable verbose output
-
-    Returns:
-        Dictionary with compression results
-    """
     start_time = time.time()
     try:
         with open(path, "rb") as f:
@@ -387,18 +279,6 @@ def compress_multiple_files(
     remove_original: bool = False,
     verbose: bool = False,
 ) -> list[dict[str, Any]]:
-    """Compress multiple files in parallel.
-
-    Args:
-        paths: List of file paths to compress
-        output_dir: Output directory for compressed files
-        max_workers: Maximum number of worker processes
-        remove_original: Whether to delete originals after compression
-        verbose: Enable verbose output
-
-    Returns:
-        List of compression results
-    """
     if max_workers is None:
         max_workers = 8
 
@@ -438,19 +318,6 @@ def create_tar_archive(
     parallel: bool = False,
     max_workers: int | None = None,
 ) -> tuple[Path, dict[str, Any]]:
-    """Create a compressed tar archive.
-
-    Args:
-        source_dir: Directory to archive
-        output_path: Output file path
-        compression: Compression algorithm to use
-        level: Compression level
-        parallel: Use parallel processing
-        max_workers: Maximum number of workers
-
-    Returns:
-        Tuple of (final_path, stats_dict)
-    """
     start_time = time.time()
     source_dir = Path(source_dir)
 
@@ -546,19 +413,6 @@ def decompress_file(
     output_dir: str | Path | None = None,
     verbose: bool = False,
 ) -> Path | str:
-    """Decompress a file.
-
-    Args:
-        compressed_path: Path to compressed file
-        output_dir: Output directory for decompressed file
-        verbose: Enable verbose output
-
-    Returns:
-        Path to decompressed file or extraction directory
-
-    Raises:
-        ValueError: If compression format is unknown
-    """
     compressed_path = Path(compressed_path)
     ext = compressed_path.suffix.lower()
 
@@ -622,7 +476,6 @@ def decompress_file(
 
 
 def main() -> None:
-    """Main entry point for the smart archiver."""
     parser = argparse.ArgumentParser(
         description="Smart Archiver - Automatically chooses best compression algorithm",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -91,7 +91,6 @@ CID_RE = re.compile(r'(src|href)=["\']cid:([^"\']+)["\']', re.IGNORECASE)
 
 
 def guess_mime(name: str) -> str:
-    """Guess a MIME type from a filename or extension, with font fallbacks."""
     mime, _ = mimetypes.guess_type(name)
     if mime:
         return mime
@@ -175,8 +174,6 @@ def fetch_remote(url: str, timeout: int) -> bytes | None:
 # SUBCOMMAND: bundle
 # ======================================================================
 def cmd_bundle(args: argparse.Namespace) -> int:
-    """Reproduce build_single_page.py: extract every asset to disk, then
-    concatenate all HTML bodies into one file with base64-embedded assets."""
     cwd = Path.cwd()
     out_dir = cwd / args.output_dir
     assets_dir = out_dir / args.assets_dir
@@ -336,7 +333,6 @@ def cmd_bundle(args: argparse.Namespace) -> int:
 def _inline_urls_in_css(
     css: str, base_file: Path | str | None, remote_base: str | None, timeout: int
 ) -> tuple[str, int, int]:
-    """Replace url(...) occurrences with data URIs. Returns (css, local, remote)."""
     local = remote = 0
 
     def repl(m: re.Match) -> str:
@@ -496,8 +492,6 @@ def _inline_dispatch(args: tuple[Path, int]) -> dict[str, Any]:
 
 
 def cmd_inline(args: argparse.Namespace) -> int:
-    """Reproduce inline_assets.py / mkst.py: rewrite every HTML/CSS file
-    in-place, embedding all local assets and remote (non-image) ones."""
     files: list[Path] = []
     for raw in args.paths:
         p = Path(raw)
@@ -544,8 +538,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
 # SUBCOMMAND: isolate  (isolate_html.py)
 # ======================================================================
 class _Isolator:
-    """Class-based isolator: local resources only."""
-
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.embedded = 0
@@ -719,7 +711,6 @@ def _scan_css_refs(css: str, base: Path | str, urls: set[str]) -> None:
 
 
 def _collect_remote_urls(html_path: Path) -> set[str]:
-    """Scan HTML + linked CSS for every remote URL that will be embedded."""
     urls: set[str] = set()
     css_queue: list[tuple[str, Path | str]] = []
     try:
@@ -856,7 +847,6 @@ def _asset_bytes(
 def _rewrite_css(
     css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
 ) -> str:
-    """Recursively inline @import and url(...) in a CSS string."""
 
     # 1. @import inlining
     def import_repl(m: re.Match) -> str:
@@ -1030,7 +1020,6 @@ def _decode_data_uri_to_file(uri: str, dest_dir: Path) -> str | None:
 
 
 def cmd_mhtml(args: argparse.Namespace) -> int:
-    """Reproduce pymht.py / pymhtml.py: convert .mhtml to .html + _files."""
     inputs = args.inputs or [str(p) for p in Path.cwd().rglob("*.mhtml")]
     if not inputs:
         print("No .mhtml inputs given and none found in cwd.")

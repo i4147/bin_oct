@@ -120,7 +120,6 @@ PROGRESS = True
 # Shared helpers
 # ---------------------------------------------------------------------------
 def contains_chinese(text: str) -> bool:
-    """True if *text* contains at least one CJK/Chinese codepoint."""
     for ch in text:
         d = ord(ch)
         for lo, hi in CHINESE_RANGES:
@@ -130,7 +129,6 @@ def contains_chinese(text: str) -> bool:
 
 
 def read_text_any_encoding(path: Path) -> str:
-    """Try a series of encodings; fall back to UTF-8 with replacement."""
     for enc in ENCODINGS:
         try:
             return path.read_text(encoding=enc, errors="strict")
@@ -140,7 +138,6 @@ def read_text_any_encoding(path: Path) -> str:
 
 
 def safe_text_from_bytes(data: bytes) -> str:
-    """Decode *data* using the first encoding that works."""
     for enc in ENCODINGS + ("latin-1",):
         try:
             return data.decode(enc)
@@ -150,8 +147,6 @@ def safe_text_from_bytes(data: bytes) -> str:
 
 
 def unique_path(directory: Path, name: str) -> Path:
-    """Return a non-existent path in *directory* named *name*, suffixing
-    ``__1``, ``__2``, ... if the name already exists."""
     target = directory / name
     if not target.exists():
         return target
@@ -165,7 +160,6 @@ def unique_path(directory: Path, name: str) -> Path:
 
 
 def is_probably_text_bytes(data: bytes) -> bool:
-    """Cheap binary detector used by find-lines."""
     if not data:
         return False
     sample = data[:4096]
@@ -187,7 +181,6 @@ def iter_files(
     exts: Optional[set[str]] = None,
     skip_hidden: bool = True,
 ) -> Iterator[Path]:
-    """Yield files under *root*, filtered by extension and hidden-status."""
     if not recursive:
         for entry in root.iterdir():
             if skip_hidden and entry.name.startswith("."):
@@ -239,7 +232,6 @@ def _require_gcld3():
 
 
 def detect_with_pycld2(text: str, min_bytes: int = 20):
-    """Return (language_name, language_code, confidence_percent) or Nones."""
     if not text or len(text) < min_bytes:
         return (None, None, 0)
     try:
@@ -286,8 +278,6 @@ def cmd_move_chinese(args: argparse.Namespace) -> int:
 def _write_extraction(
     src: Path, kept: list[str], removed: list[str], out_name: str = DEFAULT_NONENG_FILE
 ) -> None:
-    """Write removed lines to <out_name> and (only if there was something)
-    overwrite src with kept lines."""
     if not removed:
         print("ℹ️  No non-English lines found to extract. Base file left unchanged.")
         return

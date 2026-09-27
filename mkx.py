@@ -59,7 +59,6 @@ def chmod_x(p):
 
 
 def should_execute(p):
-    """Union of both original selection rules."""
     # suffix-mode rule: whitelisted suffix (or none) + shebang
     if has_shebang(p):
         return True
@@ -74,7 +73,6 @@ def should_execute(p):
 
 
 def process(path_str):
-    """Worker. Returns (path_str, changed, error)."""
     p = Path(path_str)
     try:
         if not p.is_file():

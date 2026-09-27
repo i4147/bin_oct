@@ -20,18 +20,6 @@ from pathlib import Path
 
 
 def run_git(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
-    """Run a git command and return the result.
-
-    Args:
-        args: Git command arguments (without the leading "git").
-        check: If True, raise CalledProcessError on non-zero exit.
-
-    Returns:
-        CompletedProcess instance.
-
-    Raises:
-        subprocess.CalledProcessError: If check=True and git exits non-zero.
-    """
     result = subprocess.run(
         ["git", *args],
         capture_output=True,
@@ -42,28 +30,16 @@ def run_git(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
 
 
 def get_commit_count() -> int:
-    """Return the total number of commits in the current branch."""
     result = run_git(["rev-list", "--count", "HEAD"])
     return int(result.stdout.strip())
 
 
 def get_commit_message(commit: str) -> str:
-    """Get the full commit message of a given commit."""
     result = run_git(["log", "-1", "--format=%B", commit])
     return result.stdout
 
 
 def squash_commits(count: int, commit_date: str | None = None) -> bool:
-    """Squash the last `count` commits into one.
-
-    Args:
-        count: Number of commits to squash (must be >= 2).
-        commit_date: Optional date string for the squashed commit.
-            If None, uses the current date/time.
-
-    Returns:
-        True on success, False on failure.
-    """
     if count < 2:
         print(f"Error: Need at least 2 commits to squash, got {count}", file=sys.stderr)
         return False
@@ -167,7 +143,6 @@ EOF
 
 
 def main() -> int:
-    """Parse arguments and run the squash operation."""
     parser = argparse.ArgumentParser(
         description="Squash the last N commits into one and set the date.",
     )

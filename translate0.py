@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 def contains_cyrillic(text: str) -> bool:
-    """Detect Cyrillic characters (covers core Cyrillic and some extensions)."""
     return bool(
         re.search(
             r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]", text
@@ -36,7 +35,6 @@ def contains_cyrillic(text: str) -> bool:
 
 
 def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
-    """Group lines into chunks where each chunk's total character count is <= max_chunk_size."""
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
     current_size = 0
@@ -69,8 +67,6 @@ def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
 
 
 class TranslationCache:
-    """SQLite-based persistent cache for translations."""
-
     def __init__(self, db_path: Path):
         self.db_path = db_path.expanduser()
         # ensure parent dir exists
@@ -96,7 +92,6 @@ class TranslationCache:
     def get_many(
         self, texts: list[str], source_lang: str, target_lang: str
     ) -> dict[str, str]:
-        """Return dict mapping source_text -> translated_text for any matches in cache."""
         if not texts:
             return {}
         with self.lock:
@@ -113,7 +108,6 @@ class TranslationCache:
     def set_many(
         self, translations: dict[str, str], source_lang: str, target_lang: str
     ) -> None:
-        """Insert or replace multiple translations into the cache."""
         if not translations:
             return
         with self.lock:
@@ -134,7 +128,6 @@ class TranslationCache:
             self.conn.commit()
 
     def stats(self) -> dict:
-        """Return cache stats: total_entries, last_updated, counts per language pair (list)."""
         with self.lock:
             cur = self.conn.execute("SELECT COUNT(*) FROM translations")
             total = cur.fetchone()[0] or 0
@@ -163,13 +156,8 @@ class TranslationCache:
 
 
 def translate_chunk_factory(source_lang: str, target_lang: str):
-    """Return a translate_chunk function bound to specific source/target languages."""
 
     def translate_chunk(chunk: list[str]) -> tuple[list[str], str | None]:
-        """
-        Translate a chunk (list of lines) from source_lang to target_lang.
-        Returns tuple(original_chunk, translated_text or None).
-        """
         chunk_text = "\n".join(chunk)
         translator = GoogleTranslator(source=source_lang, target=target_lang)
 

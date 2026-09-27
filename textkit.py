@@ -190,11 +190,6 @@ SPECIAL_NAMES: set[str] = {
 
 
 def is_text_file(path: Path) -> bool:
-    """Heuristically decide whether *path* is a text file.
-
-    Combines the extension allow/deny lists, the filename allow list, and a
-    printable-byte ratio probe (>= 75% printable in the first 8 KiB).
-    """
     suffix = path.suffix.lower()
     if suffix in BINARY_EXTS:
         return False
@@ -225,7 +220,6 @@ def is_text_file(path: Path) -> bool:
 
 
 def iter_text_files(root: Path) -> list[Path]:
-    """Recursively list text files under *root*, skipping noise directories."""
     out: list[Path] = []
     for entry in sorted(root.rglob("*")):
         if entry.is_dir():
@@ -248,16 +242,6 @@ _ALNUM_RE = re.compile(r"[a-zA-Z0-9]+")
 
 
 def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
-    """Tokenize *text* according to *mode*.
-
-    Parameters
-    ----------
-    text        : raw input
-    min_length  : drop tokens shorter than this
-    mode        : "regex"  -> [a-z]+ (lowercased)   (default)
-                  "alnum"  -> [a-zA-Z0-9]+ (lowercased)
-                  "nltk"   -> nltk word_tokenize, alnum-only
-    """
     text = text.lower()
 
     if mode == "nltk":
@@ -285,10 +269,6 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
 
 
 def load_stopwords(source: str, path: Path | None) -> set[str]:
-    """Return a set of lowercase stopwords.
-
-    *source* is "none", "file", or "nltk".
-    """
     if source == "none":
         return set()
 
@@ -329,7 +309,6 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
 def _worker_word_counts(
     task: tuple[str, int, str, set[str]],
 ) -> tuple[str, Counter, str | None]:
-    """Read a file and return (path, word Counter, error-or-None)."""
     path_str, min_length, mode, stopwords = task
     try:
         text = Path(path_str).read_text(encoding="utf-8", errors="ignore")
@@ -342,7 +321,6 @@ def _worker_word_counts(
 
 
 def _worker_collect_chars(path_str: str) -> set[str]:
-    """Read a file and return the set of distinct characters it contains."""
     try:
         with open(path_str, "r", encoding="utf-8", errors="ignore") as fh:
             chars: set[str] = set()
@@ -362,12 +340,6 @@ def _worker_collect_chars(path_str: str) -> set[str]:
 
 
 def _resolve_files(raw: Sequence[Path]) -> list[Path]:
-    """Expand positional file/dir arguments into a list of text files.
-
-    - Files are kept as-is.
-    - Directories are recursively scanned for text files.
-    - If *raw* is empty, the current working directory is scanned.
-    """
     if not raw:
         return iter_text_files(Path.cwd())
 
@@ -383,11 +355,6 @@ def _resolve_files(raw: Sequence[Path]) -> list[Path]:
 
 
 def _write_json(path: Path, counter: Counter, with_metadata: bool) -> None:
-    """Write *counter* to *path* as JSON (optionally with metadata header).
-
-    Note: wcount.py historically produced ``{count: count}`` (a bug); this
-    implementation emits the correct ``{word: count}`` mapping.
-    """
     sorted_items = dict(sorted(counter.items(), key=lambda kv: (-kv[1], kv[0])))
     if with_metadata:
         payload: dict[str, Any] = {
@@ -406,7 +373,6 @@ def _write_json(path: Path, counter: Counter, with_metadata: bool) -> None:
 
 
 def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
-    """Print an aggregated word-count result in the requested format."""
     total_tokens = sum(counter.values())
 
     items = counter.most_common()
@@ -440,7 +406,6 @@ def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
 
 
 def cmd_words(args: argparse.Namespace) -> int:
-    """Word-frequency analysis (covers scripts 1, 2, 6, 7, 8)."""
     files = _resolve_files(args.files)
     if not files:
         print("No input files found.", file=sys.stderr)
@@ -497,7 +462,6 @@ def cmd_words(args: argparse.Namespace) -> int:
 
 
 def cmd_chars(args: argparse.Namespace) -> int:
-    """Character count (covers charcount.py and count_chars.py)."""
     path: Path = args.file
     if not path.exists():
         print(f"Error: File '{path}' not found.", file=sys.stderr)
@@ -516,7 +480,6 @@ def cmd_chars(args: argparse.Namespace) -> int:
 
 
 def cmd_collect_chars(args: argparse.Namespace) -> int:
-    """Collect the unique character set across a directory (collect_chars.py)."""
     root: Path = args.directory.resolve()
     out_path: Path = args.output
 
@@ -604,7 +567,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argparse CLI."""
     parser = argparse.ArgumentParser(
         prog="textkit",
         description=(
@@ -756,7 +718,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse *argv* and dispatch to the chosen subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

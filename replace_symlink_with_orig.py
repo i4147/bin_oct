@@ -14,19 +14,11 @@ ERRORS_LOG_NAME: Final[str] = "errors.txt"
 
 
 class ProcessResult(NamedTuple):
-    """Outcome of processing one symlink."""
-
     status: str
     msg: str
 
 
 def process_symlink(symlink_path: Path) -> ProcessResult | None:
-    """Replace a symlink with a copy of its target.
-
-    Returns ``None`` when the symlink should be skipped (i.e. it lives in a
-    ``bin`` directory pointing at a sibling, or its target is a ``.so`` file).
-    Otherwise returns a :class:`ProcessResult` describing the outcome.
-    """
     try:
         raw_target: Path = symlink_path.readlink()
         target_path: Path = (
@@ -68,7 +60,6 @@ def process_symlink(symlink_path: Path) -> ProcessResult | None:
 
 
 def main() -> None:
-    """CLI entry point: scan for symlinks, replace them in parallel, and write logs."""
     current_dir: Path = Path.cwd()
     replaced_log: Path = current_dir / REPLACED_LOG_NAME
     errors_log: Path = current_dir / ERRORS_LOG_NAME

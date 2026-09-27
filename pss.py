@@ -43,13 +43,6 @@ TRIGRAM_MIN = 3
 
 
 def get_table_info(con: sqlite3.Connection):
-    """
-    Discover the table name, the name column, the downloads column, and
-    whether the table is an FTS5 virtual table.
-
-    Returns:
-        (table, name_col, dl_col, is_fts5)
-    """
     # Find all user tables (exclude SQLite internal ones)
     cur = con.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
@@ -102,13 +95,6 @@ def search(
     keyword: str,
     limit: int,
 ):
-    """
-    Return the top `limit` matches as a list of (name, downloads) tuples,
-    sorted by downloads descending.
-
-    Uses FTS5 MATCH for keywords of length >= 3 when the table is FTS5.
-    Falls back to LIKE for shorter keywords or non-FTS5 tables.
-    """
     kw = keyword.lower()
 
     # Quote identifiers to be safe with any names

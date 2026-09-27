@@ -34,8 +34,6 @@ MAX_PREVIEW_FILES: Final[int] = 5
 
 
 class ANSI:
-    """ANSI color codes for terminal output."""
-
     RESET: str = ANSI_RESET
     BOLD: str = ANSI_BOLD
     DIM: str = ANSI_DIM
@@ -46,7 +44,6 @@ class ANSI:
 
     @classmethod
     def disable(cls) -> None:
-        """Disable all ANSI color codes by setting them to empty strings."""
         for attr in dir(cls):
             if not attr.startswith("_") and attr != "disable":
                 setattr(cls, attr, "")
@@ -54,8 +51,6 @@ class ANSI:
 
 @dataclass
 class FileResult:
-    """Result of processing a single file."""
-
     path: Path
     status: str
     total_lines: int = 0
@@ -66,8 +61,6 @@ class FileResult:
 
 @dataclass
 class ProcessingStats:
-    """Statistics for the entire processing run."""
-
     total_files: int = 0
     text_files: int = 0
     binary_files: int = 0
@@ -78,19 +71,6 @@ class ProcessingStats:
 
 
 def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, int]:
-    """
-    Remove blank lines (and optionally whitespace-only lines) from a file.
-
-    Args:
-        path: Path to the file to process.
-        remove_spaces: If True, also remove lines that contain only whitespace.
-
-    Returns:
-        A tuple of (total_lines, removed_lines).
-
-    Raises:
-        OSError: If the file cannot be read or written.
-    """
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
@@ -117,16 +97,6 @@ def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, in
 
 
 def process_file_worker(path: Path, remove_spaces: bool = False) -> FileResult:
-    """
-    Process a single file: detect binary, remove blank lines if text.
-
-    Args:
-        path: Path to the file to process.
-        remove_spaces: If True, also remove whitespace-only lines.
-
-    Returns:
-        A FileResult describing the outcome.
-    """
     result: FileResult = FileResult(path=path, status="error")
 
     try:
@@ -163,15 +133,6 @@ def process_file_worker(path: Path, remove_spaces: bool = False) -> FileResult:
 
 
 def discover_files(directories: list[str]) -> tuple[list[Path], int]:
-    """
-    Recursively discover files in the given directories, skipping unwanted ones.
-
-    Args:
-        directories: List of directory paths as strings.
-
-    Returns:
-        A tuple of (list of file paths, number of skipped directories).
-    """
     files: list[Path] = []
     skipped_dirs: int = 0
 
@@ -196,7 +157,6 @@ def discover_files(directories: list[str]) -> tuple[list[Path], int]:
 
 
 def print_header() -> None:
-    """Log the application header banner."""
     print(f"{ANSI.CYAN}╔════════════════════════════════════════════╗{ANSI.RESET}")
     print(
         f"{ANSI.CYAN}║{ANSI.RESET}         Blank Line Remover              {ANSI.CYAN}║{ANSI.RESET}"
@@ -205,24 +165,12 @@ def print_header() -> None:
 
 
 def print_directory_list(directories: list[str]) -> None:
-    """
-    Log the list of directories being processed.
-
-    Args:
-        directories: List of directory paths as strings.
-    """
     print("Processing directories:")
     for dir_str in directories:
         print(f"  {ANSI.DIM}•{ANSI.RESET} {Path(dir_str).resolve()}")
 
 
 def print_mode(remove_spaces: bool) -> None:
-    """
-    Log the current processing mode.
-
-    Args:
-        remove_spaces: If True, whitespace-only lines are also removed.
-    """
     if remove_spaces:
         print(
             f"Mode: {ANSI.BOLD}Remove blank lines and whitespace-only lines{ANSI.RESET}"
@@ -232,18 +180,10 @@ def print_mode(remove_spaces: bool) -> None:
 
 
 def print_separator() -> None:
-    """Log a horizontal separator line."""
     print(f"{ANSI.CYAN}{'─' * 40}{ANSI.RESET}")
 
 
 def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
-    """
-    Log detailed results: modified, unchanged, skipped binary, and errored files.
-
-    Args:
-        stats: Aggregated processing statistics.
-        show_binary: If True, show all skipped binary files instead of a limited preview.
-    """
     processed: list[FileResult] = [r for r in stats.results if r.status == "processed"]
     unchanged: list[FileResult] = [r for r in stats.results if r.status == "unchanged"]
     skipped_binary: list[FileResult] = [
@@ -306,12 +246,6 @@ def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
 
 
 def print_summary(stats: ProcessingStats) -> None:
-    """
-    Log the final summary statistics.
-
-    Args:
-        stats: Aggregated processing statistics.
-    """
     print_separator()
     print(f"{ANSI.BOLD}Summary:{ANSI.RESET}")
     print(f"  Total files found:     {ANSI.BOLD}{stats.total_files:,}{ANSI.RESET}")
@@ -331,13 +265,6 @@ def print_summary(stats: ProcessingStats) -> None:
 
 
 def main() -> int:
-    """
-    Entry point: parse arguments, discover files, process them in parallel,
-    and report results.
-
-    Returns:
-        Exit code (0 if no errors, 1 otherwise).
-    """
     parser = argparse.ArgumentParser(
         description="Recursively remove blank lines from text files with parallel processing.",
         formatter_class=argparse.RawDescriptionHelpFormatter,

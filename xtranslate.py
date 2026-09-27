@@ -110,7 +110,6 @@ log = logging.getLogger("xtranslate")
 
 
 def is_binary(path: Path) -> bool:
-    """True if the first 512 bytes contain a NUL byte (heuristic from dh.py)."""
     try:
         with path.open("rb") as fh:
             head = fh.read(512)
@@ -122,7 +121,6 @@ def is_binary(path: Path) -> bool:
 
 
 def has_non_ascii(text: str) -> bool:
-    """True if the text has any char outside ASCII (file-level filter)."""
     return bool(NON_ASCII.search(text))
 
 
@@ -131,16 +129,6 @@ def looks_english(
     method: str = "ascii-ratio",
     threshold: float = 0.6,
 ) -> bool:
-    """
-    Decide whether a single line is already English.
-
-    Methods mirror the originals:
-        ascii-ratio  – ratio of ASCII letters > threshold   (dtransline.py)
-        non-ascii    – no non-ASCII chars at all            (transline2.py)
-        chinese      – contains CJK ideographs              (ptrans.py)
-        langdetect   – langdetect says 'en'                 (trans_file_linebyline.py)
-        none         – never treat as English
-    """
     stripped = text.strip()
     if not stripped:
         return True
@@ -167,7 +155,6 @@ def looks_english(
 
 
 def chunk_by_size(text: str, max_size: int) -> Iterator[str]:
-    """Split text into chunks of at most `max_size` chars, preserving line breaks."""
     buf: list[str] = []
     size = 0
     for line in text.splitlines(keepends=True):
@@ -182,7 +169,6 @@ def chunk_by_size(text: str, max_size: int) -> Iterator[str]:
 
 
 def chunk_with_lines(text: str, max_size: int) -> list[tuple[int, int, str]]:
-    """Like chunk_by_size but returns (start_line, end_line, chunk_text)."""
     lines = text.splitlines(keepends=True)
     out: list[tuple[int, int, str]] = []
     buf: list[str] = []
@@ -201,7 +187,6 @@ def chunk_with_lines(text: str, max_size: int) -> list[tuple[int, int, str]]:
 
 
 def atomic_write(path: Path, content: str, encoding: str = "utf-8") -> None:
-    """Write via tempfile + rename so a crash never leaves a half-written file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
         "w", encoding=encoding, delete=False, dir=str(path.parent)
@@ -217,7 +202,6 @@ def iter_files(
     exclude: Sequence[str | Path] = (),
     skip_hidden: bool = True,
 ) -> Iterator[Path]:
-    """Yield candidate text files under `paths`, applying the common filters."""
     exclude_resolved = {Path(p).resolve() for p in exclude}
     ext_set = {e.lower() for e in extensions} if extensions else None
 
@@ -255,8 +239,6 @@ def iter_files(
 
 
 class Translator:
-    """Thin wrapper around deep-translator's GoogleTranslator with retry."""
-
     def __init__(
         self,
         source: str = "auto",
@@ -316,7 +298,6 @@ def _marked_file_worker(task: tuple) -> str:
 
 
 def _translate_one_line(line: str, translator: Translator, opts: dict[str, Any]) -> str:
-    """Preserve leading indent + trailing newline, replace content with translation."""
     stripped = line.strip()
     if not stripped or looks_english(stripped, opts["detect"], opts["threshold"]):
         return line
@@ -327,7 +308,6 @@ def _translate_one_line(line: str, translator: Translator, opts: dict[str, Any])
 
 
 def _inline_process_one(path: Path, opts: dict[str, Any]) -> str:
-    """Handle one file for `inline` mode. Returns a status line."""
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as exc:
@@ -357,7 +337,6 @@ def _inline_process_one(path: Path, opts: dict[str, Any]) -> str:
 
 
 def _marked_process_one(path: Path, opts: dict[str, Any]) -> str:
-    """Handle one file for `marked` mode (line-by-line + backup + markers)."""
     backup = path.with_suffix(path.suffix + opts["backup_suffix"])
     try:
         shutil.copyfile(path, backup)
@@ -406,7 +385,6 @@ def _run_workers(
     tasks: list[tuple],
     workers: int,
 ) -> list[Any]:
-    """Run `worker` over tasks, using a Pool if workers > 1."""
     if workers > 1 and len(tasks) > 1:
         with mp.Pool(processes=workers) as pool:
             return pool.map(worker, tasks)
@@ -427,7 +405,6 @@ def _common_opts(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def mode_inline(args: argparse.Namespace) -> int:
-    """Line-by-line in-place translation. (dtransline, ptrans, transline2, translate_file, ultratranslator)"""
     files = list(
         iter_files(
             args.paths,
@@ -454,7 +431,6 @@ def mode_inline(args: argparse.Namespace) -> int:
 
 
 def _run_file_api_mode(files: list[Path], opts: dict[str, Any], workers: int) -> int:
-    """ultratranslator.py behaviour: GoogleTranslator.translate_file on the whole file."""
     tasks = [(str(f), opts) for f in files]
 
     def worker(task: tuple) -> str:
@@ -487,7 +463,6 @@ def _run_file_api_mode(files: list[Path], opts: dict[str, Any], workers: int) ->
 
 
 def mode_copy(args: argparse.Namespace) -> int:
-    """Chunked translation written to a new file. (autotrans, transasis, ptranslator)"""
     files = list(
         iter_files(
             args.paths,
@@ -544,7 +519,6 @@ def _resolve_output_path(path: Path, args: argparse.Namespace) -> Path:
 
 
 def mode_json(args: argparse.Namespace) -> int:
-    """Chunked translation emitted as JSON. (trans_words)"""
     files = list(
         iter_files(
             args.paths,
@@ -595,7 +569,6 @@ def mode_json(args: argparse.Namespace) -> int:
 
 
 def mode_pair(args: argparse.Namespace) -> int:
-    """Side-by-side translation for one or more files. (gtrans)"""
     paths = [Path(p) for p in args.paths]
     files: list[Path] = []
     for p in paths:
@@ -636,7 +609,6 @@ def mode_pair(args: argparse.Namespace) -> int:
 
 
 def mode_marked(args: argparse.Namespace) -> int:
-    """In-place with markers + backup. (trans_file_linebyline)"""
     files = list(
         iter_files(
             args.paths,
@@ -658,7 +630,6 @@ def mode_marked(args: argparse.Namespace) -> int:
 
 
 def mode_segment(args: argparse.Namespace) -> int:
-    """Regex-segment in-place translation with a .progress cache. (transline)"""
     pattern = re.compile(args.segment_pattern)
     files = list(
         iter_files(
@@ -762,7 +733,6 @@ def _handle_signal(signum: int, _frame) -> None:  # noqa: ANN001
 
 
 def _resume_translate_batch(task: tuple) -> list[tuple[int, str]]:
-    """Translate a batch of (line_idx, text) pairs (no-op for English/blank lines)."""
     source, target, items, retries, delay = task
     translator = Translator(source, target, retries, delay)
     out: list[tuple[int, str]] = []
@@ -775,7 +745,6 @@ def _resume_translate_batch(task: tuple) -> list[tuple[int, str]]:
 
 
 def mode_resume(args: argparse.Namespace) -> int:
-    """Batched, resumable, signal-safe translation. (translate2)"""
     global _shutdown
     _shutdown = False
     signal.signal(signal.SIGINT, _handle_signal)

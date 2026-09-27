@@ -80,8 +80,6 @@ DEFAULT_EXTS_BY_TOOL: dict[str, set[str]] = {
 
 @dataclass
 class FileResult:
-    """Outcome of processing a single file."""
-
     path: Path
     success: bool
     modified: bool = False
@@ -91,7 +89,6 @@ class FileResult:
 
 
 def read_text(path: Path, max_bytes: int = 0) -> Optional[str]:
-    """Read text as UTF-8, falling back to latin-1. Return ``None`` on error."""
     try:
         if max_bytes and path.stat().st_size > max_bytes:
             LOG.warning("File too large (%d bytes): %s", path.stat().st_size, path)
@@ -107,7 +104,6 @@ def read_text(path: Path, max_bytes: int = 0) -> Optional[str]:
 
 
 def atomic_write(path: Path, text: str) -> bool:
-    """Write ``text`` to ``path`` via a sibling ``.tmp`` file + rename."""
     tmp = path.with_suffix(path.suffix + ".tmp")
     try:
         tmp.write_text(text, encoding="utf-8")
@@ -128,7 +124,6 @@ def discover(
     exts: set[str],
     skip_dir_names: Iterable[str] = (),
 ) -> list[Path]:
-    """Expand a list of files/dirs into a de-duplicated list of matching files."""
     seen: set[Path] = set()
     skip = set(skip_dir_names)
     out: list[Path] = []
@@ -155,7 +150,6 @@ def discover(
 
 
 def _unique_path(target: Path) -> Path:
-    """Return ``target`` or ``target_1``, ``target_2`` ... if it already exists."""
     if not target.exists():
         return target
     stem, suffix = target.stem, target.suffix
@@ -168,7 +162,6 @@ def _unique_path(target: Path) -> Path:
 
 
 def _move_to_error(path: Path, dest_dir: str) -> None:
-    """Move ``path`` into ``path.parent / dest_dir`` with a unique name."""
     target_dir = path.parent / dest_dir
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -184,8 +177,6 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
 
 
 class HtmlTagFormatter:
-    """Insert newlines around block-level HTML tags using tree-sitter."""
-
     # Tags that should NOT be forced onto their own line.
     INLINE_TAGS: frozenset[str] = frozenset(
         {
@@ -221,7 +212,6 @@ class HtmlTagFormatter:
     # -- public API --------------------------------------------------------
 
     def format(self, src: str) -> tuple[str, int]:
-        """Return ``(formatted_text, edits_applied)``."""
         if not src.strip():
             return src, 0
         try:
@@ -276,7 +266,6 @@ class HtmlTagFormatter:
 
     @staticmethod
     def _collapse_blank_lines(text: str) -> str:
-        """Collapse runs of blank lines down to a single blank line."""
         out: list[str] = []
         blank_run = 0
         for line in text.split("\n"):
@@ -294,7 +283,6 @@ _FORMATTER_CACHE: Optional[HtmlTagFormatter] = None
 
 
 def _get_formatter() -> HtmlTagFormatter:
-    """Cache the tree-sitter parser per worker process."""
     global _FORMATTER_CACHE
     if _FORMATTER_CACHE is None:
         _FORMATTER_CACHE = HtmlTagFormatter()
@@ -470,7 +458,6 @@ def run_batch(
     progress: bool = False,
     move_errors_dir: Optional[str] = None,
 ) -> dict[str, int]:
-    """Run ``worker`` over ``paths`` and collect summary statistics."""
     stats = {"ok": 0, "fail": 0, "modified": 0, "bytes": 0, "detail": 0}
 
     pbar = None
@@ -527,7 +514,6 @@ def run_batch(
 
 
 def cmd_list_large(args: argparse.Namespace) -> int:
-    """bightml.py — print HTML files larger than ``--min-size-mb``."""
     root = Path.home()
     min_bytes = int(args.min_size_mb * 1024 * 1024)
     paths = args.paths or [root]
@@ -579,7 +565,6 @@ def _make_worker(args: argparse.Namespace) -> Callable[[Path], FileResult]:
 
 
 def cmd_format(args: argparse.Namespace) -> int:
-    """Format / beautify files with the selected backend."""
     exts = _normalise_exts(args.ext, args.tool)
 
     skip_dirs = list(args.skip_dir or [])

@@ -24,10 +24,6 @@ from typing import List, Set
 
 
 def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[str]:
-    """
-    Reads a file into memory, returning a list of stripped lines.
-    Uses mmap for faster memory mapping if the file size exceeds the threshold.
-    """
     size_bytes = file_path.stat().st_size
     threshold_bytes = mmap_threshold_mb * 1024 * 1024
 
@@ -49,10 +45,6 @@ def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[st
 def process_similar(
     file_path: Path, mmap_threshold_mb: float, similar_out_file: Path
 ) -> None:
-    """
-    Finds words that differ by exactly one character, removes them from the
-    original list, and appends them to a separate file. (From clean_wordlist.py)
-    """
     if not file_path.exists():
         print(f"Error: File '{file_path}' does not exist.", file=sys.stderr)
         sys.exit(1)
@@ -97,10 +89,6 @@ def process_similar(
 
 
 def process_repeats(file_path: Path, pattern: str) -> None:
-    """
-    Streams the file and removes lines matching a regex pattern
-    (default: repeated single characters). (From clean_wordlist_fast.py)
-    """
     if not file_path.exists():
         print(f"Error: File '{file_path}' does not exist.", file=sys.stderr)
         sys.exit(1)

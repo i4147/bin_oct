@@ -31,16 +31,6 @@ MAX_ERROR_MSG_LEN: int = 200
 def run_python_file(
     path: Path, timeout: int = DEFAULT_TIMEOUT
 ) -> tuple[Path, bool, str | None, str | None]:
-    """Execute a single Python file and report success or a classified failure.
-
-    Args:
-        path: Path to the Python file to execute.
-        timeout: Maximum execution time in seconds.
-
-    Returns:
-        A tuple of (path, success, error_type, error_msg). On success,
-        error_type and error_msg are None.
-    """
     try:
         result = runpy.run_path(
             str(path),
@@ -65,14 +55,6 @@ def run_python_file(
 
 
 def _classify_exception(exc: BaseException) -> str:
-    """Classify an exception into a short, human-readable error type label.
-
-    Args:
-        exc: The exception instance to classify.
-
-    Returns:
-        A string label describing the exception category.
-    """
     name = type(exc).__name__
     known = {
         "ModuleNotFoundError",
@@ -102,15 +84,6 @@ def _classify_exception(exc: BaseException) -> str:
 def _run_with_timeout(
     path: Path, timeout: int
 ) -> tuple[Path, bool, str | None, str | None]:
-    """Run a Python file in a subprocess with a hard timeout.
-
-    Args:
-        path: Path to the Python file.
-        timeout: Timeout in seconds.
-
-    Returns:
-        A tuple of (path, success, error_type, error_msg).
-    """
     try:
         proc = subprocess.run(
             [sys.executable, str(path)],
@@ -163,32 +136,10 @@ def _run_with_timeout(
 def _worker_entry(
     path: Path, timeout: int
 ) -> tuple[Path, bool, str | None, str | None]:
-    """Worker entrypoint used by the multiprocessing pool.
-
-    Runs the file via runpy inside the worker process; a hard timeout is not
-    enforceable in-process, so we delegate to a subprocess wrapper to preserve
-    timeout behavior.
-
-    Args:
-        path: Path to the Python file.
-        timeout: Timeout in seconds.
-
-    Returns:
-        A tuple of (path, success, error_type, error_msg).
-    """
     return _run_with_timeout(path, timeout)
 
 
 def find_python_files(root_dir: Path, recursive: bool = True) -> list[Path]:
-    """Locate Python files under a root directory.
-
-    Args:
-        root_dir: Directory to search.
-        recursive: Whether to descend into subdirectories.
-
-    Returns:
-        A sorted list of Path objects pointing to .py files.
-    """
     if recursive:
         return sorted(root_dir.rglob("*.py"))
     return sorted(root_dir.glob("*.py"))
@@ -199,17 +150,6 @@ def run_files_parallel(
     timeout: int = DEFAULT_TIMEOUT,
     verbose: bool = False,
 ) -> dict[str, list[Any]]:
-    """Run Python files in parallel using a fixed-size multiprocessing pool.
-
-    Args:
-        files: List of Python file paths to execute.
-        timeout: Per-file timeout in seconds.
-        verbose: If True, log each file result as it completes.
-
-    Returns:
-        A dict with keys "success" and "failed". "success" maps to a list of
-        Paths. "failed" maps to a list of (Path, error_type, error_msg) tuples.
-    """
     results: dict[str, list[Any]] = {"success": [], "failed": []}
     if not files:
         return results
@@ -246,11 +186,6 @@ def run_files_parallel(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Construct the argument parser for the CLI.
-
-    Returns:
-        A configured argparse.ArgumentParser instance.
-    """
     parser = argparse.ArgumentParser(
         description=(
             "Recursively run Python files with timeout and parallel processing"
@@ -293,11 +228,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """CLI entrypoint.
-
-    Returns:
-        Exit code: 0 if all files succeeded, 1 otherwise.
-    """
     parser = _build_parser()
     args = parser.parse_args()
 

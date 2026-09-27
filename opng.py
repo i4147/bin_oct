@@ -117,32 +117,6 @@ OPTIPNG_SUCCESS: Final[int] = 0
 
 
 class ProcessResult(NamedTuple):
-    """Outcome of processing a single PNG file.
-
-    Attributes
-    ----------
-    path:
-        The path as the parent discovered it (may be relative).
-    original_size:
-        Size of the original file in bytes, or ``0`` when it could not be
-        determined.
-    new_size:
-        Size of optipng's output in bytes, or ``0`` when no output was
-        produced.
-    stdout:
-        Decoded stdout of the optipng subprocess (UTF-8, ``errors="replace"``).
-    stderr:
-        Decoded stderr of the optipng subprocess (UTF-8, ``errors="replace"``).
-    skipped:
-        ``True`` when the original was preserved because the output was not
-        strictly smaller (larger, or same size with different bytes).
-    no_change:
-        ``True`` when the output was byte-identical to the input; no write
-        was performed and no mtime was bumped.
-    error:
-        Short, human-readable error message, or ``None`` on success.
-    """
-
     path: Path
     original_size: int
     new_size: int
@@ -159,7 +133,6 @@ class ProcessResult(NamedTuple):
 
 
 def format_bytes(n: int) -> str:
-    """Return a human-readable byte count using B/KiB/MiB/GiB/TiB units."""
     sign = "-" if n < 0 else ""
     value = float(abs(n))
     for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
@@ -178,7 +151,6 @@ def format_bytes(n: int) -> str:
 
 
 def _dedupe(path: Path, seen: set[Path]) -> bool:
-    """Return ``True`` if *path* is new, registering its resolved key."""
     try:
         key = path.resolve()
     except OSError:
@@ -192,13 +164,6 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
-    """Yield PNG files under a single directory *root*.
-
-    ``walk_files`` returns a complete ``list[Path]`` for the root; the list is
-    consumed in ``WALK_CHUNK``-sized slices so the parent's peak allocation
-    stays modest even for very large trees. Filters are applied cheapest
-    first: suffix, then skip-dir, then ``lstat`` (symlink), then ``resolve``.
-    """
     try:
         found = walk_files(str(root))
     except Exception as exc:  # noqa: BLE001 - surface as a warning, keep going
@@ -236,13 +201,6 @@ def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
 
 
 def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
-    """Yield deduplicated PNG files discovered under *roots*.
-
-    Explicit files are accepted (subject to the PNG-suffix filter and the
-    symlink policy); directories are walked recursively with ``fastwalk``.
-    Per-root problems (missing paths, walk failures) are reported as
-    warnings on stderr and do not abort the run.
-    """
     seen: set[Path] = set()
 
     for raw_root in roots:
@@ -299,11 +257,6 @@ def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
 
 
 def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
-    """Return ``True`` iff *a* and *b* have byte-identical contents.
-
-    The size check runs first as a fast reject; otherwise both files are
-    streamed in ``COMPARE_CHUNK``-sized blocks.
-    """
     if a_size != b_size:
         return False
     with a.open("rb") as fa, b.open("rb") as fb:
@@ -317,13 +270,6 @@ def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
 
 
 def _is_valid_png(path: Path) -> tuple[bool, str | None]:
-    """Return ``(ok, error)`` for the PNG magic-byte check.
-
-    The full PNG structure (chunks, CRC) is not validated — optipng is
-    trusted to write a valid file and the signature catches the realistic
-    failure modes (empty output, truncated write, plain text error dumped
-    into the output file).
-    """
     try:
         with path.open("rb") as f:
             header = f.read(len(PNG_MAGIC))
@@ -344,16 +290,6 @@ def process_file(
     timeout: float,
     dry_run: bool,
 ) -> ProcessResult:
-    """Run optipng on a single PNG and (optionally) replace it atomically.
-
-    optipng edits files in place, so we stage the input as a sibling temp
-    copy, run optipng against the copy, and only swap it in when the result
-    passes every validation gate.
-
-    This function never raises: every failure — a missing executable, a
-    timeout, a bad signature, a failed ``os.replace`` — is turned into an
-    entry on the returned :class:`ProcessResult`.
-    """
     # --- Resolve symlinks so os.replace targets the real file. ------------
     # Discovery normally filters symlinks, but hardlinks / bind mounts /
     # unusual setups can bypass that filter; resolving here is defensive.
@@ -637,7 +573,6 @@ def process_file(
 
 
 def _classify(result: ProcessResult, dry_run: bool) -> str:
-    """Map a :class:`ProcessResult` onto one of the reporting tags."""
     if result.error is not None:
         return "ERROR"
     if result.no_change:
@@ -652,7 +587,6 @@ def _classify(result: ProcessResult, dry_run: bool) -> str:
 
 
 def _emit_optipng_output(result: ProcessResult) -> None:
-    """Write the worker-captured optipng streams to our own streams."""
     if result.stdout:
         sys.stdout.write(result.stdout)
         if not result.stdout.endswith("\n"):
@@ -666,7 +600,6 @@ def _emit_optipng_output(result: ProcessResult) -> None:
 
 
 def _print_status(result: ProcessResult, tag: str) -> None:
-    """Print a single, human-readable status line for *result*."""
     path = result.path
     orig = result.original_size
     new = result.new_size
@@ -705,7 +638,6 @@ def _print_status(result: ProcessResult, tag: str) -> None:
 def _print_summary(
     counters: dict[str, int], total_before: int, total_after: int
 ) -> None:
-    """Print the final aggregate report."""
     total = sum(counters.values())
     skipped = counters["SAME"] + counters["SKIP"]
 
@@ -744,7 +676,6 @@ def _print_summary(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Construct the argument parser."""
     parser = argparse.ArgumentParser(
         prog="optipng-optimize",
         description=(
@@ -810,7 +741,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Program entry point. Returns a non-zero status if any file errored."""
     args = _build_parser().parse_args(argv)
 
     roots = [Path(p) for p in args.paths] if args.paths else [Path(".")]

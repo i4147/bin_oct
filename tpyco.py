@@ -101,8 +101,6 @@ _WORKER_RATE_LOCK: Lock
 
 @dataclass(frozen=True)
 class TextEdit:
-    """Describe a source-file replacement using absolute character offsets."""
-
     start: int
     end: int
     replacement: str
@@ -110,15 +108,12 @@ class TextEdit:
 
 @dataclass(frozen=True)
 class TranslationJob:
-    """Represent one text fragment that must be translated."""
-
     text: str
     start: int
     end: int
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments and return the configured options."""
     parser = argparse.ArgumentParser(
         description="Translate detectable non-English Python comments and strings."
     )
@@ -172,7 +167,6 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def discover_python_files(inputs: list[Path]) -> list[Path]:
-    """Expand input files and directories into a sorted, de-duplicated file list."""
     roots = inputs or [Path.cwd()]
     discovered: set[Path] = set()
 
@@ -197,7 +191,6 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
 
 
 def contains_probable_non_english(text: str) -> bool:
-    """Return whether text contains characters or markers likely to be non-English."""
     if not text.strip():
         return False
 
@@ -209,7 +202,6 @@ def contains_probable_non_english(text: str) -> bool:
 
 
 def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
-    """Split text into bounded chunks while preferring whitespace boundaries."""
     if limit <= 0:
         raise ValueError("chunk size must be greater than zero")
 
@@ -232,12 +224,10 @@ def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
 
 
 def position_to_offset(line_offsets: list[int], row: int, column: int) -> int:
-    """Convert a tokenize row and column pair into an absolute source offset."""
     return line_offsets[row - 1] + column
 
 
 def token_payload_bounds(token_text: str, token_start: int) -> tuple[int, int] | None:
-    """Return absolute-in-token bounds for a string literal's textual payload."""
     match = re.match(r"(?is)^([rubf]*)(\"\"\"|'''|\"|')", token_text)
     if match is None:
         return None
@@ -261,7 +251,6 @@ def extract_jobs(
     source: str,
     chunk_size: int,
 ) -> list[TranslationJob]:
-    """Extract translatable comment and string-literal chunks from Python source."""
     lines = source.splitlines(keepends=True)
     line_offsets: list[int] = []
     offset = 0
@@ -347,7 +336,6 @@ def extract_jobs(
 
 
 def acquire_rate_slot() -> None:
-    """Reserve a globally rate-limited request slot for the current worker."""
     while True:
         with _WORKER_RATE_LOCK:
             now = time.monotonic()
@@ -364,13 +352,11 @@ def http_json_request(
     request: Request,
     timeout: float,
 ) -> object:
-    """Execute an HTTP request and decode its JSON response."""
     with urlopen(request, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
 def translate_google(text: str, timeout: float) -> str:
-    """Translate text to English through Google's public translation endpoint."""
     query = urlencode(
         {
             "client": "gtx",
@@ -401,7 +387,6 @@ def translate_google(text: str, timeout: float) -> str:
 
 
 def translate_libretranslate(text: str, url: str, timeout: float) -> str:
-    """Translate text to English through a LibreTranslate-compatible endpoint."""
     body = json.dumps(
         {"q": text, "source": "auto", "target": "en", "format": "text"}
     ).encode("utf-8")
@@ -430,7 +415,6 @@ def translate_libretranslate(text: str, url: str, timeout: float) -> str:
 
 
 def translate_with_retry(text: str) -> str:
-    """Translate one chunk with rate limiting and exponential-backoff retries."""
     last_error: Exception | None = None
 
     for attempt in range(MAX_RETRIES):
@@ -462,7 +446,6 @@ def worker_initializer(
     next_request: Value,
     rate_lock: Lock,
 ) -> None:
-    """Initialize immutable backend settings and shared rate-limiter state."""
     global _WORKER_BACKEND
     global _WORKER_LIBRE_URL
     global _WORKER_TIMEOUT
@@ -479,7 +462,6 @@ def worker_initializer(
 
 
 def translate_job(job: TranslationJob) -> tuple[TranslationJob, str]:
-    """Translate one extracted chunk and return it with its replacement text."""
     return job, translate_with_retry(job.text)
 
 
@@ -487,7 +469,6 @@ def apply_translations(
     source: str,
     results: list[tuple[TranslationJob, str]],
 ) -> str:
-    """Apply translated chunks from right to left without shifting source offsets."""
     edits = [TextEdit(job.start, job.end, translated) for job, translated in results]
     edits.sort(key=lambda edit: edit.start, reverse=True)
 
@@ -504,7 +485,6 @@ def apply_translations(
 
 
 def validate_python(source: str, path: Path) -> None:
-    """Compile Python source to verify syntax before it is written."""
     try:
         ast.parse(source, filename=str(path))
         compile(source, str(path), "exec")
@@ -515,7 +495,6 @@ def validate_python(source: str, path: Path) -> None:
 
 
 def atomic_write(path: Path, content: str, encoding: str) -> None:
-    """Atomically replace a file while retaining its original permissions."""
     original_mode = path.stat().st_mode
 
     with NamedTemporaryFile(
@@ -546,7 +525,6 @@ def process_file(
     dry_run: bool,
     chunk_size: int,
 ) -> bool:
-    """Translate, validate, and optionally write one Python file."""
     logger.info("Reading {}", path)
     source = path.read_text(encoding=encoding)
     jobs = extract_jobs(source, chunk_size)
@@ -576,7 +554,6 @@ def process_file(
 
 
 def main() -> int:
-    """Run discovery, translation, validation, and atomic file replacement."""
     args = parse_arguments()
 
     if args.chunk_size <= 0:

@@ -47,45 +47,21 @@ SKIP_DIRS: set[str] = {
 
 
 class ImportVisitor(ast.NodeVisitor):
-    """AST visitor that collects all imported module names from Python source code."""
-
     def __init__(self) -> None:
-        """Initialize the visitor with an empty set of imports."""
         self.imports: set[str] = set()
 
     def visit_Import(self, node: ast.Import) -> None:
-        """
-        Visit an Import node and collect the top-level module name.
-
-        Args:
-            node: The Import AST node to process
-        """
         for node_name in node.names:
             self.imports.add(node_name.name.split(".")[0])
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """
-        Visit an ImportFrom node and collect the top-level module name.
-
-        Args:
-            node: The ImportFrom AST node to process
-        """
         if node.level == 0 and node.module:
             self.imports.add(node.module.split(".")[0])
         self.generic_visit(node)
 
 
 def get_local_packages(start_path: Path) -> set[str]:
-    """
-    Get the names of all local packages in the given directory.
-
-    Args:
-        start_path: The root path to search for local packages
-
-    Returns:
-        A set of package names
-    """
     packages: set[str] = set()
     for init_file in start_path.rglob("__init__.py"):
         if any(part in SKIP_DIRS for part in init_file.parts):
@@ -95,15 +71,6 @@ def get_local_packages(start_path: Path) -> set[str]:
 
 
 def _process_file(path: Path) -> tuple[Path, set[str], bool, str | None]:
-    """
-    Process a single Python file to extract its imports.
-
-    Args:
-        path: Path to the Python file to process
-
-    Returns:
-        Tuple containing (path, imports_set, success_flag, error_message)
-    """
     imports: set[str] = set()
     error: str | None = None
     try:
@@ -122,15 +89,6 @@ def _process_file(path: Path) -> tuple[Path, set[str], bool, str | None]:
 
 
 def has_python_files(dir_path: Path) -> bool:
-    """
-    Check if a directory contains any Python files.
-
-    Args:
-        dir_path: The directory to check
-
-    Returns:
-        True if the directory contains at least one .py file, False otherwise
-    """
     try:
         for item in dir_path.rglob("*.py"):
             if any(part in SKIP_DIRS for part in item.parts):
@@ -144,18 +102,6 @@ def has_python_files(dir_path: Path) -> bool:
 def find_imports_for_directory(
     dir_path: Path, start_path: Path, std_libs: set[str], all_local_packages: set[str]
 ) -> list[str]:
-    """
-    Find all third-party imports in Python files within a directory.
-
-    Args:
-        dir_path: Directory to scan for Python files
-        start_path: Root path to calculate relative paths
-        std_libs: Set of standard library module names
-        all_local_packages: Set of local package names to exclude
-
-    Returns:
-        Sorted list of third-party module names
-    """
     files: list[Path] = []
     for py_file in dir_path.rglob("*.py"):
         if py_file.is_file():
@@ -204,17 +150,6 @@ def find_imports_for_directory(
 def save_requirements_file(
     modules: list[str], output_path: Path, pkgz: set[str]
 ) -> bool:
-    """
-    Save a list of modules to a requirements.txt file.
-
-    Args:
-        modules: List of module names to save
-        output_path: Path where the requirements file should be written
-        pkgz: Set of already installed packages
-
-    Returns:
-        True if the file was created with content, False otherwise
-    """
     modules = sorted(set(modules))
     results: list[str] = []
 
@@ -261,15 +196,6 @@ def save_requirements_file(
 
 
 def get_version(module_name: str) -> str:
-    """
-    Get the version of an installed module.
-
-    Args:
-        module_name: Name of the module to check
-
-    Returns:
-        Version string or "Not Installed" if the module is not installed
-    """
     try:
         return importlib.metadata.version(module_name)
     except importlib.metadata.PackageNotFoundError:
@@ -292,15 +218,6 @@ def get_version(module_name: str) -> str:
 
 
 def get_valid_subdirs(start_path: Path) -> list[Path]:
-    """
-    Get all valid subdirectories containing Python files.
-
-    Args:
-        start_path: The root directory to search
-
-    Returns:
-        Sorted list of subdirectory paths containing Python files
-    """
     subdirs: list[Path] = []
     for d in start_path.iterdir():
         if not d.is_dir():
@@ -317,7 +234,6 @@ def get_valid_subdirs(start_path: Path) -> list[Path]:
 
 
 def main() -> None:
-    """Main entry point for the script."""
     parser = argparse.ArgumentParser(
         description="Generate requirements.txt by inspecting Python files"
     )

@@ -100,8 +100,6 @@ _MD_LINK_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[([^\]]*)\]\(([^\)]+)\)
 
 @dataclass
 class FileStats:
-    """Statistics collected while cleaning a single documentation file."""
-
     path: Path
     lines_before: int
     lines_after: int
@@ -117,21 +115,15 @@ class FileStats:
 
 
 def has_badge_domain(line: str) -> bool:
-    """Return ``True`` if ``line`` contains any known badge domain."""
     return any(re.search(domain, line, re.IGNORECASE) for domain in BADGE_DOMAINS)
 
 
 def is_image_extension_url(line: str) -> bool:
-    """Return ``True`` if ``line`` contains an image-extension URL."""
     image_extensions = r"\.(?:png|jpg|jpeg|gif|svg|ico|webp|bmp)(?:\?|#|$|\))"
     return bool(re.search(image_extensions, line, re.IGNORECASE))
 
 
 def remove_image_lines_rst(content: str) -> tuple[str, int]:
-    """Remove image/figure directives from RST content.
-
-    Returns the cleaned content and the number of removed references.
-    """
     lines: list[str] = content.split("\n")
     new_lines: list[str] = []
     removed_count: int = 0
@@ -160,10 +152,6 @@ def remove_image_lines_rst(content: str) -> tuple[str, int]:
 
 
 def remove_image_lines_md(content: str) -> tuple[str, int]:
-    """Remove markdown image/badge references from ``content``.
-
-    Returns the cleaned content and the number of removed references.
-    """
     lines: list[str] = content.split("\n")
     new_lines: list[str] = []
     removed_count: int = 0
@@ -210,7 +198,6 @@ def remove_image_lines_md(content: str) -> tuple[str, int]:
 
 
 def process_file(path: Path) -> FileStats | None:
-    """Clean a single RST/Markdown file, returning stats if modified."""
     try:
         with open(path, "r", encoding="utf-8") as f:
             content: str = f.read()
@@ -251,7 +238,6 @@ def process_file(path: Path) -> FileStats | None:
 
 
 def collect_files(directories: Sequence[Path]) -> list[Path]:
-    """Collect all ``.rst`` and ``.md`` files under the given directories."""
     files: list[Path] = []
     for directory in directories:
         if not directory.exists():
@@ -266,7 +252,6 @@ def collect_files(directories: Sequence[Path]) -> list[Path]:
 
 
 def print_stats(all_stats: Sequence[FileStats], base_path: Path) -> None:
-    """Log per-file and aggregate removal statistics."""
     if not all_stats:
         print("✨ No image references found to remove!")
         return
@@ -335,7 +320,6 @@ def print_stats(all_stats: Sequence[FileStats], base_path: Path) -> None:
 
 
 def main() -> int:
-    """Run the image reference remover over the requested directories."""
     argv: list[str] = sys.argv[1:]
     directories: list[Path] = [Path(arg) for arg in argv] if argv else [Path.cwd()]
 

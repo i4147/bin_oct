@@ -27,45 +27,14 @@ PRESERVE_EXACT: Final[frozenset[str]] = frozenset(
 
 
 def should_preserve_comment(comment_text: str) -> bool:
-    """
-    Decide whether a comment must be preserved during stripping.
-
-    Preserves shebang lines, PEP 484 type directives, and Black/isort fmt
-    pragmas.
-
-    Args:
-        comment_text: The raw comment text, including the leading ``#``.
-
-    Returns:
-        ``True`` if the comment should be kept, ``False`` otherwise.
-    """
     stripped: str = comment_text.strip()
     return stripped.startswith(PRESERVE_PREFIXES) or stripped in PRESERVE_EXACT
 
 
 class StripTransformer(cst.CSTTransformer):
-    """
-    libcst transformer that removes non-preserved comments and docstrings.
-
-    Docstrings are removed from :class:`cst.Module`,
-    :class:`cst.FunctionDef` (including ``async def``), and
-    :class:`cst.ClassDef`. If removing a body docstring would leave the body
-    empty, a ``pass`` statement is inserted.
-    """
-
     def leave_Comment(
         self, original_node: cst.Comment, updated_node: cst.Comment
     ) -> cst.BaseLeaf | cst.RemovalSentinel:
-        """
-        Remove the comment unless it matches a preservation rule.
-
-        Args:
-            original_node: The original ``Comment`` node.
-            updated_node: The (possibly-changed) ``Comment`` node.
-
-        Returns:
-            The unchanged ``Comment`` to keep it, or ``RemovalSentinel.REMOVE``.
-        """
         if should_preserve_comment(updated_node.value):
             return updated_node
         return cst.RemovalSentinel.REMOVE
@@ -74,16 +43,6 @@ class StripTransformer(cst.CSTTransformer):
     def _strip_leading_string(
         body: Sequence[cst.BaseStatement],
     ) -> tuple[cst.BaseStatement, ...]:
-        """
-        Drop the first statement if it is a bare string expression (a docstring).
-
-        Args:
-            body: The sequence of statements to inspect.
-
-        Returns:
-            The body with the leading docstring removed, or unchanged if the
-            first statement is not a docstring.
-        """
         if not body:
             return tuple(body)
 
@@ -99,16 +58,6 @@ class StripTransformer(cst.CSTTransformer):
         return tuple(body)
 
     def _strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
-        """
-        Strip a leading docstring from a function/class suite, inserting
-        ``pass`` if the suite would otherwise be empty.
-
-        Args:
-            suite: An ``IndentedBlock`` or ``SimpleStatementSuite``.
-
-        Returns:
-            The transformed suite.
-        """
         if isinstance(suite, cst.IndentedBlock):
             new_body: tuple[cst.BaseStatement, ...] = self._strip_leading_string(
                 suite.body
@@ -130,7 +79,6 @@ class StripTransformer(cst.CSTTransformer):
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
-        """Strip the module-level docstring, if any."""
         new_body: tuple[cst.BaseStatement, ...] = self._strip_leading_string(
             updated_node.body
         )
@@ -139,30 +87,15 @@ class StripTransformer(cst.CSTTransformer):
     def leave_FunctionDef(
         self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
     ) -> cst.FunctionDef:
-        """Strip the docstring from a function (including ``async def``)."""
         return updated_node.with_changes(body=self._strip_suite(updated_node.body))
 
     def leave_ClassDef(
         self, original_node: cst.ClassDef, updated_node: cst.ClassDef
     ) -> cst.ClassDef:
-        """Strip the docstring from a class body."""
         return updated_node.with_changes(body=self._strip_suite(updated_node.body))
 
 
 def process_file(file_path: Path) -> str:
-    """
-    Strip comments and docstrings from a single Python file in place.
-
-    Parses the file with libcst, applies :class:`StripTransformer`, validates
-    the regenerated code with :func:`ast.parse`, and writes the result back.
-
-    Args:
-        file_path: Path to the Python source file to process.
-
-    Returns:
-        A human-readable status message prefixed with ``[SUCCESS]``,
-        ``[SKIPPED]``, ``[WARNING]``, or ``[ERROR]``.
-    """
     try:
         source: str = file_path.read_text(encoding="utf-8")
     except Exception as exc:
@@ -196,16 +129,6 @@ def process_file(file_path: Path) -> str:
 
 
 def gather_files(inputs: list[str]) -> list[Path]:
-    """
-    Resolve the list of ``.py`` files to process.
-
-    Args:
-        inputs: Raw CLI path arguments. If empty, the current working
-            directory is searched recursively.
-
-    Returns:
-        A sorted, de-duplicated list of ``.py`` file paths.
-    """
     files: set[Path] = set()
 
     if not inputs:
@@ -223,7 +146,6 @@ def gather_files(inputs: list[str]) -> list[Path]:
 
 
 def main() -> None:
-    """Parse CLI arguments and process each target file in parallel."""
     parser = argparse.ArgumentParser(
         description="Strip comments and docstrings using libcst safely."
     )

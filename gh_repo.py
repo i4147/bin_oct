@@ -121,8 +121,6 @@ def run_cli(
 
 
 class GitBackend(ABC):
-    """Abstract local-git operations."""
-
     @abstractmethod
     def is_git_repo(self, path: Path) -> bool: ...
     @abstractmethod
@@ -154,8 +152,6 @@ class GitBackend(ABC):
 
 
 class SubprocessGit(GitBackend):
-    """git CLI via subprocess — the reference behavior."""
-
     def _run(
         self, cmd: Sequence[str], cwd: Path, check: bool = True
     ) -> subprocess.CompletedProcess:
@@ -218,8 +214,6 @@ class SubprocessGit(GitBackend):
 
 
 class GitPythonGit(GitBackend):
-    """Local git via GitPython."""
-
     def _repo(self, path: Path):
         from git import InvalidGitRepositoryError, Repo
 
@@ -310,8 +304,6 @@ class GitPythonGit(GitBackend):
 
 
 class DulwichGit(GitBackend):
-    """Local git via Dulwich (pure Python)."""
-
     @staticmethod
     def _dulwich():
         try:
@@ -438,8 +430,6 @@ class DulwichGit(GitBackend):
 
 
 class Pygit2Git(GitBackend):
-    """Local git via pygit2 (libgit2 bindings)."""
-
     @staticmethod
     def _pg():
         try:
@@ -559,8 +549,6 @@ class Pygit2Git(GitBackend):
 
 
 class GitHubBackend(ABC):
-    """Abstract GitHub remote operations."""
-
     @abstractmethod
     def repo_exists(self, owner: str, name: str) -> bool: ...
     @abstractmethod
@@ -575,8 +563,6 @@ class GitHubBackend(ABC):
 
 
 class GhCliGitHub(GitHubBackend):
-    """Remote operations via the `gh` CLI."""
-
     def __init__(self, username: Optional[str] = None) -> None:
         self.username = username
 
@@ -608,8 +594,6 @@ class GhCliGitHub(GitHubBackend):
 
 
 class RestGitHub(GitHubBackend):
-    """Remote operations via the GitHub REST API using requests."""
-
     def __init__(self, token: str, username: Optional[str] = None) -> None:
         self.token = token
         self.username = username
@@ -657,8 +641,6 @@ class RestGitHub(GitHubBackend):
 
 
 class PyGithubGitHub(GitHubBackend):
-    """Remote operations via PyGithub."""
-
     def __init__(self, token: str, username: Optional[str] = None) -> None:
         try:
             from github import Github
@@ -703,8 +685,6 @@ class PyGithubGitHub(GitHubBackend):
 
 
 class Github3GitHub(GitHubBackend):
-    """Remote operations via github3.py (a.k.a. 'githubpython')."""
-
     def __init__(self, token: str, username: Optional[str] = None) -> None:
         try:
             import github3
@@ -761,7 +741,6 @@ def make_backend(
     token: Optional[str],
     username: Optional[str],
 ) -> Backend:
-    """Instantiate the git + GitHub pair selected by `name`."""
     if name == "subprocess":
         return Backend(name, SubprocessGit(), GhCliGitHub(username))
     if name == "gitpython":
@@ -786,7 +765,6 @@ def make_backend(
 
 
 def resolve_backend(args: argparse.Namespace) -> Backend:
-    """Build the Backend requested via `args.backend`."""
     env_file = Path(args.env_file).expanduser()
     token = get_github_token(env_file)
     return make_backend(args.backend, token, getattr(args, "github_username", None))
@@ -1009,8 +987,6 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
 
 
 class GitHubRepoManager:
-    """Interactive class-based manager, backend-agnostic."""
-
     def __init__(
         self,
         backend: Backend,

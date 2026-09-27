@@ -60,8 +60,6 @@ Status = Literal["skipped", "missing", "would_add", "added", "error"]
 
 
 class ProcessResult(TypedDict):
-    """Structured result returned by `process_file`."""
-
     status: Status
     message: str
     path: Path
@@ -73,12 +71,10 @@ class ProcessResult(TypedDict):
 
 
 def has_main_guard(content: str) -> bool:
-    """Return True if *content* already contains an `if __name__ == "__main__"` guard."""
     return bool(MAIN_GUARD_PATTERN.search(content))
 
 
 def add_main_function(content: str) -> str:
-    """Insert a stub `main()` function after the last top-level import, if missing."""
     if "def main(" in content:
         return content
 
@@ -96,17 +92,12 @@ def add_main_function(content: str) -> str:
 
 
 def add_main_guard(content: str) -> str:
-    """Append a `if __name__ == "__main__":` guard to *content* if missing."""
     if has_main_guard(content):
         return content
     return content.rstrip() + MAIN_GUARD_TEMPLATE
 
 
 def process_file(path: Path, add: bool = False, dry_run: bool = False) -> ProcessResult:
-    """Inspect (and optionally rewrite) a single Python file.
-
-    Returns a `ProcessResult` describing the outcome.
-    """
     try:
         content = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -137,7 +128,6 @@ def find_python_files(
     directory: Path,
     exclude_patterns: Sequence[str] = DEFAULT_EXCLUDES,
 ) -> list[Path]:
-    """Recursively find `.py` files under *directory*, skipping excluded path parts."""
     if not directory.exists():
         logger.warning(f"Directory does not exist: {directory}")
         return []
@@ -157,7 +147,6 @@ def find_python_files(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argparse parser for the CLI."""
     parser = argparse.ArgumentParser(
         description="Find and optionally add main guard to Python files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -201,7 +190,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Run the scanner/injector CLI and return a process exit code."""
     parser = build_parser()
     args = parser.parse_args()
 

@@ -79,8 +79,6 @@ log = logging.getLogger("compressor")
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
 class Codec:
-    """A byte→byte compressor with its canonical file extension."""
-
     name: str
     ext: str
     compress: Callable[[bytes, int], bytes]
@@ -96,7 +94,6 @@ def _lzma_c(d: bytes, l: int) -> bytes:
 
 
 def _sevenz_c(d: bytes, l: int, name: str = "data") -> bytes:
-    """py7zr needs real files — wrap via a temp dir."""
     if py7zr is None:
         raise RuntimeError("py7zr not installed")
     with tempfile.TemporaryDirectory() as td:
@@ -242,7 +239,6 @@ ARCHIVE_SUFFIXES: frozenset[str] = frozenset(
 # Shared helpers
 # ---------------------------------------------------------------------------
 def human(n: int) -> str:
-    """Pretty byte count."""
     for u in ("B", "KiB", "MiB", "GiB", "TiB"):
         if n < 1024 or u == "TiB":
             return f"{n:.1f} {u}" if u != "B" else f"{n} B"
@@ -251,13 +247,11 @@ def human(n: int) -> str:
 
 
 def is_archive(p: Path) -> bool:
-    """True if the filename looks like an already-compressed archive."""
     n = p.name.lower()
     return any(n.endswith(s) for s in ARCHIVE_SUFFIXES)
 
 
 def tar_bytes(src: Path) -> tuple[bytes, str]:
-    """Serialize a directory into an in-memory tar (bytes, arcname)."""
     arcname = f"{src.name}.tar"
     with tempfile.NamedTemporaryFile(suffix=".tar", delete=False) as tmp:
         tpath = Path(tmp.name)
@@ -270,7 +264,6 @@ def tar_bytes(src: Path) -> tuple[bytes, str]:
 
 
 def safe_extract(tf: tarfile.TarFile, dest: Path) -> None:
-    """Extract a tar while refusing path traversal."""
     dest = dest.resolve()
     for m in tf.getmembers():
         target = (dest / m.name).resolve()
@@ -280,7 +273,6 @@ def safe_extract(tf: tarfile.TarFile, dest: Path) -> None:
 
 
 def prepare_input(path: Path) -> tuple[bytes, str]:
-    """Return (payload_bytes, base_name) for a file or (tarred) directory."""
     if path.is_file():
         return path.read_bytes(), path.name
     if path.is_dir():

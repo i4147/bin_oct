@@ -52,16 +52,10 @@ CHUNK_SIZE = MAX_CHARS
 
 
 def progress_path(target: Path) -> Path:
-    """Return the sidecar file that stores the number of completed units."""
     return target.with_suffix(target.suffix + ".progress")
 
 
 def make_translator(source: str, target: str) -> Translator:
-    """
-    Build a Translator.  Some versions of the `translate` package accept
-    `from_lang` in the constructor, others don't.  We try the richer form
-    first and fall back to just `to_lang`.
-    """
     try:
         return Translator(from_lang=source, to_lang=target)
     except TypeError:
@@ -69,12 +63,6 @@ def make_translator(source: str, target: str) -> Translator:
 
 
 def translate_text(translator: Translator, text: str) -> str:
-    """
-    Translate a chunk of text with retries and exponential backoff.
-
-    Empty / whitespace-only input is passed through unchanged.
-    Assumes the caller has already ensured len(text) <= MAX_CHARS.
-    """
     if not text.strip():
         return text
 
@@ -97,17 +85,6 @@ def translate_text(translator: Translator, text: str) -> str:
 
 
 def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
-    """
-    Split a single line into pieces each <= `max_chars`.
-
-    Splitting prefers natural boundaries in this order:
-      1. Sentence-ending punctuation (。！？；.!?;)
-      2. Clause punctuation (，、,:)
-      3. Whitespace
-      4. Hard character cut (last resort)
-
-    No content is lost; the pieces are later re-joined for -l mode.
-    """
     if len(line) <= max_chars:
         return [line]
 
@@ -150,13 +127,6 @@ def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:
 
 
 def chunk_lines(lines: list[str], max_chars: int = CHUNK_SIZE) -> list[list[str]]:
-    """
-    Group lines into chunks whose combined length is at most `max_chars`.
-
-    Splitting happens at line boundaries — lines are never broken here.
-    A single line longer than `max_chars` is passed through as its own
-    chunk; run_chunked() will then split it via split_long_line().
-    """
     chunks: list[list[str]] = []
     current: list[str] = []
     current_len = 0
@@ -233,11 +203,6 @@ def run_chunked(
     source: str,
     target: str,
 ) -> int:
-    """
-    Default mode: split the source into <=`chunk_size`-char blocks at line
-    boundaries, translate each block with a single API call, and write the
-    result back to the output file.
-    """
     # Never exceed the backend limit.
     if chunk_size > MAX_CHARS:
         print(
@@ -317,8 +282,6 @@ def run_chunked(
 
 
 def load_pairs(json_path: Path, src_key: str, tgt_key: str) -> list[dict[str, str]]:
-    """Load existing pairs if the JSON file already exists and uses the
-    same language keys.  Otherwise start fresh."""
     if not json_path.is_file():
         return []
     try:
@@ -345,14 +308,6 @@ def run_line_mode(
     source: str,
     target: str,
 ) -> int:
-    """
-    Translate line by line, print each translation as soon as it is ready,
-    and persist {<source>: ..., <target>: ...} pairs into a JSON array.
-
-    Lines longer than MAX_CHARS are split into pieces, translated separately,
-    and re-joined.  No content is lost; the JSON pair still holds the full
-    original line alongside the full translation.
-    """
     prog_path = progress_path(out_path)
     pairs = load_pairs(out_path, source, target)
 

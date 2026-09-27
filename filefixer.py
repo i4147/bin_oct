@@ -384,8 +384,6 @@ LOG = logging.getLogger("filefixer")
 
 @dataclass
 class Detection:
-    """A detected file type."""
-
     ext: str
     desc: str
     engine: str
@@ -394,8 +392,6 @@ class Detection:
 
 @dataclass
 class FixResult:
-    """Result of processing one file in `fix` mode."""
-
     path: Path
     action: str
     current_ext: str | None = None
@@ -412,12 +408,10 @@ class FixResult:
 
 
 def eprint(*args: Any, **kwargs: Any) -> None:
-    """Print to stderr."""
     print(*args, file=sys.stderr, **kwargs)
 
 
 def norm_ext(ext: str | None) -> str:
-    """Normalize an extension to lower-case with a leading dot."""
     if not ext:
         return ""
     ext = str(ext).strip().lower()
@@ -429,14 +423,12 @@ def norm_ext(ext: str | None) -> str:
 
 
 def parse_ext_set(value: str | None) -> set[str]:
-    """Parse a comma-separated extension list into a normalized set."""
     if not value:
         return set()
     return {norm_ext(part) for part in value.split(",") if part.strip()}
 
 
 def parse_engine_list(value: str | None) -> list[str]:
-    """Parse engine selection string."""
     if not value or value.lower() == "auto":
         return [
             "shebang",
@@ -467,7 +459,6 @@ def parse_engine_list(value: str | None) -> list[str]:
 
 
 def current_ext(path: Path) -> str:
-    """Return the effective extension, respecting compound suffixes."""
     name = path.name.lower()
     for ext in COMPOUND_EXTS:
         if name.endswith(ext):
@@ -476,7 +467,6 @@ def current_ext(path: Path) -> str:
 
 
 def mime_to_ext(mime: str | None) -> str | None:
-    """Map a MIME type to an extension."""
     if not mime:
         return None
     mime = mime.lower().split(";", 1)[0].strip()
@@ -491,7 +481,6 @@ def mime_to_ext(mime: str | None) -> str | None:
 
 
 def desc_to_ext(desc: str | None) -> str | None:
-    """Map `file -b` description text to an extension."""
     if not desc:
         return None
     key = desc.lower().strip().rstrip(".,")
@@ -506,7 +495,6 @@ def desc_to_ext(desc: str | None) -> str | None:
 
 
 def is_binary_file(path: Path, sample_size: int = 8192) -> bool | None:
-    """Return True if binary, False if text, None on access error."""
     try:
         with path.open("rb") as fh:
             data = fh.read(sample_size)
@@ -542,7 +530,6 @@ def iter_files(
     follow_symlinks: bool = False,
     skip_mount_points: bool = False,
 ) -> Iterator[Path]:
-    """Yield files under root according to traversal options."""
     if root.is_file():
         yield root
         return
@@ -589,7 +576,6 @@ def collect_files(
     follow_symlinks: bool = False,
     skip_mount_points: bool = False,
 ) -> list[Path]:
-    """Collect unique files from multiple file/directory paths."""
     files: list[Path] = []
     for raw in paths:
         path = Path(raw).expanduser()
@@ -616,7 +602,6 @@ def collect_files(
 
 
 def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
-    """Built-in signature detector from V1/V2."""
     try:
         with path.open("rb") as fh:
             data = fh.read(sample_size)
@@ -664,7 +649,6 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
 
 
 def detect_puremagic(path: Path) -> Detection | None:
-    """Detect with puremagic, if installed."""
     if puremagic is None:
         return None
     try:
@@ -685,7 +669,6 @@ def detect_puremagic(path: Path) -> Detection | None:
 
 
 def detect_magic(path: Path) -> Detection | None:
-    """Detect with python-magic, if installed."""
     if magic is None:
         return None
     try:
@@ -699,7 +682,6 @@ def detect_magic(path: Path) -> Detection | None:
 
 
 def detect_filetype(path: Path) -> Detection | None:
-    """Detect with filetype, if installed."""
     if filetype is None:
         return None
     try:
@@ -717,7 +699,6 @@ def detect_filetype(path: Path) -> Detection | None:
 
 
 def detect_file_mime(path: Path) -> Detection | None:
-    """Detect with `file --brief --mime-type`."""
     try:
         out = subprocess.check_output(
             ["file", "--brief", "--mime-type", str(path)],
@@ -734,7 +715,6 @@ def detect_file_mime(path: Path) -> Detection | None:
 
 
 def detect_file_b(path: Path) -> Detection | None:
-    """Detect with `file -b` description mapping."""
     try:
         out = subprocess.check_output(
             ["file", "-b", str(path)],
@@ -751,7 +731,6 @@ def detect_file_b(path: Path) -> Detection | None:
 
 
 def detect_shebang(path: Path) -> Detection | None:
-    """Detect interpreter from a shebang line."""
     try:
         with path.open("rb") as fh:
             first = fh.readline()
@@ -776,7 +755,6 @@ def detect_shebang(path: Path) -> Detection | None:
 
 
 def detect_mimetypes(path: Path) -> Detection | None:
-    """Detect using stdlib mimetypes."""
     mime, _ = mimetypes.guess_type(str(path))
     ext = mime_to_ext(mime)
     if ext:
@@ -785,7 +763,6 @@ def detect_mimetypes(path: Path) -> Detection | None:
 
 
 def guess_text_extension(text: str) -> str | None:
-    """Heuristic text subtype detection from fixext2/fpy."""
     text = text.strip()
     if not text:
         return None
@@ -820,7 +797,6 @@ def guess_text_extension(text: str) -> str | None:
 
 
 def detect_text(path: Path) -> Detection | None:
-    """Heuristic text detector from fixext2/fixext."""
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as fh:
             sample = fh.read(4096)
@@ -852,7 +828,6 @@ DETECTORS: dict[str, Callable[[Path], Detection | None]] = {
 def detect_extension(
     path: Path, engines: Sequence[str], *, debug: bool = False
 ) -> Detection | None:
-    """Try detection engines in order and return the first successful result."""
     for engine in engines:
         detector = DETECTORS.get(engine)
         if not detector:
@@ -878,11 +853,6 @@ def rename_with_policy(
     dst: Path,
     collision: str,
 ) -> tuple[Path, bool, str | None]:
-    """
-    Rename src to dst using the requested collision policy.
-
-    Returns (final_path, renamed, error_message).
-    """
     if src == dst:
         return src, False, "target equals source"
 
@@ -949,7 +919,6 @@ def process_fix_file(
     skip_text_mismatches: bool,
     debug: bool,
 ) -> FixResult:
-    """Process one file for extension mismatch."""
     current = current_ext(path)
 
     if current in ignore_ext:
@@ -1054,7 +1023,6 @@ def process_fix_file(
 def run_fix_pass(
     files: Sequence[Path], args: argparse.Namespace, *, apply: bool
 ) -> list[FixResult]:
-    """Run one fix pass over files."""
     engines = parse_engine_list(args.engines)
     protect_ext = set() if args.no_protect else parse_ext_set(args.protect_ext)
     ignore_ext = parse_ext_set(args.ignore_ext)
@@ -1087,7 +1055,6 @@ def run_fix_pass(
 
 
 def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
-    """Print fix summary."""
     renamed = [r for r in results if r.action == "renamed"]
     would = [r for r in results if r.action == "would-rename"]
     skipped = [r for r in results if r.action in {"skipped", "ok"}]
@@ -1119,7 +1086,6 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
 
 
 def cmd_fix(args: argparse.Namespace) -> int:
-    """CLI handler for `fix`."""
     if args.scan_cwd:
         paths = [str(Path.cwd())]
     else:
@@ -1165,7 +1131,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
 
 
 def validate_one(path: Path, kind: str) -> tuple[Path, bool | None, str]:
-    """Return (path, is_binary, description)."""
     binary = is_binary_file(path)
     if binary is None:
         return path, None, "access error"
@@ -1175,7 +1140,6 @@ def validate_one(path: Path, kind: str) -> tuple[Path, bool | None, str]:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    """CLI handler for `validate binary|text`."""
     root = Path(args.path).expanduser()
     if not root.exists():
         eprint(f"Error: path {root} does not exist")
@@ -1248,7 +1212,6 @@ PY_KEYWORDS = {"def", "class", "import", "from", "lambda", "yield", "async", "aw
 
 
 def looks_like_python_line(line: str) -> bool:
-    """Return True if a line looks Python-like (from fpy.py)."""
     if any(keyword in line for keyword in PY_KEYWORDS):
         return True
     if re.search(r":\s*$", line):
@@ -1259,7 +1222,6 @@ def looks_like_python_line(line: str) -> bool:
 
 
 def is_valid_python_token_stream(text: str) -> bool:
-    """Check tokenization validity."""
     try:
         tokenize.generate_tokens(StringIO(text).readline)
         return True
@@ -1268,7 +1230,6 @@ def is_valid_python_token_stream(text: str) -> bool:
 
 
 def is_python_construct(line: str) -> bool:
-    """Regex check for common Python constructs."""
     if re.match(r"\s*(def|class|if|elif|else|for|while|try|except|with)\b.*:", line):
         return True
     if re.match(r"\s*@[A-Za-z_]\w*", line):
@@ -1277,7 +1238,6 @@ def is_python_construct(line: str) -> bool:
 
 
 def cmd_extract_python(args: argparse.Namespace) -> int:
-    """CLI handler for `extract-python`."""
     source = Path(args.file)
     output = Path(args.output)
 
@@ -1314,7 +1274,6 @@ def cmd_extract_python(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the merged CLI parser."""
     parser = argparse.ArgumentParser(
         prog="filefixer.py",
         description="Detect/fix file-extension mismatches, validate binary/text extensions, or extract Python-like lines.",
@@ -1441,7 +1400,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

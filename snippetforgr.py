@@ -142,10 +142,6 @@ PYTEXT_EXTS: frozenset[str] = frozenset({".md", ".txt", ".html"})
 
 
 def lang_to_ext(lang: str) -> str:
-    """Map a fenced-code language tag to a file extension (with leading dot).
-
-    Unknown tags yield ``.<tag>``; empty tags yield ``.txt``.
-    """
     lang = (lang or "").strip().lower()
     if not lang:
         return ".txt"
@@ -159,13 +155,11 @@ def lang_to_ext(lang: str) -> str:
 
 
 def slug(text: str, max_len: int = 200) -> str:
-    """Sanitize *text* for use as part of a filename."""
     cleaned = re.sub(r"[^\w\-.]", "_", text)
     return cleaned[:max_len].rstrip("_") or "code_block"
 
 
 def normalize_exts(exts: Iterable[str]) -> frozenset[str]:
-    """Return a set of extensions, each guaranteed to start with a dot."""
     return frozenset(e if e.startswith(".") else "." + e for e in exts)
 
 
@@ -177,7 +171,6 @@ def normalize_exts(exts: Iterable[str]) -> frozenset[str]:
 def _head_collect(
     root: Path, exts: frozenset[str], n_lines: int, skip: Path
 ) -> list[str]:
-    """Collect the first *n_lines* of every matching file under *root*."""
     out: list[str] = []
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix not in exts:
@@ -198,7 +191,6 @@ def _head_collect(
 
 
 def cmd_head(args: argparse.Namespace) -> int:
-    """Entry point for the ``head`` subcommand (23line.py compatible)."""
     root = Path(args.root).resolve()
     out = Path(args.output).resolve()
     exts = normalize_exts(args.ext)
@@ -218,13 +210,11 @@ def cmd_head(args: argparse.Namespace) -> int:
 
 
 def _parse_fenced_regex(text: str) -> Iterator[tuple[str, str]]:
-    """Yield ``(lang, code)`` for every fenced block found via regex."""
     for m in FENCE_RE.finditer(text):
         yield m.group("lang") or "", m.group("code")
 
 
 def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
-    """Line-by-line fenced-block parser (matches exmd.py's behavior)."""
     lines = text.splitlines()
     blocks: list[dict] = []
     in_block = False
@@ -269,7 +259,6 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
 
 
 def _write_md_block_mode(md_path: Path, out_dir: Path) -> int:
-    """Block-named output: ``{stem}_block_{i}{ext}`` (excode / extcode_md)."""
     text = md_path.read_text(encoding="utf-8", errors="replace")
     stem = slug(md_path.stem)
     count = 0
@@ -282,7 +271,6 @@ def _write_md_block_mode(md_path: Path, out_dir: Path) -> int:
 
 
 def _write_md_lines_mode(md_path: Path, out_dir: Path, include_unclosed: bool) -> int:
-    """Line-range-named output: ``{stem}_lines_{S}-{E}{ext}`` (exmd)."""
     text = md_path.read_text(encoding="utf-8", errors="replace")
     stem = slug(md_path.stem)
     count = 0
@@ -295,7 +283,6 @@ def _write_md_lines_mode(md_path: Path, out_dir: Path, include_unclosed: bool) -
 
 
 def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
-    """Gather markdown (and, in *wide* mode, metadata) files."""
     targets: list[Path] = []
     for root in roots:
         if root.is_file():
@@ -317,7 +304,6 @@ def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
 
 
 def cmd_md_blocks(args: argparse.Namespace) -> int:
-    """Entry point for the ``md-blocks`` subcommand."""
     cwd = Path.cwd().resolve()
     out_dir = Path(args.output)
     if not out_dir.is_absolute():
@@ -344,7 +330,6 @@ def cmd_md_blocks(args: argparse.Namespace) -> int:
 
 
 def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
-    """Yield ``(line_number, snippet)`` for every fenced or doctest block."""
     lines = text.split("\n")
     i, n = 0, len(lines)
 
@@ -399,7 +384,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
 
 
 def _snips_process_file(path: Path, out_dir: Path) -> dict:
-    """Extract every snippet from *path* into *out_dir*; return stats."""
     result = {"file": str(path), "count": 0, "errors": 0}
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -420,13 +404,11 @@ def _snips_process_file(path: Path, out_dir: Path) -> dict:
 
 
 def _snips_worker(pair: tuple[Path, Path]) -> dict:
-    """Picklable trampoline for ``Pool.apply_async``."""
     path, out_dir = pair
     return _snips_process_file(path, out_dir)
 
 
 def _collect_snips_targets(roots: Sequence[Path], exts: frozenset[str]) -> list[Path]:
-    """Recursively gather non-symlink, non-.git files with matching suffix."""
     targets: list[Path] = []
     for root in roots:
         if root.is_file():
@@ -446,7 +428,6 @@ def _collect_snips_targets(roots: Sequence[Path], exts: frozenset[str]) -> list[
 
 
 def cmd_snips(args: argparse.Namespace) -> int:
-    """Entry point for the ``snips`` subcommand (code_snip_extractor.py)."""
     cwd = Path.cwd().resolve()
     out_dir = Path(args.output)
     if not out_dir.is_absolute():
@@ -508,7 +489,6 @@ PY_TOPLEVEL_RE = re.compile(
 
 
 def _doctest_to_code(block: str) -> str:
-    """Convert a ``>>>``/``...`` doctest block into runnable Python."""
     out: list[str] = []
     in_doctest = False
     for line in block.strip().split("\n"):
@@ -524,7 +504,6 @@ def _doctest_to_code(block: str) -> str:
 
 
 def _pytext_extract(text: str, filename: str) -> list[str]:
-    """Extract Python blocks from a text-ish file."""
     blocks: list[str] = []
 
     # 1. ```python fences
@@ -552,7 +531,6 @@ def _pytext_extract(text: str, filename: str) -> list[str]:
 
 
 def _is_pytext_target(path: Path) -> bool:
-    """True if *path* is a target for the ``pytext`` subcommand."""
     if path.name in PKG_FILENAMES:
         return True
     return path.suffix.lower() in PYTEXT_EXTS
@@ -572,7 +550,6 @@ def _collect_pytext_targets(roots: Sequence[Path]) -> list[Path]:
 
 
 def _pytext_process_file(path: Path, out_dir: Path) -> tuple[str, int]:
-    """Write every block from *path* into *out_dir*; return (path, count)."""
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except (OSError, UnicodeDecodeError):
@@ -588,13 +565,11 @@ def _pytext_process_file(path: Path, out_dir: Path) -> tuple[str, int]:
 
 
 def _pytext_worker(pair: tuple[Path, Path]) -> tuple[str, int]:
-    """Picklable trampoline for ``Pool.apply_async``."""
     path, out_dir = pair
     return _pytext_process_file(path, out_dir)
 
 
 def cmd_pytext(args: argparse.Namespace) -> int:
-    """Entry point for the ``pytext`` subcommand (xpy_code.py)."""
     cwd = Path.cwd().resolve()
     roots = [Path(p).resolve() for p in args.paths] if args.paths else [cwd]
     out_dir = Path(args.output)
@@ -680,8 +655,6 @@ HTML_PY_MARKERS: tuple[str, ...] = ("def ", "import ", "class ", "if __name__")
 
 @dataclass
 class CodeBlock:
-    """A Python code block extracted from an HTML source."""
-
     content: str
     language: str
     source_file: str
@@ -690,8 +663,6 @@ class CodeBlock:
 
 
 class HtmlCodeExtractor:
-    """Extract Python code blocks from HTML (synchronous HTTP session)."""
-
     def __init__(self, retries: int = 3, timeout: int = 10) -> None:
         import requests
         from requests.adapters import HTTPAdapter
@@ -706,7 +677,6 @@ class HtmlCodeExtractor:
 
     # ---- HTTP ----
     def fetch(self, url: str) -> str | None:
-        """Fetch *url* and return the body text, or ``None`` on failure."""
         from loguru import logger
 
         try:
@@ -722,7 +692,6 @@ class HtmlCodeExtractor:
 
     # ---- Parsing ----
     def extract_from_html(self, html: str, source: str) -> list[CodeBlock]:
-        """Return every Python :class:`CodeBlock` found in *html*."""
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html, "html.parser")
@@ -772,7 +741,6 @@ class HtmlCodeExtractor:
         return out
 
     def _from_script_json(self, soup, source: str) -> list[CodeBlock]:
-        """Pull strings out of ``<script type="application/json">`` blobs."""
         out: list[CodeBlock] = []
         offset = len(soup.find_all("pre")) + len(soup.find_all("code"))
         for idx, script in enumerate(soup.find_all("script")):
@@ -801,7 +769,6 @@ class HtmlCodeExtractor:
         return out
 
     def _walk_json(self, obj, depth: int = 0, max_depth: int = 5) -> list[str]:
-        """Recursively collect strings that smell like Python code."""
         if depth > max_depth:
             return []
         found: list[str] = []
@@ -818,7 +785,6 @@ class HtmlCodeExtractor:
     # ---- Heuristics ----
     @staticmethod
     def _is_python(text: str) -> bool:
-        """Cheap heuristic: does *text* look like Python source?"""
         if not text.strip():
             return False
         lower = text.lower()
@@ -828,7 +794,6 @@ class HtmlCodeExtractor:
 
     @staticmethod
     def _extract_filename(text: str) -> str | None:
-        """Look for ``# filename: foo.py`` in the first 10 lines."""
         for line in text.split("\n")[:10]:
             m = HTML_FILENAME_RE.search(line)
             if m is not None:
@@ -837,8 +802,6 @@ class HtmlCodeExtractor:
 
 
 class HtmlExtractorSink:
-    """Wrap :class:`HtmlCodeExtractor` with output-directory management."""
-
     def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -900,12 +863,10 @@ class HtmlExtractorSink:
 
 
 def _collect_html_files(root: Path) -> list[str]:
-    """All ``*.html`` under *root*, as strings (picklable for Pool)."""
     return [str(p) for p in root.rglob("*.html")]
 
 
 def _html_file_worker(pair: tuple[str, str]) -> int:
-    """Picklable trampoline for ``Pool.apply_async``."""
     path, out_dir = pair
     sink = HtmlExtractorSink(Path(out_dir))
     try:
@@ -915,7 +876,6 @@ def _html_file_worker(pair: tuple[str, str]) -> int:
 
 
 def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int:
-    """Process many HTML files in a worker pool."""
     total = 0
     pool = Pool(processes=workers)
     try:
@@ -936,7 +896,6 @@ def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int
 
 
 def cmd_html(args: argparse.Namespace) -> int:
-    """Entry point for the ``html`` subcommand (pycodex.py)."""
     try:
         import bs4  # noqa: F401
         import loguru  # noqa: F401
@@ -993,7 +952,6 @@ def cmd_html(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="snippetforge.py",
         description="Unified code-snippet extractor (merges 7 standalone scripts).",
@@ -1136,7 +1094,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

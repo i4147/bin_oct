@@ -145,8 +145,6 @@ ALL_EXTENSIONS: tuple[str, ...] = tuple(
 # ---------------------------------------------------------------------------
 @dataclass
 class ExtractResult:
-    """Outcome of extracting one archive."""
-
     archive_path: Path
     status: str = "failed"  # 'success' | 'failed' | 'skipped'
     output_dir: Optional[Path] = None
@@ -187,7 +185,6 @@ def dir_size(p: Path) -> int:
 
 
 def unique_dir(p: Path) -> Path:
-    """Return p if free, otherwise p_1, p_2, … (subdir.py's n4)."""
     if not p.exists():
         return p
     i = 1
@@ -199,7 +196,6 @@ def unique_dir(p: Path) -> Path:
 
 
 def strip_version(stem: str) -> str:
-    """`pkg-1.2.3-py3-none-any` -> `pkg` (uzz.py's s6)."""
     parts = stem.replace(".whl", "").split("-")
     for i, part in enumerate(parts):
         if part and part[0].isdigit():
@@ -208,7 +204,6 @@ def strip_version(stem: str) -> str:
 
 
 def detect_extension(path: Path) -> Optional[str]:
-    """Longest-match extension key, or None."""
     name = path.name.lower()
     if name.endswith(".whl"):
         return ".whl"
@@ -224,7 +219,6 @@ def detect_extension(path: Path) -> Optional[str]:
 
 @contextlib.contextmanager
 def _open_decompressor(path: Path, kind: str) -> Iterator:
-    """Yield a file-like object streaming decompressed bytes."""
     if kind == "gz":
         with gzip.open(path, "rb") as f:
             yield f
@@ -260,7 +254,6 @@ def _decompress_stream(src: Path, dst: Path, kind: str) -> None:
 
 
 def _safe_extract_tar(tar: tarfile.TarFile, dest: Path) -> None:
-    """`filter='data'` exists on Python 3.12+; gracefully degrade otherwise."""
     try:
         tar.extractall(path=dest, filter="data")
     except TypeError:
@@ -304,7 +297,6 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
 
 
 def extract_with_python(archive: Path, dest: Path) -> None:
-    """Pure-Python extractor covering the formats used by the python-engine scripts."""
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
 
@@ -475,8 +467,6 @@ def _try_extract(archive: Path, dest: Path, engine: str) -> None:
 # Single-root detection (ar_extract.py's _check_if_single_file_archive)
 # ---------------------------------------------------------------------------
 def should_use_subdir(archive: Path) -> bool:
-    """Return True for single-file compressions and archives whose contents
-    all live under one common top-level directory."""
     name = archive.name.lower()
 
     # Plain single-file compression (not a .tar.* wrapper)

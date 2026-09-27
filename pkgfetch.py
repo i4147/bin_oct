@@ -135,8 +135,6 @@ HTML_SIMPLE_CONTENT_TYPES = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class Link:
-    """A downloadable package artifact discovered in a simple-index response."""
-
     url: str
     comes_from: str | None = None
     requires_python: str | None = None
@@ -144,7 +142,6 @@ class Link:
     hashes: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        """Merge hash fragments such as '#sha256=<digest>' into hashes."""
         fragment = urlparse(self.url).fragment
         if not fragment:
             return
@@ -160,7 +157,6 @@ class Link:
 
     @property
     def url_without_fragment(self) -> str:
-        """Artifact URL excluding '#hash=...' fragments."""
         return self.url.split("#", 1)[0]
 
     @property
@@ -169,7 +165,6 @@ class Link:
 
     @property
     def filename(self) -> str:
-        """Unquoted filename extracted from the URL path."""
         return unquote(self.parsed_url.path.rsplit("/", 1)[-1])
 
     @property
@@ -186,7 +181,6 @@ class Link:
 
     @property
     def file_path(self) -> Path:
-        """Return a local file path for file:// URLs."""
         if not self.is_file:
             raise ValueError(f"not a file URL: {self.url}")
 
@@ -198,8 +192,6 @@ class Link:
 
 @dataclass(frozen=True, slots=True)
 class Package:
-    """A resolved package name/version/link candidate."""
-
     name: str
     version: str
     link: Link
@@ -222,8 +214,6 @@ class Package:
 
 @dataclass(slots=True)
 class TargetPython:
-    """Target interpreter/platform configuration used for wheel compatibility."""
-
     py_version: tuple[int, ...] | None = None
     abis: list[str] | None = None
     implementation: str | None = None
@@ -231,13 +221,11 @@ class TargetPython:
     _tags: list[Tag] | None = field(default=None, init=False, repr=False)
 
     def supported_tags(self) -> list[Tag]:
-        """Return tags accepted by this target environment."""
         if self._tags is None:
             self._tags = self._compute_tags()
         return self._tags
 
     def python_version_str(self) -> str:
-        """Return target version in Python Requires-Python format."""
         version = self.py_version or sys.version_info[:2]
         return ".".join(str(value) for value in version[:2])
 
@@ -264,8 +252,6 @@ class TargetPython:
 
 
 class SimpleHTMLParser(HTMLParser):
-    """Extract artifact anchors and optional base URL from a HTML simple index."""
-
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.base_url: str | None = None
@@ -283,7 +269,6 @@ class SimpleHTMLParser(HTMLParser):
 
 
 def parse_html_simple_page(response: httpx.Response) -> Iterator[Link]:
-    """Yield package links from a PEP 503 HTML response."""
     parser = SimpleHTMLParser()
     parser.feed(response.text)
 
@@ -305,7 +290,6 @@ def parse_html_simple_page(response: httpx.Response) -> Iterator[Link]:
 
 
 def parse_json_simple_page(response: httpx.Response) -> Iterator[Link]:
-    """Yield package links from a PEP 691 JSON response."""
     data = response.json()
     base_url = str(response.url)
 
@@ -328,7 +312,6 @@ def parse_json_simple_page(response: httpx.Response) -> Iterator[Link]:
 
 
 def fetch_simple_page(client: httpx.Client, url: str) -> list[Link]:
-    """Fetch one simple-index page and parse JSON or HTML response data."""
     response = client.get(url, headers={"Accept": SIMPLE_ACCEPT_HEADER})
     response.raise_for_status()
 
@@ -347,7 +330,6 @@ def fetch_simple_page(client: httpx.Client, url: str) -> list[Link]:
 
 
 def source_filename_without_extension(filename: str) -> str:
-    """Remove the recognized source-distribution extension from a filename."""
     lower_filename = filename.lower()
 
     for suffix in sorted(SOURCE_SUFFIXES, key=len, reverse=True):
@@ -361,7 +343,6 @@ def requires_python_matches(
     requires_python: str,
     target_python: TargetPython,
 ) -> bool:
-    """Return whether a Requires-Python specifier supports the target Python."""
     try:
         specifier = SpecifierSet(requires_python)
     except InvalidSpecifier:
@@ -377,12 +358,6 @@ def requires_python_matches(
 
 
 def wheel_tag_priority(link: Link, priorities: dict[Tag, int]) -> int:
-    """
-    Return best wheel-tag priority.
-
-    Lower values are better. A value after the priorities range means
-    unsupported/non-wheel.
-    """
     unsupported = len(priorities) + 1
 
     if not link.is_wheel:
@@ -409,7 +384,6 @@ def candidate_from_link(
     no_binary: bool,
     only_binary: bool,
 ) -> Package | None:
-    """Build a matching package candidate, or return None."""
     if link.is_wheel:
         if no_binary:
             return None
@@ -463,8 +437,6 @@ def candidate_from_link(
 
 
 class PackageFinder:
-    """Collect, filter, rank, and resolve package distribution candidates."""
-
     def __init__(
         self,
         index_urls: Iterable[str] = (),
@@ -491,7 +463,6 @@ class PackageFinder:
 
     @property
     def client(self) -> httpx.Client:
-        """Create the shared index client lazily."""
         if self._client is None:
             self._client = httpx.Client(
                 follow_redirects=True,
@@ -501,7 +472,6 @@ class PackageFinder:
         return self._client
 
     def close(self) -> None:
-        """Close the owned HTTP client."""
         if self._client is not None:
             self._client.close()
             self._client = None
@@ -520,7 +490,6 @@ class PackageFinder:
         no_binary: bool = False,
         only_binary: bool = False,
     ) -> list[Package]:
-        """Return matching distributions, sorted with the best candidate first."""
         candidates: list[Package] = []
         seen_urls: set[str] = set()
 
@@ -566,7 +535,6 @@ class PackageFinder:
         source_url: str,
         requirement: Requirement,
     ) -> list[Link]:
-        """Fetch links from an index URL or a direct find-links source."""
         if source_type == "index":
             package_url = urljoin(
                 source_url.rstrip("/") + "/",
@@ -585,12 +553,6 @@ class PackageFinder:
 
     @staticmethod
     def _collect_file_links(url: str) -> list[Link]:
-        """
-        Resolve a file:// find-links directory or a direct file artifact.
-
-        Local HTML pages are intentionally not parsed; use an HTTP simple index
-        when HTML index parsing is needed.
-        """
         path = Path(unquote(urlparse(url).path))
 
         if path.is_file():
@@ -606,15 +568,6 @@ class PackageFinder:
         ]
 
     def _sort_key(self, package: Package) -> tuple[int, Version, int, int, str]:
-        """
-        Candidate ranking:
-
-        1. Non-yanked artifacts.
-        2. Newer package version.
-        3. Source distributions before wheels.
-        4. Better source archive / wheel tag.
-        5. Stable deterministic filename order.
-        """
         link = package.link
         is_yanked = link.yanked is not None
 
@@ -631,7 +584,6 @@ class PackageFinder:
 
 
 def source_artifact_priority(link: Link) -> int:
-    """Rank source archive formats; source archives always outrank wheels."""
     filename = link.filename.lower()
 
     if filename.endswith(".tar.gz") or filename.endswith(".tgz"):
@@ -650,7 +602,6 @@ def source_artifact_priority(link: Link) -> int:
 
 
 def choose_hash(hashes: dict[str, str]) -> tuple[str, str] | None:
-    """Choose the strongest supported hash supplied by the package index."""
     valid_hashes = [
         (algorithm.lower(), digest.lower())
         for algorithm, digest in hashes.items()
@@ -667,7 +618,6 @@ def choose_hash(hashes: dict[str, str]) -> tuple[str, str] | None:
 
 
 def calculate_file_hash(path: Path, algorithm: str) -> str:
-    """Return a hexadecimal digest for a file."""
     digest = hashlib.new(algorithm)
 
     with path.open("rb") as file:
@@ -678,12 +628,6 @@ def calculate_file_hash(path: Path, algorithm: str) -> str:
 
 
 def verify_hashes(path: Path, hashes: dict[str, str]) -> bool:
-    """
-    Verify repository-provided hashes.
-
-    If no hash exists in the simple index, the download cannot be
-    cryptographically authenticated, but archive integrity is still checked.
-    """
     selected_hash = choose_hash(hashes)
 
     if selected_hash is None:
@@ -711,12 +655,6 @@ def verify_hashes(path: Path, hashes: dict[str, str]) -> bool:
 
 
 def verify_archive_integrity(path: Path) -> bool:
-    """
-    Check whether a downloaded source archive or wheel can be opened.
-
-    This complements cryptographic hash validation. It does not prove package
-    safety; only index hashes provide cryptographic artifact verification.
-    """
     filename = path.name.lower()
 
     try:
@@ -757,7 +695,6 @@ def verify_archive_integrity(path: Path) -> bool:
 
 
 def remote_file_size(client: httpx.Client, url: str) -> int | None:
-    """Return remote content length when the server provides it."""
     try:
         response = client.head(url, follow_redirects=True)
         response.raise_for_status()
@@ -769,7 +706,6 @@ def remote_file_size(client: httpx.Client, url: str) -> int | None:
 
 
 def server_supports_ranges(client: httpx.Client, url: str) -> bool:
-    """Return whether the remote server appears to support byte ranges."""
     try:
         response = client.head(url, follow_redirects=True)
         response.raise_for_status()
@@ -784,7 +720,6 @@ def download_httpx_single(
     url: str,
     destination: Path,
 ) -> None:
-    """Download one URL using streamed httpx I/O."""
     with client.stream("GET", url) as response:
         response.raise_for_status()
 
@@ -799,11 +734,6 @@ def download_httpx_parallel(
     size: int,
     workers: int = DEFAULT_PARALLEL_WORKERS,
 ) -> None:
-    """
-    Download a large HTTP file through parallel byte ranges.
-
-    The partial files are merged only after every range succeeds.
-    """
     workers = min(workers, max(2, (size + CHUNK_SIZE - 1) // CHUNK_SIZE))
     part_dir = destination.with_name(destination.name + ".parts")
 
@@ -880,7 +810,6 @@ def download_httpx_parallel(
 
 
 def download_requests(url: str, destination: Path) -> None:
-    """Download using requests, imported only when selected."""
     try:
         import requests
     except ImportError as exc:
@@ -898,7 +827,6 @@ def download_requests(url: str, destination: Path) -> None:
 
 
 def download_pycurl(url: str, destination: Path) -> None:
-    """Download using pycurl, imported only when selected."""
     try:
         import pycurl
     except ImportError as exc:
@@ -923,7 +851,6 @@ def download_pycurl(url: str, destination: Path) -> None:
 
 
 def download_aria2c(url: str, destination: Path) -> None:
-    """Download using aria2c subprocess with split/parallel connections."""
     aria2c = shutil.which("aria2c")
 
     if aria2c is None:
@@ -958,12 +885,6 @@ def download(
     backend: str = "httpx",
     client: httpx.Client | None = None,
 ) -> Path:
-    """
-    Download an artifact and validate its cryptographic hash/archive integrity.
-
-    Existing valid files are reused. Invalid or incomplete cached files are
-    removed before downloading again.
-    """
     destination_dir.mkdir(parents=True, exist_ok=True)
 
     if link.is_file:
@@ -1068,7 +989,6 @@ def download(
 
 
 def parse_python_version(value: str) -> tuple[int, ...]:
-    """Parse --py-version such as 3.12 or 3.12.1."""
     parts = value.split(".")
 
     if not parts or any(not part.isdigit() for part in parts):
@@ -1080,7 +1000,6 @@ def parse_python_version(value: str) -> tuple[int, ...]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the command-line argument parser."""
     parser = argparse.ArgumentParser(
         prog="pkgfetch",
         description=(
@@ -1217,7 +1136,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def configure_logging(verbose: bool) -> None:
-    """Configure concise loguru output."""
     logger.remove()
     logger.add(
         sys.stderr,
@@ -1227,7 +1145,6 @@ def configure_logging(verbose: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point."""
     args = build_parser().parse_args(argv)
     configure_logging(args.verbose)
 

@@ -24,8 +24,6 @@ OUTPUT_FILE: Final[Path] = Path("fa_en.json")
 
 
 class TranslationResult(TypedDict):
-    """A single translated chunk of source text."""
-
     chunk_id: str
     start_line: int
     end_line: int
@@ -37,17 +35,6 @@ Chunk = tuple[int, int, str]
 
 
 def chunk_file(file_path: Path, chunk_size: int = CHUNK_SIZE) -> list[Chunk]:
-    """
-    Split ``file_path`` into chunks of at most ``chunk_size`` characters,
-    preserving line boundaries.
-
-    Args:
-        file_path: Source text file to read.
-        chunk_size: Maximum character count per chunk.
-
-    Returns:
-        A list of ``(start_line, end_line, text)`` tuples. Empty on read error.
-    """
     chunks: list[Chunk] = []
     current_chunk: list[str] = []
     current_size: int = 0
@@ -76,21 +63,6 @@ def chunk_file(file_path: Path, chunk_size: int = CHUNK_SIZE) -> list[Chunk]:
 def translate_chunk(
     chunk_data: Chunk, chunk_index: int, total_chunks: int
 ) -> TranslationResult | None:
-    """
-    Translate a single chunk of Persian text into English.
-
-    Pauses briefly before translating any chunk after the first to avoid
-    hammering the upstream translation service.
-
-    Args:
-        chunk_data: ``(start_line, end_line, text)`` tuple to translate.
-        chunk_index: Zero-based index of this chunk (used for throttling).
-        total_chunks: Total number of chunks being processed (for logging).
-
-    Returns:
-        A :class:`TranslationResult`, or ``None`` if translation failed or
-        produced an empty result.
-    """
     start_line, end_line, text = chunk_data
 
     if chunk_index > 0:
@@ -114,7 +86,6 @@ def translate_chunk(
 
 
 def main() -> None:
-    """Read, translate, and persist the chunked translation results."""
     if not INPUT_FILE.exists():
         logger.error(f"Input file {INPUT_FILE} not found.")
         return

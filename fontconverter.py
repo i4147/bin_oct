@@ -56,7 +56,6 @@ except ImportError:
 
 
 def unique_path(path: Path) -> Path:
-    """Return a path that does not exist by appending _1, _2, ... before suffix."""
     if not path.exists():
         return path
     stem = path.stem
@@ -74,11 +73,6 @@ def collect_files(
     paths: Sequence[str],
     extensions: Sequence[str],
 ) -> list[Path]:
-    """
-    Collect files from given paths (files or directories).
-    If no paths given, scan the current working directory recursively.
-    Extensions are matched case-insensitively and should include the dot (e.g. '.ttf').
-    """
     ext_set = {ext.lower() for ext in extensions}
     result: list[Path] = []
 
@@ -118,7 +112,6 @@ def run_parallel(
     workers: int,
     *args,
 ) -> list:
-    """Run func(item, *args) for each item, using a multiprocessing pool if workers > 1."""
     if workers <= 1 or len(items) <= 1:
         return [func(item, *args) for item in items]
     with multiprocessing.Pool(processes=workers) as pool:
@@ -131,7 +124,6 @@ def run_parallel(
 
 
 def _convert_worker(src: Path, target_ext: str, remove_source: bool) -> None:
-    """Convert a single font file to target format."""
     if not HAS_FONTTOOLS:
         print(
             "Error: fontTools is required for 'convert'. Install with: pip install fonttools",
@@ -162,7 +154,6 @@ def _convert_worker(src: Path, target_ext: str, remove_source: bool) -> None:
 
 
 def cmd_convert(args: argparse.Namespace) -> int:
-    """Handler for 'convert' subcommand."""
     if not HAS_FONTTOOLS:
         print(
             "Error: fontTools is required. Install with: pip install fonttools",
@@ -191,7 +182,6 @@ def cmd_convert(args: argparse.Namespace) -> int:
 
 
 def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
-    """Convert OTF to TTF using fontTools. Returns status dict."""
     if not HAS_FONTTOOLS:
         return {"status": "failed", "error": "fontTools not installed", "otf": str(src)}
 
@@ -250,7 +240,6 @@ def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
 
 
 def cmd_otf2ttf(args: argparse.Namespace) -> int:
-    """Handler for 'otf2ttf' subcommand."""
     if not HAS_FONTTOOLS:
         print(
             "Error: fontTools is required. Install with: pip install fonttools",
@@ -309,7 +298,6 @@ def cmd_otf2ttf(args: argparse.Namespace) -> int:
 
 
 def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
-    """Convert OTF to TTF using FontForge Python bindings. Returns (status, message)."""
     try:
         import fontforge
     except ImportError:
@@ -331,7 +319,6 @@ def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
 
 
 def cmd_otf2ttf_fontforge(args: argparse.Namespace) -> int:
-    """Handler for 'otf2ttf-fontforge' subcommand."""
     try:
         import fontforge  # noqa: F401
     except ImportError:
@@ -374,7 +361,6 @@ def cmd_otf2ttf_fontforge(args: argparse.Namespace) -> int:
 
 
 def _tottf_worker(src: Path, remove_source: bool) -> bool:
-    """Convert a font file to TTF using FontForge CLI. Returns True on success."""
     dst = src.with_suffix(".ttf")
     cmd = [
         "fontforge",
@@ -400,7 +386,6 @@ def _tottf_worker(src: Path, remove_source: bool) -> bool:
 
 
 def cmd_tottf(args: argparse.Namespace) -> int:
-    """Handler for 'tottf' subcommand."""
     extensions = [".svg", ".woff", ".eot", ".otf", ".ttc"]
     files = collect_files(args.paths, extensions)
     if not files:
@@ -423,7 +408,6 @@ def cmd_tottf(args: argparse.Namespace) -> int:
 
 
 def _woff22ttf_worker(src: Path, keep_source: bool) -> bool:
-    """Decompress WOFF2 to TTF. Returns True on success."""
     if not HAS_FONTTOOLS:
         print(
             "Error: fontTools is required. Install with: pip install fonttools",
@@ -448,7 +432,6 @@ def _woff22ttf_worker(src: Path, keep_source: bool) -> bool:
 
 
 def cmd_woff22ttf(args: argparse.Namespace) -> int:
-    """Handler for 'woff22ttf' subcommand."""
     if not HAS_FONTTOOLS:
         print(
             "Error: fontTools is required. Install with: pip install fonttools",

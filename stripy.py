@@ -43,8 +43,6 @@ WORKERS: int = 8
 
 @dataclass(slots=True)
 class FileReport:
-    """Outcome of processing a single file."""
-
     path: Path
     docstrings_removed: int = 0
     comments_removed: int = 0
@@ -59,19 +57,16 @@ class FileReport:
 
 
 def _pass_stmt() -> cst.SimpleStatementLine:
-    """Return a freshly-built ``pass`` statement line."""
     return cst.SimpleStatementLine(body=[cst.Pass()])
 
 
 def _is_docstring_small(stmt: cst.BaseSmallStatement) -> bool:
-    """Return ``True`` for a string-literal expression statement."""
     return isinstance(stmt, cst.Expr) and isinstance(
         stmt.value, (cst.SimpleString, cst.ConcatenatedString)
     )
 
 
 def _is_docstring_stmt(stmt: cst.BaseStatement) -> bool:
-    """Return ``True`` if ``stmt`` is a standalone docstring expression."""
     return (
         isinstance(stmt, cst.SimpleStatementLine)
         and len(stmt.body) == 1
@@ -85,11 +80,6 @@ def _strip_first_docstring(
     *,
     ensure_body: bool = False,
 ) -> Sequence[cst.BaseStatement]:
-    """Return ``stmts`` with a leading docstring removed.
-
-    When ``ensure_body`` is true and the result would be empty, a ``pass``
-    statement is inserted so the enclosing suite stays syntactically valid.
-    """
     new = list(stmts)
     if new and _is_docstring_stmt(new[0]):
         new = new[1:]
@@ -101,7 +91,6 @@ def _strip_first_docstring(
 
 
 def _strip_suite(body: cst.BaseSuite, counters: dict[str, int]) -> cst.BaseSuite:
-    """Remove a leading docstring from a class/function body."""
     if isinstance(body, cst.IndentedBlock):
         new_inner = _strip_first_docstring(body.body, counters, ensure_body=True)
         return body.with_changes(body=new_inner)
@@ -125,8 +114,6 @@ def _strip_suite(body: cst.BaseSuite, counters: dict[str, int]) -> cst.BaseSuite
 
 
 class StripTransformer(cst.CSTTransformer):
-    """Remove comments and the leading docstring of modules/classes/functions."""
-
     def __init__(self) -> None:
         super().__init__()
         self.counters: dict[str, int] = {
@@ -203,10 +190,6 @@ class StripTransformer(cst.CSTTransformer):
 
 
 def process_file(path: Path) -> FileReport:
-    """Strip comments/docstrings from a single file in-place.
-
-    Runs in a worker process; must therefore be picklable and self-contained.
-    """
     report = FileReport(path=path)
 
     try:
@@ -278,11 +261,6 @@ def process_file(path: Path) -> FileReport:
 
 
 def _collect_python_files(inputs: Sequence[Path]) -> list[Path]:
-    """Expand every input into a unique, sorted list of ``*.py`` files.
-
-    Each input may be a Python file or a directory (searched recursively).
-    Symlinks are resolved and duplicates removed.
-    """
     seen: set[Path] = set()
     collected: list[Path] = []
 

@@ -16,12 +16,10 @@ console = Console()
 
 
 def process_file(path: Path) -> None:
-    """Strip a single .so file"""
     _ret, _, _ = runcmd(["strip", str(path)], show_output=True)
 
 
 def process_whl(whl_path: Path) -> None:
-    """Process all .so files inside a .whl archive"""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         with ZipFile(whl_path, "r") as zf:
@@ -36,7 +34,6 @@ def process_whl(whl_path: Path) -> None:
 
 
 def collect_files(cwd: Path, args: list[str]) -> list[Path]:
-    """Collect .so files from args or recursively from cwd"""
     if args:
         return [Path(p) for p in args]
     so_files = [p for p in cwd.rglob("*") if SO_PATTERN.search(p.name) and p.is_file()]
@@ -44,7 +41,6 @@ def collect_files(cwd: Path, args: list[str]) -> list[Path]:
 
 
 def show_summary(files: list[Path]) -> None:
-    """Display total count and size of .so files"""
     total_size = sum(f.stat().st_size for f in files if f.is_file())
     console.print(
         f"[bold cyan]Total number of .so files:[/] [bold yellow]{len(files)}[/]"

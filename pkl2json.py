@@ -9,7 +9,6 @@ import pandas as pd
 
 
 def load_pkl_file(filepath):
-    """Load a pickle file and return the DataFrame."""
     try:
         with open(filepath, "rb") as f:
             data = pickle.load(f)

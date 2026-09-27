@@ -27,19 +27,6 @@ from pathlib import Path
 
 
 def _load_env_file(path: Path | None = None) -> None:
-    """Populate os.environ from ~/.env if the keys aren't already set.
-
-    Accepts lines of the form:
-        KEY=value
-        KEY="value"
-        KEY='value'
-        export KEY=value
-
-    Blank lines and lines starting with '#' are ignored. Values already
-    present in the real environment are NOT overwritten (setdefault),
-    so an explicit `GITHUB_TOKEN=... python script.py` on the command
-    line always wins over ~/.env.
-    """
     path = path or (Path.home() / ".env")
     if not path.is_file():
         return
@@ -63,13 +50,6 @@ def _load_env_file(path: Path | None = None) -> None:
 
 
 class SubprocessBackend:
-    """Default backend. Shells out to the ``git`` executable for everything.
-
-    Every other backend inherits from this class. Methods it doesn't
-    override therefore keep using subprocess, which is exactly the
-    "fallback to subprocess if needed" contract.
-    """
-
     name = "subprocess"
 
     def __init__(self) -> None:
@@ -115,12 +95,6 @@ class SubprocessBackend:
     # -- write operations --------------------------------------------------
 
     def rebase_interactive(self, count: int, todo_content: str) -> tuple[bool, str]:
-        """Run ``git rebase -i HEAD~count`` with a pre-baked todo list.
-
-        Git invokes ``$GIT_SEQUENCE_EDITOR <todo-file>`` once. We point it
-        at a tiny Python script that overwrites the todo file. This avoids
-        the shell heredoc / ``$1`` / ``\\$1`` trap entirely.
-        """
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False, encoding="utf-8"
         ) as fh:
@@ -158,15 +132,6 @@ class SubprocessBackend:
         return result.returncode == 0, result.stderr
 
     def push_force_with_lease(self) -> tuple[bool, str]:
-        """Push with --force-with-lease, using GITHUB_TOKEN if available.
-
-        The token is injected via a one-shot `-c url.<token>@github.com/
-        .insteadOf=https://github.com/` override. It lives only in this
-        subprocess's argv — never written to ~/.gitconfig, never to disk.
-
-        GIT_TERMINAL_PROMPT=0 makes git fail fast instead of hanging if
-        the token is missing or invalid.
-        """
         env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
         cmd: list[str] = ["git"]
 
@@ -204,11 +169,6 @@ class SubprocessBackend:
 
 
 class GitPythonBackend(SubprocessBackend):
-    """Uses GitPython for read operations. Rebase / amend / push still
-    go through subprocess because GitPython has no clean interactive
-    rebase API.
-    """
-
     name = "gitpython"
 
     def __init__(self) -> None:
@@ -239,10 +199,6 @@ class GitPythonBackend(SubprocessBackend):
 
 
 class Libgit2Backend(SubprocessBackend):
-    """Uses pygit2 (libgit2 bindings) for read operations. libgit2 has no
-    interactive rebase, so writes fall back to subprocess.
-    """
-
     name = "libgit2"
 
     def __init__(self) -> None:
@@ -278,8 +234,6 @@ class Libgit2Backend(SubprocessBackend):
 
 
 class DulwichBackend(SubprocessBackend):
-    """Pure-Python git via dulwich. Read ops native; writes fall back."""
-
     name = "dulwich"
 
     def __init__(self) -> None:
@@ -312,10 +266,6 @@ class DulwichBackend(SubprocessBackend):
 
 
 class PyGithubBackend(SubprocessBackend):
-    """PyGithub talks to GitHub's remote API only; it cannot perform local
-    rebase or amend. Every operation therefore falls back to subprocess.
-    """
-
     name = "pygithub"
 
     def __init__(self) -> None:
@@ -338,9 +288,6 @@ _BACKEND_REGISTRY: dict[str, type[SubprocessBackend]] = {
 
 
 def build_backend(name: str) -> SubprocessBackend:
-    """Instantiate the requested backend, falling back to subprocess on
-    any failure (unknown name, missing library, not a repo, etc.).
-    """
     norm = name.lower()
 
     if norm == "subprocess":
@@ -372,9 +319,6 @@ def build_backend(name: str) -> SubprocessBackend:
 
 
 def squash_commits(backend: SubprocessBackend, count: int) -> bool:
-    """Squash the last ``count`` commits into one, stamp with "now",
-    and force-push. Returns True on success, False on any handled failure.
-    """
     if count < 2:
         print(
             f"error: need at least 2 commits to squash, got {count}",

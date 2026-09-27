@@ -27,7 +27,6 @@ NUM_WORKERS = 8
 
 
 def run(cmd, input_bytes=None):
-    """Run a command, return (returncode, combined_output)."""
     try:
         proc = subprocess.run(
             cmd,
@@ -41,10 +40,6 @@ def run(cmd, input_bytes=None):
 
 
 def check_file(path: Path):
-    """
-    Returns (path, ok: bool, output: str).
-    Chooses the right command based on extension.
-    """
     ext = path.suffix.lower()
 
     if ext in CPP_EXTS:
@@ -77,7 +72,6 @@ def check_file(path: Path):
 
 
 def gather_files(paths):
-    """Expand given paths into a list of source file Paths."""
     files = []
     if not paths:
         # current dir, non-recursive

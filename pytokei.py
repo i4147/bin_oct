@@ -86,7 +86,6 @@ DEFAULT_EXCLUDES: list[str] = [".git"]
 
 
 def is_binary(path: Path) -> bool:
-    """Return True if the file appears to be binary (contains NUL bytes)."""
     try:
         with path.open("rb") as f:
             chunk = f.read(8192)
@@ -96,13 +95,11 @@ def is_binary(path: Path) -> bool:
 
 
 def _contains_exclude(path: Path, excludes: set[str]) -> bool:
-    """Return True if any exclude substring appears in the path string."""
     s = str(path)
     return any(ex in s for ex in excludes)
 
 
 def detect_shebang(path: Path, excludes: set[str]) -> str | None:
-    """Detect language from a shebang line for extensionless files."""
     if is_binary(path):
         print(f"{path} is binary")
         return None
@@ -125,7 +122,6 @@ def count_file(
     language: str,
     excludes: set[str],
 ) -> tuple[int, int, int]:
-    """Count (code, comments, blank) lines in a file."""
     if _contains_exclude(path, excludes):
         return (0, 0, 0)
     if is_binary(path):
@@ -158,7 +154,6 @@ def _add(
     comments: int,
     blank: int,
 ) -> None:
-    """Accumulate counts into the stats dictionary."""
     stats["languages"][language]["code"] += code
     stats["languages"][language]["comments"] += comments
     stats["languages"][language]["blank"] += blank
@@ -168,7 +163,6 @@ def _add(
 
 
 def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
-    """Walk *root* and return code/comment/blank statistics."""
     stats: dict[str, Any] = {
         "total": {"code": 0, "comments": 0, "blank": 0},
         "languages": {
@@ -201,7 +195,6 @@ def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
 
 
 def print_report(stats: dict[str, Any]) -> None:
-    """Print statistics in the format used by pytokei.py."""
     print(f"Total lines of code:{stats['total']['code']}")
     print(f"Total comment lines:{stats['total']['comments']}")
     print(f"Total blank lines:{stats['total']['blank']}\n")
@@ -221,7 +214,6 @@ def print_report(stats: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser."""
     parser = argparse.ArgumentParser(
         prog="pytokei_merged.py",
         description="Count lines of code, comments, and blanks by language.",
@@ -249,7 +241,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

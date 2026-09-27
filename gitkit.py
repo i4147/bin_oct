@@ -57,8 +57,6 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 @dataclass
 class CommitInfo:
-    """Normalised commit record used across backends."""
-
     sha: str
     subject: str
     timestamp: int
@@ -86,7 +84,6 @@ def err(msg: str) -> None:
 
 
 def _cutoff(days: int) -> datetime:
-    """Return `now - days` as a timezone-aware datetime."""
     return datetime.now(timezone.utc) - timedelta(days=days)
 
 
@@ -100,12 +97,6 @@ def _parse_commit_ts(ts: int) -> datetime:
 
 
 class GitBackend:
-    """Base backend. Every method has a subprocess-based default so
-    subclasses can override only what they support natively.
-
-    Uses the `git` binary in the chosen working directory.
-    """
-
     name = "subprocess"
 
     def __init__(self, repo: Path) -> None:
@@ -221,7 +212,6 @@ class GitBackend:
 
     # --- History diffs ----------------------------------------------------
     def deleted_files_in_history(self) -> dict[str, str]:
-        """Return {path: sha_of_commit_that_deleted_it} — earliest deletion wins."""
         out = self._run(
             "log",
             "--diff-filter=D",
@@ -242,7 +232,6 @@ class GitBackend:
         return deletions
 
     def files_added_in_last(self, n: int) -> list[Path]:
-        """Return paths (resolved under repo) added in the last `n` commits."""
         out = self._run(
             "log",
             "-n",
@@ -266,8 +255,6 @@ class GitBackend:
 
 
 class GitPythonBackend(GitBackend):
-    """GitPython-backed backend. Falls back to subprocess for unsupported ops."""
-
     name = "gitpython"
 
     def __init__(self, repo: Path) -> None:
@@ -363,9 +350,6 @@ class GitPythonBackend(GitBackend):
 
 
 class Pygit2Backend(GitBackend):
-    """pygit2 (libgit2) backend. Native `rev_parse` and `head_sha`;
-    everything else delegates to subprocess."""
-
     name = "libgit2"
 
     def __init__(self, repo: Path) -> None:
@@ -401,8 +385,6 @@ class Pygit2Backend(GitBackend):
 
 
 class DulwichBackend(GitBackend):
-    """Dulwich backend. Native `head_sha`; rest delegates."""
-
     name = "dulwich"
 
     def __init__(self, repo: Path) -> None:
@@ -429,9 +411,6 @@ class DulwichBackend(GitBackend):
 
 
 class PyGithubBackend(GitBackend):
-    """PyGithub backend. Only useful for remote-API operations; local git
-    plumbing has no API equivalent, so everything delegates to subprocess."""
-
     name = "pygithub"
 
     def __init__(self, repo: Path) -> None:
@@ -448,13 +427,10 @@ class PyGithubBackend(GitBackend):
 
 
 class GhBackend(GitBackend):
-    """`gh` CLI backend. `gh` has no plumbing equivalent — delegates."""
-
     name = "gh"
 
 
 def make_backend(name: str, repo: Path) -> GitBackend:
-    """Return the backend instance for the chosen name."""
     if name == "subprocess":
         return GitBackend(repo)
     if name == "gitpython":
@@ -489,8 +465,6 @@ BACKEND_CHOICES = (
 
 
 def cmd_checkout_previous(args: argparse.Namespace) -> int:
-    """For every git repo found (dir itself + immediate subdirs) whose HEAD
-    commit subject starts with `--prefix`, offer to checkout `HEAD^`."""
     root = Path(args.repo).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -552,8 +526,6 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
 
 
 def cmd_rm_commits(args: argparse.Namespace) -> int:
-    """Reset branch to drop commits older than `--days`, creating a
-    `backup-<branch>-<timestamp>` branch first. Mirrors rmcommits.py."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -623,10 +595,6 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
 
 
 def cmd_cut(args: argparse.Namespace) -> int:
-    """Drop commits older than `--days`. Two rewrite strategies:
-    * squash  -> `reset --hard` to the oldest kept commit
-    * orphan  -> new orphan branch + cherry-pick kept commits onto it
-    """
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -704,8 +672,6 @@ def cmd_cut(args: argparse.Namespace) -> int:
 
 
 def cmd_del_remote_commits(args: argparse.Namespace) -> int:
-    """Reset a branch to the newest commit within `--days`, then force-push.
-    Unifies delcomit.py's three variants."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -774,7 +740,6 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
 
 
 def cmd_list_added(args: argparse.Namespace) -> int:
-    """List files added in the last N commits (lastncommits.py)."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -799,7 +764,6 @@ def cmd_list_added(args: argparse.Namespace) -> int:
 
 
 def cmd_restore_deleted(args: argparse.Namespace) -> int:
-    """Restore every file ever deleted in history that's currently missing."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -870,8 +834,6 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
 
 
 def _pending_deletions_matching_history(be: GitBackend) -> list[str]:
-    """Return paths that are (a) currently deleted in the working tree and
-    (b) known to have been deleted before in history."""
     historical = set(be.deleted_files_in_history().keys())
     if not historical:
         return []
@@ -886,7 +848,6 @@ def _pending_deletions_matching_history(be: GitBackend) -> list[str]:
 
 
 def cmd_stage_deleted(args: argparse.Namespace) -> int:
-    """Stage pending deletions matching historical deletions, then commit."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -917,7 +878,6 @@ def cmd_stage_deleted(args: argparse.Namespace) -> int:
 
 
 def cmd_squash_deletions(args: argparse.Namespace) -> int:
-    """Stage pending historical deletions and squash them into the last commit."""
     repo = Path(args.repo).resolve()
     be = make_backend(args.backend, repo)
     if not be.is_repo():
@@ -953,14 +913,6 @@ def cmd_squash_deletions(args: argparse.Namespace) -> int:
 
 
 def cmd_age_filter(args: argparse.Namespace) -> int:
-    """Run the age-based clean/smudge filter (git-age-filter.py).
-
-    `clean`   reads plaintext from stdin, writes age-armored ciphertext to stdout.
-    `smudge`  reads (possibly) armored ciphertext from stdin, writes plaintext.
-
-    NOTE: this subcommand does not touch any repository and does not use a
-    backend — it's a git filter driver that git invokes directly.
-    """
     age_bin = args.age_bin
     if not age_bin:
         default = Path.home() / ".." / "usr" / "bin" / "age"
@@ -1011,7 +963,6 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
 
 
 def _add_backend_arg(p: argparse.ArgumentParser) -> None:
-    """Add the shared `-b/--backend` flag to a subparser."""
     p.add_argument(
         "-b",
         "--backend",
@@ -1023,7 +974,6 @@ def _add_backend_arg(p: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser and register every subcommand."""
     parser = argparse.ArgumentParser(
         prog="git_kit.py",
         description="Unified git maintenance CLI with pluggable backends.",

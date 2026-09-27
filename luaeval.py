@@ -11,13 +11,11 @@ from tree_sitter import Language, Parser
 
 
 def make_parser() -> Parser:
-    """Create a tree-sitter parser for Lua."""
     language = Language(tree_sitter_lua.language())
     return Parser(language)
 
 
 def has_syntax_error(parser: Parser, source: bytes) -> bool:
-    """Return True if the source has any syntax errors."""
     tree = parser.parse(source)
     # Walk the tree and look for ERROR or MISSING nodes
     stack = [tree.root_node]
@@ -30,7 +28,6 @@ def has_syntax_error(parser: Parser, source: bytes) -> bool:
 
 
 def move_to_error_dir(path: Path) -> None:
-    """Move file to an 'error' subdir in its parent folder."""
     error_dir = path.parent / "error"
     error_dir.mkdir(exist_ok=True)
     target = error_dir / path.name

@@ -52,15 +52,6 @@ COMMENT_MAP: dict[str, str] = {
 
 
 def process_chunk(lines: Sequence[str], comment_char: str) -> list[str]:
-    """Prefix non-blank, non-already-commented lines with ``comment_char``.
-
-    Args:
-        lines: Lines to process.
-        comment_char: Comment prefix for the target language.
-
-    Returns:
-        A new list of lines with the requested prefix applied.
-    """
     processed: list[str] = []
     line: str
     for line in lines:
@@ -73,18 +64,6 @@ def process_chunk(lines: Sequence[str], comment_char: str) -> list[str]:
 
 
 def _parse_args(argv: Sequence[str]) -> tuple[Path, int, int | None]:
-    """Parse CLI arguments into (path, start_line, end_line).
-
-    Args:
-        argv: Full argument vector, including the program name at index 0.
-
-    Returns:
-        A tuple of the target path, the 1-based start line, and the optional
-        1-based end line.
-
-    Raises:
-        SystemExit: If the arguments are invalid or the file does not exist.
-    """
     if not 3 <= len(argv) <= 4:
         logger.error("Usage: python commentout.py <filename> <start_line> [end_line]")
         raise SystemExit(1)
@@ -105,11 +84,6 @@ def _parse_args(argv: Sequence[str]) -> tuple[Path, int, int | None]:
 
 
 def _resolve_comment_char(file_path: Path) -> str:
-    """Return the comment prefix appropriate for ``file_path``'s extension.
-
-    Falls back to ``DEFAULT_COMMENT`` and logs a warning for unknown
-    extensions.
-    """
     ext: str = file_path.suffix.lower()
     comment_char: str | None = COMMENT_MAP.get(ext)
     if comment_char is None:
@@ -123,14 +97,6 @@ def _resolve_comment_char(file_path: Path) -> str:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    """Entry point: comment out a line range within a source file.
-
-    Args:
-        argv: Optional argument vector (defaults to ``sys.argv``).
-
-    Returns:
-        Process exit code (0 on success).
-    """
     args: list[str] = list(argv) if argv is not None else sys.argv
     file_path: Path
     start_line: int

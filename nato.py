@@ -36,10 +36,6 @@ NATO = {
 
 
 def to_nato(text: str) -> str:
-    """Convert a string to space-separated NATO phonetic words.
-
-    Non-letter characters are skipped.
-    """
     words = [NATO[ch.upper()] for ch in text if ch.isalpha() and ch.upper() in NATO]
     return " ".join(words)
 

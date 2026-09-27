@@ -23,16 +23,6 @@ StripResult = tuple[Path, bool, str]
 
 
 def find_notebook_files(paths: list[Path]) -> set[Path]:
-    """
-    Discover all ``.ipynb`` files reachable from the given paths.
-
-    Args:
-        paths: Files or directories to inspect. Directories are searched
-            recursively; ``.ipynb_checkpoints`` directories are skipped.
-
-    Returns:
-        A set of resolved ``Path`` objects pointing at notebook files.
-    """
     notebook_files: set[Path] = set()
 
     for path in paths:
@@ -54,15 +44,6 @@ def find_notebook_files(paths: list[Path]) -> set[Path]:
 
 
 def strip_notebook_output(notebook_path: Path) -> StripResult:
-    """
-    Strip outputs and execution counts from a single notebook in place.
-
-    Args:
-        notebook_path: Path to the ``.ipynb`` file to modify.
-
-    Returns:
-        A tuple ``(path, success, message)`` describing the outcome.
-    """
     try:
         with notebook_path.open("r", encoding="utf-8") as f:
             notebook: dict[str, object] = json.load(f)
@@ -104,13 +85,6 @@ def strip_notebook_output(notebook_path: Path) -> StripResult:
 
 
 def process_notebooks(paths: list[Path]) -> None:
-    """
-    Discover and strip outputs from all reachable notebooks using a fixed pool
-    of :data:`MAX_WORKERS` workers.
-
-    Args:
-        paths: Files or directories to process.
-    """
     notebook_files: set[Path] = find_notebook_files(paths)
     if not notebook_files:
         print("No .ipynb files found to process.")
@@ -146,7 +120,6 @@ def process_notebooks(paths: list[Path]) -> None:
 
 
 def main() -> None:
-    """Parse CLI arguments and dispatch notebook processing."""
     parser = argparse.ArgumentParser(
         description="Strip outputs from Jupyter notebook (.ipynb) files",
         formatter_class=argparse.RawDescriptionHelpFormatter,

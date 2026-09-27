@@ -78,8 +78,6 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
 
     class _DummyTqdm:
-        """No-op replacement for `tqdm.tqdm` when the package is unavailable."""
-
         def __init__(self, *_: Any, **__: Any) -> None:  # noqa: D401
             pass
 
@@ -115,7 +113,6 @@ log = logging.getLogger("merged_translator")
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """Configure the root logger once. `--verbose` bumps to DEBUG."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -132,7 +129,6 @@ PERSIAN_RE = re.compile(
 
 
 def is_persian(text: str) -> bool:
-    """Return True if `text` contains at least one Persian/Arabic character."""
     return bool(PERSIAN_RE.search(text))
 
 
@@ -140,7 +136,6 @@ def is_persian(text: str) -> bool:
 # JSON helpers
 # ---------------------------------------------------------------------------
 def load_json_dict(path: Path) -> dict[str, str]:
-    """Load a JSON file, coerce it to a flat `{str: str}` dict."""
     with path.open(encoding="utf-8") as fh:
         data = json.load(fh)
     if not isinstance(data, dict):
@@ -149,7 +144,6 @@ def load_json_dict(path: Path) -> dict[str, str]:
 
 
 def save_json(data: Any, path: Path) -> None:
-    """Atomic-ish JSON write: write to `*.tmp`, then rename over the target."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     with tmp.open("w", encoding="utf-8") as fh:
@@ -168,7 +162,6 @@ def translate_google(
     retries: int = 3,
     delay: float = 0.5,
 ) -> Optional[str]:
-    """Backend: `deep_translator.GoogleTranslator` (with retry loop)."""
     if GoogleTranslator is None:
         raise RuntimeError(
             "deep-translator is not installed (pip install deep-translator)"
@@ -199,7 +192,6 @@ def translate_pypackage(
     retries: int = 1,
     delay: float = 0.5,
 ) -> Optional[str]:
-    """Backend: `translate.Translator` (PyPI package `translate`)."""
     if PyTranslator is None:
         raise RuntimeError("translate package is not installed (pip install translate)")
     translator = PyTranslator(from_lang=source, to_lang=target)
@@ -228,7 +220,6 @@ def translate_cli(
     retries: int = 1,
     delay: float = 0.5,
 ) -> Optional[str]:
-    """Backend: the external `translate-cli` binary."""
     cmd = ["translate-cli", "-f", source, "-t", target, "-o", text]
     last_err = ""
     for attempt in range(retries):
@@ -254,7 +245,6 @@ _BACKENDS = {
 
 
 def get_backend(name: str):
-    """Return the translation callable registered under `name`."""
     try:
         return _BACKENDS[name]
     except KeyError:
@@ -270,10 +260,6 @@ def get_backend(name: str):
 def _translate_item(
     item: tuple[str, str, str, str, int, float],
 ) -> tuple[str, Optional[str]]:
-    """Translate one text unit. Returns `(input, output_or_None)`.
-
-    Tuple layout: (text, backend_name, source, target, retries, delay).
-    """
     text, backend_name, source, target, retries, delay = item
     try:
         backend = get_backend(backend_name)
@@ -290,11 +276,6 @@ def _translate_item(
 # `file` subcommand helpers
 # ---------------------------------------------------------------------------
 def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, str]]:
-    """Group `lines` into chunks of at most `max_chars` characters.
-
-    Oversized single lines are emitted as their own chunk (matches the
-    behavior of the originals).
-    """
     chunks: list[tuple[int, int, str]] = []
     buf: list[str] = []
     buf_len = 0
@@ -319,7 +300,6 @@ def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, 
 
 
 def cmd_file(args: argparse.Namespace) -> int:
-    """Translate a text file (line-by-line or chunked). See module docstring."""
     input_path = Path(args.input)
     if not input_path.is_file():
         log.error("Input file not found: %s", input_path)
@@ -462,7 +442,6 @@ def cmd_file(args: argparse.Namespace) -> int:
 # `words` subcommand
 # ---------------------------------------------------------------------------
 def cmd_words(args: argparse.Namespace) -> int:
-    """Translate a words file into a `{word: translation}` JSON dict."""
     input_path = Path(args.input)
     if not input_path.is_file():
         log.error("Input file not found: %s", input_path)
@@ -568,7 +547,6 @@ def cmd_words(args: argparse.Namespace) -> int:
 # `lookup` subcommand
 # ---------------------------------------------------------------------------
 def _setup_readline(candidates: list[str]) -> None:
-    """Install a tab-completer over `candidates` (no-op if readline absent)."""
     if not _HAVE_READLINE:
         return
     words = sorted(candidates)
@@ -583,7 +561,6 @@ def _setup_readline(candidates: list[str]) -> None:
 
 
 def _load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
-    """Load `{fa: en}` (or `{en: fa}`) JSON and build the reverse map."""
     if not path.exists():
         log.error("Dictionary file not found: %s", path)
         sys.exit(1)
@@ -602,14 +579,12 @@ def _fuzzy(
     n: int = 5,
     cutoff: float = 0.6,
 ) -> list[str]:
-    """`difflib.get_close_matches` wrapper used by the lookup command."""
     return get_close_matches(word, list(candidates), n=n, cutoff=cutoff)
 
 
 def _fzf_select(
     candidates: Iterable[str], prompt: str = "Select word: "
 ) -> Optional[str]:
-    """Run `fzf` interactively; return the selected string or None."""
     if not shutil.which("fzf"):
         return None
     try:
@@ -634,7 +609,6 @@ def _fzf_select(
 
 
 def _interactive_loop(fwd: dict[str, str], rev: dict[str, str]) -> int:
-    """REPL for offline lookups (tab completion + fuzzy fallback)."""
     candidates = set(fwd) | set(rev)
     _setup_readline(list(candidates))
     print("\n🌐 Offline Persian ↔ English Translator")
@@ -659,7 +633,6 @@ def _interactive_loop(fwd: dict[str, str], rev: dict[str, str]) -> int:
 
 
 def cmd_lookup(args: argparse.Namespace) -> int:
-    """Offline dictionary lookup (mirrors `fatrans.py` and `fztrans.py`)."""
     dict_path = Path(os.path.expanduser(args.dict))
     fwd, rev = _load_dictionary(dict_path)
     candidates = set(fwd) | set(rev)
@@ -717,7 +690,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
 # CLI wiring
 # ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argparse parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="merged_translator.py",
         description="Unified Persian ↔ English translation toolkit.",
@@ -895,7 +867,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point: parse args, configure logging, dispatch to subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     setup_logging(args.verbose)

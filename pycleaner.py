@@ -71,7 +71,6 @@ _USE_COLOR: bool = True
 
 
 def _c(code: str, text: str) -> str:
-    """Wrap *text* in an ANSI SGR sequence unless colour is disabled."""
     return text if not _USE_COLOR else f"\x1b[{code}m{text}\x1b[0m"
 
 
@@ -100,12 +99,10 @@ def dim(s: str) -> str:
 
 
 def _safe_read(path: Path) -> str:
-    """Read *path* as UTF-8, replacing bad bytes (never raises)."""
     return path.read_text(encoding="utf-8", errors="replace")
 
 
 def _display_path(p: str) -> str:
-    """Shorten a path for display when it is under CWD."""
     if "::" in p:
         return p
     try:
@@ -115,7 +112,6 @@ def _display_path(p: str) -> str:
 
 
 def _iter_py_files(root: Path, skip_dirs: set[str]) -> list[Path]:
-    """Recursively collect *.py files under *root*, skipping hidden/system dirs."""
     return [
         p
         for p in root.rglob("*.py")
@@ -156,7 +152,6 @@ class _ImportReport:
 
 
 def _collect_type_checking_lines(tree: ast.Module) -> set[int]:
-    """Line numbers of every node under an `if TYPE_CHECKING:` guard."""
     lines: set[int] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.If):
@@ -173,7 +168,6 @@ def _collect_type_checking_lines(tree: ast.Module) -> set[int]:
 
 
 def _collect_all_exports(tree: ast.Module) -> set[str]:
-    """Names listed in a top-level `__all__ = [...]`."""
     names: set[str] = set()
     for node in tree.body:
         if not isinstance(node, ast.Assign):
@@ -188,7 +182,6 @@ def _collect_all_exports(tree: ast.Module) -> set[str]:
 
 
 def _collect_used_names(tree: ast.Module) -> set[str]:
-    """Every identifier referenced (Load ctx, attribute head, or docstring)."""
     used: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
@@ -206,7 +199,6 @@ def _collect_used_names(tree: ast.Module) -> set[str]:
 
 
 def _parse_import_names(node: ast.Import | ast.ImportFrom) -> list[tuple[str, str]]:
-    """Return (full_name, bound_name) pairs for an import statement."""
     pairs: list[tuple[str, str]] = []
     for alias in node.names:
         full = alias.name
@@ -222,7 +214,6 @@ def _analyse_imports(
     is_init: bool = False,
     ignore_init: bool = False,
 ) -> _ImportReport:
-    """AST-based unused-import detector (afk2.py logic)."""
     report = _ImportReport(path=path)
     try:
         tree = ast.parse(source, filename=path)
@@ -288,7 +279,6 @@ def _analyse_imports(
 
 
 def _bound_name(segment: str) -> str:
-    """Extract the name an `import x as y` / `from m import x as y` segment binds."""
     m = re.match(r"^\s*[\w.]+\s+as\s+(\w+)\s*$", segment)
     if m:
         return m.group(1)
@@ -296,7 +286,6 @@ def _bound_name(segment: str) -> str:
 
 
 def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
-    """Rewrite a single-line `import a, b` or `from m import a, b`."""
     m = re.match(r"^(\s*import\s+)(.+)$", stmt)
     if m:
         head, body = m.group(1), m.group(2)
@@ -325,7 +314,6 @@ def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
 
 
 def _rewrite_multiline_import(stmt: str, unused: set[str]) -> str | None:
-    """Rewrite a parenthesised multi-line `from x import (\\n  a,\\n  b,\\n)`."""
     m = re.match(r"^(\s*from\s+[\w.]+\s+import\s*$)(.*?)($.*)", stmt, re.DOTALL)
     if not m:
         return None
@@ -346,7 +334,6 @@ def _rewrite_multiline_import(stmt: str, unused: set[str]) -> str | None:
 
 
 def _rewrite_source(source: str, unused: list[UnusedImport]) -> str:
-    """Apply all `unused` fixes to *source*, returning the new text."""
     by_line: dict[int, set[str]] = {}
     end_of: dict[int, int] = {}
     for item in unused:
@@ -391,7 +378,6 @@ def _rewrite_source(source: str, unused: list[UnusedImport]) -> str:
 
 
 def _autoflake_one(path: Path, *, autofix: bool, diff: bool) -> None:
-    """Run `autoflake` against a single file."""
     if not path.exists():
         print(f"Error: The file `{path}` does not exist.")
         return
@@ -671,7 +657,6 @@ def _cmd_imports(args: argparse.Namespace) -> int:
 
 
 def _cmd_imports_autoflake(args: argparse.Namespace) -> int:
-    """afk_autoflake.py behaviour — external tool."""
     paths = [Path(p) for p in (args.paths or ["."])]
     files: list[Path] = []
     for p in paths:
@@ -785,8 +770,6 @@ def _scan_one_defs(path: Path) -> _DefScanResult:
 def _filter_unused_global(
     scans: list[_DefScanResult], kind_filter: str
 ) -> list[DefItem]:
-    """detect_unused.py-style: an item is unused if the name never appears
-    as a Load/Attribute anywhere across all scanned files."""
     all_defs: list[DefItem] = []
     all_used: set[str] = set()
     for s in scans:
@@ -811,8 +794,6 @@ def _filter_unused_global(
 
 
 def _filter_unused_per_file(scan: _DefScanResult, kind_filter: str) -> list[DefItem]:
-    """rmunusedfuncs-style: an item is unused if the name is not referenced
-    within the *same* file."""
     if scan.error:
         return []
     result: list[DefItem] = []
@@ -827,8 +808,6 @@ def _filter_unused_per_file(scan: _DefScanResult, kind_filter: str) -> list[DefI
 
 
 def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool) -> str:
-    """Remove top-level (or all) `FunctionDef`/`ClassDef`/const-assignment nodes
-    whose name is in *names*, using ast.unparse."""
     tree = ast.parse(source)
     if only_top_level:
         new_body = []
@@ -997,7 +976,6 @@ _VULTURE_RE = re.compile(
 def _parse_vulture_lines(
     lines: list[str], mode: str
 ) -> dict[str, list[tuple[int, str, str]]]:
-    """Return {file: [(lineno, kind, name), ...]} for the chosen mode."""
     issues: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
 
     if mode == "skip-dirs":
@@ -1058,7 +1036,6 @@ def _comment_out(line: str, *, marker: bool = False) -> str:
 def _apply_vulture_fixes(
     path: str, fixes: list[tuple[int, str, str]], mode: str
 ) -> tuple[list[str], list[str]]:
-    """Apply vulture fixes in-place; returns (original_lines, new_lines)."""
     p = Path(path)
     with p.open("r", encoding="utf-8") as f:
         original = f.readlines()

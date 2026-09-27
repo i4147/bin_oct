@@ -49,24 +49,15 @@ from tenacity import (
 
 
 class TranslationFailedError(Exception):
-    """Raised when a backend call fails or returns an unusable result.
-
-    Also raised (deliberately) when a translation looks like an identity
-    passthrough (output ~= input), since several free backends silently
-    echo the source text back instead of raising when something goes
-    wrong server-side. Treating that as a failure lets tenacity retry it
-    like any other transient error.
-    """
+    pass
 
 
 class UnknownBackendError(Exception):
-    """Raised when --backend names a backend not present in BACKEND_FACTORIES."""
+    pass
 
 
 class NoBackendAvailableError(Exception):
-    """Raised when no backend could be selected via the fallback order,
-    typically because none of the optional libraries are importable.
-    """
+    pass
 
 
 # --------------------------------------------------------------------------
@@ -89,12 +80,6 @@ _DEEPL_TARGET_OVERRIDES: dict[str, str] = {
 
 
 def _lang_for_deepl(code: str, *, is_target: bool) -> str:
-    """Map an ISO 639-1 code to DeepL's expected format.
-
-    DeepL wants upper-case codes for both source and target, but only
-    target codes need the regional-variant overrides (source language is
-    auto-detectable and less picky).
-    """
     code = code.strip()
     if is_target and code.lower() in _DEEPL_TARGET_OVERRIDES:
         return _DEEPL_TARGET_OVERRIDES[code.lower()]
@@ -102,27 +87,22 @@ def _lang_for_deepl(code: str, *, is_target: bool) -> str:
 
 
 def _lang_for_deep_translator(code: str, *, is_target: bool) -> str:
-    """deep_translator (GoogleTranslator etc.) wants lower-case ISO codes."""
     return code.strip().lower()
 
 
 def _lang_for_translate_pkg(code: str, *, is_target: bool) -> str:
-    """The `translate` package wants lower-case ISO codes."""
     return code.strip().lower()
 
 
 def _lang_for_translators_bing(code: str, *, is_target: bool) -> str:
-    """The `translators` package (Bing engine) wants lower-case ISO codes."""
     return code.strip().lower()
 
 
 def _lang_for_googletrans(code: str, *, is_target: bool) -> str:
-    """googletrans wants lower-case ISO codes."""
     return code.strip().lower()
 
 
 def _lang_for_pygoogletranslation(code: str, *, is_target: bool) -> str:
-    """pygoogletranslation (a googletrans fork) wants lower-case ISO codes."""
     return code.strip().lower()
 
 
@@ -142,9 +122,6 @@ def _lang_for_pygoogletranslation(code: str, *, is_target: bool) -> str:
 
 
 def _make_deepl(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `deepl` backend (official DeepL API, requires
-    DEEPL_API_KEY environment variable). Pure Python, no compiled deps.
-    """
     import deepl  # type: ignore[import-untyped]
 
     api_key = os.environ.get("DEEPL_API_KEY")
@@ -162,10 +139,6 @@ def _make_deepl(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `deep_translator` backend (GoogleTranslator by
-    default). Pure Python HTTP client, no API key required, no compiled
-    deps. This is the recommended default.
-    """
     from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 
     src = _lang_for_deep_translator(source, is_target=False)
@@ -184,9 +157,6 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_translate(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `translate` package backend (Tier 2, free, fragile;
-    rate-limited by the underlying MyMemory API).
-    """
     from translate import Translator as TranslatePkgTranslator  # type: ignore[import-untyped]
 
     src = _lang_for_translate_pkg(source, is_target=False)
@@ -203,10 +173,6 @@ def _make_translate(source: str, target: str) -> Callable[[str], str]:
 
 
 def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `translators` package using the Bing engine
-    (Tier 2, free, fragile; requires Node.js installed via `pkg install
-    nodejs` for some translators internals).
-    """
     import translators as ts  # type: ignore[import-untyped]
 
     src = _lang_for_translators_bing(source, is_target=False)
@@ -230,11 +196,6 @@ _googletrans_lock = threading.Lock()
 
 
 def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `googletrans` backend (Tier 2, free, fragile; prone
-    to breaking when Google changes internal endpoints). Access is
-    serialized via a module-level lock since the client is not known to be
-    thread-safe.
-    """
     from googletrans import Translator as GoogleTransTranslator  # type: ignore[import-untyped]
 
     src = _lang_for_googletrans(source, is_target=False)
@@ -256,10 +217,6 @@ _pygoogletranslation_lock = threading.Lock()
 
 
 def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
-    """Factory for the `pygoogletranslation` backend (Tier 2, free,
-    fragile; a maintained fork of googletrans). Access is serialized via a
-    module-level lock for the same reason as googletrans.
-    """
     from pygoogletranslation import Translator as PyGoogleTranslator  # type: ignore[import-untyped]
 
     src = _lang_for_pygoogletranslation(source, is_target=False)
@@ -307,22 +264,6 @@ FALLBACK_ORDER: tuple[str, ...] = (
 def select_backend(
     requested: str | None, source: str, target: str
 ) -> tuple[str, Callable[[str], str]]:
-    """Resolve the backend to use and construct its translate callable.
-
-    If `requested` is given, it must be a key in BACKEND_FACTORIES or
-    UnknownBackendError is raised immediately (fail fast on typos rather
-    than silently falling back). If not given, walks FALLBACK_ORDER and
-    returns the first backend that imports and constructs successfully
-    (skipping `deepl` unless DEEPL_API_KEY is set).
-
-    Returns:
-        (backend_name, translate_callable)
-
-    Raises:
-        UnknownBackendError: `requested` is not a recognized backend name.
-        NoBackendAvailableError: no backend in the fallback order could be
-            constructed (e.g. none of the optional libraries are installed).
-    """
     if requested:
         if requested not in BACKEND_FACTORIES:
             valid = ", ".join(sorted(BACKEND_FACTORIES))
@@ -360,27 +301,6 @@ def select_backend(
 
 
 def chunk_text(text: str, chunk_size: int) -> list[str]:
-    """Split `text` into chunks of at most `chunk_size` characters, breaking
-    on whitespace where possible so words are not split mid-token.
-
-    Algorithm: repeatedly take a window of up to `chunk_size` characters
-    from the remaining text. If the window doesn't reach the end of the
-    text, scan backwards from the end of the window for the last
-    whitespace character and cut there instead, so the next chunk doesn't
-    start mid-word. If no whitespace is found in the window (e.g. one
-    extremely long token), fall back to a hard cut at `chunk_size`.
-
-    Each resulting chunk has leading/trailing whitespace stripped. Chunks
-    that are empty after stripping are omitted entirely (e.g. runs of
-    blank lines between paragraphs).
-
-    Args:
-        text: Full input text.
-        chunk_size: Maximum characters per chunk.
-
-    Returns:
-        Ordered list of non-empty, stripped chunk strings.
-    """
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
 
@@ -423,26 +343,12 @@ def chunk_text(text: str, chunk_size: int) -> list[str]:
 
 
 def _normalize_for_comparison(s: str) -> str:
-    """Lower-case and collapse whitespace, for comparing source vs.
-    translated text to detect identity (untranslated) passthroughs.
-    """
     return " ".join(s.lower().split())
 
 
 def looks_untranslated(
     source_text: str, translated_text: str, source_lang: str, target_lang: str
 ) -> bool:
-    """Heuristically decide whether `translated_text` looks like the
-    backend simply echoed `source_text` back unchanged, rather than
-    performing an actual translation.
-
-    Skipped entirely when source_lang == target_lang, since a genuinely
-    identical result is expected and correct in that case.
-
-    Comparison is case-insensitive and whitespace-collapsed to avoid false
-    positives from incidental capitalization/formatting differences that a
-    real translation might still introduce.
-    """
     if source_lang.strip().lower() == target_lang.strip().lower():
         return False
     return _normalize_for_comparison(source_text) == _normalize_for_comparison(
@@ -462,20 +368,6 @@ def translate_with_retry(
     target_lang: str,
     delay: float,
 ) -> str:
-    """Translate `text` with up to 3 attempts and exponential backoff,
-    using tenacity. Also retries when the result looks like an identity
-    passthrough (see `looks_untranslated`), since that pattern indicates a
-    silent backend failure on several free services rather than a genuine
-    translation.
-
-    A fixed `delay` is applied *before* every attempt (including the
-    first) to keep steady-state request pacing under `--delay`, separate
-    from tenacity's exponential backoff between retries.
-
-    Raises:
-        TranslationFailedError: all 3 attempts failed or kept returning an
-            identity passthrough.
-    """
 
     @retry(
         reraise=True,
@@ -511,11 +403,6 @@ def translate_with_retry(
 
 
 def load_existing_results(output_path: Path) -> dict[str, str]:
-    """Load previously saved translations from `output_path`, if it exists
-    and is valid JSON. Returns an empty dict on any read/parse failure
-    (logged, not raised) so a corrupted or missing output file never
-    blocks a fresh run.
-    """
     if not output_path.exists():
         return {}
     try:
@@ -531,16 +418,6 @@ def load_existing_results(output_path: Path) -> dict[str, str]:
 
 
 def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
-    """Write `results` to `output_path` atomically: serialize to a
-    temporary file in the same directory, flush and fsync it, then rename
-    it over the destination. The rename is atomic on POSIX filesystems
-    (including Termux's), so a crash mid-write never leaves a half-written
-    JSON file at `output_path`.
-
-    Keys are sorted numerically so the JSON file reads in chunk order
-    regardless of dict insertion order (threads may complete out of
-    sequence).
-    """
     tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
     ordered = {str(k): results[str(k)] for k in sorted(results, key=lambda k: int(k))}
     try:
@@ -557,12 +434,6 @@ def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
 
 
 def append_failed_index(failed_path: Path, index: int) -> None:
-    """Append a failed chunk index to the failed-chunks log file.
-
-    Uses simple line-append rather than atomic rewrite: this file is
-    advisory/diagnostic, and append-only writes are safe enough for that
-    purpose without the overhead of a full atomic-rewrite scheme.
-    """
     with failed_path.open("a", encoding="utf-8") as f:
         f.write(f"{index}\n")
 
@@ -578,10 +449,6 @@ _shutdown_requested = threading.Event()
 
 
 def _handle_sigint(signum: int, frame: FrameType | None) -> None:
-    """SIGINT handler: request shutdown rather than raising KeyboardInterrupt
-    mid-stack, so in-flight futures can be drained and results saved
-    cleanly instead of leaving the executor in an inconsistent state.
-    """
     logger.info("Ctrl+C received, finishing in-flight chunks and saving...")
     _shutdown_requested.set()
 
@@ -603,13 +470,6 @@ def run_translation(
     delay: float,
     save_every: int,
 ) -> dict[str, str]:
-    """Translate all chunks not already present in `existing`, using a
-    ThreadPoolExecutor with up to `workers` threads, saving progress every
-    `save_every` completed chunks and on shutdown.
-
-    Returns the full results dict (existing + newly translated), which is
-    also the final state written to `output_path`.
-    """
     results = dict(existing)
     pending_indices = [i for i in range(len(chunks)) if str(i) not in results]
 
@@ -691,10 +551,6 @@ def run_translation(
 
 
 def configure_logging(log_file: Path) -> None:
-    """Configure loguru: DEBUG-and-above to a rotating log file, ERROR-and-
-    above to stderr. The default loguru stderr sink is removed first so
-    DEBUG-level messages don't also spam the terminal.
-    """
     logger.remove()
     logger.add(sys.stderr, level="ERROR", backtrace=False, diagnose=False)
     logger.add(
@@ -714,7 +570,6 @@ def configure_logging(log_file: Path) -> None:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Define and parse command-line arguments."""
     ap = argparse.ArgumentParser(
         description="Split a text file into chunks, translate each chunk, and save results to JSON.",
     )
@@ -772,11 +627,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point: wires together argument parsing, logging, chunking,
-    backend selection, and the translation loop. Returns a process exit
-    code (0 success, 1 usage/setup error, 2 completed with some chunk
-    failures).
-    """
     args = parse_args(argv)
 
     # Hard memory constraint from the spec: never exceed 4 worker threads

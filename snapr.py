@@ -19,15 +19,6 @@ POOL_SIZE: int = 8
 
 
 def compress_file(path: Path, remove_original: bool = True) -> tuple[bool, str]:
-    """Compress a single file using Snappy and optionally remove the original.
-
-    Args:
-        path: Path to the file to compress.
-        remove_original: If True, delete the original file after compression.
-
-    Returns:
-        A tuple of (success, message).
-    """
     try:
         compressed_path: Path = path.with_suffix(path.suffix + COMPRESSED_EXT)
         with open(path, "rb") as f:
@@ -53,15 +44,6 @@ def compress_file(path: Path, remove_original: bool = True) -> tuple[bool, str]:
 
 
 def decompress_file(path: Path, remove_original: bool = True) -> tuple[bool, str]:
-    """Decompress a single Snappy-compressed file and optionally remove the original.
-
-    Args:
-        path: Path to the compressed file.
-        remove_original: If True, delete the compressed file after decompression.
-
-    Returns:
-        A tuple of (success, message).
-    """
     try:
         if path.suffix != COMPRESSED_EXT:
             return False, f"File {path} doesn't have {COMPRESSED_EXT} extension"
@@ -84,14 +66,6 @@ def decompress_file(path: Path, remove_original: bool = True) -> tuple[bool, str
 
 
 def process_file_worker(args: tuple[Path, str, bool]) -> tuple[bool, str]:
-    """Worker entry point for processing a single file.
-
-    Args:
-        args: Tuple of (path, operation, remove_original).
-
-    Returns:
-        A tuple of (success, message).
-    """
     path, operation, remove_original = args
     if operation == "compress":
         return compress_file(path, remove_original)
@@ -101,16 +75,6 @@ def process_file_worker(args: tuple[Path, str, bool]) -> tuple[bool, str]:
 
 
 def find_files(directory: Path, operation: str, recursive: bool = True) -> list[Path]:
-    """Find files to process in a directory.
-
-    Args:
-        directory: Base directory to search.
-        operation: Either "compress" or "decompress".
-        recursive: If True, search recursively.
-
-    Returns:
-        A list of matching file paths.
-    """
     files: list[Path] = []
     if operation == "compress":
         pattern: str = "**/*" if recursive else "*"
@@ -126,15 +90,6 @@ def find_files(directory: Path, operation: str, recursive: bool = True) -> list[
 
 
 def create_tar_archive(directory: Path, remove_original: bool = True) -> Path | None:
-    """Create a tar archive from a directory and optionally remove the original.
-
-    Args:
-        directory: Directory to archive.
-        remove_original: If True, delete the directory after archiving.
-
-    Returns:
-        The path to the created tar archive, or None on failure.
-    """
     try:
         tar_path: Path = directory.with_suffix(".tar")
         print(f"Creating tar archive: {tar_path}")
@@ -151,15 +106,6 @@ def create_tar_archive(directory: Path, remove_original: bool = True) -> Path | 
 
 
 def tar_subdirectories(base_dir: Path, remove_original: bool = True) -> list[Path]:
-    """Tar all immediate subdirectories of a base directory.
-
-    Args:
-        base_dir: Base directory whose subdirectories will be archived.
-        remove_original: If True, delete each subdirectory after archiving.
-
-    Returns:
-        A list of created tar archive paths.
-    """
     tar_files: list[Path] = []
     for item in base_dir.iterdir():
         if item.is_dir():
@@ -174,16 +120,6 @@ def process_files(
     operation: str,
     remove_original: bool = True,
 ) -> tuple[int, int]:
-    """Process a list of files concurrently using a fixed-size multiprocessing pool.
-
-    Args:
-        paths: List of file paths to process.
-        operation: Either "compress" or "decompress".
-        remove_original: If True, delete original files after processing.
-
-    Returns:
-        A tuple of (success_count, failure_count).
-    """
     if not paths:
         logger.warning(f"No files found to {operation}")
         return 0, 0
@@ -221,11 +157,6 @@ def process_files(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments.
-
-    Returns:
-        The parsed arguments namespace.
-    """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Compress or decompress files recursively using Snappy (cramjam)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -268,11 +199,6 @@ Examples:
 
 
 def main() -> int:
-    """Run the Snappy compression/decompression CLI.
-
-    Returns:
-        Exit code (0 on success, 1 on failure).
-    """
     args: argparse.Namespace = parse_args()
 
     if args.verbose:

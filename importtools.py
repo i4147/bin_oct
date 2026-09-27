@@ -486,7 +486,6 @@ STDLIB_MEMBER_MAP: dict[str, set[str]] = {
 
 
 def _make_logger():
-    """Return loguru's logger if available, otherwise a stdlib fallback."""
     try:
         from loguru import logger as _log  # type: ignore
 
@@ -508,7 +507,6 @@ LOG = _make_logger()
 def iter_py_files(
     root: Path, *, skip_dirs: Iterable[str] = SKIP_DIRS
 ) -> Iterator[Path]:
-    """Yield *.py files under ``root`` skipping common virtualenv/cache dirs."""
     root = Path(root)
     skip = set(skip_dirs)
     if root.is_file():
@@ -524,7 +522,6 @@ def iter_py_files(
 
 
 def parse_file(path: Path) -> ast.Module | None:
-    """Parse ``path`` as Python source; return ``None`` on decode/syntax errors."""
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
         return ast.parse(src, filename=str(path))
@@ -544,9 +541,6 @@ def write_lines(path: Path, lines: list[str]) -> None:
 
 
 def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[str]]:
-    """
-    Walk ``tree`` and return three sets: ``imported``, ``assigned``, ``used``.
-    """
     imported: set[str] = set()
     assigned: set[str] = set()
     used: set[str] = set()
@@ -593,10 +587,6 @@ def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[s
 
 
 def top_import_block_end(lines: list[str]) -> int:
-    """
-    Return the index (0-based) after the trailing leading run of imports,
-    comments, docstrings, and blank lines.
-    """
     end = 0
     in_doc = False
     for i, line in enumerate(lines):
@@ -623,7 +613,6 @@ def top_import_block_end(lines: list[str]) -> int:
 
 
 def insert_imports(path: Path, imports: list[str]) -> bool:
-    """Insert ``imports`` (list of full statement strings) after the top block."""
     src = read_source(path)
     if src is None:
         return False
@@ -649,7 +638,6 @@ def rel(path: Path, root: Path) -> str:
 
 
 def _detect_missing(path: Path, strategy: str) -> list[str]:
-    """Return list of suggested statements ('import X' or 'from X import Y')."""
     tree = parse_file(path)
     if tree is None:
         return []
@@ -750,7 +738,6 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
 
 
 def _position_basic(path: Path) -> list[str]:
-    """imdetector.py behavior — top-level body only."""
     src = read_source(path)
     if src is None:
         return []
@@ -809,7 +796,6 @@ def _is_nested(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> bool:
 
 
 def _position_deep(path: Path) -> list[tuple[int, int, str]]:
-    """chk_imports.py behavior — returns (start_line, end_line, text) tuples."""
     src = read_source(path)
     if src is None:
         return []
@@ -1068,8 +1054,6 @@ def _extract_module_name(text: str) -> str:
 
 
 class _ImportTransformer(ast.NodeTransformer):
-    """Rewrite ``import m`` + ``m.attr`` into ``from m import attr``."""
-
     def __init__(self, tree: ast.Module) -> None:
         self.tree = tree
         self.module_to_names: dict[str, set[str]] = {}

@@ -56,39 +56,14 @@ DiffChunkArgs = tuple[list[str], "frozenset[str]", str]
 
 
 def count_lines(path: Path) -> int:
-    """Return the number of lines in ``path``.
-
-    Args:
-        path: File to count lines in.
-
-    Returns:
-        The line count (number of newline bytes plus one).
-    """
     return path.read_bytes().count(b"\n") + 1
 
 
 def strip_indentation(lines: Sequence[str]) -> list[str]:
-    """Strip leading and trailing spaces/tabs from every line.
-
-    Args:
-        lines: Input lines.
-
-    Returns:
-        A new list of stripped lines.
-    """
     return [line.strip(" \t") for line in lines]
 
 
 def read_file_task(path: Path) -> FileLines:
-    """Read ``path`` and return its lines, stripping code indentation.
-
-    Args:
-        path: File to read.
-
-    Returns:
-        A tuple ``(path, lines)``. For recognized source-code extensions,
-        each line is stripped of leading/trailing spaces and tabs.
-    """
     text: str = path.read_text(encoding="utf-8", errors="ignore")
     lines: list[str] = text.splitlines(keepends=False)
     if path.suffix.lower() in CODE_EXT:
@@ -97,16 +72,6 @@ def read_file_task(path: Path) -> FileLines:
 
 
 def filter_diff_chunk(args: DiffChunkArgs) -> list[str]:
-    """Filter a chunk of lines by membership in ``exclude_set``.
-
-    Args:
-        args: Tuple of ``(chunk, exclude_set, mode)`` where ``mode`` is
-            ``"only_in_first"`` to keep lines NOT in ``exclude_set``, or any
-            other value to keep lines that ARE in ``exclude_set``.
-
-    Returns:
-        The filtered list of lines.
-    """
     chunk, exclude_set, mode = args
     if mode == "only_in_first":
         return [p for p in chunk if p not in exclude_set]
@@ -114,25 +79,10 @@ def filter_diff_chunk(args: DiffChunkArgs) -> list[str]:
 
 
 def _chunked(lines: list[str], size: int) -> list[list[str]]:
-    """Split ``lines`` into contiguous chunks of at most ``size`` items.
-
-    Args:
-        lines: Lines to split.
-        size: Maximum chunk size.
-
-    Returns:
-        A list of chunks.
-    """
     return [lines[i : i + size] for i in range(0, len(lines), size)]
 
 
 def report_diff_lines(path1: Path, path2: Path) -> None:
-    """Compare ``path1`` and ``path2`` and log the diff summary.
-
-    Args:
-        path1: First file to compare.
-        path2: Second file to compare.
-    """
     lines1_count: int = count_lines(path1)
     lines2_count: int = count_lines(path2)
 
@@ -190,14 +140,6 @@ def report_diff_lines(path1: Path, path2: Path) -> None:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    """Entry point for the file-diff script.
-
-    Args:
-        argv: Optional argument vector (defaults to ``sys.argv[1:]``).
-
-    Returns:
-        Process exit code (0 on success, 1 on invalid arguments).
-    """
     args: list[str] = list(argv) if argv is not None else sys.argv[1:]
     if len(args) != 2:
         logger.error("Usage: python difflines.py <file1> <file2>")

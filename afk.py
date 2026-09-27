@@ -60,8 +60,6 @@ WORKERS = 8
 
 @dataclass
 class UnusedImport:
-    """A single import statement that has one or more unused names."""
-
     lineno: int
     col_offset: int
     statement: str
@@ -71,8 +69,6 @@ class UnusedImport:
 
 @dataclass
 class FileReport:
-    """Analysis result for a single source file (real or archive member)."""
-
     path: str
     unused_imports: list[UnusedImport] = field(default_factory=list)
     error: str | None = None
@@ -81,8 +77,6 @@ class FileReport:
 
 @dataclass
 class AutoflakeReport:
-    """Result of running the external ``autoflake`` tool on one source."""
-
     path: str
     diff: str = ""
     fixed_source: str = ""
@@ -90,7 +84,6 @@ class AutoflakeReport:
 
     @property
     def has_unused(self) -> bool:
-        """True when autoflake produced a different source."""
         return bool(self.diff)
 
 
@@ -100,8 +93,6 @@ class AutoflakeReport:
 
 
 class Colors:
-    """ANSI escape codes; call :meth:`disable` to blank them all out."""
-
     BOLD = "\x1b[1m"
     CYAN = "\x1b[36m"
     YELLOW = "\x1b[33m"
@@ -111,7 +102,6 @@ class Colors:
 
     @classmethod
     def disable(cls) -> None:
-        """Replace every public color attribute with an empty string."""
         for attr in dir(cls):
             if not attr.startswith("_") and attr != "disable":
                 setattr(cls, attr, "")
@@ -123,16 +113,6 @@ class Colors:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    """Collect every imported name and the contexts that protect it.
-
-    Protected contexts suppress unused-import warnings:
-
-    * ``future_imports``        — ``from __future__ import ...``
-    * ``type_checking_imports`` — imports inside ``if TYPE_CHECKING:``
-    * ``all_export``            — strings listed in ``__all__``
-    * ``star_imports``          — modules referenced by ``from m import *``
-    """
-
     def __init__(self) -> None:
         self.imports: dict[str, tuple[int, int, str]] = {}
         self.type_checking_imports: set[str] = set()
@@ -144,7 +124,6 @@ class ImportVisitor(ast.NodeVisitor):
     # -- control-flow context ------------------------------------------------
 
     def visit_If(self, node: ast.If) -> None:
-        """Track whether we are inside an ``if TYPE_CHECKING:`` block."""
         is_tc = (
             isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING"
         ) or (
@@ -200,10 +179,6 @@ class ImportVisitor(ast.NodeVisitor):
     # -- ``__all__`` re-exports ---------------------------------------------
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        """Record string literals assigned to ``__all__``.
-
-        Accepts list, tuple, and set literals.
-        """
         for target in node.targets:
             if (
                 isinstance(target, ast.Name)
@@ -226,8 +201,6 @@ class ImportVisitor(ast.NodeVisitor):
 
 
 class NameVisitor(ast.NodeVisitor):
-    """Collect every identifier that appears anywhere in the module."""
-
     def __init__(self) -> None:
         self.used_names: set[str] = set()
 
@@ -255,7 +228,6 @@ class NameVisitor(ast.NodeVisitor):
 def analyze_imports(
     source: str, path: str = ""
 ) -> tuple[list[UnusedImport], str | None]:
-    """Analyse ``source`` with the built-in AST engine."""
     try:
         tree = ast.parse(source)
     except SyntaxError as exc:
@@ -315,7 +287,6 @@ def analyze_imports(
 
 
 def process_py_file(path: str) -> FileReport:
-    """Read and analyse a plain ``.py`` file with the AST engine."""
     path_obj = Path(path)
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as fh:
@@ -336,7 +307,6 @@ def process_py_file(path: str) -> FileReport:
 
 
 def extract_py_files_from_wheel(wheel_path: str) -> dict[str, str]:
-    """Return ``{virtual_path: source}`` for every ``.py`` inside a wheel."""
     result: dict[str, str] = {}
     try:
         with zipfile.ZipFile(wheel_path, "r") as whl:
@@ -354,7 +324,6 @@ def extract_py_files_from_wheel(wheel_path: str) -> dict[str, str]:
 
 
 def extract_py_files_from_tar_zst(archive_path: str) -> dict[str, str]:
-    """Return ``{virtual_path: source}`` for every ``.py`` in a ``.tar.zst``."""
     result: dict[str, str] = {}
     prefix = Path(archive_path).name
 
@@ -378,7 +347,6 @@ def extract_py_files_from_tar_zst(archive_path: str) -> dict[str, str]:
 def _collect_tar_members(
     tar: tarfile.TarFile, prefix: str, result: dict[str, str]
 ) -> None:
-    """Populate ``result`` with every ``.py`` regular file in ``tar``."""
     for member in tar:
         if not (member.isfile() and member.name.endswith(".py")):
             continue
@@ -393,7 +361,6 @@ def _collect_tar_members(
 
 
 def process_archive_member(virtual_path: str, source: str) -> FileReport:
-    """Analyse a single in-memory archive member with the AST engine."""
     unused, error = analyze_imports(source, virtual_path)
     return FileReport(
         path=virtual_path,
@@ -415,7 +382,6 @@ _AUTOFLACE_BASE = [
 
 
 def _autoflake_build_diff(original: str, fixed: str, label: str) -> str:
-    """Return a unified diff between two source strings."""
     return "".join(
         difflib.unified_diff(
             original.splitlines(keepends=True),
@@ -427,11 +393,6 @@ def _autoflake_build_diff(original: str, fixed: str, label: str) -> str:
 
 
 def autoflake_process_path(path: str) -> AutoflakeReport:
-    """Run autoflake against a real file path.
-
-    Passing the path (rather than stdin) lets autoflake honour
-    ``--ignore-init-module-imports`` for ``__init__.py`` files.
-    """
     try:
         original = Path(path).read_text(encoding="utf-8", errors="replace")
     except Exception as exc:
@@ -464,11 +425,6 @@ def autoflake_process_path(path: str) -> AutoflakeReport:
 
 
 def autoflake_process_source(virtual_path: str, source: str) -> AutoflakeReport:
-    """Run autoflake against an in-memory source (used for archive members).
-
-    Note: because we go through stdin, autoflake cannot detect that the
-    source corresponds to an ``__init__.py`` file.
-    """
     try:
         result = subprocess.run(
             [*_AUTOFLACE_BASE, "-"],
@@ -525,7 +481,6 @@ def _process_archive_autoflake_worker(args: tuple[str, str]) -> AutoflakeReport:
 def discover_files(
     paths: list[str], exclude_patterns: list[str]
 ) -> tuple[list[str], list[tuple[str, str]]]:
-    """Expand ``paths`` into ``(py_files, archive_members)``."""
     py_files: list[str] = []
     archive_members: list[tuple[str, str]] = []
     exclude_regexes = [re.compile(p) for p in exclude_patterns]
@@ -565,7 +520,6 @@ def _collect_from_file(
     py_files: list[str],
     archive_members: list[tuple[str, str]],
 ) -> None:
-    """Dispatch a single file path onto the appropriate collector."""
     if path.suffix == ".py":
         if not should_exclude(str(path)):
             py_files.append(str(path))
@@ -585,7 +539,6 @@ def _collect_from_file(
 
 
 def remove_unused_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]:
-    """Return ``(new_source, ok)`` with unused aliases stripped."""
     lines = source.split("\n")
     unused_by_line: dict[int, set[str]] = {}
 
@@ -628,7 +581,6 @@ def _reconstruct_import_line(
     unused_names: set[str],
     original_line: str,
 ) -> str | None:
-    """Rebuild an import line keeping only used aliases."""
     indent = original_line[: len(original_line) - len(original_line.lstrip())]
 
     if isinstance(node, ast.Import):
@@ -667,7 +619,6 @@ def _reconstruct_import_line(
 def autofix_file(
     path: str, unused: list[UnusedImport], dry_run: bool = False
 ) -> tuple[bool, str | None]:
-    """Apply :func:`remove_unused_imports` to a real file on disk."""
     if "::" in path:
         return (False, "Cannot autofix inside packed archives")
 
@@ -705,7 +656,6 @@ def print_report(
     dry_run: bool = False,
     autofix: bool = False,
 ) -> None:
-    """Print the AST-engine report."""
     if not use_color:
         Colors.disable()
 
@@ -767,7 +717,6 @@ def print_autoflake_report(
     autofix: bool = False,
     show_diff: bool = False,
 ) -> None:
-    """Print the autoflake-engine report."""
     if not use_color:
         Colors.disable()
 
@@ -823,7 +772,6 @@ def print_autoflake_report(
 
 
 def build_parser() -> ArgumentParser:
-    """Construct the argument parser used by :func:`main`."""
     parser = ArgumentParser(
         description=(
             "Detect and optionally remove unused imports from Python files "
@@ -902,7 +850,6 @@ def _run_ast_mode(
     archive_members: list[tuple[str, str]],
     args,
 ) -> int:
-    """Run the built-in AST analyzer over the discovered files."""
     reports: list[FileReport] = []
     with Pool(processes=WORKERS) as pool:
         if py_files:
@@ -925,7 +872,6 @@ def _run_autoflake_mode(
     archive_members: list[tuple[str, str]],
     args,
 ) -> int:
-    """Run the external autoflake tool over the discovered files."""
     if shutil.which("autoflake") is None:
         print(
             "Error: `autoflake` is not installed. Run `pip install autoflake`.",
@@ -952,7 +898,6 @@ def _run_autoflake_mode(
 
 
 def main() -> int:
-    """Entry point.  Returns the process exit status."""
     parser = build_parser()
     args = parser.parse_args()
 

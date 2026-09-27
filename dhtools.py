@@ -75,11 +75,6 @@ DEFAULT_SKIP: frozenset[str] = frozenset({"dh_reverse.py"})
 def _iter_py_files(
     paths: Iterable[Path], skip: frozenset[str] = frozenset()
 ) -> list[Path]:
-    """Expand a mix of files and directories into a list of ``.py`` files.
-
-    Files whose *name* is in ``skip`` are dropped (mirrors the original
-    ``dh_reverse.py`` behaviour of never touching itself).
-    """
     out: list[Path] = []
     for p in paths:
         if p.is_file() and p.suffix == ".py":
@@ -93,7 +88,6 @@ def _iter_py_files(
 
 
 def _read_and_parse(path: Path) -> tuple[str, ast.Module] | tuple[None, None]:
-    """Return (source, ast) or (None, None) if the file cannot be parsed."""
     try:
         src = path.read_text(encoding="utf-8")
         return src, ast.parse(src)
@@ -105,12 +99,6 @@ def _read_and_parse(path: Path) -> tuple[str, ast.Module] | tuple[None, None]:
 # Hashing helpers (reverse subcommand)
 # ===========================================================================
 def _strip_docstring_and_unparse(node: ast.FunctionDef) -> str:
-    """Return the function source as ``ast.unparse`` output with the leading
-    docstring removed and each line stripped of surrounding whitespace.
-
-    This is the hash used by ``dh_reverse.py`` — it makes the match
-    insensitive to docstring wording and indentation differences.
-    """
     body = [
         stmt
         for stmt in node.body
@@ -139,10 +127,6 @@ def _normalized_hash(node: ast.FunctionDef) -> str:
 
 
 def _raw_source(source: str, node: ast.FunctionDef) -> str:
-    """Slice of the source from the ``def`` line through ``end_lineno``.
-
-    Decorator lines are intentionally excluded (matches all three originals).
-    """
     lines = source.split("\n")
     return "\n".join(lines[node.lineno - 1 : node.end_lineno])
 
@@ -159,12 +143,6 @@ def _function_hash(source: str, node: ast.FunctionDef, match: str) -> str:
 # reverse subcommand
 # ===========================================================================
 def _build_dh_map(dh_path: Path, match: str) -> dict[str, tuple[str, str]]:
-    """Return ``{function_name: (module_stem, hash)}`` for every function
-    found anywhere in the ``dh`` package.
-
-    Names appearing in more than one module produce a warning and the last
-    one wins — same as the originals.
-    """
     result: dict[str, tuple[str, str]] = {}
     for py_file in sorted(dh_path.glob("**/*.py")):
         source, tree = _read_and_parse(py_file)
@@ -185,12 +163,6 @@ def _insert_dh_imports(
     matched: dict[str, str],
     style: str,
 ) -> str:
-    """Insert the dh imports for ``matched`` into ``source``.
-
-    ``style == "flat"``   -> ``from dh import a, b, c`` (merged with any
-                             existing top-level ``from dh import …`` line).
-    ``style == "module"`` -> one line per name: ``from dh.<module> import <name>``.
-    """
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -234,7 +206,6 @@ def _insert_dh_imports(
 
 
 def _prune_unused_imports(source: str) -> str:
-    """Remove top-level imports whose bound names are never loaded."""
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -274,7 +245,6 @@ def _apply_reverse_to_file(
     prune: bool,
     debug: bool,
 ) -> tuple[Path, bool, str]:
-    """Core worker: rewrite a single file. Returns (path, changed, message)."""
     source, tree = _read_and_parse(path)
     if tree is None or source is None:
         return (path, False, "")
@@ -327,7 +297,6 @@ def _apply_reverse_to_file(
 
 
 def _reverse_worker(args: tuple) -> tuple[Path, bool, str]:
-    """Process-pool entry-point — must be module-level to be picklable."""
     return _apply_reverse_to_file(*args)
 
 
@@ -384,7 +353,6 @@ def cmd_reverse(args: argparse.Namespace) -> int:
 # inline subcommand
 # ===========================================================================
 def _build_dh_export_map(dh_path: Path) -> dict[str, Path]:
-    """Return ``{exported_name: defining_module_file}`` from ``__init__.py``."""
     init = dh_path / "__init__.py"
     if not init.exists():
         raise FileNotFoundError(f"Could not find __init__.py at {init}")
@@ -402,7 +370,6 @@ def _build_dh_export_map(dh_path: Path) -> dict[str, Path]:
 
 
 def _collect_local_refs(node: ast.AST, names: set[str]) -> set[str]:
-    """Return every ``Load`` name inside *node* that is a key in *names*."""
     refs: set[str] = set()
     for child in ast.walk(node):
         if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load):
@@ -414,12 +381,6 @@ def _collect_local_refs(node: ast.AST, names: set[str]) -> set[str]:
 def _collect_inline_source(
     module_file: Path, func_name: str
 ) -> tuple[list[str], list[str]]:
-    """Extract source blocks and required imports to inline ``func_name``.
-
-    Returns ``(import_statements, source_blocks)``.  Walks the transitive
-    closure of same-module references so that e.g. ``def a(): return b()``
-    also pulls in ``def b`` from the same ``dh`` module.
-    """
     if not module_file.exists():
         return ([], [])
     try:
@@ -482,7 +443,6 @@ def _collect_inline_source(
 def _inline_file(
     path: Path, dh_map: dict[str, Path], apply: bool
 ) -> tuple[Path, bool, str]:
-    """Rewrite a single file, replacing dh imports with inline source."""
     if path.resolve() == Path(__file__).resolve():
         return (path, False, "")
 
@@ -603,7 +563,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
 # usage subcommand
 # ===========================================================================
 def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
-    """Return the list of names imported from the ``dh`` package in *py_file*."""
     source, tree = _read_and_parse(py_file)
     if tree is None:
         print(f"   ⚠️  Skipping {py_file.name}: could not parse")
@@ -647,7 +606,6 @@ def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
 
 
 def _count_dh_calls(py_file: Path, names: set[str]) -> dict[str, int]:
-    """Count direct ``name(...)`` call sites for the given imported names."""
     _, tree = _read_and_parse(py_file)
     if tree is None:
         return {}

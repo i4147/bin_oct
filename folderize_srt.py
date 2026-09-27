@@ -10,14 +10,11 @@ _detector = None
 
 
 def _init_worker():
-    """Build the detector once inside each worker process."""
     global _detector
     _detector = LanguageDetectorBuilder.from_all_languages().build()
 
 
 def _detect_batch(lines: list[str]):
-    """Worker function: detect language for each line in a batch.
-    Returns list of (line, lang_name, iso_code) — Language enum isn't picklable."""
     out = []
     for line in lines:
         try:
@@ -36,7 +33,6 @@ def get_srt_files(directory: Path) -> list[Path]:
 
 
 def detect_language_majority_vote(file_path: Path, pool: Pool):
-    """Detect language using majority vote, with lines processed in parallel batches."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             raw_lines = f.readlines()

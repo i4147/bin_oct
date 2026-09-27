@@ -50,15 +50,6 @@ from typing import Iterable, Iterator, Sequence
 def iter_py_files(
     root: Path, *, exclude_names: set[str] | None = None
 ) -> Iterator[Path]:
-    """Yield every ``.py`` file under *root* recursively.
-
-    Parameters
-    ----------
-    root
-        Directory to walk.
-    exclude_names
-        File *basenames* (not paths) to skip.
-    """
     excl = exclude_names or set()
     for p in root.rglob("*.py"):
         if p.name in excl:
@@ -67,7 +58,6 @@ def iter_py_files(
 
 
 def read_text_safe(path: Path) -> str | None:
-    """Read *path* as UTF-8; return ``None`` on decode/IO error."""
     try:
         return path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
@@ -75,22 +65,15 @@ def read_text_safe(path: Path) -> str | None:
 
 
 def sha256_hex(text: str) -> str:
-    """Hex SHA-256 digest of *text* (UTF-8)."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def slice_lines(lines: Sequence[str], start: int, end: int) -> str:
-    """Return ``lines[start-1:end]`` joined.
-
-    ``start``/``end`` are 1-based line numbers as reported by the ``ast`` module.
-    """
     return "".join(lines[start - 1 : end])
 
 
 @dataclass
 class Declaration:
-    """A single top-level Python declaration of interest."""
-
     kind: str  # 'assign' | 'function' | 'class' | 'const'
     name: str
     lineno: int
@@ -105,11 +88,6 @@ class Declaration:
 
 
 class _NameStripper(ast.NodeTransformer):
-    """Replace function/class names with a fixed placeholder.
-
-    Enables "same body, different name" duplicate detection.
-    """
-
     def _rename(self, node: ast.AST) -> ast.AST:
         node.name = "__NAME__"  # type: ignore[attr-defined]
         self.generic_visit(node)
@@ -121,7 +99,6 @@ class _NameStripper(ast.NodeTransformer):
 
 
 def ast_hash(node: ast.AST) -> str:
-    """Content hash of *node* with declaration names stripped."""
     clone = copy.deepcopy(node)
     clone = _NameStripper().visit(clone)
     ast.fix_missing_locations(clone)
@@ -130,21 +107,18 @@ def ast_hash(node: ast.AST) -> str:
 
 
 def is_simple_assign(node: ast.AST) -> bool:
-    """True for ``NAME = ...`` (single or tuple of ``Name`` targets)."""
     if not isinstance(node, ast.Assign):
         return False
     return all(isinstance(t, ast.Name) for t in node.targets)
 
 
 def assign_names(node: ast.Assign) -> list[str]:
-    """Return the simple names bound by *node*."""
     return [t.id for t in node.targets if isinstance(t, ast.Name)]
 
 
 def collect_ast_declarations(
     tree: ast.Module, lines: Sequence[str]
 ) -> list[Declaration]:
-    """Extract top-level assignments / functions / classes from *tree*."""
     out: list[Declaration] = []
     for node in tree.body:
         if is_simple_assign(node):
@@ -185,11 +159,6 @@ def collect_ast_declarations(
 
 
 def cmd_const(args: argparse.Namespace) -> int:
-    """Regex-based duplicate-constant removal for a single file.
-
-    Keeps the first declaration of each name; appends every later
-    declaration to ``<file's dir>/<dup_file>``.
-    """
     target: Path = args.file
     if not target.exists():
         print(f"File not found: {target}")
@@ -238,7 +207,6 @@ def cmd_const(args: argparse.Namespace) -> int:
 
 
 def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
-    """Worker: dedup one file; return (path, moved_count, error)."""
     path_str, suffix = job
     path = Path(path_str)
     text = path.read_text(encoding="utf-8")
@@ -299,7 +267,6 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
 
 
 def cmd_ast(args: argparse.Namespace) -> int:
-    """AST-based dedup across many files."""
     targets: list[Path] = []
     if args.paths:
         for p in args.paths:
@@ -355,7 +322,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
 
 
 def _ts_make_parser():
-    """Build a tree-sitter Python parser (imported lazily)."""
     import tree_sitter_python as tsp  # type: ignore
     from tree_sitter import Language, Parser  # type: ignore
 
@@ -369,7 +335,6 @@ def _ts_node_text(src_bytes: bytes, node) -> str:
 
 
 def _ts_collect(path: Path, parser) -> list[Declaration]:
-    """Extract top-level function/class/UPPERCASE-const declarations."""
     text = read_text_safe(path)
     if text is None:
         return []
@@ -423,7 +388,6 @@ def _ts_collect(path: Path, parser) -> list[Declaration]:
 
 
 def _ts_write_output(representatives: dict[str, Declaration], out_path: Path) -> None:
-    """Write each representative declaration once to *out_path*."""
     parts = [
         "# Auto-generated file",
         "# Contains duplicate top-level constants, functions, and classes.",
@@ -443,7 +407,6 @@ def _ts_write_output(representatives: dict[str, Declaration], out_path: Path) ->
 
 
 def cmd_ts(args: argparse.Namespace) -> int:
-    """Tree-sitter duplicate detection (diduper / tsdeduper)."""
     try:
         parser = _ts_make_parser()
     except ImportError as e:
@@ -497,7 +460,6 @@ def _append(path: Path, text: str) -> None:
 
 
 def cmd_refactor(args: argparse.Namespace) -> int:
-    """Extract every top-level def/class/assignment into a module package."""
     input_dir: Path = args.input_dir.resolve()
     out_dir: Path = args.output_dir
     out_dir.mkdir(parents=True, exist_ok=True)

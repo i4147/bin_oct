@@ -111,8 +111,6 @@ except ImportError:
 # ===========================================================================
 @dataclass
 class Detection:
-    """A single hypothesis about the file's format."""
-
     name: str
     kind: str
     mime: str = "application/octet-stream"
@@ -204,7 +202,6 @@ _MAGIC_TABLE: list[tuple[bytes, int, Detection]] = [
 
 
 def sniff_magic(data: bytes) -> Detection:
-    """Return the best Detection for the given header bytes."""
     best: Detection | None = None
     for sig, off, det in _MAGIC_TABLE:
         if len(data) < off + len(sig):
@@ -236,10 +233,6 @@ def _register(name: str, extractor: Callable[[Path], None]) -> None:
 # Safety: block zip-slip / tar-slip / absolute paths
 # ===========================================================================
 def _safe_member_path(base: Path, member: str) -> Path | None:
-    """
-    Return base/member resolved, or None if it escapes `base`.
-    Absolute paths and '..' components are rejected.
-    """
     try:
         p = (base / member).resolve()
         p.relative_to(base.resolve())
@@ -252,7 +245,6 @@ def _safe_member_path(base: Path, member: str) -> Path | None:
 # STAGE 2 — libarchive catch-all
 # ===========================================================================
 def try_libarchive(filename: str) -> bool:
-    """Attempt to open the file as any libarchive-supported container."""
     libarchive = _libarchive_mod
     if libarchive is None:
         print("  SKIP: libarchive-c not installed.\n")
@@ -282,13 +274,6 @@ def try_libarchive(filename: str) -> bool:
 # STAGE 3 — Individual byte-level decompressors
 # ===========================================================================
 def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
-    """
-    Assemble {label: callable} for all available byte-stream decoders.
-
-    Type-checker note: for each optional module, we rebind to a fresh local
-    (`mod = _xyz_mod`) after an `is None` guard.  Pyright then knows the local
-    is non-None inside the branch and stops reporting attribute errors.
-    """
     methods: dict[str, Callable[[bytes], bytes]] = {
         "zlib": zlib.decompress,
         "raw-deflate": lambda d: zlib.decompress(d, -15),
@@ -370,7 +355,6 @@ def _hint_boost_order(
     methods: dict[str, Callable[[bytes], bytes]],
     hint: Detection,
 ) -> dict[str, Callable[[bytes], bytes]]:
-    """Move decoders matching the magic hint to the front of the dict."""
     if hint.kind == "unknown":
         return methods
 
@@ -397,7 +381,6 @@ def _hint_boost_order(
 
 
 def try_stream_decompressors(data: bytes, hint: Detection) -> bool:
-    """Try each byte-stream decoder, hint-matching ones first."""
     methods = _hint_boost_order(_build_decompressors(), hint)
     success = False
     for name, func in methods.items():
@@ -574,7 +557,6 @@ def try_pycdlib(filename: str) -> bool:
 
 
 def try_pickle(data: bytes) -> bool:
-    """Attempt pickle loads.  UNSAFE on untrusted input — see warning below."""
     if not (
         data.startswith(b"\x80\x04")
         or data.startswith(b"\x80\x05")
@@ -671,7 +653,6 @@ def extract_cab(src: Path) -> None:
 
 
 def extract_iso(src: Path) -> None:
-    """Extract every file/dir from an ISO9660 image, preserving structure."""
     pycdlib = _pycdlib_mod
     if pycdlib is None:
         return
@@ -725,7 +706,6 @@ def extract_libarchive(src: Path) -> None:
 
 
 def extract_stream(name: str, blob: bytes, src_name: str) -> None:
-    """Write raw-stream decompression output under a sensible name."""
     suffixes = {
         "gzip": ".gz",
         "bz2": ".bz2",
@@ -753,7 +733,6 @@ def extract_stream(name: str, blob: bytes, src_name: str) -> None:
 
 
 def extract_pickle(src: Path) -> None:
-    """Pickle is a serialized object, not an archive — dump repr to disk."""
     obj = pickle.loads(src.read_bytes())
     out = Path.cwd() / (src.name + ".repr.txt")
     out.write_text(repr(obj), encoding="utf-8")
@@ -761,10 +740,6 @@ def extract_pickle(src: Path) -> None:
 
 
 def run_extraction(src: Path) -> None:
-    """
-    Execute every extractor registered during recognition.
-    Any entry is validated against zip-slip / tar-slip before writing.
-    """
     if not _RECOGNIZED:
         print("Nothing recognized — no extraction performed.\n")
         return

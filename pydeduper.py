@@ -87,8 +87,6 @@ SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".venv", "venv", "node_module
 # ---------------------------------------------------------------------------
 @dataclass
 class Source:
-    """A unit of Python source text (from a file, an archive member, or a decompressed stream)."""
-
     origin: str
     text: str
     path: Optional[Path] = None
@@ -96,8 +94,6 @@ class Source:
 
 @dataclass
 class Definition:
-    """A single top-level function, class or constant."""
-
     kind: str  # 'func' | 'class' | 'const'
     name: str
     source: str
@@ -113,7 +109,6 @@ class Definition:
 # Logging helpers
 # ---------------------------------------------------------------------------
 def _success(msg: str, *args) -> None:
-    """Emit a SUCCESS-level message (works with or without loguru)."""
     if _HAS_LOGURU:
         logger.success(msg, *args)
     else:
@@ -121,7 +116,6 @@ def _success(msg: str, *args) -> None:
 
 
 def _setup_logging(level: str, verbose: bool) -> None:
-    """Configure loguru if available, otherwise stdlib logging."""
     lvl = "DEBUG" if verbose else level.upper()
     if _HAS_LOGURU:
         logger.remove()
@@ -147,7 +141,6 @@ def _setup_logging(level: str, verbose: bool) -> None:
 # Scanning — file / archive / compressed sources
 # ---------------------------------------------------------------------------
 def _safe_read_text(path: Path) -> Optional[str]:
-    """Read *path* as UTF-8 (falling back to latin-1). Returns None on OSError."""
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -162,7 +155,6 @@ def _safe_read_text(path: Path) -> Optional[str]:
 
 
 def _decompress(path: Path) -> Optional[bytes]:
-    """Decompress a single-file compressed stream based on its suffix."""
     suffix = path.suffix.lower()
     try:
         raw = path.read_bytes()
@@ -192,7 +184,6 @@ def _decompress(path: Path) -> Optional[bytes]:
 
 
 def _iter_zip(path: Path) -> Iterator[Source]:
-    """Yield Python source for every .py member of a zip/whl archive."""
     try:
         with zipfile.ZipFile(path) as zf:
             for info in zf.infolist():
@@ -213,7 +204,6 @@ def _iter_zip(path: Path) -> Iterator[Source]:
 
 
 def _iter_tar(path: Path) -> Iterator[Source]:
-    """Yield Python source for every .py member of a tar family archive."""
     try:
         with tarfile.open(path, "r:*") as tf:
             for member in tf.getmembers():
@@ -238,7 +228,6 @@ def _iter_tar(path: Path) -> Iterator[Source]:
 
 
 def _iter_compressed(path: Path) -> Iterator[Source]:
-    """Yield a Source for a single-file compressed Python file (.py.gz etc.)."""
     raw = _decompress(path)
     if raw is None:
         return
@@ -252,11 +241,6 @@ def _iter_compressed(path: Path) -> Iterator[Source]:
 
 
 def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
-    """Walk *root* and yield every :class:`Source` we can find.
-
-    The ``utils/`` output directory is skipped, as are common junk
-    directories (``.git``, ``__pycache__``, virtualenvs, …).
-    """
     root = root.resolve()
     utils_dir = (root / "utils").resolve()
     for path in sorted(root.rglob("*")):
@@ -301,12 +285,10 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
 # AST extraction
 # ---------------------------------------------------------------------------
 def _sha256(text: str) -> str:
-    """Return the hex sha256 of *text* (utf-8 encoded)."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
-    """Return the source of top-level import statements referenced by *node*."""
     used: set[str] = set()
     for sub in ast.walk(node):
         if isinstance(sub, ast.Name):
@@ -337,7 +319,6 @@ def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
 
 
 def _is_literal_value(node: ast.AST) -> bool:
-    """True if *node* is a literal constant / tuple / list / set / dict of literals."""
     if isinstance(node, ast.Constant):
         return True
     if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
@@ -351,7 +332,6 @@ def _is_literal_value(node: ast.AST) -> bool:
 
 
 def _is_typevar_call(node: ast.Assign) -> bool:
-    """True if the RHS is a call like ``TypeVar(...)`` / ``NewType(...)``."""
     value = node.value
     if not isinstance(value, ast.Call):
         return False
@@ -364,13 +344,6 @@ def _is_typevar_call(node: ast.Assign) -> bool:
 
 
 def _const_names(node: ast.AST, mode: str) -> list[str]:
-    """Return the target names of a top-level const node, or [] if not a const.
-
-    ``mode``:
-        * ``"all"``       — any ``Assign`` with simple name / tuple targets
-        * ``"uppercase"`` — name is ALL_CAPS, or the RHS is a TypeVar-like call
-        * ``"literal"``   — RHS is a literal (str/num/tuple/list/dict of literals)
-    """
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
         names = [node.target.id]
     elif isinstance(node, ast.Assign):
@@ -401,7 +374,6 @@ def extract_definitions(
     path: Optional[Path],
     const_mode: str = "all",
 ) -> list[Definition]:
-    """Parse *text* and return every top-level definition it contains."""
     try:
         tree = ast.parse(text, filename=origin)
     except SyntaxError as exc:
@@ -444,7 +416,6 @@ def extract_definitions(
 
 
 def _worker(payload: tuple[str, str, Optional[Path], str]) -> list[Definition]:
-    """Multiprocessing entry point: unpack and delegate to :func:`extract_definitions`."""
     text, origin, path, const_mode = payload
     return extract_definitions(text, origin, path, const_mode)
 
@@ -454,7 +425,6 @@ def _collect_all(
     workers: int,
     const_mode: str,
 ) -> list[Definition]:
-    """Run :func:`extract_definitions` over all sources, optionally in parallel."""
     payloads = [(s.text, s.origin, s.path, const_mode) for s in sources]
     if workers <= 1:
         out: list[Definition] = []
@@ -477,7 +447,6 @@ def group_duplicates(
     min_occurs: int = 2,
     match_mode: str = "content",
 ) -> dict[str, list[Definition]]:
-    """Group definitions by content hash (default) or by kind+name, keeping only groups >= *min_occurs*."""
     groups: dict[str, list[Definition]] = defaultdict(list)
     for d in defs:
         key = f"{d.kind}::{d.name}" if match_mode == "name" else d.content_hash
@@ -489,7 +458,6 @@ def group_duplicates(
 # Writing to utils/
 # ---------------------------------------------------------------------------
 def _read_existing_hashes(path: Path) -> set[str]:
-    """Return the set of content hashes already present in *path* (empty if missing/unparsable)."""
     if not path.exists():
         return set()
     try:
@@ -514,7 +482,6 @@ def write_utils(
     const_file: str,
     dry_run: bool = False,
 ) -> dict[str, Path]:
-    """Append one representative of every duplicate group into the relevant utils/*.py file."""
     utils_dir.mkdir(parents=True, exist_ok=True)
     file_map = {"func": func_file, "class": class_file, "const": const_file}
     by_kind: dict[str, list[Definition]] = defaultdict(list)
@@ -588,7 +555,6 @@ def write_utils(
 # Patching originals on 'move'
 # ---------------------------------------------------------------------------
 def _insert_imports(lines: list[str], imports: list[str]) -> list[str]:
-    """Insert *imports* after the module docstring and any existing imports."""
     if not imports:
         return lines
     text = "".join(lines)
@@ -617,7 +583,6 @@ def _patch_file(
     file_map: dict[str, str],
     dry_run: bool,
 ) -> None:
-    """Remove *defs* from *path* and inject imports from the corresponding utils module."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -676,7 +641,6 @@ def patch_originals(
     const_file: str,
     dry_run: bool = False,
 ) -> None:
-    """Remove moved definitions from every patchable origin file and add imports."""
     try:
         utils_rel = utils_dir.relative_to(root)
     except ValueError:
@@ -700,7 +664,6 @@ def patch_originals(
 # CLI
 # ---------------------------------------------------------------------------
 def _add_common_args(p: argparse.ArgumentParser) -> None:
-    """Add the flags shared by every subcommand."""
     p.add_argument(
         "--dir",
         type=Path,
@@ -777,14 +740,12 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
 
 
 def _resolve_utils_dir(args: argparse.Namespace) -> Path:
-    """Return the utils/ directory for *args*, honouring --utils-dir if set."""
     if args.utils_dir is not None:
         return args.utils_dir.resolve()
     return (args.dir / "utils").resolve()
 
 
 def _load_sources(args: argparse.Namespace) -> list[Source]:
-    """Resolve --dir, verify it exists, and scan it into a list of Sources."""
     root = args.dir.resolve()
     if not root.exists():
         logger.error(f"directory does not exist: {root}")
@@ -801,7 +762,6 @@ def _load_sources(args: argparse.Namespace) -> list[Source]:
 def _extract_and_group(
     args: argparse.Namespace,
 ) -> tuple[list[Definition], dict[str, list[Definition]]]:
-    """Shared pipeline for all subcommands: load sources, extract, group."""
     sources = _load_sources(args)
     if not sources:
         return [], {}
@@ -819,7 +779,6 @@ def _extract_and_group(
 # Subcommand implementations
 # ---------------------------------------------------------------------------
 def cmd_report(args: argparse.Namespace) -> int:
-    """Print duplicate groups to stdout without touching the filesystem."""
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates found")
@@ -846,7 +805,6 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_copy(args: argparse.Namespace) -> int:
-    """Write one representative per duplicate group into utils/."""
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates to copy")
@@ -870,7 +828,6 @@ def cmd_copy(args: argparse.Namespace) -> int:
 
 
 def cmd_move(args: argparse.Namespace) -> int:
-    """Copy representatives into utils/ and remove/patch the originals."""
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates to move")
@@ -913,7 +870,6 @@ def cmd_move(args: argparse.Namespace) -> int:
 # Parser / entry point
 # ---------------------------------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="pydedup",
         description=(
@@ -959,7 +915,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """CLI entry point. Returns a process exit status."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

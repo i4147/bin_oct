@@ -21,7 +21,6 @@ _NAME_WIDTH: Final[int] = 50
 
 
 def _get_parser() -> Any:
-    """Return a lazily-initialized tree-sitter TOML parser for this process."""
     global _parser
     if _parser is None:
         import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
@@ -33,7 +32,6 @@ def _get_parser() -> Any:
 
 
 def remove_toml_comments(content: str) -> str:
-    """Strip every TOML comment (and trailing whitespace before it) from *content*."""
     parser: Any = _get_parser()
     source: bytes = content.encode("utf-8")
     tree: Any = parser.parse(source)
@@ -64,7 +62,6 @@ def remove_toml_comments(content: str) -> str:
 
 
 def process_file(path: Path) -> tuple[str, float, int, int]:
-    """Rewrite *path* with comments stripped; return (name, ms, before, after)."""
     start_time: float = time.perf_counter()
     try:
         with open(path, encoding="utf-8") as f:
@@ -83,7 +80,6 @@ def process_file(path: Path) -> tuple[str, float, int, int]:
 
 
 def collect_toml_files(paths: list[Path]) -> list[Path]:
-    """Expand *paths* (files and/or directories) into a list of .toml files."""
     toml_files: list[Path] = []
     for path in paths:
         if path.is_file():
@@ -95,7 +91,6 @@ def collect_toml_files(paths: list[Path]) -> list[Path]:
 
 
 def main() -> int:
-    """Entry point: collect .toml files, strip comments in a pool, print a report."""
     paths: list[Path]
     if len(sys.argv) > 1:
         paths = [Path(arg) for arg in sys.argv[1:]]

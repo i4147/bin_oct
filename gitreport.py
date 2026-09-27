@@ -11,12 +11,6 @@ from dulwich.repo import Repo
 
 
 def get_added_files_per_commit(repo_path: str) -> dict:
-    """
-    Walk the commit history and collect files that were *added*
-    (i.e., not present in any parent) in each commit.
-
-    Returns a dict: {short_hash (8 chars): [list of filenames]}
-    """
     repo = Repo(repo_path)
     result = {}
 

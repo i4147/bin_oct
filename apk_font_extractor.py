@@ -38,8 +38,6 @@ APK_TIMEOUT_SECONDS: int = 600
 
 @dataclass
 class FontInfo:
-    """Metadata describing a single font file."""
-
     family_name: str
     style_name: str
     weight: int
@@ -54,16 +52,9 @@ class FontInfo:
 
 
 class APKFontExtractor:
-    """Extract .ttf/.woff/.woff2 fonts from APK archives in parallel."""
-
     FONT_EXTENSIONS: frozenset[str] = FONT_EXTENSIONS
 
     def __init__(self, output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
-        """Initialize the extractor.
-
-        Args:
-            output_dir: Directory where extracted fonts will be written.
-        """
         self.output_dir: Path = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.processed_fonts: dict[str, Path] = {}
@@ -76,7 +67,6 @@ class APKFontExtractor:
     # -- discovery ---------------------------------------------------------
 
     def _find_apk_files(self, paths: list[Path]) -> list[Path]:
-        """Return all APK files found under the given input paths."""
         apk_files: list[Path] = []
         for path in paths:
             if path.is_file() and path.suffix.lower() == ".apk":
@@ -92,10 +82,6 @@ class APKFontExtractor:
     # -- extraction --------------------------------------------------------
 
     def _extract_fonts_from_apk(self, apk_path: Path) -> list[tuple[Path, bytes, str]]:
-        """Extract every supported font file from an APK archive.
-
-        Returns a list of ``(internal_path, data, extension)`` tuples.
-        """
         fonts: list[tuple[Path, bytes, str]] = []
         try:
             with zipfile.ZipFile(apk_path, "r") as zip_ref:
@@ -134,7 +120,6 @@ class APKFontExtractor:
     # -- metadata ----------------------------------------------------------
 
     def _get_font_metadata(self, font_data: bytes) -> FontInfo | None:
-        """Parse font metadata from raw bytes. Returns None on failure."""
         font: TTFont | None = None
         try:
             font = TTFont(io=None, fontData=font_data)  # type: ignore[arg-type]
@@ -205,7 +190,6 @@ class APKFontExtractor:
     # -- filename generation ----------------------------------------------
 
     def _generate_font_filename(self, font_info: FontInfo) -> str:
-        """Build a canonical ``Family-Style.ext`` filename."""
         family_name = re.sub(r"[^\w\s-]", "", font_info.family_name)
         family_name = re.sub(r"\s+", "-", family_name.strip())
 
@@ -231,7 +215,6 @@ class APKFontExtractor:
     def _handle_duplicate_filename(
         self, filename: str, source_apk: Path, font_data: bytes
     ) -> str:
-        """Return a filename that does not collide with an existing file."""
         base_name = Path(filename).stem
         extension = Path(filename).suffix
         counter = 1
@@ -250,7 +233,6 @@ class APKFontExtractor:
     def _is_same_font(
         self, existing_path: Path, source_apk: Path, font_data: bytes
     ) -> bool:
-        """Heuristically determine whether the existing file is the same font."""
         try:
             existing_size = existing_path.stat().st_size
         except OSError:
@@ -265,7 +247,6 @@ class APKFontExtractor:
     def _save_font(
         self, font_data: bytes, filename: str, source_apk: Path
     ) -> Path | None:
-        """Write font data to disk, resolving filename collisions."""
         final_filename = self._handle_duplicate_filename(
             filename, source_apk, font_data
         )
@@ -282,7 +263,6 @@ class APKFontExtractor:
     # -- per-APK worker ----------------------------------------------------
 
     def _process_apk(self, apk_path: Path) -> int:
-        """Extract and save every supported font found in ``apk_path``."""
         print("Processing APK: {}", apk_path.name)
         fonts = self._extract_fonts_from_apk(apk_path)
         extracted_count = 0
@@ -308,7 +288,6 @@ class APKFontExtractor:
     # -- driver ------------------------------------------------------------
 
     def process(self, input_paths: list[Path] | None = None) -> int:
-        """Process all discovered APKs using a fixed multiprocessing pool."""
         if input_paths is None:
             input_paths = [Path.cwd()]
         else:
@@ -350,7 +329,6 @@ class APKFontExtractor:
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description=(
             "Extract .ttf, .woff, and .woff2 fonts from APK files "
@@ -391,7 +369,6 @@ Examples:
 
 
 def main() -> int:
-    """Entry point. Returns a process exit code."""
     args = parse_arguments()
 
     if args.verbose:

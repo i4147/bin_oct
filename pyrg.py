@@ -124,7 +124,6 @@ _PATH_PALETTE = (
 
 
 def _stable_hash(s: str) -> int:
-    """Deterministic FNV-1a-ish hash (avoids md5 import / availability)."""
     h = 2166136261
     for ch in s:
         h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
@@ -132,7 +131,6 @@ def _stable_hash(s: str) -> int:
 
 
 def color_for_path(path: str, enabled: bool) -> str:
-    """Pick a stable per-directory color (item 22)."""
     if not enabled:
         return ""
     d = os.path.dirname(path) or "."
@@ -149,7 +147,6 @@ def normalize_extension(value: str) -> str:
 
 
 def parse_extension_args(raw_exts: list[str] | None) -> set[str]:
-    """Turn ['py,pyi', 'pyx'] into {'.py', '.pyi', '.pyx'}."""
     out: set[str] = set()
     if not raw_exts:
         return out
@@ -162,7 +159,6 @@ def parse_extension_args(raw_exts: list[str] | None) -> set[str]:
 
 
 def resolve_type_presets(types: list[str] | None) -> set[str]:
-    """Expand -t/--type arguments into a union of extensions."""
     out: set[str] = set()
     if not types:
         return out
@@ -210,12 +206,6 @@ def _should_color(args: argparse.Namespace, is_stdout: bool) -> bool:
 
 
 class IgnoreMatcher:
-    """Very small per-directory gitignore-style matcher.
-
-    Handles: comments, negation (!), anchoring (/), directory-only (trailing /),
-    and the common globs (*, ?, [], **).  Loading is lazy and cached per dir.
-    """
-
     def __init__(self) -> None:
         self._cache: dict[str, list[tuple[re.Pattern[str], bool, bool]]] = {}
 
@@ -260,7 +250,6 @@ class IgnoreMatcher:
 
     @staticmethod
     def _glob_to_regex(pattern: str, anchored: bool) -> str:
-        """Translate a gitignore glob into a regex over a relative path."""
         out: list[str] = [r"^" if anchored else r"(?:^|.*/)"]
         i, n = 0, len(pattern)
         while i < n:
@@ -303,7 +292,6 @@ class IgnoreMatcher:
         return "".join(out)
 
     def is_ignored(self, path: Path, root: Path) -> bool:
-        """True if `path` (below `root`) is excluded by any ancestor's rules."""
         try:
             rel = path.relative_to(root)
         except ValueError:
@@ -336,8 +324,6 @@ OutputLine = tuple[int, str, bool, list[tuple[int, int]]]
 
 @dataclass
 class FileResult:
-    """Returned by `worker`.  `groups` is a list of contiguous line runs."""
-
     path: str
     groups: list[list[OutputLine]] = field(default_factory=list)
     match_count: int = 0
@@ -358,11 +344,6 @@ def _walk_dir(
     ignore_matcher: IgnoreMatcher | None,
     search_hidden: bool,
 ) -> Iterator[Path]:
-    """Depth-first walk that yields regular files under `root`.
-
-    Uses os.scandir for speed, tracks visited (st_dev, st_ino) pairs to
-    prevent symlink cycles, and consults `ignore_matcher` if provided.
-    """
     seen: set[tuple[int, int]] = set()
     stack: list[tuple[Path, int]] = [(root, 0)]
     while stack:
@@ -426,7 +407,6 @@ def get_files(
     follow_symlinks: bool,
     ignore_matcher: IgnoreMatcher | None,
 ) -> Iterator[Path]:
-    """Yield files matching every filter."""
 
     def _post_filter(p: Path) -> bool:
         if extensions and p.suffix.lower() not in extensions:
@@ -474,7 +454,6 @@ def _spans_for_line(
     fixed: str,
     ignore_case: bool,
 ) -> list[tuple[int, int]]:
-    """Return all (start, end) matches of the pattern within a single line."""
     if regex is not None:
         return [(m.start(), m.end()) for m in regex.finditer(line)]
     if not fixed:
@@ -498,11 +477,6 @@ def _apply_replace_line(
     matches: list[re.Match[str]],
     template: str,
 ) -> tuple[str, list[tuple[int, int]]]:
-    """Apply `template` to every match in `line`.
-
-    Returns (new_text, highlight_spans).  Backreferences (\\1, \\g<name>) are
-    expanded via `re.Match.expand`.
-    """
     if not matches:
         return line, []
     parts: list[str] = []
@@ -539,7 +513,6 @@ def _build_groups(
     context_before: int,
     context_after: int,
 ) -> list[list[OutputLine]]:
-    """Merge match lines + their context into non-overlapping groups."""
     context_set: set[int] = set()
     for lineno in match_lines:
         start = max(1, lineno - context_before)
@@ -578,7 +551,6 @@ def _process_lines(
     replace: str | None,
     only_matching: bool,
 ) -> FileResult:
-    """Line-by-line search path."""
     hits: list[tuple[int, list[tuple[int, int]]]] = []
     for idx, line in enumerate(lines):
         spans = _spans_for_line(line, regex, fixed, ignore_case)
@@ -656,7 +628,6 @@ def _process_multiline(
     max_count: int,
     replace: str | None,
 ) -> FileResult:
-    """Whole-file regex search (DOTALL), for --multiline."""
     lines = text.splitlines()
     line_starts = [0]
     for i, ch in enumerate(text):
@@ -710,7 +681,6 @@ def _replace_spans(
     spans: list[tuple[int, int]],
     template: str,
 ) -> tuple[str, list[tuple[int, int]]]:
-    """Replace each span in `line` with `template` (no backref expansion)."""
     if not spans:
         return line, []
     parts: list[str] = []
@@ -735,7 +705,6 @@ def _replace_spans(
 
 
 def worker(job: dict[str, Any]) -> FileResult:
-    """Search one file.  Inputs are plain data so pickling is trivial (item 24)."""
     path_str: str = job["path"]
     cwd_str: str = job["cwd"]
     regex_pattern = job["regex"]  # str | None
@@ -843,7 +812,6 @@ def emit_result(
     color: bool,
     heading: bool,
 ) -> None:
-    """Render one file's results according to the active output mode."""
     # -l / --files-with-matches
     if args.files_with_matches:
         _emit_path(result.path, out_fh, color)
@@ -1086,7 +1054,6 @@ def build_argparser() -> argparse.ArgumentParser:
 
 
 def _collect_files(args: argparse.Namespace) -> list[Path]:
-    """Shared file-discovery path used by both --files and normal search."""
     extensions = parse_extension_args(args.extensions)
     extensions |= resolve_type_presets(args.types)
 
@@ -1134,7 +1101,6 @@ def _search_quiet(
     fixed: str,
     args: argparse.Namespace,
 ) -> bool:
-    """-q/--quiet: short-circuit as soon as we find anything."""
     jobs = [
         {
             "path": str(p),

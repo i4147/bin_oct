@@ -14,12 +14,10 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 
 
 def is_image_file(path: Path) -> bool:
-    """Check if a file path is a supported image based on extension."""
     return path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
 
 
 def get_terminal_width() -> int:
-    """Get current terminal width in columns."""
     try:
         return os.get_terminal_size().columns
     except OSError:
@@ -27,10 +25,6 @@ def get_terminal_width() -> int:
 
 
 def load_ppm(path: Path):
-    """
-    Minimal native reader for ASCII/Binary PPM (P3/P6) formats to avoid external dependencies.
-    For production, installing 'Pillow' is recommended for full format support.
-    """
     with path.open("rb") as f:
         header = []
         while len(header) < 4:
@@ -63,7 +57,6 @@ def load_ppm(path: Path):
 def render_half_blocks(
     width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int
 ):
-    """Render image pixels using half-block characters (2 vertical pixels per cell)."""
     # Downsample width to fit terminal
     scale = max(1, width // max_width)
     scaled_w = width // scale
@@ -96,7 +89,6 @@ def render_half_blocks(
 
 
 def render_file(path: Path, max_width: int):
-    """Attempts to render an image file to stdout."""
     print(f"\n--- {path} ---")
 
     # Try Pillow if installed for universal format support
@@ -129,7 +121,6 @@ def render_file(path: Path, max_width: int):
 
 
 def traverse_directory(root_dir: Path) -> list[Path]:
-    """Recursively discover image files using pathlib.Path.rglob()."""
     images = []
     # Path.rglob("*") traverses directory recursively
     for path in root_dir.rglob("*"):

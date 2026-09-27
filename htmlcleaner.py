@@ -34,8 +34,6 @@ MIN_INLINE_SIZE = 0
 
 @dataclass
 class ExtractionResult:
-    """Result of processing a single HTML file."""
-
     path: Path
     success: bool
     css_count: int = 0
@@ -44,19 +42,12 @@ class ExtractionResult:
 
 
 class HTMLExtractor(html.parser.HTMLParser):
-    """
-    Streaming HTML parser that identifies and extracts inline <style> and <script> tags.
-
-    Uses a streaming approach to minimize memory usage for large files.
-    """
-
     def __init__(self):
         super().__init__(convert_charrefs=False)
         self.reset_state()
         self.extractions: list[tuple[str, str, dict]] = []  # (type, content, attrs)
 
     def reset_state(self):
-        """Reset parser state for reuse."""
         self.current_tag = None
         self.current_attrs = {}
         self.current_content = []
@@ -65,7 +56,6 @@ class HTMLExtractor(html.parser.HTMLParser):
         self.script_has_src = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
-        """Handle opening tags."""
         tag_lower = tag.lower()
 
         if tag_lower == "style":
@@ -85,7 +75,6 @@ class HTMLExtractor(html.parser.HTMLParser):
                 self.script_has_src = True
 
     def handle_endtag(self, tag: str):
-        """Handle closing tags."""
         tag_lower = tag.lower()
 
         if tag_lower == "style" and self.in_style:
@@ -103,42 +92,26 @@ class HTMLExtractor(html.parser.HTMLParser):
             self.current_content = []
 
     def handle_data(self, data: str):
-        """Collect content within style/script tags."""
         if self.in_style or self.in_script:
             self.current_content.append(data)
 
     def handle_entityref(self, name: str):
-        """Handle entity references within script/style."""
         if self.in_script:
             self.current_content.append(f"&{name};")
 
     def handle_charref(self, name: str):
-        """Handle character references within script/style."""
         if self.in_script:
             self.current_content.append(f"&#{name};")
 
     def error(self, message: str):
-        """Handle parser errors gracefully."""
         pass
 
 
 def compute_content_hash(content: str) -> str:
-    """Compute a short hash for content-based filenames."""
     return hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
 
 
 def get_unique_filename(base_name: str, extension: str, assets_dir: Path) -> str:
-    """
-    Generate a unique filename, avoiding collisions.
-
-    Args:
-        base_name: Base name for the file
-        extension: File extension (with dot)
-        assets_dir: Directory where file will be saved
-
-    Returns:
-        Unique filename
-    """
     filename = f"{base_name}{extension}"
     counter = 1
 
@@ -152,17 +125,6 @@ def get_unique_filename(base_name: str, extension: str, assets_dir: Path) -> str
 def extract_assets_from_html(
     html_content: str, html_path: Path, assets_base_dir: Path
 ) -> tuple[str, int, int]:
-    """
-    Extract inline CSS and JS from HTML content and return modified HTML.
-
-    Args:
-        html_content: Original HTML content
-        html_path: Path to original HTML file (for naming)
-        assets_base_dir: Base directory for assets
-
-    Returns:
-        Tuple of (modified_html, css_count, js_count)
-    """
     parser = HTMLExtractor()
 
     try:
@@ -298,15 +260,6 @@ def extract_assets_from_html(
 
 
 def process_html_file(path: Path) -> ExtractionResult:
-    """
-    Process a single HTML file: extract assets and update in place.
-
-    Args:
-        path: Path to HTML file
-
-    Returns:
-        ExtractionResult with processing status
-    """
     try:
         # Read file with size check
         if not path.is_file():
@@ -367,15 +320,6 @@ def process_html_file(path: Path) -> ExtractionResult:
 
 
 def find_html_files(paths: list[Path]) -> Iterator[Path]:
-    """
-    Find all HTML files from given paths (files and directories).
-
-    Args:
-        paths: List of file/directory paths
-
-    Yields:
-        Path objects for HTML files
-    """
     seen = set()
 
     for path in paths:
@@ -399,12 +343,10 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
 
 
 def get_default_paths() -> list[Path]:
-    """Get default paths (current directory) when no input provided."""
     return [Path.cwd()]
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description="Extract inline CSS and JavaScript from HTML files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -447,7 +389,6 @@ Examples:
 
 
 def main() -> int:
-    """Main entry point."""
     args = parse_arguments()
 
     # Update global configuration

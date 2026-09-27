@@ -12,12 +12,6 @@ from loguru import logger
 
 
 def extract_definitions(path: Path) -> dict[str, list[str]]:
-    """
-    Extract top-level definitions from a Python file.
-
-    Returns:
-        Dict with keys 'functions', 'classes', 'constants' and lists of names
-    """
     definitions = {"functions": [], "classes": [], "constants": []}
 
     try:
@@ -60,10 +54,6 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
 
 
 def extract_exports_from_init(init_path: Path) -> set[str]:
-    """
-    Extract names exported from __init__.py.
-    Handles both __all__ and direct imports.
-    """
     exported = set()
 
     try:
@@ -110,13 +100,6 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
 
 
 def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[str]]]:
-    """
-    Check all Python files in directory against __init__.py exports.
-
-    Returns:
-        Dict mapping filename -> {'functions': [...], 'classes': [...], 'constants': [...]}
-        containing names that are defined but NOT exported.
-    """
     if directory is None:
         directory = Path.cwd()
 
@@ -163,7 +146,6 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
 
 
 def main():
-    """Main entry point."""
     logger.remove()
     logger.add(
         lambda msg: print(msg, end=""),

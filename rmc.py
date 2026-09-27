@@ -121,11 +121,6 @@ def has_no_strippable_content(source: str) -> bool:
 
 
 def format_size(num_bytes: int) -> str:
-    """Format a byte count for display.
-
-    Examples: 345 -> "345 B"; 1023 -> "1023 B"; 1024 -> "1k"; 1740 -> "1.7k";
-    1048576 -> "1M"
-    """
     if num_bytes < 1024:
         return f"{num_bytes} B"
     for suffix, threshold in (("M", 1024**3), ("k", 1024)):
@@ -142,11 +137,6 @@ def format_size(num_bytes: int) -> str:
 
 
 def is_docstring_literal(expr: cst.BaseExpression) -> bool:
-    """Return whether a CST expression is a valid Python docstring literal.
-
-    Bytes literals and f-strings are not considered docstrings. Concatenated
-    string literals are docstrings only when both sides are ordinary strings.
-    """
     if isinstance(expr, cst.SimpleString):
         return "b" not in expr.prefix.lower()
     if isinstance(expr, cst.ConcatenatedString):
@@ -155,7 +145,6 @@ def is_docstring_literal(expr: cst.BaseExpression) -> bool:
 
 
 def starts_with_docstring(stmt_line: cst.SimpleStatementLine) -> bool:
-    """Return whether a statement line begins with a docstring expression."""
     if not stmt_line.body:
         return False
     first = stmt_line.body[0]
@@ -163,7 +152,6 @@ def starts_with_docstring(stmt_line: cst.SimpleStatementLine) -> bool:
 
 
 def has_trailing_comment(node: cst.CSTNode) -> bool:
-    """Return whether a CST node has a trailing comment."""
     trailing_ws = getattr(node, "trailing_whitespace", None)
     return trailing_ws is not None and getattr(trailing_ws, "comment", None) is not None
 
@@ -200,10 +188,6 @@ def strip_indented_block_docstring(
 def strip_simple_suite_docstring(
     suite: cst.SimpleStatementSuite,
 ) -> tuple[cst.SimpleStatementSuite, bool]:
-    """Remove the first docstring from a one-line suite.
-
-    For example: `def function(): "doc"` becomes `def function(): pass`
-    """
     if not suite.body:
         return suite, False
     first = suite.body[0]
@@ -216,7 +200,6 @@ def strip_simple_suite_docstring(
 
 
 def strip_suite_docstring(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bool]:
-    """Remove a leading docstring from an arbitrary CST suite."""
     if isinstance(suite, cst.IndentedBlock):
         return strip_indented_block_docstring(suite)
     if isinstance(suite, cst.SimpleStatementSuite):
@@ -225,13 +208,6 @@ def strip_suite_docstring(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bool]:
 
 
 def strip_module_docstring(module: cst.Module) -> cst.Module:
-    """Remove a leading module-level docstring.
-
-    The module docstring lives directly in ``Module.body`` as the first
-    statement. If removing it would leave the module empty (or the module
-    has only the docstring and nothing else), the module is left empty,
-    which is still valid Python.
-    """
     if not module.body:
         return module
     first = module.body[0]
@@ -265,9 +241,6 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
 
 
 def _dehash(comment_text: str) -> str:
-    """Strip a leading '#' and one optional following space from a single
-    comment line's text (e.g. "# x = 1" -> "x = 1", "#x=1" -> "x=1").
-    """
     text = comment_text[1:]
     if text.startswith(" "):
         text = text[1:]
@@ -275,13 +248,6 @@ def _dehash(comment_text: str) -> str:
 
 
 def looks_like_commented_out_code(comment_lines: list[str]) -> bool:
-    """Heuristic: return True if the given run of consecutive comment
-    lines' text (with '#' stripped) parses as valid Python on its own.
-
-    See the module docstring for the known false-positive/false-negative
-    limitations of this heuristic. `comment_lines` are full comment tokens
-    including the leading '#', e.g. ["# x = 1", "# y = 2"].
-    """
     dehashed = "\n".join(_dehash(line) for line in comment_lines)
     if not dehashed.strip():
         return False
@@ -293,17 +259,6 @@ def looks_like_commented_out_code(comment_lines: list[str]) -> bool:
 
 
 def find_commented_out_code_lines(source: str) -> set[int]:
-    """Return the set of physical line numbers that belong to a run of
-    consecutive comment-only or trailing comment lines which, taken
-    together, parse as valid Python source once '#' prefixes are removed.
-
-    Consecutive comment lines are grouped by contiguous physical line
-    number (regardless of whether they're standalone or trailing-on-code
-    comments) and each group is tested independently via
-    `looks_like_commented_out_code`. Groups that pass are added to the
-    result set, meaning every comment-remover in this script must check
-    this set and skip removal for lines it contains.
-    """
     try:
         tokens = list(_tokenize.generate_tokens(io.StringIO(source).readline))
     except (IndentationError, _tokenize.TokenError, SyntaxError):
@@ -362,27 +317,15 @@ class CommentDocstringStripper(cst.CSTTransformer):
 
     @staticmethod
     def _is_protected_comment(comment_text: str) -> bool:
-        """Return whether a comment must be preserved due to its prefix
-        (shebang, encoding declaration, tool directives, etc.).
-        """
         return comment_text.startswith(PROTECTED_COMMENT_PREFIXES)
 
     def _is_on_protected_line(self, node: cst.CSTNode) -> bool:
-        """Return whether `node` (a Comment node) sits on a physical line
-        identified as likely commented-out code. LibCST comment nodes
-        don't carry line numbers directly on their own by default, so this
-        relies on position metadata being attached to the module before
-        the visit (see `run_transform`).
-        """
         pos = self.get_metadata(cst.metadata.PositionProvider, node, None)
         if pos is None:
             return False
         return pos.start.line in self.protected_code_lines
 
     def _should_remove_comment(self, comment_node: cst.Comment) -> bool:
-        """Decide whether a given Comment node should be removed, honoring
-        both the protected-prefix rule and the commented-out-code heuristic.
-        """
         if self._is_on_protected_line(comment_node):
             return False
         if self.remove_all:
@@ -390,7 +333,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return not self._is_protected_comment(comment_node.value)
 
     def leave_TrailingWhitespace(self, original_node, updated_node):
-        """Remove ordinary inline (trailing) comments."""
         del original_node
         if updated_node.comment is None:
             return updated_node
@@ -401,9 +343,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         )
 
     def leave_EmptyLine(self, original_node, updated_node):
-        """Remove standalone comments when ``--all`` or
-        ``--remove-all-comments`` is used.
-        """
         del original_node
         if not self.remove_all_comments:
             return updated_node
@@ -414,13 +353,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node.with_changes(comment=None)
 
     def leave_FunctionDef(self, original_node, updated_node):
-        """Remove function docstrings and return annotations.
-
-        Parameter annotations are removed separately by ``leave_Param``.
-        `FunctionDef` carries a `type_comment` field in recent LibCST, but
-        not every version exposes it, so it's only added to the change set
-        when the attribute actually exists.
-        """
         del original_node
         if self.remove_docstrings:
             new_body, changed = strip_suite_docstring(updated_node.body)
@@ -434,7 +366,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node
 
     def leave_ClassDef(self, original_node, updated_node):
-        """Remove class docstrings."""
         del original_node
         if not self.remove_docstrings:
             return updated_node
@@ -444,14 +375,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node
 
     def leave_Param(self, original_node, updated_node):
-        """Remove annotations from function, method, and lambda parameters.
-
-        `cst.Param` has an `annotation` field but NO `type_comment` field,
-        so unlike assignments / for / with / function defs, there is no
-        type comment to strip here. Referencing `type_comment` on a Param
-        is what previously raised:
-            AttributeError: 'Param' object has no attribute 'type_comment'
-        """
         del original_node
         if not self.remove_type_annotations:
             return updated_node
@@ -460,11 +383,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node.with_changes(annotation=None)
 
     def leave_AnnAssign(self, original_node, updated_node):
-        """Remove variable annotations.
-
-        `name: int = 1` becomes `name = 1`.
-        A bare annotation such as `name: int` becomes `pass`.
-        """
         del original_node
         if not self.remove_type_annotations:
             return updated_node
@@ -476,7 +394,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         )
 
     def leave_Assign(self, original_node, updated_node):
-        """Remove type comments attached to ordinary assignments."""
         del original_node
         if not self.remove_type_annotations:
             return updated_node
@@ -486,7 +403,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node.with_changes(type_comment=None)
 
     def leave_For(self, original_node, updated_node):
-        """Remove type comments attached to for statements."""
         del original_node
         if not self.remove_type_annotations:
             return updated_node
@@ -496,7 +412,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
         return updated_node.with_changes(type_comment=None)
 
     def leave_With(self, original_node, updated_node):
-        """Remove type comments attached to with statements."""
         del original_node
         if not self.remove_type_annotations:
             return updated_node
@@ -509,10 +424,6 @@ class CommentDocstringStripper(cst.CSTTransformer):
 def run_transform(
     module: cst.Module, transformer: CommentDocstringStripper
 ) -> cst.Module:
-    """Run `transformer` over `module` with position metadata attached, so
-    the transformer can look up physical line numbers for comment nodes
-    (needed for the commented-out-code protection check).
-    """
     wrapper = cst.metadata.MetadataWrapper(module)
     return wrapper.visit(transformer)
 
@@ -523,11 +434,6 @@ def run_transform(
 
 
 def string_token_lines(source: str) -> set[int]:
-    """Return physical line numbers occupied by string tokens.
-
-    Blank physical lines inside triple-quoted strings must not be removed,
-    because they are part of the string value rather than source formatting.
-    """
     occupied = set()
     try:
         tokens = _tokenize.generate_tokens(io.StringIO(source).readline)
@@ -543,10 +449,6 @@ def string_token_lines(source: str) -> set[int]:
 
 
 def collapse_blank_lines(source: str) -> str:
-    """Collapse consecutive blank source lines to at most one blank line.
-
-    Blank lines inside multiline string literals are preserved.
-    """
     lines = source.splitlines(keepends=True)
     string_lines = string_token_lines(source)
     result = []
@@ -575,7 +477,6 @@ def collapse_blank_lines(source: str) -> str:
 
 
 def atomic_replace(path: Path, data: bytes) -> None:
-    """Atomically replace ``path`` with ``data``."""
     try:
         mode = path.stat().st_mode
     except OSError:
@@ -604,26 +505,14 @@ def atomic_replace(path: Path, data: bytes) -> None:
 
 
 def backup_path_for(path: Path) -> Path:
-    """Return the sidecar backup path for a given source file."""
     return path.with_name(path.name + BACKUP_SUFFIX)
 
 
 def write_backup(path: Path, original_bytes: bytes) -> None:
-    """Write the pre-transform original bytes to a sidecar backup file.
-
-    Uses atomic_replace so a crash mid-write never leaves a half-written
-    backup that --reverse could restore from and corrupt the real file.
-    """
     atomic_replace(backup_path_for(path), original_bytes)
 
 
 def restore_from_backup(path: Path) -> tuple[Path, bool, str | None]:
-    """Restore `path` from its sidecar backup file, then delete the backup.
-
-    Returns (path, restored, error_or_none). `restored` is False (with no
-    error) when no backup file exists for `path`, meaning there is nothing
-    to reverse for that file.
-    """
     backup = backup_path_for(path)
     if not backup.exists():
         return path, False, None
@@ -656,17 +545,6 @@ def process_file(
     remove_type_annotations,
     make_backup,
 ):
-    """Transform one Python file.
-
-    Returns: (path, bytes_reduced, changed, error_or_none)
-
-    The input file is modified only after the generated source passes
-    ast.parse() validation. If `make_backup` is True, the original bytes
-    are saved to a sidecar file before the real file is overwritten, so
-    --reverse can restore them later. When `make_backup` is False (the
-    default), the original bytes are discarded and --reverse will have
-    nothing to restore for this file.
-    """
     try:
         original_bytes = path.read_bytes()
     except OSError as exc:
@@ -739,7 +617,6 @@ def process_file(
 
 
 def iter_python_files(paths):
-    """Yield unique Python files under the supplied files and directories."""
     seen = set()
 
     def on_walk_error(exc):
@@ -780,9 +657,6 @@ def iter_python_files(paths):
 
 
 def iter_backup_files(paths):
-    """Yield the original (non-backup) path for every sidecar backup file
-    found under the supplied files and directories. Used by --reverse.
-    """
     seen = set()
 
     def on_walk_error(exc):
@@ -831,7 +705,6 @@ def iter_backup_files(paths):
 
 
 def build_arg_parser():
-    """Build the command-line parser."""
     parser = argparse.ArgumentParser(
         prog="strip_comments",
         description=(
@@ -907,7 +780,6 @@ def build_arg_parser():
 
 
 def run_reverse(paths):
-    """Restore all files that have a sidecar backup under `paths`."""
     targets = list(iter_backup_files(paths))
     if not targets:
         print("No backup files found to restore.", file=sys.stderr)
@@ -930,7 +802,6 @@ def run_reverse(paths):
 
 
 def main(argv=None):
-    """Run the command-line application."""
     args = build_arg_parser().parse_args(argv)
     paths = args.paths or [Path.cwd()]
 

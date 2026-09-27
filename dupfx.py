@@ -34,7 +34,6 @@ POOL_WORKERS: int = 8
 
 
 def file_stat_key(p: Path) -> tuple[int, int] | None:
-    """Return (st_ino, st_dev) for a path, or None on OSError."""
     try:
         st = p.stat()
         return (st.st_ino, st.st_dev)
@@ -43,12 +42,6 @@ def file_stat_key(p: Path) -> tuple[int, int] | None:
 
 
 def quick_hash(path: Path, n: int = QUICK_READ) -> str:
-    """Compute a fast hash from the head and tail of a file.
-
-    Reads up to `n` bytes from the start and, if the file is large enough,
-    up to `n` bytes from the end. For small files, reads the whole content.
-    Raises OSError on I/O failures.
-    """
     h = xxh64()
     try:
         size = path.stat().st_size
@@ -68,10 +61,6 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
 
 
 def full_hash(path: Path) -> tuple[str, Path]:
-    """Compute the full xxh64 hash of a file's contents.
-
-    Returns ("", path) for empty files or on OSError.
-    """
     try:
         if not path.stat().st_size:
             return ("", path)
@@ -96,11 +85,6 @@ def iter_files(
     follow_symlinks: bool,
     min_size: int,
 ) -> Iterator[Path]:
-    """Yield candidate files under `root` meeting the given filters.
-
-    Skips anything inside a .git directory, non-files, and (by default)
-    symlinks. Only yields files whose size is at least `min_size`.
-    """
     if recursive:
         iterator: Iterable[Path] = root.rglob("*")
     else:
@@ -120,10 +104,6 @@ def iter_files(
 
 
 def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
-    """Choose which file to keep from a list of duplicates.
-
-    Policy may be "first" (lexicographic), "oldest" (mtime), or "newest" (mtime).
-    """
     if not files:
         raise ValueError("Empty file list")
     if policy == "first":
@@ -137,7 +117,6 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
 
 
 def main() -> None:
-    """Entry point: scan, hash, and delete duplicate files."""
     cwd = Path.cwd()
     p = argparse.ArgumentParser(
         description="Find and delete duplicate files by content."

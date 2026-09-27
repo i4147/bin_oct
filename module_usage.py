@@ -133,7 +133,6 @@ STDLIB_FALLBACK: set[str] = {
 
 
 def collect_stdlib_modules() -> set[str]:
-    """Return the set of top-level stdlib module names."""
     modules: set[str] = set()
     for info in importlib.machinery.all_suffixes():  # type: ignore[attr-defined]
         _ = info
@@ -162,14 +161,6 @@ def collect_stdlib_modules() -> set[str]:
 
 
 def extract_imports(path: Path) -> dict[str, list[str]]:
-    """
-    Parse *path* and return a mapping of imported module -> [aliases/names].
-
-    For `import foo` -> {"foo": []}
-    For `import foo as f` -> {"foo": ["f"]}
-    For `from foo import bar` -> {"foo": ["bar"]}
-    For `from foo import bar as b` -> {"foo": ["b"]}
-    """
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError) as exc:
@@ -199,7 +190,6 @@ def _collect_package_aliases(
     tree: ast.AST,
     package: str,
 ) -> set[str]:
-    """Collect local aliases bound to the custom *package* on import."""
     aliases: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -215,7 +205,6 @@ def _record_package_attribute_calls(
     imports: dict[str, list[str]],
     package: str,
 ) -> None:
-    """Record calls of the form `alias.attr(...)` for the custom package."""
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -241,11 +230,6 @@ def count_calls(
     imports: dict[str, list[str]],
     package: str,
 ) -> dict[str, Counter[str]]:
-    """
-    Count how often each imported name is called in *path*.
-
-    Returns a mapping module -> Counter(attr/name -> count).
-    """
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError):
@@ -280,7 +264,6 @@ def _extract_imports_full(
     path: Path,
     package: str,
 ) -> dict[str, list[str]]:
-    """Extract imports including `dh` attribute-call records."""
     imports = extract_imports(path)
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -309,15 +292,6 @@ def analyze_directory(
     dict[str, int],
     dict[str, int],
 ]:
-    """
-    Analyze all `.py` files in *directory*.
-
-    Returns:
-        per_file        — list of (filename, counts)
-        stdlib_totals   — module -> total calls
-        thirdparty_totals — package -> total calls
-        package_totals  — function -> total calls
-    """
     files = sorted(directory.glob("*.py"))
     if not files:
         raise FileNotFoundError(f"No .py files found in {directory}")
@@ -387,7 +361,6 @@ def build_report(
     directory: Path,
     package: str,
 ) -> str:
-    """Build the full text report as one string."""
     lines: list[str] = []
     now = datetime.now()
 
@@ -518,7 +491,6 @@ def generate_charts(
     style: str,
     package: str,
 ) -> None:
-    """Render matplotlib charts into *chart_dir*."""
     if not stdlib_totals and not thirdparty_totals and not package_totals:
         print("⚠️  No data to chart.")
         return
@@ -711,7 +683,6 @@ def cmd_charts(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser."""
     parser = argparse.ArgumentParser(
         prog="module_usage.py",
         description="Analyze import usage in a directory of Python scripts.",

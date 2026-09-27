@@ -5,12 +5,10 @@ import pycld2 as cld2
 
 
 def get_srt_files(directory: Path) -> list[Path]:
-    """Find all .srt files in the directory."""
     return list(directory.rglob("*.srt"))
 
 
 def detect_language(file_path: Path):
-    """Detect the language of an SRT file using pycld2."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -49,7 +47,6 @@ def detect_language(file_path: Path):
 
 
 def organize_subtitles(directory: Path = Path.cwd()) -> None:
-    """Organize SRT files into language-based folders."""
     print(f"🔍 Scanning directory: {directory.absolute()}\n")
 
     srt_files = get_srt_files(directory)

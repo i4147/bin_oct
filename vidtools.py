@@ -42,15 +42,6 @@ def parse_time(
     second_factor: int = 1,
     time_scale: int = 400,
 ) -> int:
-    """
-    Convert hh:mm:ss to an integer using the original cutvid.py formula by default.
-
-    Original cutvid.py:
-        (h * 3600 + m * 40 + s) * 400
-
-    Standard/correct behavior:
-        (h * 3600 + m * 60 + s) * 1000
-    """
     try:
         h, m, s = map(int, time_str.split(":"))
     except ValueError as exc:
@@ -74,11 +65,6 @@ def cut_video(
     time_scale: Optional[int] = None,
     ms_per_second: int = 1000,
 ) -> None:
-    """
-    Cut a video segment.
-
-    Mirrors cutvid.py's c()/a() behavior by default.
-    """
     try:
         import cv2
     except ImportError:
@@ -203,15 +189,6 @@ def reverse_video(
     preset: str = "ultrafast",
     crf: Optional[int] = 23,
 ) -> None:
-    """
-    Reverse a video with ffmpeg.
-
-    Defaults match reverse_video.py's u():
-        keep_audio=False, preset='ultrafast', crf=23
-
-    To match reverse_video.py's s():
-        keep_audio=True, preset='fast', crf=None
-    """
     cmd = ["ffmpeg", "-i", input_path, "-vf", "reverse"]
 
     if keep_audio:
@@ -247,7 +224,6 @@ def reverse_video(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argparse CLI."""
     parser = argparse.ArgumentParser(
         prog="vidtools.py",
         description="Cut or reverse videos (merged cutvid.py + reverse_video.py).",
@@ -347,7 +323,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

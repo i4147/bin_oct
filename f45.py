@@ -7,7 +7,6 @@ from pathlib import Path
 
 
 def wrap_text_content(content: str, width: int) -> str:
-    """Wraps text content to target width while preserving paragraph structures."""
     paragraphs = content.split("\n\n")
     wrapped_paragraphs = []
 

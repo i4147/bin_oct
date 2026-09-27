@@ -68,11 +68,6 @@ def err(msg: str) -> None:
 def read_lines(
     path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = False
 ) -> list[str]:
-    """Read lines from a text file, using mmap for files > MMAP_THRESHOLD.
-
-    Blank-line skipping mirrors the originals: a line is kept only if
-    `line.strip()` is truthy. Newlines (\\n and \\r\\n) are stripped.
-    """
     if not path.exists():
         raise FileNotFoundError(path)
     lines: list[str] = []
@@ -108,7 +103,6 @@ def read_lines(
 def write_lines(
     path: Path, lines: Sequence[str], encoding: str = DEFAULT_ENCODING
 ) -> None:
-    """Write lines to `path` with a trailing newline on every line."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding=encoding) as f:
         for line in lines:
@@ -116,7 +110,6 @@ def write_lines(
 
 
 def dedupe_preserving_order(lines: Iterable[str]) -> tuple[list[str], list[str]]:
-    """Return (unique_lines, removed_lines) preserving first-occurrence order."""
     seen: set = set()
     unique: list[str] = []
     removed: list[str] = []
@@ -130,7 +123,6 @@ def dedupe_preserving_order(lines: Iterable[str]) -> tuple[list[str], list[str]]
 
 
 def backup_file(path: Path) -> Path:
-    """Copy `path` to `path.bak` and return the backup path."""
     bak = path.with_suffix(path.suffix + ".bak")
     shutil.copy2(path, bak)
     return bak
@@ -144,7 +136,6 @@ def sort_lines(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     workers: int = 1,
 ) -> list[str]:
-    """In-memory sort; falls back to external merge-sort above `chunk_size`."""
     if len(lines) <= chunk_size:
         return sorted(lines, key=key, reverse=reverse)
 
@@ -174,7 +165,6 @@ def sort_lines(
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
-    """Print basic statistics + top-10 most common lines for a text file."""
     path = Path(args.file)
     if not path.is_file():
         err(f"File not found: {path}")
@@ -215,15 +205,6 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
 
 def cmd_sort_dedupe(args: argparse.Namespace) -> int:
-    """Sort and/or remove duplicate lines in a text file.
-
-    Behavior parity:
-      * sonic.py  — flags for sort/unique/reverse/case-insensitive/skip-empty,
-                    backup, JSON report, dry-run.
-      * soniq.py  — --start-line/--end-line sorts & dedupes only a slice;
-                    --quiet hides the removed-line listing.
-      * soniq2.py — atomic replace via tempfile when output == input.
-    """
     input_path = Path(args.file)
     if not input_path.is_file():
         err(f"File not found: {input_path}")
@@ -354,14 +335,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
 
 
 def cmd_dedupe_seq(args: argparse.Namespace) -> int:
-    """Remove **sequential** (adjacent) duplicate lines from a text file.
-
-    Preserves detect_repeated_lines.py's semantics:
-      * Only identical adjacent lines are treated as duplicates.
-      * Blank-line skipping is on by default (--include-blanks flips it).
-      * Interactive y/n/a/q prompt unless --yes or --dry-run.
-      * Every modified file gets a `.bak` backup.
-    """
     path = Path(args.file)
     if not path.is_file():
         err(f"File not found: {path}")
@@ -440,7 +413,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
 
 
 def _is_same_char_line(line: str) -> bool:
-    """True iff the line (without trailing newline) is >=2 identical chars."""
     body = line.rstrip("\n")
     if len(body) <= 1:
         return False
@@ -448,7 +420,6 @@ def _is_same_char_line(line: str) -> bool:
 
 
 def cmd_drop_same_char(args: argparse.Namespace) -> int:
-    """Remove lines consisting solely of one repeated character ('aaaa', '   ')."""
     path = Path(args.file)
     if not path.is_file():
         err(f"File not found: {path}")
@@ -478,12 +449,6 @@ def cmd_drop_same_char(args: argparse.Namespace) -> int:
 
 
 def cmd_dedupe_json(args: argparse.Namespace) -> int:
-    """Deduplicate a JSON list of dicts (by a key, or by full dict) and re-write.
-
-    Covers both originals:
-      * juniq.py:      --key src                          (case-sensitive)
-      * sort_quotes.py: --key quote --lower --sort-by author
-    """
     path = Path(args.file)
     if not path.is_file():
         err(f"File not found: {path}")
@@ -553,7 +518,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser and register every subcommand."""
     parser = argparse.ArgumentParser(
         prog="file_cleanup.py",
         description="Unified text/JSON line-cleaning toolkit.",
@@ -750,7 +714,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point: parse argv and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

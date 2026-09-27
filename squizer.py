@@ -53,11 +53,6 @@ PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
 # Stdlib discovery
 # ─────────────────────────────────────────────────────────────────────
 def get_stdlib_modules() -> set[str]:
-    """Return the set of top-level stdlib module names.
-
-    Uses `sys.stdlib_module_names` when available (3.10+); otherwise
-    scans the stdlib directory for `.py`, `.so`, and package folders.
-    """
     if hasattr(sys, "stdlib_module_names"):
         return set(sys.stdlib_module_names)
 
@@ -89,8 +84,6 @@ STDLIB_KEEP: frozenset[str] = frozenset()
 # Pass 1 – strip docstrings & type annotations
 # ─────────────────────────────────────────────────────────────────────
 class StripDocstringsAndTypes(ast.NodeTransformer):
-    """Remove docstrings, return annotations, arg annotations, and AnnAssign targets."""
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         node.returns = None
         _remove_docstring(node)
@@ -118,7 +111,6 @@ class StripDocstringsAndTypes(ast.NodeTransformer):
         return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST | None:
-        """`x: T = v` -> `x = v`; `x: T` (no value) -> dropped."""
         if node.value is None:
             return None
         new = ast.Assign(targets=[node.target], value=node.value)
@@ -126,7 +118,6 @@ class StripDocstringsAndTypes(ast.NodeTransformer):
 
 
 def _remove_docstring(node: ast.AST) -> None:
-    """Pop a leading string-literal expression from a body-carrying node."""
     body = getattr(node, "body", None)
     if (
         body
@@ -141,12 +132,6 @@ def _remove_docstring(node: ast.AST) -> None:
 # Pass 2 – strip stdlib imports (records them for a trailing notice)
 # ─────────────────────────────────────────────────────────────────────
 class StdlibImportStripper(ast.NodeTransformer):
-    """Remove imports that reference stdlib modules; record them for later.
-
-    `__future__` is stripped along with everything else — see the note on
-    `STDLIB_KEEP` above for why.
-    """
-
     def __init__(self) -> None:
         self.removed: list[str] = []
 
@@ -181,12 +166,6 @@ class StdlibImportStripper(ast.NodeTransformer):
 
 
 class FutureImportGuard(ast.NodeTransformer):
-    """Final safety net: drop any surviving `from __future__ import ...`.
-
-    The stripper already removes these, but this pass makes the invariant
-    unconditional — even if `STDLIB_KEEP` is ever changed by mistake.
-    """
-
     def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.AST | None:
         if node.module == "__future__":
             return None
@@ -197,7 +176,6 @@ class FutureImportGuard(ast.NodeTransformer):
 # Pass 3 – identifier shortening
 # ─────────────────────────────────────────────────────────────────────
 def generate_short_names() -> Iterator[str]:
-    """Yield `a, b, ..., z, a1, b1, ..., z1, a2, ...`."""
     letters = string.ascii_lowercase
     idx = 0
     while True:
@@ -206,8 +184,6 @@ def generate_short_names() -> Iterator[str]:
 
 
 class NameCollector(ast.NodeVisitor):
-    """Collect user-defined identifiers longer than 3 characters."""
-
     def __init__(self, name_map: dict[str, str], name_gen: Iterator[str]) -> None:
         self.name_map = name_map
         self.name_gen = name_gen
@@ -243,8 +219,6 @@ class NameCollector(ast.NodeVisitor):
 
 
 class NameRenamer(ast.NodeTransformer):
-    """Replace collected identifiers with their short forms."""
-
     def __init__(self, name_map: dict[str, str]) -> None:
         self.name_map = name_map
 
@@ -335,8 +309,6 @@ def _is_const(node: ast.AST | None, value: object) -> bool:
 
 
 class PeepholeOptimizer(ast.NodeTransformer):
-    """Semantics-preserving local rewrites that shrink the AST."""
-
     # ── statement-list traversal ─────────────────────────────────────
     def generic_visit(self, node: ast.AST) -> ast.AST:
         super().generic_visit(node)
@@ -522,7 +494,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
 # Pass 5 – post-unparse `;` joining of adjacent simple statements
 # ─────────────────────────────────────────────────────────────────────
 def _is_simple_line(line: str) -> bool:
-    """True if `line` is a single statement that can be `;`-joined."""
     s = line.strip()
     if not s or s.startswith("#") or s.endswith(":"):
         return False
@@ -535,7 +506,6 @@ def _leading_ws(line: str) -> str:
 
 
 def join_simple_lines(text: str) -> str:
-    """Merge runs of same-indent simple statements with `;` separators."""
     lines = text.split("\n")
     out: list[str] = []
     i = 0
@@ -572,11 +542,6 @@ _STUB_HEADER = "import base64 as _b,zlib as _z\nexec(_z.decompress(_b.b85decode(
 
 
 def wrap_payload(source: str, *, level: int = 9) -> str:
-    """Return a self-contained runnable stub that `exec`s `source` in-memory.
-
-    The stub uses only stdlib (`zlib`, `base64`), needs no temp files, and
-    runs identically under any Python 3.8+ interpreter.
-    """
     raw = source.encode("utf-8")
     packed = zlib.compress(raw, level)
     b85 = base64.b85encode(packed).decode("ascii")
@@ -600,7 +565,6 @@ def wrap_payload(source: str, *, level: int = 9) -> str:
 # Driver
 # ─────────────────────────────────────────────────────────────────────
 def _render_file(filepath: str, tree: ast.AST) -> str:
-    """Unparse one AST and return the (header + minified-body) block."""
     tree = FutureImportGuard().visit(tree)
     ast.fix_missing_locations(tree)
 
@@ -611,7 +575,6 @@ def _render_file(filepath: str, tree: ast.AST) -> str:
 
 
 def compress_files(file_paths: Sequence[str]) -> None:
-    """Run the full pipeline over `file_paths` and write the output artifact(s)."""
     name_map: dict[str, str] = {}
     name_gen = generate_short_names()
     parsed_trees: list[tuple[str, ast.AST]] = []
@@ -696,12 +659,10 @@ def compress_files(file_paths: Sequence[str]) -> None:
 
 
 def get_python_files() -> list[str]:
-    """Recursively find all `.py` files in the current directory."""
     return [str(p) for p in Path(".").rglob("*.py") if p.is_file()]
 
 
 def main(argv: list[str]) -> int:
-    """CLI entry point. Returns a process exit code."""
     if not argv:
         files = get_python_files()
         if not files:

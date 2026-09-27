@@ -37,8 +37,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ProcessingResult:
-    """Result of processing a single file."""
-
     path: Path
     success: bool
     error: str | None = None
@@ -48,8 +46,6 @@ class ProcessingResult:
 
 
 class HTMLFormatter:
-    """HTML formatter using Tree-sitter parser."""
-
     # Tags that should be on their own line
     BLOCK_TAGS = {
         "html",
@@ -114,7 +110,6 @@ class HTMLFormatter:
     INLINE_TAGS = {"b", "i", "u", "em", "strong", "code", "small", "sub", "sup"}
 
     def __init__(self):
-        """Initialize the formatter with Tree-sitter HTML parser."""
         try:
             self.HTML_LANGUAGE = Language(ts_html.language())
             self.parser = Parser(self.HTML_LANGUAGE)
@@ -122,15 +117,6 @@ class HTMLFormatter:
             raise RuntimeError(f"Failed to initialize Tree-sitter parser: {e}")
 
     def format_html(self, source_code: str) -> tuple[str, int]:
-        """
-        Format HTML source code so every tag starts on a new line.
-
-        Args:
-            source_code: The HTML source code as a string
-
-        Returns:
-            Tuple of (formatted_code, number_of_tags_formatted)
-        """
         if not source_code.strip():
             return source_code, 0
 
@@ -161,11 +147,6 @@ class HTMLFormatter:
             return source_code, 0
 
     def _collect_edits(self, node: Node, source: str) -> list[tuple[int, str, int]]:
-        """
-        Collect all edit operations needed for formatting.
-
-        Returns list of (position, insert_text, delete_count) tuples.
-        """
         edits = []
 
         # Walk the tree iteratively for better performance
@@ -208,7 +189,6 @@ class HTMLFormatter:
         return edits
 
     def _get_tag_name(self, element_node: Node, source: str) -> str | None:
-        """Extract tag name from an element node."""
         for child in element_node.children:
             if child.type == "start_tag":
                 for tag_child in child.children:
@@ -217,12 +197,10 @@ class HTMLFormatter:
         return None
 
     def _should_format_tag(self, tag_name: str) -> bool:
-        """Determine if a tag should be formatted on its own line."""
         # Format all tags except explicit inline tags
         return tag_name not in self.INLINE_TAGS
 
     def _cleanup_blank_lines(self, text: str) -> str:
-        """Remove excessive blank lines (more than 2 consecutive)."""
         lines = text.split("\n")
         result = []
         blank_count = 0
@@ -240,11 +218,6 @@ class HTMLFormatter:
 
 
 def read_file_safe(path: Path, max_size: int = MAX_FILE_SIZE) -> str | None:
-    """
-    Safely read a file with size limit and encoding detection.
-
-    Returns file content as string or None if failed.
-    """
     try:
         # Check file size
         file_size = path.stat().st_size
@@ -270,11 +243,6 @@ def read_file_safe(path: Path, max_size: int = MAX_FILE_SIZE) -> str | None:
 
 
 def write_file_atomic(path: Path, content: str) -> bool:
-    """
-    Write file atomically using a temporary file.
-
-    Returns True if successful, False otherwise.
-    """
     temp_path = path.with_suffix(path.suffix + ".tmp")
 
     try:
@@ -297,11 +265,6 @@ def write_file_atomic(path: Path, content: str) -> bool:
 
 
 def find_html_files(paths: list[Path]) -> Iterator[Path]:
-    """
-    Find all HTML files in the given paths.
-
-    If paths is empty, searches current directory recursively.
-    """
     if not paths:
         paths = [Path.cwd()]
 
@@ -333,11 +296,6 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
 
 
 def process_file(path: Path) -> ProcessingResult:
-    """
-    Process a single HTML file.
-
-    Returns ProcessingResult with status information.
-    """
     try:
         # Read file
         content = read_file_safe(path)
@@ -377,7 +335,6 @@ def process_file(path: Path) -> ProcessingResult:
 
 
 def main() -> int:
-    """Main entry point."""
     # Parse command line arguments
     import argparse
 

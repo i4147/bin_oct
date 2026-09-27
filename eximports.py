@@ -41,25 +41,12 @@ STDLIB: Final[frozenset[str]] = frozenset(getattr(sys, "stdlib_module_names", ()
 
 
 def _make_parser() -> Parser:
-    """Create a tree-sitter parser for Python.
-
-    Returns:
-        A configured ``Parser`` instance.
-    """
     parser: Parser = Parser()
     parser.language = Language(tsp.language())
     return parser
 
 
 def process_file(path: Path) -> list[str]:
-    """Extract top-level import statements from a single Python file.
-
-    Args:
-        path: Path to the Python file to parse.
-
-    Returns:
-        A list of raw import statement strings as they appear in the source.
-    """
     file_path: Path = Path(path)
     src: bytes = file_path.read_bytes()
     parser: Parser = _make_parser()
@@ -74,15 +61,6 @@ def process_file(path: Path) -> list[str]:
 
 
 def normalize_import(import_line: str) -> str | None:
-    """Reduce an import statement to its root module name.
-
-    Args:
-        import_line: A raw ``import ...`` or ``from ... import ...`` line.
-
-    Returns:
-        The normalized root module name, or ``None`` if the line is a
-        relative/private import or otherwise unusable.
-    """
     line: str = import_line.lower().strip()
     if line.startswith("import "):
         module: str = line[7:]
@@ -106,11 +84,6 @@ def normalize_import(import_line: str) -> str | None:
 
 
 def _get_installed_pkgs() -> set[str]:
-    """Return the set of installed distribution names, normalized.
-
-    Returns:
-        Lowercase, underscore-normalized package names.
-    """
     pkgs: set[str] = set()
     dist = None
     for dist in distributions():
@@ -125,14 +98,6 @@ def _get_installed_pkgs() -> set[str]:
 
 
 def process_files_parallel(files: list[Path]) -> set[str]:
-    """Extract imports from ``files`` concurrently.
-
-    Args:
-        files: Python file paths to scan.
-
-    Returns:
-        The union of all raw import statements found.
-    """
     all_imports: set[str] = set()
     if not files:
         return all_imports
@@ -144,15 +109,6 @@ def process_files_parallel(files: list[Path]) -> set[str]:
 
 
 def filter_imports(imports: set[str]) -> list[str]:
-    """Filter out stdlib and installed-package imports.
-
-    Args:
-        imports: Raw import statement strings.
-
-    Returns:
-        A sorted list of normalized, unknown-to-environment module names,
-        each terminated with a newline.
-    """
     installed_pkgs: set[str] = _get_installed_pkgs()
     excluded: set[str] = set(STDLIB) | installed_pkgs
     filtered: list[str] = []
@@ -165,27 +121,10 @@ def filter_imports(imports: set[str]) -> list[str]:
 
 
 def get_pyfiles(root: Path) -> list[Path]:
-    """Recursively find all Python files under ``root``.
-
-    Args:
-        root: Directory to search.
-
-    Returns:
-        A list of "*.py" file paths.
-    """
     return [p for p in root.rglob("*.py") if p.is_file()]
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    """Entry point for the import extraction script.
-
-    Args:
-        argv: Optional argument vector (currently unused; reserved for
-            future options).
-
-    Returns:
-        Process exit code (0 on success).
-    """
     _ = list(argv) if argv is not None else sys.argv[1:]
 
     outfile: Path = Path(OUTPUT_FILE)

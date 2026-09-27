@@ -41,7 +41,6 @@ PY3_NONE_ANY_BLOCKLIST: frozenset[str] = frozenset({"pycryptodome", "matplotlib"
 
 
 def _parse_wheel(filename: str) -> tuple[str, str, str] | None:
-    """Return (package_name, version, python_variant) or None if unmatched."""
     match = WHL_PATTERN.match(filename)
     if match is None:
         return None
@@ -49,7 +48,6 @@ def _parse_wheel(filename: str) -> tuple[str, str, str] | None:
 
 
 def _latest_dates(parsed: list[tuple[str, str, str, str]]) -> dict[str, str]:
-    """Map package name -> newest date stamp for date-stamped versions."""
     latest: dict[str, str] = {}
     for _, name, version, _ in parsed:
         if "-" not in version:
@@ -66,10 +64,6 @@ def _latest_dates(parsed: list[tuple[str, str, str, str]]) -> dict[str, str]:
 
 
 def cleanup_wheels(whl_files: list[str], directory: Path = WHL_DIRECTORY) -> int:
-    """Delete obsolete/unwanted wheels from *directory*.
-
-    Returns the number of files removed.
-    """
     # Parse each file once and keep only the ones that match our pattern.
     parsed: list[tuple[str, str, str, str]] = []
     for filename in whl_files:

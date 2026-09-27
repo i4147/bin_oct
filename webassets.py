@@ -82,12 +82,10 @@ _ANSI = {
 
 
 def cprint(msg: str, color: str = "white") -> None:
-    """Print ``msg`` with a simple ANSI colour (matches `dh.cprint`)."""
     print(f"{_ANSI.get(color, '')}{msg}{_ANSI['reset']}")
 
 
 def file_size(p: Path | str) -> int:
-    """File size in bytes, or 0 if unreadable."""
     try:
         return Path(p).stat().st_size
     except OSError:
@@ -95,7 +93,6 @@ def file_size(p: Path | str) -> int:
 
 
 def dir_size(p: Path | str) -> int:
-    """Total size of a file or of every file under a directory."""
     p = Path(p)
     if p.is_file():
         return file_size(p)
@@ -105,7 +102,6 @@ def dir_size(p: Path | str) -> int:
 
 
 def human_size(n: float) -> str:
-    """Format a byte count as B/KB/MB/GB/TB."""
     sign = "-" if n < 0 else ""
     n = abs(float(n))
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -120,11 +116,6 @@ def find_files(
     extensions: Sequence[str],
     exclude_parts: Sequence[str] = (),
 ) -> list[Path]:
-    """
-    Return every file under ``root`` whose name ends with one of ``extensions``
-    (case-insensitive). ``root`` may itself be a file. Parts listed in
-    ``exclude_parts`` (e.g. ``"node_modules"``) cause the file to be skipped.
-    """
     root = Path(root)
     exts = tuple(e.lower() for e in extensions)
     out: list[Path] = []
@@ -151,10 +142,6 @@ def parallel_map(
     items: list[Any],
     workers: Optional[int] = None,
 ) -> list[Any]:
-    """
-    Apply ``func`` to each item, using a process pool when worthwhile.
-    ``func`` must be module-level (picklable) or a `functools.partial` thereof.
-    """
     if not items:
         return []
     if workers is None:
@@ -166,7 +153,6 @@ def parallel_map(
 
 
 def require_tool(tool: str, hint: str = "") -> None:
-    """Raise if an external CLI tool is missing."""
     if shutil.which(tool) is None:
         msg = f"'{tool}' is not installed."
         if hint:
@@ -179,8 +165,6 @@ def require_tool(tool: str, hint: str = "") -> None:
 # ============================================================================
 @dataclass
 class Result:
-    """Outcome of minifying one file."""
-
     path: Path
     original_size: int
     minified_size: int
@@ -201,7 +185,6 @@ class Result:
 
 
 def _relative(path: Path) -> Path | str:
-    """Path relative to CWD if possible, otherwise the path unchanged."""
     try:
         return path.relative_to(Path.cwd())
     except ValueError:
@@ -209,7 +192,6 @@ def _relative(path: Path) -> Path | str:
 
 
 def print_file_result(r: Result) -> None:
-    """One-line-per-file report, styled like the originals."""
     rel = _relative(r.path)
     if not r.success:
         cprint(f"✗ {rel}: {r.error}", "red")
@@ -227,7 +209,6 @@ def print_file_result(r: Result) -> None:
 
 
 def print_summary(results: Sequence[Result], title: str = "Summary") -> None:
-    """Aggregate results and print a final report."""
     total = len(results)
     ok = sum(1 for r in results if r.success and not r.no_change)
     nc = sum(1 for r in results if r.success and r.no_change)
@@ -323,19 +304,12 @@ def _fix_doctype(s: str) -> str:
 
 
 def _post_process_html(s: str) -> str:
-    """Insert a space between adjacent inline tags; normalise doctype."""
     s = _fix_doctype(s)
     s = _RE_INLINE_WS.sub(r"\1 \2", s)
     return s
 
 
 def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
-    """
-    HTML minifier backend mirroring ``hmin.py``:
-    write a JSON config file, pipe HTML through html-minifier-terser's stdin,
-    capture stdout, run the doctype/inline-whitespace post-processing,
-    overwrite the file.
-    """
     path = Path(path)
     orig = file_size(path)
     if not path.exists():
@@ -388,10 +362,6 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
 
 
 def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
-    """
-    HTML minifier backend mirroring ``htmin.py``: pass all flags to
-    html-minifier-terser and have it rewrite the file in place.
-    """
     path = Path(path)
     orig = file_size(path)
 
@@ -425,7 +395,6 @@ def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
 # CSS minification
 # ============================================================================
 def minify_css_csso(path: Path) -> Result:
-    """CSS minifier backend using the `csso` CLI (mirrors mincss.py)."""
     path = Path(path)
     orig = file_size(path)
     if not path.exists():
@@ -447,7 +416,6 @@ def minify_css_csso(path: Path) -> Result:
 
 
 def minify_css_rcssmin(path: Path) -> Result:
-    """CSS minifier backend using rcssmin (mirrors pcssmin.py)."""
     path = Path(path)
     orig = file_size(path)
     if _rcssmin is None:
@@ -469,7 +437,6 @@ def minify_css_rcssmin(path: Path) -> Result:
 # JS minification
 # ============================================================================
 def minify_js_rjsmin(path: Path) -> Result:
-    """JS minifier backend using rjsmin (mirrors pjsmin.py)."""
     path = Path(path)
     orig = file_size(path)
     if _rjsmin is None:
@@ -491,13 +458,6 @@ def minify_js_rjsmin(path: Path) -> Result:
 # JSON minification  (jm2.py + mjb.py merged)
 # ============================================================================
 def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
-    """
-    JSON minifier.
-
-    ``spaced=True`` preserves jm2.py's ``indent=None`` output (spaces after
-    ``:`` and ``,``). Default (``spaced=False``) uses compact separators,
-    matching mjb.py.
-    """
     path = Path(path)
     orig = file_size(path)
     try:
@@ -529,12 +489,6 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
 # SVG minification  (pysvg2.py)
 # ============================================================================
 def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> Result:
-    """
-    SVG minifier using `svgcleaner` (mirrors pysvg2.py).
-
-    Files whose path contains any string in ``skip_parts`` (default:
-    ``("lazy",)``, matching the original) are silently skipped.
-    """
     path = Path(path)
     if any(s in path.parts for s in skip_parts) or not path.exists():
         return Result(path, 0, 0, True, no_change=True)
@@ -586,11 +540,6 @@ def truncate_at_last_tag(
     path: Path,
     tags: Sequence[str] = DEFAULT_TRUNCATE_TAGS,
 ) -> Result:
-    """
-    Truncate the file right after the last closing tag found when scanning
-    from the end of the file. Preserves original bytes (including newlines)
-    up to that point. Exactly matches fixsvg.py's algorithm.
-    """
     path = Path(path)
     if not path.exists():
         return Result(path, 0, 0, False, "file not found")
@@ -629,11 +578,6 @@ def _collapse_html_ws(s: str) -> str:
 
 
 def minify_mixed(path: Path) -> tuple[Path, str]:
-    """
-    Dispatch by extension to rcssmin / json / regex-HTML (mirrors minjch.py).
-    Returns ``(path, status_message)`` — status is a short human string so
-    parallel workers can be pickled cleanly.
-    """
     path = Path(path)
     ext = path.suffix.lower()
     try:
@@ -661,7 +605,6 @@ _MESON_DB: dict[str, Any] = {}
 
 
 def _v_keys(prefix: str, actual: dict, expected: dict) -> dict:
-    """Ensure `actual` has every key in `expected` (and pop them off)."""
     assert set(actual.keys()).issuperset(expected.keys()), (
         f"{prefix}:DIFF:{set(actual.keys()).difference(expected.keys())}"
     )
@@ -799,11 +742,6 @@ def _v_object(prefix: str, name: str, d: dict) -> None:
 
 
 def validate_meson_json(doc_file: Path) -> int:
-    """
-    Validate a Meson JSON docs file against the schema used by
-    jsonvalidator.py. Raises AssertionError with a descriptive message on
-    failure; returns 0 on success.
-    """
     global _MESON_DB
     _MESON_DB = json.loads(Path(doc_file).read_text(encoding="utf-8"))
     assert isinstance(_MESON_DB, dict)
@@ -884,7 +822,6 @@ def _ext_list(s: str) -> list[str]:
 
 
 def cmd_html(args: argparse.Namespace) -> int:
-    """Minify HTML files (backend: hmin or htmin)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -904,7 +841,6 @@ def cmd_html(args: argparse.Namespace) -> int:
 
 
 def cmd_css(args: argparse.Namespace) -> int:
-    """Minify CSS files (backend: csso or rcssmin)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -925,7 +861,6 @@ def cmd_css(args: argparse.Namespace) -> int:
 
 
 def cmd_js(args: argparse.Namespace) -> int:
-    """Minify JS files via rjsmin."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -940,7 +875,6 @@ def cmd_js(args: argparse.Namespace) -> int:
 
 
 def cmd_json(args: argparse.Namespace) -> int:
-    """Minify JSON files (with optional dry-run and spaced-format flag)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -956,7 +890,6 @@ def cmd_json(args: argparse.Namespace) -> int:
 
 
 def cmd_svg(args: argparse.Namespace) -> int:
-    """Minify SVG files (backend: svgcleaner)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -972,7 +905,6 @@ def cmd_svg(args: argparse.Namespace) -> int:
 
 
 def cmd_truncate(args: argparse.Namespace) -> int:
-    """Truncate files at their last closing tag (fixsvg.py behavior)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -989,7 +921,6 @@ def cmd_truncate(args: argparse.Namespace) -> int:
 
 
 def cmd_mixed(args: argparse.Namespace) -> int:
-    """Minify CSS/JSON/HTML mixed directories (minjch.py behavior)."""
     exts = _ext_list(args.ext)
     files = _collect_files(args.paths, exts)
     if not files:
@@ -1005,7 +936,6 @@ def cmd_mixed(args: argparse.Namespace) -> int:
 
 
 def cmd_validate_meson_json(args: argparse.Namespace) -> int:
-    """Run the Meson JSON-docs validator on a single file."""
     try:
         validate_meson_json(args.doc_file)
     except AssertionError as exc:

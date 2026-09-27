@@ -41,11 +41,6 @@ _BLANK_RUN_RE = re.compile(rb"(?:[ \t]*\n){3,}")
 
 
 def is_bash_file(path: Path) -> bool:
-    """Return True if `path` looks like a bash/sh/zsh script.
-
-    Detection is by file extension first (.sh / .bash), falling back to
-    inspecting the first line for a recognized shebang.
-    """
     if path.suffix.lower() in (".sh", ".bash"):
         return True
     try:
@@ -57,14 +52,6 @@ def is_bash_file(path: Path) -> bool:
 
 
 def find_comment_ranges(source: bytes) -> list[tuple[int, int, bool]]:
-    """Parse `source` and return a sorted list of (start, end, is_inline)
-    byte-offset ranges for every comment node, excluding a leading shebang
-    line (which starts with '#!' at byte 0 and must be preserved).
-
-    `is_inline` is True when the comment is preceded on its own line by
-    non-whitespace content (e.g. `cmd # comment`), which lets the stripping
-    step also trim the trailing whitespace that preceded it.
-    """
     tree = PARSER.parse(source)
     out: list[tuple[int, int, bool]] = []
 
@@ -85,12 +72,6 @@ def find_comment_ranges(source: bytes) -> list[tuple[int, int, bool]]:
 
 
 def strip_comments(source: bytes) -> tuple[bytes, int]:
-    """Remove all comment byte-ranges from `source`.
-
-    For inline comments (`cmd # comment`), trailing spaces/tabs left before
-    the comment are also trimmed so lines don't end with dangling
-    whitespace. Returns (new_source, number_of_comments_removed).
-    """
     ranges = find_comment_ranges(source)
     if not ranges:
         return source, 0
@@ -107,18 +88,10 @@ def strip_comments(source: bytes) -> tuple[bytes, int]:
 
 
 def normalize_blank_lines(source: bytes) -> bytes:
-    """Collapse any run of 2 or more consecutive blank lines down to exactly
-    one blank line. Comment stripping tends to leave behind such runs where
-    comment-only lines used to be.
-    """
     return _BLANK_RUN_RE.sub(b"\n\n", source)
 
 
 def validate_bash_source(source: bytes) -> bool:
-    """Re-parse `source` with tree-sitter and return True only if the parse
-    tree contains no ERROR nodes and no MISSING tokens, i.e. the result is
-    still syntactically valid bash.
-    """
     tree = PARSER.parse(source)
 
     def has_error(node: Node) -> bool:
@@ -130,12 +103,6 @@ def validate_bash_source(source: bytes) -> bool:
 
 
 def process_file(path: Path) -> tuple[str, int, str]:
-    """Strip comments and normalize blank lines in a single file, validate
-    the result, and write it back only if validation passes.
-
-    Returns (relative_path, comments_removed, error_message). On any
-    failure `error_message` is non-empty and the file is left unmodified.
-    """
     rel = os.path.relpath(path)
     try:
         source = path.read_bytes()
@@ -159,9 +126,6 @@ def process_file(path: Path) -> tuple[str, int, str]:
 
 
 def iter_targets(targets: Iterable[Path]) -> Generator[Path, None, None]:
-    """Yield unique, resolved bash-script file paths from a mix of file and
-    directory inputs. Directories are traversed recursively via `rglob`.
-    """
     seen: set[Path] = set()
     for target in targets:
         try:

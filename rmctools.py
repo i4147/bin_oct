@@ -119,7 +119,6 @@ FILE_COMMENT_KEYWORDS: tuple[str, ...] = ("coding", "encoding", "type:", "fmt:")
 # Common helpers: file discovery, IO, error handling
 # ---------------------------------------------------------------------------
 def _looks_like_python_script(path: Path) -> bool:
-    """True if the file starts with a `#!...python...` shebang."""
     try:
         with path.open("r", encoding="utf-8") as fh:
             first = fh.readline()
@@ -133,11 +132,6 @@ def gather_python_files(
     excludes: Iterable[str] = DEFAULT_EXCLUDES,
     include_shebang_scripts: bool = False,
 ) -> list[Path]:
-    """
-    Return a sorted, deduplicated list of Python files given a mix of files
-    and directories. Directories are walked recursively (`rglob('*.py')`).
-    Files inside `excludes` (any path component match) are skipped.
-    """
     excl = {e.lower() for e in excludes}
     seen: set[Path] = set()
     for raw in paths:
@@ -162,7 +156,6 @@ def gather_python_files(
 
 
 def safe_read_text(path: Path) -> tuple[str | None, str | None]:
-    """Read file text with tokenize-detected encoding. Returns (text, error)."""
     try:
         with tokenize.open(path) as fh:
             return fh.read(), None
@@ -173,7 +166,6 @@ def safe_read_text(path: Path) -> tuple[str | None, str | None]:
 def write_text_preserving_newlines(
     path: Path, text: str, encoding: str = "utf-8"
 ) -> None:
-    """Write text with `\n` line endings (matches most original scripts)."""
     path.write_text(text, encoding=encoding, newline="\n")
 
 
@@ -182,7 +174,6 @@ def run_parallel(
     files: Sequence[Path],
     workers: int,
 ) -> list[tuple[Path, object]]:
-    """Run `func` over each file using a ProcessPool, preserve input order."""
     if not files:
         return []
     workers = max(1, min(workers, len(files)))
@@ -203,10 +194,6 @@ def run_parallel(
 # Shebang / leading-comment extraction (used by ast-based strippers)
 # ---------------------------------------------------------------------------
 def split_leading_comments(src: str) -> tuple[str, str]:
-    """
-    Split source into (header, rest) where `header` contains shebang + leading
-    shebang/encoding/type/fmt comments (up to the first real line of code).
-    """
     lines = src.splitlines(keepends=True)
     header: list[str] = []
     i = 0
@@ -236,7 +223,6 @@ def split_leading_comments(src: str) -> tuple[str, str]:
 if _HAS_LIBCST:
 
     def _is_plain_string(stmt: "cst.BaseStatement", binary_check: bool) -> bool:
-        """True if `stmt` is a simple statement holding just a (non-bytes) string."""
         if not isinstance(stmt, cst.SimpleStatementLine):
             return False
         if len(stmt.body) != 1 or not isinstance(stmt.body[0], cst.Expr):
@@ -249,8 +235,6 @@ if _HAS_LIBCST:
         return True
 
     class _LibCSTStripper(cst.CSTTransformer):
-        """Removes comments and/or docstrings while optionally preserving markers."""
-
         def __init__(
             self,
             strip_comments: bool = True,
@@ -353,7 +337,6 @@ if _HAS_LIBCST:
             return updated
 
     def _wrap_suite(stmt: "cst.BaseSmallStatement") -> "cst.SimpleStatementLine":
-        """Wrap a small statement so `_is_plain_string` can inspect it uniformly."""
         return cst.SimpleStatementLine(body=[stmt])  # type: ignore[arg-type]
 
     class _LibCSTResult(NamedTuple):
@@ -554,10 +537,6 @@ class _DocstringStripper(ast.NodeTransformer):
 def _extract_kept_comments(
     src: str, keep_noqa: bool
 ) -> tuple[dict[int, list[str]], int]:
-    """
-    Collect comment tokens worth preserving (`# type:`, `# fmt:`, optionally `# noqa`).
-    Returns ({line_number -> [comment strings]}, hash_only_comment_count).
-    """
     kept: dict[int, list[str]] = {}
     hash_only = 0
     try:
@@ -577,7 +556,6 @@ def _extract_kept_comments(
 
 
 def _reapply_kept_comments(new_src: str, kept: dict[int, list[str]]) -> str:
-    """Best-effort re-insertion of preserved comments at their original lines."""
     if not kept:
         return new_src
     lines = new_src.splitlines()
@@ -610,7 +588,6 @@ class _ASTResult(NamedTuple):
 
 
 def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTResult:
-    """(path, unparser, preserve_shebang, preserve_file_comments, keep_noqa, dry_run)"""
     path, unparser, preserve_shebang, preserve_file_comments, keep_noqa, dry_run = args
 
     src, err = safe_read_text(path)
@@ -734,7 +711,6 @@ _LANG_EXTS: dict[str, str] = {
 
 
 def _regex_strip_text(src: str, ext: str, keep_strings: bool) -> str:
-    """pyjtc behaviour for a given language extension."""
     if ext in {"c", "cpp", "h", "hpp"}:
         src = re.sub(r"//.*", "", src)
         src = re.sub(r"/\*.*?\*/", "", src, flags=re.DOTALL)
@@ -763,9 +739,6 @@ class _RegexResult(NamedTuple):
 
 
 def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _RegexResult:
-    """
-    (path, lang_override, keep_strings, hash_only, dry_run, validate_python)
-    """
     path, lang_override, keep_strings, hash_only, dry_run, validate_python = args
 
     src, err = safe_read_text(path)

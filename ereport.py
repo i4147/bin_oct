@@ -15,7 +15,6 @@ TOOLS = {
 
 
 def execute_tool(cmd_base: list[str], target_file: Path) -> dict:
-    """Runs a single tool command against target file and returns output details."""
     tool_name = cmd_base[0]
 
     if shutil.which(tool_name) is None:
@@ -46,7 +45,6 @@ def execute_tool(cmd_base: list[str], target_file: Path) -> dict:
 
 
 def analyze_file(py_file: Path, report_dir: Path) -> None:
-    """Runs all checks on a Python file and writes its report JSON."""
     print(f"Processing: {py_file.name}")
     report_data = {
         "filename": py_file.name,

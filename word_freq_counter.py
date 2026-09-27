@@ -17,14 +17,6 @@ OUTPUT_FILE: Path = Path("counter.json")
 
 
 def process_file(path: Path) -> Counter[str]:
-    """Count lowercase word occurrences in a single file.
-
-    Args:
-        path: Path to the file to process.
-
-    Returns:
-        A Counter mapping words to their frequencies in the file.
-    """
     word_counter: Counter[str] = Counter()
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -38,14 +30,6 @@ def process_file(path: Path) -> Counter[str]:
 
 
 def collect_text_files(directory: Path | None = None) -> list[Path]:
-    """Collect candidate text files from a directory.
-
-    Args:
-        directory: Directory to scan. Defaults to the current working directory.
-
-    Returns:
-        A list of paths to text files.
-    """
     if directory is None:
         directory = Path.cwd()
     text_files: list[Path] = get_nobinary(directory)
@@ -54,14 +38,6 @@ def collect_text_files(directory: Path | None = None) -> list[Path]:
 
 
 def process_files_parallel(paths: list[Path]) -> Counter[str]:
-    """Process files in parallel using a fixed-size multiprocessing pool.
-
-    Args:
-        paths: List of file paths to process.
-
-    Returns:
-        An aggregated Counter of word frequencies across all files.
-    """
     total_counter: Counter[str] = Counter()
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[Any] = [
@@ -78,23 +54,12 @@ def process_files_parallel(paths: list[Path]) -> Counter[str]:
 
 
 def _now_isoformat() -> str:
-    """Return the current local time in ISO 8601 format.
-
-    Returns:
-        Current timestamp as an ISO 8601 string.
-    """
     from datetime import datetime
 
     return datetime.now().isoformat()
 
 
 def save_results_json(counter: Counter[str], output_file: Path) -> None:
-    """Persist word counts and metadata to a JSON file.
-
-    Args:
-        counter: Aggregated word frequency counter.
-        output_file: Destination path for the JSON output.
-    """
     sorted_words: dict[str, int] = dict(
         sorted(counter.items(), key=lambda x: (-x[1], x[0]))
     )
@@ -112,11 +77,6 @@ def save_results_json(counter: Counter[str], output_file: Path) -> None:
 
 
 def main() -> int:
-    """Run the word frequency analysis pipeline.
-
-    Returns:
-        Process exit code (0 on success).
-    """
     directory: Path = Path.cwd()
     print(f"Starting word frequency analysis in {directory}")
 

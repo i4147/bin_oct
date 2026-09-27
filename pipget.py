@@ -162,12 +162,6 @@ _PRINT_LOCK = asyncio.Lock()
 
 
 class FileTooLarge(Exception):
-    """Raised when a remote file exceeds ``MAX_FILE_SIZE``.
-
-    We use an exception (rather than a boolean return) so the signal
-    bypasses the retry loop — retrying an oversized file is pointless.
-    """
-
     def __init__(self, size: int):
         super().__init__(f"file is {size} bytes (limit: {MAX_FILE_SIZE})")
         self.size = size
@@ -179,22 +173,10 @@ class FileTooLarge(Exception):
 
 
 def _norm_sep(s: str) -> str:
-    """Normalise PEP-503-style separators.
-
-    ``-``, ``_``, and ``.`` all collapse to ``_`` and the result is
-    lower-cased.  This lets us compare ``aiohttp-3.5.16.tar.gz`` with
-    ``aiohttp_3_5_16_...`` without caring which separator the mirror used.
-    """
     return re.sub(r"[-_.]+", "_", s).lower()
 
 
 def parse_package_spec(spec: str) -> tuple:
-    """Split ``'name'`` or ``'name==version'`` into ``(name, version|None)``.
-
-    Only ``==`` is recognised (the common exact-pin operator).  Anything
-    else — ``>=``, ``~=``, extras like ``pkg[foo]`` — is passed through
-    untouched as part of the name, matching the previous behaviour.
-    """
     spec = spec.strip()
     if "==" in spec:
         name, _, version = spec.partition("==")
@@ -209,7 +191,6 @@ def parse_package_spec(spec: str) -> tuple:
 
 
 def is_windows_url(url: str) -> bool:
-    """Return True if the URL clearly refers to a Windows-only artifact."""
     lower = url.lower()
     return (
         "win32" in lower
@@ -220,7 +201,6 @@ def is_windows_url(url: str) -> bool:
 
 
 def has_arch_tag(url: str) -> bool:
-    """Return True if the URL carries any platform / architecture tag."""
     lower = url.lower()
     if WHEEL_PLATFORM_RE.search(lower):
         return True
@@ -231,12 +211,10 @@ def has_arch_tag(url: str) -> bool:
 
 
 def is_sdist(url: str) -> bool:
-    """Return True if the URL points to a source distribution archive."""
     return url.lower().endswith(SDIST_EXTENSIONS)
 
 
 def is_pure_wheel(url: str) -> bool:
-    """Return True if the URL points to a pure-Python wheel (py3-none-any)."""
     lower = url.lower()
     if not lower.endswith(".whl"):
         return False
@@ -249,13 +227,6 @@ def is_pure_wheel(url: str) -> bool:
 
 
 def _validate_tar(path: Path) -> tuple:
-    """Validate a tar archive (any compression).  Returns (ok, message).
-
-    ``tarfile`` with mode ``"r:*"`` auto-detects gzip / bz2 / xz / plain.
-    We drain every member's payload so the decompressor's own checksum
-    (gzip CRC32, bz2/xz CRC) is actually verified — just listing members
-    wouldn't touch the compressed payload.
-    """
     try:
         # ``errorlevel=2`` makes tarfile raise on any recoverable
         # corruption rather than silently producing garbage members.
@@ -277,11 +248,6 @@ def _validate_tar(path: Path) -> tuple:
 
 
 def _validate_zip(path: Path) -> tuple:
-    """Validate a zip / wheel archive.  Returns (ok, message).
-
-    ``ZipFile.testzip()`` reads every member and verifies its CRC32,
-    returning the name of the first bad member (or ``None`` if clean).
-    """
     try:
         with zipfile.ZipFile(path, "r") as zf:
             bad = zf.testzip()
@@ -293,11 +259,6 @@ def _validate_zip(path: Path) -> tuple:
 
 
 def validate_archive(path: Path, filename: str) -> tuple:
-    """Dispatch to the right validator based on filename.
-
-    Returns ``(ok, message)``.  Unknown extensions are treated as valid
-    (we can't know how to check them).
-    """
     lower = filename.lower()
     if lower.endswith(TAR_EXTENSIONS):
         return _validate_tar(path)
@@ -312,15 +273,6 @@ def validate_archive(path: Path, filename: str) -> tuple:
 
 
 def select_best_url(links: list, pkg_name: str, version=None):
-    """Pick the best download URL from a list of ``<a>`` tags.
-
-    If ``version`` is supplied, only files whose normalised name begins
-    with ``<normalised pkg>_<normalised version>_`` (or equals it) are
-    eligible.  This is what makes ``name==version`` pinning work.
-
-    Returns ``(url, filename, status)`` where status is one of
-    ``"download"`` / ``"skip"`` / ``None``.
-    """
     sdist_candidates: list = []
     pure_wheel_candidates: list = []
     arch_skipped: list = []
@@ -382,11 +334,6 @@ def select_best_url(links: list, pkg_name: str, version=None):
 
 
 def find_existing_package(pkg_name: str, version=None) -> bool:
-    """Return True if a non-empty file for ``pkg_name`` already exists.
-
-    If ``version`` is given, only files matching that exact version are
-    considered, so re-running with a different pin will re-download.
-    """
     normalized = _norm_sep(pkg_name)
 
     if version:
@@ -416,10 +363,6 @@ async def fetch_package_page(
     mirror_base: str,
     is_simple_index: bool,
 ) -> str:
-    """Fetch the HTML index page for ``pkg_name``.
-
-    Returns decoded HTML on success, ``""`` on any failure.
-    """
     if is_simple_index:
         url = f"{mirror_base.rstrip('/')}/{pkg_name}/"
     else:
@@ -454,16 +397,6 @@ async def download_file(
     pkg_name: str = "",
     referer: str = "",
 ) -> bool:
-    """Stream ``url`` into ``DOWNLOAD_DIR/filename``, then validate it.
-
-    Raises :class:`FileTooLarge` if the file exceeds ``MAX_FILE_SIZE``,
-    either from the ``Content-Length`` header (pre-flight) or from actual
-    bytes received (safety net for chunked responses).
-
-    Returns True on HTTP 200 + full download + successful integrity check.
-    Returns False on any other failure (or if validation fails — the
-    partial file is deleted so the retry loop can try again).
-    """
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     output_path = DOWNLOAD_DIR / filename
 
@@ -577,12 +510,6 @@ async def download_file_with_retry(
     pkg_name: str = "",
     max_retries: int = MAX_RETRIES,
 ) -> bool:
-    """Linear-back-off wrapper around :func:`download_file`.
-
-    ``FileTooLarge`` is *not* retried — it propagates straight through.
-    Corrupt downloads (integrity-check failures) fall through here as a
-    plain ``False`` and therefore *are* retried.
-    """
     for attempt in range(max_retries):
         if attempt > 0:
             await asyncio.sleep(RETRY_DELAY * attempt)
@@ -598,12 +525,6 @@ async def process_package(
     is_simple_index: bool,
     semaphore: asyncio.Semaphore,
 ) -> tuple:
-    """Fetch, select and download one package under ``semaphore``.
-
-    ``spec`` is either ``"name"`` or ``"name==version"``.  Returns
-    ``(spec, status)`` where status ∈
-    ``{"ok", "exists", "skipped", "too_large", "failed"}``.
-    """
     pkg_name, version = parse_package_spec(spec)
     label = f"{pkg_name}=={version}" if version else pkg_name
 
@@ -672,11 +593,6 @@ async def process_package(
 
 
 def load_packages_from_file(file_path: str) -> list:
-    """Read package names / specs from a text file.
-
-    Each line may be ``name`` or ``name==version``.  Blank lines and
-    ``#`` comments are ignored (comments may appear after the spec).
-    """
     path = Path(file_path)
     if not path.is_file():
         print(f"Error: file not found: {file_path}", file=sys.stderr)
@@ -712,7 +628,6 @@ def load_packages_from_file(file_path: str) -> list:
 
 
 async def run(args) -> int:
-    """Top-level async runner.  Returns the process exit code."""
     global DOWNLOAD_DIR, MAX_FILE_SIZE
 
     # ---- resolve mirror --------------------------------------------------

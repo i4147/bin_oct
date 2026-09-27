@@ -6,11 +6,6 @@ from pathlib import Path
 
 
 def is_valid_module_file(path: Path) -> bool:
-    """Return True if the path is a candidate Python module file.
-
-    Excludes non-`.py` files, dunder files (e.g. `__main__.py`),
-    and private files whose name starts with an underscore.
-    """
     if not path.is_file():
         return False
     if path.suffix != ".py":
@@ -21,10 +16,6 @@ def is_valid_module_file(path: Path) -> bool:
 
 
 def is_valid_subpackage(path: Path) -> bool:
-    """Return True if the path is a subpackage (dir with __init__.py).
-
-    Skips private directories starting with an underscore.
-    """
     if not path.is_dir():
         return False
     if path.name.startswith("_"):
@@ -33,7 +24,6 @@ def is_valid_subpackage(path: Path) -> bool:
 
 
 def parse_module(path: Path) -> ast.Module | None:
-    """Parse a Python file into an AST, returning None on failure."""
     try:
         source = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
@@ -46,10 +36,6 @@ def parse_module(path: Path) -> ast.Module | None:
 
 
 def get_public_functions(tree: ast.Module) -> list[str]:
-    """Collect names of top-level public functions.
-
-    Skips names starting with '_' and the special name 'main'.
-    """
     names: list[str] = []
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -62,7 +48,6 @@ def get_public_functions(tree: ast.Module) -> list[str]:
 
 
 def get_public_classes(tree: ast.Module) -> list[str]:
-    """Collect names of top-level public classes (not starting with '_')."""
     names: list[str] = []
     for node in tree.body:
         if isinstance(node, ast.ClassDef):
@@ -72,12 +57,6 @@ def get_public_classes(tree: ast.Module) -> list[str]:
 
 
 def has_only_main(tree: ast.Module) -> bool:
-    """Return True if the module defines `main` and no other public members.
-
-    Private names (starting with '_') are ignored. If `main` is the only
-    public top-level definition, we treat the module as a script entry
-    point and skip re-exporting it.
-    """
     has_main = False
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -95,14 +74,6 @@ def has_only_main(tree: ast.Module) -> bool:
 
 
 def build_init_content(project_dir: Path) -> str:
-    """Build the content for __init__.py from the given directory.
-
-    - Imports public functions and classes from each sibling module.
-    - Imports subpackages as modules.
-    - Skips dunder/private files and directories.
-    - Skips modules that only define `main` (script entry points).
-    - Appends an `__all__` list of all re-exported names.
-    """
     import_lines: list[str] = []
     exported_names: list[str] = []
 
@@ -181,17 +152,6 @@ def clean_content(text: str) -> str:
 
 
 def create_init_file(project_dir: Path | None = None) -> Path:
-    """Create (or overwrite) __init__.py in the given project directory.
-
-    Args:
-        project_dir: Target directory. Defaults to the current working dir.
-
-    Returns:
-        The path to the created __init__.py file.
-
-    Raises:
-        NotADirectoryError: If the given path is not a directory.
-    """
     if project_dir is None:
         project_dir = Path.cwd()
 

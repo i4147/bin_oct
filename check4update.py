@@ -13,7 +13,6 @@ import pycurl
 
 
 def _normalize_name(name: str) -> str:
-    """Normalize package name per PEP 503."""
     return re.sub(r"[-_.]+", "-", name).lower()
 
 

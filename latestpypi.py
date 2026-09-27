@@ -10,7 +10,6 @@ OUTPUT_FILE = Path("latest_pypi_packages.txt")
 
 
 def fetch_latest_packages(url: str = RSS_URL) -> list[str]:
-    """Fetch the PyPI RSS feed and return a list of package names."""
     req = urllib.request.Request(url, headers={"User-Agent": "pypi-latest-fetcher/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         data = resp.read()

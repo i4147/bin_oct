@@ -27,11 +27,6 @@ def load_json(path: Path) -> dict:
 
 
 def detect_direction(data: dict, path: Path) -> str:
-    """
-    Return 'en' if keys look English (en→fa dict),
-    'fa' if keys look Persian (fa→en dict),
-    or raise ValueError if mixed/undetermined.
-    """
     if not data:
         raise ValueError(f"{path} is empty.")
 
@@ -50,7 +45,6 @@ def detect_direction(data: dict, path: Path) -> str:
 
 
 def unique_path(base: Path) -> Path:
-    """Return a path that doesn't exist, appending _1, _2, ... if needed."""
     if not base.exists():
         return base
     stem = base.stem
@@ -64,12 +58,10 @@ def unique_path(base: Path) -> Path:
 
 
 def discover_inputs() -> list[Path]:
-    """Find all .json files in the current directory."""
     return sorted(Path.cwd().glob("*.json"))
 
 
 def collect_inputs(argv: list[str]) -> list[Path]:
-    """Resolve input paths from CLI args, or auto-discover if none given."""
     if not argv:
         paths = discover_inputs()
         if not paths:
@@ -89,7 +81,6 @@ def collect_inputs(argv: list[str]) -> list[Path]:
 
 
 def normalize_value(value) -> list:
-    """Coerce a JSON value into a list of translations."""
     if isinstance(value, list):
         return list(value)
     return [value]

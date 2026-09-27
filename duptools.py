@@ -114,7 +114,6 @@ def err(msg: str) -> None:
 
 
 def _new_hasher(algorithm: str):
-    """Return a hasher object with .update(bytes) and .hexdigest()."""
     if algorithm == "xxhash" and _HAS_XXHASH:
         return xxhash.xxh64()
     if algorithm == "blake2b" or algorithm == "xxhash":
@@ -133,8 +132,6 @@ def _new_hasher(algorithm: str):
 
 
 class _XorHasher:
-    """Fallback emulation of xorhash: xor-fold every 8-byte word."""
-
     __slots__ = ("_acc",)
 
     def __init__(self) -> None:
@@ -150,9 +147,6 @@ class _XorHasher:
 
 
 class _PPDeepHasher:
-    """Fallback emulation of ppdeep: wrap the content through the lib
-    if present, else a plain hash of the first 4 KB (prefix fingerprint)."""
-
     __slots__ = ("_h", "_buf")
 
     def __init__(self) -> None:
@@ -177,7 +171,6 @@ class _PPDeepHasher:
 def hash_file(
     path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK_SIZE
 ) -> Optional[str]:
-    """Stream a file through a hasher; return hex digest (None on OSError)."""
     if algorithm == "ppdeep" and _HAS_PPDEEP:
         try:
             return ppdeep.hash_from_file(str(path))
@@ -205,7 +198,6 @@ def hash_file(
 
 
 def quick_hash(path: Path, head: int = QUICK_HEAD) -> Optional[str]:
-    """dupfx.py's quick fingerprint: hash of head and (if large) tail bytes."""
     try:
         size = path.stat().st_size
         h = hashlib.blake2b(digest_size=8)
@@ -234,7 +226,6 @@ def collect_files(
     min_size: int,
     excludes: Iterable[str],
 ) -> list[Path]:
-    """Walk `root` and return candidate files honoring exclusion rules."""
     exclude_set = set(excludes)
     iterator = root.rglob("*") if recursive else root.iterdir()
     out: list[Path] = []
@@ -276,13 +267,6 @@ def find_duplicates(
     quick_first: bool,
     chunk_size: int,
 ) -> dict[str, list[Path]]:
-    """Group files by content hash. Optional quick-hash pre-filter.
-
-    Mirrors the phase layout of dupfx.py:
-      phase 1: group by size (cheap, single-process)
-      phase 2: optional quick-hash
-      phase 3: full hash on survivors
-    """
     # Phase 1 — group by size
     by_size: dict[int, list[Path]] = defaultdict(list)
     for p in files:
@@ -333,7 +317,6 @@ def find_duplicates(
 
 
 def select_keeper(group: list[Path], policy: str) -> Path:
-    """Return the file to keep. Mirrors dupfx.py's `l()` helper."""
     if not group:
         raise ValueError("empty group")
     if policy == "first":
@@ -357,7 +340,6 @@ def _trash_available() -> bool:
 
 
 def _delete_file(path: Path, use_trash: bool) -> bool:
-    """Delete `path` (via gio trash if requested and available)."""
     try:
         if use_trash and _trash_available():
             subprocess.run(["gio", "trash", str(path)], check=True)
@@ -375,7 +357,6 @@ def _delete_file(path: Path, use_trash: bool) -> bool:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
-    """Show duplicate groups with total wasted space; no files modified."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"{root} is not a directory")
@@ -440,7 +421,6 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def cmd_delete(args: argparse.Namespace) -> int:
-    """Delete duplicates, keeping one file per group according to --keep."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"{root} is not a directory")
@@ -507,15 +487,12 @@ def cmd_delete(args: argparse.Namespace) -> int:
 
 @dataclass
 class SymlinkOp:
-    """A single recorded replacement (used by `restore`)."""
-
     symlink: str
     target: str
     size: int
 
 
 def cmd_symlink(args: argparse.Namespace) -> int:
-    """Move the master copy into a stash dir and symlink its siblings to it."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"{root} is not a directory")
@@ -642,7 +619,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
 
 
 def cmd_restore(args: argparse.Namespace) -> int:
-    """Restore originals from the manifest created by `symlink`."""
     manifest_path = Path(args.manifest).expanduser()
     if not manifest_path.exists():
         err(f"manifest not found: {manifest_path}")
@@ -702,7 +678,6 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
 
 def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> None:
-    """Flags shared by report/delete/symlink."""
     p.add_argument(
         "-d", "--directory", default=".", help="Directory to scan (default: .)"
     )
@@ -760,7 +735,6 @@ def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> No
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser with every subcommand."""
     parser = argparse.ArgumentParser(
         prog="dupe_tool.py",
         description="Find, delete, or symlink duplicate files.",

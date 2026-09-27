@@ -35,22 +35,18 @@ EXCLUDE_PATTERNS: Final[tuple[str, ...]] = (
 
 
 class FormatResult(NamedTuple):
-    """Outcome of formatting a single file."""
-
     path: Path
     success: bool
     error_msg: str | None
 
 
 def should_format(path: Path) -> bool:
-    """Return ``True`` if ``path`` has a supported extension and no excluded suffix."""
     if path.suffix not in EXTENSIONS:
         return False
     return all(not path.name.endswith(p) for p in EXCLUDE_PATTERNS)
 
 
 def get_files_to_format(cwd: Path) -> list[Path]:
-    """Recursively collect all files under ``cwd`` that should be formatted."""
     files: list[Path] = []
     for path in cwd.rglob("*"):
         if path.is_dir():
@@ -63,7 +59,6 @@ def get_files_to_format(cwd: Path) -> list[Path]:
 
 
 def unique_path(path: Path) -> Path:
-    """Return a variant of ``path`` that does not yet exist by appending a counter."""
     if not path.exists():
         return path
     stem: str = path.stem
@@ -78,7 +73,6 @@ def unique_path(path: Path) -> Path:
 
 
 def move_to_error_folder(path: Path) -> Path | None:
-    """Move ``path`` into a sibling ``error/`` directory and return its new location."""
     error_dir: Path = path.parent / ERROR_DIR_NAME
     error_dir.mkdir(exist_ok=True)
     dest: Path = unique_path(error_dir / path.name)
@@ -91,7 +85,6 @@ def move_to_error_folder(path: Path) -> Path | None:
 
 
 def format_file(path: Path) -> FormatResult:
-    """Run Prettier on ``path`` and return a :class:`FormatResult`."""
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
             ["prettier", "--write", str(path)],
@@ -112,7 +105,6 @@ def format_file(path: Path) -> FormatResult:
 
 
 def process_file_wrapper(path: Path) -> FormatResult:
-    """Format ``path`` and move it to ``error/`` on failure."""
     result: FormatResult = format_file(path)
     if not result.success:
         move_to_error_folder(result.path)
@@ -120,7 +112,6 @@ def process_file_wrapper(path: Path) -> FormatResult:
 
 
 def main() -> None:
-    """CLI entry point: format every matching file in the current directory."""
     cwd: Path = Path.cwd()
     files: list[Path] = get_files_to_format(cwd)
 

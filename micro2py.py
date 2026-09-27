@@ -45,11 +45,6 @@ else:  # pragma: no cover - fallback for older interpreters
 
 
 def is_stdlib(name: str) -> bool:
-    """Return True if ``name`` resolves to a standard-library module.
-
-    Uses the fast path (``sys.stdlib_module_names``) when available and
-    otherwise falls back to ``importlib.util.find_spec``.
-    """
     if _STDLIB is not None:
         return name in _STDLIB
     try:
@@ -71,13 +66,6 @@ _U_PREFIX_RE = re.compile(r"\bu([A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 def refactor_content(text: str) -> str:
-    """Return ``text`` with ``u<mod>`` identifiers replaced where safe.
-
-    Only rewrites when the candidate (the part after the leading ``u``)
-    is an actual standard-library module name. Anything else is left
-    untouched, so identifiers like ``user``, ``unittest`` or ``url`` are
-    preserved.
-    """
 
     def repl(match: re.Match[str]) -> str:
         candidate = match.group(1)
@@ -94,11 +82,6 @@ def refactor_content(text: str) -> str:
 
 
 def _rename_target(path: Path) -> Path | None:
-    """Return the new Path if the filename should be renamed, else None.
-
-    A rename is suggested only when the stem starts with ``u``, has more
-    characters after it, and the remainder is a stdlib module name.
-    """
     stem = path.stem
     if len(stem) > 1 and stem.startswith("u") and is_stdlib(stem[1:]):
         return path.with_name(stem[1:] + path.suffix)
@@ -106,16 +89,6 @@ def _rename_target(path: Path) -> Path | None:
 
 
 def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
-    """Refactor a single ``.py`` file.
-
-    Performs two independent operations:
-
-    * rewrite ``u<mod>`` identifiers in the source text;
-    * rename the file if its name looks like ``u<mod>.py``.
-
-    Returns a tuple ``(content_changed, name_changed)``. When
-    ``dry_run`` is True, the file is inspected but never modified.
-    """
     content_changed = False
     name_changed = False
 
@@ -147,11 +120,6 @@ def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
 
 
 def _iter_py_files(root: Path):
-    """Yield ``.py`` files under ``root``.
-
-    If ``root`` is a file, it is yielded when it has a ``.py`` suffix.
-    If it is a directory, the tree is walked recursively.
-    """
     if root.is_file():
         if root.suffix == ".py":
             yield root
@@ -170,9 +138,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument(
         "paths",
-        nargs="*",  # zero or more: default handled below
+        nargs="*",
         type=Path,
-        default=[Path(".")],  # no args -> recurse from current directory
+        default=[Path(".")],
         help="Files or directories to refactor (recursively). "
         "Defaults to '.' if omitted.",
     )

@@ -54,11 +54,6 @@ RAWTEXT_TAGS = {"script", "style", "textarea", "title"}
 
 
 def _find_safe_splits(path: Path, n: int) -> list[int]:
-    """Return n-1 byte offsets that are safe places to split the file.
-
-    A safe split is a position that is NOT inside a tag and NOT inside a
-    raw-text element (script/style/textarea/title). We scan bytes once.
-    """
     size = path.stat().st_size
     if n <= 1 or size == 0:
         return []

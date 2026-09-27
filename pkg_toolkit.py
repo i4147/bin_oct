@@ -87,7 +87,6 @@ def run_cmd(
     timeout: Optional[float] = None,
     check: bool = False,
 ) -> subprocess.CompletedProcess:
-    """Run a command and return CompletedProcess with text output."""
     return subprocess.run(
         cmd,
         capture_output=True,
@@ -98,7 +97,6 @@ def run_cmd(
 
 
 def human_size(num: int) -> str:
-    """Format bytes as a human-readable string."""
     if num < 1024:
         return f"{num} B"
     value = float(num)
@@ -113,7 +111,6 @@ _SIZE_RE = re.compile(r"([\d.]+)\s*([KMGT]?)B?", re.IGNORECASE)
 
 
 def parse_size(text: str) -> int:
-    """Parse strings like '12.5 MB', '10M', '1G' into bytes."""
     match = _SIZE_RE.match(text.strip())
     if not match:
         return 0
@@ -130,7 +127,6 @@ def parse_size(text: str) -> int:
 
 
 def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[str]:
-    """Return SHA-256 hex digest for a file, or None if unreadable."""
     digest = hashlib.sha256()
     try:
         with path.open("rb") as handle:
@@ -142,7 +138,6 @@ def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[st
 
 
 def ensure_parent(path: Path) -> None:
-    """Create parent directories for a path if needed."""
     if path.parent and path.parent != Path("."):
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -153,7 +148,6 @@ def ensure_parent(path: Path) -> None:
 
 
 def cmd_check_system_bin(args: argparse.Namespace) -> int:
-    """Scan /system/bin and move CWD files whose hash and name match."""
     system_dir = Path(args.system_bin)
     if not system_dir.exists():
         print("⚠️  /system/bin directory not found!")
@@ -233,7 +227,6 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
 
 
 def get_dpkg_installed_packages() -> list[str]:
-    """Return installed dpkg package names."""
     try:
         result = run_cmd(["dpkg", "-l"], check=False)
     except FileNotFoundError:
@@ -251,7 +244,6 @@ def get_dpkg_installed_packages() -> list[str]:
 
 
 def is_doc_path(path_str: str, mode: str) -> bool:
-    """Return True if path should be skipped for the selected filter mode."""
     if mode == "none":
         return False
 
@@ -284,7 +276,6 @@ def is_doc_path(path_str: str, mode: str) -> bool:
 def check_package_missing_full(
     pkg: str, filter_mode: str, timeout: float
 ) -> dict[str, Any]:
-    """Check one dpkg package and return missing-file details."""
     try:
         result = run_cmd(["dpkg", "-L", pkg], timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
@@ -337,7 +328,6 @@ def check_package_missing_full(
 
 
 def cmd_missing_files(args: argparse.Namespace) -> int:
-    """Audit installed dpkg packages for missing files."""
     packages = get_dpkg_installed_packages()
     if not packages:
         print("No installed dpkg packages found.")
@@ -414,7 +404,6 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
 
 
 def get_package_files(pkg: str) -> list[str]:
-    """Return file list for a dpkg or rpm package."""
     for cmd in (["dpkg", "-L", pkg], ["rpm", "-ql", pkg]):
         try:
             result = run_cmd(cmd, check=True)
@@ -425,7 +414,6 @@ def get_package_files(pkg: str) -> list[str]:
 
 
 def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
-    """Copy all files from one package into a destination tree."""
     pkg = args.package
     dest_root = Path(args.dest_root).expanduser() / pkg
     dest_root.mkdir(parents=True, exist_ok=True)
@@ -464,7 +452,6 @@ def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
 
 
 def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
-    """Parse /var/lib/dpkg/status into package dependency/provides info."""
     packages: dict[str, dict[str, list[str]]] = {}
 
     for block in re.split(r"\n\s*\n", status_text.strip()):
@@ -506,7 +493,6 @@ def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
 
 
 def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
-    """Find Debian library packages that no installed package depends on."""
     status_path = Path(args.status_file)
     if not status_path.exists():
         raise SystemExit(
@@ -545,7 +531,6 @@ def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
 
 
 def load_keep_file(path: Path) -> set[str]:
-    """Load a keep-list file."""
     try:
         return {line.strip() for line in path.read_text().splitlines() if line.strip()}
     except FileNotFoundError:
@@ -553,13 +538,11 @@ def load_keep_file(path: Path) -> set[str]:
 
 
 def save_keep_file(path: Path, keep: Iterable[str]) -> None:
-    """Save a keep-list file."""
     ensure_parent(path)
     path.write_text("\n".join(sorted(keep)) + ("\n" if keep else ""), encoding="utf-8")
 
 
 def termux_get_installed(pkg_cmd: str) -> set[str]:
-    """Return installed Termux package names."""
     result = run_cmd([pkg_cmd, "list-installed"], check=False)
     installed: set[str] = set()
     for line in result.stdout.strip().splitlines():
@@ -569,7 +552,6 @@ def termux_get_installed(pkg_cmd: str) -> set[str]:
 
 
 def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
-    """Return direct dependencies of a Termux package."""
     result = run_cmd([pkg_cmd, "show", pkg], check=False)
     deps: set[str] = set()
 
@@ -584,7 +566,6 @@ def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
 
 
 def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> tuple[list[str], set[str]]:
-    """Return Termux orphan package list and current keep set."""
     installed = termux_get_installed(pkg_cmd)
     keep = load_keep_file(keep_file)
     depended: set[str] = set()
@@ -601,7 +582,6 @@ def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> tuple[list[str], se
 
 
 def cmd_orphan_pkgs_termux(args: argparse.Namespace) -> int:
-    """Find Termux orphan packages, optionally interactively managing a keep list."""
     keep_file = Path(args.keep_file).expanduser()
     orphans, keep = analyze_termux_orphans(args.pkg_cmd, keep_file)
 
@@ -659,7 +639,6 @@ def cmd_orphan_pkgs_termux(args: argparse.Namespace) -> int:
 
 
 def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
-    """List installed apt packages sorted by installed size."""
     try:
         result = run_cmd(["apt", "list", "--installed"], check=False)
     except FileNotFoundError:
@@ -707,7 +686,6 @@ def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
 
 
 def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
-    """Worker: create a .deb for one package using python-apt."""
     try:
         import apt  # type: ignore
 
@@ -752,7 +730,6 @@ def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
 
 
 def cmd_make_deb(args: argparse.Namespace) -> int:
-    """Create .deb files for installed apt packages."""
     try:
         import apt  # type: ignore
         from loguru import logger  # type: ignore
@@ -834,7 +811,6 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
 
 
 def cmd_suggest_removals(args: argparse.Namespace) -> int:
-    """Suggest unused packages from bash history, sorted by installed size."""
     try:
         result = run_cmd(
             ["dpkg-query", "-W", "-f=${binary:Package} ${Installed-Size}\n"],
@@ -906,7 +882,6 @@ def cmd_suggest_removals(args: argparse.Namespace) -> int:
 
 
 def cmd_save_deb_names(args: argparse.Namespace) -> int:
-    """Save installed dpkg package names to a text file."""
     try:
         result = run_cmd(
             ["dpkg-query", "-f", "${binary:Package}\n", "-W"],
@@ -935,7 +910,6 @@ def cmd_save_deb_names(args: argparse.Namespace) -> int:
 
 
 def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
-    """Worker: return package download size in bytes."""
     try:
         result = run_cmd(["apt", "show", pkg], timeout=10, check=False)
         if result.returncode != 0:
@@ -952,7 +926,6 @@ def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
 
 
 def _save_package_json(path: str, payload: dict[str, Any]) -> bool:
-    """Save package JSON payload."""
     try:
         output_path = Path(path)
         ensure_parent(output_path)
@@ -967,7 +940,6 @@ def _save_package_json(path: str, payload: dict[str, Any]) -> bool:
 
 
 def cmd_show_big_packages(args: argparse.Namespace) -> int:
-    """Scan all available apt packages and report those above a download-size threshold."""
     threshold_bytes = int(args.threshold_mb * 1024 * 1024)
 
     print(f"🔍 Scanning ALL available packages larger than {args.threshold_mb}MB...")
@@ -1118,7 +1090,6 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
 
 
 def cmd_sort_csv(args: argparse.Namespace) -> int:
-    """Sort a package CSV by Installed-Size, overwriting the file."""
     csv_path = Path(args.csvfile)
 
     with csv_path.open(newline="", encoding="utf-8") as handle:
@@ -1147,7 +1118,6 @@ def cmd_sort_csv(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argparse CLI."""
     parser = argparse.ArgumentParser(
         description="Merged Debian/Termux package and system-bin toolkit."
     )
@@ -1281,7 +1251,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

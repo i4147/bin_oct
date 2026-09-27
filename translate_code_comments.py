@@ -96,8 +96,6 @@ PYCLD2_CODES_TO_SKIP = {"en", "un"}
 
 @dataclass(frozen=True)
 class TranslationConfig:
-    """Configuration shared by all translation modes."""
-
     target_language: str = "en"
     source_language: str = "auto"
     delay: float = 0.5
@@ -110,21 +108,16 @@ class TranslationConfig:
 
 @dataclass
 class TranslationStats:
-    """Counters collected while processing one or more files."""
-
     changed_files: int = 0
     translated_items: int = 0
     failed_items: int = 0
 
 
 class Translator:
-    """Small wrapper around deep-translator with consistent error handling."""
-
     def __init__(self, config: TranslationConfig) -> None:
         self.config = config
 
     def translate(self, text: str) -> str:
-        """Translate text, returning the original text if translation fails."""
         if not text.strip():
             return text
 
@@ -148,11 +141,6 @@ class Translator:
             return text
 
     def translate_many(self, texts: Sequence[str]) -> list[str]:
-        """Translate a sequence as one batch where possible.
-
-        Batch mode falls back to individual translations if the provider
-        returns an unexpected number of segments.
-        """
         if not texts:
             return []
 
@@ -185,17 +173,14 @@ class Translator:
 
 
 def contains_non_ascii(text: str) -> bool:
-    """Return whether text contains at least one non-ASCII character."""
     return bool(NON_ASCII_RE.search(text))
 
 
 def contains_japanese(text: str) -> bool:
-    """Return whether text contains Japanese Hiragana, Katakana, or Kanji."""
     return bool(JAPANESE_RE.search(text))
 
 
 def contains_non_latin(text: str) -> bool:
-    """Return whether text contains alphabetic characters outside Latin."""
     return any(character.isalpha() and not character.isascii() for character in text)
 
 
@@ -205,7 +190,6 @@ def is_ignored_text(
     *,
     conservative: bool,
 ) -> bool:
-    """Apply the marker and trivial-text filters used by the scan modes."""
     stripped = text.strip()
 
     if not stripped:
@@ -232,7 +216,6 @@ def should_translate_pycld2(
     text: str,
     config: TranslationConfig,
 ) -> bool:
-    """Use pycld2 to determine whether text is probably non-English."""
     if is_ignored_text(text, config, conservative=True):
         return False
 
@@ -251,7 +234,6 @@ def should_translate_langdetect(
     text: str,
     config: TranslationConfig,
 ) -> bool:
-    """Use langdetect plus non-Latin detection."""
     if is_ignored_text(text, config, conservative=False):
         return False
 
@@ -270,7 +252,6 @@ def should_translate_japanese(
     text: str,
     config: TranslationConfig,
 ) -> bool:
-    """Return true only for Japanese-containing text."""
     if is_ignored_text(text, config, conservative=False):
         return False
 
@@ -281,7 +262,6 @@ def should_translate_non_ascii(
     text: str,
     config: TranslationConfig,
 ) -> bool:
-    """Return true for non-ASCII text not excluded by markers."""
     if is_ignored_text(text, config, conservative=False):
         return False
 
@@ -292,7 +272,6 @@ def iter_python_files(
     root: Path,
     excluded_dirs: frozenset[str],
 ) -> Iterator[Path]:
-    """Yield Python files while skipping configured directory names."""
     if root.is_file():
         if root.suffix == ".py":
             yield root
@@ -307,7 +286,6 @@ def iter_all_files(
     root: Path,
     excluded_dirs: frozenset[str],
 ) -> Iterator[Path]:
-    """Yield files recursively while skipping configured directories."""
     if root.is_file():
         yield root
         return
@@ -318,7 +296,6 @@ def iter_all_files(
 
 
 def line_offsets(source: str) -> list[int]:
-    """Return absolute offsets for the beginning of every source line."""
     offsets = [0]
     for line in source.splitlines(keepends=True):
         offsets.append(offsets[-1] + len(line))
@@ -330,16 +307,10 @@ def absolute_offset(
     line: int,
     column: int,
 ) -> int:
-    """Convert a one-based line and zero-based column to an offset."""
     return offsets[line - 1] + column
 
 
 def literal_parts(token_text: str) -> tuple[str, str, str]:
-    """Split a Python string token into prefix, quote, and suffix.
-
-    The returned suffix is the same quote delimiter as the quote. This
-    supports ordinary and triple-quoted strings with common prefixes.
-    """
     match = re.match(
         r"(?P<prefix>[rRuUbBfF]*)(?P<quote>'''|\"\"\"|'|\")",
         token_text,
@@ -353,7 +324,6 @@ def literal_parts(token_text: str) -> tuple[str, str, str]:
 
 
 def encode_literal(value: str, original_token: str) -> str:
-    """Encode translated text using the original token's quote style."""
     prefix, quote, closing_quote = literal_parts(original_token)
 
     if "f" in prefix.lower():
@@ -375,7 +345,6 @@ def encode_literal(value: str, original_token: str) -> str:
 def ast_string_locations(
     tree: ast.AST,
 ) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
-    """Return print-string and docstring token start locations."""
     print_locations: set[tuple[int, int]] = set()
     docstring_locations: set[tuple[int, int]] = set()
 
@@ -416,7 +385,6 @@ def replace_token_text(
     source: str,
     replacements: Sequence[tuple[int, int, str]],
 ) -> str:
-    """Apply absolute source replacements from right to left."""
     result = source
 
     for start, end, replacement in sorted(
@@ -439,7 +407,6 @@ def translate_python_tokens(
     include_comments: bool,
     batch: bool = False,
 ) -> tuple[str, int]:
-    """Translate selected comments and string literals in Python source."""
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
         tree = ast.parse(source)
@@ -538,7 +505,6 @@ def translate_ast_mode(
     translator: Translator,
     predicate,
 ) -> tuple[str, int]:
-    """AST-oriented mode corresponding to trans_py.py."""
     return translate_python_tokens(
         source,
         translator,
@@ -557,7 +523,6 @@ def translate_file(
     *,
     config: TranslationConfig,
 ) -> tuple[Path, bool, int]:
-    """Read, transform, and optionally write one file."""
     try:
         original = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as exc:
@@ -601,7 +566,6 @@ def process_in_parallel(
     *,
     workers: int,
 ) -> TranslationStats:
-    """Process files concurrently using a bounded thread pool."""
     stats = TranslationStats()
 
     if not files:
@@ -635,7 +599,6 @@ def run_python_mode(
     ast_mode: bool = False,
     batch: bool = False,
 ) -> int:
-    """Run one of the Python-source translation modes."""
     excluded = frozenset(args.exclude)
     config = TranslationConfig(
         target_language=args.target,
@@ -703,7 +666,6 @@ def translate_plain_text(
     *,
     batch: bool,
 ) -> tuple[str, int]:
-    """Translate arbitrary non-Python text line by line."""
     lines = source.splitlines(keepends=True)
     candidates: list[tuple[int, str, str]] = []
 
@@ -736,7 +698,6 @@ def translate_plain_text(
 
 
 def run_batch_mode(args: argparse.Namespace) -> int:
-    """Run the ultralinetrans.py-compatible batch mode."""
     excluded = frozenset(args.exclude)
     config = TranslationConfig(
         target_language=args.target,
@@ -813,7 +774,6 @@ def run_batch_mode(args: argparse.Namespace) -> int:
 
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add options shared by the translation subcommands."""
     parser.add_argument(
         "path",
         nargs="?",
@@ -873,7 +833,6 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the command-line parser."""
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -977,7 +936,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments and execute the selected mode."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return int(args.handler(args))

@@ -35,15 +35,6 @@ ImageType = Union[np.ndarray, "Image.Image"]
 
 
 def deskew(image: np.ndarray) -> np.ndarray:
-    """
-    Deskew an OpenCV image using its minimum-area rectangle angle.
-
-    Args:
-        image: Binary or grayscale OpenCV image.
-
-    Returns:
-        The deskewed image, or the original if no coordinates are found.
-    """
     if HAS_CV2:
         coords = np.column_stack(np.where(image > 0))
         if coords.size == 0:
@@ -60,15 +51,6 @@ def deskew(image: np.ndarray) -> np.ndarray:
 
 
 def preprocess_image_cv2(img_path: Path) -> np.ndarray | None:
-    """
-    Preprocess an image using OpenCV.
-
-    Args:
-        img_path: Path to the source image.
-
-    Returns:
-        The preprocessed image as a numpy array, or None on failure.
-    """
     img = cv2.imread(str(img_path))
     if img is None:
         return None
@@ -86,15 +68,6 @@ def preprocess_image_cv2(img_path: Path) -> np.ndarray | None:
 
 
 def preprocess_image_pillow(img_path: Path) -> Image.Image | None:
-    """
-    Preprocess an image using Pillow as a fallback.
-
-    Args:
-        img_path: Path to the source image.
-
-    Returns:
-        The preprocessed PIL image, or None on failure.
-    """
     try:
         img = Image.open(str(img_path))
         if img.mode != "L":
@@ -112,44 +85,16 @@ def preprocess_image_pillow(img_path: Path) -> Image.Image | None:
 
 
 def preprocess_image(img_path: Path) -> ImageType | None:
-    """
-    Preprocess an image using OpenCV if available, otherwise Pillow.
-
-    Args:
-        img_path: Path to the source image.
-
-    Returns:
-        The preprocessed image, or None on failure.
-    """
     if HAS_CV2:
         return preprocess_image_cv2(img_path)
     return preprocess_image_pillow(img_path)
 
 
 def should_skip(path: Path) -> bool:
-    """
-    Determine whether a path should be skipped based on extension.
-
-    Args:
-        path: Path to check.
-
-    Returns:
-        True if the path's extension is not in SUPPORTED_EXT.
-    """
     return path.suffix.lower() not in SUPPORTED_EXT
 
 
 def save_processed_image(img: ImageType, img_path: Path) -> None:
-    """
-    Save a processed image back to disk.
-
-    Args:
-        img: The processed image (numpy array or PIL image).
-        img_path: Destination path.
-
-    Raises:
-        ValueError: If the image type is unsupported.
-    """
     if HAS_CV2 and isinstance(img, np.ndarray):
         cv2.imwrite(str(img_path), img)
     elif not HAS_CV2 and not isinstance(img, np.ndarray):
@@ -159,15 +104,6 @@ def save_processed_image(img: ImageType, img_path: Path) -> None:
 
 
 def process_single_image(image_path: Path) -> dict[str, Any]:
-    """
-    Preprocess an image, overwrite it, and write a .txt sidecar with OCR text.
-
-    Args:
-        image_path: Path to the image to process.
-
-    Returns:
-        A result dictionary with keys: path, success, error, size_before, size_after.
-    """
     result: dict[str, Any] = {
         "path": str(image_path),
         "success": False,
@@ -193,12 +129,6 @@ def process_single_image(image_path: Path) -> dict[str, Any]:
 
 
 def get_image_files() -> list[Path]:
-    """
-    Collect all supported image files under BASE_DIR recursively.
-
-    Returns:
-        A list of image file paths.
-    """
     image_files: list[Path] = []
     for path in BASE_DIR.rglob("*"):
         if path.is_file() and not should_skip(path):
@@ -207,10 +137,6 @@ def get_image_files() -> list[Path]:
 
 
 def process() -> None:
-    """
-    Run the full preprocessing + OCR pipeline over all discovered images
-    using a fixed multiprocessing.Pool of POOL_SIZE workers.
-    """
     if not HAS_CV2:
         logger.warning(
             "OpenCV not found, using Pillow as fallback (limited functionality)"
@@ -279,7 +205,6 @@ def process() -> None:
 
 
 def main() -> None:
-    """Entry point: prompt for confirmation and run the processing pipeline."""
     logger.warning("⚠️  WARNING: This script will MODIFY original image files in-place!")
     logger.warning("⚠️  NO BACKUPS will be created.")
     logger.warning("⚠️  CTRL+C to cancel, ENTER to continue...")

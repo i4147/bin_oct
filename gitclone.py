@@ -12,7 +12,6 @@ from pathlib import Path
 
 
 def _default_branch(url: str) -> str | None:
-    """Ask the remote what HEAD points to, e.g. 'main' or 'master'."""
     result = subprocess.run(
         ["git", "ls-remote", "--symref", url, "HEAD"],
         capture_output=True,
@@ -29,7 +28,6 @@ def _default_branch(url: str) -> str | None:
 
 
 def _has_submodules(repo_dir: Path) -> bool:
-    """True if the bare repo has a .gitmodules file in its tree."""
     rc = subprocess.run(
         ["git", "-C", str(repo_dir), "cat-file", "-e", "HEAD:.gitmodules"],
         capture_output=True,

@@ -58,23 +58,19 @@ from typing import Any, Iterable, Optional, Sequence
 
 
 def die(msg: str, code: int = 1) -> "None":
-    """Print an error and exit."""
     print(f"Error: {msg}", file=sys.stderr)
     sys.exit(code)
 
 
 def warn(msg: str) -> None:
-    """Print a warning to stderr."""
     print(f"Warning: {msg}", file=sys.stderr)
 
 
 def info(msg: str) -> None:
-    """Print an informational message to stdout."""
     print(msg)
 
 
 def require_input(path: str | Path, *, check_suffix: Optional[str] = None) -> Path:
-    """Resolve an input path, erroring if missing or with wrong suffix."""
     p = Path(path)
     if not p.exists():
         die(f"input file '{p}' does not exist")
@@ -84,12 +80,10 @@ def require_input(path: str | Path, *, check_suffix: Optional[str] = None) -> Pa
 
 
 def default_pdf_path(input_path: Path) -> Path:
-    """Return ``<stem>.pdf`` beside ``input_path`` (matches all originals)."""
     return input_path.with_suffix(".pdf")
 
 
 def resolve_output(input_path: Path, output: Optional[str | Path]) -> Path:
-    """Return CLI output if given, else the sibling ``<stem>.pdf``."""
     return Path(output) if output else default_pdf_path(Path(input_path))
 
 
@@ -101,7 +95,6 @@ def render_pdf_from_html(
     css_strings: Sequence[str] = (),
     base_url: Optional[str] = None,
 ) -> None:
-    """Render an HTML string to PDF with WeasyPrint (shared renderer)."""
     from weasyprint import CSS, HTML  # type: ignore
 
     sheets: list[Any] = []
@@ -209,7 +202,6 @@ _LOCAL_FONT_FACES = """\
 
 
 def inline_css(mode: str) -> str:
-    """Return the inline CSS for ``mode`` ('default' or 'local-fonts')."""
     if mode == "local-fonts":
         return _LOCAL_FONT_FACES + _INLINE_CSS_TEMPLATE.format(
             font_sans='"LocalInter",sans-serif',
@@ -227,7 +219,6 @@ def inline_css(mode: str) -> str:
 
 
 def cmd_svg(args: argparse.Namespace) -> int:
-    """Convert an SVG file to PDF via cairosvg."""
     inp = require_input(args.input, check_suffix=".svg")
     out = resolve_output(inp, args.output)
     try:
@@ -246,8 +237,6 @@ def cmd_svg(args: argparse.Namespace) -> int:
 # Subcommand: chm  (chm2pdf.py + chm2pdf_reportlab.py)
 # ============================================================================
 class _CHMHtmlExtractor(HTMLParser):
-    """Preserve visible HTML from a CHM topic (chm2pdf.py's extractor)."""
-
     SKIP_TAGS = {"script", "style", "meta", "link", "iframe"}
 
     def __init__(self) -> None:
@@ -300,7 +289,6 @@ _CHM_STYLE_HEADER = (
 
 
 def _clean_topic_html(raw: str) -> str:
-    """Strip <script>/<style> and reduce blank lines (chm2pdf.py)."""
     if not raw:
         return ""
     raw = re.sub(r"<script[^>]*>.*?</script>", "", raw, flags=re.DOTALL | re.IGNORECASE)
@@ -317,10 +305,6 @@ def _clean_topic_html(raw: str) -> str:
 
 
 def _chm_weasyprint_extract(chm_path: Path) -> str:
-    """
-    Extract all topics from a CHM file into a single HTML string
-    (WeasyPrint-friendly, preserving inline HTML) — chm2pdf.py behavior.
-    """
     try:
         import chm.chm as pychm  # type: ignore
     except ImportError:
@@ -411,10 +395,6 @@ def _escape(s: str) -> str:
 
 
 def _strip_html_to_text(raw_html: str) -> str:
-    """
-    Very simple HTML → text reduction used by the reportlab CHM backend
-    (chm2pdf_reportlab.py's `.clean_html`).
-    """
     if not raw_html:
         return ""
     s = raw_html
@@ -440,10 +420,6 @@ def _strip_html_to_text(raw_html: str) -> str:
 
 
 def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
-    """
-    CHM → PDF via ReportLab (chm2pdf_reportlab.py's behavior).
-    Best-effort: uses ``chm`` package's ``CHMFile``, ``get_toc``, ``get_obj``.
-    """
     try:
         import chm  # type: ignore
     except ImportError:
@@ -545,7 +521,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
 
 
 def _flatten_toc(toc: Any) -> list[str]:
-    """Flatten whatever structure the chm package's ``get_toc`` returns."""
     out: list[str] = []
     if isinstance(toc, list):
         for item in toc:
@@ -560,7 +535,6 @@ def _flatten_toc(toc: Any) -> list[str]:
 
 
 def cmd_chm(args: argparse.Namespace) -> int:
-    """Convert a CHM file to PDF via one of two backends."""
     inp = require_input(args.input, check_suffix=".chm")
     out = resolve_output(inp, args.output)
 
@@ -618,7 +592,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
 
 
 def cmd_html(args: argparse.Namespace) -> int:
-    """Convert an HTML file to PDF via WeasyPrint."""
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
     html_text = inp.read_text(encoding="utf-8")
@@ -661,7 +634,6 @@ def _convert_markdown2(
     pygments: bool,
     toc: bool,
 ) -> str:
-    """markdown2 conversion (handles md2pdf.py & md2pdf2.py)."""
     from markdown2 import markdown  # type: ignore
 
     extras = _MARKDOWN2_FULL_EXTRAS if full_extras else _MARKDOWN2_SIMPLE_EXTRAS
@@ -697,7 +669,6 @@ def _convert_markdown2(
 
 
 def _convert_markdown(text: str) -> str:
-    """python-markdown conversion (handles md_to_pdf.py & md_to_pdf2.py)."""
     try:
         import markdown  # type: ignore
     except ImportError:
@@ -714,7 +685,6 @@ def _wrap_md_html(body_html: str, title: str) -> str:
 
 
 def cmd_markdown(args: argparse.Namespace) -> int:
-    """Convert a Markdown file to PDF."""
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
     text = inp.read_text(encoding="utf-8")
@@ -767,7 +737,6 @@ _DICT_M_RX = re.compile(r"<[A-Z]\s+M=\"[^\"]+\"\s*/?>")
 
 
 def _format_dictionary_entry(line: str) -> Optional[str]:
-    """Convert one tab-separated dictionary line to an HTML block."""
     try:
         word, definition = line.strip().split("\t", 1)
     except ValueError:
@@ -786,7 +755,6 @@ def _format_dictionary_entry(line: str) -> Optional[str]:
 
 
 def cmd_dict(args: argparse.Namespace) -> int:
-    """Convert a tab-separated dictionary file to PDF."""
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
     font = Path(args.font)
@@ -923,7 +891,6 @@ td { padding: 8pt 10pt; border-bottom: 1px solid #eee;
 
 
 def cmd_compile_css(args: argparse.Namespace) -> int:
-    """Generate a print-style CSS with base64-embedded fonts."""
     font_dir = Path(args.font_dir)
     faces = [
         _font_face(font_dir, family, style, weight, filename)
@@ -949,7 +916,6 @@ def cmd_compile_css(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argparse CLI."""
     p = argparse.ArgumentParser(
         prog="pdfkit.py",
         description="Unified document-to-PDF converter.",

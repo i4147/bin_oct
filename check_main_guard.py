@@ -9,7 +9,6 @@ from pathlib import Path
 
 
 def has_main_guard(filepath: Path) -> bool:
-    """Return True if the file contains an `if __name__ == '__main__':` block."""
     try:
         source = filepath.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError) as e:

@@ -101,7 +101,6 @@ def truncate(s, width):
 
 
 def load_ls_colors():
-    """Read and parse ~/.ls_colors, returning a dict of key -> ansi code."""
     home = Path.home()
     ls_colors_file = home / ".ls_colors"
     if not ls_colors_file.exists():
@@ -130,7 +129,6 @@ def load_ls_colors():
 
 
 def get_ls_color(path, ls_colors, is_dir):
-    """Return the ANSI escape sequence for the given path based on LS_COLORS."""
     if is_dir:
         key = "di"
     elif path.is_symlink():

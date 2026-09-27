@@ -37,13 +37,6 @@ COLORS = {
 
 
 def supports_color() -> bool:
-    """Check if stdout supports ANSI colors.
-
-    Returns True only if:
-    - NO_COLOR env var is not set
-    - TERM is not "dumb"
-    - stdout is a TTY (interactive terminal)
-    """
     if os.environ.get("NO_COLOR"):
         return False
     if os.environ.get("TERM") == "dumb":
@@ -52,16 +45,6 @@ def supports_color() -> bool:
 
 
 def color(text: str, color_name: str = "reset", bold: bool = False) -> str:
-    """Wrap text in ANSI color codes if supported.
-
-    Args:
-        text: The string to colorize
-        color_name: Key into COLORS dict (e.g. "red", "green")
-        bold: Whether to add bold attribute
-
-    Returns:
-        Colorized string, or original text if colors are disabled
-    """
     if not supports_color():
         return text
     prefix = COLORS.get(color_name, COLORS["reset"])
@@ -71,16 +54,6 @@ def color(text: str, color_name: str = "reset", bold: bool = False) -> str:
 
 
 def expand_glob_args(args: list[str]) -> list[str]:
-    """Expand glob patterns in arguments (like bash does).
-
-    Args:
-        args: List of command-line arguments
-
-    Returns:
-        Expanded list where glob patterns are replaced with matching files.
-        Non-glob arguments are passed through unchanged.
-        If a glob matches nothing, the original pattern is kept (bash behavior).
-    """
     expanded = []
     for arg in args:
         # Skip if it's an option or contains no glob chars
@@ -98,14 +71,6 @@ def expand_glob_args(args: list[str]) -> list[str]:
 
 
 def create_log_file(name: str) -> Path:
-    """Create a unique log file in LOG_DIR.
-
-    Args:
-        name: Command name used as filename prefix
-
-    Returns:
-        Path to the created log file (guaranteed unique via timestamp + counter)
-    """
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     milliseconds = int(time.time() * 1000) % 1000
@@ -118,13 +83,6 @@ def create_log_file(name: str) -> Path:
 
 
 def write_log_header(log_file: Path, command: list[str], cwd: str) -> None:
-    """Write header info to log file.
-
-    Args:
-        log_file: Path to log file
-        command: Full command list (binary + args)
-        cwd: Current working directory
-    """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"{'=' * 50}\n")
@@ -135,12 +93,6 @@ def write_log_header(log_file: Path, command: list[str], cwd: str) -> None:
 
 
 def write_log_footer(log_file: Path, exit_code: int) -> None:
-    """Write footer info to log file.
-
-    Args:
-        log_file: Path to log file
-        exit_code: Exit code of the wrapped command
-    """
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a", encoding="utf-8") as f:
         f.write(f"\n{'=' * 50}\n")
@@ -150,14 +102,6 @@ def write_log_footer(log_file: Path, exit_code: int) -> None:
 
 
 def copy_to_clipboard(data: str) -> bool:
-    """Copy text to Android clipboard via termux-clipboard-set.
-
-    Args:
-        data: Text to copy
-
-    Returns:
-        True if successful, False otherwise (e.g. termux-api not installed)
-    """
     try:
         proc = subprocess.run(
             ["termux-clipboard-set"],
@@ -172,16 +116,6 @@ def copy_to_clipboard(data: str) -> bool:
 
 
 def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
-    """Parse wrapper-specific options and return command components.
-
-
-
-    Args:
-        argv: sys.argv[1:] (arguments after script name)
-
-    Returns:
-        Tuple of (command_name, command_args, options_namespace)
-    """
     parser = argparse.ArgumentParser(
         description="Universal command wrapper with logging, colors, and clipboard",
         add_help=False,
@@ -216,7 +150,6 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
 
 
 def main() -> None:
-    """Main entry point: parse args, run command, log output, optionally copy to clipboard."""
     name, command_args, opts = parse_args(sys.argv[1:])
 
     # Expand glob patterns in arguments
@@ -332,12 +265,6 @@ def main() -> None:
 
 
 class nullcontext:
-    """Null context manager for when logging is disabled.
-
-    Provides a no-op context manager so `with` statements work
-    even when there's no log file to open.
-    """
-
     def __enter__(self):
         return None
 

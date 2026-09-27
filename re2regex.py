@@ -34,12 +34,10 @@ UpdateTask: TypeAlias = tuple[Path, bool]
 
 
 def get_pyfiles(root: Path) -> list[Path]:
-    """Return all ``*.py`` files under *root*."""
     return [p for p in root.rglob("*.py") if p.is_file()]
 
 
 def update_file(file_path: Path, reverse: bool = False) -> FileResult:
-    """Swap the first matching import line in *file_path*; return a status message or ``None``."""
     try:
         lines = file_path.read_text(encoding="utf-8").splitlines(keepends=True)
     except OSError as exc:
@@ -69,13 +67,11 @@ def update_file(file_path: Path, reverse: bool = False) -> FileResult:
 
 
 def _update_file_tuple(task: UpdateTask) -> FileResult:
-    """Tuple-argument wrapper around :func:`update_file` for ``Pool.map``."""
     path, reverse = task
     return update_file(path, reverse)
 
 
 def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
-    """Update *tasks* with a fixed 8-worker Pool using *method*."""
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_update_file_tuple, tasks)
@@ -96,7 +92,6 @@ def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Recursively swap 'import re' with 'import regex as re'"
     )
@@ -116,7 +111,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     reverse: bool = bool(args.reverse)
     pool_method: str = args.pool_method

@@ -29,7 +29,6 @@ SQLITE_MAGIC = b"SQLite format 3\x00"
 
 
 def is_sqlite_file(path: Path) -> bool:
-    """Return True if the file begins with the SQLite magic header."""
     try:
         with open(path, "rb") as f:
             return f.read(16) == SQLITE_MAGIC
@@ -38,7 +37,6 @@ def is_sqlite_file(path: Path) -> bool:
 
 
 def detect_format(path: Path) -> str:
-    """Infer internal format name from a file's extension (and magic bytes)."""
     ext = path.suffix.lower()
     if ext in (".db", ".sqlite", ".sqlite3"):
         # .db files are usually sqlite; if not, we still attempt sqlite
@@ -61,7 +59,6 @@ def detect_format(path: Path) -> str:
 
 
 def parse_target(name: str) -> str:
-    """Normalise a -d value like 'csv', '.JSONL', 'db', 'sqlite3'."""
     n = name.lower().lstrip(".")
     if n in ("db", "sqlite", "sqlite3"):
         return "sqlite"
@@ -82,7 +79,6 @@ def parse_target(name: str) -> str:
 
 
 def _coerce_to_tables(obj) -> dict[str, pd.DataFrame]:
-    """Turn an arbitrary pickled/python object into {table_name: DataFrame}."""
     if isinstance(obj, pd.DataFrame):
         return {"data": obj}
     if isinstance(obj, dict):

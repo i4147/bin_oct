@@ -47,7 +47,6 @@ PackageResult: TypeAlias = tuple[str, str]  # (name, "pure" | "native" | "not_fo
 
 
 def has_native_wheels(info: dict[str, Any]) -> bool:
-    """Return True when the PyPI JSON *info* advertises native/compiled release files."""
     urls = info.get("urls", [])
     if not isinstance(urls, list):
         return False
@@ -62,7 +61,6 @@ def has_native_wheels(info: dict[str, Any]) -> bool:
 
 
 def check_package(name: str) -> PackageResult:
-    """Classify *name* against PyPI as ``pure``, ``native``, or ``not_found``."""
     url = PYPI_URL.format(name=name)
     try:
         resp = requests.get(url, timeout=REQUEST_TIMEOUT)
@@ -80,12 +78,10 @@ def check_package(name: str) -> PackageResult:
 
 
 def _check_package_tuple(item: tuple[str]) -> PackageResult:
-    """Tuple-argument wrapper around :func:`check_package` for ``Pool.map``."""
     return check_package(item[0])
 
 
 def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
-    """Classify *packages* with a fixed 8-worker Pool using *method*."""
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_check_package_tuple, [(pkg,) for pkg in packages])
@@ -108,7 +104,6 @@ def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
 
 
 def load_packages(path: Path) -> list[str]:
-    """Return the stripped non-empty lines of *path*."""
     try:
         return [
             line.strip()
@@ -121,7 +116,6 @@ def load_packages(path: Path) -> list[str]:
 
 
 def write_lines(path: Path, lines: Sequence[str]) -> None:
-    """Write *lines* to *path* separated by newlines."""
     try:
         path.write_text("\n".join(lines), encoding="utf-8")
     except OSError as exc:
@@ -129,7 +123,6 @@ def write_lines(path: Path, lines: Sequence[str]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "package_list", help="Path to a file with one package per line."
@@ -144,7 +137,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     infile: Path = Path(args.package_list)

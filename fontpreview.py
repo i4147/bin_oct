@@ -93,7 +93,6 @@ def find_fonts(
     *,
     max_fonts: Optional[int] = None,
 ) -> list[Path]:
-    """Return all font files under `paths` (defaulting to cwd), capped."""
     if not paths:
         paths = [Path.cwd()]
 
@@ -134,7 +133,6 @@ def find_fonts(
 
 
 def format_size(n: float) -> str:
-    """Human-readable byte size."""
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024.0:
             return f"{n:.1f} {unit}"
@@ -144,12 +142,10 @@ def format_size(n: float) -> str:
 
 @lru_cache(maxsize=128)
 def font_format(ext: str) -> str:
-    """Friendly name of a font extension, e.g. '.ttf' -> 'TrueType'."""
     return _FONT_FORMATS.get(ext.lower(), ext.upper().lstrip("."))
 
 
 def _parse_paths(raw: Sequence[str]) -> list[Path]:
-    """Turn CLI path strings into resolved Paths (empty -> cwd)."""
     if not raw:
         return [Path.cwd()]
     out: list[Path] = []
@@ -171,7 +167,6 @@ def _parse_paths(raw: Sequence[str]) -> list[Path]:
 def _generate_simple_html(
     fonts: Sequence[Path], text: str, sizes: Sequence[int]
 ) -> str:
-    """Build the HTML used by both simple scripts."""
     esc_text = html.escape(text)
     parts: list[str] = [
         "<!DOCTYPE html>",

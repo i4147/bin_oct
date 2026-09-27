@@ -23,32 +23,6 @@ from typing import DefaultDict, Iterator, Optional, Tuple
 
 
 def file_extension(name: str) -> str:
-    """Return the file extension, matching ``Path(name).suffix`` semantics.
-
-
-
-    Implemented inline (not via ``Path````) to avoid building a Path per file
-    during the recursive walk, which matters when scanning tens of thousands
-    of files.
-
-
-
-    Leading dots (``.bashrc````)and trailing dots (``file.````)do not
-    count as extensions, matching ``Path.suffix`` behavior:
-
-    - ``Path(".bashrc").suffix`` -> ``""``
-    - ``Path("file.").suffix`` -> ``""``
-    - ``Path("archive.tar.gz").suffix`` -> ``".gz"``
-
-    Args:
-        name: File name (not a full path).
-
-    Returns:
-        The extension including the leading dot, or ``""`` if there is none.
-
-
-
-    """
     dot_index = name.rfind(".")
     if 0 < dot_index < len(name) - 1:
         return name[dot_index:]
@@ -56,21 +30,6 @@ def file_extension(name: str) -> str:
 
 
 def format_size(num_bytes: int) -> str:
-    """Return a compact human-readable representation of *num_bytes*.
-
-    Uses binary units (1024-based): B, KB, MB, GB, TB, PB. Values
-    below 1024 bytes are shown as integers; larger values get one decimal
-    place (e.g. ``"1.5MB"``).
-
-    Args:
-        num_bytes: Size in bytes (non-negative).
-
-    Returns:
-        Human-readable size string.
-
-
-
-    """
     value = float(num_bytes)
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
         if value < 1024 or unit == "PB":
@@ -82,39 +41,6 @@ def format_size(num_bytes: int) -> str:
 
 
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
-    """Yield ``(DirEntry, top_level_name)`` for every regular file under *root*.
-
-    Traversal is depth-first using an explicit LIFO stack plus ``os.scandir``.
-    This avoids the per-directory tuple allocation that ``os.walk`` performs,
-    and each ``DirEntry`` caches its own stat result, so at most one ``stat``
-    call is made per file even when both an extension size and a directory
-    size are needed (the ``DirEntry.stat()`` result is cached internally by
-    Python's ``os.scandir`` implementation).
-
-
-
-    Args:
-        root: Directory to walk recursively.
-
-    Yields:
-        Tuples of ``(DirEntry, top_level_name)`` where ``top_level_name`` is
-        the name of the first-level subdirectory of *root* containing the file,
-        or ``None`` when the file sits directly in *root*. This lets callers
-        bucket files per top-level directory without a second traversal.
-
-
-
-    Notes:
-        - Symlinks (files or directories) are skipped to prevent cycles and
-          double-counting.
-
-        - Directories named ``.git`` are pruned, so the whole subtree is
-          skipped entirely.
-
-        - Unreadable directories (``OSError`` during ``scandir````) are silently
-          skipped, matching the original script's behavior.
-
-    """
     # Stack of (path, top_level_name) pairs. top_level_name is None for
     # the root itself; for subdirectories it's the name of the first-level
     # subdirectory under root that contains them.
@@ -153,16 +79,6 @@ def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    """Parse command-line arguments for extz.py.
-
-
-
-    Returns:
-        Namespace with attributes: ``size``, ``filenames``.
-
-
-
-    """
     parser = argparse.ArgumentParser(
         description="Report recursive per-extension file counts in the CWD.",
     )
@@ -190,26 +106,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def _format_filename_sample(filenames: list[str], total_count: int) -> str:
-    """Format the filename sample column for one extension group.
-
-
-
-    Rules:
-        - If the group has fewer than 3 files, show all filenames joined
-          by ", ".
-        - If the group has 3+ files, show the first 2 filenames joined
-          by ", ", followed by "..." (the count column already shows how
-          many more exist).
-
-    Args:
-        filenames: List of filenames in this group (unsorted).
-        total_count: Total number of files in this group (== len(filenames)).
-
-    Returns:
-        Formatted string for the filename column.
-
-
-    """
     if total_count < 3:
         return ", ".join(filenames)
     return ", ".join(filenames[:2]) + ", ..."
@@ -222,22 +118,6 @@ def print_extension_histogram(
     show_size: bool,
     show_filenames: bool,
 ) -> None:
-    """Print the per-extension histogram.
-
-
-
-    Args:
-        counts: Mapping of extension (or ``".no_ext"````) to file count.
-        sizes: Mapping of extension to total size in bytes (only used
-            when ``show_size`` is True).
-        filenames: Mapping of extension to list of filenames (only used
-            when ``show_filenames`` is True).
-        show_size: Whether to include a total-size column.
-        show_filenames: Whether to include a filename-sample column.
-
-
-
-    """
     if not counts:
         print("No files found.")
         return
@@ -297,15 +177,6 @@ def print_extension_histogram(
 
 
 def main(argv: Optional[list[str]] = None) -> None:
-    """Entry point: walk the CWD recursively, count files per extension,
-    and optionally report total sizes and/or filename samples per extension.
-
-
-
-    Args:
-        argv: Optional argument list (defaults to ``sys.argv[1:]`` via
-            ``argparse``).
-    """
     args = parse_args(argv)
     root = Path.cwd()
 

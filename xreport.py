@@ -99,7 +99,6 @@ except ImportError:
 # Shared helpers
 # --------------------------------------------------------------------------- #
 def fsz(n: float) -> str:
-    """Return a human-readable size string (e.g. ``1.50 MB``)."""
     n = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
         if abs(n) < 1024.0 or unit == "PB":
@@ -153,7 +152,6 @@ _SORTED_EXTS: tuple[str, ...] = tuple(sorted(ARCHIVE_TYPES, key=len, reverse=Tru
 
 
 def detect_archive(path: Path) -> tuple[Optional[str], Optional[str]]:
-    """Return ``(extension, description)`` if ``path`` looks like an archive."""
     name = path.name.lower()
     for ext in _SORTED_EXTS:
         if name.endswith(ext):
@@ -165,7 +163,6 @@ def detect_archive(path: Path) -> tuple[Optional[str], Optional[str]]:
 # `scan` command — mirrors xreport.py / xreport2.py
 # --------------------------------------------------------------------------- #
 def _gzip_stream_size(path: Path) -> int:
-    """Read the ISIZE footer of a gzip stream (mod 2**32), or estimate."""
     try:
         with open(path, "rb") as f:
             f.seek(-4, os.SEEK_END)
@@ -175,7 +172,6 @@ def _gzip_stream_size(path: Path) -> int:
 
 
 def _zstd_frame_size(path: Path) -> int:
-    """Best-effort zstd uncompressed size, or estimate."""
     if zstd is not None:
         try:
             with open(path, "rb") as f:
@@ -196,12 +192,6 @@ def _zstd_frame_size(path: Path) -> int:
 
 
 def analyze_archive(path: Path) -> dict[str, Any]:
-    """
-    Analyse one archive and return the same dict shape as the originals:
-
-        {'path', 'filename', 'ext', 'archive_type', 'compressed_size',
-         'extracted_size', 'file_count', 'ratio', 'integrity', 'error'}
-    """
     ext, desc = detect_archive(path)
     size = path.stat().st_size
     extracted = 0
@@ -301,7 +291,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
 
 
 def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
-    """Extract ``path`` under ``dest_root/<name>_extracted``."""
     ext, _ = detect_archive(path)
     dest = dest_root / f"{path.name}_extracted"
     dest.mkdir(parents=True, exist_ok=True)
@@ -348,7 +337,6 @@ def cmd_scan(
     verbose: bool,
     as_json: bool,
 ) -> int:
-    """Entry point of the ``scan`` subcommand (mirrors xreport*.py)."""
     root = Path(directory).resolve()
 
     if as_json:
@@ -447,7 +435,6 @@ SKIP_DIRS = frozenset(
 
 
 def _count_stream(reader) -> int:
-    """Read ``reader`` to EOF and return total bytes."""
     total = 0
     while True:
         chunk = reader.read(1 << 20)
@@ -550,7 +537,6 @@ SIZE_HANDLERS: dict[str, tuple[str, _SizeHandler]] = {
 
 
 def cmd_sizes(directory: str) -> int:
-    """Entry point of the ``sizes`` subcommand (mirrors zreport.py)."""
     root = Path(directory).resolve()
     if not root.is_dir():
         print(f"Error: {root} is not a directory")
@@ -626,7 +612,6 @@ def cmd_sizes(directory: str) -> int:
 # CLI
 # --------------------------------------------------------------------------- #
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argument parser with ``scan`` and ``sizes``."""
     parser = argparse.ArgumentParser(
         prog="archive_report.py",
         description=(
@@ -706,7 +691,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
-    """Program entry point."""
     argv_list = list(sys.argv[1:] if argv is None else argv)
 
     # Default to `scan` when the user does not name a subcommand (so bare

@@ -49,7 +49,7 @@ except ImportError as exc:
 
 
 class BackendError(Exception):
-    """Raised when a translation backend cannot translate a word."""
+    pass
 
 
 TranslatorCallable = Callable[[str], str]
@@ -137,7 +137,6 @@ _PROGRESS_LOCK = threading.Lock()
 
 
 def _configure_logging() -> None:
-    """Configure compact stderr logging and a rotating UTF-8 file log."""
     logger.remove()
     logger.add(
         "translate_words.log",
@@ -155,13 +154,11 @@ def _configure_logging() -> None:
 
 
 def _print(message: str) -> None:
-    """Print one complete console message without interleaving output."""
     with _CONSOLE_LOCK:
         print(message, flush=True)
 
 
 def _language(backend: str, code: str) -> str:
-    """Return a backend-specific language code, warning for unknown codes."""
     mapped = _LANG_MAP.get(backend, {}).get(code.casefold())
     if mapped is None:
         logger.warning(
@@ -174,7 +171,6 @@ def _language(backend: str, code: str) -> str:
 
 
 def _require_python_and_platform() -> None:
-    """Validate the requested Python version and the Termux ARM target."""
     if sys.version_info[:2] != (3, 12):
         raise SystemExit(
             f"Python 3.12 is required; detected {platform.python_version()}"
@@ -189,7 +185,6 @@ def _require_python_and_platform() -> None:
 
 
 def _import(name: str):
-    """Import a backend module only after the user selects that backend."""
     try:
         return importlib.import_module(name)
     except Exception as exc:
@@ -197,7 +192,6 @@ def _import(name: str):
 
 
 def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh DeepL client for each translation request."""
     key = os.getenv("DEEPL_API_KEY")
     if not key:
         raise BackendError("DEEPL_API_KEY is not set")
@@ -206,7 +200,6 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallabl
     target_code = _language("deepl", target)
 
     def translate(text: str) -> str:
-        """Translate one text through a fresh DeepL client."""
         try:
             module = importlib.import_module("deepl")
             client = module.DeepLClient(key)
@@ -226,13 +219,11 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallabl
 def _make_deep_translator(
     source: str, target: str, script_path: str
 ) -> TranslatorCallable:
-    """Create a fresh deep-translator Google client for each request."""
     _import("deep_translator")
     source_code = _language("deep_translator", source)
     target_code = _language("deep_translator", target)
 
     def translate(text: str) -> str:
-        """Translate one text using the Google wrapper."""
         try:
             module = importlib.import_module("deep_translator")
             client = module.GoogleTranslator(
@@ -249,7 +240,6 @@ def _make_deep_translator(
 def _make_libretranslate_remote(
     source: str, target: str, script_path: str
 ) -> TranslatorCallable:
-    """Create a remote LibreTranslate client from LIBRETRANSLATE_URL."""
     url = os.getenv("LIBRETRANSLATE_URL")
     if not url:
         raise BackendError("LIBRETRANSLATE_URL is not set")
@@ -258,7 +248,6 @@ def _make_libretranslate_remote(
     target_code = _language("libretranslate_remote", target)
 
     def translate(text: str) -> str:
-        """Translate one text through a remote LibreTranslate server."""
         try:
             module = importlib.import_module("deep_translator")
             client = module.LibreTranslateTranslator(
@@ -274,7 +263,6 @@ def _make_libretranslate_remote(
 
 
 def _make_translate(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh translate-package client for each request."""
     if Path(script_path).stem.casefold() == "translate":
         raise BackendError(
             "the local script name resolves to the translate package; rename it"
@@ -282,7 +270,6 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslatorCal
     _import("translate")
 
     def translate(text: str) -> str:
-        """Translate one text using the translate package."""
         try:
             module = importlib.import_module("translate")
             client = module.Translator(from_lang=source, to_lang=target)
@@ -296,7 +283,6 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslatorCal
 def _make_translators_bing(
     source: str, target: str, script_path: str
 ) -> TranslatorCallable:
-    """Create a serialized translators Bing wrapper."""
     _import("translators")
     lock = _SERIAL_LOCKS["translators_bing"]
     logger.warning(
@@ -304,7 +290,6 @@ def _make_translators_bing(
     )
 
     def translate(text: str) -> str:
-        """Translate one text through the serialized Bing scraper."""
         try:
             module = importlib.import_module("translators")
             with lock:
@@ -323,13 +308,11 @@ def _make_translators_bing(
 
 
 def _make_googletrans(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create one serialized googletrans client."""
     module = _import("googletrans")
     client = module.Translator()
     lock = _SERIAL_LOCKS["googletrans"]
 
     def translate(text: str) -> str:
-        """Translate one text through the serialized Google client."""
         try:
             with lock:
                 result = client.translate(text, src=source, dest=target)
@@ -343,7 +326,6 @@ def _make_googletrans(source: str, target: str, script_path: str) -> TranslatorC
 def _make_pygoogletranslation(
     source: str, target: str, script_path: str
 ) -> TranslatorCallable:
-    """Create one serialized pygoogletranslation client."""
     module = _import("pygoogletranslation")
     client_class = getattr(module, "Translator", None)
     if client_class is None:
@@ -352,7 +334,6 @@ def _make_pygoogletranslation(
     lock = _SERIAL_LOCKS["pygoogletranslation"]
 
     def translate(text: str) -> str:
-        """Translate one text through the serialized translation client."""
         try:
             with lock:
                 result = client.translate(text, src=source, dest=target)
@@ -364,13 +345,11 @@ def _make_pygoogletranslation(
 
 
 def _make_boto3(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh AWS Translate client for each request."""
     _import("boto3")
     source_code = _language("boto3", source)
     target_code = _language("boto3", target)
 
     def translate(text: str) -> str:
-        """Translate one text through AWS Translate."""
         try:
             module = importlib.import_module("boto3")
             client = module.client("translate")
@@ -387,7 +366,6 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslatorCallabl
 
 
 def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh Baidu AIP client for each request."""
     app_id = os.getenv("BAIDU_APP_ID")
     api_key = os.getenv("BAIDU_API_KEY")
     secret_key = os.getenv("BAIDU_SECRET_KEY")
@@ -400,7 +378,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
     target_code = _language("baidu", target)
 
     def translate(text: str) -> str:
-        """Translate one text through Baidu translation."""
         try:
             module = importlib.import_module("aip")
             client = module.AipNlp(app_id, api_key, secret_key)
@@ -415,7 +392,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
 
 
 def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create an Alibaba machine-translation request factory."""
     access_key = os.getenv("ALIBABA_ACCESS_KEY_ID")
     secret = os.getenv("ALIBABA_ACCESS_KEY_SECRET")
     region = os.getenv("ALIBABA_REGION", "cn-hangzhou")
@@ -429,7 +405,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
     target_code = _language("alibaba", target)
 
     def translate(text: str) -> str:
-        """Translate one text through Alibaba Cloud machine translation."""
         try:
             core = importlib.import_module("aliyunsdkcore.client")
             request_module = importlib.import_module("aliyunsdkalimt.request.v20181012")
@@ -448,7 +423,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
 
 
 def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh IBM Watson client for each request."""
     api_key = os.getenv("WATSON_API_KEY")
     url = os.getenv("WATSON_URL")
     if not api_key or not url:
@@ -456,7 +430,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
     _import("ibm_watson")
 
     def translate(text: str) -> str:
-        """Translate one text through IBM Watson Language Translator."""
         try:
             module = importlib.import_module("ibm_watson")
             authenticator_module = importlib.import_module(
@@ -481,7 +454,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
 
 
 def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallable:
-    """Create a fresh Azure Translator request client for each request."""
     key = os.getenv("AZURE_TRANSLATOR_KEY")
     region = os.getenv("AZURE_TRANSLATOR_REGION")
     endpoint = os.getenv(
@@ -497,7 +469,6 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallabl
     target_code = _language("azure", target)
 
     def translate(text: str) -> str:
-        """Translate one text through Azure Translator."""
         try:
             requests = importlib.import_module("requests")
             response = requests.post(
@@ -536,7 +507,6 @@ _BACKEND_FACTORIES: dict[str, Factory] = {
 
 
 def _fallback_order() -> list[str]:
-    """Return the configured default backend fallback order."""
     order: list[str] = []
     if os.getenv("DEEPL_API_KEY"):
         order.append("deepl")
@@ -560,7 +530,6 @@ def _select_backend(
     target: str,
     script_path: str,
 ) -> tuple[str, TranslatorCallable]:
-    """Initialize the preferred backend or the first usable fallback."""
     candidates = [preferred] if preferred else _fallback_order()
     failures: list[str] = []
 
@@ -595,7 +564,6 @@ def _select_backend(
 
 
 def _read_words(path: Path) -> list[str]:
-    """Read non-empty words while preserving their input order."""
     if not path.is_file():
         raise SystemExit(f"Input file does not exist: {path}")
     words: list[str] = []
@@ -611,7 +579,6 @@ def _read_words(path: Path) -> list[str]:
 
 
 def _load_results(path: Path, continue_run: bool) -> dict[str, str]:
-    """Load a previous JSON mapping when resume mode is enabled."""
     if not continue_run or not path.exists():
         return {}
     try:
@@ -625,7 +592,6 @@ def _load_results(path: Path, continue_run: bool) -> dict[str, str]:
 
 
 def _atomic_save(path: Path, results: dict[str, str]) -> None:
-    """Write JSON through a temporary file and atomic replacement."""
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
         prefix=f".{path.name}.",
@@ -646,7 +612,6 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
 
 
 def _append_failed(path: Path, word: str) -> None:
-    """Append one permanently failed word to the failure file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with _FAILED_LOCK:
         with path.open("a", encoding="utf-8") as handle:
@@ -659,7 +624,6 @@ def _translate_one(
     delay: float,
     failed_path: Path,
 ) -> tuple[str, str | None]:
-    """Translate one word with three attempts and exponential backoff."""
     for attempt in range(1, 4):
         try:
             time.sleep(delay)
@@ -682,7 +646,6 @@ def _translate_one(
 
 
 def _parse_args() -> argparse.Namespace:
-    """Parse and validate command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Translate a one-word-per-line file into a JSON mapping."
     )
@@ -708,7 +671,6 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _run(args: argparse.Namespace) -> int:
-    """Run translation, periodic saves, resume handling, and interruption recovery."""
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
@@ -781,7 +743,6 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    """Configure the process and execute the command-line workflow."""
     _require_python_and_platform()
     _configure_logging()
     args = _parse_args()

@@ -40,11 +40,6 @@ HEREDOC_START_RE = re.compile(
 
 
 def extract_python_heredocs(bash_text: str):
-    """
-    Find all python heredocs in the given bash script text.
-    Returns a list of extracted python source code strings, in order
-    of appearance.
-    """
     blocks = []
     lines = bash_text.splitlines(keepends=True)
 

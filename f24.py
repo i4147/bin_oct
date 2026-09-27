@@ -25,7 +25,6 @@ PathCTime = tuple[float, Path]
 
 
 def iter_files(root: Path) -> list[Path]:
-    """Recursively collect all files under *root*, skipping excluded directories."""
     files: list[Path] = []
     for dirpath, dirnames, filenames in root.walk(follow_symlinks=False):
         dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
@@ -34,7 +33,6 @@ def iter_files(root: Path) -> list[Path]:
 
 
 def ctime_if_recent(path: Path) -> PathCTime | None:
-    """Return ``(ctime, path)`` if *path* was changed within the last 24 hours."""
     try:
         ctime: float = path.stat().st_ctime
     except (FileNotFoundError, PermissionError, OSError):
@@ -45,7 +43,6 @@ def ctime_if_recent(path: Path) -> PathCTime | None:
 
 
 def main() -> None:
-    """Scan the current directory tree and log recently changed files."""
     root: Path = Path.cwd()
     files: list[Path] = iter_files(root)
     if not files:

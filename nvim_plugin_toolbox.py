@@ -430,7 +430,6 @@ RENAME_MAP: dict[str, str] = {
 
 
 def _unique_path(path: Path) -> Path:
-    """Return `path`, or `path` with `_N` suffix if it already exists."""
     if not path.exists():
         return path
     stem, suffix, parent = path.stem, path.suffix, path.parent
@@ -450,11 +449,6 @@ def _unique_path(path: Path) -> Path:
 def find_plugin_refs(
     path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERNS
 ) -> set[str]:
-    """Return the set of plugin-category names referenced in `path`.
-
-    Both file *contents* and the *filename* are scanned, matching the
-    original folderize_plugins.py behavior.
-    """
     found: set[str] = set()
     try:
         content = path.read_text(encoding="utf-8")
@@ -476,7 +470,6 @@ def find_plugin_refs(
 
 
 def _safe_move(src: Path, dest_dir: Path) -> Path:
-    """Move `src` into `dest_dir`, disambiguating on name conflict."""
     dest_dir.mkdir(exist_ok=True)
     dest = dest_dir / src.name
     if dest.exists() and dest != src:
@@ -491,7 +484,6 @@ def _safe_move(src: Path, dest_dir: Path) -> Path:
 
 
 def cmd_folderize(args: argparse.Namespace) -> int:
-    """Organize all `.lua` files under CWD into plugin-named folders."""
     root = Path.cwd()
     lua_files = list(root.rglob("*.lua"))
     if not lua_files:
@@ -575,7 +567,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
 
 
 def _git_info(repo: Path) -> tuple[Optional[str], Optional[str]]:
-    """Return (commit, branch) for a git repo, or (None, None)."""
     try:
         commit = subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
@@ -595,7 +586,6 @@ def _git_info(repo: Path) -> tuple[Optional[str], Optional[str]]:
 
 
 def cmd_lock_main(args: argparse.Namespace) -> int:
-    """Generate a `lazy-lock.json` from installed lazy.nvim plugins."""
     lazy_dir = Path(args.lazy_dir).expanduser()
     output = Path(args.output).expanduser()
 
@@ -649,11 +639,6 @@ def cmd_lock_main(args: argparse.Namespace) -> int:
 
 
 def _find_block(text: str, start: int) -> Optional[tuple[int, int]]:
-    """Find the matching `}` for the `{` at `text[start]`.
-
-    Returns `(start, end_exclusive)` or `None` if unbalanced.  Respects
-    string literals and backslash escapes.
-    """
     if start >= len(text) or text[start] != "{":
         return None
     depth = 0
@@ -686,7 +671,6 @@ def _find_block(text: str, start: int) -> Optional[tuple[int, int]]:
 
 
 def _split_top_level(body: str) -> list[str]:
-    """Split a Lua table body into its top-level `{...}` entries."""
     entries: list[str] = []
     i, n = 0, len(body)
     while i < n:
@@ -747,7 +731,6 @@ _URL_PATTERNS = (
 
 
 def _extract_plugin_url(block: str) -> Optional[str]:
-    """Return the plugin URL (i.e. `owner/repo`) from a Lua spec block."""
     for pat in _URL_PATTERNS:
         m = re.search(pat, block)
         if m:
@@ -757,7 +740,6 @@ def _extract_plugin_url(block: str) -> Optional[str]:
 
 
 def _format_plugin_block(block: str) -> str:
-    """Normalize a raw `{...}` block into a `return {...}` chunk."""
     lines = [ln.strip() for ln in block.strip().split("\n")]
     body = "\n".join(lines).strip()
     if body.startswith("return"):
@@ -768,7 +750,6 @@ def _format_plugin_block(block: str) -> str:
 
 
 def _balanced_braces(code: str) -> bool:
-    """Cheap syntactic sanity check used when lua/luac are unavailable."""
     pairs = {"(": ")", "[": "]", "{": "}"}
     stack: list[str] = []
     in_str = False
@@ -798,11 +779,6 @@ def _balanced_braces(code: str) -> bool:
 
 
 def _lua_syntax_valid(code: str) -> bool:
-    """Best-effort Lua syntax validation.
-
-    Tries `luac -p -`, then `lua -e`, and finally falls back to a brace
-    balance check.  This mirrors split_lua_plugins.py's `is_valid_lua`.
-    """
     try:
         proc = subprocess.run(
             ["luac", "-p", "-"],
@@ -831,7 +807,6 @@ def _lua_syntax_valid(code: str) -> bool:
 
 
 def cmd_split(args: argparse.Namespace) -> int:
-    """Split a Lua plugin-spec file into one file per plugin entry."""
     strict = args.engine == "strict"
 
     # ---- Resolve flag defaults from the chosen engine ----------------------
@@ -945,7 +920,6 @@ def cmd_split(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argparse CLI with subcommands."""
     parser = argparse.ArgumentParser(
         prog="nvim_plugin_toolbox.py",
         description="Unified Neovim plugin helper (folderize / lock / split).",
@@ -1073,7 +1047,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point.  Returns process exit code."""
     parser = build_parser()
     args = parser.parse_args(argv)
     rc = args.func(args)

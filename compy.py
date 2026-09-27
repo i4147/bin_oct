@@ -84,12 +84,6 @@ SHORT_NAMES = [
 
 
 def strip_comments_and_shebang(source: str) -> str:
-    """
-    Remove comments and the initial shebang while preserving code structure.
-
-    AST parsing already removes comments semantically, but this avoids issues
-    caused by a shebang and gives cleaner parse input.
-    """
     lines = source.splitlines()
 
     if lines and lines[0].startswith("#!"):
@@ -116,12 +110,6 @@ def strip_comments_and_shebang(source: str) -> str:
 
 
 def get_stdlib_modules() -> set[str]:
-    """
-    Return available standard-library module names.
-
-    sys.stdlib_module_names is preferred where available. A small fallback is
-    included for compatibility.
-    """
     modules = set(getattr(sys, "stdlib_module_names", set()))
 
     if not modules:
@@ -146,7 +134,6 @@ STDLIB_MODULES = get_stdlib_modules()
 
 
 def is_stdlib_import(module_name: str | None) -> bool:
-    """Return True when an import target belongs to the Python standard library."""
     if not module_name:
         return False
 
@@ -155,7 +142,6 @@ def is_stdlib_import(module_name: str | None) -> bool:
 
 
 def is_docstring_expr(node: ast.stmt) -> bool:
-    """Return True if node is an expression statement containing a string."""
     return (
         isinstance(node, ast.Expr)
         and isinstance(node.value, ast.Constant)
@@ -164,9 +150,6 @@ def is_docstring_expr(node: ast.stmt) -> bool:
 
 
 def is_terminating_statement(node: ast.stmt) -> bool:
-    """
-    Return True when a statement definitely terminates its current control flow.
-    """
     if isinstance(node, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
         return True
 
@@ -190,7 +173,6 @@ def is_terminating_statement(node: ast.stmt) -> bool:
 
 
 def block_terminates(statements: list[ast.stmt]) -> bool:
-    """Return True when the final reachable statement in a block terminates."""
     if not statements:
         return False
 
@@ -202,12 +184,6 @@ def block_terminates(statements: list[ast.stmt]) -> bool:
 
 
 def make_short_name(index: int) -> str:
-    """
-    Generate compact valid identifiers.
-
-    Sequence:
-    a, b, ..., z, A, ..., Z, aa, ab, ...
-    """
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     base = len(alphabet)
 
@@ -224,8 +200,6 @@ def make_short_name(index: int) -> str:
 
 
 class AnnotationStripper(ast.NodeTransformer):
-    """Remove type annotations and type comments from the AST."""
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         self.generic_visit(node)
         node.returns = None
@@ -276,8 +250,6 @@ class AnnotationStripper(ast.NodeTransformer):
 
 
 class ImportCleaner(ast.NodeTransformer):
-    """Remove future imports and imports from standard-library modules."""
-
     def visit_Module(self, node: ast.Module) -> ast.AST:
         self.generic_visit(node)
         node.body = self._clean_block(node.body)
@@ -307,9 +279,6 @@ class ImportCleaner(ast.NodeTransformer):
 
     @staticmethod
     def _clean_block(statements: list[ast.stmt]) -> list[ast.stmt]:
-        """
-        Remove docstrings and unreachable statements from a statement block.
-        """
         cleaned: list[ast.stmt] = []
         first_real_statement = True
         terminated = False
@@ -332,19 +301,6 @@ class ImportCleaner(ast.NodeTransformer):
 
 
 class Simplifier(ast.NodeTransformer):
-    """
-    Apply AST simplifications before name shortening.
-
-    Includes:
-    - x = x + y -> x += y
-    - Boolean return patterns
-    - Dropping redundant else blocks
-    - Nested if merging
-    - Constant folding when the result is shorter
-    - True/False condition shortening
-    - Unreachable statement removal
-    """
-
     def visit_Module(self, node: ast.Module) -> ast.AST:
         self.generic_visit(node)
         node.body = self._simplify_block(node.body)
@@ -456,10 +412,6 @@ class Simplifier(ast.NodeTransformer):
         return self._fold_expression_if_shorter(node)
 
     def _simplify_block(self, statements: list[ast.stmt]) -> list[ast.stmt]:
-        """
-        Simplify a statement block, including unreachable-code removal and
-        moving else bodies outward after terminating if bodies.
-        """
         output: list[ast.stmt] = []
         terminated = False
 
@@ -519,20 +471,6 @@ class Simplifier(ast.NodeTransformer):
 
     @staticmethod
     def _convert_boolean_return_pattern(node: ast.If) -> ast.Return | None:
-        """
-        Convert boolean-return if blocks into a compact `return bool(x)` form.
-
-        Supported forms:
-            if x:
-                return True
-            else:
-                return False
-
-            if x:
-                return False
-            else:
-                return True
-        """
         if len(node.body) != 1 or len(node.orelse) != 1:
             return None
 
@@ -575,12 +513,6 @@ class Simplifier(ast.NodeTransformer):
 
     @staticmethod
     def _fold_expression_if_shorter(node: ast.expr) -> ast.expr:
-        """
-        Fold a literal-only unary/binary expression only if its source form
-        becomes shorter after folding.
-
-        Evaluation is restricted to AST-produced literal expressions.
-        """
         if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
             return node
 
@@ -614,14 +546,6 @@ class Simplifier(ast.NodeTransformer):
 
 
 class NameCollector(ast.NodeVisitor):
-    """
-    Collect candidate user-defined names.
-
-    Imported names, builtins, dunder names, and protected runtime names are
-    excluded. Attributes are deliberately not renamed because changing them can
-    break public APIs, reflection, and external object access.
-    """
-
     def __init__(self) -> None:
         self.names: set[str] = set()
         self.imported_names: set[str] = set()
@@ -695,13 +619,6 @@ class NameCollector(ast.NodeVisitor):
 
 
 class NameRenamer(ast.NodeTransformer):
-    """
-    Rename identifiers consistently.
-
-    Keyword argument names are renamed in visit_keyword, fixing the important
-    case where a function parameter is renamed but calls use keyword arguments.
-    """
-
     def __init__(self, mapping: dict[str, str]) -> None:
         self.mapping = mapping
 
@@ -743,17 +660,6 @@ class NameRenamer(ast.NodeTransformer):
         return node
 
     def visit_keyword(self, node: ast.keyword) -> ast.AST:
-        """
-        Rename keyword argument names along with their parameter names.
-
-        Example:
-            def long_parameter(...): ...
-            func(long_parameter=value)
-
-        becomes:
-            def a(...): ...
-            func(a=value)
-        """
         self.generic_visit(node)
 
         if node.arg is not None and node.arg in self.mapping:
@@ -780,11 +686,6 @@ class NameRenamer(ast.NodeTransformer):
 
 
 def build_name_mapping(tree: ast.AST) -> dict[str, str]:
-    """
-    Build a deterministic original-name -> compact-name mapping.
-
-    Existing short names are reserved to avoid collisions.
-    """
     collector = NameCollector()
     collector.visit(tree)
 
@@ -810,19 +711,6 @@ def build_name_mapping(tree: ast.AST) -> dict[str, str]:
 
 
 def join_simple_lines(source: str) -> str:
-    """
-    Post-unparse compacting pass.
-
-    Adjacent same-indent simple statements are joined with semicolons where
-    doing so does not cross suite headers such as `if`, `def`, `try`, etc.
-
-    Example:
-        x = 1
-        y = 2
-
-    becomes:
-        x = 1; y = 2
-    """
     lines = [line.rstrip() for line in source.splitlines() if line.strip()]
     output: list[str] = []
 
@@ -873,13 +761,6 @@ def join_simple_lines(source: str) -> str:
 
 
 def compact_spacing(source: str) -> str:
-    """
-    Apply safe textual spacing reductions after ast.unparse.
-
-    Python's unparser often emits spaces around operators and after commas.
-    Most can be safely removed, but spaces separating keywords/identifiers must
-    remain intact.
-    """
     source = re.sub(r",\s+", ",", source)
     source = re.sub(r":\s+", ":", source)
 
@@ -924,7 +805,6 @@ def compact_spacing(source: str) -> str:
 
 
 def compress_source(source: str, filename: str = "<input>") -> str:
-    """Compress Python source text into compact Python code."""
     source = strip_comments_and_shebang(source)
 
     tree = ast.parse(source, filename=filename)
@@ -951,11 +831,6 @@ def compress_source(source: str, filename: str = "<input>") -> str:
 
 
 def discover_python_files(inputs: list[str]) -> list[Path]:
-    """
-    Resolve input paths into a sorted unique list of Python files.
-
-    If no inputs are supplied, recursively scans the current directory.
-    """
     roots = [Path(item) for item in inputs] if inputs else [Path.cwd()]
     found: set[Path] = set()
 
@@ -977,12 +852,6 @@ def discover_python_files(inputs: list[str]) -> list[Path]:
 
 
 def process_file(path_string: str) -> tuple[str, str, str | None]:
-    """
-    Worker function for multiprocessing.
-
-    Returns:
-        (display_name, compressed_source, error_message)
-    """
     path = Path(path_string)
 
     try:
@@ -1005,11 +874,6 @@ def process_file(path_string: str) -> tuple[str, str, str | None]:
 
 
 def format_output(results: list[tuple[str, str, str | None]]) -> str:
-    """
-    Format processed file contents for compressed.txt.
-
-    File references are included only when more than one file was processed.
-    """
     successful = [
         (name, content)
         for name, content, error in results

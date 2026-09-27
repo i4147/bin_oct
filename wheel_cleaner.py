@@ -104,11 +104,6 @@ _CODE_SUFFIXES: tuple[str, ...] = (".py", ".so", ".pyi")
 
 
 def _dist_info_prefix(names: Sequence[str]) -> Optional[str]:
-    """Return the ``<name>.dist-info/`` prefix of the wheel, or ``None``.
-
-    Prefers a real directory entry (``foo-1.0.dist-info/``) over an entry
-    that merely *contains* ``.dist-info`` somewhere in its path.
-    """
     for name in names:
         if name.endswith(".dist-info/"):
             return name
@@ -119,7 +114,6 @@ def _dist_info_prefix(names: Sequence[str]) -> Optional[str]:
 
 
 def _detect_dist_info_only(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
-    """True when every entry lives under a single ``*.dist-info/`` directory."""
     prefix = _dist_info_prefix(names)
     if prefix is None:
         return False
@@ -127,7 +121,6 @@ def _detect_dist_info_only(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
 
 
 def _detect_record(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
-    """True when every ``RECORD`` row points inside the ``*.dist-info/`` dir."""
     prefix = _dist_info_prefix(names)
     if prefix is None:
         return False
@@ -148,19 +141,10 @@ def _detect_record(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
 
 
 def _detect_no_code(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
-    """True when the archive contains no ``.py`` / ``.so`` / ``.pyi`` file."""
     return not any(name.lower().endswith(_CODE_SUFFIXES) for name in names)
 
 
 def _detect_no_payload(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
-    """Literal port of ``ewhl.py``'s check (kept for exact compatibility).
-
-    .. warning::
-       The original only ignores a *top-level* ``dist-info/`` directory, so
-       for a normal wheel such as ``foo-1.0.dist-info/METADATA`` the entry is
-       considered "payload" and the wheel is never reported as empty.  Use
-       ``--detect dist-info-only`` (the default) for the intended behaviour.
-    """
     has_py = any(name.endswith(".py") for name in names)
     has_other = any(
         not name.startswith(("dist-info/", "__pycache__/"))
@@ -191,7 +175,6 @@ detectors:
 
 
 def resolve_detectors(raw: Optional[Iterable[str]]) -> list[str]:
-    """Expand ``--detect`` values (repeatable, comma separated, ``all``)."""
     if not raw:
         return [DEFAULT_DETECTOR]
 
@@ -222,7 +205,6 @@ def resolve_detectors(raw: Optional[Iterable[str]]) -> list[str]:
 
 
 def wheel_is_empty(path: Path, detectors: Sequence[str], quiet: bool = False) -> bool:
-    """Return True when *path* matches any of the selected detectors."""
     try:
         with zipfile.ZipFile(path, "r") as zf:
             names = zf.namelist()
@@ -240,11 +222,6 @@ def wheel_is_empty(path: Path, detectors: Sequence[str], quiet: bool = False) ->
 def find_wheels(
     directory: Path, recursive: bool, exclude: Optional[Path] = None
 ) -> list[Path]:
-    """Collect ``*.whl`` files in *directory*, optionally recursively.
-
-    Files located inside *exclude* (typically the destination folder) are
-    skipped so repeated runs do not re-report already-moved wheels.
-    """
     candidates = directory.rglob("*.whl") if recursive else directory.glob("*.whl")
     result: list[Path] = []
     for candidate in candidates:
@@ -261,7 +238,6 @@ def find_wheels(
 
 
 def unique_path(directory: Path, name: str) -> Path:
-    """Return a collision-free path inside *directory* for *name*."""
     target = directory / name
     if not target.exists():
         return target
@@ -274,11 +250,6 @@ def unique_path(directory: Path, name: str) -> Path:
 
 
 def parse_wheel_name(path: Path) -> tuple[Optional[str], Optional[str]]:
-    """Best-effort ``(distribution, version)`` extraction from a wheel name.
-
-    Mirrors ``ewhl2.py``: take the first two dash-separated components of the
-    filename stem and normalise ``_`` to ``-`` in the distribution name.
-    """
     parts = path.stem.split("-")
     if len(parts) >= 2:
         return parts[0].replace("_", "-"), parts[1]
@@ -286,7 +257,6 @@ def parse_wheel_name(path: Path) -> tuple[Optional[str], Optional[str]]:
 
 
 def default_site_packages() -> Path:
-    """The interpreter's ``purelib`` directory (site-packages)."""
     return Path(sysconfig.get_paths()["purelib"])
 
 
@@ -296,7 +266,6 @@ def default_site_packages() -> Path:
 
 
 def installed_packages() -> dict[str, str]:
-    """Map of ``distribution-name.lower() -> version`` for the current env."""
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "pip", "list", "--format=freeze"],
@@ -317,7 +286,6 @@ def installed_packages() -> dict[str, str]:
 
 
 def pip_show(name: str) -> Optional[dict[str, str]]:
-    """Return the parsed output of ``pip show <name>`` (or ``None``)."""
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "pip", "show", name],
@@ -337,11 +305,6 @@ def pip_show(name: str) -> Optional[dict[str, str]]:
 
 
 def pip_show_location_and_files(name: str) -> tuple[Optional[str], bool]:
-    """Return ``(location, has_real_files)`` from ``pip show -f <name>``.
-
-    ``has_real_files`` is True when the ``Files:`` section lists anything
-    outside a ``.dist-info`` directory, i.e. the installation looks complete.
-    """
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "pip", "show", "-f", name],
@@ -372,7 +335,6 @@ def pip_show_location_and_files(name: str) -> tuple[Optional[str], bool]:
 
 
 def is_empty_dist_info(dist_info: Path) -> bool:
-    """True when every ``RECORD`` entry resolves inside *dist_info* itself."""
     record = dist_info / "RECORD"
     if not record.is_file():
         return False
@@ -397,7 +359,6 @@ def is_empty_dist_info(dist_info: Path) -> bool:
 
 
 def find_empty_installed_packages(site_packages: Path) -> list[str]:
-    """List ``*.dist-info`` directories in *site_packages* that are empty."""
     found: list[str] = []
     if not site_packages.is_dir():
         return found
@@ -786,7 +747,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Parse *argv* and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

@@ -39,18 +39,15 @@ POOL_SIZE: int = 8
 
 
 def is_remote(url: str) -> bool:
-    """Return True if the URL refers to a remote resource (http/https or protocol-relative)."""
     return urlparse(url).scheme in ("http", "https") or url.startswith("//")
 
 
 def is_image(url: str) -> bool:
-    """Return True if the URL path has a recognized image file extension."""
     ext = Path(urlparse(url).path).suffix.lower()
     return ext in IMAGE_EXTENSIONS
 
 
 def get_mime_type(path: str) -> str:
-    """Guess the MIME type for a file path, with fallbacks for common web fonts."""
     mime, _ = mimetypes.guess_type(path)
     if not mime:
         ext = Path(path).suffix.lower()
@@ -67,7 +64,6 @@ def get_mime_type(path: str) -> str:
 
 
 def fetch_remote(url: str) -> bytes | None:
-    """Fetch a remote URL and return its bytes, or None on failure."""
     if url.startswith("//"):
         url = "https:" + url
     try:
@@ -80,7 +76,6 @@ def fetch_remote(url: str) -> bytes | None:
 
 
 def read_local(path: Path) -> bytes | None:
-    """Read a local file and return its bytes, or None on failure."""
     try:
         return path.read_bytes()
     except Exception as e:
@@ -91,11 +86,6 @@ def read_local(path: Path) -> bytes | None:
 def process_css_content(
     css_content: str, base_path: Path, base_url: str | None = None
 ) -> tuple[str, int, int]:
-    """Inline url() references in CSS content with base64 data URIs.
-
-    Returns the transformed CSS, the number of local resources inlined, and
-    the number of remote resources inlined.
-    """
     loc: int = 0
     rem: int = 0
 
@@ -135,7 +125,6 @@ def process_css_content(
 
 
 def process_html_file(path: Path) -> dict[str, Any]:
-    """Inline linked CSS/JS and image references in a single HTML file."""
     stats: dict[str, Any] = {
         "path": str(path),
         "local": 0,
@@ -241,7 +230,6 @@ def process_html_file(path: Path) -> dict[str, Any]:
 
 
 def process_css_file(path: Path) -> dict[str, Any]:
-    """Inline url() references in a single CSS file."""
     stats: dict[str, Any] = {
         "path": str(path),
         "local": 0,
@@ -264,7 +252,6 @@ def process_css_file(path: Path) -> dict[str, Any]:
 
 
 def process_file(path: Path) -> dict[str, Any]:
-    """Dispatch a file to the appropriate processor based on its extension."""
     if path.suffix.lower() == ".html" or path.suffix.lower() == ".htm":
         return process_html_file(path)
     elif path.suffix.lower() == ".css":
@@ -279,7 +266,6 @@ def process_file(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    """Parse arguments, discover target files, and process them in parallel."""
     parser = argparse.ArgumentParser(description="Standalone HTML/CSS Bundler Tool")
     parser.add_argument(
         "paths",

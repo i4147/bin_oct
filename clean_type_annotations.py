@@ -39,8 +39,6 @@ SKIP_DIR_NAMES = frozenset({"__pycache__"})
 
 
 class TypeAnnotationRemover(cst.CSTTransformer):
-    """Strip type annotations from a libcst module tree."""
-
     # -- parameters -----------------------------------------------------
 
     def leave_Param(self, original_node, updated_node):
@@ -106,18 +104,12 @@ class TypeAnnotationRemover(cst.CSTTransformer):
 
 
 def _read_source(path: Path) -> tuple[str, str]:
-    """Read a file honouring PEP 263 encoding cookies.
-
-    Returns ``(text, encoding)``. Reading the raw bytes once avoids a
-    second syscall while still letting :mod:`tokenize` sniff the encoding.
-    """
     raw = path.read_bytes()
     encoding, _ = tokenize.detect_encoding(io.BytesIO(raw).readline)
     return raw.decode(encoding), encoding
 
 
 def _atomic_write(path: Path, text: str, encoding: str) -> None:
-    """Write ``text`` to ``path`` atomically, preserving its mode."""
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
         tmp.write_text(text, encoding=encoding)
@@ -141,11 +133,6 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
 
 
 def process_file(path_str: str) -> tuple[str, str | None, bool]:
-    """Process a single file.
-
-    Returns ``(path, error_or_None, changed)``. Errors are reported as
-    strings so they pickle cleanly across worker processes.
-    """
     path = Path(path_str)
 
     try:

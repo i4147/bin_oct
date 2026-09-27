@@ -55,14 +55,6 @@ _POOL: Pool | None = None
 
 
 def fsz(size: float) -> str:
-    """Format a byte count into a human-readable string.
-
-    Args:
-        size: Size in bytes.
-
-    Returns:
-        Formatted string such as ``"1.50 MB"``.
-    """
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if size < 1024.0:
             return f"{size:.2f} {unit}"
@@ -71,11 +63,6 @@ def fsz(size: float) -> str:
 
 
 def _get_pool() -> Pool:
-    """Return the module-level multiprocessing pool, creating it lazily.
-
-    Returns:
-        A shared ``multiprocessing.Pool`` with ``MAX_WORKERS`` workers.
-    """
     global _POOL
     if _POOL is None:
         _POOL = Pool(processes=MAX_WORKERS)
@@ -83,7 +70,6 @@ def _get_pool() -> Pool:
 
 
 def _close_pool() -> None:
-    """Close and join the module-level multiprocessing pool if it exists."""
     global _POOL
     if _POOL is not None:
         _POOL.close()
@@ -92,15 +78,6 @@ def _close_pool() -> None:
 
 
 def should_compress(path: Path) -> bool:
-    """Return whether a file is a candidate for compression.
-
-    Args:
-        path: Candidate file path.
-
-    Returns:
-        True if the file is a regular non-symlink file of at least 1KB
-        that does not already have a compressed extension.
-    """
     try:
         if not path.is_file() or path.is_symlink():
             return False
@@ -113,15 +90,6 @@ def should_compress(path: Path) -> bool:
 
 
 def get_files(directory: Path, mode: str = "compress") -> list[Path]:
-    """List files in a directory for compression or decompression.
-
-    Args:
-        directory: Directory to scan.
-        mode: Either ``"compress"`` or ``"decompress"``.
-
-    Returns:
-        Sorted list of matching files.
-    """
     if mode == "compress":
         return sorted(
             p
@@ -134,26 +102,10 @@ def get_files(directory: Path, mode: str = "compress") -> list[Path]:
 
 
 def get_dirs(directory: Path) -> list[Path]:
-    """List immediate subdirectories of a directory.
-
-    Args:
-        directory: Directory to scan.
-
-    Returns:
-        Sorted list of subdirectory paths.
-    """
     return sorted(p for p in directory.glob("*") if not p.is_symlink() and p.is_dir())
 
 
 def decompress_file(path: Path) -> bool:
-    """Decompress a single .7z archive in place.
-
-    Args:
-        path: Path to the ``.7z`` file.
-
-    Returns:
-        True on success, False otherwise.
-    """
     if path.suffix != ".7z":
         return False
     out_path = path.with_suffix("")
@@ -180,15 +132,6 @@ def decompress_file(path: Path) -> bool:
 
 
 def compress_in_memory(infile: Path, outfile: Path) -> bool:
-    """Compress a small file by reading it fully into memory.
-
-    Args:
-        infile: Source file path.
-        outfile: Destination ``.7z`` path.
-
-    Returns:
-        True on success, False otherwise.
-    """
     try:
         data = infile.read_bytes()
         if not data:
@@ -216,22 +159,6 @@ def compress_in_memory(infile: Path, outfile: Path) -> bool:
 
 
 def compress_chunk(data: bytes, chunk_id: int, temp_dir: Path) -> Path:
-    """Compress a single data chunk into a temporary .7z archive.
-
-    This function is intended to be executed inside a worker process,
-    so all arguments must be picklable.
-
-    Args:
-        data: Raw chunk bytes.
-        chunk_id: Index of the chunk, used for filenames.
-        temp_dir: Directory to store intermediate files.
-
-    Returns:
-        Path to the compressed chunk archive.
-
-    Raises:
-        Exception: If compression of the chunk fails.
-    """
     chunk_path = temp_dir / f"chunk_{chunk_id:06d}.bin"
     compressed_path = temp_dir / f"chunk_{chunk_id:06d}.7z"
     try:
@@ -254,19 +181,6 @@ def compress_chunk(data: bytes, chunk_id: int, temp_dir: Path) -> Path:
 
 
 def compress_chunked(in_path: Path, out_path: Path, file_size: int) -> bool:
-    """Compress a large file by splitting it into chunks processed in parallel.
-
-    Chunks are compressed using a multiprocessing pool and then combined
-    into a single solid ``.7z`` archive.
-
-    Args:
-        in_path: Source file path.
-        out_path: Destination ``.7z`` path.
-        file_size: Size of the source file in bytes.
-
-    Returns:
-        True on success, False otherwise.
-    """
     temp_dir = TEMP_DIR / f"compress_{in_path.stem}"
     temp_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -312,19 +226,9 @@ def compress_chunked(in_path: Path, out_path: Path, file_size: int) -> bool:
 
 
 async def compress_folder_async(folder_path: Path, output_path: Path) -> bool:
-    """Compress an entire folder into a single ``.7z`` archive asynchronously.
-
-    Args:
-        folder_path: Folder to compress.
-        output_path: Destination ``.7z`` archive path.
-
-    Returns:
-        True if compression succeeded and saved space, False otherwise.
-    """
     loop = asyncio.get_running_loop()
 
     def compress() -> None:
-        """Synchronously write the folder archive (runs in executor)."""
         with py7zr.SevenZipFile(
             output_path,
             mode="w",
@@ -363,15 +267,6 @@ async def compress_folder_async(folder_path: Path, output_path: Path) -> bool:
 
 
 def compress_file(path: Path) -> tuple[bool, int, int]:
-    """Compress a single file, choosing memory or chunked strategy by size.
-
-    Args:
-        path: Source file path.
-
-    Returns:
-        Tuple of ``(success, original_size, compressed_size)``. On failure
-        or skip, sizes are 0.
-    """
     out_path = path.with_suffix(path.suffix + ".7z")
     if out_path.exists():
         print(f"Skipping {path.name} - output already exists")
@@ -408,7 +303,6 @@ def compress_file(path: Path) -> tuple[bool, int, int]:
 
 
 async def process_compress() -> None:
-    """Compress all eligible files and directories in the current directory."""
     cwd = Path.cwd()
     TEMP_DIR.mkdir(parents=True, exist_ok=True)
     print("\n🔧 7-Zip Compression Settings:")
@@ -468,7 +362,6 @@ async def process_compress() -> None:
 
 
 async def process_decompress() -> None:
-    """Decompress all ``.7z`` archives in the current directory."""
     cwd = Path.cwd()
     files_to_decompress = get_files(cwd, mode="decompress")
     if not files_to_decompress:
@@ -519,11 +412,6 @@ async def process_decompress() -> None:
 
 
 async def main_async(mode: str = "compress") -> None:
-    """Dispatch to compress or decompress processing.
-
-    Args:
-        mode: Either ``"compress"`` or ``"decompress"``.
-    """
     if mode == "compress":
         await process_compress()
     elif mode == "decompress":
@@ -533,11 +421,6 @@ async def main_async(mode: str = "compress") -> None:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build the command-line argument parser.
-
-    Returns:
-        Configured ``argparse.ArgumentParser`` instance.
-    """
     parser = argparse.ArgumentParser(
         description=(
             "Multi-threaded 7-Zip compression/decompression tool (max compression)"
@@ -573,7 +456,6 @@ Examples:
 
 
 def main() -> None:
-    """CLI entry point for compression/decompression."""
     parser = _build_parser()
     args = parser.parse_args()
     mode = "decompress" if args.decompress else "compress"

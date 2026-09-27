@@ -86,8 +86,6 @@ except ImportError:
     HAS_LOGURU = False
 
     class _FallbackLogger:
-        """Minimal stand-in when loguru is not installed."""
-
         def debug(self, m: Any, *a: Any, **k: Any) -> None:
             print(f"[DEBUG] {m}")
 
@@ -134,14 +132,13 @@ DEFAULT_TRANSLATE_CHUNK = 32768
 
 
 class AppError(RuntimeError):
-    """User-facing error."""
+    pass
 
 
 # --------------------------------------------------------------------------
 # Generic helpers (replacements for the dh.* helpers used by originals)
 # --------------------------------------------------------------------------
 def _fmt_size(n: float) -> str:
-    """Human-readable file size (originally `dh.fsz`)."""
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024:
             return f"{n:.1f} {unit}"
@@ -150,14 +147,12 @@ def _fmt_size(n: float) -> str:
 
 
 def _dir_size(p: Path) -> int:
-    """Total size in bytes of all files under `p` (originally `dh.gsz`)."""
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
 
 
 def _pmap(
     fn: Callable[[Any], Any], items: Sequence[Any], workers: int | None = None
 ) -> list[Any]:
-    """Parallel map that gracefully falls back to serial for small loads."""
     items = list(items)
     if not items:
         return []
@@ -175,7 +170,6 @@ def find_images(
     recursive: bool = False,
     extensions: set[str] = IMAGE_EXTENSIONS,
 ) -> list[Path]:
-    """Collect image files from the given files/dirs (de-duplicated)."""
     out: list[Path] = []
     seen: set[Path] = set()
     for raw in paths:
@@ -194,7 +188,6 @@ def find_images(
 
 
 def _pick_backend(pref: str) -> str:
-    """Resolve an 'auto' backend preference to a concrete choice."""
     if pref == "auto":
         if HAS_CV2:
             return "cv"
@@ -274,7 +267,6 @@ def _enhance_one(path: Path, backend: str, suffix: str) -> bool:
 
 
 def cmd_enhance(args: argparse.Namespace) -> int:
-    """image2text.py — binarise/enhance images (saves alongside originals)."""
     backend = _pick_backend(args.backend)
     inputs = args.paths if args.paths else [Path.cwd()]
     files = find_images(inputs, recursive=False)
@@ -342,7 +334,6 @@ def _prepare_pillow(path: Path) -> bool:
 
 
 def cmd_prepare(args: argparse.Namespace) -> int:
-    """ocr_prepare.py — prepare images for Tesseract, in-place."""
     if args.verbose and HAS_LOGURU:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
@@ -390,7 +381,6 @@ def _rotate_center(bgr: "np.ndarray", angle: float) -> "np.ndarray":
 
 
 def _deskew_min_area_rect(bgr: "np.ndarray") -> "np.ndarray":
-    """Deskew using minAreaRect over non-zero pixels (matches ocrgrid.y1)."""
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     coords = np.column_stack(np.where(gray > 0))
     if coords.size == 0:
@@ -401,7 +391,6 @@ def _deskew_min_area_rect(bgr: "np.ndarray") -> "np.ndarray":
 
 
 def cmd_grid_variants(args: argparse.Namespace) -> int:
-    """ocrgrid.py — grid-search Tesseract over psm/oem/dpi for 5 image variants."""
     if not (HAS_CV2 and HAS_NUMPY):
         raise AppError("grid-variants requires OpenCV + numpy")
     _require_tesseract()
@@ -498,7 +487,6 @@ def _grid_search_preprocess(path: Path) -> "np.ndarray":
 
 
 def cmd_grid_search(args: argparse.Namespace) -> int:
-    """ocrgrid2.py — grid-search Tesseract over oem/psm on preprocessed images."""
     if not HAS_CV2:
         raise AppError("grid-search requires OpenCV")
     _require_tesseract()
@@ -554,7 +542,6 @@ def cmd_grid_search(args: argparse.Namespace) -> int:
 # Subcommand: ocr  (pyocr.py + ruimg.py)
 # ==========================================================================
 def _ocr_single(path: Path, lang: str | None) -> bool:
-    """Single-file fast-path (pyocr.py behaviour)."""
     if not path.is_file() or path.suffix.lower() not in IMAGE_EXTENSIONS:
         print(f"error: '{path.name}' is not a supported image file")
         return False
@@ -582,7 +569,6 @@ def _ocr_single(path: Path, lang: str | None) -> bool:
 
 
 def _ocr_file(path: Path, lang: str | None) -> dict[str, Any]:
-    """Batch worker (ruimg.py behaviour); returns a JSON-serialisable dict."""
     try:
         with Image.open(path) as im:
             cfg = f"-l {lang}" if lang else ""
@@ -611,7 +597,6 @@ def _ocr_file(path: Path, lang: str | None) -> dict[str, Any]:
 
 
 def cmd_ocr(args: argparse.Namespace) -> int:
-    """pyocr.py / ruimg.py — OCR single files or whole directories."""
     _require_tesseract()
     if args.verbose if hasattr(args, "verbose") else False:
         pass
@@ -694,7 +679,6 @@ def _chunks(text: str, size: int) -> list[str]:
 
 
 def cmd_translate(args: argparse.Namespace) -> int:
-    """transocr.py — OCR a text/image file and translate it to English."""
     from deep_translator import GoogleTranslator
 
     p: Path = args.input_path

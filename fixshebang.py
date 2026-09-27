@@ -40,14 +40,6 @@ COMMON_PYTHON_NAMES: Final[set[str]] = {
 
 
 def get_shebang(content: str) -> str:
-    """Return the appropriate shebang line for the given file content.
-
-    Args:
-        content: The text content of the file.
-
-    Returns:
-        The shebang line to use.
-    """
     if re.search(
         r"^\s*(?:import\s+cv2\b|from\s+cv2\b)",
         content,
@@ -58,19 +50,10 @@ def get_shebang(content: str) -> str:
 
 
 def is_symlink(path: Path) -> bool:
-    """Return True if the given path is a symbolic link."""
     return path.is_symlink()
 
 
 def is_likely_python_file(path: Path) -> bool:
-    """Heuristically determine whether a file is likely a Python file.
-
-    Args:
-        path: The file path to inspect.
-
-    Returns:
-        True if the file appears to be Python source, False otherwise.
-    """
     try:
         with open(path, "rb") as f:
             content = f.read(512)
@@ -95,14 +78,6 @@ def is_likely_python_file(path: Path) -> bool:
 
 
 def find_python_files(directory: Path) -> list[Path]:
-    """Recursively find Python files under the given directory.
-
-    Args:
-        directory: The root directory to scan.
-
-    Returns:
-        A list of paths to Python files.
-    """
     python_files: list[Path] = []
     for path in directory.rglob("*"):
         if (
@@ -141,15 +116,6 @@ def find_python_files(directory: Path) -> list[Path]:
 
 
 def process_file(path: Path, root_dir: Path) -> tuple[Path, bool, str | None, str, str]:
-    """Process a single file to add or update its Python shebang.
-
-    Args:
-        path: The file to process.
-        root_dir: The root directory used for relative path reporting.
-
-    Returns:
-        A tuple of (path, was_changed, error_or_None, relative_path, action_type).
-    """
     rel_path = str(path.relative_to(root_dir))
     if is_symlink(path):
         return (path, False, "Symlink skipped", rel_path, "skipped")
@@ -176,23 +142,10 @@ def process_file(path: Path, root_dir: Path) -> tuple[Path, bool, str | None, st
 def _process_file_star(
     args: tuple[Path, Path],
 ) -> tuple[Path, bool, str | None, str, str]:
-    """Unpack arguments for process_file when using Pool.apply_async.
-
-    Args:
-        args: A tuple of (path, root_dir).
-
-    Returns:
-        The result of process_file.
-    """
     return process_file(*args)
 
 
 def main() -> int:
-    """Run the shebang updater across the current working directory.
-
-    Returns:
-        Exit code (0 on success, 1 if errors occurred).
-    """
     current_dir = Path.cwd()
     print(f"📁 Scanning directory: {current_dir}")
     print("-" * 40)

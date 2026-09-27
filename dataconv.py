@@ -62,12 +62,6 @@ MMAP_THRESHOLD = 5 * 1024 * 1024
 
 
 def _require(modname: str):
-    """
-    Import a module lazily. If missing, raise a friendly error naming the
-    pip package so users know exactly what to install. Doing this lazily
-    matters because multiprocessing workers only pay the import cost for
-    formats they actually touch.
-    """
     try:
         return importlib.import_module(modname)
     except ImportError as exc:
@@ -77,7 +71,6 @@ def _require(modname: str):
 
 
 def read_text(path: Path) -> str:
-    """Read a text file, mmap'ing it when it exceeds MMAP_THRESHOLD."""
     size = path.stat().st_size
     if size == 0:
         return ""
@@ -90,7 +83,6 @@ def read_text(path: Path) -> str:
 
 
 def _columns(rows: list[dict[str, Any]]) -> list[str]:
-    """Ordered union of keys across all rows (stable, insertion-ordered)."""
     cols: list[str] = []
     seen: set = set()
     for row in rows:
@@ -102,7 +94,6 @@ def _columns(rows: list[dict[str, Any]]) -> list[str]:
 
 
 def _flat(value: Any) -> Any:
-    """Flatten a value for CSV/XML output."""
     if value is None:
         return ""
     if isinstance(value, bool):
@@ -113,7 +104,6 @@ def _flat(value: Any) -> Any:
 
 
 def _infer_sql_type(values) -> str:
-    """Very simple type inference for SQLite / SQL dumps."""
     kind: Optional[str] = None
     for v in values:
         if v is None:
@@ -136,7 +126,6 @@ def _infer_sql_type(values) -> str:
 
 
 def _sqlite_val(value: Any) -> Any:
-    """Adapt a python value into something sqlite3 accepts."""
     if value is None:
         return None
     if isinstance(value, bool):
@@ -147,7 +136,6 @@ def _sqlite_val(value: Any) -> Any:
 
 
 def _sql_literal(value: Any) -> str:
-    """Render a python value as a SQL literal."""
     if value is None:
         return "NULL"
     if isinstance(value, bool):
@@ -166,7 +154,6 @@ def _sql_literal(value: Any) -> str:
 
 
 def _is_table_dict(data: Any) -> bool:
-    """True if `data` looks like {table_name: [row, row, ...]}."""
     return (
         isinstance(data, dict)
         and bool(data)
@@ -175,10 +162,6 @@ def _is_table_dict(data: Any) -> bool:
 
 
 def _as_tables(data: Any, fallback_name: str) -> Tables:
-    """
-    Normalize arbitrary loaded structures into Tables form.
-    Used by many loaders (json, yaml, msgpack, pickle, ...).
-    """
     if _is_table_dict(data):
         return {
             str(k): [r if isinstance(r, dict) else {"value": r} for r in v]
@@ -199,7 +182,6 @@ def _as_tables(data: Any, fallback_name: str) -> Tables:
 
 
 def load_csv(path: Path) -> Tables:
-    """Load CSV/TSV into a single table named after the file stem."""
     text = read_text(path)
     # Tab-delimited TSV files get sniffed as such if their ext says so.
     dialect: Any = "excel-tab" if path.suffix.lower() == ".tsv" else "excel"
@@ -208,7 +190,6 @@ def load_csv(path: Path) -> Tables:
 
 
 def write_csv(tables: Tables, out_path: Path) -> list[Path]:
-    """Write each table as a CSV file. Multi-table => suffixed filenames."""
     multi = len(tables) > 1
     written: list[Path] = []
     for name, rows in tables.items():
@@ -231,12 +212,10 @@ def write_csv(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_json(path: Path) -> Tables:
-    """Accept a list of dicts, a dict of tables, or a single object."""
     return _as_tables(json.loads(read_text(path)), path.stem)
 
 
 def write_json(tables: Tables, out_path: Path) -> list[Path]:
-    """Single table -> flat list; multiple tables -> {name: [...]}."""
     payload: Any = next(iter(tables.values())) if len(tables) == 1 else tables
     out_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False, default=str),
@@ -249,7 +228,6 @@ def write_json(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_jsonl(path: Path) -> Tables:
-    """One JSON object per line — streams naturally."""
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as fh:
         for i, line in enumerate(fh, 1):
@@ -262,7 +240,6 @@ def load_jsonl(path: Path) -> Tables:
 
 
 def write_jsonl(tables: Tables, out_path: Path) -> list[Path]:
-    """JSONL only supports a single table; flatten the first one."""
     name, rows = next(iter(tables.items()))
     with out_path.open("w", encoding="utf-8") as fh:
         for row in rows:
@@ -274,7 +251,6 @@ def write_jsonl(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_db(path: Path) -> Tables:
-    """Open SQLite read-only, mmap it if large, and read every table."""
     size = path.stat().st_size
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
@@ -298,7 +274,6 @@ def load_db(path: Path) -> Tables:
 
 
 def write_db(tables: Tables, out_path: Path) -> list[Path]:
-    """Create a fresh SQLite file. Types are inferred per column."""
     if out_path.exists():
         out_path.unlink()
     con = sqlite3.connect(out_path)
@@ -346,7 +321,6 @@ _NON_COLUMN_KEYWORDS = {
 
 
 def _split_top_level(s: str) -> list[str]:
-    """Split on commas at paren depth 0 (respecting quoted strings)."""
     parts: list[str] = []
     cur: list[str] = []
     depth = 0
@@ -377,7 +351,6 @@ def _split_top_level(s: str) -> list[str]:
 
 
 def _iter_create_tables(text: str):
-    """Yield (table_name, body) for each CREATE TABLE, honoring nesting."""
     for m in _CREATE_RE.finditer(text):
         name = m.group(1)
         i, depth, start = m.end(), 1, m.end()
@@ -401,7 +374,6 @@ def _iter_create_tables(text: str):
 
 
 def _iter_inserts(text: str):
-    """Yield (table, column_list_or_None, raw_values_string)."""
     for m in _INSERT_RE.finditer(text):
         name = m.group(1)
         cols = m.group(2)
@@ -436,7 +408,6 @@ def _iter_inserts(text: str):
 
 
 def _convert_sql_value(tok: str) -> Any:
-    """Turn one SQL literal token into a python value."""
     if tok == "":
         return None
     upper = tok.upper()
@@ -461,7 +432,6 @@ def _convert_sql_value(tok: str) -> Any:
 
 
 def _parse_value_tuples(raw: str) -> list[list[Any]]:
-    """Parse `(1,'a',NULL),(2,'b',NULL)` into python rows."""
     rows: list[list[Any]] = []
     i, n = 0, len(raw)
     while i < n:
@@ -515,7 +485,6 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
 
 
 def load_sql(path: Path) -> Tables:
-    """Extract CREATE/INSERT statements into Tables (heuristic but robust)."""
     text = read_text(path)
     # Strip comments so our regexes don't trip over them.
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
@@ -554,7 +523,6 @@ def load_sql(path: Path) -> Tables:
 
 
 def write_sql(tables: Tables, out_path: Path) -> list[Path]:
-    """Emit a portable CREATE + INSERT dump."""
     lines: list[str] = ["-- generated by dataconv.py", ""]
     for name, rows in tables.items():
         cols = _columns(rows)
@@ -578,7 +546,6 @@ def write_sql(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_xlsx(path: Path) -> Tables:
-    """openpyxl handles xlsx/xlsm (read-only, values-only for speed)."""
     openpyxl = _require("openpyxl")
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     out: Tables = {}
@@ -600,7 +567,6 @@ def load_xlsx(path: Path) -> Tables:
 
 
 def load_xls(path: Path) -> Tables:
-    """Legacy .xls — read-only via xlrd, and xlrd only supports xls."""
     xlrd = _require("xlrd")
     book = xlrd.open_workbook(path)
     out: Tables = {}
@@ -617,7 +583,6 @@ def load_xls(path: Path) -> Tables:
 
 
 def load_xlsb(path: Path) -> Tables:
-    """Binary Excel — pyxlsb for read."""
     pyxlsb = _require("pyxlsb")
     out: Tables = {}
     with pyxlsb.open_workbook(path) as wb:
@@ -639,7 +604,6 @@ def load_xlsb(path: Path) -> Tables:
 
 
 def load_ods(path: Path) -> Tables:
-    """OpenDocument Spreadsheet via odfpy (pulls the XML apart manually)."""
     odf = _require("odf.opendocument")
     table_mod = _require("odf.table")
     text_mod = _require("odf.text")
@@ -673,7 +637,6 @@ def load_ods(path: Path) -> Tables:
 
 
 def write_xlsx(tables: Tables, out_path: Path) -> list[Path]:
-    """One sheet per table; sheet names truncated to Excel's 31-char limit."""
     openpyxl = _require("openpyxl")
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
@@ -688,7 +651,6 @@ def write_xlsx(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def write_ods(tables: Tables, out_path: Path) -> list[Path]:
-    """Write one OpenDocument Spreadsheet with a sheet per table."""
     odf_opendoc = _require("odf.opendocument")
     table_mod = _require("odf.table")
     text_mod = _require("odf.text")
@@ -723,13 +685,11 @@ def write_ods(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_parquet(path: Path) -> Tables:
-    """pyarrow-backed parquet read (single table per file)."""
     pq = _require("pyarrow.parquet")
     return {path.stem: pq.read_table(path).to_pylist()}
 
 
 def write_parquet(tables: Tables, out_path: Path) -> list[Path]:
-    """Snappy-compressed parquet. Multiple tables => separate files."""
     pa = _require("pyarrow")
     pq = _require("pyarrow.parquet")
     multi = len(tables) > 1
@@ -749,13 +709,11 @@ def write_parquet(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_feather(path: Path) -> Tables:
-    """Arrow Feather v2 via pyarrow."""
     feather = _require("pyarrow.feather")
     return {path.stem: feather.read_table(path).to_pylist()}
 
 
 def write_feather(tables: Tables, out_path: Path) -> list[Path]:
-    """Feather supports a single table; use the first."""
     pa = _require("pyarrow")
     feather = _require("pyarrow.feather")
     name, rows = next(iter(tables.items()))
@@ -766,13 +724,11 @@ def write_feather(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_orc(path: Path) -> Tables:
-    """Apache ORC via pyarrow."""
     orc = _require("pyarrow.orc")
     return {path.stem: orc.read_table(path).to_pylist()}
 
 
 def write_orc(tables: Tables, out_path: Path) -> list[Path]:
-    """ORC single-table only."""
     pa = _require("pyarrow")
     orc = _require("pyarrow.orc")
     _, rows = next(iter(tables.items()))
@@ -783,7 +739,6 @@ def write_orc(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_arrow(path: Path) -> Tables:
-    """Arrow IPC file format."""
     ipc = _require("pyarrow.ipc")
     ipc_feather = _require("pyarrow.feather")
     with path.open("rb") as fh:
@@ -792,7 +747,6 @@ def load_arrow(path: Path) -> Tables:
 
 
 def write_arrow(tables: Tables, out_path: Path) -> list[Path]:
-    """Arrow IPC file format."""
     pa = _require("pyarrow")
     ipc = _require("pyarrow.ipc")
     _, rows = next(iter(tables.items()))
@@ -826,7 +780,6 @@ def write_yaml(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_toml(path: Path) -> Tables:
-    """tomllib is stdlib on 3.11+; tomli for older versions."""
     try:
         import tomllib as toml_mod
     except ImportError:
@@ -842,10 +795,6 @@ def write_toml(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_xml(path: Path) -> Tables:
-    """
-    Simple XML: expects <root><row><col>v</col>...</row></root> or
-    <table>...</table> wrappers. Not a general-purpose XML mapper.
-    """
     ET = _require("xml.etree.ElementTree")
     tree = ET.parse(path)
     root = tree.getroot()
@@ -917,7 +866,6 @@ def load_avro(path: Path) -> Tables:
 
 
 def write_avro(tables: Tables, out_path: Path) -> list[Path]:
-    """Avro schema is inferred (nullable union) from the first rows."""
     fastavro = _require("fastavro")
     name, rows = next(iter(tables.items()))
     if not rows:
@@ -941,7 +889,6 @@ def write_avro(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_bson(path: Path) -> Tables:
-    """MongoDB BSON documents concatenated in one file."""
     bson_mod = _require("bson")
     data = path.read_bytes()
     rows = list(bson_mod.decode_all(data))
@@ -963,10 +910,6 @@ def write_bson(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_hdf5(path: Path) -> Tables:
-    """
-    HDF5: each top-level key that behaves like a table becomes a Table.
-    Uses pandas' HDFStore so we can read whatever PyTables stored.
-    """
     pd = _require("pandas")
     out: Tables = {}
     with pd.HDFStore(path, mode="r") as store:
@@ -978,7 +921,6 @@ def load_hdf5(path: Path) -> Tables:
 
 
 def write_hdf5(tables: Tables, out_path: Path) -> list[Path]:
-    """Each table becomes a key in a fresh HDF5 file."""
     pd = _require("pandas")
     _require("tables")
     with pd.HDFStore(out_path, mode="w") as store:
@@ -988,7 +930,6 @@ def write_hdf5(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_netcdf(path: Path) -> Tables:
-    """NetCDF via xarray; each data variable becomes a flattened table."""
     xr = _require("xarray")
     ds = xr.open_dataset(path)
     try:
@@ -1001,7 +942,6 @@ def load_netcdf(path: Path) -> Tables:
 
 
 def write_netcdf(tables: Tables, out_path: Path) -> list[Path]:
-    """Write each table as a data variable inside one NetCDF file."""
     xr = _require("xarray")
     pd = _require("pandas")
     ds = xr.Dataset()
@@ -1013,7 +953,6 @@ def write_netcdf(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_zarr(path: Path) -> Tables:
-    """Zarr via xarray; treats each data variable as a table."""
     xr = _require("xarray")
     ds = xr.open_zarr(path)
     try:
@@ -1037,14 +976,12 @@ def write_zarr(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_rds(path: Path) -> Tables:
-    """R data files (.rds / .rdata) via pyreadr."""
     pyreadr = _require("pyreadr")
     result = pyreadr.read_r(str(path))
     return {name: df.to_dict(orient="records") for name, df in result.items()}
 
 
 def write_rds(tables: Tables, out_path: Path) -> list[Path]:
-    """Write a single-table RDS via pyreadr (multi-table unsupported)."""
     pyreadr = _require("pyreadr")
     pd = _require("pandas")
     _, rows = next(iter(tables.items()))
@@ -1053,14 +990,12 @@ def write_rds(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_dta(path: Path) -> Tables:
-    """Stata .dta via pandas."""
     pd = _require("pandas")
     df = pd.read_stata(path)
     return {path.stem: df.to_dict(orient="records")}
 
 
 def write_dta(tables: Tables, out_path: Path) -> list[Path]:
-    """Stata .dta via pandas (single table only)."""
     pd = _require("pandas")
     _, rows = next(iter(tables.items()))
     pd.DataFrame(rows).to_stata(out_path)
@@ -1068,14 +1003,12 @@ def write_dta(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_sav(path: Path) -> Tables:
-    """SPSS .sav via pyreadstat."""
     pyreadstat = _require("pyreadstat")
     df, _meta = pyreadstat.read_sav(str(path))
     return {path.stem: df.to_dict(orient="records")}
 
 
 def load_sas7bdat(path: Path) -> Tables:
-    """SAS .sas7bdat via pyreadstat."""
     pyreadstat = _require("pyreadstat")
     df, _meta = pyreadstat.read_sas7bdat(str(path))
     return {path.stem: df.to_dict(orient="records")}
@@ -1092,7 +1025,6 @@ def load_dbf(path: Path) -> Tables:
 
 
 def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
-    """dbf only supports a single table; use the first one."""
     dbf = _require("dbf")
     _, rows = next(iter(tables.items()))
     if not rows:
@@ -1116,10 +1048,6 @@ def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def _geo_to_tables(gdf) -> Tables:
-    """
-    Convert a GeoDataFrame to Tables. Geometry becomes WKT; that keeps
-    the data JSON/CSV-friendly at the cost of losing spatial semantics.
-    """
     df = gdf.copy()
     if "geometry" in df.columns:
         df["geometry"] = df["geometry"].apply(
@@ -1136,11 +1064,6 @@ def load_geojson(path: Path) -> Tables:
 
 
 def write_geojson(tables: Tables, out_path: Path) -> list[Path]:
-    """
-    Best-effort: if a 'geometry' column of WKT strings exists we rebuild
-    the geometry and emit true GeoJSON; otherwise we emit a FeatureCollection
-    with null geometries so the properties round-trip losslessly.
-    """
     gpd = _require("geopandas")
     shapely_wkt = _require("shapely.wkt")
     _, rows = next(iter(tables.items()))
@@ -1169,7 +1092,6 @@ def load_shapefile(path: Path) -> Tables:
 
 
 def write_shapefile(tables: Tables, out_path: Path) -> list[Path]:
-    """Shapefiles always carry at least a stub geometry column."""
     gpd = _require("geopandas")
     shapely_wkt = _require("shapely.wkt")
     import pandas as pd
@@ -1195,7 +1117,6 @@ def write_shapefile(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_ini(path: Path) -> Tables:
-    """INI: each [section] becomes a table with key/value rows."""
     import configparser
 
     cp = configparser.ConfigParser()
@@ -1207,7 +1128,6 @@ def load_ini(path: Path) -> Tables:
 
 
 def write_ini(tables: Tables, out_path: Path) -> list[Path]:
-    """INI writer expects tables whose rows have 'key' and 'value' columns."""
     import configparser
 
     cp = configparser.ConfigParser()
@@ -1223,11 +1143,6 @@ def write_ini(tables: Tables, out_path: Path) -> list[Path]:
 
 
 def load_fixed_width(path: Path) -> Tables:
-    """
-    Fixed-width loader: expects a sibling `<name>.schema.json` file that
-    describes column widths:
-        {"columns": [{"name": "id", "width": 5}, ...]}
-    """
     schema_path = path.with_suffix(path.suffix + ".schema.json")
     if not schema_path.exists():
         raise ValueError(f"fixed-width '{path}' requires a schema at {schema_path}")
@@ -1249,9 +1164,6 @@ def load_fixed_width(path: Path) -> Tables:
 
 
 def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
-    """
-    Fixed-width writer: emits data + a schema sidecar file next to it.
-    """
     _, rows = next(iter(tables.items()))
     cols = _columns(rows)
     # Compute widths from the longest rendered value per column.
@@ -1457,7 +1369,6 @@ WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
 
 
 def _output_path(src: Path, target_fmt: str, out_dir: Optional[Path]) -> Path:
-    """Compute an output path preserving the input stem."""
     name = src.stem + FMT_TO_EXT[target_fmt]
     return (out_dir / name) if out_dir else src.with_name(name)
 
@@ -1465,11 +1376,6 @@ def _output_path(src: Path, target_fmt: str, out_dir: Optional[Path]) -> Path:
 def convert_job(
     job: tuple[str, str, Optional[str]],
 ) -> tuple[str, bool, list[str], str]:
-    """
-    Worker entry point:
-    (source_path, target_format, output_dir_or_None)
-        -> (source_path, ok, [output_paths], message)
-    """
     src_str, target_fmt, out_dir_str = job
     src = Path(src_str)
     try:
@@ -1500,7 +1406,6 @@ def convert_job(
 
 
 def detect_format(path: Path) -> Optional[str]:
-    """Extension-based format detection, case insensitive."""
     return EXT_TO_FMT.get(path.suffix.lower())
 
 
@@ -1541,7 +1446,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def _resolve_target(args: argparse.Namespace) -> str:
-    """Which writer did the user ask for?"""
     for fmt in WRITERS:
         if getattr(args, fmt, False):
             return fmt

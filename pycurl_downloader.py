@@ -26,7 +26,6 @@ USER_AGENT = "Mozilla/5.0 (compatible; PyCurlDownloader/1.0)"
 
 
 def filename_from_url(url: str) -> str:
-    """Derive a safe local filename from a URL."""
     parsed = urlparse(url)
     path = unquote(parsed.path)
     name = Path(path).name or "index"
@@ -42,7 +41,6 @@ def filename_from_url(url: str) -> str:
 
 
 def unique_path(directory: Path, name: str) -> Path:
-    """Return a non-colliding path inside `directory`."""
     candidate = directory / name
     if not candidate.exists():
         return candidate
@@ -56,7 +54,6 @@ def unique_path(directory: Path, name: str) -> Path:
 
 
 def download_one(url: str) -> tuple[str, bool, str]:
-    """Download a single URL with pycurl. Returns (url, success, message)."""
     url = url.strip()
     if not url:
         return (url, False, "empty url")
@@ -105,14 +102,12 @@ def download_one(url: str) -> tuple[str, bool, str]:
 
 
 def worker_init():
-    """Ignore SIGINT in workers so Ctrl+C is handled by the main process."""
     import signal
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def load_urls(path: Path) -> list[str]:
-    """Read URLs from file, skipping blanks and comments."""
     return [
         line.strip()
         for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -121,7 +116,6 @@ def load_urls(path: Path) -> list[str]:
 
 
 def save_failed(path: Path, failed_urls: list[str]) -> None:
-    """Rewrite the input file so it contains only the URLs that failed."""
     if failed_urls:
         path.write_text("\n".join(failed_urls) + "\n", encoding="utf-8")
     else:

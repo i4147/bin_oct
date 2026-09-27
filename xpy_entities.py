@@ -209,11 +209,6 @@ STDLIB_IMPORTS: dict[str, str] = {
 # ---------------------------------------------------------------------------
 @dataclass
 class Entity:
-    """A single extracted code entity.
-
-    `type` is one of: ``function``, ``method``, ``class``, ``constant``.
-    """
-
     name: str
     full_name: str
     type: str
@@ -232,7 +227,6 @@ class Entity:
 # Helpers
 # ---------------------------------------------------------------------------
 def infer_imports(source: str) -> list[str]:
-    """Return typing/stdlib import lines suggested by identifiers in *source*."""
     out: list[str] = []
     seen: set[str] = set()
     for name, imp in STDLIB_IMPORTS.items():
@@ -243,14 +237,12 @@ def infer_imports(source: str) -> list[str]:
 
 
 def safe_name(s: str) -> str:
-    """Sanitise *s* for use as a filename stem."""
     s = re.sub(r"[^\w\-.]", "_", s)
     s = s.strip(". ")
     return s or "unnamed"
 
 
 def unique_path(base: Path) -> Path:
-    """Return *base*, or ``base_1``/``base_2``/… if it already exists."""
     if not base.exists():
         return base
     stem, suf = base.stem, base.suffix
@@ -263,7 +255,6 @@ def unique_path(base: Path) -> Path:
 
 
 def parse_kinds(spec: str) -> set[str]:
-    """Parse ``--kinds`` value into a set, always including 'method' if 'function'."""
     kinds = {k.strip() for k in spec.split(",") if k.strip()}
     if "function" in kinds:
         kinds.add("method")
@@ -274,8 +265,6 @@ def parse_kinds(spec: str) -> set[str]:
 # Backend: ast
 # ---------------------------------------------------------------------------
 class ASTExtractor(ast.NodeVisitor):
-    """Extract functions, methods, classes and UPPER_CASE constants via ``ast``."""
-
     def __init__(self, source: str, path: str, scope: str = "all") -> None:
         self.source = source
         self.lines = source.splitlines(keepends=True)
@@ -456,7 +445,6 @@ def _ts_parser():
 
 
 def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list[str]]:
-    """Top-level defs only — matches tsext.py/extfc.py behaviour."""
     parser = _ts_parser()
     data = source.encode("utf-8")
     tree = parser.parse(data)
@@ -531,7 +519,6 @@ def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list
 # Backend: libcst
 # ---------------------------------------------------------------------------
 def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]]:
-    """Top-level defs + UPPER_CASE assignments via libcst."""
     if not HAS_LIBCST:
         raise RuntimeError("libcst not installed")
     try:
@@ -619,7 +606,6 @@ def find_python_files(
     include_archives: bool = False,
     skip_dirs: set[str] | None = None,
 ) -> tuple[list[Path], list[Path]]:
-    """Walk *roots*; return ``(python_files, archive_files)``."""
     skip_dirs = skip_dirs or SKIP_DIRS
     pys: list[Path] = []
     archives: list[Path] = []
@@ -754,7 +740,6 @@ def write_json_metadata(entity: Entity, py_path: Path) -> Path:
 
 
 def write_txt_entities(entities: list[Entity], out_dir: Path) -> None:
-    """Write one .txt per source file, plus a unique.txt per kind (gextco-style)."""
     by_kind: dict[str, dict[str, list[Entity]]] = {
         "function": defaultdict(list),
         "method": defaultdict(list),

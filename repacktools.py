@@ -111,7 +111,6 @@ log = logging.getLogger("repack_tool")
 
 
 def _b64_nopad(data: bytes) -> str:
-    """URL-safe base64 without padding (PEP 376 RECORD hash format)."""
     return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
 
 
@@ -161,7 +160,6 @@ def platform_tag() -> str:
 
 
 def current_sys_tag() -> tuple[str, str, str]:
-    """Return (interpreter, abi, platform) for the running interpreter."""
     try:
         from packaging.tags import sys_tags  # type: ignore
 
@@ -234,7 +232,6 @@ def _read_record(dist_info: Path) -> Optional[list[tuple[str, str, str]]]:
 
 
 def _console_script_names(dist_info: Path) -> list[str]:
-    """Parse ``entry_points.txt`` for console_scripts entry names."""
     ep = dist_info / "entry_points.txt"
     if not ep.exists():
         return []
@@ -257,8 +254,6 @@ def _console_script_names(dist_info: Path) -> list[str]:
 
 @dataclass
 class PackageInfo:
-    """A repackable installed package."""
-
     name: str
     version: str
     dist_info: Path
@@ -277,7 +272,6 @@ class PackageInfo:
 
 
 def resolve_source(source: str, explicit: Optional[Path]) -> Path:
-    """Return the site-packages directory for the requested source."""
     if explicit is not None:
         p = explicit.expanduser().resolve()
         if not p.exists():
@@ -311,7 +305,6 @@ def discover_packages(
     site_packages: Path,
     names: Optional[Sequence[str]] = None,
 ) -> list[PackageInfo]:
-    """Return the list of PackageInfo to process."""
     wanted = {n.lower().replace("-", "_") for n in names} if names else None
     out: list[PackageInfo] = []
 
@@ -361,7 +354,6 @@ def _package_has_binary(site_packages: Path, top_level: str) -> bool:
 
 
 def _guess_top_level(site_packages: Path, dist_info: Path, name: str) -> str:
-    """Determine the import name (top level) of the package."""
     tl = dist_info / "top_level.txt"
     if tl.exists():
         first = tl.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -408,7 +400,6 @@ def _write_wheel_metadata(
 
 
 def _compute_record(base: Path, dist_info_name: str) -> str:
-    """Compute a RECORD file body for the tree rooted at ``base``."""
     rows: list[str] = []
     for f in sorted(base.rglob("*")):
         if not f.is_file():
@@ -436,10 +427,6 @@ def _zip_directory(src: Path, dest: Path) -> None:
 def build_wheel_simple(
     pkg: PackageInfo, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
-    """Copy the package dir + dist-info; synthesize WHEEL/RECORD.
-
-    Mirrors repack_pkgs.py / rwheel.py / rpack.py.
-    """
     tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
     wheel_path = output_dir / pkg.wheel_filename(tag)
 
@@ -507,12 +494,6 @@ def build_wheel_from_record(
     missing_dir: Optional[Path],
     verbose: bool,
 ) -> tuple[bool, str, Optional[Path]]:
-    """Rebuild the wheel from the RECORD file. Mirrors siter.py/sr.py/vsr3.py.
-
-    ``on_missing`` controls what happens when a RECORD entry's file is
-    missing: ``skip`` (ignore), ``warn`` (log + skip), ``abort`` (fail the
-    whole package), ``copy`` (copy the package tree to ``missing_dir`` and
-    fail)."""
     rows = _read_record(pkg.dist_info)
     if rows is None:
         return False, f"no RECORD file in {pkg.dist_info.name}", None
@@ -611,7 +592,6 @@ def build_wheel_from_record(
 
 
 def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
-    """Locate the venv bin/Scripts directory for the given site-packages."""
     cur = site_packages.resolve()
     for _ in range(5):
         for name in ("bin", "Scripts"):
@@ -630,7 +610,6 @@ def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
 def build_wheel_via_subprocess(
     src_unpacked: Path, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
-    """Invoke ``python -m wheel pack`` on an unpacked tree."""
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         sys.executable,
@@ -674,8 +653,6 @@ class RepackStats:
 
 
 class Repacker:
-    """Drive the repack workflow for a set of packages."""
-
     def __init__(
         self,
         site_packages: Path,
@@ -782,7 +759,6 @@ class Repacker:
 
 
 def _worker_repack(args_tuple: tuple[dict[str, Any], PackageInfo]) -> dict[str, Any]:
-    """Multiprocessing worker: rebuild one wheel."""
     cfg, pkg = args_tuple
     if cfg["method"] == "simple":
         ok, msg, path = build_wheel_simple(pkg, Path(cfg["output_dir"]), cfg["verbose"])
@@ -810,7 +786,6 @@ def _worker_repack(args_tuple: tuple[dict[str, Any], PackageInfo]) -> dict[str, 
 
 
 def _find_dist_info_dir(root: Path) -> Optional[Path]:
-    """Return the first ``*.dist-info`` dir under ``root`` (or ``root`` itself)."""
     if root.name.endswith(".dist-info"):
         return root
     cands = [d for d in root.iterdir() if d.is_dir() and d.name.endswith(".dist-info")]
@@ -841,7 +816,6 @@ def _wheel_tag_from_dist_info(dist_info: Path) -> str:
 def pack_unpacked_dir_library(
     src: Path, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
-    """Pack ``src`` using the ``wheel`` library. Mirrors wpack.py / wrepack.py."""
     if not _HAS_WHEEL:
         return False, "wheel library not installed", None
     dist_info = _find_dist_info_dir(src)
@@ -868,7 +842,6 @@ def pack_unpacked_dir_library(
 def pack_unpacked_dir_subprocess(
     src: Path, output_dir: Path, verbose: bool
 ) -> tuple[bool, str, Optional[Path]]:
-    """Pack ``src`` via ``wheel pack`` subprocess. Mirrors wheelpackdirs.py."""
     ok, msg, path = build_wheel_via_subprocess(src, output_dir, verbose)
     if ok:
         return True, path.name if path else "ok", path
@@ -902,7 +875,6 @@ def run_pack_dirs(
     workers: int,
     verbose: bool,
 ) -> int:
-    """Entry point for ``pack-dirs`` subcommand."""
     if not directory.is_dir():
         log.error("directory not found: %s", directory)
         return 1

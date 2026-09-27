@@ -16,7 +16,6 @@ CHUNK_SIZE: Final[int] = 1024 * 64
 
 
 def compress_stream(input_stream: BinaryIO, output_file_path: Path) -> None:
-    """Brotli-compress ``input_stream`` into ``output_file_path`` in ``CHUNK_SIZE`` chunks."""
     compressor: brotli.Compressor = brotli.Compressor(quality=BROTLI_QUALITY)
     with output_file_path.open("wb") as f_out:
         while True:
@@ -28,10 +27,6 @@ def compress_stream(input_stream: BinaryIO, output_file_path: Path) -> None:
 
 
 def process_directory(dir_path: Path) -> tuple[Path, bool, str | None]:
-    """Tar ``dir_path`` in memory and Brotli-compress it to `<dir>.tar.br`.
-
-    Returns ``(path, success, error_message_or_None)``.
-    """
     output_br: Path = dir_path.with_name(f"{dir_path.name}.tar.br")
     tar_buffer: io.BytesIO = io.BytesIO()
     try:
@@ -45,10 +40,6 @@ def process_directory(dir_path: Path) -> tuple[Path, bool, str | None]:
 
 
 def process_file(file_path: Path) -> tuple[Path, bool, str | None]:
-    """Brotli-compress ``file_path`` to `<file>.br`.
-
-    Returns ``(path, success, error_message_or_None)``.
-    """
     output_br: Path = file_path.with_name(f"{file_path.name}.br")
     try:
         with file_path.open("rb") as f_in:
@@ -59,13 +50,11 @@ def process_file(file_path: Path) -> tuple[Path, bool, str | None]:
 
 
 def _dispatch(job: tuple[Path, bool]) -> tuple[Path, bool, str | None]:
-    """Route a single starmap job to :func:`process_directory` or :func:`process_file`."""
     path, is_dir = job
     return process_directory(path) if is_dir else process_file(path)
 
 
 def main() -> None:
-    """CLI entry point: discover targets in the cwd and compress them in parallel."""
     current_dir: Path = Path(".")
     script_name: str = Path(__file__).name
 

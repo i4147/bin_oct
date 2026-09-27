@@ -31,45 +31,16 @@ Task = tuple[Path, list[str]]
 
 
 def get_source(node: ast.AST, content: str) -> str | None:
-    """
-    Return the source segment that produced ``node``.
-
-    Args:
-        node: The AST node whose source text is desired.
-        content: The full source text ``node`` came from.
-
-    Returns:
-        The source segment, or ``None`` if it cannot be recovered.
-    """
     return ast.get_source_segment(content, node)
 
 
 def normalize_source(source: str | None) -> str:
-    """
-    Normalize source text for duplicate comparison by stripping trailing
-    whitespace on each line and trimming surrounding whitespace.
-
-    Args:
-        source: Source text, possibly ``None``.
-
-    Returns:
-        The normalized source (empty string when ``source`` is ``None``).
-    """
     if not source:
         return ""
     return "\n".join(line.rstrip() for line in source.strip().splitlines())
 
 
 def _iter_target_py_files(root: Path) -> list[Path]:
-    """
-    Collect all ``.py`` files under ``root``, skipping ``.git`` directories.
-
-    Args:
-        root: Directory to walk.
-
-    Returns:
-        A list of Python file paths.
-    """
     files: list[Path] = []
     for path in root.rglob("*.py"):
         if ".git" in path.parts:
@@ -83,18 +54,6 @@ def _collect_definitions(
     definitions: DefinitionsMap,
     source_map: SourceMap,
 ) -> None:
-    """
-    Record every top-level function/class/constant definition in ``file_path``.
-
-    Keys are ``(kind, name, normalized_source)``; values are the list of files
-    that contain the definition. Parse errors are silently ignored so a single
-    broken file cannot abort the scan.
-
-    Args:
-        file_path: Python source file to inspect.
-        definitions: Accumulator for definition -> file list.
-        source_map: Accumulator for definition -> original source snippet.
-    """
     try:
         content: str = file_path.read_text(encoding="utf-8")
         tree: ast.Module = ast.parse(content)
@@ -121,18 +80,6 @@ def _collect_definitions(
 
 
 def analyze_files() -> list[dict[str, Any]]:
-    """
-    Scan every ``.py`` file under the current directory for duplicated
-    top-level definitions.
-
-    A definition is "repeated" when it appears in more than
-    :data:`DUPLICATE_THRESHOLD` distinct files. The returned list is unsorted;
-    the caller is expected to sort by ``count`` if desired.
-
-    Returns:
-        A list of dicts with keys ``type``, ``name``, ``source``, ``count``,
-        and ``files``.
-    """
     cwd: Path = Path.cwd()
     definitions: DefinitionsMap = collections.defaultdict(list)
     source_map: SourceMap = {}
@@ -158,13 +105,6 @@ def analyze_files() -> list[dict[str, Any]]:
 
 
 def write_repeated_json(repeated: list[dict[str, Any]]) -> None:
-    """
-    Persist the analysis result to :data:`REPEATED_JSON_PATH`, sorted by
-    descending duplicate count.
-
-    Args:
-        repeated: Output of :func:`analyze_files`.
-    """
     repeated.sort(key=lambda item: item["count"], reverse=True)
     REPEATED_JSON_PATH.write_text(
         json.dumps(repeated, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -173,14 +113,6 @@ def write_repeated_json(repeated: list[dict[str, Any]]) -> None:
 
 
 def load_refactoring_maps() -> FileMap:
-    """
-    Load :data:`REPEATED_JSON_PATH` and invert it into a basename -> object
-    names map.
-
-    Returns:
-        A mapping from Python file basename to the list of top-level object
-        names that should be stripped from that file.
-    """
     with REPEATED_JSON_PATH.open("r", encoding="utf-8") as f:
         data: list[dict[str, Any]] = json.load(f)
 
@@ -197,22 +129,7 @@ def load_refactoring_maps() -> FileMap:
 
 
 class ASTStripper(ast.NodeTransformer):
-    """
-    AST transformer that removes top-level functions, classes, and assignments
-    whose names appear in :attr:`target_names`.
-
-    Attributes:
-        target_names: Names to strip.
-        removed_something: Set to ``True`` once any node is removed.
-    """
-
     def __init__(self, target_names: list[str]) -> None:
-        """
-        Initialize the stripper.
-
-        Args:
-            target_names: Names of objects to remove from the tree.
-        """
         super().__init__()
         self.target_names: set[str] = set(target_names)
         self.removed_something: bool = False
@@ -220,7 +137,6 @@ class ASTStripper(ast.NodeTransformer):
     def visit_FunctionDef(  # type: ignore[override]
         self, node: ast.FunctionDef
     ) -> ast.FunctionDef | None:
-        """Remove the function if its name is targeted; otherwise recurse."""
         if node.name in self.target_names:
             self.removed_something = True
             return None
@@ -229,7 +145,6 @@ class ASTStripper(ast.NodeTransformer):
     def visit_AsyncFunctionDef(  # type: ignore[override]
         self, node: ast.AsyncFunctionDef
     ) -> ast.AsyncFunctionDef | None:
-        """Remove the async function if its name is targeted; otherwise recurse."""
         if node.name in self.target_names:
             self.removed_something = True
             return None
@@ -238,7 +153,6 @@ class ASTStripper(ast.NodeTransformer):
     def visit_ClassDef(  # type: ignore[override]
         self, node: ast.ClassDef
     ) -> ast.ClassDef | None:
-        """Remove the class if its name is targeted; otherwise recurse."""
         if node.name in self.target_names:
             self.removed_something = True
             return None
@@ -247,7 +161,6 @@ class ASTStripper(ast.NodeTransformer):
     def visit_Assign(  # type: ignore[override]
         self, node: ast.Assign
     ) -> ast.Assign | None:
-        """Remove the assignment if any target name matches; otherwise recurse."""
         for target in node.targets:
             if isinstance(target, ast.Name) and target.id in self.target_names:
                 self.removed_something = True
@@ -256,19 +169,6 @@ class ASTStripper(ast.NodeTransformer):
 
 
 def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
-    """
-    Strip the named objects from ``file_path`` and prepend a ``dh`` import.
-
-    Inserts the ``from dh import ...`` line after any shebang and after a
-    module docstring.
-
-    Args:
-        file_path: Python source file to refactor in place.
-        objects_to_remove: Names to delete and re-import from ``dh``.
-
-    Returns:
-        ``True`` if the file was modified, otherwise ``False``.
-    """
     try:
         source_code: str = file_path.read_text(encoding="utf-8")
         tree: ast.Module = ast.parse(source_code)
@@ -318,10 +218,6 @@ def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
 
 
 def main() -> None:
-    """
-    Analyze the project for duplicated definitions, write ``repeated.json``,
-    then refactor every local file listed in it in parallel.
-    """
     print("🔎 Analyzing Python files for duplicated definitions...")
     repeated: list[dict[str, Any]] = analyze_files()
 

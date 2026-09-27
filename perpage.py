@@ -34,7 +34,6 @@ SplitResult: TypeAlias = tuple[Path, int]
 
 
 def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> int:
-    """Write one PDF per page of *pdf_path* into *output_dir*; return page count."""
     reader = PdfReader(pdf_path)
     stem = pdf_path.stem
     total_pages = len(reader.pages)
@@ -52,7 +51,6 @@ def split_pdf_by_page(pdf_path: Path, output_dir: Path) -> int:
 
 
 def extract_text_by_page(pdf_path: Path, output_dir: Path) -> int:
-    """Write one .txt per page of *pdf_path* into *output_dir*; return page count."""
     reader = PdfReader(pdf_path)
     stem = pdf_path.stem
     total_pages = len(reader.pages)
@@ -68,7 +66,6 @@ def extract_text_by_page(pdf_path: Path, output_dir: Path) -> int:
 
 
 def _process_pdf(task: SplitTask) -> SplitResult:
-    """Process a single PDF according to *task* (path, output_dir, text_mode)."""
     pdf_path, output_dir, text_mode = task
     try:
         if text_mode:
@@ -82,12 +79,10 @@ def _process_pdf(task: SplitTask) -> SplitResult:
 
 
 def _process_pdf_tuple(item: tuple[SplitTask]) -> SplitResult:
-    """Tuple-argument wrapper around :func:`_process_pdf` for ``Pool.map``."""
     return _process_pdf(item[0])
 
 
 def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
-    """Process *tasks* with a fixed 8-worker Pool using *method*."""
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_process_pdf_tuple, [(task,) for task in tasks])
@@ -110,7 +105,6 @@ def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
 
 
 def collect_pdfs(input_paths: Sequence[str]) -> list[Path]:
-    """Resolve *input_paths* (files/dirs) into a list of PDF files, CWD when empty."""
     if not input_paths:
         return [p for p in Path.cwd().rglob("*.pdf") if p.is_file()]
 
@@ -130,7 +124,6 @@ def process_pdfs(
     pool_method: str,
     text_mode: bool,
 ) -> int:
-    """Split or extract *input_paths* into *output_dir*; return number of PDFs handled."""
     if output_dir is None:
         output_dir = Path.cwd() / DEFAULT_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -152,7 +145,6 @@ def process_pdfs(
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "paths",
@@ -181,7 +173,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     text_mode: bool = bool(args.text)

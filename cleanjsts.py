@@ -28,7 +28,6 @@ _LANGUAGE_BY_EXTENSION: Final[dict[str, Language]] = {
 
 
 def _collect_comment_ranges(node: tree_sitter.Node, out: list[tuple[int, int]]) -> None:
-    """Recursively collect the byte ranges of every ``comment`` node in a tree."""
     if node.type == "comment":
         out.append((node.start_byte, node.end_byte))
         return
@@ -37,14 +36,12 @@ def _collect_comment_ranges(node: tree_sitter.Node, out: list[tuple[int, int]]) 
 
 
 def _has_error(node: tree_sitter.Node) -> bool:
-    """Return ``True`` if the tree rooted at ``node`` contains error or missing nodes."""
     if node.is_error or node.is_missing:
         return True
     return any(_has_error(child) for child in node.children)
 
 
 def _remove_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes:
-    """Return ``source`` with the given byte ranges removed, preserving newline counts."""
     ranges.sort()
     parts: list[bytes] = []
     prev: int = 0
@@ -58,10 +55,6 @@ def _remove_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes:
 
 
 def process_file(file_path: Path) -> str | None:
-    """Strip comments from a single file, validating the cleaned result before writing.
-
-    Returns ``None`` on success or a human-readable error message on failure.
-    """
     try:
         language: Language | None = _LANGUAGE_BY_EXTENSION.get(file_path.suffix)
         if language is None:
@@ -92,7 +85,6 @@ def process_file(file_path: Path) -> str | None:
 
 
 def _gather_files(paths: list[Path]) -> list[Path]:
-    """Collect all supported source files from the given file and directory paths."""
     files: list[Path] = []
     for path in paths:
         if path.is_file():
@@ -105,7 +97,6 @@ def _gather_files(paths: list[Path]) -> list[Path]:
 
 
 def main() -> None:
-    """CLI entry point: gather target files and strip their comments in parallel."""
     if len(sys.argv) > 1:
         paths: list[Path] = [Path(arg) for arg in sys.argv[1:]]
     else:

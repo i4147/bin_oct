@@ -66,7 +66,6 @@ from typing import Dict, List, Sequence, Tuple
 def _extract_plumber(
     pdf_path: str, page_indices: Sequence[int], opts: dict
 ) -> list[tuple[int, str]]:
-    """Extract text from pages using pdfplumber."""
     import pdfplumber  # noqa: F401
 
     out: list[tuple[int, str]] = []
@@ -87,7 +86,6 @@ def _extract_plumber(
 def _extract_fitz(
     pdf_path: str, page_indices: Sequence[int], opts: dict
 ) -> list[tuple[int, str]]:
-    """Extract text from pages using PyMuPDF (fitz). Supports --sort."""
     import fitz  # type: ignore
 
     sort = bool(opts.get("sort", False))
@@ -113,7 +111,6 @@ def _extract_fitz(
 def _extract_pypdf(
     pdf_path: str, page_indices: Sequence[int], opts: dict
 ) -> list[tuple[int, str]]:
-    """Extract text from pages using pypdf."""
     from pypdf import PdfReader  # type: ignore
 
     out: list[tuple[int, str]] = []
@@ -135,7 +132,6 @@ def _extract_pypdf(
 def _extract_pypdf2(
     pdf_path: str, page_indices: Sequence[int], opts: dict
 ) -> list[tuple[int, str]]:
-    """Extract text from pages using PyPDF2."""
     import PyPDF2  # type: ignore
 
     out: list[tuple[int, str]] = []
@@ -157,7 +153,6 @@ def _extract_pypdf2(
 def _extract_pdfminer(
     pdf_path: str, page_indices: Sequence[int], opts: dict
 ) -> list[tuple[int, str]]:
-    """Extract text from pages using pdfminer.six, honouring LAParams options."""
     from pdfminer.high_level import extract_text  # type: ignore
     from pdfminer.layout import LAParams  # type: ignore
 
@@ -216,7 +211,6 @@ _THREAD_BACKENDS = {"fitz", "plumber"}
 def _extract_chunk(
     pdf_path: str, page_indices: Sequence[int], backend: str, opts: dict
 ) -> list[tuple[int, str]]:
-    """Dispatcher used by the executors (must remain a top-level function)."""
     return _BACKENDS[backend](pdf_path, page_indices, opts)
 
 
@@ -226,7 +220,6 @@ def _extract_chunk(
 
 
 def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
-    """Return the total number of pages in `pdf_path` for the given backend."""
     if backend == "plumber":
         import pdfplumber  # noqa: F401
 
@@ -264,11 +257,6 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
 
 
 def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> list[Path]:
-    """Resolve CLI inputs into a de-duplicated, sorted list of PDF paths.
-
-    If `inputs` is empty, the current directory is scanned.  Directories are
-    scanned recursively by default.  `.pdf` match is case-insensitive.
-    """
     if not inputs:
         inputs = ["."]
 
@@ -298,24 +286,17 @@ def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> list[Path]:
 
 
 def _build_out_dir(pdf: Path, args: argparse.Namespace) -> Path:
-    """Compute the output directory for a single PDF."""
     if args.output_dir:
         return Path(args.output_dir).expanduser() / pdf.stem
     return pdf.parent / pdf.stem
 
 
 def _format_name(template: str, stem: str, page: int, total: int) -> str:
-    """Render the output filename from `--name-template`.
-
-    Placeholders: {stem} {page} {total} {w}.  `{w}` is the pad width used by
-    the default template, computed from the page count.
-    """
     width = max(3, len(str(total)))
     return template.format(stem=stem, page=page, total=total, w=width)
 
 
 def _build_opts(args: argparse.Namespace) -> dict:
-    """Collect backend options into a picklable dict."""
     return {
         "sort": args.sort,
         "password": args.password or "",
@@ -336,10 +317,6 @@ def _build_opts(args: argparse.Namespace) -> dict:
 
 
 def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
-    """Extract pages of a single PDF to individual text files.
-
-    Returns the number of files written.
-    """
     # 1. Page count
     try:
         total = _page_count(str(pdf), args.backend, args.password or "")

@@ -75,8 +75,6 @@ TRUETYPE_TABLE = "glyf"
 
 @dataclass
 class ConversionResult:
-    """Result of one font conversion attempt."""
-
     input: Path
     output_format: str
     output: Optional[Path] = None
@@ -93,7 +91,6 @@ class ConversionResult:
 
     @property
     def failed(self) -> bool:
-        """True only for real failures, not intentional skips."""
         return not self.success and not self.skipped
 
 
@@ -103,7 +100,6 @@ class ConversionResult:
 
 
 def detect_format(path: Path) -> Optional[str]:
-    """Return normalized font extension if supported, else None."""
     ext = path.suffix.lower().lstrip(".")
     return ext if ext in SUPPORTED_FORMATS else None
 
@@ -113,14 +109,12 @@ def generate_output_path(
     output_format: str,
     output_dir: Optional[Path] = None,
 ) -> Path:
-    """Build output path, either alongside input or inside output_dir."""
     if output_dir is not None:
         return output_dir / f"{input_path.stem}.{output_format}"
     return input_path.with_suffix(f".{output_format}")
 
 
 def _outline_kind(font: TTFont) -> str:
-    """Return 'cff', 'truetype', or 'unknown' based on table tags."""
     tags = set(font.keys())
     if tags & CFF_TABLES:
         return "cff"
@@ -142,11 +136,6 @@ def convert_font(
     force: bool,
     allow_outline_mismatch: bool,
 ) -> ConversionResult:
-    """
-    Convert one font file.
-
-    This function is top-level so it can be used with multiprocessing.Pool.
-    """
     start = time.perf_counter()
     result = ConversionResult(input=input_path, output_format=output_format)
     output_existed_before = False
@@ -310,7 +299,6 @@ def convert_font(
 
 
 def find_font_files(paths: Sequence[Path]) -> list[Path]:
-    """Find supported font files recursively, with case-insensitive suffixes."""
     files: list[Path] = []
 
     for path in paths:
@@ -346,7 +334,6 @@ def find_font_files(paths: Sequence[Path]) -> list[Path]:
 
 
 def print_file_stats(result: ConversionResult) -> None:
-    """Print one file's result."""
     name = result.input.name
 
     if result.success:
@@ -380,7 +367,6 @@ def print_file_stats(result: ConversionResult) -> None:
 
 
 def print_summary(results: Sequence[ConversionResult]) -> None:
-    """Print overall summary."""
     total = len(results)
     ok = sum(1 for r in results if r.success)
     skipped = sum(1 for r in results if r.skipped)

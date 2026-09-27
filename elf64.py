@@ -51,21 +51,6 @@ ELF_MACHINES = {
 
 
 def analyze_file(path: Path) -> dict | None:
-    """
-    Inspect a single file and return a metadata dict if it is a 64-bit ELF,
-    or None otherwise.
-
-    This function is the unit of work dispatched to the multiprocessing pool,
-    so it must be a top-level, picklable function. It takes and returns only
-    picklable data (Path, dict, None).
-
-    Two-stage filter:
-      1. binaryornot -> cheap text-file rejection (no file open cost beyond
-         a small header read).
-      2. pyelftools  -> authoritative ELF class check + metadata extraction.
-
-    Returns a dict with keys: path, size, type, machine, endianness, entry.
-    """
 
     try:
         if not is_binary(str(path)):
@@ -96,17 +81,6 @@ def analyze_file(path: Path) -> dict | None:
 
 
 def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
-    """
-    Yield every regular file under `root`, recursively.
-
-    Uses pathlib's rglob() for a clean recursive walk. Symlinks are skipped
-    by default to avoid cycles and double-counting.
-
-    Note: the traversal itself runs in the main process. Only the per-file
-    analysis is parallelized. This keeps directory I/O serialized (which the
-    OS handles best) while CPU/IO work on file contents is spread across
-    workers.
-    """
     for path in root.rglob("*"):
         if not path.is_file():
             continue
@@ -116,19 +90,6 @@ def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
 
 
 def scan(root: Path, follow_symlinks: bool = False) -> Iterator[dict]:
-    """
-    Recursively scan `root` and yield metadata dicts for 64-bit ELF files.
-
-    Uses multiprocessing.Pool with a FIXED number of workers (WORKERS) and
-    imap_unordered so results stream back as soon as each file finishes,
-    without waiting for earlier files to complete.
-
-    imap_unordered is preferred over imap / map here because:
-      * Files take wildly different times to analyze (a large .so is much
-        slower than a tiny shell script).
-      * We don't care about ordering.
-      * It gives the lowest latency from "worker finishes" to "user sees it".
-    """
     paths = iter_files(root, follow_symlinks=follow_symlinks)
 
     with mp.Pool(processes=WORKERS) as pool:

@@ -63,7 +63,6 @@ from watchdog.observers import Observer
 
 
 def tail_file(fname, n: int = 10) -> list[str]:
-    """Return the last *n* lines of *fname*; ``[]`` on error."""
     try:
         with open(fname) as f:
             lines = f.readlines()
@@ -74,12 +73,6 @@ def tail_file(fname, n: int = 10) -> list[str]:
 
 
 def parse_exts(spec: str | None) -> tuple[str, ...] | None:
-    """Parse a comma-separated extension list.
-
-    Each entry is lowercased and forced to start with ``.``.  Multi-part
-    suffixes such as ``.tar.gz`` are supported and matched via
-    ``str.endswith``, so both ``gz`` and ``tar.gz`` work as expected.
-    """
     if not spec:
         return None
     parts = [p.strip().lower() for p in spec.split(",") if p.strip()]
@@ -89,7 +82,6 @@ def parse_exts(spec: str | None) -> tuple[str, ...] | None:
 
 
 def path_matches_ext(path: Path, exts: tuple[str, ...] | None) -> bool:
-    """Return True if *path*'s name ends with one of *exts* (or *exts* is None)."""
     if exts is None:
         return True
     name = path.name.lower()
@@ -97,7 +89,6 @@ def path_matches_ext(path: Path, exts: tuple[str, ...] | None) -> bool:
 
 
 def human_size(n: int) -> str:
-    """Format a byte count as a compact, human-readable string."""
     if n < 1024:
         return f"{n}B"
     for unit in ("K", "M", "G", "T"):
@@ -113,8 +104,6 @@ def human_size(n: int) -> str:
 
 
 class ChangeHandler(FileSystemEventHandler):
-    """Batches filesystem events and (optionally) copies changed files."""
-
     def __init__(
         self,
         root: Path,
@@ -343,7 +332,6 @@ def do_initial_copy(
     excluded: tuple[str, ...] | None,
     dest_dir: Path,
 ) -> None:
-    """Copy files that already exist before we start observing."""
     for t in targets:
         if t.is_file():
             paths = [t]

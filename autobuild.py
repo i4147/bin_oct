@@ -15,7 +15,6 @@ OUTPUT_DIR = CURRENT_DIR / "wheels"
 
 
 def is_package_dir(path: Path) -> bool:
-    """Check if a directory looks like a Python package source tree."""
     if not path.is_dir():
         return False
     return (
@@ -26,10 +25,6 @@ def is_package_dir(path: Path) -> bool:
 
 
 def build_wheel(pkg_dir: Path) -> tuple[str, bool, str]:
-    """
-    Build a wheel for a single package directory.
-    Returns (package_name, success, message).
-    """
     try:
         result = subprocess.run(
             [

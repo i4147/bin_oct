@@ -18,12 +18,6 @@ from loguru import logger
 
 
 def extract_definitions(path: Path) -> dict[str, list[str]]:
-    """
-    Extract top-level definitions from a Python file.
-
-    Returns:
-        Dict with keys 'functions', 'classes', 'constants' and lists of names
-    """
     definitions = {"functions": [], "classes": [], "constants": []}
 
     try:
@@ -61,10 +55,6 @@ def extract_definitions(path: Path) -> dict[str, list[str]]:
 
 
 def extract_exports_from_init(init_path: Path) -> set[str]:
-    """
-    Extract names exported from __init__.py.
-    Handles both __all__ and direct imports.
-    """
     exported = set()
 
     try:
@@ -105,13 +95,6 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
 
 
 def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[str]]]:
-    """
-    Check all Python files in directory against __init__.py exports.
-
-    Returns:
-        Dict mapping filename -> {'functions': [...], 'classes': [...], 'constants': [...]}
-        containing names that are defined but NOT exported.
-    """
     if directory is None:
         directory = Path.cwd()
 
@@ -156,19 +139,6 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
 
 
 def build_import_block(missing: dict[str, dict[str, list[str]]]) -> str:
-    """
-    Build import statements + __all__ block for missing definitions.
-
-    Groups imports by module and produces something like:
-        from .foo import (bar, Baz)
-        from .bar import QUX
-
-        __all__ = [
-            "bar",
-            "Baz",
-            "QUX",
-        ]
-    """
     import_lines = []
     all_names = []
 
@@ -203,16 +173,6 @@ def build_import_block(missing: dict[str, dict[str, list[str]]]) -> str:
 def autofix_init(
     init_path: Path, missing: dict[str, dict[str, list[str]]], dry_run: bool = False
 ) -> bool:
-    """
-    Append missing imports and __all__ entries to __init__.py.
-
-    Strategy:
-    - If __init__.py already has an __all__, insert new entries into it
-      (and append imports at the end).
-    - If no __all__ exists, append imports + a new __all__ at the end.
-
-    Returns True on success.
-    """
     if not missing:
         return True
 

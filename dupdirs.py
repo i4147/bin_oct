@@ -40,7 +40,6 @@ def _file_hash(path: Path) -> str:
 
 
 def _collect_files(root: Path):
-    """All files below `root`, as (relative_posix_path, abs_path)."""
     result = []
     root = root.resolve()
     stack = [(root, 0)]
@@ -69,10 +68,6 @@ def _collect_files(root: Path):
 
 
 def _collect_subdirs(root: Path):
-    """
-    All subdirectories below `root` (excluding root itself), as relative
-    posix paths. Skips .git and symlinks.
-    """
     result = []
     root = root.resolve()
     stack = [(root, 0)]
@@ -100,15 +95,6 @@ def _collect_subdirs(root: Path):
 
 
 def folder_signature(args):
-    """
-    Worker function.
-
-    args = (path_str, mode)
-        mode = "content"   -> hash contents too
-        mode = "structure" -> hash only paths/structure
-
-    Returns (struct_key, content_key, abs_path) or None if folder skipped.
-    """
     path_str, mode = args
     root = Path(path_str).resolve()
 

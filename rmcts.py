@@ -28,7 +28,6 @@ _PARSER: Parser | None = None
 
 
 def get_parser() -> Parser:
-    """Return a lazily-initialized, process-local tree-sitter Python parser."""
     global _PARSER
     if _PARSER is None:
         language: Language = Language(tsp.language())
@@ -37,28 +36,23 @@ def get_parser() -> Parser:
 
 
 def line_start(content: bytes, offset: int) -> int:
-    """Return the byte offset of the start of the line containing ``offset``."""
     return content.rfind(b"\n", 0, offset) + 1
 
 
 def line_end(content: bytes, offset: int) -> int:
-    """Return the byte offset just past the end of the line containing ``offset``."""
     newline: int = content.find(b"\n", offset)
     return len(content) if newline == -1 else newline + 1
 
 
 def node_line_start(content: bytes, node: Node) -> int:
-    """Return the byte offset of the start of the line containing ``node``."""
     return line_start(content, node.start_byte)
 
 
 def node_line_end(content: bytes, node: Node) -> int:
-    """Return the byte offset just past the line containing ``node``."""
     return line_end(content, node.end_byte)
 
 
 def is_keep_comment(comment: bytes, start_byte: int) -> bool:
-    """Return True if ``comment`` should be preserved (shebang, type/fmt, coding)."""
     if start_byte == 0 and comment.startswith(b"#!"):
         return True
     stripped: bytes = comment.lstrip()
@@ -71,7 +65,6 @@ def is_keep_comment(comment: bytes, start_byte: int) -> bool:
 
 
 def first_named_child(node: Node) -> Node | None:
-    """Return the first named child of ``node``, or None if there is none."""
     for child in node.children:
         if child.is_named:
             return child
@@ -79,7 +72,6 @@ def first_named_child(node: Node) -> Node | None:
 
 
 def is_string_expression(node: Node) -> bool:
-    """Return True if ``node`` is a string literal or an expression wrapping one."""
     if node.type in {"string", "concatenated_string"}:
         return True
     if node.type != "expression_statement":
@@ -89,7 +81,6 @@ def is_string_expression(node: Node) -> bool:
 
 
 def first_real_statement(container: Node) -> Node | None:
-    """Return the first non-comment named child of ``container``."""
     for child in container.children:
         if child.is_named and child.type != "comment":
             return child
@@ -97,7 +88,6 @@ def first_real_statement(container: Node) -> Node | None:
 
 
 def is_docstring(node: Node) -> bool:
-    """Return True if ``node`` is a module, class, or function docstring."""
     if not is_string_expression(node):
         return False
     parent: Node | None = node.parent
@@ -116,7 +106,6 @@ def is_docstring(node: Node) -> bool:
 
 
 def indent_for_block(block: Node, content: bytes) -> bytes:
-    """Return the indentation bytes appropriate for statements inside ``block``."""
     for child in block.children:
         if not child.is_named:
             continue
@@ -134,14 +123,12 @@ def indent_for_block(block: Node, content: bytes) -> bytes:
 
 
 def block_named_children(block: Node) -> Iterator[Node]:
-    """Yield the named children of ``block``."""
     for child in block.children:
         if child.is_named:
             yield child
 
 
 def collect_actions(root: Node, content: bytes) -> list[tuple[int, int, bytes]]:
-    """Compute sorted, non-overlapping edit actions to strip comments/docstrings."""
     removals: dict[int, tuple[int, int, bytes]] = {}
     blocks: list[Node] = []
     stack: list[Node] = [root]
@@ -208,7 +195,6 @@ def collect_actions(root: Node, content: bytes) -> list[tuple[int, int, bytes]]:
 
 
 def apply_actions(content: bytes, actions: list[tuple[int, int, bytes]]) -> bytes:
-    """Apply a sorted list of edit actions to ``content`` and return the result."""
     output: bytearray = bytearray()
     last_end: int = 0
     for start, end, replacement in actions:
@@ -220,7 +206,6 @@ def apply_actions(content: bytes, actions: list[tuple[int, int, bytes]]) -> byte
 
 
 def strip_comments_and_docstrings(content: bytes) -> tuple[bytes, int]:
-    """Strip comments/docstrings from ``content``; return new bytes and count."""
     parser: Parser = get_parser()
     tree = parser.parse(content)
     actions: list[tuple[int, int, bytes]] = collect_actions(tree.root_node, content)
@@ -235,7 +220,6 @@ def strip_comments_and_docstrings(content: bytes) -> tuple[bytes, int]:
 
 
 def process_file(path: Path, base: Path) -> tuple[str, int, str]:
-    """Process a single file; return (relative path, removed count, error)."""
     try:
         content: bytes = path.read_bytes()
         new_content, removed_count = strip_comments_and_docstrings(content)
@@ -251,7 +235,6 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
 
 
 def iter_py_files(paths: list[Path]) -> Iterator[Path]:
-    """Yield unique Python files from the given files and directories."""
     seen: set[Path] = set()
     for path in paths:
         if path.is_file():
@@ -278,7 +261,6 @@ def iter_py_files(paths: list[Path]) -> Iterator[Path]:
 
 
 def _walker(root_dir: Path) -> Iterator[Path]:
-    """Yield non-symlink Python files under ``root_dir``, skipping .git."""
     for r, _, files in root_dir.walk():
         rp: Path = Path(r)
         for f in files:
@@ -290,7 +272,6 @@ def _walker(root_dir: Path) -> Iterator[Path]:
 
 
 def main() -> int:
-    """Entry point; return exit status (0 on success, 1 if any errors)."""
     cwd: Path = Path.cwd()
     before: int = gsz(cwd)
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
@@ -315,7 +296,6 @@ def main() -> int:
         exhausted: bool = False
 
         def submit_until_full() -> bool:
-            """Fill the pending map up to MAX_WORKERS; return True if exhausted."""
             nonlocal exhausted
             while len(pending) < MAX_WORKERS:
                 try:

@@ -22,7 +22,6 @@ COMPILERS = {
 
 
 def _pick_compiler(candidates):
-    """Return the first candidate available on PATH, or None."""
     for c in candidates:
         if sh.which(c):
             return c

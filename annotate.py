@@ -44,8 +44,6 @@ from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 #  ANNOTATE MODE  (LibCST + .pyi stub)
 # =========================================================================== #
 class TypeshedSanitizer(cst.CSTTransformer):
-    """Rewrite references to `_typeshed.Incomplete` into `typing.Any`."""
-
     def leave_ImportFrom(self, original_node, updated_node):
         if (
             original_node.module
@@ -125,7 +123,6 @@ _TS_PARSER_FACTORY = None  # type: ignore[var-annotated]
 
 
 def _ensure_tree_sitter() -> None:
-    """Import and cache tree-sitter Python grammar on first use."""
     global _PY_LANGUAGE, _TS_PARSER_FACTORY
     if _PY_LANGUAGE is not None:
         return
@@ -202,7 +199,6 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
 def strip_annotations_from_bytes(
     src_bytes: bytes, path: Path
 ) -> tuple[bytes, list[str], Optional[str]]:
-    """Return (new_bytes, warnings, error). error=None on success."""
     _ensure_tree_sitter()
     parser = _TS_PARSER_FACTORY()
     parser.set_language(_PY_LANGUAGE)

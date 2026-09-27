@@ -155,11 +155,6 @@ def iter_files(
     *,
     skip: frozenset[str] = frozenset(),
 ) -> list[Path]:
-    """Expand a mix of files and directories into a deduped list of files.
-
-    Directories are scanned recursively. Files whose *name* is in ``skip``
-    are dropped (mirrors ``dh_reverse.py``). Preserves first-seen order.
-    """
     out: list[Path] = []
     seen: set[Path] = set()
     for p in paths:
@@ -180,7 +175,6 @@ def iter_files(
 
 
 def read_text(path: Path) -> str:
-    """Read a text file, falling back to latin-1 on decode errors."""
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -203,11 +197,6 @@ def _write(path: Path, text: str, *, backup: bool) -> None:
 # Fixer discovery (refactor subcommand)
 # ===========================================================================
 def discover_fixers(fixer_module: str = DEFAULT_FIXER_MODULE) -> list[str]:
-    """Return every non-package submodule of *fixer_module*.
-
-    Falls back to the static list from ``2232.py`` if the module can't be
-    imported (e.g. lib2to3 missing on Python 3.13+).
-    """
     try:
         import importlib
 
@@ -224,7 +213,6 @@ def discover_fixers(fixer_module: str = DEFAULT_FIXER_MODULE) -> list[str]:
 
 
 def resolve_fixers(spec: str, fixer_module: str) -> list[str]:
-    """Turn ``--fixers auto`` / explicit comma-separated list into a list."""
     if spec == "auto":
         return discover_fixers(fixer_module)
     return [f.strip() for f in spec.split(",") if f.strip()]
@@ -245,12 +233,6 @@ def _import_refactoring_tool():
 
 
 class _CapturingTool:
-    """RefactoringTool that records log_error/log_message calls.
-
-    Mirrors ``2232.py``'s ``g`` subclass. Constructed lazily via
-    ``_build_capturing_tool`` so that ``lib2to3`` import can fail cleanly.
-    """
-
     @staticmethod
     def build(fixers: list[str], options: dict) -> tuple[object, list[str], list[str]]:
         base = _import_refactoring_tool()
@@ -280,11 +262,6 @@ def describe_diff(
     max_lines: int,
     ctx_chars: int,
 ) -> str:
-    """Format a short diff summary of two source strings.
-
-    ``mode``: "none" → "", "compact" → ``-``/``+`` lines, "full" →
-    ``Line N: old -> new`` lines (as in 2232.py).
-    """
     if mode == "none" or original == new_text:
         return ""
     old = original.splitlines()
@@ -324,7 +301,6 @@ def _refactor_file(
     backup: bool,
     show_errors: bool,
 ) -> tuple[Path, bool, str]:
-    """Refactor one file with lib2to3. Returns (path, changed, message)."""
     try:
         original = read_text(path)
     except OSError as e:
@@ -373,11 +349,6 @@ def _refactor_file(
 # detect subcommand (is2or3.py)
 # ===========================================================================
 def detect_file(path: Path) -> tuple[Path, int | None, str]:
-    """Heuristically classify a source file as Python 2 or 3.
-
-    Returns ``(path, version, reason)`` where version is 2, 3, or None on
-    read error. This is a cleaned-up version of ``is2or3.py``.
-    """
     try:
         text = read_text(path)
     except OSError as e:
@@ -502,7 +473,6 @@ EXCEPT_RE = re.compile(r"^(\s*)except\s+(\S+)\s*,\s*(\S+)\s*:")
 
 
 def _convert_print_line(line: str) -> tuple[str, bool]:
-    """Rewrite a single line's `print x` to `print(x)`; returns (line, changed)."""
     if PRINT_BARE_RE.match(line):
         indent = line[: len(line) - len(line.lstrip())]
         return (f"{indent}print()\n", True)
@@ -518,7 +488,6 @@ def _convert_print_line(line: str) -> tuple[str, bool]:
 
 
 def _convert_legacy_line(line: str) -> tuple[str, bool]:
-    """Extra Py2 → Py3 fixes (--all): except X, e: / xrange / raw_input."""
     original = line
     line = line.replace("xrange(", "range(")
     line = line.replace("raw_input(", "input(")
@@ -531,7 +500,6 @@ def _convert_legacy_line(line: str) -> tuple[str, bool]:
 
 
 def fixprint_text(text: str, do_all: bool) -> tuple[str, bool]:
-    """Line-based rewrite of *text*. Returns (new_text, changed)."""
     out_lines: list[str] = []
     changed = False
     for line in text.splitlines(keepends=True):
@@ -551,7 +519,6 @@ def _fixprint_file(
     backup: bool,
     with_ruff: bool,
 ) -> tuple[Path, bool, str]:
-    """Fix one file's print/legacy syntax. Returns (path, changed, message)."""
     try:
         original = read_text(path)
     except OSError as e:
@@ -572,7 +539,6 @@ def _fixprint_file(
 
 
 def _run_ruff_up010(path: Path) -> str:
-    """Run ``ruff check --fix --select UP010 <path>`` and report the result."""
     if shutil.which("ruff") is None:
         return " (ruff not found; skipped)"
     try:
@@ -659,7 +625,6 @@ def cmd_run2to3(args: argparse.Namespace) -> int:
 # strip-tag subcommand (nopy2.py)
 # ===========================================================================
 def _strip_tag_from_text(text: str, tag: str) -> str:
-    """Remove every line starting with *tag*; preserve trailing newline."""
     out = "\n".join(l for l in text.splitlines() if not l.startswith(tag))
     if text.endswith("\n"):
         out += "\n"
@@ -667,7 +632,6 @@ def _strip_tag_from_text(text: str, tag: str) -> str:
 
 
 def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
-    """Rewrite a zip/whl in place, stripping *tag* from matching members."""
     tmp_fd, tmp_name = tempfile.mkstemp(suffix=".zip")
     tmp = Path(tmp_name)
     try:
@@ -694,7 +658,6 @@ def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
 
 
 def _process_tar(path: Path, targets: frozenset[str], tag: str) -> bool:
-    """Rewrite a tar/tar.gz in place, stripping *tag* from matching members."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_p = Path(tmpdir)
         with tarfile.open(path, "r:*") as tin:
@@ -728,7 +691,6 @@ def _process_tar(path: Path, targets: frozenset[str], tag: str) -> bool:
 def _strip_tag_file(
     path: Path, targets: frozenset[str], tag: str
 ) -> tuple[Path, bool, str]:
-    """Strip *tag* from a file: either a member-bearing archive or a loose file."""
     low = path.name.lower()
     try:
         if low.endswith((".zip", ".whl")) or zipfile.is_zipfile(path):

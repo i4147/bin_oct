@@ -53,7 +53,6 @@ _PARSERS: dict[str, Parser] = {}
 
 
 def get_parser(ext: str) -> Parser:
-    """Return (and cache) a tree-sitter parser for the given file extension."""
     if ext not in _PARSERS:
         if ext in C_EXTS:
             lang: Language = Language(tree_sitter_c.language())
@@ -68,7 +67,6 @@ def get_parser(ext: str) -> Parser:
 
 
 def collect_comment_ranges(root: Node) -> list[tuple[int, int]]:
-    """Return a list of (start_byte, end_byte) ranges for all comment nodes."""
     ranges: list[tuple[int, int]] = []
     stack: list[Node] = [root]
     while stack:
@@ -82,7 +80,6 @@ def collect_comment_ranges(root: Node) -> list[tuple[int, int]]:
 
 
 def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
-    """Parse ``content`` and return metadata for every comment found."""
     parser: Parser = get_parser(ext)
     tree = parser.parse(content)
     ranges: list[tuple[int, int]] = collect_comment_ranges(tree.root_node)
@@ -123,7 +120,6 @@ def strip_comments(
     ext: str,
     selected_ranges: list[tuple[int, int]] | None = None,
 ) -> tuple[bytes, int]:
-    """Return ``content`` with the given (or all) comment ranges removed."""
     if selected_ranges is None:
         parser: Parser = get_parser(ext)
         tree = parser.parse(content)
@@ -143,7 +139,6 @@ def strip_comments(
 
 
 def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
-    """Interactively prompt the user about each comment in ``path``."""
     try:
         path = Path(path).resolve()
         base = Path(base).resolve()
@@ -201,7 +196,6 @@ def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
 
 
 def process_file(path: Path, base: Path) -> tuple[str, int, str]:
-    """Non-interactive worker: strip all comments from ``path`` in place."""
     try:
         content: bytes = path.read_bytes()
         ext: str = path.suffix.lower()
@@ -218,7 +212,6 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
 
 
 def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
-    """Yield unique C/C++ files found under the given paths."""
     seen: set[Path] = set()
     for p in paths:
         if p.is_file() and p.suffix.lower() in ALL_EXTS:
@@ -236,10 +229,6 @@ def iter_cc_files(paths: Iterable[Path]) -> Iterator[Path]:
 
 
 def _run_batch(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
-    """Process files in parallel with a fixed pool of ``WORKERS`` workers.
-
-    Returns a tuple ``(total_comments, files_changed, errors)``.
-    """
     total_comments: int = 0
     files_changed: int = 0
     errors: int = 0
@@ -259,7 +248,6 @@ def _run_batch(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
 
 
 def _run_interactive(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
-    """Process files sequentially in interactive mode."""
     total_comments: int = 0
     files_changed: int = 0
     errors: int = 0
@@ -280,7 +268,6 @@ def _run_interactive(files: Sequence[Path], base: Path) -> tuple[int, int, int]:
 
 
 def main() -> int:
-    """Entry point: parse args, discover files, and dispatch processing."""
     ap: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Remove comments from C/C++ files in place (tree-sitter powered)."
     )

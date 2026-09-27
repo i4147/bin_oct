@@ -96,7 +96,6 @@ _ANSI = {
 
 
 def cprint(msg: str, color: Optional[str] = None) -> None:
-    """Print `msg`, optionally colored (only if stdout is a TTY)."""
     if color and sys.stdout.isatty() and color in _ANSI:
         print(f"{_ANSI[color]}{msg}{_ANSI['reset']}")
     else:
@@ -104,12 +103,10 @@ def cprint(msg: str, color: Optional[str] = None) -> None:
 
 
 def should_skip(path: Path) -> bool:
-    """Return True for VCS / cache / build folders we never traverse."""
     return any(part in SKIP_DIR_NAMES for part in path.parts)
 
 
 def unique_path(p: Path) -> Path:
-    """Return `p` if free, else `stem.N.suffix` for the first free N."""
     if not p.exists():
         return p
     i = 1
@@ -123,16 +120,6 @@ def unique_path(p: Path) -> Path:
 def iter_files(
     root: Path, ext: Optional[Sequence[str]] = None, recursive: bool = False
 ) -> Iterator[Path]:
-    """
-    Yield regular files under `root`.
-
-    Parameters
-    ----------
-    root       : directory to scan.
-    ext        : if given, only yield files whose name ends with one of these
-                 suffixes (e.g. ``['.so', '.so.1']``).
-    recursive  : if True, walk subdirectories, skipping :data:`SKIP_DIR_NAMES`.
-    """
     if root.is_file():
         yield root
         return
@@ -160,9 +147,6 @@ def iter_files(
 
 
 def is_binary_file(path: Path, chunk: int = 1024) -> bool:
-    """
-    Heuristic binary check: NUL byte OR non-UTF-8 in the first `chunk` bytes.
-    """
     try:
         with path.open("rb") as fh:
             head = fh.read(chunk)
@@ -178,7 +162,6 @@ def is_binary_file(path: Path, chunk: int = 1024) -> bool:
 
 
 def is_elf_binary(path: Path) -> bool:
-    """True if the file starts with the ELF magic number."""
     try:
         with path.open("rb") as fh:
             return fh.read(4) == b"\x7fELF"
@@ -187,7 +170,6 @@ def is_elf_binary(path: Path) -> bool:
 
 
 def is_shebang_script(path: Path) -> bool:
-    """True if the file starts with ``#!``."""
     try:
         with path.open("rb") as fh:
             return fh.read(2) == b"#!"
@@ -196,7 +178,6 @@ def is_shebang_script(path: Path) -> bool:
 
 
 def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
-    """Return a logger that writes to `log_path` (and stderr if verbose)."""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("binarytoolkit")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
@@ -219,7 +200,6 @@ def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
 
 
 def verify_so_load(path: Path) -> tuple[bool, str]:
-    """Try to load `path` via ``ctypes.CDLL``. Returns (ok, message)."""
     if not path.exists():
         return False, "File does not exist"
     if not path.is_file():
@@ -235,7 +215,6 @@ def verify_so_load(path: Path) -> tuple[bool, str]:
 
 
 def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
-    """Run ``nm`` on `path`. Returns (has_symbols, count, note)."""
     try:
         res = subprocess.run(
             ["nm", str(path)], capture_output=True, text=True, timeout=timeout
@@ -258,7 +237,6 @@ def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
 
 
 def cmd_sort(args: argparse.Namespace) -> int:
-    """Move binary files from `directory` into `dest`."""
     src = Path(args.directory).resolve()
     dst = Path(args.dest)
     if not dst.is_absolute():
@@ -291,7 +269,6 @@ def cmd_sort(args: argparse.Namespace) -> int:
 
 
 def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
-    """Probe an executable; return (path, None) on OK else (path, error_str)."""
     for probe in PROBE_ARGS:
         try:
             res = subprocess.run(
@@ -329,7 +306,6 @@ def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
 
 
 def _collect_testable_executables(root: Path) -> list[Path]:
-    """All ELF executables (skipping scripts/symlinks/.git) under `root`."""
     out: list[Path] = []
     for p in iter_files(root, recursive=True):
         if ".git" in p.parts or p.is_symlink():
@@ -351,7 +327,6 @@ def _collect_testable_executables(root: Path) -> list[Path]:
 
 
 def cmd_sanity(args: argparse.Namespace) -> int:
-    """Run every ELF executable with common probes; move broken ones aside."""
     root = Path(args.directory).resolve()
     err_dir = Path(args.err_dir)
     if not err_dir.is_absolute():
@@ -445,7 +420,6 @@ def _collect_so_files(inputs: Sequence[str]) -> list[Path]:
 
 
 def cmd_verify_so(args: argparse.Namespace) -> int:
-    """Verify that .so files load via ctypes; optionally count symbols."""
     log_path = Path(args.log_file).expanduser()
     logger = setup_logger(log_path, verbose=args.verbose)
 
@@ -496,11 +470,6 @@ def cmd_verify_so(args: argparse.Namespace) -> int:
 
 
 class SoStripper:
-    """
-    Strips shared objects, backing them up first and (optionally) verifying
-    via ctypes that the stripped file still loads. Restores on failure.
-    """
-
     def __init__(
         self,
         strip_cmd: str = "strip",
@@ -695,7 +664,6 @@ def _strip_common_args(p: argparse.ArgumentParser) -> None:
 
 
 def cmd_strip(args: argparse.Namespace) -> int:
-    """Dispatch to the strip strategy selected on the command line."""
     root = Path(args.directory).resolve()
     stripper = SoStripper(
         strip_cmd=args.strip_cmd,

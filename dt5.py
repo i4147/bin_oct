@@ -43,13 +43,6 @@ from loguru import logger
 
 
 def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
-    """
-    Configure loguru: DEBUG to rotating file, ERROR to stderr.
-
-    Args:
-        debug_log: Path to debug log file.
-        error_stderr: If True, also log errors to stderr.
-    """
     logger.remove()
 
     # Debug level to file (rotated at 50 MB)
@@ -145,19 +138,6 @@ LANGUAGE_CODES = {
 
 
 def map_language_code(backend: str, code: str) -> str:
-    """
-    Map ISO 639-1 language code to backend-specific code.
-
-    Args:
-        backend: Backend name (e.g., "deep_translator").
-        code: ISO 639-1 code (e.g., "en", "zh").
-
-    Returns:
-        Backend-specific code, or original if unmapped.
-
-    Raises:
-        ValueError: If backend unknown.
-    """
     if backend not in LANGUAGE_CODES:
         raise ValueError(f"Unknown backend: {backend}")
     return LANGUAGE_CODES[backend].get(code, code)
@@ -169,19 +149,6 @@ def map_language_code(backend: str, code: str) -> str:
 
 
 def _make_deep_translator(source: str, target: str) -> Callable:
-    """
-    Factory for deep_translator backend.
-
-    Args:
-        source: Source language code (ISO 639-1).
-        target: Target language code (ISO 639-1).
-
-    Returns:
-        Callable that translates a single chunk.
-
-    Raises:
-        ImportError: If deep_translator not installed.
-    """
     try:
         from deep_translator import GoogleTranslator
     except ImportError:
@@ -193,7 +160,6 @@ def _make_deep_translator(source: str, target: str) -> Callable:
     target = map_language_code("deep_translator", target)
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via GoogleTranslator."""
         translator = GoogleTranslator(source_language=source, target_language=target)
         return translator.translate(text)
 
@@ -201,20 +167,6 @@ def _make_deep_translator(source: str, target: str) -> Callable:
 
 
 def _make_deepl(source: str, target: str) -> Callable:
-    """
-    Factory for deepl backend (requires DEEPL_API_KEY environment variable).
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk.
-
-    Raises:
-        ImportError: If deepl not installed.
-        ValueError: If DEEPL_API_KEY not set.
-    """
     try:
         import deepl
     except ImportError:
@@ -231,7 +183,6 @@ def _make_deepl(source: str, target: str) -> Callable:
     translator = deepl.Translator(api_key)
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via DeepL."""
         result = translator.translate_text(text, source_lang=source, target_lang=target)
         return result.text
 
@@ -239,19 +190,6 @@ def _make_deepl(source: str, target: str) -> Callable:
 
 
 def _make_translate(source: str, target: str) -> Callable:
-    """
-    Factory for translate backend (Mymemory-based).
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk.
-
-    Raises:
-        ImportError: If translate not installed.
-    """
     try:
         from translate import Translator
     except ImportError:
@@ -262,27 +200,12 @@ def _make_translate(source: str, target: str) -> Callable:
     translator = Translator(from_lang=source, to_lang=target)
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via Mymemory."""
         return translator.translate(text)
 
     return translate_chunk
 
 
 def _make_translators_bing(source: str, target: str) -> Callable:
-    """
-    Factory for translators (Bing backend).
-    Requires: pip install translators + pkg install nodejs
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk.
-
-    Raises:
-        ImportError: If translators not installed.
-    """
     try:
         import translators
     except ImportError:
@@ -292,7 +215,6 @@ def _make_translators_bing(source: str, target: str) -> Callable:
     target = map_language_code("translators_bing", target)
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via Bing."""
         return translators.translate_text(
             text, from_language=source, to_language=target, service="bing"
         )
@@ -301,20 +223,6 @@ def _make_translators_bing(source: str, target: str) -> Callable:
 
 
 def _make_googletrans(source: str, target: str) -> Callable:
-    """
-    Factory for googletrans backend (thread-unsafe, serialized with lock).
-    Requires: pip install "googletrans==4.0.0rc1"
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk (thread-safe via lock).
-
-    Raises:
-        ImportError: If googletrans not installed.
-    """
     try:
         from googletrans import Translator
     except ImportError:
@@ -330,7 +238,6 @@ def _make_googletrans(source: str, target: str) -> Callable:
     translator = Translator()
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via googletrans (serialized)."""
         with lock:
             result = translator.translate(
                 text, src_language=source, dest_language=target
@@ -341,19 +248,6 @@ def _make_googletrans(source: str, target: str) -> Callable:
 
 
 def _make_pygoogletranslation(source: str, target: str) -> Callable:
-    """
-    Factory for pygoogletranslation backend (thread-unsafe, serialized with lock).
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk (thread-safe via lock).
-
-    Raises:
-        ImportError: If pygoogletranslation not installed.
-    """
     try:
         from pygoogletranslation import Translator
     except ImportError:
@@ -368,7 +262,6 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
     translator = Translator()
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via pygoogletranslation (serialized)."""
         with lock:
             result = translator.translate(
                 text, src_language=source, dest_language=target
@@ -379,20 +272,6 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
 
 
 def _make_boto3(source: str, target: str) -> Callable:
-    """
-    Factory for AWS Translate (boto3).
-    Requires AWS credentials in environment or ~/.aws/credentials.
-
-    Args:
-        source: Source language code.
-        target: Target language code.
-
-    Returns:
-        Callable that translates a single chunk.
-
-    Raises:
-        ImportError: If boto3 not installed.
-    """
     try:
         import boto3
     except ImportError:
@@ -403,7 +282,6 @@ def _make_boto3(source: str, target: str) -> Callable:
     client = boto3.client("translate", region_name="us-east-1")
 
     def translate_chunk(text: str) -> str:
-        """Translate text chunk via AWS Translate."""
         response = client.translate_text(
             Text=text,
             SourceLanguageCode=source,
@@ -441,24 +319,6 @@ DEFAULT_BACKEND_ORDER = [
 
 
 def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
-    """
-    Split text into chunks, preserving word boundaries.
-
-    Strategy:
-      1. Split into ~chunk_size blocks.
-      2. If a block exceeds chunk_size, scan backwards from chunk_size to find
-         the last space (word boundary).
-      3. Strip leading/trailing whitespace from each chunk.
-      4. Skip empty chunks.
-
-    Args:
-        text: Input text.
-        chunk_size: Target chunk size in characters.
-
-    Returns:
-        List of chunks, each ≤ chunk_size (or slightly more if a single word
-        exceeds chunk_size).
-    """
     if not text or not text.strip():
         return []
 
@@ -499,21 +359,6 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
 def is_identity_translation(
     original: str, translated: str, threshold: float = 0.98
 ) -> bool:
-    """
-    Detect if translation is (nearly) identical to the original.
-
-    Some backends silently return the source text when they fail or when the
-    source language equals the target language. We treat this as a failure so
-    the retry / fallback logic kicks in.
-
-    Args:
-        original: Source text.
-        translated: Translated text.
-        threshold: Similarity ratio above which we flag as identity.
-
-    Returns:
-        True if the two strings are suspiciously similar.
-    """
     if translated is None:
         return True
     a = original.strip()
@@ -539,8 +384,6 @@ def is_identity_translation(
 
 @dataclass
 class TranslationState:
-    """Persistent state for a translation job."""
-
     source_file: str
     source_lang: str
     target_lang: str
@@ -577,12 +420,6 @@ class TranslationState:
 
 
 def atomic_write_json(path: Path, payload: dict) -> None:
-    """
-    Write JSON to *path* atomically (temp file + rename).
-
-    Safe on the same filesystem; a crash mid-write leaves the previous file
-    intact.
-    """
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.parent.mkdir(parents=True, exist_ok=True)
     with tmp.open("w", encoding="utf-8") as f:
@@ -598,7 +435,6 @@ def atomic_write_json(path: Path, payload: dict) -> None:
 
 
 def load_state(path: Path) -> Optional[TranslationState]:
-    """Load state from JSON, or return None if missing / corrupt."""
     if not path.exists():
         return None
     try:
@@ -615,7 +451,6 @@ def load_state(path: Path) -> Optional[TranslationState]:
 
 
 def save_state(path: Path, state: TranslationState) -> None:
-    """Atomically save state to *path*."""
     try:
         atomic_write_json(path, state.to_json())
     except OSError as e:
@@ -623,7 +458,6 @@ def save_state(path: Path, state: TranslationState) -> None:
 
 
 def append_failed_chunk(path: Path, index: int, text: str, error: str) -> None:
-    """Append a failed chunk record to a newline-delimited JSON file."""
     record = {"index": index, "text": text, "error": error, "ts": time.time()}
     try:
         with path.open("a", encoding="utf-8") as f:
@@ -643,11 +477,6 @@ def retry_with_backoff(
     base_delay: float = 1.0,
     max_delay: float = 15.0,
 ) -> str:
-    """
-    Call fn() with exponential backoff on exception.
-
-    Raises the last exception if all attempts fail.
-    """
     last_exc: Optional[BaseException] = None
     for attempt in range(1, attempts + 1):
         try:
@@ -666,12 +495,6 @@ def retry_with_backoff(
 
 
 class TranslatorEngine:
-    """
-    Multi-backend translation engine with fallback, retries, and resume.
-
-    Not thread-safe for state mutation — callers must serialize via lock.
-    """
-
     def __init__(
         self,
         source_lang: str,
@@ -706,15 +529,6 @@ class TranslatorEngine:
             )
 
     def translate_chunk(self, text: str) -> tuple[str, str]:
-        """
-        Translate a single chunk trying each backend with retries.
-
-        Returns:
-            (translated_text, backend_name)
-
-        Raises:
-            RuntimeError: if every backend fails or yields identity output.
-        """
         errors: list[str] = []
         for name, fn in self.backends:
             try:
@@ -746,8 +560,6 @@ class TranslatorEngine:
 
 
 class GracefulShutdown:
-    """Context manager that installs SIGINT/SIGTERM handlers."""
-
     def __init__(self):
         self.event = threading.Event()
         self._prev_int = None
@@ -788,11 +600,6 @@ def run_translation(
     max_workers: int = 2,
     save_every: int = 10,
 ) -> TranslationState:
-    """
-    Run the translation pipeline with resume support.
-
-    Returns the final TranslationState.
-    """
     input_path = Path(input_path)
     output_path = Path(output_path)
 
@@ -849,7 +656,6 @@ def run_translation(
     done_since_save = 0
 
     def worker(idx: int) -> tuple[int, Optional[str], Optional[str], Optional[str]]:
-        """Translate chunk idx. Returns (idx, translation, backend, error)."""
         if stop_event.is_set():
             return idx, None, None, "cancelled"
         text = state.chunks[idx]

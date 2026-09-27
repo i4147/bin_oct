@@ -17,8 +17,6 @@ from loguru import logger
 
 
 class Color:
-    """ANSI color code constants and helpers for terminal colorization."""
-
     BLACK: Final[int] = 30
     RED: Final[int] = 31
     GREEN: Final[int] = 32
@@ -63,7 +61,6 @@ class Color:
         bg: int | None = None,
         attrs: list[int] | None = None,
     ) -> str:
-        """Wrap *text* with ANSI escape codes for the given colors and attributes."""
         if not cls._enabled:
             return text
         codes: list[str] = []
@@ -81,17 +78,14 @@ class Color:
 
     @classmethod
     def disable(cls) -> None:
-        """Disable color output globally."""
         cls._enabled = False
 
     @classmethod
     def enable(cls) -> None:
-        """Enable color output globally."""
         cls._enabled = True
 
     @classmethod
     def can_colorize(cls) -> bool:
-        """Return True if ANSI colors should be emitted to stdout."""
         import os
 
         if os.environ.get("NO_COLOR"):
@@ -109,7 +103,6 @@ def colored(
     bg: int | None = None,
     attrs: list[int] | None = None,
 ) -> str:
-    """Return *text* wrapped in ANSI color escape codes."""
     return Color._build_code(text, fg, bg, attrs)
 
 
@@ -386,16 +379,12 @@ WORKER_COUNT: Final[int] = 8
 
 @dataclass
 class MimeResult:
-    """Result of running the `file` command to detect a MIME type."""
-
     mime_type: str | None
     error: str | None = None
 
 
 @dataclass
 class MismatchResult:
-    """A detected extension mismatch, with the suggested new path."""
-
     path: Path
     current_ext: str
     detected_mime: str
@@ -405,7 +394,6 @@ class MismatchResult:
 
 
 def fix_by_shebang(path: Path) -> str | None:
-    """Return the extension implied by *path*'s shebang, or None if unknown."""
     if is_binary(path):
         return None
     try:
@@ -436,7 +424,6 @@ def fix_by_shebang(path: Path) -> str | None:
 
 
 def get_file_mime(path: Path) -> MimeResult:
-    """Run `file --brief --mime-type` on *path* and return the parsed result."""
     try:
         exit_code: int
         stdout: str
@@ -459,7 +446,6 @@ def get_file_mime(path: Path) -> MimeResult:
 
 
 def safe_rename(old_path: Path, new_path: Path) -> bool:
-    """Rename *old_path* to *new_path*, deduplicating if necessary. Returns success."""
     try:
         if new_path.exists():
             new_path = unique_path(new_path)
@@ -470,7 +456,6 @@ def safe_rename(old_path: Path, new_path: Path) -> bool:
 
 
 def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
-    """Return a MismatchResult if *path*'s extension looks wrong, else None."""
     if path.suffix.lower() in SKIP_EXTENSIONS:
         return None
     current_ext: str = path.suffix.lower()
@@ -509,7 +494,6 @@ def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
 
 
 def process_file_worker(args: tuple[Path, Path]) -> MismatchResult | None:
-    """Multiprocessing entry point: skip empty files, then detect mismatches."""
     base_dir, path = args
     try:
         if path.stat().st_size == 0:
@@ -520,7 +504,6 @@ def process_file_worker(args: tuple[Path, Path]) -> MismatchResult | None:
 
 
 def scan_directory(directory: str) -> list[MismatchResult]:
-    """Walk *directory*, analyze each file, and return all detected mismatches."""
     base_dir: Path = Path(directory).resolve()
     if not base_dir.is_dir():
         logger.error(f"Error: {directory} is not a directory")
@@ -566,7 +549,6 @@ def scan_directory(directory: str) -> list[MismatchResult]:
 
 
 def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> int:
-    """Log each mismatch, optionally prompting before renaming. Returns rename count."""
     if not mismatches:
         logger.success("✓ No file extension mismatches found!")
         return 0
@@ -604,7 +586,6 @@ def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> in
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Construct the CLI argument parser."""
     parser = argparse.ArgumentParser(
         description="Detect and fix file extension mismatches by analyzing MIME types",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -637,7 +618,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """CLI entry point."""
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args()
 

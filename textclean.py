@@ -86,7 +86,6 @@ _ANSI = {
 # dh.get_files, dh.gsz, dh.mpf3) — factored out so no sub-command duplicates.
 # --------------------------------------------------------------------------- #
 def cprint(msg: str, color: str | None = None, *, end: str = "\n") -> None:
-    """Coloured print, falling back to plain output when stdout isn't a tty."""
     if color and color in _ANSI and sys.stdout.isatty():
         sys.stdout.write(f"{_ANSI[color]}{msg}{_ANSI['reset']}{end}")
     else:
@@ -94,7 +93,6 @@ def cprint(msg: str, color: str | None = None, *, end: str = "\n") -> None:
 
 
 def is_binary(path: Path, chunk: int = 8192) -> bool:
-    """Heuristic binary check: NUL byte in the first `chunk` bytes."""
     try:
         with open(path, "rb") as fh:
             return b"\x00" in fh.read(chunk)
@@ -108,7 +106,6 @@ def iter_files(
     recursive: bool = True,
     skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS,
 ) -> Iterator[Path]:
-    """Yield files under `roots` (files are yielded as-is)."""
     for root in roots:
         root = Path(root)
         if root.is_file() and not root.is_symlink():
@@ -132,7 +129,6 @@ def iter_text_files(
     recursive: bool = True,
     skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS,
 ) -> Iterator[Path]:
-    """Like `iter_files`, but skips binaries."""
     for f in iter_files(roots, recursive=recursive, skip_dirs=skip_dirs):
         if not is_binary(f):
             yield f
@@ -335,7 +331,6 @@ def _build_line_predicate(
     multiline: bool,
     ignore_case: bool,
 ):
-    """Return a callable: line -> True if the line should be dropped."""
     if regex:
         flags = 0
         if ignore_case:

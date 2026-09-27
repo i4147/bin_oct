@@ -139,7 +139,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
 # Small helpers
 # ---------------------------------------------------------------------------
 def parse_size(value: str) -> int:
-    """Parse a size string like `1MB`, `500KB`, `1048576` into bytes."""
     s = value.strip().upper().replace(" ", "")
     units = {
         "B": 1,
@@ -160,7 +159,6 @@ def parse_size(value: str) -> int:
 
 
 def human_size(n: float) -> str:
-    """Format a byte count as a short human-readable string."""
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if n < 1024 or unit == "TB":
             return f"{int(n)} B" if unit == "B" else f"{n:.1f} {unit}"
@@ -176,7 +174,6 @@ def _file_size(p: Path) -> int:
 
 
 def dir_size(path: Path) -> int:
-    """Recursively sum file sizes under *path* (0 on error)."""
     total = 0
     try:
         for p in path.rglob("*"):
@@ -188,7 +185,6 @@ def dir_size(path: Path) -> int:
 
 
 def _safe_extractall(tar: tarfile.TarFile, path: Path) -> None:
-    """tarfile.extractall with the safer `data` filter when available."""
     try:
         tar.extractall(path, filter="data")
     except TypeError:
@@ -200,8 +196,6 @@ def _safe_extractall(tar: tarfile.TarFile, path: Path) -> None:
 # ---------------------------------------------------------------------------
 @dataclass(slots=True)
 class TaskResult:
-    """Outcome of a single compress / decompress task."""
-
     path: Path
     original_size: int = 0
     processed_size: int = 0
@@ -232,7 +226,6 @@ def run_parallel(
     operation: str,
     dry_run: bool = False,
 ) -> list[TaskResult]:
-    """Run *worker* over *tasks* in a process pool while printing progress."""
     if not tasks:
         return []
 
@@ -292,7 +285,6 @@ def compress_file(
     keep: bool,
     only_if_smaller: bool = False,
 ) -> TaskResult:
-    """Stream-compress a single file to `<name>.zst`."""
     t0 = time.perf_counter()
     dst = src.with_suffix(src.suffix + ZST_EXT)
     tmp = src.with_suffix(src.suffix + ZST_EXT + ".tmp")
@@ -370,7 +362,6 @@ def tar_compress_dir(
     threads: int,
     keep: bool,
 ) -> TaskResult:
-    """Tar a directory then zstd it to `<name>.tar.zst`."""
     t0 = time.perf_counter()
     dst = src_dir.with_name(src_dir.name + TAR_ZST_EXT)
     tmp_tar = src_dir.parent / f".tmp_{src_dir.name}.tar"
@@ -432,7 +423,6 @@ def decompress_file(
     keep: bool = True,
     untar: bool = True,
 ) -> TaskResult:
-    """Decompress a `.zst` file (and extract `.tar.zst` archives when *untar*)."""
     t0 = time.perf_counter()
 
     suffixes = src.suffixes
@@ -525,7 +515,6 @@ def _should_skip_path(p: Path) -> bool:
 def discover_targets(
     root: Path, args: argparse.Namespace
 ) -> tuple[list[Path], list[Path]]:
-    """Return (files, dirs) to operate on based on CLI filters."""
     files: list[Path] = []
     dirs: list[Path] = []
 
@@ -672,7 +661,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
 
 
 def _verify_archive(archive: Path) -> None:
-    """List members of a .tar.zst archive (used by --verify)."""
     print(f"\nVerifying {archive.name} …")
     try:
         dctx = zstd.ZstdDecompressor()

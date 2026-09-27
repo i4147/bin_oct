@@ -31,7 +31,6 @@ APT_ENV: dict[str, str] = {**os.environ, "APT_CONFIG": os.environ.get("APT_CONFI
 
 
 def read_packages(filepath: Path) -> list[str]:
-    """Read package names from a file, skipping blanks and # comments."""
     pkgs: list[str] = []
     with filepath.open("r") as f:
         for line in f:
@@ -43,7 +42,6 @@ def read_packages(filepath: Path) -> list[str]:
 
 
 def load_progress(progress_file: Path) -> dict[str, Any]:
-    """Load saved progress, or return a fresh structure if missing/corrupt."""
     if not progress_file.exists():
         return {"completed": [], "failed": [], "current": None}
     try:
@@ -59,7 +57,6 @@ def load_progress(progress_file: Path) -> dict[str, Any]:
 
 
 def save_progress(progress_file: Path, progress: dict[str, Any]) -> None:
-    """Atomically write progress to disk (write to .tmp, then rename)."""
     tmp: Path = progress_file.with_suffix(progress_file.suffix + ".tmp")
     with tmp.open("w") as f:
         json.dump(progress, f, indent=2)
@@ -67,11 +64,6 @@ def save_progress(progress_file: Path, progress: dict[str, Any]) -> None:
 
 
 def cleanup_deb(pkg: str) -> list[Path]:
-    """Delete cached .deb files for a package from apt archives.
-
-    Matches <pkg>_*.deb, <pkg>-*.deb and <pkg>.deb to handle version-suffixed
-    filenames produced by apt.
-    """
     patterns: list[str] = [
         f"{pkg}_*.deb",
         f"{pkg}-*.deb",
@@ -92,11 +84,6 @@ def cleanup_deb(pkg: str) -> list[Path]:
 
 
 def reinstall(pkg: str) -> None:
-    """Run apt install --reinstall for a single package.
-
-    Suppresses apt's 'unstable CLI interface' warning by setting APT_CONFIG
-    and passing a non-interactive flag combination.
-    """
     cmd: list[str] = [
         "apt",
         "-qq",

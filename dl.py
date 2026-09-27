@@ -91,7 +91,6 @@ _DEFAULT_UA = (
 
 
 def human_size(num: float) -> str:
-    """Human-readable byte size (the `fsz` helper from the original dh.py)."""
     try:
         num = float(num)
     except (TypeError, ValueError):
@@ -104,7 +103,6 @@ def human_size(num: float) -> str:
 
 
 def read_url_list(path: Path) -> list[str]:
-    """Return non-empty, non-comment lines from `path`."""
     try:
         return [
             line.strip()
@@ -119,14 +117,12 @@ _FILENAME_BAD = re.compile(r'[<>:"|?*]')
 
 
 def safe_filename(name: str) -> str:
-    """Sanitize arbitrary string into a safe filename (≤255 chars)."""
     name = urllib.parse.unquote(name)
     name = _FILENAME_BAD.sub("_", name)
     return name[:255].strip() or "downloaded_file"
 
 
 def filename_from_url(url: str) -> str:
-    """Derive a filename from a URL path."""
     q = urllib.parse.urlparse(url)
     name = Path(urllib.parse.unquote(q.path)).name
     name = name.split("?")[0].split("#")[0]
@@ -134,7 +130,6 @@ def filename_from_url(url: str) -> str:
 
 
 def filename_from_headers(url: str, headers: dict) -> str:
-    """Prefer Content-Disposition filename; else URL path."""
     cd = ""
     for k in ("Content-Disposition", "content-disposition"):
         if headers.get(k):
@@ -148,7 +143,6 @@ def filename_from_headers(url: str, headers: dict) -> str:
 
 
 def unique_path(p: Path) -> Path:
-    """Return `p` or `p_1`, `p_2`... if it exists."""
     if not p.exists():
         return p
     stem, suffix = p.stem, p.suffix
@@ -163,7 +157,6 @@ def unique_path(p: Path) -> Path:
 def remote_size_urllib(
     url: str, timeout: float = 10.0, ua: str = _DEFAULT_UA
 ) -> Optional[int]:
-    """HEAD then Range GET fallback (from dsize.py / dsized.py)."""
     try:
         req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": ua})
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -231,7 +224,6 @@ def _download_urllib(
     resume: bool = False,
     quiet: bool = False,
 ) -> Path:
-    """pywget-style streaming download using urllib (+ tqdm)."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     total = remote_size_urllib(url, timeout, ua)
     start = dest.stat().st_size if resume and dest.exists() else 0
@@ -273,7 +265,6 @@ def _download_requests(
     ua: str = _DEFAULT_UA,
     resume: bool = False,
 ) -> Path:
-    """rget-style download using requests (Range-resumable)."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     start = dest.stat().st_size if resume and dest.exists() else 0
     headers = {"User-Agent": ua}
@@ -296,7 +287,6 @@ def _download_pycurl(
     ua: str = _DEFAULT_UA,
     resume: bool = False,
 ) -> Path:
-    """pycurl streaming download."""
     if not _HAS_PYCURL:
         raise RuntimeError("pycurl not available")
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -434,7 +424,6 @@ def cmd_check(args: argparse.Namespace) -> int:
 def _process_size_url(
     url: str, download_small: bool, dest_dir: Path, max_size: int, timeout: float
 ) -> str:
-    """Return the '<url>\\t<size>' line; optionally prompt+download."""
     size = remote_size_urllib(url, timeout=timeout)
     if size is None:
         return f"{url}\tUnknown"
@@ -494,7 +483,6 @@ def cmd_size(args: argparse.Namespace) -> int:
 
 
 def _parse_size(s: str) -> int:
-    """Parse '1M', '512K', '1048576' → bytes."""
     s = s.strip().upper()
     m = re.match(r"^(\d+(?:\.\d+)?)\s*([KMGT]?)(?:B)?$", s)
     if not m:
@@ -539,7 +527,6 @@ def _passes_ext_filter(url: str) -> bool:
 def _batch_worker(
     url: str, dest_dir: str, engine: str, resume: bool, timeout: float, ua: str
 ) -> tuple[str, bool, str]:
-    """Download one URL. Returns (url, ok, message). Must be picklable."""
     dest = Path(dest_dir)
     dest.mkdir(parents=True, exist_ok=True)
     fpath = unique_path(dest / filename_from_url(url))

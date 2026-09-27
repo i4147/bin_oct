@@ -89,12 +89,10 @@ DEFAULT_EXTENSIONS = (
 
 
 def has_chinese(text: str) -> bool:
-    """True if `text` contains at least one CJK character."""
     return bool(CHINESE_RE.search(text))
 
 
 def chinese_ratio(text: str) -> float:
-    """Fraction of non-whitespace characters that are CJK."""
     stripped = "".join(text.split())
     if not stripped:
         return 0.0
@@ -102,16 +100,10 @@ def chinese_ratio(text: str) -> float:
 
 
 def meets_threshold(text: str, threshold: float) -> bool:
-    """True if `text`'s CJK ratio is >= `threshold`.
-
-    `threshold == 0.0` collapses to the 'any Chinese char' check used by
-    chintrans.py / transchin.py.
-    """
     return chinese_ratio(text) >= threshold
 
 
 def build_translator(source: str = "auto", target: str = "en") -> GoogleTranslator:
-    """Construct a GoogleTranslator."""
     return GoogleTranslator(source=source, target=target)
 
 
@@ -122,11 +114,6 @@ def translate_with_retries(
     retry_delay: float,
     success_delay: float = 0.0,
 ) -> Optional[str]:
-    """Translate `text`, retrying up to `retries` times.
-
-    Returns the translated string, or ``None`` if all attempts failed.
-    `success_delay` sleeps only after a successful call (rate limiting).
-    """
     for attempt in range(retries):
         try:
             result = translator.translate(text)
@@ -147,11 +134,6 @@ def translate_with_retries(
 
 
 def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
-    """Group `lines` into chunks of total size (len+1 per line) <= max_chars.
-
-    A line longer than `max_chars` gets its own chunk. Mirrors the algorithm
-    from chintrans.py so line counts stay aligned with the translation output.
-    """
     chunks: list[list[str]] = []
     current: list[str] = []
     total = 0
@@ -174,13 +156,11 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
 
 
 def read_stripped_lines(path: Path) -> list[str]:
-    """Read non-empty, stripped lines from `path` (used by chunked/line modes)."""
     with path.open(encoding="utf-8") as fh:
         return [w.strip() for w in fh if w.strip()]
 
 
 def write_inplace(path: Path, original: Sequence[str], translations: dict) -> None:
-    """Rewrite `path` line-by-line, substituting translated lines."""
     with path.open("w", encoding="utf-8") as fh:
         for line in original:
             fh.write(f"{translations.get(line, line)}\n")
@@ -192,7 +172,6 @@ def write_inplace(path: Path, original: Sequence[str], translations: dict) -> No
 
 
 def _worker_chunked_chunk(task):
-    """Worker for the `chunked` subcommand: translate one chunk of lines."""
     chunk, retries, retry_delay, source, target = task
     text = "\n".join(chunk)
     translator = build_translator(source, target)
@@ -201,7 +180,6 @@ def _worker_chunked_chunk(task):
 
 
 def _worker_single_line(task):
-    """Worker for the `line` subcommand: translate one line."""
     line, retries, retry_delay, source, target = task
     translator = build_translator(source, target)
     result = translate_with_retries(translator, line, retries, retry_delay)
@@ -209,7 +187,6 @@ def _worker_single_line(task):
 
 
 def _worker_walk_file(task):
-    """Worker for the `walk` subcommand: translate a whole file in place."""
     (
         file_path,
         dry_run,
@@ -289,7 +266,6 @@ def _worker_walk_file(task):
 
 
 def cmd_chunked(args: argparse.Namespace) -> int:
-    """Translate a single file in place, batching lines into chunks."""
     input_path = Path(args.input_file.strip())
     if not input_path.exists():
         logger.error("Input file not found: {}", input_path.name)
@@ -375,7 +351,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
 
 
 def cmd_line(args: argparse.Namespace) -> int:
-    """Translate a single file in place, one line per API call."""
     input_path = Path(args.input_file.strip())
     if not input_path.exists():
         logger.error("Input file not found: {}", input_path.name)
@@ -444,7 +419,6 @@ def _collect_walk_files(
     extensions: Sequence[str],
     excludes: Iterable[str],
 ) -> list[Path]:
-    """Expand file/dir arguments into a flat list of file paths to process."""
     exclude_set = {Path(p).resolve() for p in excludes}
     found: list[Path] = []
 
@@ -466,7 +440,6 @@ def _collect_walk_files(
 
 
 def cmd_walk(args: argparse.Namespace) -> int:
-    """Walk files/directories, translating Chinese lines in place."""
     files = _collect_walk_files(args.paths, args.extensions, args.exclude)
     if not files:
         print("No files to process.")
@@ -517,7 +490,6 @@ def cmd_walk(args: argparse.Namespace) -> int:
 def _translate_long_text(
     text: str, translator: GoogleTranslator, chunk_size: int
 ) -> str:
-    """Translate `text` in chunks of `chunk_size` chars and concatenate."""
     if not text:
         return ""
     parts = [
@@ -530,7 +502,6 @@ def _translate_long_text(
 def _translate_python_source(
     text: str, translator: GoogleTranslator, chunk_size: int
 ) -> str:
-    """.py-aware translation: handles triple-quoted docstrings and # comments."""
     lines = text.splitlines(keepends=True)
     out: list[str] = []
     in_doc = False
@@ -576,7 +547,6 @@ def _translate_python_source(
 
 
 def cmd_whole(args: argparse.Namespace) -> int:
-    """Translate an entire file, writing to `<stem>_eng<suffix>`."""
     input_path = Path(args.input_path)
     if not input_path.exists():
         print("File not found.", file=sys.stderr)

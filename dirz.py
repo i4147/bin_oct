@@ -21,18 +21,6 @@ from typing import Iterator, Optional, Tuple
 
 
 def format_size(num_bytes: int) -> str:
-    """Return a compact human-readable representation of *num_bytes*.
-
-    Uses binary units (1024-based): B, KB, MB, GB, TB, PB. Values
-    below 1024 bytes are shown as integers; larger values get one decimal
-    place (e.g. ``"1.5MB"``).
-
-    Args:
-        num_bytes: Size in bytes (non-negative).
-
-    Returns:
-        Human-readable size string.
-    """
     value = float(num_bytes)
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
         if value < 1024 or unit == "PB":
@@ -44,37 +32,6 @@ def format_size(num_bytes: int) -> str:
 
 
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
-    """Yield ``(DirEntry, top_level_name)`` for every regular file under *root*.
-
-    Traversal is depth-first using an explicit LIFO stack plus ``os.scandir``.
-    This avoids the per-directory tuple allocation that ``os.walk`` performs,
-    and each ``DirEntry`` caches its own stat result, so at most one ``stat``
-    call is made per file even when both an extension size and a directory
-    size are needed (the ``DirEntry.stat()`` result is cached internally by
-    Python's ``os.scandir`` implementation).
-
-    Args:
-        root: Directory to walk recursively.
-
-    Yields:
-        Tuples of ``(DirEntry, top_level_name)`` where ``top_level_name`` is
-        the name of the first-level subdirectory of *root* containing the file,
-        or ``None`` when the file sits directly in *root*. This lets callers
-        bucket files per top-level directory without a second traversal.
-
-
-
-    Notes:
-        - Symlinks (files or directories) are skipped to prevent cycles and
-          double-counting.
-
-        - Directories named ``.git`` are pruned, so the whole subtree is
-          skipped entirely.
-
-        - Unreadable directories (``OSError`` during ``scandir``) are silently
-          skipped, matching the original script's behavior.
-
-    """
     # Stack of (path, top_level_name) pairs. top_level_name is None for
     # the root itself; for subdirectories it's the name of the first-level
     # subdirectory under root that contains them.
@@ -113,14 +70,6 @@ def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    """Parse command-line arguments for dirz.py.
-
-
-
-    Returns:
-        Namespace with attribute: ``size``.
-
-    """
     parser = argparse.ArgumentParser(
         description="List top-level directories of the CWD, optionally with total sizes.",
     )
@@ -143,17 +92,6 @@ def print_directory_listing(
     sizes: dict[str, int],
     show_size: bool,
 ) -> None:
-    """Print the top-level directory listing and the total count.
-
-
-
-    Args:
-        dirs: Sorted list of top-level directory names.
-        sizes: Mapping of directory name to total size in bytes (only used
-            when ``show_size`` is True).
-        show_size: Whether to include a total-size column.
-
-    """
     size_strings: dict[str, str] = {}
     size_width = 0
     if show_size and dirs:
@@ -178,16 +116,6 @@ def print_directory_listing(
 
 
 def main(argv: Optional[list[str]] = None) -> None:
-    """Entry point: list top-level directories of the CWD, optionally with sizes.
-
-
-
-
-
-    Args:
-        argv: Optional argument list (defaults to ``sys.argv[1:]`` via
-            ``argparse``).
-    """
     args = parse_args(argv)
     root = Path.cwd()
 

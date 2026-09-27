@@ -30,24 +30,16 @@ RepeatedItem = dict[str, Any]
 
 
 def get_source(node: ast.AST, content: str) -> str:
-    """Return the source segment for *node* from *content*, or an empty string."""
     return ast.get_source_segment(content, node) or ""
 
 
 def normalize_source(source: str) -> str:
-    """Return *source* stripped of surrounding whitespace and trailing spaces per line."""
     if not source:
         return ""
     return "\n".join(line.rstrip() for line in source.strip().splitlines())
 
 
 def analyze_file(path: Path) -> dict[str, Any]:
-    """Analyze a single Python file for top-level function definitions.
-
-    Returns a dict with ``definitions`` mapping (name, normalized source) to a
-    list of file paths, and ``source_map`` mapping the same key to the original
-    source text.
-    """
     definitions: defaultdict[DefinitionKey, list[str]] = defaultdict(list)
     source_map: SourceMap = {}
     try:
@@ -67,11 +59,6 @@ def analyze_file(path: Path) -> dict[str, Any]:
 
 
 def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
-    """Find duplicate top-level functions across all Python files in *target_dirs*.
-
-    Returns a list of dicts sorted by descending duplicate count, each containing
-    ``name``, ``source``, ``count``, and ``files``.
-    """
     resolved_dirs: list[Path] = target_dirs if target_dirs else [Path.cwd()]
     py_files: list[Path] = []
     for target_dir in resolved_dirs:
@@ -112,7 +99,6 @@ def save_dh_module(
     repeated: list[RepeatedItem],
     output_path: Path = Path(DEFAULT_OUTPUT_NAME),
 ) -> None:
-    """Write the source of all repeated functions to *output_path*."""
     lines: list[str] = []
     for item in repeated:
         source: str = item["source"]
@@ -122,7 +108,6 @@ def save_dh_module(
 
 
 def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
-    """Remove duplicated functions from *path* and add imports for them."""
     try:
         content: str = path.read_text(encoding="utf-8")
         tree: ast.Module = ast.parse(content)
@@ -175,7 +160,6 @@ def apply_refactoring(
     repeated: list[RepeatedItem],
     target_dirs: list[Path] | None = None,
 ) -> None:
-    """Apply refactoring to every Python file under *target_dirs* using a pool."""
     resolved_dirs: list[Path] = target_dirs if target_dirs else [Path.cwd()]
     py_files: list[Path] = []
     for target_dir in resolved_dirs:
@@ -193,7 +177,6 @@ def apply_refactoring(
 
 
 def main() -> None:
-    """Parse command-line arguments and run duplicate detection/refactoring."""
     parser = argparse.ArgumentParser(
         description="Detect and refactor duplicate functions"
     )

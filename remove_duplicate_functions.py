@@ -37,17 +37,6 @@ POOL_SIZE: int = 8
 
 
 def normalize_function_body(lines: Sequence[str], start_idx: int, end_idx: int) -> str:
-    """Return the function body lines with common leading indentation removed.
-
-    Args:
-        lines: All lines of the source file.
-        start_idx: Index of the first body line.
-        end_idx: Index one past the last body line.
-
-    Returns:
-        A normalized, dedented string containing only non-blank lines joined
-        by newlines, or an empty string if there is no body.
-    """
     body_lines: list[str] = list(lines[start_idx:end_idx])
     if not body_lines:
         return ""
@@ -59,18 +48,6 @@ def normalize_function_body(lines: Sequence[str], start_idx: int, end_idx: int) 
 
 
 def compute_function_hash(path: Path, func_node: ast.FunctionDef) -> str | None:
-    """Compute an MD5 hash for a top-level function definition.
-
-    The hash covers the function's signature (arguments and return
-    annotation) plus its normalized body.
-
-    Args:
-        path: Path to the source file containing the function.
-        func_node: The AST node for the function.
-
-    Returns:
-        A hexadecimal MD5 digest, or None if the file could not be read.
-    """
     try:
         lines: list[str] = path.read_text().splitlines(keepends=True)
     except Exception:
@@ -100,15 +77,6 @@ def compute_function_hash(path: Path, func_node: ast.FunctionDef) -> str | None:
 def extract_top_level_functions(
     path: Path,
 ) -> dict[str, dict[str, Any]] | None:
-    """Extract all top-level function definitions from a Python file.
-
-    Args:
-        path: Path to the Python file.
-
-    Returns:
-        A mapping of function name to a dict containing name, hash, lineno,
-        and end_lineno, or None if the file could not be parsed.
-    """
     try:
         tree: ast.Module = ast.parse(path.read_text(), filename=str(path))
     except SyntaxError:
@@ -135,16 +103,6 @@ def process_target_file(
     ref_hashes: dict[str, str],
     apply: bool = False,
 ) -> dict[str, Any]:
-    """Process a single target file, optionally removing duplicate functions.
-
-    Args:
-        target_path: Path to the target file.
-        ref_hashes: Mapping of reference function hash to reference name.
-        apply: If True, remove duplicates from the file; otherwise dry-run.
-
-    Returns:
-        A result dict with keys: file, status, duplicates, and optionally error.
-    """
     funcs: dict[str, dict[str, Any]] | None = extract_top_level_functions(target_path)
     if funcs is None or not funcs:
         return {"file": target_path, "status": "skipped", "duplicates": []}
@@ -197,14 +155,6 @@ def process_target_file(
 
 
 def expand_input_paths(inputs: Sequence[str]) -> list[Path]:
-    """Expand CLI inputs into a sorted list of unique Python files.
-
-    Args:
-        inputs: File or directory path strings from the CLI.
-
-    Returns:
-        A sorted list of Path objects for all matching .py files.
-    """
     py_files: set[Path] = set()
     if not inputs:
         py_files.update(Path(".").rglob("*.py"))
@@ -219,14 +169,6 @@ def expand_input_paths(inputs: Sequence[str]) -> list[Path]:
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """Parse command-line arguments.
-
-    Args:
-        argv: Optional sequence of argument strings (defaults to sys.argv[1:]).
-
-    Returns:
-        The parsed argparse.Namespace.
-    """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Remove duplicate functions from Python files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -252,14 +194,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point for the duplicate-function remover.
-
-    Args:
-        argv: Optional sequence of argument strings.
-
-    Returns:
-        Exit code (0 for success, non-zero for failure).
-    """
     args: argparse.Namespace = parse_args(argv)
 
     ref_path: Path = Path(args.reference)

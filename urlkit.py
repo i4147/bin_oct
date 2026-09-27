@@ -239,7 +239,6 @@ BY_EXT_KNOWN = [
 # Shared helpers
 # ===========================================================================
 def _write_urls(path: Path, urls: Iterable[str], append: bool = False) -> None:
-    """Write URLs (one per line) to *path*, optionally appending."""
     mode = "a" if append else "w"
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open(mode, encoding="utf-8") as f:
@@ -249,7 +248,6 @@ def _write_urls(path: Path, urls: Iterable[str], append: bool = False) -> None:
 
 
 def _archive_kind(path: Path) -> Optional[str]:
-    """Return 'zip', 'tar', '7z' or None based on filename."""
     name = path.name.lower()
     if name.endswith(ZIP_SUFFIXES):
         return "zip"
@@ -261,7 +259,6 @@ def _archive_kind(path: Path) -> Optional[str]:
 
 
 def _decode_bytes(data: bytes) -> str:
-    """Decode bytes using utf-8 → chardet → latin-1 fallback."""
     try:
         return data.decode("utf-8")
     except UnicodeDecodeError:
@@ -278,7 +275,6 @@ def _decode_bytes(data: bytes) -> str:
 
 
 def _read_text_file(path: Path) -> Optional[str]:
-    """Read a text file trying common encodings (mirrors exlinks.py o())."""
     for enc in ("utf-8", "latin-1", "iso-8859-1", "cp1252"):
         try:
             return path.read_text(encoding=enc)
@@ -356,7 +352,6 @@ def _extract_from_7z(path: Path) -> set[str]:
 
 
 def _iter_files(root: Path, skip_dirs: set[str]) -> Iterable[Path]:
-    """Yield files under *root* (or the file itself), skipping skip_dirs."""
     if root.is_file():
         yield root
         return
@@ -375,7 +370,6 @@ def _classify_git(url: str, git_hosts: tuple[str, ...]) -> bool:
 
 # ---- Scan worker -----------------------------------------------------------
 def _scan_worker(task: tuple) -> set[str]:
-    """Multiprocessing worker: extract URLs from one file."""
     path_str, max_size, archives_only, files_only = task
     path = Path(path_str)
     urls: set[str] = set()
@@ -409,7 +403,6 @@ def _scan_worker(task: tuple) -> set[str]:
 # Subcommand: clean  (clean_urls.py)
 # ===========================================================================
 def cmd_clean(args: argparse.Namespace) -> int:
-    """Dedupe domains; save github.com URLs separately."""
     domains: set[str] = set()
     git_urls: list[str] = []
     src = Path(args.input)
@@ -442,7 +435,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
 # Subcommand: scan  (exlinks.py + furl.py + urlzz.py)
 # ===========================================================================
 def cmd_scan(args: argparse.Namespace) -> int:
-    """Extract URLs from files and archives (recursively)."""
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     skip_dirs = {s for s in args.skip_dirs.split(",") if s}
     git_hosts = tuple(h for h in args.git_hosts.split(",") if h)
@@ -490,7 +482,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
 # Subcommand: split  (file_urls.py  +  split_urls.py)
 # ===========================================================================
 def _split_grouped(args: argparse.Namespace) -> int:
-    """Original file_urls.py behavior."""
     group_map = {
         "html": (".html", ".htm"),
         "pdf": (".pdf",),
@@ -542,7 +533,6 @@ def _split_grouped(args: argparse.Namespace) -> int:
 
 
 def _split_by_ext(args: argparse.Namespace) -> int:
-    """Original split_urls.py behavior."""
     src = Path(args.input)
     if not src.exists():
         log_error(f"{src} not found")

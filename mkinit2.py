@@ -36,7 +36,6 @@ def process_module(module_path: Path) -> tuple[str, list[str]]:
 
 
 def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]:
-    """Return (imported_module_imports, existing_all, original_lines)."""
     existing_imports: set[str] = set()
     existing_all: set[str] = set()
     try:

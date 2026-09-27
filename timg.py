@@ -22,7 +22,6 @@ IMAGE_EXTENSIONS = {
 
 
 def load_image(file_path: Path) -> Image.Image:
-    """Load standard images or render SVG files into a PIL Image."""
     if file_path.suffix.lower() == ".svg":
         try:
             import cairosvg
@@ -41,7 +40,6 @@ def load_image(file_path: Path) -> Image.Image:
 
 
 def find_images(target_dir: Path, recursive: bool = True) -> Iterator[Path]:
-    """Find all supported image files using Python 3.12 Path.walk()."""
     if not recursive:
         for p in target_dir.iterdir():
             if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS:
@@ -57,7 +55,6 @@ def find_images(target_dir: Path, recursive: bool = True) -> Iterator[Path]:
 
 
 def render_to_terminal(img: Image.Image, max_w: int, max_h: int) -> None:
-    """Render a PIL Image to the terminal using ANSI half-block characters (▀)."""
     img_w, img_h = img.size
     if img_w == 0 or img_h == 0:
         return

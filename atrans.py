@@ -82,7 +82,7 @@ MAX_RETRIES = 3
 
 
 class BackendError(Exception):
-    """Raised when a backend cannot be imported, initialized, or used."""
+    pass
 
 
 # ---------------------------------------------------------------------------
@@ -95,13 +95,6 @@ class BackendError(Exception):
 
 
 def _make_translate(source, target, script_path):
-    """
-    Backend: PyPI package ``translate``.
-
-    Upstream exposes ``translate.Translator``; some forks and bundled builds
-    expose ``translate.GoogleTranslator`` instead. We accept either, and we
-    also guard against a local file silently shadowing the real package.
-    """
     try:
         import translate
     except ImportError as e:
@@ -138,7 +131,6 @@ def _make_translate(source, target, script_path):
 
 
 def _make_deep_translator(source, target, _script_path):
-    """Backend: PyPI package ``deep_translator`` (GoogleTranslator)."""
     try:
         from deep_translator import GoogleTranslator
     except ImportError as e:
@@ -152,12 +144,6 @@ def _make_deep_translator(source, target, _script_path):
 
 
 def _make_googletrans(source, target, _script_path):
-    """
-    Backend: PyPI package ``googletrans``.
-
-    ``googletrans.Translator`` is not documented as thread-safe, so we reuse a
-    single instance and serialize every call through a lock.
-    """
     try:
         from googletrans import Translator
     except ImportError as e:
@@ -186,18 +172,6 @@ _BACKEND_FACTORIES = {
 
 
 class TranslatorWrapper:
-    """
-    Resolve the preferred backend, silently falling back to the others on
-    failure. Once constructed, ``.translate(text)`` dispatches to the
-    selected backend.
-
-    Attributes
-    ----------
-    backend_name : str
-        The backend that was actually chosen (may differ from the preferred
-        one if automatic fallback occurred).
-    """
-
     def __init__(self, preferred, source, target, script_path):
         self.source = source
         self.target = target
@@ -241,7 +215,6 @@ class TranslatorWrapper:
         sys.exit(1)
 
     def translate(self, text):
-        """Translate a single piece of text with the selected backend."""
         return self._call(text)
 
 
@@ -251,12 +224,6 @@ class TranslatorWrapper:
 
 
 def load_progress(out_path):
-    """
-    Load an existing output JSON file so a previous job can be resumed.
-
-    Returns an empty dict when the file does not exist, cannot be parsed, or
-    does not contain a JSON object.
-    """
     if not os.path.exists(out_path):
         return {}
     try:
@@ -270,12 +237,6 @@ def load_progress(out_path):
 
 
 def save_output(out_path, data, lock):
-    """
-    Atomically write ``data`` to ``out_path`` as pretty JSON.
-
-    We write to a temp file and then rename it, so an interrupted write can
-    never leave a half-written (i.e. corrupt) JSON file on disk.
-    """
     with lock:
         tmp_path = out_path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
@@ -284,7 +245,6 @@ def save_output(out_path, data, lock):
 
 
 def append_failed(failed_path, word, lock):
-    """Append a single failed word to ``failed.txt`` (thread-safe)."""
     with lock:
         with open(failed_path, "a", encoding="utf-8") as f:
             f.write(word + "\n")
@@ -423,19 +383,6 @@ def main():
 
     # -- Worker function ----------------------------------------------------
     def translate_word(word):
-        """
-        Try up to ``MAX_RETRIES`` times to translate one word.
-
-        A retry is triggered by:
-          * an exception raised by the backend, or
-          * an "identity translation": the backend returned the input
-            unchanged (a common failure mode when a term is unknown or the
-            service silently returned the source text).
-
-        On success returns ``(word, translation)``. On persistent failure
-        returns ``(word, None)`` — the caller appends the word to
-        ``failed.txt`` and skips it in the output JSON.
-        """
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 time.sleep(args.delay)

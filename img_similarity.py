@@ -100,7 +100,6 @@ def err(msg: str) -> None:
 
 
 def _require(modname: str, method: str) -> bool:
-    """Return True if `modname` is importable, else print a clear error."""
     try:
         __import__(modname)
         return True
@@ -118,7 +117,6 @@ def _require(modname: str, method: str) -> bool:
 
 
 def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
-    """dupimg.py: resize → grayscale → DCT → top-left 8x8 vs mean → bit-string."""
     if not _require("cv2", "dct-phash"):
         return None
     import cv2  # type: ignore
@@ -142,7 +140,6 @@ def hash_dct_phash(path: Path, hash_size: int = 16) -> Optional[str]:
 
 
 def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
-    """imgdedup.py: dHash as an integer bitmask (uses cv2)."""
     if not _require("cv2", "dhash-custom"):
         return None
     import cv2  # type: ignore
@@ -161,7 +158,6 @@ def hash_dhash_custom(path: Path, hash_size: int = 8) -> Optional[int]:
 
 
 def hash_imagehash(path: Path, method: str, hash_size: int = 8):
-    """imagehash-based hashes; supports the 7 algorithms the originals used."""
     if not (_require("PIL", method) and _require("imagehash", method)):
         return None
     import imagehash  # type: ignore
@@ -191,7 +187,6 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
 
 
 def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
-    """folderimg.py: dict of phash/dhash/ahash for weighted comparison."""
     if not (_require("PIL", "multihash") and _require("imagehash", "multihash")):
         return None
     import imagehash  # type: ignore
@@ -211,7 +206,6 @@ def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
 
 
 def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
-    """organize_images.py: HSV histogram (8 bins × 3 channels) + raw pixels."""
     if not (_require("cv2", "hist") and _require("numpy", "hist")):
         return None
     import cv2  # type: ignore
@@ -242,7 +236,6 @@ def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
 
 
 def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
-    """Dispatch to the right feature extractor for the chosen method."""
     if method == "dct-phash":
         return hash_dct_phash(path, hash_size)
     if method == "dhash-custom":
@@ -260,21 +253,18 @@ def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
 
 
 def hamming_str(a: Any, b: Any) -> int:
-    """Hamming distance between two equal-length bit-strings."""
     if a is None or b is None:
         return 10**9
     return sum(x != y for x, y in zip(a, b))
 
 
 def hamming_int(a: Any, b: Any) -> int:
-    """Hamming distance between two integer bitmasks."""
     if a is None or b is None:
         return 10**9
     return bin(int(a) ^ int(b)).count("1")
 
 
 def multihash_dist(a: Any, b: Any) -> float:
-    """folderimg.py's weighted distance over phash/dhash/ahash."""
     if a is None or b is None:
         return float("inf")
     d = 0.0
@@ -284,7 +274,6 @@ def multihash_dist(a: Any, b: Any) -> float:
 
 
 def distance(method: str, a: Any, b: Any) -> float:
-    """Return the distance between two features (lower = more similar)."""
     if a is None or b is None:
         return float("inf")
     if method == "dct-phash":
@@ -300,7 +289,6 @@ def distance(method: str, a: Any, b: Any) -> float:
 
 
 def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
-    """Return the maximum Hamming distance for a method (used in similarity mode)."""
     if method == "dct-phash":
         return 64
     if method == "dhash-custom":
@@ -322,7 +310,6 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
 def collect_images(
     root: Path, recursive: bool, exclude_parts: Iterable[str]
 ) -> list[Path]:
-    """Return files under `root` whose suffix is supported, excluding dirs."""
     ex_set = {p for p in exclude_parts if p}
     iterator = root.rglob("*") if recursive else root.glob("*")
     out: list[Path] = []
@@ -340,7 +327,6 @@ def collect_images(
 def compute_features(
     paths: Sequence[Path], method: str, hash_size: int, workers: int
 ) -> list[tuple[Path, Any]]:
-    """Compute features for all paths; returns [(path, feature), ...]."""
     items: list[tuple[Path, Any]] = []
     if workers <= 1 or len(paths) <= 1:
         for p in paths:
@@ -370,10 +356,6 @@ def group_items(
     similarity_mode: bool,
     hash_size: int,
 ) -> list[list[Path]]:
-    """
-    Greedy grouping: O(n²) pairwise comparison, matches every original's
-    semantics. Returns a list of path groups (singletons included).
-    """
     if similarity_mode:
         max_bits = max_hamming_distance(method, hash_size)
         if max_bits is None:
@@ -418,7 +400,6 @@ def file_size_mb(p: Path) -> float:
 
 
 def resolve_threshold(args: argparse.Namespace) -> float:
-    """Determine the effective threshold from CLI args + mode + method."""
     if args.threshold is not None:
         return float(args.threshold)
     if args.mode == "similarity":
@@ -427,18 +408,12 @@ def resolve_threshold(args: argparse.Namespace) -> float:
 
 
 def resolve_hash_size(args: argparse.Namespace) -> int:
-    """Default hash-size depends on the chosen method."""
     if args.hash_size is not None:
         return args.hash_size
     return 16 if args.method == "dct-phash" else 8
 
 
 def _pipeline(args: argparse.Namespace):
-    """
-    Common front-end for scan / organize / dedup:
-    scan directory → compute features → group → return (root, multi_groups, threshold).
-    Returns None on unrecoverable issues (already printed).
-    """
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -487,7 +462,6 @@ def _pipeline(args: argparse.Namespace):
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
-    """Report groups of similar / duplicate images without touching any files."""
     res = _pipeline(args)
     if res is None:
         print("Nothing to do.")
@@ -523,7 +497,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
 
 def cmd_organize(args: argparse.Namespace) -> int:
-    """Move (or copy) grouped images into `<out_prefix>_NNN/` folders."""
     res = _pipeline(args)
     if res is None:
         print("Nothing to do.")
@@ -590,7 +563,6 @@ def cmd_organize(args: argparse.Namespace) -> int:
 
 
 def cmd_dedup(args: argparse.Namespace) -> int:
-    """Delete duplicates, keeping the first file per group (imgdedup.py)."""
     res = _pipeline(args)
     if res is None:
         print("Nothing to do.")
@@ -632,7 +604,6 @@ def cmd_dedup(args: argparse.Namespace) -> int:
 
 
 def cmd_keep_one(args: argparse.Namespace) -> int:
-    """Keep exactly one image per group folder, delete the rest."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -689,7 +660,6 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
 
 
 def cmd_cluster(args: argparse.Namespace) -> int:
-    """HSV-histogram + raw-pixel features → agglomerative clustering into K groups."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -797,7 +767,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
 
 
 def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
-    """Flags shared by scan/organize/dedup."""
     sp.add_argument(
         "-d", "--directory", default=".", help="Directory to scan (default: .)"
     )
@@ -840,7 +809,6 @@ def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="img_similarity.py",
         description="Unified image similarity / deduplication toolkit.",

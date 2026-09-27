@@ -116,7 +116,6 @@ TAR_GNAME: str = "root"
 
 
 def fmt_size(n: float) -> str:
-    """Human readable byte size, `dh.fsz` compatible."""
     for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
         if abs(n) < 1024.0:
             return f"{n:6.2f} {unit}"
@@ -125,7 +124,6 @@ def fmt_size(n: float) -> str:
 
 
 def dir_total_size(root: Path) -> int:
-    """Sum of file sizes under *root* (recursive).  Equivalent to `dh.gsz`."""
     total = 0
     for p in root.rglob("*"):
         try:
@@ -137,7 +135,6 @@ def dir_total_size(root: Path) -> int:
 
 
 def get_files(root: Path, exts: Iterable[str]) -> list[Path]:
-    """Non-recursive file scan filtered by extension (matches `dh.get_files`)."""
     exts = tuple(exts)
     return sorted(
         p
@@ -147,7 +144,6 @@ def get_files(root: Path, exts: Iterable[str]) -> list[Path]:
 
 
 def unique_path(p: Path) -> Path:
-    """Return *p*, or `<stem>_N<suffix>` if it already exists (`dh.unique_path`)."""
     if not p.exists():
         return p
     stem, suf, parent = p.stem, p.suffix, p.parent
@@ -162,7 +158,6 @@ def unique_path(p: Path) -> Path:
 def parallel_map(
     func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS
 ) -> list[Any]:
-    """Ordered pool map (used where output order matters for reports)."""
     if not items:
         return []
     if workers <= 1:
@@ -174,7 +169,6 @@ def parallel_map(
 def parallel_imap(
     func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS
 ) -> list[Any]:
-    """Unordered pool map (used where only the summary matters)."""
     if not items:
         return []
     if workers <= 1:
@@ -184,7 +178,6 @@ def parallel_imap(
 
 
 def _copy_stream(src: BinaryIO, dst: BinaryIO) -> int:
-    """Copy *src* → *dst* in CHUNK-sized blocks; return number of bytes copied."""
     total = 0
     while True:
         chunk = src.read(CHUNK)
@@ -202,7 +195,6 @@ def _copy_stream(src: BinaryIO, dst: BinaryIO) -> int:
 
 @contextlib.contextmanager
 def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
-    """Yield a readable file-like object exposing *src* decompressed with *codec*."""
     if codec == "gz":
         with gzip.open(src, "rb") as f:
             yield f
@@ -232,7 +224,6 @@ def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
 def open_compressor(
     dst: Path, codec: str, level: int = DEFAULT_LEVEL
 ) -> Iterator[BinaryIO]:
-    """Yield a writable file-like object writing *dst* compressed with *codec*."""
     if codec == "gz":
         with gzip.open(dst, "wb", compresslevel=level) as f:
             yield f
@@ -268,7 +259,6 @@ def open_compressor(
 
 
 def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
-    """`foo.tar.gz` → `('foo', 'gz')`.  Returns None if not a `*.tar.<codec>`."""
     parts = p.name.split(".")
     if len(parts) < 3 or parts[-2] != "tar":
         return None
@@ -278,7 +268,6 @@ def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
 
 
 def _extract_7z_to_tar(src: Path, dst: Path) -> None:
-    """Extract the single tar inside a `.tar.7z` archive to *dst*."""
     tmp = Path(tempfile.mkdtemp(prefix="tar7z_dec_"))
     try:
         with py7zr.SevenZipFile(src, mode="r") as z:
@@ -384,7 +373,6 @@ def run_tar_codec(args: argparse.Namespace) -> int:
 
 
 def detect_archive_ext(p: Path) -> Optional[str]:
-    """Return the matching archive extension (e.g. `.tar.gz`) or None."""
     name = p.name.lower()
     for ext in _ARCHIVE_SUFFIXES:
         if name.endswith(ext):
@@ -393,7 +381,6 @@ def detect_archive_ext(p: Path) -> Optional[str]:
 
 
 def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
-    """Yield `(name, bytes)` for each regular file inside *src*."""
     if ext in ZIP_FORMATS:
         with zipfile.ZipFile(src, "r") as zf:
             for info in zf.infolist():
@@ -451,7 +438,6 @@ def _write_archive(
     ext: str,
     level: int = DEFAULT_LEVEL,
 ) -> int:
-    """Write `(name, bytes)` tuples into an archive of format *ext*."""
     if ext in ZIP_FORMATS:
         total = 0
         with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -640,7 +626,6 @@ def _single_transcode(
     level: int,
     legacy_percent: bool,
 ) -> tuple[str, bool, str]:
-    """Shared body of gz2xz / xz2gz single-file conversions."""
     dst = src.with_suffix(dst_suffix)
     try:
         with open_decompressed(src, src_codec) as f:

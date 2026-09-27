@@ -124,7 +124,6 @@ DEFAULT_KEEP_EXEC_PARENTS: frozenset[str] = frozenset({"bin", "sbin"})
 # Small helpers
 # --------------------------------------------------------------------------- #
 def mode_of(p: Path) -> Optional[int]:
-    """Return the permission bits of *p*, or None on error."""
     try:
         return st.S_IMODE(p.stat().st_mode)
     except (OSError, PermissionError):
@@ -170,10 +169,6 @@ def chmod_safe(p: Path, mode: int) -> bool:
 
 
 def chmod_add_x(p: Path) -> bool:
-    """
-    Add x bits to a file one level at a time (u, then g, then o).
-    Mirrors nchmod.py's t() — useful when the running user isn't the owner.
-    """
     try:
         base = p.stat().st_mode
     except OSError:
@@ -192,13 +187,6 @@ def chmod_add_x(p: Path) -> bool:
 
 
 def chmod_remove_x(p: Path) -> bool:
-    """
-    Strip all x bits, preserving the rest.
-
-    Equivalent to the user's working snippet:
-        new_mode = mode & ~(S_IXUSR | S_IXGRP | S_IXOTH)
-        os.chmod(path, new_mode)
-    """
     try:
         base = p.stat().st_mode
     except OSError:
@@ -216,8 +204,6 @@ def chmod_remove_x(p: Path) -> bool:
 # --------------------------------------------------------------------------- #
 @dataclass
 class Config:
-    """Runtime configuration shared across all subcommands."""
-
     root: Path
     skip_dirs: frozenset[str] = DEFAULT_SKIP_DIRS
     exec_dirs: frozenset[str] = DEFAULT_EXEC_DIRS
@@ -239,7 +225,6 @@ class Config:
         return any(part in self.exec_dirs for part in p.parts)
 
     def looks_executable_special(self, p: Path) -> bool:
-        """shebang / binary / suffix / exec-dir heuristics."""
         if p.suffix in self.suffix_exec:
             return True
         if has_shebang(p):
@@ -251,21 +236,11 @@ class Config:
         return False
 
     def matches_deexec(self, p: Path) -> bool:
-        """True if *p*'s basename matches any deexec glob pattern."""
         name = p.name
         return any(fnmatch.fnmatch(name, pat) for pat in self.deexec_patterns)
 
     # NEW: the rule you asked for.
     def keeps_exec_by_parent(self, p: Path) -> bool:
-        """
-        True iff the file's immediate parent directory name is in
-        keep_exec_parents (default: {'bin', 'sbin'}).
-
-        Uses the *immediate* parent only — not any ancestor — so a file
-        like `foo/bin/bar.py` is protected, but `foo/bin/sub/bar.py`
-        is not. Change `p.parent.name` to `p.parents` iteration if you
-        want any-ancestor semantics.
-        """
         try:
             return p.parent.name in self.keep_exec_parents
         except (OSError, IndexError):
@@ -278,10 +253,6 @@ class Config:
 def walk_items(
     cfg: Config, include_dirs: bool = True, include_files: bool = True
 ) -> Iterator[tuple[str, Path]]:
-    """
-    Yield ('dir', path) and/or ('file', path) tuples, honoring skip dirs
-    and skipping symlinks.
-    """
     for dirpath, dirnames, filenames in os.walk(
         str(cfg.root), topdown=True, followlinks=False
     ):
@@ -312,7 +283,6 @@ class Decision:
 
 
 def decide(cfg: Config, kind: str, path: Path) -> Decision:
-    """Compute the target mode (or a skip/error reason) for one item."""
     if kind == "dir":
         cur = mode_of(path)
         if cur is None:
@@ -380,7 +350,6 @@ class Stats:
 
 
 def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
-    """Worker used both inline and via multiprocessing."""
     s = Stats(total=1)
     try:
         if cfg.is_skipped(path):
@@ -435,12 +404,6 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
 # addx mode — nchmod.py behavior
 # --------------------------------------------------------------------------- #
 def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
-    """
-    Chained x-bit addition. For each file:
-      * if already executable (any x bit)  -> leave alone
-      * if in exec-dir, has shebang, or has an exec-suffix -> add x bits
-    Directories are normalized to cfg.dir_mode (never reduced below it).
-    """
     s = Stats()
     items = list(walk_items(cfg))
     for kind, path in tqdm(items, desc="addx", unit="items"):
@@ -489,24 +452,6 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
 # deexec mode — strip x bits, EXCEPT under bin/ and sbin/
 # --------------------------------------------------------------------------- #
 def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
-    """
-    Forcibly remove the x bits (u/g/o) from every regular file whose
-    basename matches any of cfg.deexec_patterns — with two exceptions:
-
-      1. Directories are never touched (you need +x to traverse them).
-      2. Files whose *immediate* parent directory is named `bin` or `sbin`
-         are skipped, so their exec state is preserved. This is the
-         "keep exec state iff parent name is bin or sbin" rule.
-
-    Other permission bits are preserved bit-for-bit.
-
-    Integrated form of the user's snippet:
-
-        for path in glob.glob("*.py"):
-            mode = os.stat(path).st_mode
-            new_mode = mode & ~(S_IXUSR | S_IXGRP | S_IXOTH)
-            os.chmod(path, new_mode)
-    """
     s = Stats()
     items = list(walk_items(cfg, include_dirs=False, include_files=True))
 

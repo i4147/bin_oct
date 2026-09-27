@@ -38,8 +38,6 @@ DEFAULT_POOL_SIZE: int = 8
 
 @dataclass
 class FileResult:
-    """Result of processing a single Python file."""
-
     path: str
     comments_removed: int = 0
     docstrings_removed: int = 0
@@ -48,7 +46,6 @@ class FileResult:
 
 
 def iter_python_files(paths: Iterable[Path]) -> Iterator[Path]:
-    """Yield unique, non-symlink Python files discovered under the given paths."""
     seen: set[Path] = set()
     for input_path in paths:
         path: Path = input_path.expanduser()
@@ -93,8 +90,6 @@ def _comment_should_be_preserved(text: str, is_first_line: bool) -> bool:
 
 
 class _Transformer(cst.CSTTransformer):
-    """CST transformer that drops comments and docstrings while preserving structure."""
-
     def __init__(self, remove_module_docstring: bool) -> None:
         self.remove_module_docstring: bool = remove_module_docstring
         self.comments_removed: int = 0
@@ -176,7 +171,6 @@ def _remove_blank_lines(data: str) -> str:
 
 
 def process_file(path_str: str, remove_module_docstring: bool) -> FileResult:
-    """Process a single Python file, removing comments/docstrings in-place."""
     path: Path = Path(path_str)
     result: FileResult = FileResult(path=str(path))
     try:
@@ -223,7 +217,6 @@ def process_file(path_str: str, remove_module_docstring: bool) -> FileResult:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description=(
             "Remove Python comments and docstrings recursively, preserving "
@@ -246,7 +239,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Entry point: discover files, process them in parallel, and log a summary."""
     args: argparse.Namespace = parse_args()
     input_paths: list[Path] = args.paths or [Path(".")]
     files: list[Path] = list(iter_python_files(input_paths))

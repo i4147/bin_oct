@@ -16,11 +16,6 @@ _PARSER: Parser | None = None
 
 
 def get_parser() -> Parser:
-    """Initialize and return a single-instance tree-sitter Lua parser.
-
-    Returns:
-        Parser: The tree-sitter Lua parser instance.
-    """
     global _PARSER
     if _PARSER is None:
         _PARSER = Parser(LUA_LANGUAGE)
@@ -28,15 +23,6 @@ def get_parser() -> Parser:
 
 
 def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
-    """Traverse AST to collect byte ranges for standard Lua comments, preserving LDoc/LuaLS annotations.
-
-    Args:
-        root (Node): Root node of the tree-sitter syntax tree.
-        content (bytes): Raw byte contents of the source file.
-
-    Returns:
-        list[tuple[int, int]]: List of (start_byte, end_byte) pairs to strip.
-    """
     ranges: list[tuple[int, int]] = []
     stack: list[Node] = [root]
     while stack:
@@ -53,14 +39,6 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
 
 
 def strip_comments(content: bytes) -> tuple[bytes, int]:
-    """Parse Lua source bytes and remove normal comments while keeping doc annotations.
-
-    Args:
-        content (bytes): Source file raw content.
-
-    Returns:
-        tuple[bytes, int]: Stripped content bytes and the count of comments removed.
-    """
     parser: Parser = get_parser()
     tree = parser.parse(content)
     ranges: list[tuple[int, int]] = collect_comment_ranges(tree.root_node, content)
@@ -77,14 +55,6 @@ def strip_comments(content: bytes) -> tuple[bytes, int]:
 
 
 def process_file_worker(args: tuple[Path, Path]) -> tuple[str, int, str]:
-    """Worker helper unpacking tuple arguments for multiprocessing.Pool.imap.
-
-    Args:
-        args (tuple[Path, Path]): Pair of (target_path, base_path).
-
-    Returns:
-        tuple[str, int, str]: Relative path string, count of comments removed, and error string if any.
-    """
     path, base = args
     try:
         content: bytes = path.read_bytes()
@@ -101,14 +71,6 @@ def process_file_worker(args: tuple[Path, Path]) -> tuple[str, int, str]:
 
 
 def iter_lua_files(paths: list[Path]) -> Iterator[Path]:
-    """Yield unique Lua file paths from a list of files or directories.
-
-    Args:
-        paths (list[Path]): Input file or directory paths.
-
-    Yields:
-        Iterator[Path]: Resolved, unique Lua file paths.
-    """
     seen: set[Path] = set()
     for p in paths:
         if p.is_file() and p.suffix.lower() in LUA_EXTS:
@@ -125,11 +87,6 @@ def iter_lua_files(paths: list[Path]) -> Iterator[Path]:
 
 
 def main() -> int:
-    """Parse CLI options, execute parallel comment stripping using mp.Pool.imap, and report execution log.
-
-    Returns:
-        int: Exit status code (0 for success, 1 for error/empty).
-    """
     ap = argparse.ArgumentParser(
         description="Remove comments from Lua files in place, preserving '---' annotations (tree-sitter powered)."
     )

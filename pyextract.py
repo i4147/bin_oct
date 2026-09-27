@@ -112,8 +112,6 @@ DEFAULT_SKIP_TESTS = {"test", "tests", "examples"}
 # --------------------------------------------------------------------------
 @dataclass
 class Entity:
-    """A single extracted code entity (function, class or constant)."""
-
     name: str
     full_name: str
     type: str  # 'function' | 'class' | 'constant'
@@ -157,7 +155,6 @@ def is_archive(path: Path) -> bool:
 def discover(
     root: Path, skip_dirs: set[str], skip_tests: bool, include_archives: bool
 ) -> tuple[list[Path], list[Path]]:
-    """Recursively find Python source files and (optionally) archives."""
     skip = set(skip_dirs)
     if skip_tests:
         skip |= DEFAULT_SKIP_TESTS
@@ -181,7 +178,6 @@ def discover(
 
 
 def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
-    """Yield (member_name, source) for every .py file inside `archive`."""
     n = archive.name.lower()
     if n.endswith((".whl", ".zip")):
         try:
@@ -231,7 +227,6 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
 # AST backend
 # --------------------------------------------------------------------------
 def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
-    """Return the exact source slice for an AST node (decorators included)."""
     start = node.lineno - 1
     decs = getattr(node, "decorator_list", None) or []
     if decs:
@@ -846,7 +841,6 @@ def write_imports_file(imports: Iterable[str], out_dir: Path) -> None:
 # Multiprocessing worker
 # --------------------------------------------------------------------------
 def _worker(item: tuple) -> tuple:
-    """(path_str, parser, include_nested, constants_only, is_archive) -> result"""
     path_str, parser_name, include_nested, constants_only, is_archive = item
     p = Path(path_str)
     entities: list[Entity] = []

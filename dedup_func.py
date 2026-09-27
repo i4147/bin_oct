@@ -72,10 +72,6 @@ except ImportError:  # pragma: no cover
 
 
 def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Path]:
-    """Recursively yield ``*.py`` files under ``root``.
-
-    ``exclude_paths`` are resolved and excluded from the results.
-    """
     excludes = {Path(p).resolve() for p in exclude_paths if p is not None}
     results: list[Path] = []
 
@@ -96,7 +92,6 @@ def iter_python_files(root: Path, exclude_paths: Iterable[Path] = ()) -> list[Pa
 
 
 def parse_file(path: Path) -> tuple[Optional[str], Optional[ast.AST]]:
-    """Read + parse a Python file. Returns ``(source, tree)`` or ``(None, None)``."""
     try:
         src = path.read_text(encoding="utf-8")
         tree = ast.parse(src, filename=str(path))
@@ -106,7 +101,6 @@ def parse_file(path: Path) -> tuple[Optional[str], Optional[ast.AST]]:
 
 
 def normalize_body(body: str) -> str:
-    """Strip comments and blank lines, strip indentation — used by ``single``."""
     lines: list[str] = []
     for line in body.split("\n"):
         line = re.sub(r'(?<!["\'])#.*$', "", line)
@@ -116,7 +110,6 @@ def normalize_body(body: str) -> str:
 
 
 def clean_source(lines: list[str]) -> str:
-    """Dedent a list of source lines by the minimum non-empty indentation."""
     nonempty = [ln for ln in lines if ln.strip()]
     if not nonempty:
         return ""
@@ -125,7 +118,6 @@ def clean_source(lines: list[str]) -> str:
 
 
 def function_line_range(node: ast.AST) -> tuple[int, int]:
-    """Return ``(start, end)`` line numbers for a def, including decorators."""
     end = getattr(node, "end_lineno", None) or getattr(node, "lineno")
     decs = getattr(node, "decorator_list", None)
     start = decs[0].lineno if decs else node.lineno
@@ -138,8 +130,6 @@ def function_line_range(node: ast.AST) -> tuple[int, int]:
 
 
 class FunctionRecord:
-    """A discovered function definition with its normalized body key."""
-
     __slots__ = ("name", "body", "original_body", "lineno", "node")
 
     def __init__(self, name: str, body: str, lineno: int, node: ast.AST) -> None:
@@ -151,8 +141,6 @@ class FunctionRecord:
 
 
 class FunctionCollector(ast.NodeVisitor):
-    """Collect every ``def``/``async def`` (including nested ones)."""
-
     def __init__(self, source_lines: list[str]) -> None:
         self.source_lines = source_lines
         self.functions: list[FunctionRecord] = []
@@ -174,7 +162,6 @@ class FunctionCollector(ast.NodeVisitor):
 
 
 def find_duplicates_in_file(path: Path) -> dict[str, list[FunctionRecord]]:
-    """Return ``{normalized_body: [records]}`` for groups with > 1 member."""
     src, tree = parse_file(path)
     if tree is None:
         print(f"Syntax error in file: {path}")
@@ -301,7 +288,6 @@ def cmd_single(args: argparse.Namespace) -> int:
 
 
 def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
-    """Extract top-level functions/classes/constants with source + sha256."""
     src, tree = parse_file(path)
     if tree is None:
         return []
@@ -344,7 +330,6 @@ def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
 
 
 def _scan_worker(path_str: str) -> list[dict[str, Any]]:
-    """Multiprocessing entrypoint for ``scan``."""
     return extract_objects_from_file(Path(path_str))
 
 
@@ -415,7 +400,6 @@ def refactor_to_shared_module(
     shared_module: Path,
     min_occurrences: int,
 ) -> None:
-    """Move hot duplicates into ``shared_module`` and update importers."""
     content = (
         shared_module.read_text(encoding="utf-8") if shared_module.exists() else ""
     )
@@ -569,7 +553,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
 def extract_definitions(
     path: Path,
 ) -> dict[tuple[str, str, str], tuple[str, dict[str, Any]]]:
-    """Return ``{(type, name, source): (path_str, record)}`` for top-level defs."""
     src, tree = parse_file(path)
     if tree is None:
         return {}
@@ -597,14 +580,12 @@ def extract_definitions(
 def _consolidate_worker(
     path_str: str,
 ) -> dict[tuple[str, str, str], tuple[str, dict[str, Any]]]:
-    """Multiprocessing entrypoint for ``consolidate``."""
     return extract_definitions(Path(path_str))
 
 
 def strip_definition_from_source(
     source: str, name: str, kind: str, source_code: str, module_name: str
 ) -> str:
-    """Remove a duplicate definition and prepend ``from <module> import <name>``."""
     tree = ast.parse(source)
     new_body: list[ast.AST] = []
     removed = False
@@ -726,7 +707,6 @@ def cmd_consolidate(args: argparse.Namespace) -> int:
 
 
 def _hash_function(node: ast.FunctionDef, lines: list[str]) -> str:
-    """md5 over (ast-dumped signature + return type + dedented body)."""
     start = node.lineno - 1
     end = node.end_lineno if node.end_lineno is not None else start + 1
     body_lines = lines[start:end]
@@ -745,7 +725,6 @@ def _hash_function(node: ast.FunctionDef, lines: list[str]) -> str:
 
 
 def analyze_file_functions(path: Path) -> Optional[dict[str, dict[str, Any]]]:
-    """Return ``{name: {...hash, lineno, end_lineno}}`` or ``None`` on parse error."""
     try:
         src = path.read_text(encoding="utf-8")
         tree = ast.parse(src, filename=str(path))
@@ -770,7 +749,6 @@ def analyze_file_functions(path: Path) -> Optional[dict[str, dict[str, Any]]]:
 def _prune_worker(
     path_str: str, ref_hashes: dict[str, str], apply: bool
 ) -> dict[str, Any]:
-    """Multiprocessing entrypoint for ``prune``."""
     path = Path(path_str)
     defs = analyze_file_functions(path)
     if defs is None or not defs:

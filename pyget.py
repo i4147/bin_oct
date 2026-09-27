@@ -68,7 +68,6 @@ STOP = threading.Event()
 
 
 def fmt_size(n: float | None) -> str:
-    """Format a byte count with SI units, e.g. ``9.2 MB``."""
     if n is None:
         return "?"
     if n > 1000 * 1000:
@@ -81,7 +80,6 @@ def fmt_size(n: float | None) -> str:
 
 
 def fmt_pair(done: float, total: float) -> str:
-    """Render ``done/total`` with a shared unit, pip-style."""
     if total < 1000:
         return f"{done:.0f}/{total:.0f} bytes"
     if total < 1000 * 1000:
@@ -90,7 +88,6 @@ def fmt_pair(done: float, total: float) -> str:
 
 
 def fmt_time(seconds: float | None) -> str:
-    """Format a duration as ``H:MM:SS``."""
     if seconds is None or seconds < 0 or seconds != seconds:
         return "--:--:--"
     s = int(seconds)
@@ -100,7 +97,6 @@ def fmt_time(seconds: float | None) -> str:
 
 
 def fmt_bar(fraction: float | None, width: int, spin: int = 0) -> str:
-    """Render a pip-style bar.  ``fraction=None`` gives an indeterminate bar."""
     if width <= 0:
         return ""
     if fraction is None:
@@ -115,14 +111,12 @@ def fmt_bar(fraction: float | None, width: int, spin: int = 0) -> str:
 
 
 def shorten(url: str, n: int = 42) -> str:
-    """A short human label for a URL (its basename, truncated)."""
     path = urllib.parse.urlparse(url).path
     name = Path(path).name or url
     return name if len(name) <= n else name[: n - 1] + "…"
 
 
 def pick_chunk_size(total: int | None) -> int:
-    """Choose a streaming chunk size based on the expected file size."""
     if total is None:
         return CHUNK_MEDIUM
     if total >= HUGE_FILE_THRESHOLD:
@@ -138,8 +132,6 @@ def pick_chunk_size(total: int | None) -> int:
 
 
 class Bar:
-    """State and rendering for a single download."""
-
     def __init__(self, label: str, total: int | None = None) -> None:
         self.label: str = label
         self.total: int | None = total
@@ -158,11 +150,9 @@ class Bar:
 
     @property
     def elapsed(self) -> float:
-        """Seconds since this bar was created."""
         return max(time.monotonic() - self.start, 1e-6)
 
     def _tick(self) -> None:
-        """Update the smoothed speed estimate (called from ``render``)."""
         now = time.monotonic()
         dt = now - self._last_t
         if dt < 0.15:
@@ -172,7 +162,6 @@ class Bar:
         self._last_t, self._last_d = now, self.done
 
     def _eta(self) -> float | None:
-        """Estimated seconds remaining, or ``None`` if unknown."""
         if not self.total or self.speed <= 0:
             return None
         return max(self.total - self.done, 0) / self.speed
@@ -180,7 +169,6 @@ class Bar:
     # -- rendering ---------------------------------------------------------
 
     def render(self, width: int) -> str:
-        """Render this bar to a single line of at most ``width`` columns."""
         if self.skipped:
             return f"{self.label}  already downloaded ({fmt_size(self.done)})"
         if self.failed:
@@ -218,8 +206,6 @@ class Bar:
 
 
 class Progress:
-    """Renders N bars in place using ANSI cursor movement."""
-
     def __init__(
         self,
         stream: Any | None = None,
@@ -240,7 +226,6 @@ class Progress:
     # -- lifecycle ---------------------------------------------------------
 
     def add(self, bar: Bar) -> None:
-        """Register a bar for rendering."""
         with self.lock:
             self.bars.append(bar)
 
@@ -284,7 +269,6 @@ class Progress:
         self._drawn = len(lines)
 
     def close(self) -> None:
-        """Stop the refresh thread and print the final lines."""
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=1.0)
@@ -312,22 +296,12 @@ class Progress:
 
 @dataclass
 class StreamInfo:
-    """Metadata about the HTTP response, before reading the body."""
-
     status: int
     total_length: int | None
     content_disposition: str | None
 
 
 class Backend(ABC):
-    """
-    Abstract HTTP backend.
-
-    ``open`` returns a context manager that yields ``(StreamInfo, chunks)``
-    where ``chunks`` is an iterator of ``bytes``.  Implementations must
-    be usable from multiple threads at once.
-    """
-
     name: str = "?"
 
     @abstractmethod
@@ -337,13 +311,10 @@ class Backend(ABC):
         offset: int,
         timeout: float,
     ) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
-        """Context manager yielding ``(info, chunks)`` for the given URL."""
         raise NotImplementedError
 
 
 class PurePythonBackend(Backend):
-    """Backend based on the standard library's ``urllib``."""
-
     name = "python"
 
     @contextmanager
@@ -387,8 +358,6 @@ class PurePythonBackend(Backend):
 
 
 class RequestsBackend(Backend):
-    """Backend based on the popular third-party ``requests`` library."""
-
     name = "requests"
 
     def __init__(self) -> None:
@@ -435,8 +404,6 @@ class RequestsBackend(Backend):
 
 
 class PycurlBackend(Backend):
-    """Backend based on ``pycurl`` (libcurl bindings)."""
-
     name = "pycurl"
 
     def __init__(self) -> None:
@@ -461,14 +428,12 @@ class PycurlBackend(Backend):
         }
 
         def write_cb(data: bytes) -> int:
-            """libcurl write callback: push body bytes into the queue."""
             if stop_flag.is_set():
                 return 0
             q.put(bytes(data))
             return len(data)
 
         def header_cb(data: bytes) -> int:
-            """libcurl header callback: parse status line + headers."""
             line = data.decode("latin-1").rstrip("\r\n")
             if line.startswith("HTTP/"):
                 state["headers"] = {}
@@ -488,7 +453,6 @@ class PycurlBackend(Backend):
             return len(data)
 
         def run() -> None:
-            """Worker thread: perform the request and stream into the queue."""
             try:
                 curl = pc.Curl()
                 try:
@@ -548,7 +512,6 @@ class PycurlBackend(Backend):
 
 
 def get_backend(name: str) -> Backend:
-    """Instantiate a backend by name, with helpful import errors."""
     if name == "python":
         return PurePythonBackend()
     if name == "requests":
@@ -578,14 +541,12 @@ _CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.I)
 
 
 def _sanitize(name: str) -> str:
-    """Strip path components and dangerous characters from a filename."""
     name = name.replace("\\", "/").rsplit("/", 1)[-1]
     name = name.strip().strip('"').strip("'").replace("\x00", "")
     return "" if name in ("", ".", "..") else name
 
 
 def parse_content_disposition(cd: str | None) -> str | None:
-    """Extract ``filename`` from a Content-Disposition header value."""
     if not cd:
         return None
     for pattern in (_CD_STAR, _CD_QUOTED, _CD_BARE):
@@ -598,19 +559,16 @@ def parse_content_disposition(cd: str | None) -> str | None:
 
 
 def guess_from_url(url: str) -> str:
-    """Derive a sensible filename from a URL's path."""
     path = urllib.parse.urlparse(url).path
     name = _sanitize(urllib.parse.unquote(Path(path).name))
     return name or "index.html"
 
 
 def filename_from_info(info: StreamInfo, url: str) -> str:
-    """Prefer Content-Disposition, fall back to the URL's basename."""
     return parse_content_disposition(info.content_disposition) or guess_from_url(url)
 
 
 def unique_path(path: Path) -> Path:
-    """Return ``path`` if free, else ``name (1).ext``, ``name (2).ext``, …"""
     if not path.exists():
         return path
     stem, suffix = path.stem, path.suffix
@@ -624,7 +582,6 @@ def unique_path(path: Path) -> Path:
 
 
 def part_path(outdir: Path, url: str) -> Path:
-    """Stable path for the in-progress file of a given URL."""
     digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:12]
     return outdir / f".dl-{digest}.part"
 
@@ -643,13 +600,6 @@ def download_one(
     resume: bool,
     timeout: float,
 ) -> tuple[Path, bool]:
-    """
-    Download a single URL to ``outdir``.
-
-    Returns ``(final_path, was_skipped)``.  On error, raises; the caller
-    collects the exception.  The bar is registered immediately so failures
-    are visible in the progress display.
-    """
     bar = Bar(shorten(url))
     progress.add(bar)
 
@@ -733,7 +683,6 @@ def download_one(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for the ``dl`` CLI."""
     p = argparse.ArgumentParser(
         prog="dl",
         description="pip-style download manager",
@@ -806,7 +755,6 @@ def build_parser() -> argparse.ArgumentParser:
 def collect_urls(
     args: argparse.Namespace, parser: argparse.ArgumentParser
 ) -> list[str]:
-    """Combine positional URLs with any URLs read from ``-f`` files."""
     urls: list[str] = list(args.urls)
     for path_str in args.file:
         fpath = Path(path_str)
@@ -821,7 +769,6 @@ def collect_urls(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point.  Returns a process exit status."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

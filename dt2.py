@@ -108,19 +108,6 @@ def save_progress(
     target_lang: str,
     output_type: str = "json",
 ) -> None:
-    """
-    Persist translation progress.
-
-    output_type:
-      - "text":   translated text file only; untranslated lines keep original.
-      - "json":   structured JSON with metadata + translations map.
-                  Entries where the translation equals the original (or is
-                  empty) are excluded from the JSON and written to failed_path
-                  instead (one source line per line).
-      - "merged": paired text file — each source line followed by its
-                  translation. If no translation exists, or the translation
-                  equals the source, a blank line is written instead.
-    """
     try:
         # "Successful" = we have a translation that is not empty and not
         # identical to the source text.
@@ -339,7 +326,6 @@ def main() -> None:
         save_lock = threading.Lock()
 
         def periodic_save() -> None:
-            """Background thread that periodically saves translation progress to disk."""
             nonlocal last_save_time
             while not interrupted:
                 time.sleep(args.save_interval)

@@ -81,7 +81,6 @@ POOL_SIZE: int = 8
 
 
 def _read_file_text(path: Path) -> str | None:
-    """Read a file as text (utf-8, ignoring errors) and return its content, or None on OSError."""
     try:
         with open(path, encoding="utf-8", errors="ignore") as f:
             return f.read()
@@ -90,12 +89,10 @@ def _read_file_text(path: Path) -> str | None:
 
 
 def _contains_skip_signature(content: str) -> bool:
-    """Return True if the file content contains any of the known skip signatures."""
     return any(sig in content for sig in SKIP_CONTENT_SIGNATURES)
 
 
 def should_skip_file(path: Path) -> bool:
-    """Return True if the file should be skipped based on extension, path patterns, symlink status, being this script, or known content signatures."""
     if path.resolve() == SCRIPT_PATH:
         return True
     if path.suffix.lower() in SKIP_EXTENSIONS:
@@ -110,7 +107,6 @@ def should_skip_file(path: Path) -> bool:
 
 
 def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
-    """Scan a single file for secret patterns and return its path along with a list of leak dictionaries."""
     leaks: list[dict[str, Any]] = []
     content: str | None = _read_file_text(path)
     if content is None:
@@ -139,7 +135,6 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
 
 
 def get_all_files(root_dir: Path = Path(".")) -> list[Path]:
-    """Recursively collect all non-skipped files under root_dir."""
     files: list[Path] = []
     try:
         for path in root_dir.rglob("*"):
@@ -151,7 +146,6 @@ def get_all_files(root_dir: Path = Path(".")) -> list[Path]:
 
 
 def check_secrets(root_dir: Path = Path(".")) -> tuple[int, int, int]:
-    """Scan all files under root_dir for secrets using a multiprocessing pool and return (files_scanned, total_leaks, files_with_leaks)."""
     files: list[Path] = get_all_files(root_dir)
     if not files:
         print("No files found to scan.")
@@ -182,7 +176,6 @@ def check_secrets(root_dir: Path = Path(".")) -> tuple[int, int, int]:
 
 
 def main() -> int:
-    """Entry point: run the secret scan and return an exit code (0 clean, 1 leaks found, 2 error/interrupt)."""
     print("-" * 40)
     print("SECRET LEAK DETECTOR - Pre-GitHub Push Scanner")
     print("-" * 40)

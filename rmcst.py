@@ -78,22 +78,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
 
 
 class InlineCommentRemover(cst.CSTTransformer):
-    """
-    Strip every trailing (inline) comment from a parsed module.
-
-    libcst attaches a line's trailing comment to a `TrailingWhitespace` node,
-    which is reachable from:
-      * `SimpleStatementLine.trailing_whitespace`  ->  `x = 1  # c`
-      * `SimpleStatementSuite.trailing_whitespace` ->  `if x: y = 1  # c`
-      * `IndentedBlock.header`                     ->  `if x:  # c\n    ...`
-
-    Standalone comments live in `EmptyLine.comment` / `leading_lines`, so
-    they are naturally untouched by this transformer.
-
-    The counter is exposed via `comments_removed`; one transformer instance
-    should be created per file.
-    """
-
     def __init__(self) -> None:
         super().__init__()
         self.comments_removed: int = 0
@@ -121,14 +105,6 @@ class InlineCommentRemover(cst.CSTTransformer):
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
-    """
-    Atomically replace `path` with `data`.
-
-    The new content is written to a hidden temp file in the same directory,
-    the original mode bits are copied over, and the temp file is renamed onto
-    the target. `os.replace` is atomic on POSIX and on Windows (same volume),
-    so a crash can never leave a partially-written source file behind.
-    """
     try:
         mode: int | None = path.stat().st_mode
     except OSError:
@@ -161,16 +137,6 @@ def _atomic_write(path: Path, data: bytes) -> None:
 
 
 def process_file(path: Path) -> tuple[Path, int, str | None]:
-    """
-    Process a single file end-to-end.
-
-    Returns ``(path, comments_removed, error_or_None)``. The file is only
-    rewritten if at least one comment was removed *and* the produced source
-    still parses as valid Python.
-
-    This function must be importable from the top level so it can be pickled
-    to worker processes (it is, on all platforms including spawn-based ones).
-    """
     # 1. Read raw bytes.
     try:
         source_bytes = path.read_bytes()
@@ -224,18 +190,6 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
 
 
 def iter_python_files(roots: Iterable[Path]) -> Iterator[Path]:
-    """
-    Yield unique ``.py`` files reachable from ``roots``.
-
-    * A file argument is yielded directly (if it has a ``.py`` suffix).
-    * A directory argument is walked recursively using ``Path.walk`` (3.12+),
-      with the common non-source directories in ``SKIP_DIRS`` pruned and
-      per-directory errors surfaced via a warning.
-    * Duplicate paths (e.g. a file passed explicitly that is also inside a
-      directory argument) are yielded only once.
-    * The generator is lazy, so the multiprocessing pool's feeder thread can
-      stream paths to workers without materialising the whole tree.
-    """
     seen: set[Path] = set()
 
     def _on_error(exc: OSError) -> None:

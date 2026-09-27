@@ -108,12 +108,6 @@ def is_jsonl_file(path: Path) -> bool:
 
 
 def iter_jsonl_files(inputs: Iterable[Path]) -> Iterator[Path]:
-    """
-    Yield unique JSONL/NDJSON files.
-
-    Directories are walked recursively with pathlib.Path.rglob(). Symbolic links
-    are not traversed as directories by pathlib's normal glob behavior.
-    """
     seen: set[Path] = set()
 
     for input_path in inputs:
@@ -159,12 +153,6 @@ def destination_for(
     output_dir: Path | None,
     input_roots: tuple[Path, ...],
 ) -> Path:
-    """
-    Convert `example.jsonl` to `example.json`.
-
-    When --output-dir is used, preserve a path relative to the most-specific
-    supplied input directory where possible.
-    """
     output_name = source.with_suffix(".json").name
 
     if output_dir is None:
@@ -203,13 +191,6 @@ def encode_record(
 
 
 def convert_one(job: Job) -> Result:
-    """
-    Worker process function.
-
-    Data is read line-by-line and emitted directly into a JSON array. The
-    temporary file is created in the destination directory so os.replace()
-    remains atomic on the same filesystem.
-    """
     source = job.source
     destination = job.destination
 

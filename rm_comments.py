@@ -100,16 +100,6 @@ ProcessResult = tuple[Path, int, str | None, bool]
 
 
 def remove_comments_from_content(content: str) -> tuple[str, int]:
-    """Remove ``#`` comments from source text while preserving string literals.
-
-    Args:
-        content: The full text content of a file.
-
-    Returns:
-        A tuple ``(modified_content, removed_count)`` where ``modified_content``
-        is the text with comments stripped and ``removed_count`` is the number
-        of comment lines/segments that were removed.
-    """
     lines: list[str] = content.split("\n")
     modified_lines: list[str] = []
     removed_count: int = 0
@@ -170,16 +160,6 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
 
 
 def is_ignored_extension(path: Path) -> bool:
-    """Return ``True`` if the file has an extension in ``EXCLUDE_EXTENSIONS``.
-
-    Also checks the last two suffixes combined (e.g. ``.min.js``).
-
-    Args:
-        path: Path to the file to test.
-
-    Returns:
-        ``True`` if the file should be skipped based on its extension.
-    """
     suffix: str = path.suffix.lower()
     if suffix in EXCLUDE_EXTENSIONS:
         return True
@@ -192,28 +172,10 @@ def is_ignored_extension(path: Path) -> bool:
 
 
 def is_hidden(path: Path) -> bool:
-    """Return ``True`` if any part of the path starts with a dot.
-
-    Args:
-        path: Path to inspect.
-
-    Returns:
-        ``True`` if the path contains a hidden component.
-    """
     return any(part.startswith(".") for part in path.parts)
 
 
 def process_file(path: Path) -> ProcessResult:
-    """Process a single file: detect binary, strip comments, write back.
-
-    Args:
-        path: Path to the file to process.
-
-    Returns:
-        A tuple ``(path, removed_count, error_message, was_binary)``. When
-        ``was_binary`` is ``True`` the file was skipped as binary. When
-        ``error_message`` is not ``None`` an error occurred while processing.
-    """
     try:
         if is_binary(str(path)):
             return path, 0, None, True
@@ -239,17 +201,6 @@ def find_target_files(
     exclude_dirs: set[str] | None = None,
     ignore_extensions: bool = True,
 ) -> list[Path]:
-    """Recursively find candidate files for comment removal.
-
-    Args:
-        root_dir: Root directory to scan.
-        include_hidden: Whether to include hidden files and directories.
-        exclude_dirs: Directory names to skip. Defaults to ``DEFAULT_EXCLUDE_DIRS``.
-        ignore_extensions: Whether to skip files with binary/ignored extensions.
-
-    Returns:
-        A list of ``Path`` objects for candidate files.
-    """
     if exclude_dirs is None:
         exclude_dirs = set(DEFAULT_EXCLUDE_DIRS)
 
@@ -274,7 +225,6 @@ def find_target_files(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build and return the command-line argument parser."""
     parser = argparse.ArgumentParser(
         description="Remove comments from non-binary files using # comment syntax"
     )
@@ -318,18 +268,6 @@ def _iter_results(
     root_dir: Path,
     verbose: bool,
 ) -> tuple[int, int, int, int, int]:
-    """Aggregate results and log per-file progress.
-
-    Args:
-        results: Iterable of ``ProcessResult`` tuples.
-        total: Total number of files being processed.
-        root_dir: Root directory used for relative path display.
-        verbose: Whether to log per-file details for skipped/unchanged files.
-
-    Returns:
-        Tuple ``(total_removed, files_changed, files_with_errors,
-        binary_files, completed)``.
-    """
     total_removed: int = 0
     files_changed: int = 0
     files_with_errors: int = 0
@@ -368,11 +306,6 @@ def _iter_results(
 
 
 def main() -> int:
-    """Entry point: parse arguments and process files in parallel.
-
-    Returns:
-        Exit code (0 on success, 1 on fatal error).
-    """
     parser: argparse.ArgumentParser = _build_parser()
     args: argparse.Namespace = parser.parse_args()
 

@@ -119,7 +119,6 @@ RED = "\x1b[91m"
 # Shared helpers
 # ---------------------------------------------------------------------------
 def is_binary(path: Path, sample: int = 1024) -> bool:
-    """Return True if the first `sample` bytes contain a NUL byte."""
     try:
         with path.open("rb") as f:
             return b"\x00" in f.read(sample)
@@ -139,7 +138,6 @@ def walk_files(
     allowed_exts: Optional[set[str]] = None,
     blocked_exts: Optional[set[str]] = None,
 ) -> Iterator[Path]:
-    """Yield files under `roots`, applying all requested filters."""
     skip = SKIP_DIRS if skip_dirs is None else skip_dirs
     blocked = BIN_EXT_DEFAULT if blocked_exts is None else blocked_exts
 
@@ -194,7 +192,6 @@ def walk_files(
 
 
 def highlight(line: str, spans: Sequence[tuple[int, int]], enabled: bool) -> str:
-    """Wrap each span in ANSI red, if `enabled`."""
     if not enabled or not spans:
         return line
     parts: list[str] = []
@@ -211,7 +208,6 @@ def highlight(line: str, spans: Sequence[tuple[int, int]], enabled: bool) -> str
 # Subcommand: names  (exnames.py)
 # ===========================================================================
 def _load_names(path: Path) -> list[tuple[str, re.Pattern[str]]]:
-    """Parse a names file into (name, compiled regex) pairs."""
     out: list[tuple[str, re.Pattern[str]]] = []
     with path.open("r", encoding="utf-8") as f:
         for raw in f:
@@ -289,7 +285,6 @@ _pause_event: Optional[threading.Event] = None
 
 
 def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
-    """Search a single file for `query`; return list of (path, line|None)."""
     path_str, query, content_mode = job
     path = Path(path_str)
     out: list[tuple[str, Optional[int]]] = []
@@ -308,7 +303,6 @@ def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
 
 
 def _install_pause_hotkey() -> bool:
-    """Install SPACE/p=pause, c=resume handlers if `keyboard` is available."""
     if keyboard is None:
         print("'keyboard' not installed. Pause disabled.")
         return False
@@ -383,7 +377,6 @@ def cmd_fast(args: argparse.Namespace) -> int:
 # Subcommand: find  (pfind.py)
 # ===========================================================================
 def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
-    """Return (archive_path, member) pairs where member matches pattern."""
     out: list[tuple[str, str]] = []
     needle = pattern.lower()
     name = archive.name.lower()
@@ -447,7 +440,6 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
 
 
 def _find_worker(job: tuple[str, str]) -> list[tuple[str, Optional[str]]]:
-    """Return filename matches, including archive members."""
     path_str, pattern = job
     p = Path(path_str)
     results: list[tuple[str, Optional[str]]] = []
@@ -487,7 +479,6 @@ def cmd_find(args: argparse.Namespace) -> int:
 def _grep_worker(
     job: tuple[str, str, bool, bool, bool],
 ) -> tuple[str, list[tuple[int, str, list[tuple[int, int]]]]]:
-    """Search a single file.  Returns (path, [(lineno, line, spans)])."""
     path_str, pattern, ignore_case, fixed_strings, skip_binary = job
     path = Path(path_str)
     if skip_binary and is_binary(path):
@@ -614,7 +605,6 @@ def _collect_stems(root: Path) -> Iterator[str]:
 
 
 def _edit_distance_bounded(a: str, b: str, bound: int) -> int:
-    """Band-limited Levenshtein distance; returns bound+1 when too far."""
     n, m = len(a), len(b)
     if abs(n - m) > bound:
         return bound + 1
@@ -644,7 +634,6 @@ def _edit_distance_bounded(a: str, b: str, bound: int) -> int:
 
 
 def _similar_groups(names: list[str], ratio: float = 0.8) -> list[list[str]]:
-    """Group near-duplicate names using a length-banded edit distance."""
     n = len(names)
     used = [False] * n
     by_len: dict[int, list[int]] = {}
@@ -712,7 +701,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
 # Subcommand: strings  (stringr.py)
 # ===========================================================================
 def _strings_worker(job: tuple[str, str]) -> Optional[tuple[str, str]]:
-    """Run `strings` on one file.  Returns (name, stdout) or None."""
     path_str, _ = job
     path = Path(path_str)
     if not path.exists() or not is_binary(path):

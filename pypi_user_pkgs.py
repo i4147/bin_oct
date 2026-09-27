@@ -72,8 +72,6 @@ _PAGE_RE = re.compile(r"[?&]page=(\d+)")
 # HTML parsing
 # --------------------------------------------------------------------------
 class _ProfileParser(HTMLParser):
-    """Collect project links and pagination numbers from a PyPI profile page."""
-
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self._snippet_hrefs: list[str] = []
@@ -99,7 +97,6 @@ class _ProfileParser(HTMLParser):
                 self._snippet_hrefs.append(href)
 
     def project_names(self) -> list[str]:
-        """Return the list of distinct project names in document order."""
         hrefs = self._snippet_hrefs or self._all_project_hrefs
         names: list[str] = []
         seen: set[str] = set()
@@ -115,13 +112,11 @@ class _ProfileParser(HTMLParser):
 
 
 def _page_of(url: str) -> int:
-    """Extract the ``page`` query parameter from *url* (defaults to 1)."""
     m = re.search(r"[?&]page=(\d+)", url)
     return int(m.group(1)) if m else 1
 
 
 def _with_page(url: str, page: int) -> str:
-    """Return *url* with its query string replaced by ``?page=<page>``."""
     return f"{url.split('?', 1)[0]}?page={page}"
 
 
@@ -129,7 +124,6 @@ def _with_page(url: str, page: int) -> str:
 # HTTP backends: httpx (default), urllib, requests, pycurl, aria2c
 # --------------------------------------------------------------------------
 def check_backend(backend: str) -> None:
-    """Fail fast if the selected backend's dependency is missing."""
     if backend == "requests":
         try:
             import requests  # noqa: F401
@@ -164,14 +158,6 @@ def check_backend(backend: str) -> None:
 
 
 def fetch_bytes(url: str, backend: str = DEFAULT_BACKEND, timeout: float = 30.0):
-    """GET *url* and return ``(body_bytes, effective_url)``.
-
-    This is the *synchronous* metadata fetch used for the profile page and
-    the per-package JSON API. The ``httpx`` backend intentionally uses its
-    synchronous client here even when parallel downloads are enabled, because
-    the metadata calls are tiny and we want to keep the discovery loop
-    simple.
-    """
     if backend == "aria2c":
         backend = "urllib"
 
@@ -237,7 +223,7 @@ def _fetch_pycurl(url: str, timeout: float):
 # Downloads
 # --------------------------------------------------------------------------
 class FileTooLarge(Exception):
-    """Raised when a remote file exceeds the configured size limit."""
+    pass
 
 
 def download_file(
@@ -247,11 +233,6 @@ def download_file(
     max_bytes: int,
     timeout: float = 60.0,
 ) -> int:
-    """Stream *url* into *dest* synchronously (single-file path).
-
-    Used for every backend except ``httpx``, which goes through the async
-    dispatcher in :func:`download_all`.
-    """
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.parent / (dest.name + ".part")
@@ -352,7 +333,6 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
 
 
 def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int:
-    """Download via the external ``aria2c`` binary."""
     cmd = [
         ARIA2C_BIN,
         "--no-conf=true",
@@ -411,12 +391,6 @@ async def _download_one_async(
     max_bytes: int,
     sem: asyncio.Semaphore,
 ) -> tuple[Path, int | None, Exception | None]:
-    """Download a single file through an existing ``httpx.AsyncClient``.
-
-    Returns ``(dest, bytes_written_or_None, exception_or_None)``. This
-    function never raises, so ``asyncio.as_completed`` can collect partial
-    failures without aborting the whole batch.
-    """
     async with sem:
         dest = Path(dest)
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -455,12 +429,6 @@ async def _download_all_async(
     jobs: int,
     on_event,
 ) -> None:
-    """Run every (url, dest) pair through a shared AsyncClient.
-
-    ``jobs`` is the maximum number of concurrent transfers. ``on_event`` is
-    invoked from the event loop as each file finishes, so progress prints
-    as results arrive rather than all at once at the end.
-    """
     import httpx
 
     sem = asyncio.Semaphore(jobs)
@@ -495,11 +463,6 @@ def download_all(
     timeout: float,
     on_event,
 ) -> None:
-    """Dispatch a batch of downloads to the appropriate runner.
-
-    Only the ``httpx`` backend gets the async parallel path. Every other
-    backend falls back to running :func:`download_file` sequentially.
-    """
     if backend == "httpx" and tasks:
         asyncio.run(
             _download_all_async(tasks, max_bytes, timeout, DEFAULT_JOBS, on_event)
@@ -520,7 +483,6 @@ def download_all(
 # Package discovery
 # --------------------------------------------------------------------------
 def resolve_profile_url(target: str) -> str:
-    """Turn a bare username into a full PyPI profile URL."""
     target = target.strip()
     if "://" in target:
         return target
@@ -528,10 +490,6 @@ def resolve_profile_url(target: str) -> str:
 
 
 def extract_username(target: str) -> str:
-    """Extract a filesystem-safe username from a user string or profile URL.
-
-    Used to build the ``<user>.txt`` output filename.
-    """
     target = target.strip().rstrip("/")
     if "://" in target:
         # Take the last path segment of the URL.
@@ -542,14 +500,12 @@ def extract_username(target: str) -> str:
 
 
 def save_package_list(names: list[str], username: str) -> Path:
-    """Write one package name per line to ``<username>.txt`` in the CWD."""
     out_path = Path.cwd() / f"{username}.txt"
     out_path.write_text("\n".join(names) + "\n", encoding="utf-8")
     return out_path
 
 
 def collect_packages(start_url: str, backend: str, timeout: float, quiet: bool = False):
-    """Return ``(package_names, final_profile_url)`` walking paginated pages."""
     names: list[str] = []
     seen: set[str] = set()
     visited_pages: set[int] = set()
@@ -580,14 +536,12 @@ def collect_packages(start_url: str, backend: str, timeout: float, quiet: bool =
 
 
 def fetch_package_files(name: str, backend: str, timeout: float):
-    """Return ``(version, [file_dict, ...])`` for the latest release of *name*."""
     body, _ = fetch_bytes(f"{PYPI_BASE}/pypi/{name}/json", backend, timeout)
     meta = json.loads(body)
     return meta["info"]["version"], meta.get("urls", [])
 
 
 def _mib(n: int) -> str:
-    """Pretty-print a byte count as MiB."""
     return f"{n / (1024 * 1024):.2f} MiB"
 
 

@@ -39,7 +39,6 @@ DEFAULT_REPORT = Path("conflict_report.json")
 
 
 def normalize(name: str) -> str:
-    """PEP 503 name normalisation: lowercase, '-'/'_'/'.' collapse to '-'."""
     return re.sub(r"[-_.]+", "-", name).strip().lower()
 
 
@@ -59,7 +58,6 @@ def load_pypi_names(path: Path) -> set[str]:
 
 
 def installed_distributions() -> set[str]:
-    """Normalized names of distributions installed in the current interpreter."""
     try:
         from importlib.metadata import distributions
     except ImportError:  # pragma: no cover - very old Python
@@ -77,7 +75,6 @@ def installed_distributions() -> set[str]:
 
 
 def collect_targets(root: Path):
-    """Yield (path, import_name, kind) for things that can shadow imports."""
     for p in sorted(root.iterdir()):
         if p.is_file() and p.suffix == ".py":
             yield p, p.stem, "module"
@@ -86,7 +83,6 @@ def collect_targets(root: Path):
 
 
 def unique_target(path: Path) -> Path:
-    """Return a non-existing sibling path with '_N' inserted before the suffix."""
     stem, suffix = path.stem, path.suffix
     n = 1
     while True:

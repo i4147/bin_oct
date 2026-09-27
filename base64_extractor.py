@@ -166,7 +166,6 @@ IMAGE_DATA_RE = re.compile(
 
 
 def guess_extension(mime: str) -> str:
-    """Return a file extension for a MIME type, with sensible fallbacks."""
     mime = (mime or "").lower().strip()
     if not mime:
         return ".bin"
@@ -198,7 +197,6 @@ def iter_files(
     skip_dirs: Iterable[str] = DEFAULT_SKIP_DIRS,
     follow_symlinks: bool = False,
 ) -> Iterator[Path]:
-    """Yield files under `root` (or `root` itself) matching `extensions`."""
     exts = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in extensions}
     skip = {s.lower() for s in skip_dirs}
 
@@ -230,10 +228,6 @@ def read_text_safe(path: Path) -> Optional[str]:
 def detect_mime_from_bytes(
     blob: bytes,
 ) -> tuple[Optional[str], Optional[str], Optional[str]]:
-    """
-    Sniff MIME + extension + category from the first bytes of a blob.
-    Returns (mime, ext, category) or (None, None, None).
-    """
     if not blob or len(blob) < 4:
         return (None, None, None)
     if blob.startswith(b"\x89PNG\r\n\x1a\n"):
@@ -283,7 +277,6 @@ def decode_b64(data: str) -> Optional[bytes]:
 
 
 def relurl(target: Path, from_dir: Path) -> str:
-    """POSIX-style relative URL from a directory to a target file."""
     try:
         return target.relative_to(from_dir).as_posix()
     except ValueError:

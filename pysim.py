@@ -13,7 +13,6 @@ from typing import Any
 
 
 def hash_node(node: ast.AST) -> str:
-    """Generate a stable hash for an AST node based on its source content."""
     try:
         # ast.unparse is available in Python 3.9+
         source = ast.unparse(node)
@@ -24,10 +23,6 @@ def hash_node(node: ast.AST) -> str:
 
 
 def extract_definitions(path: Path) -> dict[str, Any] | None:
-    """
-    Parse a .py file and extract hashes of its top-level definitions:
-    functions, classes, and module-level constant assignments.
-    """
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
@@ -67,11 +62,9 @@ def extract_definitions(path: Path) -> dict[str, Any] | None:
 
 
 def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
-    """Compare two file definition dicts and compute similarity metrics."""
     a, b = pair
 
     def intersect_hashes(key: str) -> list[str]:
-        """Return names shared by both files with identical content hashes."""
         if key not in a or key not in b:
             return []
         a_map = a[key]

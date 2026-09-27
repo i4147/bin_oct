@@ -69,7 +69,6 @@ def err(msg: str) -> None:
 
 
 def unique_path(p: Path) -> Path:
-    """Return `p`, or `p_1`, `p_2`, ... if it already exists."""
     if not p.exists():
         return p
     stem, suffix = p.stem, p.suffix
@@ -84,7 +83,6 @@ def unique_path(p: Path) -> Path:
 def _collect_by_ext(
     root: Path, exts: Iterable[str], recursive: bool = True
 ) -> list[Path]:
-    """Return files under `root` whose suffix (lowercased) matches `exts`."""
     exts = {e.lower() for e in exts}
     iterator = root.rglob("*") if recursive else root.glob("*")
     return [p for p in iterator if p.is_file() and p.suffix.lower() in exts]
@@ -96,7 +94,6 @@ def _collect_by_ext(
 
 
 def cmd_chat_export(args: argparse.Namespace) -> int:
-    """Convert a JSON array of conversations into per-chat Markdown files."""
     src = Path(args.input)
     if not src.is_file():
         err(f"File not found: {src}")
@@ -134,7 +131,6 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
 
 
 def _convert_one_info(src: Path) -> Optional[Path]:
-    """Convert one `.info` file via the `info` CLI; return target path or None."""
     # Strip the `.info` / `.info-NN` suffix from the filename.
     stem = re.sub(r"\.info(-\d+)?$", "", src.name)
     dest = src.parent / f"{stem}.md"
@@ -162,7 +158,6 @@ def _convert_one_info(src: Path) -> Optional[Path]:
 
 
 def cmd_info_to_md(args: argparse.Namespace) -> int:
-    """Convert `.info` files in a directory to Markdown via the `info` command."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -190,7 +185,6 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
 
 
 def _render_roff(text: str) -> str:
-    """Very small roff → Markdown translator (man2md.py's `a()`)."""
     lines = text.splitlines()
     out: list[str] = []
     in_fence = False
@@ -302,7 +296,6 @@ def _render_roff(text: str) -> str:
 
 
 def cmd_man_to_md(args: argparse.Namespace) -> int:
-    """Convert a man page (roff source) to Markdown."""
     src = Path(args.input)
     try:
         text = src.read_text(encoding="utf-8", errors="ignore")
@@ -323,7 +316,6 @@ def cmd_man_to_md(args: argparse.Namespace) -> int:
 
 
 def _apply_tailwind_classes(html: str) -> str:
-    """Add Tailwind classes to common tags (md2html.py's `i()`)."""
     from bs4 import BeautifulSoup  # lazy
 
     soup = BeautifulSoup(html, "html.parser")
@@ -345,7 +337,6 @@ def _apply_tailwind_classes(html: str) -> str:
 
 
 def _replace_latex(text: str) -> str:
-    """Convert \\[...\\] and \\(...\\) into span markers for KaTeX."""
     text = re.sub(
         r"\\\[(.*?)\\\]",
         '<div class="latex-displayr">\x01</div>',
@@ -387,7 +378,6 @@ _HTML_TEMPLATE = """\
 
 
 def cmd_md_to_html(args: argparse.Namespace) -> int:
-    """Markdown -> styled HTML using Tailwind/KaTeX (md2html.py)."""
     try:
         import markdown  # type: ignore
     except ImportError:
@@ -443,7 +433,6 @@ _MD_LINK = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 def _md_to_rst(text: str) -> str:
-    """Very small Markdown -> RST pre-converter (mk_html.py's `k()`)."""
 
     def heading(match: re.Match) -> str:
         level = len(match.group(1))
@@ -478,7 +467,6 @@ def _md_to_rst(text: str) -> str:
 
 
 def _find_rst2html_helper() -> Optional[Path]:
-    """Find a `rest2html.py` helper near cwd or Python's prefix (mk_html.py's g())."""
     candidates = [
         Path.cwd() / "doc" / "rest2html.py",
         Path.cwd() / "rest2html.py",
@@ -491,7 +479,6 @@ def _find_rst2html_helper() -> Optional[Path]:
 
 
 def _style_hash(style_path: Path) -> str:
-    """Return `style_<sha256[:32]>.css` for cache-busting (mk_html.py's `a()`)."""
     data = style_path.read_bytes()
     return f"style_{hashlib.sha256(data).hexdigest()[:32]}.css"
 
@@ -499,7 +486,6 @@ def _style_hash(style_path: Path) -> str:
 def _convert_one_to_html(
     args_tuple: tuple[Path, Optional[str]],
 ) -> tuple[Path, Optional[Path]]:
-    """Convert a single source file to HTML (mk_html.py's `d()`)."""
     src, stylesheet = args_tuple
     dest = src.with_suffix(".html")
     if dest.exists() and dest.stat().st_mtime > src.stat().st_mtime:
@@ -543,7 +529,6 @@ def _convert_one_to_html(
 
 
 def cmd_rst_to_html(args: argparse.Namespace) -> int:
-    """.rst / .txt / .md -> HTML recursively (mk_html.py)."""
     root = Path(args.directory).resolve()
     if not root.is_dir():
         err(f"Not a directory: {root}")
@@ -604,7 +589,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
 
 
 def cmd_mobi_to_html(args: argparse.Namespace) -> int:
-    """Extract a `.mobi` file to HTML (and asset dir if it's EPUB-based)."""
     try:
         import mobi  # type: ignore
     except ImportError:
@@ -649,7 +633,6 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
 
 
 def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
-    """Extract slide text (and table cells) from a .pptx to a .txt file."""
     try:
         from pptx import Presentation  # type: ignore
     except ImportError:
@@ -692,7 +675,6 @@ def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
 
 
 def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
-    """Convert one `.rst` file to `.md` via pandoc."""
     if not src.exists():
         err(f"{src} not found")
         return False
@@ -726,7 +708,6 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
 
 
 def cmd_rst_to_md(args: argparse.Namespace) -> int:
-    """Convert `.rst` files to `.md` via pandoc (rst2md2.py)."""
     # Verify pandoc is installed.
     try:
         subprocess.run(["pandoc", "--version"], capture_output=True, check=True)
@@ -773,7 +754,6 @@ def cmd_rst_to_md(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level parser with every subcommand."""
     parser = argparse.ArgumentParser(
         prog="doc_convert.py",
         description="Unified document conversion CLI.",

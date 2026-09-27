@@ -88,8 +88,6 @@ NON_CODE_PREFIXES = (
 # Uniform archive accessor  (tar.gz / zip / whl)
 # ---------------------------------------------------------------------------
 class _Member:
-    """A single file inside an archive, with lazy content loading."""
-
     __slots__ = ("name", "size", "_read")
 
     def __init__(self, name, size, read):
@@ -103,8 +101,6 @@ class _Member:
 
 
 class Archive:
-    """Read-only, format-agnostic view over tar.gz / zip / whl archives."""
-
     def __init__(self, path: Path):
         self.path = path
         lower = path.name.lower()
@@ -129,7 +125,6 @@ class Archive:
             self._fh = None
 
     def files(self):
-        """Yield _Member for every regular file in the archive."""
         fh = self._fh
         if self.kind == "tar":
             for m in fh.getmembers():
@@ -198,7 +193,6 @@ def _check_all_non_setup_empty(members):
 
 
 def _check_only_metadata(members):
-    """Every file is either a well-known metadata name, or an empty .py."""
     if not members:
         return None
     for m in members:
@@ -212,7 +206,6 @@ def _check_only_metadata(members):
 
 
 def _check_only_pyc(members):
-    """No source, just compiled artifacts."""
     if any(_is_py(m) for m in members):
         return None
     has_compiled = any(
@@ -226,7 +219,6 @@ def _check_only_pyc(members):
 
 
 def _check_only_docs_tests(members):
-    """Everything lives under docs/ tests/ examples/ … (plus top-level meta)."""
     if not members:
         return None
     for m in members:
@@ -241,7 +233,6 @@ def _check_only_docs_tests(members):
 
 
 def _py_is_trivial(src: str) -> bool:
-    """True if a .py file only contains imports, docstrings, or `pass`."""
     try:
         tree = ast.parse(src)
     except SyntaxError:
@@ -260,7 +251,6 @@ def _py_is_trivial(src: str) -> bool:
 
 
 def _check_imports_only(members):
-    """Every non-setup .py parses but contains only imports/docstrings/pass."""
     py = [m for m in members if _is_py(m)]
     if not py:
         return None
@@ -304,7 +294,6 @@ _CHECKS = (
 # Worker
 # ---------------------------------------------------------------------------
 def analyze(path: Path):
-    """Return (path, reason_or_None).  Runs in a worker process."""
     try:
         with Archive(path) as ar:
             members = list(ar.files())
@@ -321,7 +310,6 @@ def analyze(path: Path):
 # Destination naming
 # ---------------------------------------------------------------------------
 def _split_archive_name(name: str):
-    """Split 'foo.tar.gz' -> ('foo', '.tar.gz'); 'foo.whl' -> ('foo', '.whl')."""
     lower = name.lower()
     for compound in (".tar.gz",):
         if lower.endswith(compound):
@@ -331,7 +319,6 @@ def _split_archive_name(name: str):
 
 
 def _unique_dest(directory: Path, name: str) -> Path:
-    """Avoid clobbering existing files in the destination directory."""
     dest = directory / name
     if not dest.exists():
         return dest

@@ -110,24 +110,18 @@ shutdown_flag = False
 
 
 def setup_logging(log_file: str = "translate_chunks.log") -> None:
-    """Configure loguru logging."""
     logger.remove()
     logger.add(sys.stderr, level="ERROR")
     logger.add(log_file, level="DEBUG", rotation="10 MB")
 
 
 def signal_handler(sig, frame) -> None:
-    """Handle Ctrl+C for graceful shutdown."""
     global shutdown_flag
     shutdown_flag = True
     logger.info("Shutdown signal received. Waiting for current tasks to complete...")
 
 
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
-    """
-    Split text into chunks of approximately chunk_size characters.
-    Preserves word boundaries by splitting at the last space before chunk_size.
-    """
     if not text:
         return []
 
@@ -154,7 +148,6 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
 
 
 def load_existing_output(output_path: Path) -> dict[str, str]:
-    """Load existing output JSON if it exists."""
     if output_path.exists():
         try:
             with output_path.open("r", encoding="utf-8") as f:
@@ -165,7 +158,6 @@ def load_existing_output(output_path: Path) -> dict[str, str]:
 
 
 def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
-    """Atomically save JSON data to file."""
     temp_path = output_path.with_suffix(".tmp")
     try:
         with temp_path.open("w", encoding="utf-8") as f:
@@ -178,7 +170,6 @@ def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
 
 
 def is_identity_translation(text: str, translated: str) -> bool:
-    """Check if translation is effectively an identity translation."""
     # Normalize both texts for comparison
     norm_orig = text.lower().strip()
     norm_trans = translated.lower().strip()
@@ -186,7 +177,6 @@ def is_identity_translation(text: str, translated: str) -> bool:
 
 
 def make_deep_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for deep_translator backend."""
     source_lang = LANG_MAPPING["deep_translator"].get(source, source)
     target_lang = LANG_MAPPING["deep_translator"].get(target, target)
 
@@ -205,7 +195,6 @@ def make_deep_translator(source: str, target: str) -> Callable[[str], str]:
 
 
 def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for deepl backend."""
     try:
         import deepl
     except ImportError:
@@ -232,7 +221,6 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
 
 
 def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for translate backend."""
     try:
         from translate import Translator
     except ImportError:
@@ -253,7 +241,6 @@ def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
 
 
 def make_translators_bing_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for translators_bing backend."""
     try:
         import translators as ts
     except ImportError:
@@ -278,7 +265,6 @@ def make_translators_bing_translator(source: str, target: str) -> Callable[[str]
 
 
 def make_googletrans_translator(source: str, target: str) -> Callable[[str], str]:
-    """Factory for googletrans backend."""
     try:
         from googletrans import Translator
     except ImportError:
@@ -305,7 +291,6 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
 def make_pygoogletranslation_translator(
     source: str, target: str
 ) -> Callable[[str], str]:
-    """Factory for pygoogletranslation backend."""
     try:
         from pygoogletranslation import Translator
     except ImportError:
@@ -333,7 +318,6 @@ def make_pygoogletranslation_translator(
 def select_backend(
     source: str, target: str, backend: Optional[str] = None
 ) -> Callable[[str], str]:
-    """Select the best available backend in priority order."""
     backends = [
         ("deepl", make_deepl_translator),
         ("deep_translator", make_deep_translator),
@@ -371,7 +355,6 @@ def translate_chunk(
     max_retries: int = MAX_RETRIES,
     backoff_base: int = BACKOFF_BASE,
 ) -> tuple[int, Optional[str]]:
-    """Translate a single chunk with retries and backoff."""
     if shutdown_flag:
         return index, None
 
@@ -412,7 +395,6 @@ def process_chunks(
     failed_path: Path,
     existing_output: dict[str, str],
 ) -> None:
-    """Process all chunks with threading and periodic saving."""
     results = existing_output.copy()
     failed_indices = set()
 
@@ -459,7 +441,6 @@ def process_chunks(
 
 
 def main() -> None:
-    """Main entry point."""
     parser = argparse.ArgumentParser(description="Translate text file in chunks")
     parser.add_argument("-i", "--input", default=DEFAULT_INPUT, help="Input text file")
     parser.add_argument(

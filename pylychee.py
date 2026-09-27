@@ -44,7 +44,6 @@ TARGET_EXTS: Final[tuple[str, ...]] = (".md", ".html", ".htm")
 
 
 def _strip_fragment_query(u: str) -> str:
-    """Remove URL fragment and query string from a URL or path."""
     v, _ = urldefrag(u)
     if "?" in v:
         v = v.split("?", 1)[0]
@@ -52,19 +51,16 @@ def _strip_fragment_query(u: str) -> str:
 
 
 def _guess_ext(u: str) -> str:
-    """Return the lowercased file extension of a URL or path, ignoring query/fragment."""
     p = _strip_fragment_query(u)
     return Path(p).suffix.lower()
 
 
 def _is_remote(u: str) -> bool:
-    """Return True if the reference is an absolute HTTP(S) URL."""
     s = u.strip()
     return any(s.startswith(x) for x in HTTP_SCHEMES)
 
 
 def _is_local_ref(u: str) -> bool:
-    """Return True if the reference is a non-empty local path (not a fragment)."""
     s = u.strip()
     if not s:
         return False
@@ -74,17 +70,14 @@ def _is_local_ref(u: str) -> bool:
 
 
 def _is_imageish(u: str) -> bool:
-    """Return True if the reference looks like an image by extension."""
     return _guess_ext(u) in EXT_IMAGE
 
 
 def _read_bytes(path: Path) -> bytes:
-    """Read and return the raw bytes of a file."""
     return path.read_bytes()
 
 
 def _local_target_resolve(base_dir: Path, u: str) -> Path | None:
-    """Resolve a local reference relative to base_dir, returning None on absolute paths."""
     s = u.strip()
     if not s:
         return None
@@ -100,7 +93,6 @@ def _local_target_resolve(base_dir: Path, u: str) -> Path | None:
 
 
 def _mime_for_local(path: Path) -> str:
-    """Guess the MIME type for a local file, defaulting to application/octet-stream."""
     if path.suffix.lower() == ".svg":
         return "image/svg+xml"
     m, _ = mimetypes.guess_type(str(path))
@@ -108,7 +100,6 @@ def _mime_for_local(path: Path) -> str:
 
 
 def _to_data_uri(path: Path) -> str:
-    """Encode a local file as a base64 data URI."""
     mime = _mime_for_local(path)
     raw = _read_bytes(path)
     b64 = base64.b64encode(raw).decode("ascii")
@@ -116,7 +107,6 @@ def _to_data_uri(path: Path) -> str:
 
 
 def _http_check(url: str, timeout: int) -> bool:
-    """Return True if the remote URL responds successfully (HEAD, falling back to GET)."""
     req = urllib.request.Request(url, method="HEAD")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -133,7 +123,6 @@ def _http_check(url: str, timeout: int) -> bool:
 
 
 def _replace_html(html: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
-    """Inline local images and prune unreachable images in HTML href/src attributes."""
     removals: list[str] = []
 
     def html_attr_repl(m: re.Match[str]) -> str:
@@ -168,7 +157,6 @@ def _replace_html(html: str, file_dir: Path, timeout: int) -> tuple[str, list[st
 
 
 def _replace_md(md: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
-    """Inline local images and prune unreachable images in Markdown images/links."""
     removals: list[str] = []
 
     def replace_md_images(match: re.Match[str]) -> str:
@@ -216,7 +204,6 @@ def _replace_md(md: str, file_dir: Path, timeout: int) -> tuple[str, list[str]]:
 
 
 def process_file(args: tuple[str, int]) -> list[str]:
-    """Process a single file: inline/prune references and return report lines."""
     path_str, timeout = args
     path = Path(path_str)
     file_dir = path.parent
@@ -236,7 +223,6 @@ def process_file(args: tuple[str, int]) -> list[str]:
 
 
 def iter_files(root: Path, exts: tuple[str, ...]) -> list[str]:
-    """Return all files under root (recursively) whose suffix matches exts."""
     out: list[str] = []
     for p in root.rglob("*"):
         if p.is_file() and p.suffix.lower() in exts:
@@ -245,7 +231,6 @@ def iter_files(root: Path, exts: tuple[str, ...]) -> list[str]:
 
 
 def main() -> int:
-    """CLI entry point: scan a folder and process all markdown/HTML files."""
     parser = argparse.ArgumentParser()
     parser.add_argument("root", help="Folder to scan")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)

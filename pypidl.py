@@ -114,7 +114,6 @@ DEFAULT_USER_AGENT = (
 # Small helpers
 # --------------------------------------------------------------------------- #
 def _require(mod: Any, pkg_name: str, mode: str) -> None:
-    """Abort with a friendly message if an optional dependency is missing."""
     if mod is None:
         sys.exit(
             f"[{mode}] this subcommand requires the '{pkg_name}' package; "
@@ -123,7 +122,6 @@ def _require(mod: Any, pkg_name: str, mode: str) -> None:
 
 
 def human_size(n: float) -> str:
-    """Return a human-readable size string (e.g. ``'1.5 MB'``)."""
     units = ("B", "KB", "MB", "GB", "TB")
     v = float(n)
     for u in units:
@@ -134,7 +132,6 @@ def human_size(n: float) -> str:
 
 
 def _clean_spec(spec: str) -> str:
-    """Strip version constraint operators, keeping only the package name."""
     return spec.split("==")[0].split(">=")[0].split("<=")[0].strip()
 
 
@@ -142,11 +139,6 @@ def _clean_spec(spec: str) -> str:
 # Metadata fetching — two flavours preserved from the originals
 # --------------------------------------------------------------------------- #
 def fetch_json_multi_mirror(pkg_name: str) -> dict:
-    """Try every JSON mirror in order (pip_get.py's ``j()``).
-
-    Uses ``urllib`` so this works for both `basic` and `download` (which
-    additionally use ``requests`` for the actual download).
-    """
     for mirror in JSON_MIRRORS:
         url = f"{mirror}/{pkg_name}/json"
         for _ in range(MIRROR_RETRIES):
@@ -163,7 +155,6 @@ def fetch_json_multi_mirror(pkg_name: str) -> dict:
 
 
 def fetch_json_pypi(pkg_name: str) -> dict:
-    """Fetch JSON metadata from the canonical PyPI endpoint via ``requests``."""
     r = requests.get(f"https://pypi.org/pypi/{pkg_name}/json")
     if r.status_code != 200:
         raise ValueError(f"Failed to fetch package info for {pkg_name}")
@@ -171,7 +162,6 @@ def fetch_json_pypi(pkg_name: str) -> dict:
 
 
 def fetch_json_urlopen(pkg_name: str, timeout: int = 10) -> Optional[dict]:
-    """Fetch JSON via ``urllib`` (pdown2.py's ``i()``). Returns ``None`` on error."""
     url = f"https://pypi.org/pypi/{pkg_name}/json"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as r:
@@ -185,7 +175,6 @@ def fetch_json_urlopen(pkg_name: str, timeout: int = 10) -> Optional[dict]:
 # File-picking strategies — one per original script (they differ subtly)
 # --------------------------------------------------------------------------- #
 def pick_py3_any_wheel_or_sdist(files: list[dict]) -> Optional[dict]:
-    """pd.py behaviour: prefer ``py3-none-any`` wheel, else first sdist."""
     for f in files:
         if f.get("packagetype") == "bdist_wheel":
             if f.get("python_version") == "py3" and "any" in f.get("filename", ""):
@@ -197,7 +186,6 @@ def pick_py3_any_wheel_or_sdist(files: list[dict]) -> Optional[dict]:
 
 
 def pick_wheel_then_sdist(files: list[dict]) -> Optional[dict]:
-    """pdown.py behaviour: any wheel, then any sdist, then first file."""
     for f in files:
         if f.get("packagetype") == "bdist_wheel":
             return f
@@ -208,7 +196,6 @@ def pick_wheel_then_sdist(files: list[dict]) -> Optional[dict]:
 
 
 def pick_mirror_file(files: list[dict], version: str) -> Optional[dict]:
-    """pip_get.py behaviour: skip win/mac wheels, prefer sdist, then pure wheels."""
     candidates: list[dict] = []
     for f in files:
         fname = f["filename"].lower()
@@ -232,7 +219,6 @@ def pick_mirror_file(files: list[dict], version: str) -> Optional[dict]:
 
 
 def score_wheel(f_info: dict, python_version: str) -> int:
-    """pdown2.py wheel scoring — higher = better match for *python_version*."""
     fname = f_info["filename"].lower()
     pv = f_info.get("python_version", "").lower()
     score = 0
@@ -253,7 +239,6 @@ def score_wheel(f_info: dict, python_version: str) -> int:
 
 
 def pick_scored_wheel(meta: dict, python_version: str) -> Optional[tuple[str, int]]:
-    """pdown2.py behaviour: best wheel for the requested Python version."""
     releases = meta.get("releases", {})
     if not releases:
         return None
@@ -276,14 +261,12 @@ def pick_scored_wheel(meta: dict, python_version: str) -> Optional[tuple[str, in
 # Simple download primitives (each kept from its original script)
 # --------------------------------------------------------------------------- #
 def download_requests_simple(url: str, target: Path) -> None:
-    """pd.py — synchronous, non-streaming, whole-body into memory."""
     r = requests.get(url)
     r.raise_for_status()
     target.write_bytes(r.content)
 
 
 def download_requests_stream(url: str, target: Path) -> None:
-    """pdown.py — streaming with a simple ``\\r`` percentage printout."""
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         total = int(r.headers.get("content-length", 0))
@@ -306,7 +289,6 @@ def download_requests_stream(url: str, target: Path) -> None:
 def download_urlopen_progress(
     url: str, target: Path, size: int, chunk: int = 8192
 ) -> tuple[bool, str]:
-    """pdown2.py — ``urllib`` stream with MB-based ``\\r`` progress."""
     print(f"  📥 Downloading {target.name} ({size / 1024 / 1024:.2f} MB)...")
     try:
         with urllib.request.urlopen(url) as r:
@@ -335,7 +317,6 @@ def download_urlopen_progress(
 # Hash verification (pip_get.py)
 # --------------------------------------------------------------------------- #
 def verify_hash(path: Path, digests: dict) -> bool:
-    """Verify ``path`` against sha256 or md5 in *digests* (pip_get.py behaviour)."""
     if "sha256" in digests:
         algo, expected = "sha256", digests["sha256"]
     elif "md5" in digests:
@@ -368,7 +349,6 @@ def verify_hash(path: Path, digests: dict) -> bool:
 # Subcommand:  basic   (pd.py)
 # =========================================================================== #
 def cmd_basic(args: argparse.Namespace) -> int:
-    """Download the latest release of a single package (pd.py)."""
     _require(requests, "requests", "basic")
     meta = fetch_json_pypi(args.package)
     releases = meta.get("releases", {})
@@ -394,7 +374,6 @@ def cmd_basic(args: argparse.Namespace) -> int:
 # Subcommand:  download   (pdown.py)
 # =========================================================================== #
 def cmd_download(args: argparse.Namespace) -> int:
-    """Download a specific (or latest) version with a progress bar (pdown.py)."""
     _require(requests, "requests", "download")
     print(f"Fetching {args.package} (version: {args.version or 'latest'})...")
     meta = fetch_json_pypi(args.package)
@@ -430,7 +409,6 @@ def cmd_download(args: argparse.Namespace) -> int:
 def _download_wheel_worker(
     pkg: str, out_dir: Path, python_version: str
 ) -> tuple[str, bool, str]:
-    """Worker for pdown2.py: resolve + download a single package's best wheel."""
     print(f"🔍 Fetching info for: {pkg}")
     meta = fetch_json_urlopen(pkg)
     if meta is None:
@@ -449,7 +427,6 @@ def _download_wheel_worker(
 
 
 def cmd_wheels(args: argparse.Namespace) -> int:
-    """Parallel wheel downloads for a fixed Python version (pdown2.py)."""
     out_dir = Path(args.output).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Saving wheels to: {out_dir}\n")
@@ -475,7 +452,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
 # Subcommand:  mirror   (pip_get.py)
 # =========================================================================== #
 def _progress_bar() -> Any:
-    """pip_get.py's rich progress bar layout."""
     return Progress(
         TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
         BarColumn(bar_width=None),
@@ -495,7 +471,6 @@ def _progress_bar() -> Any:
 
 
 def _mirror_download_pycurl(url: str, target: Path, total: int) -> None:
-    """pip_get.py — pycurl backend with rich progress + resume support."""
     size = target.stat().st_size if target.exists() else 0
     mode = "ab" if size > 0 else "wb"
     with _progress_bar() as progress:
@@ -530,7 +505,6 @@ def _mirror_download_pycurl(url: str, target: Path, total: int) -> None:
 
 
 def _mirror_download_requests(url: str, target: Path, total: int) -> None:
-    """pip_get.py — requests backend with rich progress + Range resume."""
     size = target.stat().st_size if target.exists() else 0
     mode = "ab" if size > 0 else "wb"
     headers: dict[str, str] = {}
@@ -568,7 +542,6 @@ def _mirror_download_requests(url: str, target: Path, total: int) -> None:
 
 
 def _mirror_download_aria2c(url: str, target: Path) -> None:
-    """pip_get.py — aria2c external backend."""
     subprocess.run(
         [
             "aria2c",
@@ -584,7 +557,6 @@ def _mirror_download_aria2c(url: str, target: Path) -> None:
 
 
 def _mirror_download(url: str, target: Path, total: int, backend: str) -> None:
-    """Dispatch to the selected backend (pip_get.py)."""
     chunked = total > CHUNKED_THRESHOLD
     mb = total / 1024 / 1024
     print(f"File size: {mb:.2f} MB | Chunked mode: {chunked}")
@@ -602,7 +574,6 @@ def _mirror_download(url: str, target: Path, total: int, backend: str) -> None:
 
 
 def _read_specs_from_file(path: Path) -> list[str]:
-    """Parse a package-list file: strip blanks / comments / split whitespace."""
     if not path.exists():
         raise FileNotFoundError(f"Package list file not found: {path}")
     if not path.is_file():
@@ -622,7 +593,6 @@ def _read_specs_from_file(path: Path) -> list[str]:
 
 
 def _mirror_process_spec(spec: str, backend: str, output_dir: Path) -> None:
-    """Resolve + download one ``pkg`` or ``pkg==version`` specifier."""
     print(f"\nProcessing Package Specifier: {spec}")
     if "==" in spec:
         name, version = spec.split("==", 1)
@@ -648,7 +618,6 @@ def _mirror_process_spec(spec: str, backend: str, output_dir: Path) -> None:
 
 
 def cmd_mirror(args: argparse.Namespace) -> int:
-    """Multi-mirror, multi-backend, hash-verified downloads (pip_get.py)."""
     # Backend-specific dependency check
     if args.backend == "pycurl":
         _require(pycurl, "pycurl", "mirror")
@@ -731,7 +700,6 @@ def _is_pure_wheel(fname: str) -> bool:
 
 
 def _pick_scrape_link(links: Iterable[Any]) -> Optional[tuple[str, str, str]]:
-    """Return ``(url, filename, action)`` where action is 'download' or 'skip'."""
     sdists: list[tuple[str, str]] = []
     wheels: list[tuple[str, str]] = []
     others: list[tuple[str, str]] = []
@@ -763,7 +731,6 @@ def _pick_scrape_link(links: Iterable[Any]) -> Optional[tuple[str, str, str]]:
 
 
 def _scrape_fetch_html(pkg: str, mirror_url: str, trailing_slash: bool) -> str:
-    """Fetch the HTML /simple page for *pkg* (pipget.py)."""
     url = (
         f"{mirror_url.rstrip('/')}/{pkg}/"
         if trailing_slash
@@ -798,7 +765,6 @@ def _scrape_fetch_html(pkg: str, mirror_url: str, trailing_slash: bool) -> str:
 
 
 def _explain_http_error(code: int, pkg: str) -> None:
-    """Print a friendly message for common HTTP error codes (pipget.py)."""
     if code == 402:
         print("  HTTP 402: Payment Required — the mirror may require authentication")
     elif code == 403:
@@ -810,7 +776,6 @@ def _explain_http_error(code: int, pkg: str) -> None:
 
 
 def _scrape_parse(html: str) -> Optional[tuple[str, str, str]]:
-    """BeautifulSoup parse + file selection (pipget.py)."""
     if not html:
         return None
     soup = BeautifulSoup(html, "html.parser")
@@ -821,7 +786,6 @@ def _scrape_parse(html: str) -> Optional[tuple[str, str, str]]:
 
 
 def _scrape_download(url: str, filename: str, out_dir: Path) -> bool:
-    """Download with retry/backoff (pipget.py)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     target = out_dir / filename
     if target.exists() and target.stat().st_size > 0:
@@ -856,7 +820,6 @@ def _scrape_download(url: str, filename: str, out_dir: Path) -> bool:
 
 
 def _scrape_already_have(pkg: str, out_dir: Path) -> bool:
-    """Detect a local file whose name matches ``pkg[-_.]v?<version>``."""
     lowered = pkg.lower().replace("-", "_").replace(".", "_")
     pattern = re.compile("^" + re.escape(lowered) + r"[-_.]v?\d", re.IGNORECASE)
     for f in out_dir.iterdir():
@@ -868,7 +831,6 @@ def _scrape_already_have(pkg: str, out_dir: Path) -> bool:
 
 
 def _read_pkg_names_from_file(path: Path) -> list[str]:
-    """pipget.py file parser: extracts the leading package name token."""
     if not path.is_file():
         print(f"Error: file not found: {path}", file=sys.stderr)
         sys.exit(1)
@@ -889,7 +851,6 @@ def _read_pkg_names_from_file(path: Path) -> list[str]:
 
 
 def cmd_scrape(args: argparse.Namespace) -> int:
-    """HTML /simple index scraping downloader (pipget.py)."""
     _require(pycurl, "pycurl", "scrape")
     _require(BeautifulSoup, "beautifulsoup4", "scrape")
 
@@ -1001,7 +962,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
 # CLI wiring
 # =========================================================================== #
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="pypi_dl",
         description="Unified PyPI package downloader "
@@ -1124,7 +1084,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point — parse args and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

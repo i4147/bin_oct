@@ -65,11 +65,6 @@ HALF_BLOCK = "\u2580"
 # Low level keyboard input
 # ---------------------------------------------------------------------------
 def read_key(fd: int, timeout: float | None = None) -> str | None:
-    """Read one logical key from *fd*.
-
-    Returns a string such as ``"j"`` or ``"\x1b[A"`` (Up), or ``None`` if
-    *timeout* elapsed with no input.  A lone ``"\x1b"`` means the Escape key.
-    """
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
         return None
@@ -120,17 +115,14 @@ class Viewer:
         return size.columns, size.lines
 
     def view_rows(self) -> int:
-        """Number of terminal rows available for the page (last row = status)."""
         _, lines = self.term_size()
         return max(1, lines - 1)
 
     def render_width(self) -> int:
-        """Pixel width the page is rasterised at."""
         cols, _ = self.term_size()
         return max(1, int(round(cols * self.zoom)))
 
     def page_px_size(self, index: int | None = None) -> tuple[int, int]:
-        """(width, height) of the page in pixels at the current zoom."""
         index = self.page_index if index is None else index
         width = self.render_width()
         rect = self.doc[index].rect
@@ -139,7 +131,6 @@ class Viewer:
 
     # -- rasterising -------------------------------------------------------
     def pixmap(self, index: int, width: int) -> tuple[int, int, bytes]:
-        """Return ``(width, height, rgb_bytes)`` for a page, with caching."""
         key = (index, width)
         hit = self._cache.get(key)
         if hit is not None:
@@ -162,7 +153,6 @@ class Viewer:
     # -- painting ----------------------------------------------------------
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
-        """Render one terminal row (two pixel rows) as an ANSI string."""
         bottom = top + 1
         have_top = 0 <= top < h
         have_bot = 0 <= bottom < h

@@ -300,8 +300,6 @@ TRANSLITERATION_MAPS: list[dict[str, str]] = [
 
 @dataclass
 class HtmlFile:
-    """Data class representing an HTML file with its processing metadata."""
-
     path: Path
     title: str | None = None
     new_name: str | None = None
@@ -311,8 +309,6 @@ class HtmlFile:
 
 @dataclass
 class ProcessingResult:
-    """Data class representing the result of processing an HTML file."""
-
     path: Path
     original_name: str
     new_name: str | None
@@ -323,19 +319,9 @@ class ProcessingResult:
 
 
 class LanguageTransliterator:
-    """Handles script detection and transliteration for various languages."""
-
     @staticmethod
     @lru_cache(maxsize=1024)
     def detect_script(text: str) -> str:
-        """Detect the primary script used in the text.
-
-        Args:
-            text: The text to analyze.
-
-        Returns:
-            The name of the detected script (e.g., 'persian', 'cyrillic', 'english').
-        """
         if not text:
             return "english"
 
@@ -374,14 +360,6 @@ class LanguageTransliterator:
 
     @staticmethod
     def transliterate(text: str) -> str:
-        """Transliterate text using available transliteration methods.
-
-        Args:
-            text: The text to transliterate.
-
-        Returns:
-            The transliterated text.
-        """
         if not text:
             return text
 
@@ -399,14 +377,6 @@ class LanguageTransliterator:
 
     @staticmethod
     def transliterate_smart(text: str) -> str:
-        """Transliterate text intelligently based on detected script.
-
-        Args:
-            text: The text to transliterate.
-
-        Returns:
-            The transliterated text, or original text if already in English.
-        """
         if not text:
             return text
 
@@ -418,22 +388,12 @@ class LanguageTransliterator:
 
 
 class HtmlTitleExtractor:
-    """Extracts titles from HTML files using multiple parsing strategies."""
-
     def __init__(self) -> None:
         self.parser: TreeSitterParser | None = (
             TreeSitterParser() if TREE_SITTER_AVAILABLE else None
         )
 
     def extract_title(self, path: Path) -> str | None:
-        """Extract the title from an HTML file.
-
-        Args:
-            path: Path to the HTML file.
-
-        Returns:
-            The extracted title, or None if no title was found.
-        """
         try:
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
                 content: str = f.read()
@@ -450,14 +410,6 @@ class HtmlTitleExtractor:
         return self._extract_with_regex(content)
 
     def _extract_with_tree_sitter(self, html_content: str) -> str | None:
-        """Extract title using tree-sitter parser.
-
-        Args:
-            html_content: The HTML content as a string.
-
-        Returns:
-            The extracted title, or None if extraction failed.
-        """
         try:
             if self.parser and hasattr(self.parser, "parse"):
                 tree = self.parser.parse(html_content.encode("utf-8"))
@@ -469,14 +421,6 @@ class HtmlTitleExtractor:
         return None
 
     def _query_tree_for_title(self, tree: Any) -> str | None:
-        """Query the tree-sitter parse tree for the title tag.
-
-        Args:
-            tree: The tree-sitter parse tree.
-
-        Returns:
-            The title text, or None if not found.
-        """
         try:
 
             def traverse(node: Any) -> str | None:
@@ -510,14 +454,6 @@ class HtmlTitleExtractor:
 
     @staticmethod
     def _extract_with_regex(html_content: str) -> str | None:
-        """Extract title using regex patterns.
-
-        Args:
-            html_content: The HTML content as a string.
-
-        Returns:
-            The extracted title, or None if no title was found.
-        """
         patterns: list[str] = [
             r"<title[^>]*>(.*?)</title>",
             r"<TITLE[^>]*>(.*?)</TITLE>",
@@ -537,22 +473,12 @@ class HtmlTitleExtractor:
 
     @staticmethod
     def _decode_html_entities(text: str) -> str:
-        """Decode HTML entities in text.
-
-        Args:
-            text: Text containing HTML entities.
-
-        Returns:
-            Text with decoded HTML entities.
-        """
         import html
 
         return html.unescape(text)
 
 
 class TreeSitterParser:
-    """Wrapper for tree-sitter HTML parsing."""
-
     def __init__(self) -> None:
         self.available: bool = TREE_SITTER_AVAILABLE
         self.parser: Any | None = None
@@ -564,7 +490,6 @@ class TreeSitterParser:
                 self.available = False
 
     def _init_parser(self) -> None:
-        """Initialize the tree-sitter parser."""
         try:
             # This is a placeholder - actual implementation would need language pack
             # self.parser = Parser()
@@ -575,22 +500,12 @@ class TreeSitterParser:
             self.available = False
 
     def parse(self, content: bytes) -> Any | None:
-        """Parse HTML content.
-
-        Args:
-            content: HTML content as bytes.
-
-        Returns:
-            Parse tree, or None if parsing failed.
-        """
         if self.parser:
             return self.parser.parse(content)
         return None
 
 
 class FilenameNormalizer:
-    """Normalizes filenames based on extracted titles."""
-
     PUNCTUATION_PATTERN: re.Pattern = re.compile(r"[^\w\s-]", re.UNICODE)
     SPACE_PATTERN: re.Pattern = re.compile(r"\s+")
     UNDERSCORE_PATTERN: re.Pattern = re.compile(r"_+")
@@ -623,15 +538,6 @@ class FilenameNormalizer:
 
     @staticmethod
     def normalize(title: str, extension: str = ".html") -> str:
-        """Normalize a title into a valid filename.
-
-        Args:
-            title: The title to normalize.
-            extension: The file extension to append.
-
-        Returns:
-            A normalized filename.
-        """
         if not title:
             return f"unnamed{extension}"
 
@@ -660,15 +566,6 @@ class FilenameNormalizer:
 
     @staticmethod
     def ensure_unique(filename: Path, existing_files: set[Path]) -> Path:
-        """Ensure filename uniqueness by appending a counter if needed.
-
-        Args:
-            filename: The desired filename.
-            existing_files: Set of existing file paths.
-
-        Returns:
-            A unique filename.
-        """
         if filename not in existing_files:
             return filename
 
@@ -684,21 +581,11 @@ class FilenameNormalizer:
 
 
 class HtmlFileProcessor:
-    """Processes HTML files for renaming."""
-
     def __init__(self) -> None:
         self.title_extractor: HtmlTitleExtractor = HtmlTitleExtractor()
         self.existing_names: set[str] = set()
 
     def process_file(self, path: Path) -> ProcessingResult:
-        """Process a single HTML file for renaming.
-
-        Args:
-            path: Path to the HTML file.
-
-        Returns:
-            ProcessingResult containing the outcome.
-        """
         start_time: datetime = datetime.now()
         original_name: str = path.name
 
@@ -801,8 +688,6 @@ class HtmlFileProcessor:
 
 
 class FileDiscovery:
-    """Discovers HTML files in directories."""
-
     SKIP_DIRS: set[str] = {
         ".git",
         ".svn",
@@ -830,14 +715,6 @@ class FileDiscovery:
 
     @staticmethod
     def discover_files(paths: list[str]) -> list[Path]:
-        """Discover HTML files in the given paths.
-
-        Args:
-            paths: List of file or directory paths to search.
-
-        Returns:
-            Sorted list of discovered HTML file paths.
-        """
         discovered: list[Path] = []
         seen: set[Path] = set()
 
@@ -873,14 +750,6 @@ class FileDiscovery:
 
     @staticmethod
     def _discover_in_directory(directory: Path) -> list[Path]:
-        """Discover HTML files in a directory recursively.
-
-        Args:
-            directory: Directory to search.
-
-        Returns:
-            List of HTML file paths found.
-        """
         files: list[Path] = []
         try:
             for item in directory.rglob("*"):
@@ -897,27 +766,16 @@ class FileDiscovery:
 
 
 def process_file_task(path: Path) -> ProcessingResult:
-    """Process a single file for multiprocessing pool.
-
-    Args:
-        path: Path to the HTML file.
-
-    Returns:
-        ProcessingResult for the file.
-    """
     processor: HtmlFileProcessor = HtmlFileProcessor()
     return processor.process_file(path)
 
 
 class HtmlRenamerApp:
-    """Main application class for HTML file renaming."""
-
     def __init__(self, paths: list[str] | None = None) -> None:
         self.paths: list[str] = paths or ["."]
         self.results: list[ProcessingResult] = []
 
     def run(self) -> None:
-        """Run the HTML file renaming application."""
         print("=" * 70)
         print("HTML File Renamer (by Title Tag)")
         print("=" * 70)
@@ -949,7 +807,6 @@ class HtmlRenamerApp:
         self._print_summary()
 
     def _print_summary(self) -> None:
-        """Print summary of processing results."""
         print("=" * 70)
         print("SUMMARY")
         print("=" * 70)
@@ -991,7 +848,6 @@ class HtmlRenamerApp:
 
 
 def main() -> None:
-    """Main entry point for the script."""
     paths: list[str] = sys.argv[1:] if len(sys.argv) > 1 else ["."]
     app: HtmlRenamerApp = HtmlRenamerApp(paths)
     app.run()

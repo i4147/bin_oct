@@ -81,7 +81,6 @@ _COLORS = {
 
 
 def cprint(msg: str, color: str | None = None) -> None:
-    """Colored print compatible with the originals' dh.cprint."""
     if color and color in _COLORS:
         print(f"{_COLORS[color]}{msg}\033[0m")
     else:
@@ -89,7 +88,6 @@ def cprint(msg: str, color: str | None = None) -> None:
 
 
 def get_installed_packages() -> dict[str, str]:
-    """Return {distribution_name: version} using importlib.metadata."""
     import importlib.metadata as md
 
     out: dict[str, str] = {}
@@ -107,7 +105,6 @@ def get_installed_packages() -> dict[str, str]:
 def http_get(
     url: str, *, timeout: float = 15, headers: dict | None = None, stream: bool = False
 ) -> requests.Response:
-    """GET with shared UA and error checking."""
     h = {"User-Agent": DEFAULT_UA}
     if headers:
         h.update(headers)
@@ -155,7 +152,6 @@ def fmt_bytes(n: float) -> str:
 
 
 def build_robots(session: requests.Session, base_url: str) -> RobotFileParser | None:
-    """Load robots.txt for base_url; return None if we can't."""
     rp = RobotFileParser()
     rp.set_url(urljoin(base_url, "/robots.txt"))
     try:
@@ -852,7 +848,6 @@ def _sigint(_sig, _frame):
 
 
 def _parallel_worker(url: str, max_mb: float):
-    """Fetch one index page and return (matches, subdirs)."""
     from loguru import logger
 
     matches: list[dict] = []

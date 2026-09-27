@@ -311,11 +311,6 @@ def _wrap_path(arg: ast.expr) -> ast.Call:
 
 
 class OsPathTransformer(ast.NodeTransformer):
-    """Rewrite os.path.X(p) into Path(p).Y()/Path(p).Y.
-
-    Also handles the `from os import path` case when `bare_path` is True.
-    """
-
     def __init__(self, bare_path: bool = False) -> None:
         super().__init__()
         self.bare_path = bare_path

@@ -53,7 +53,6 @@ def write_json_file(
     ensure_ascii: bool = False,
     sort_keys: bool = False,
 ) -> None:
-    """Writes a Python dictionary to a JSON file with standard formatting."""
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(
             data, f, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys
@@ -61,7 +60,6 @@ def write_json_file(
 
 
 def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
-    """Recursively finds files in a directory matching specific extensions."""
     files = []
     for ext in extensions:
         files.extend(directory.rglob(f"*{ext}"))
@@ -74,7 +72,6 @@ def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
 
 
 def process_toml(filepath: Path) -> None:
-    """Converts a TOML file to a JSON file."""
     if toml is None:
         print(
             "Error: 'toml' package is required. Run 'pip install toml'", file=sys.stderr
@@ -101,10 +98,6 @@ def process_toml(filepath: Path) -> None:
 
 
 def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
-    """
-    Recursive helper to convert a parsed ElementTree Element into a dictionary.
-    Mimics the structure of xmltodict for standard/defused ElementTree.
-    """
     node_dict: dict[str, Any] = {element.tag: {} if element.attrib else None}
     children = list(element)
 
@@ -136,7 +129,6 @@ def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
 
 
 def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
-    """Converts a single XML file to JSON using the specified engine."""
     out_path = filepath.with_suffix(".json")
 
     try:
@@ -181,7 +173,6 @@ def convert_yaml_to_json_str(
     ensure_ascii: bool = True,
     strict: bool = False,
 ) -> str:
-    """Parses YAML string and returns a formatted JSON string."""
     try:
         if strict:
             loader = yaml.SafeLoader

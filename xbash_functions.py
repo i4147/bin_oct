@@ -98,8 +98,6 @@ IS_TERMUX: Final[bool] = (
 
 
 class _LoggerProtocol(Protocol):
-    """Minimal logging interface used throughout the module."""
-
     def debug(self, msg: str, *args: object) -> None: ...
     def info(self, msg: str, *args: object) -> None: ...
     def warning(self, msg: str, *args: object) -> None: ...
@@ -107,8 +105,6 @@ class _LoggerProtocol(Protocol):
 
 
 class _PrintLogger:
-    """stdlib fallback logger using loguru-style '{}' formatting."""
-
     def __init__(self, verbose: bool = False) -> None:
         self.verbose = verbose
 
@@ -131,7 +127,6 @@ class _PrintLogger:
 
 
 def make_logger(use_loguru: bool, verbose: bool) -> _LoggerProtocol:
-    """Return a loguru logger if requested+available, else stdlib logger."""
     if use_loguru:
         try:
             from loguru import logger  # type: ignore
@@ -158,7 +153,6 @@ def is_shell_script(
     include_extensionless: bool = True,
     max_size: int = DEFAULT_MAX_FILE_SIZE,
 ) -> bool:
-    """Return True if `path` looks like a shell script worth processing."""
     if not path.is_file():
         return False
     if path.suffix == ".sh":
@@ -238,7 +232,6 @@ def collect_scripts_scandir(
     max_size: int,
     log: _LoggerProtocol,
 ) -> Iterator[Path]:
-    """Generator-based walker using os.scandir (stdlib only)."""
     for p in inputs:
         if not p.exists():
             log.warning("{} does not exist, skipping...", p)
@@ -268,7 +261,6 @@ def collect_scripts_fastwalk(
     max_size: int,
     log: _LoggerProtocol,
 ) -> Iterator[Path]:
-    """fastwalk-based walker (mirrors xbash_functions.py)."""
     try:
         from fastwalk import walk_files  # type: ignore
     except ImportError:
@@ -320,7 +312,6 @@ def collect_scripts(
     max_size: int,
     log: _LoggerProtocol,
 ) -> Iterator[Path]:
-    """Dispatch to the requested walker and de-duplicate results."""
     gen = (
         collect_scripts_fastwalk(
             inputs,
@@ -351,7 +342,6 @@ def collect_scripts(
 
 
 def extract_functions(path: Path, log: _LoggerProtocol) -> Iterator[tuple[str, str]]:
-    """Yield (function_name, full_text_with_braces) for each function in `path`."""
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as fh:
             content = fh.read()
@@ -402,7 +392,6 @@ def write_function(
     add_header: bool,
     log: _LoggerProtocol,
 ) -> Path | None:
-    """Write one extracted function to disk; return target path or None on error."""
     safe_name = UNSAFE_NAME_RE.sub("_", name)
     try:
         rel = source_path.relative_to(Path.cwd())
@@ -443,7 +432,6 @@ def write_function(
 def _process_one(
     task: tuple[Path, Path, bool, bool, bool, bool],
 ) -> tuple[Path, list[Path]]:
-    """Extract all functions from one file. Must be top-level for pickling."""
     path, output_dir, use_extension, add_header, chmod_files, verbose = task
     log = _PrintLogger(verbose)
     written: list[Path] = []
@@ -503,7 +491,6 @@ def _process_scripts(
 
 
 def run(args: argparse.Namespace) -> int:
-    """Execute the full pipeline for parsed CLI args."""
     log = make_logger(args.use_loguru, args.verbose)
 
     if IS_TERMUX:

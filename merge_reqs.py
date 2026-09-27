@@ -67,7 +67,6 @@ except Exception:  # pragma: no cover
 
 
 def _hash_bytes(data: bytes) -> str:
-    """Hash bytes with xxhash if available, else hashlib.sha256."""
     try:
         import xxhash  # type: ignore
 
@@ -354,12 +353,10 @@ _BLOCKLIST: set[str] = {
 
 
 def norm(name: str) -> str:
-    """Normalise a package name (casefold, underscores -> hyphens)."""
     return name.strip().lower().replace("_", "-")
 
 
 def is_valid_module_name(name: str) -> bool:
-    """Reject obviously non-module tokens (blocklist, dunders, punctuation)."""
     if not name or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
         return False
     if name.startswith("__") and name.endswith("__"):
@@ -373,10 +370,6 @@ def is_valid_module_name(name: str) -> bool:
 
 
 def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
-    """
-    Read a pip-list file (one package per line, optional version spec).
-    Returns normalised names.
-    """
     out: set[str] = set()
     if not path:
         return out
@@ -398,9 +391,6 @@ def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
 
 
 def load_mapping(path: str | os.PathLike | None) -> dict[str, str]:
-    """
-    Read a `module = package` mapping file. Returns {norm(module): package}.
-    """
     out: dict[str, str] = {}
     if not path:
         return out
@@ -420,15 +410,6 @@ def load_mapping(path: str | os.PathLike | None) -> dict[str, str]:
 
 
 def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> set[str]:
-    """
-    Return the set of known stdlib module names.
-
-    source: 'embedded' | 'python' | 'both'
-      - 'embedded' uses the hardcoded fallback list.
-      - 'python'   uses sys.stdlib_module_names + builtin_module_names.
-      - 'both'     unions the two (default, safest).
-    extra_file: optional file of extra stdlib-like names (one per line).
-    """
     mods: set[str] = set()
     if source in ("embedded", "both"):
         mods |= _STDLIB_FALLBACK
@@ -454,7 +435,6 @@ _SHEBANG_RE = re.compile(r"^#!.*python", re.IGNORECASE)
 
 
 def looks_like_python_script(path: Path) -> bool:
-    """True if a suffix-less file is python (shebang or first line looks like python)."""
     try:
         with path.open("rb") as f:
             head = f.read(4096)
@@ -472,7 +452,6 @@ def iter_candidate_files(
     include_archives: bool = True,
     include_notebooks: bool = True,
 ) -> Iterator[Path]:
-    """Yield every file we consider worth scanning."""
     ignore_set = set(ignore)
     root_path = Path(root)
     for dirpath, dirnames, filenames in os.walk(root_path):
@@ -495,7 +474,6 @@ def iter_candidate_files(
 
 
 def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[str]:
-    """Collect names of local modules/packages under `root`."""
     local: set[str] = set()
     ignore_set = set(ignore)
     for dirpath, dirnames, filenames in os.walk(Path(root)):
@@ -527,7 +505,6 @@ _DYN_RE = re.compile(r'(?:import_module|__import__)\(\s*[\'"]([\w.]+)[\'"]\s*\)'
 
 
 def extract_ast(source: str) -> dict[str, set[str]]:
-    """Extract imports via AST (handles dynamic and relative imports)."""
     res = _EMPTY_RESULT()
     try:
         tree = ast.parse(source)
@@ -576,7 +553,6 @@ def extract_ast(source: str) -> dict[str, set[str]]:
 
 
 def extract_regex(source: str) -> dict[str, set[str]]:
-    """Extract imports via regex (line-based; ignores relative imports)."""
     res = _EMPTY_RESULT()
     for line in source.splitlines():
         line = line.split("#", 1)[0].strip()
@@ -595,7 +571,6 @@ def extract_regex(source: str) -> dict[str, set[str]]:
 
 
 def extract_imports(source: str, extractor: str = "ast") -> dict[str, set[str]]:
-    """Dispatch to the chosen extractor."""
     if extractor == "regex":
         return extract_regex(source)
     return extract_ast(source)
@@ -691,7 +666,6 @@ def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
 def process_path(
     path: str | os.PathLike, extractor: str = "ast"
 ) -> dict[str, set[str]]:
-    """Extract imports from any supported file type."""
     p = Path(path)
     low = p.name.lower()
     if p.suffix in (".py", ".pyw") or (p.suffix == "" and p.is_file()):
@@ -799,16 +773,6 @@ def filter_packages(
     installed: Optional[set[str]],
     include_unknown: bool,
 ) -> set[str]:
-    """
-    Reduce a set of raw import names to a set of requirements entries.
-
-    Rules (in order):
-      1. Skip empty / invalid / blocklisted names.
-      2. Skip stdlib and local modules.
-      3. Skip already-installed (only if `installed` was provided).
-      4. Apply module->package mapping when a match exists.
-      5. If pip_pkgs is non-empty, require membership unless --include-unknown.
-    """
     out: set[str] = set()
     stdlib_n = {norm(s) for s in stdlib}
     local_n = {norm(l) for l in local}
@@ -971,7 +935,6 @@ def _write_lines(path: str | os.PathLike, lines: Sequence[str]) -> None:
 
 
 def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:
-    """Return normalised names of installed packages, or None on failure."""
     try:
         proc = subprocess.run(
             [pip_cmd, "freeze"],

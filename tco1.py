@@ -71,7 +71,7 @@ from loguru import logger
 
 
 class BackendError(RuntimeError):
-    """Raised when a translation backend cannot be initialized or used."""
+    pass
 
 
 TranslationFunction = Callable[[str], str]
@@ -150,7 +150,6 @@ _counter_lock = threading.Lock()
 
 
 def _configure_logging() -> None:
-    """Configure the small rotating file log and compact error-only stderr log."""
     logger.remove()
     logger.add(
         "translate_words.log",
@@ -168,14 +167,12 @@ def _configure_logging() -> None:
 
 
 def _mapped_language(backend: str, language: str) -> str:
-    """Return a backend-specific language code, or the original code if unknown."""
     return _LANG_MAP.get(backend, {}).get(language.casefold(), language)
 
 
 def _make_deep_translator(
     source: str, target: str, script_path: str
 ) -> TranslationFunction:
-    """Create a per-request deep_translator GoogleTranslator wrapper."""
     del script_path
     try:
         from deep_translator import GoogleTranslator
@@ -186,7 +183,6 @@ def _make_deep_translator(
     mapped_target = _mapped_language("deep_translator", target)
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh deep_translator client."""
         try:
             client = GoogleTranslator(
                 source=mapped_source,
@@ -200,7 +196,6 @@ def _make_deep_translator(
 
 
 def _make_deepl(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create a per-request DeepL API wrapper."""
     del script_path
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
@@ -215,7 +210,6 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslationFuncti
     mapped_target = _mapped_language("deepl", target)
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh DeepL client."""
         try:
             client = deepl.Translator(api_key)
             return str(
@@ -234,7 +228,6 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslationFuncti
 def _make_libretranslate_remote(
     source: str, target: str, script_path: str
 ) -> TranslationFunction:
-    """Create a wrapper for a LibreTranslate server running on another machine."""
     del script_path
     api_url = os.environ.get("LIBRETRANSLATE_URL")
     if not api_url:
@@ -246,7 +239,6 @@ def _make_libretranslate_remote(
         raise BackendError("install it with: pip install deep_translator") from exc
 
     def translate(text: str) -> str:
-        """Translate one string through the configured LAN LibreTranslate server."""
         try:
             client = LibreTranslateTranslator(
                 source=source,
@@ -261,7 +253,6 @@ def _make_libretranslate_remote(
 
 
 def _make_translate(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create a wrapper for either the upstream translate package or a fork."""
     try:
         module_path = Path(__import__("translate").__file__).resolve()
         if module_path == Path(script_path).resolve():
@@ -287,7 +278,6 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
         )
 
     def translate_text(text: str) -> str:
-        """Translate one string with a fresh translate-package client."""
         try:
             client = translator_class(**class_kwargs)
             return str(client.translate(text))
@@ -300,7 +290,6 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
 def _make_googletrans(
     source: str, target: str, script_path: str
 ) -> TranslationFunction:
-    """Create a serialized googletrans client wrapper."""
     del script_path
     try:
         from googletrans import Translator
@@ -313,7 +302,6 @@ def _make_googletrans(
     lock = threading.Lock()
 
     def translate(text: str) -> str:
-        """Translate one string using one locked googletrans instance."""
         try:
             with lock:
                 response = client.translate(text, src=source, dest=target)
@@ -327,7 +315,6 @@ def _make_googletrans(
 def _make_pygoogletranslation(
     source: str, target: str, script_path: str
 ) -> TranslationFunction:
-    """Create a serialized pygoogletranslation client wrapper."""
     del script_path
     try:
         from pygoogletranslation import Translator
@@ -338,7 +325,6 @@ def _make_pygoogletranslation(
     lock = threading.Lock()
 
     def translate(text: str) -> str:
-        """Translate one string using one locked pygoogletranslation instance."""
         try:
             with lock:
                 response = client.translate(text, src=source, dest=target)
@@ -352,7 +338,6 @@ def _make_pygoogletranslation(
 def _make_translators_bing(
     source: str, target: str, script_path: str
 ) -> TranslationFunction:
-    """Create a serialized translators Bing wrapper using the Node.js runtime."""
     del script_path
     try:
         import translators
@@ -368,7 +353,6 @@ def _make_translators_bing(
     lock = threading.Lock()
 
     def translate(text: str) -> str:
-        """Translate one string through the Bing translator scraper."""
         try:
             with lock:
                 return str(
@@ -386,7 +370,6 @@ def _make_translators_bing(
 
 
 def _make_boto3(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create an AWS Translate wrapper using credentials from the environment."""
     del script_path
     try:
         import boto3
@@ -400,7 +383,6 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslationFuncti
     mapped_target = _mapped_language("boto3", target)
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh AWS client."""
         try:
             client = boto3.client("translate", region_name=region)
             response = client.translate_text(
@@ -416,7 +398,6 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslationFuncti
 
 
 def _make_baidu(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create a Baidu AI translation wrapper."""
     del script_path
     app_id = os.environ.get("BAIDU_APP_ID")
     app_key = os.environ.get("BAIDU_APP_KEY")
@@ -432,7 +413,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslationFuncti
     mapped_target = _mapped_language("baidu", target)
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh Baidu client."""
         try:
             client = AipNlp(app_id, app_key, os.environ.get("BAIDU_SECRET_KEY", ""))
             response = client.translate(text, mapped_source, mapped_target)
@@ -444,7 +424,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslationFuncti
 
 
 def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create an Alibaba machine-translation wrapper."""
     del script_path
     access_key = os.environ.get("ALIBABA_ACCESS_KEY_ID")
     access_secret = os.environ.get("ALIBABA_ACCESS_KEY_SECRET")
@@ -464,7 +443,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
     region = os.environ.get("ALIBABA_REGION", "cn-hangzhou")
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh Alibaba SDK client."""
         try:
             client = AcsClient(access_key, access_secret, region)
             request = TranslateGeneralRequest.TranslateGeneralRequest()
@@ -482,7 +460,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
 
 
 def _make_watson(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create an IBM Watson Language Translator wrapper."""
     del script_path
     api_key = os.environ.get("WATSON_API_KEY")
     service_url = os.environ.get("WATSON_URL")
@@ -496,7 +473,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslationFunct
         raise BackendError("install it with: pip install ibm-watson") from exc
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh Watson client."""
         try:
             authenticator = IAMAuthenticator(api_key)
             client = LanguageTranslatorV3(
@@ -517,7 +493,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslationFunct
 
 
 def _make_azure(source: str, target: str, script_path: str) -> TranslationFunction:
-    """Create an Azure Translator wrapper using key-based authentication."""
     del script_path
     key = os.environ.get("AZURE_TRANSLATOR_KEY")
     endpoint = os.environ.get(
@@ -537,7 +512,6 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslationFuncti
         ) from exc
 
     def translate(text: str) -> str:
-        """Translate one string with a fresh Azure client."""
         try:
             client = TextTranslationClient(
                 endpoint=endpoint,
@@ -573,7 +547,6 @@ _BACKEND_FACTORIES = {
 
 
 def _backend_chain(preferred: str) -> list[str]:
-    """Return the preferred backend followed by the remaining default choices."""
     if preferred == "default":
         return list(_DEFAULT_CHAIN)
     return [preferred] + [name for name in _DEFAULT_CHAIN if name != preferred]
@@ -582,7 +555,6 @@ def _backend_chain(preferred: str) -> list[str]:
 def _select_backend(
     preferred: str, source: str, target: str, script_path: str
 ) -> tuple[str, TranslationFunction]:
-    """Initialize the first usable backend in the configured fallback chain."""
     if preferred in _FORBIDDEN_BACKENDS:
         raise BackendError(
             f"backend '{preferred}' is unavailable on Termux armv8l: "
@@ -627,7 +599,6 @@ def _select_backend(
 
 
 def _load_existing(path: Path) -> "OrderedDict[str, str]":
-    """Load an existing JSON mapping without printing its potentially large contents."""
     if not path.exists():
         return OrderedDict()
 
@@ -644,7 +615,6 @@ def _load_existing(path: Path) -> "OrderedDict[str, str]":
 def _read_pending(
     input_path: Path, existing: dict[str, str], continue_job: bool
 ) -> tuple[list[str], int]:
-    """Stream the input once and return unique pending words plus total input count."""
     if not input_path.is_file():
         raise BackendError(f"input file does not exist: {input_path}")
 
@@ -668,7 +638,6 @@ def _read_pending(
 
 
 def _atomic_save(path: Path, results: dict[str, str]) -> None:
-    """Write the current mapping to a temporary file and atomically replace output."""
     path.parent.mkdir(parents=True, exist_ok=True)
     directory = str(path.parent)
     fd, temporary_name = tempfile.mkstemp(
@@ -691,14 +660,12 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
 
 
 def _append_failed(path: Path, word: str) -> None:
-    """Append one failed word safely so concurrent workers cannot interleave lines."""
     with _failed_lock:
         with path.open("a", encoding="utf-8") as handle:
             handle.write(word + "\n")
 
 
 def _is_valid_translation(source: str, translated: object) -> bool:
-    """Return whether a backend result is nonempty and not an identity translation."""
     if translated is None:
         return False
     value = str(translated).strip()
@@ -711,7 +678,6 @@ def _translate_one(
     delay: float,
     failed_path: Path,
 ) -> tuple[str, Optional[str]]:
-    """Translate one word with three attempts and exponential retry backoff."""
     last_error = "empty or identity translation"
 
     for attempt in range(1, 4):
@@ -748,7 +714,6 @@ def _translate_one(
 def _print_progress(
     number: int, total: int, word: str, translation: Optional[str]
 ) -> None:
-    """Print one compact, serialized progress line to stdout."""
     with _console_lock:
         if translation is None:
             print(f"[{number}/{total}] ✗ {word} (failed -> failed.txt)")
@@ -757,7 +722,6 @@ def _print_progress(
 
 
 def _parse_args() -> argparse.Namespace:
-    """Parse and validate command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Translate a word-list file into a JSON mapping on Termux."
     )
@@ -813,7 +777,6 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Run the translation job and return a process exit status."""
     _configure_logging()
     args = _parse_args()
 

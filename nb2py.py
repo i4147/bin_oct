@@ -38,17 +38,10 @@ IMPORT_PREFIXES: tuple[str, ...] = ("import ", "from ")
 
 
 def is_import_line(line: str) -> bool:
-    """Return True if ``line`` begins a top-level import statement."""
     return line.startswith(IMPORT_PREFIXES)
 
 
 def strip_magics(source: str) -> str:
-    """Comment out IPython magics and shell escapes in ``source``.
-
-    Lines starting with ``%``, ``!`` or ``%%`` are replaced with a
-    ``# [MAGIC] ...`` comment, and backslash line continuations that follow
-    are also commented out.
-    """
     lines: list[str] = source.split("\n")
     result: list[str] = []
     i: int = 0
@@ -68,7 +61,6 @@ def strip_magics(source: str) -> str:
 
 
 def nb2py(notebook: NotebookNode) -> str:
-    """Convert a parsed notebook into a standalone Python script."""
     imports: list[str] = []
     os_mods: list[str] = []
     sys_mods: list[str] = []
@@ -118,15 +110,6 @@ def nb2py(notebook: NotebookNode) -> str:
 
 
 def process_file(path: Path) -> str | None:
-    """Convert a single ``.ipynb`` file to a sibling ``.py`` file.
-
-    Args:
-        path: Path to the notebook to convert.
-
-    Returns:
-        A status message if the notebook was exported, or ``None`` if the
-        target ``.py`` file already existed.
-    """
     path = Path(path)
     fo: Path = path.with_suffix(".py")
     if fo.exists():
@@ -140,15 +123,6 @@ def process_file(path: Path) -> str | None:
 
 
 def _collect_files(args: Sequence[str]) -> list[Path]:
-    """Resolve CLI arguments into a list of ``.ipynb`` files.
-
-    Args:
-        args: Raw CLI arguments. If empty, all ``.ipynb`` files under the
-            current working directory are returned.
-
-    Returns:
-        A list of candidate notebook paths.
-    """
     if not args:
         return list(Path.cwd().rglob("*.ipynb"))
 
@@ -164,14 +138,6 @@ def _collect_files(args: Sequence[str]) -> list[Path]:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
-    """Entry point: convert notebooks to Python scripts in parallel.
-
-    Args:
-        argv: Optional argument vector (defaults to ``sys.argv[1:]``).
-
-    Returns:
-        Process exit code (0 on success).
-    """
     args: list[str] = list(argv) if argv is not None else sys.argv[1:]
     files: list[Path] = _collect_files(args)
 

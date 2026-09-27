@@ -105,7 +105,6 @@ LOG = logging.getLogger("imgtool")
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """Configure root logging exactly like the original gif2jpg.py did."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s  %(levelname)-8s  %(message)s",
@@ -195,11 +194,6 @@ def find_files(
     recursive: bool = True,
     exclude_dirs: frozenset[str] = DEFAULT_EXCLUDE_DIRS,
 ) -> list[Path]:
-    """Return a sorted list of unique files under *roots*.
-
-    *extensions* (if given) is matched case-insensitively on the suffix.
-    Directories whose name appears in *exclude_dirs* are skipped.
-    """
     exts = {e.lower() for e in extensions} if extensions else None
     results: list[Path] = []
     seen: set[Path] = set()
@@ -241,7 +235,6 @@ def find_files(
 
 
 def dir_size(path: Path) -> int:
-    """Total size of *path* in bytes (recursive for directories)."""
     if path.is_file():
         try:
             return path.stat().st_size
@@ -258,7 +251,6 @@ def dir_size(path: Path) -> int:
 
 
 def human_size(n: int) -> str:
-    """Human readable byte size (matches typical 'K/M/G' formatting)."""
     sign = "-" if n < 0 else ""
     n = abs(n)
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -273,7 +265,6 @@ def _run_parallel(
     tasks: list,
     workers: int,
 ) -> list:
-    """Execute *worker(task)* for every task, sequentially when workers==1."""
     if not tasks:
         return []
     if workers == 1:
@@ -294,7 +285,6 @@ def _run_parallel(
 # Image helpers
 # ============================================================================
 def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
-    """Flatten an image with transparency onto a solid background."""
     if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
         im = im.convert("RGBA")
         canvas = Image.new("RGB", im.size, bg)
@@ -306,7 +296,6 @@ def flatten_to_rgb(im: "Image.Image", bg=(255, 255, 255)) -> "Image.Image":
 
 
 def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") -> None:
-    """Convert *src* to JPEG at *dst*; honours alpha by flattening onto white."""
     # Optional fast path with OpenCV (matches to_jpg.py / tojpg.py behaviour)
     if backend in ("auto", "cv2") and _HAS_CV2:
         img = cv2.imread(str(src), cv2.IMREAD_UNCHANGED)
@@ -335,7 +324,6 @@ def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") ->
 def save_png(
     src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool = False
 ) -> None:
-    """Convert *src* to PNG at *dst*."""
     # SVG requires a dedicated renderer
     if src.suffix.lower() == ".svg":
         if not _HAS_CAIROSVG:
@@ -428,10 +416,6 @@ def _worker_invert(task):
 def _extract_gif_frames(
     path: Path, dup_mean: float, dup_frac: float
 ) -> list["np.ndarray"]:
-    """Extract GIF frames, honouring disposal modes and skipping dupes.
-
-    This is a faithful port of gif2jpg.py's `p()`.
-    """
     if not (_HAS_PIL and _HAS_NUMPY):
         raise RuntimeError("Pillow + numpy are required for GIF extraction")
 
@@ -629,13 +613,6 @@ def cmd_invert(args: argparse.Namespace) -> int:
 def _html_to_png(
     src: str, dst: Path, method: str, width: Optional[int], dpi: int, scale: float
 ) -> None:
-    """Render *src* (file path or HTML string) to PNG at *dst*.
-
-    Two rendering methods are supported:
-      * ``cairosvg``  — HTML → PDF → PNG via cairosvg (htm2png.py behaviour)
-      * ``pdf2image`` — HTML → PDF → PIL pages, vertically stitched
-                        (html2png.py behaviour)
-    """
     if not _HAS_WEASYPRINT:
         raise RuntimeError("weasyprint is required for HTML rendering")
 

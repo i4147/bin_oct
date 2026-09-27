@@ -71,18 +71,6 @@ NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 # PPM (P6) parsing
 # ---------------------------------------------------------------------------
 def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
-    """Parse a binary PPM (P6) image.
-
-    A P6 file looks like::
-
-        P6<ws>WIDTH<ws>HEIGHT<ws>MAXVAL<ws><W*H*3 raw RGB bytes>
-
-    where ``<ws>`` is any run of whitespace and ``#`` starts a comment
-    that runs to the end of the line.  MAXVAL is almost always 255.
-
-    Returns ``(width, height, rgb_samples)``.  Raises ``RuntimeError``
-    on malformed input.
-    """
     if len(data) < 2 or data[:2] != b"P6":
         raise RuntimeError("renderer did not produce a P6 PPM image")
 
@@ -124,17 +112,10 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
 # Backends
 # ---------------------------------------------------------------------------
 class RenderError(RuntimeError):
-    """Raised when a backend cannot produce an image for a page."""
+    pass
 
 
 class Renderer:
-    """Rasterises PDF pages by spawning an external command line tool.
-
-    All three supported tools can write a P6 PPM; from this class's point
-    of view they are interchangeable, apart from how you ask for a given
-    pixel width (gs wants a resolution, the other two take it directly).
-    """
-
     CACHE_LIMIT = 6
     BACKENDS = ("gs", "pdftoppm", "mutool")
     # A short hint used when a chosen backend is missing on PATH.
@@ -157,7 +138,6 @@ class Renderer:
     # -- setup -------------------------------------------------------------
     @classmethod
     def _detect_tool(cls, backend: str | None) -> str:
-        """Pick a backend, honouring an explicit request if given."""
         if backend:
             if backend not in cls.BACKENDS:
                 sys.exit(
@@ -185,17 +165,10 @@ class Renderer:
         )
 
     def close(self) -> None:
-        """Remove the scratch directory."""
         shutil.rmtree(self._tmp, ignore_errors=True)
 
     # -- page count --------------------------------------------------------
     def page_count(self) -> int:
-        """Number of pages in the document (queried once, then cached).
-
-        Tries the cheapest source first: pdfinfo (poppler) if present,
-        then Ghostscript.  mutool has no equivalent one-liner for a bare
-        count, so it is only reached if the first two are both absent.
-        """
         if self._count is not None:
             return self._count
 
@@ -265,28 +238,9 @@ class Renderer:
     # -- Ghostscript helpers ----------------------------------------------
     @staticmethod
     def _ps_string(s: str) -> str:
-        """Escape a Python string as a PostScript literal string."""
         return "(" + "".join("\\" + c if c in "()\\" else c for c in s) + ")"
 
     def _gs_page_points(self, index: int) -> tuple[float, float]:
-        """Page size in points, CropBox-aware and rotation-aware.
-
-        gs needs a *resolution* rather than a target pixel width, so to
-        hit a given width we first need the page's physical size:
-
-            dpi = pixel_width * 72 / page_width_in_points
-
-        The query runs once per page and is cached.  Note that gs applies
-        /Rotate when rendering to a raster device, so we swap width and
-        height for 90/270 degree pages to keep the DPI math consistent
-        with what actually comes back.
-
-        Since gs 9.50 the PostScript interpreter is sandboxed: the
-        `file` operator refuses paths that were not pre-declared on the
-        command line.  `-dNOSAFER` alone is not enough any more; the
-        supported escape hatch is `--permit-file-read=<path>`, which
-        grants read access to exactly the one file we care about.
-        """
         hit = self._pt_cache.get(index)
         if hit is not None:
             return hit
@@ -347,7 +301,6 @@ class Renderer:
 
     # -- rendering ---------------------------------------------------------
     def _wipe_tmp(self) -> None:
-        """Clear the scratch directory before a backend writes to it."""
         for name in os.listdir(self._tmp):
             try:
                 os.unlink(os.path.join(self._tmp, name))
@@ -355,7 +308,6 @@ class Renderer:
                 pass
 
     def _run_gs(self, index: int, width: int) -> bytes:
-        """Render one page with Ghostscript's ppmraw device."""
         pw, _ph = self._gs_page_points(index)
         dpi = max(4.0, width * 72.0 / pw)
 
@@ -387,7 +339,6 @@ class Renderer:
             raise RenderError("gs produced no output") from None
 
     def _run_pdftoppm(self, index: int, width: int) -> bytes:
-        """Render one page with poppler's pdftoppm."""
         self._wipe_tmp()
         root = os.path.join(self._tmp, "page")
         argv = [
@@ -424,7 +375,6 @@ class Renderer:
             return fh.read()
 
     def _run_mutool(self, index: int, width: int) -> bytes:
-        """Render one page with MuPDF's mutool draw."""
         out = os.path.join(self._tmp, "page.ppm")
         argv = [
             "mutool",
@@ -451,11 +401,6 @@ class Renderer:
 
     # -- dispatch ----------------------------------------------------------
     def page(self, index: int, width: int) -> tuple[int, int, bytes]:
-        """Return ``(width, height, rgb_bytes)`` for a page, with caching.
-
-        The cache is what keeps scrolling cheap: the backend only runs
-        when the page number or the render width changes.
-        """
         key = (index, width)
         hit = self._cache.get(key)
         if hit is not None:
@@ -483,15 +428,6 @@ class Renderer:
 # Keyboard input
 # ---------------------------------------------------------------------------
 def read_key(fd: int, timeout: float | None = None) -> str | None:
-    """Read one logical key from *fd*.
-
-    Returns a string such as ``"j"`` or ``"\\x1b[A"`` (Up), or ``None`` if
-    *timeout* elapsed with no input.  A lone ``"\\x1b"`` means Escape.
-
-    Escape sequences are swallowed whole: after the initial ESC we keep
-    reading (with a short per-byte deadline) until a final byte arrives,
-    so a bare ESC keypress still returns promptly instead of blocking.
-    """
     ready, _, _ = select.select([fd], [], [], timeout)
     if not ready:
         return None
@@ -543,12 +479,10 @@ class Viewer:
         return size.columns, size.lines
 
     def view_rows(self) -> int:
-        """Terminal rows available for the page (the last row is status)."""
         _, lines = self.term_size()
         return max(1, lines - 1)
 
     def render_width(self) -> int:
-        """Pixel width the page is rasterised at."""
         cols, _ = self.term_size()
         return max(1, min(self.MAX_RENDER_WIDTH, int(round(cols * self.zoom))))
 
@@ -559,13 +493,6 @@ class Viewer:
     # -- painting ----------------------------------------------------------
     @staticmethod
     def _paint_row(data: bytes, w: int, h: int, top: int, x0: int, cols: int) -> str:
-        """Render one terminal row (two pixel rows) as an ANSI string.
-
-        The cell column ``i`` shows pixel row ``top`` in the foreground
-        of a U+2580 (upper half block) and pixel row ``top+1`` in the
-        background.  Colour escape codes are only emitted when a colour
-        actually changes, which keeps the output compact.
-        """
         bottom = top + 1
         have_top = 0 <= top < h
         have_bot = 0 <= bottom < h
@@ -612,7 +539,6 @@ class Viewer:
         return "".join(out)
 
     def _status(self, cols: int, note: str = "") -> str:
-        """The reverse-video line at the bottom of the screen."""
         name = os.path.basename(self.path)
         if note:
             line = f" {note} "
@@ -634,7 +560,6 @@ class Viewer:
         return REVERSE + line[:cols].ljust(cols) + RESET
 
     def draw(self) -> None:
-        """Repaint the whole screen."""
         cols, _ = self.term_size()
         rows = self.view_rows()
         width = self.render_width()
@@ -682,7 +607,6 @@ class Viewer:
             self.x = self.y = 0
 
     def screen_down(self) -> None:
-        """Scroll a full screen; at the bottom, turn the page."""
         step = self.view_rows() * 2
         _, h = self.page_px_size()
         max_y = max(0, h - step)
@@ -694,7 +618,6 @@ class Viewer:
             self.y = min(self.y + step, max_y)
 
     def screen_up(self) -> None:
-        """Scroll a full screen; at the top, go back and land at the bottom."""
         step = self.view_rows() * 2
         if self.y <= 0:
             if self.page_index > 0:
@@ -706,7 +629,6 @@ class Viewer:
             self.y = max(0, self.y - step)
 
     def set_zoom(self, value: float) -> None:
-        """Change zoom, keeping the current reading position roughly stable."""
         value = max(self.MIN_ZOOM, min(self.MAX_ZOOM, value))
         if value == self.zoom:
             return

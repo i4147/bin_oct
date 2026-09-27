@@ -69,16 +69,14 @@ logging.basicConfig(level=logging.WARNING)
 
 
 class RateLimitError(Exception):
-    """Raised when the translator reports a rate-limit / quota error."""
+    pass
 
 
 class TransientError(Exception):
-    """Raised for retryable translation failures (network, empty, etc.)."""
+    pass
 
 
 class InterruptFlag:
-    """Cooperative Ctrl+C handling used by the `vi` mode."""
-
     def __init__(self) -> None:
         self.set: bool = False
 
@@ -96,7 +94,6 @@ class InterruptFlag:
 
 
 def read_text_auto(path: Path) -> str:
-    """Read *path* trying several encodings before falling back to replacement."""
     for enc in ENCODINGS:
         try:
             return path.read_text(encoding=enc, errors="strict")
@@ -106,7 +103,6 @@ def read_text_auto(path: Path) -> str:
 
 
 def is_text_file(path: Path) -> bool:
-    """Cheap binary check: read the first 2 KiB, look for NUL bytes."""
     try:
         with path.open("rb") as fh:
             head = fh.read(2048)
@@ -116,7 +112,6 @@ def is_text_file(path: Path) -> bool:
 
 
 def chunk_smart(text: str, max_chars: int) -> list[str]:
-    """Split *text* into <= max_chars pieces, preferring \\n\\n > \\n > space."""
     if len(text) <= max_chars:
         return [text]
     chunks: list[str] = []
@@ -138,12 +133,10 @@ def chunk_smart(text: str, max_chars: int) -> list[str]:
 
 
 def chunk_fixed(text: str, size: int) -> list[str]:
-    """Naive slicing chunker (matches tkor.py / tchn.py)."""
     return [text[i : i + size] for i in range(0, len(text), size)]
 
 
 def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
-    """Group whole lines into buckets whose joined length <= max_chars."""
     chunks: list[list[str]] = []
     current: list[str] = []
     current_len = 0
@@ -166,7 +159,6 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
 
 
 def dedupe_preserve_order(items: Iterable[str]) -> list[str]:
-    """Return unique items, keeping first-seen order (used by ru mode)."""
     seen: set[str] = set()
     out: list[str] = []
     for it in items:
@@ -177,7 +169,6 @@ def dedupe_preserve_order(items: Iterable[str]) -> list[str]:
 
 
 def _classify_error(exc: Exception) -> type[Exception]:
-    """Map a raw translator exception to our retryable types."""
     msg = str(exc).lower()
     if any(k in msg for k in ("429", "rate limit", "too many", "quota")):
         return RateLimitError
@@ -194,7 +185,6 @@ def translate_with_retry(
     max_delay: float,
     raise_on_empty: bool = True,
 ) -> str:
-    """Translate *text* with exponential backoff on rate-limit / transient errors."""
     translator = GoogleTranslator(source=source, target=target)
     last_exc: Exception | None = None
     for attempt in range(1, attempts + 1):
@@ -217,7 +207,6 @@ def translate_with_retry(
 
 
 def translate_single_shot(text: str, *, source: str, target: str) -> str:
-    """No-retry translator used by zh / per-line fallbacks."""
     try:
         result = GoogleTranslator(source=source, target=target).translate(text)
         return result if result is not None else text
@@ -231,7 +220,6 @@ def make_progress_path(src: Path) -> Path:
 
 
 def make_output_path(src: Path, style: str) -> Path:
-    """style='suffix' -> foo.txt.en ; style='stem' -> foo_eng.txt"""
     if style == "suffix":
         return src.with_suffix(src.suffix + ".en")
     return src.with_name(f"{src.stem}_eng{src.suffix}")
@@ -279,7 +267,6 @@ def _clear_vi_progress(src: Path) -> None:
 def _translate_one_vi_file(
     src: Path, args: argparse.Namespace, flag: InterruptFlag
 ) -> bool:
-    """Returns True on success, False if interrupted."""
     out = make_output_path(src, "suffix")
     print(f"\n📄 {src.name}  →  {out.name}")
 
@@ -471,7 +458,6 @@ def run_zh(args: argparse.Namespace) -> int:
 
 
 def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
-    """Translate a group of lines; returns (group, translated_text_or_None)."""
     joined = "\n".join(line_group)
     translator = GoogleTranslator(source=args.source, target=args.target)
     for attempt in range(1, args.attempts + 1):

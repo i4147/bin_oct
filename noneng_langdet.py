@@ -49,8 +49,6 @@ REPORT_PREVIEW_LENGTH: int = 150
 
 @dataclass
 class DetectionResult:
-    """Result of scanning a single file for non-English content."""
-
     path: Path
     non_english_lines: list[dict[str, Any]] = field(default_factory=list)
     total_lines: int = 0
@@ -59,8 +57,6 @@ class DetectionResult:
 
 @dataclass
 class ScanConfig:
-    """Configuration controlling file discovery and detection behavior."""
-
     confidence_threshold: float = DEFAULT_CONFIDENCE
     min_line_length: int = DEFAULT_MIN_LINE_LENGTH
     max_line_length: int = DEFAULT_MAX_LINE_LENGTH
@@ -172,20 +168,16 @@ class ScanConfig:
 
 
 class NonEnglishDetector:
-    """Detects non-English lines inside text files within a directory tree."""
-
     config: ScanConfig
     detector: LanguageDetector
 
     def __init__(self, config: ScanConfig) -> None:
-        """Initialize the detector with the provided scan configuration."""
         self.config = config
         self.detector = LanguageDetector(
             confidence_threshold=config.confidence_threshold
         )
 
     def is_text_file(self, path: Path) -> bool:
-        """Return True if the file is considered a text file to scan."""
         if path.suffix.lower() in self.config.text_extensions:
             return True
         no_ext_names: set[str] = {
@@ -210,7 +202,6 @@ class NonEnglishDetector:
         return path.name.lower() in no_ext_names
 
     def should_ignore(self, path: Path) -> bool:
-        """Return True if the file should be skipped during scanning."""
         parts: tuple[str, ...] = path.parts
         for part in parts:
             if part in self.config.ignore_dirs or part.startswith("."):
@@ -273,7 +264,6 @@ class NonEnglishDetector:
         return False
 
     def read_file_lines(self, path: Path) -> list[str] | None:
-        """Read the file as a list of lines trying multiple encodings, or None."""
         encodings: list[str] = [
             self.config.encoding,
             "latin-1",
@@ -290,7 +280,6 @@ class NonEnglishDetector:
         return None
 
     def filter_lines(self, lines: Sequence[str]) -> list[tuple[int, str]]:
-        """Return candidate (line_number, text) pairs worth language detection."""
         filtered: list[tuple[int, str]] = []
         for i, line in enumerate(lines, 1):
             stripped: str = line.strip()
@@ -311,7 +300,6 @@ class NonEnglishDetector:
         return filtered
 
     def _is_code_pattern(self, line: str) -> bool:
-        """Return True if the line looks like source code rather than prose."""
         code_indicators: list[bool] = [
             line.startswith(
                 (
@@ -375,7 +363,6 @@ class NonEnglishDetector:
         return any(code_indicators)
 
     def process_file(self, path: Path) -> DetectionResult:
-        """Process a single file, returning a DetectionResult with any findings."""
         result: DetectionResult = DetectionResult(path=path)
         try:
             lines: list[str] | None = self.read_file_lines(path)
@@ -420,7 +407,6 @@ class NonEnglishDetector:
         return result
 
     def scan_directory(self, root_dir: Path = Path(".")) -> list[DetectionResult]:
-        """Scan a directory tree and return DetectionResult for each file."""
         results: list[DetectionResult] = []
         paths: list[Path] = []
         print(f"Scanning directory: {root_dir.absolute()}")
@@ -460,7 +446,6 @@ class NonEnglishDetector:
         return results
 
     def save_results(self, results: list[DetectionResult], output_file: Path) -> None:
-        """Write a human-readable report of scan results to output_file."""
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("Non-English Content Detection Results\n")
             f.write("=" * 40 + "\n")
@@ -507,7 +492,6 @@ class NonEnglishDetector:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Construct and return the CLI argument parser."""
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Detect non-English content in text files recursively",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -557,7 +541,6 @@ Examples:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point: parse arguments, scan, save report, and return exit code."""
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args(argv)
 

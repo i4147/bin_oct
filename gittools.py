@@ -54,7 +54,6 @@ from loguru import logger
 
 
 def _load_repo_list(file_path: Path) -> list[str]:
-    """Return the non-empty, stripped lines of *file_path* or exit(1)."""
     if not file_path.exists():
         logger.error(f"Error: {file_path} does not exist")
         sys.exit(1)
@@ -67,13 +66,11 @@ def _load_repo_list(file_path: Path) -> list[str]:
 
 
 def _is_valid_slug(slug: str) -> bool:
-    """True if *slug* looks like ``owner/repo``."""
     parts = slug.split("/")
     return len(parts) == 2 and all(parts)
 
 
 def _human_size(n: int) -> str:
-    """Format a byte count in a compact human-readable form."""
     if n < 1024:
         return f"{n}B"
     if n < 1024**2:
@@ -90,7 +87,6 @@ def _print_summary(
     total: int,
     success_label: str = "Successfully cloned",
 ) -> None:
-    """Print a uniform end-of-run summary block."""
     print("-" * 40)
     print("\nSummary:")
     print(f"  ✅ {success_label}: {success}")
@@ -104,7 +100,6 @@ def _pool_consume(
     jobs: list[tuple[str, object]],
     result_handler: Callable[[str, bool, str], None],
 ) -> None:
-    """Run ``(slug, async_result)`` pairs to completion, calling *result_handler*."""
     for slug, async_res in jobs:
         try:
             _, ok, msg = async_res.get()
@@ -114,7 +109,6 @@ def _pool_consume(
 
 
 def _load_dotenv_token(quiet: bool = False) -> Optional[str]:
-    """Load GITHUB_TOKEN from ~/.env (same behaviour as forklone.py)."""
     from dotenv import load_dotenv
 
     env_path = Path.home() / ".env"
@@ -133,7 +127,6 @@ def _load_dotenv_token(quiet: bool = False) -> Optional[str]:
 
 
 def _gh_size_mb(owner: str, repo: str, token: Optional[str] = None) -> Optional[float]:
-    """Return the repo size in MB according to the GitHub API, or None on error."""
     url = f"https://api.github.com/repos/{owner}/{repo}"
     headers = {"Accept": "application/vnd.github.v3+json"}
     if token:
@@ -168,7 +161,6 @@ def _gh_size_mb(owner: str, repo: str, token: Optional[str] = None) -> Optional[
 
 
 def _git_clone_one(slug: str, output_dir: Path) -> tuple[str, bool, str]:
-    """Worker: shallow-clone ``owner/repo`` into ``output_dir/owner/repo``."""
     from git import GitCommandError, Repo
     from git.exc import InvalidGitRepositoryError
 
@@ -253,7 +245,6 @@ def cmd_clone(args: argparse.Namespace) -> int:
 def _zip_download_one(
     slug: str, output_dir: Path, timeout: int
 ) -> tuple[str, bool, str]:
-    """Worker: download ``owner/repo`` as a ZIP archive and extract it."""
     if not _is_valid_slug(slug):
         return slug, False, f"Invalid format: {slug}"
 
@@ -350,7 +341,6 @@ def cmd_zip(args: argparse.Namespace) -> int:
 
 
 def _dulwich_size_check(slug: str, max_bytes: int) -> tuple[bool, int]:
-    """Return (fits_in_limit, size_in_bytes). Defaults to (True, 0) on error."""
     url = f"https://api.github.com/repos/{slug}"
     try:
         resp = requests.get(url, timeout=10)
@@ -367,7 +357,6 @@ def _dulwich_size_check(slug: str, max_bytes: int) -> tuple[bool, int]:
 def _dulwich_clone_one(
     slug: str, output_dir: Path, max_bytes: int
 ) -> tuple[str, bool, str]:
-    """Worker: pure-Python clone via dulwich, respecting *max_bytes*."""
     from dulwich import porcelain
     from dulwich.errors import NotGitRepository
     from dulwich.repo import Repo as DulwichRepo
@@ -473,7 +462,6 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
 
 
 def _ensure_env_template() -> bool:
-    """Create a ~/.env template if missing; returns False when it was created."""
     env_path = Path.home() / ".env"
     if not env_path.exists():
         print("\n📝 Creating ~/.env template...")
@@ -500,7 +488,6 @@ def _print_token_help() -> None:
 
 
 def _gh_authenticate(token: Optional[str]):
-    """Return (Github client, authenticated user) or exit(1)."""
     from github import Github
     from github.GithubException import GithubException
 
@@ -518,7 +505,6 @@ def _gh_authenticate(token: Optional[str]):
 
 
 def _gh_fork_repo(gh, user, origin_slug: str):
-    """Return the (existing or freshly-created) fork of *origin_slug*."""
     from github.GithubException import GithubException, UnknownObjectException
 
     try:
@@ -539,7 +525,6 @@ def _gh_fork_repo(gh, user, origin_slug: str):
 
 
 def _clone_fork_and_link(fork, origin_slug: str):
-    """Clone *fork* and add the *origin_slug* as `upstream`, wiring the branch."""
     from git import Repo
 
     repo_name = fork.name
@@ -599,7 +584,6 @@ def cmd_fork(args: argparse.Namespace) -> int:
 
 
 def _parse_gh_slug(text: str) -> tuple[Optional[str], Optional[str]]:
-    """Accept ``owner/repo`` or a GitHub URL; return (owner, repo) or (None, None)."""
     text = text.strip()
     if "/" in text and not text.startswith("http"):
         parts = text.split("/")
@@ -618,7 +602,6 @@ def _parse_gh_slug(text: str) -> tuple[Optional[str], Optional[str]]:
 
 
 def _cli_git_clone(owner: str, repo: str, destination: Path) -> bool:
-    """Shallow ``git clone`` via the CLI, mirroring gclone1.py."""
     slug = f"{owner}/{repo}"
     url = f"https://github.com/{slug}.git"
     print(f"\n🚀 Cloning {slug} (shallow clone)...")
@@ -680,7 +663,6 @@ def cmd_gclone(args: argparse.Namespace) -> int:
 def _download_zip_with_progress(
     owner: str, repo: str, branch: str, output: Optional[str]
 ) -> str:
-    """Stream a repo zipball to disk with a tqdm progress bar."""
     from github import Github
     from tqdm import tqdm
 
@@ -739,7 +721,6 @@ def cmd_get_zip(args: argparse.Namespace) -> int:
 def _sparse_clone_one(
     url: str, output_dir: Path, extensions: list[str], timeout: int = 300
 ) -> tuple[str, bool, str]:
-    """Worker: sparse-checkout clone of *url* limited to *extensions*."""
     try:
         parsed = urlparse(url)
         name = Path(parsed.path).stem

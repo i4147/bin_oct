@@ -66,7 +66,6 @@ logger = logging.getLogger("pkgtool")
 
 
 def configure_logging(verbose: bool = False) -> None:
-    """Configure root logging for the CLI."""
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -82,7 +81,6 @@ def configure_logging(verbose: bool = False) -> None:
 
 
 def get_user_site() -> Path:
-    """Return the user site-packages directory as a resolved Path."""
     if not site.USER_SITE:
         site.main()
     return Path(site.USER_SITE).resolve()
@@ -92,16 +90,6 @@ def get_site_packages_paths(
     include_user: bool = True,
     include_pythonpath: bool = False,
 ) -> list[Path]:
-    """
-    Return existing site-packages directories.
-
-    Parameters
-    ----------
-    include_user:
-        Include the user site-packages directory.
-    include_pythonpath:
-        Include entries from the PYTHONPATH environment variable.
-    """
     paths: list[Path] = [Path(p) for p in site.getsitepackages()]
 
     if include_user:
@@ -126,12 +114,6 @@ def get_site_packages_paths(
 
 
 def find_site_packages_dirs(start: Path) -> list[Path]:
-    """
-    Recursively find site-packages / dist-packages directories under *start*.
-
-    This mirrors the scanning logic in repacopy.py, including virtualenv
-    directory names such as .venv, venv, env, and virtualenv.
-    """
     found: set[Path] = set()
 
     venv_names = [".venv", "venv", "env", "virtualenv"]
@@ -164,11 +146,6 @@ def find_site_packages_dirs(start: Path) -> list[Path]:
 
 
 def find_dist_info(root: Path, pkg: str) -> Path:
-    """
-    Find the *.dist-info directory for *pkg* inside *root*.
-
-    Handles both dashed and underscored package names.
-    """
     candidates = list(root.glob(f"{pkg}-*.dist-info"))
     if not candidates:
         normalized = pkg.replace("-", "_")
@@ -188,17 +165,11 @@ def find_dist_info(root: Path, pkg: str) -> Path:
 
 
 def read_record(record_path: Path) -> list[list[str]]:
-    """Read a RECORD CSV file and return all rows."""
     with record_path.open("r", encoding="utf-8", newline="") as handle:
         return list(csv.reader(handle))
 
 
 def clean_record_pyc(dist_info: Path) -> None:
-    """
-    Remove .pyc lines from a dist-info RECORD file.
-
-    This is the behavior of copy_pkg_files.py's clean step.
-    """
     record = dist_info / "RECORD"
     if not record.exists():
         return
@@ -216,7 +187,6 @@ def clean_record_pyc(dist_info: Path) -> None:
 
 
 def read_metadata(dist_info: Path) -> dict[str, Any]:
-    """Extract basic metadata from a dist-info directory."""
     meta: dict[str, Any] = {
         "name": dist_info.stem.split("-")[0],
         "version": None,
@@ -243,7 +213,6 @@ def read_metadata(dist_info: Path) -> dict[str, Any]:
 
 
 def get_dist_info_path(dist: importlib.metadata.Distribution) -> Path | None:
-    """Return the dist-info directory for an importlib.metadata distribution."""
     path = getattr(dist, "_path", None)
     if path is not None:
         return Path(path)
@@ -256,7 +225,6 @@ def get_dist_info_path(dist: importlib.metadata.Distribution) -> Path | None:
 
 
 def has_entry_points(dist: importlib.metadata.Distribution) -> bool:
-    """Return True if the distribution declares entry points."""
     try:
         return bool(dist.entry_points)
     except Exception:
@@ -278,30 +246,6 @@ def copy_record_files(
     skip_pyc: bool = True,
     warn_missing: bool = True,
 ) -> tuple[int, int, int]:
-    """
-    Copy or move files listed in a dist-info RECORD file.
-
-    Parameters
-    ----------
-    dist_info:
-        The *.dist-info directory containing RECORD.
-    source_root:
-        Root directory against which relative RECORD paths are resolved.
-    dest_root:
-        Destination root directory.
-    move:
-        Move instead of copy.
-    per_package_subdir:
-        If True, place files under dest_root/<package-name>/...
-    skip_pyc:
-        Skip .pyc entries.
-    warn_missing:
-        Log a warning for missing non-pyc files.
-
-    Returns
-    -------
-    (copied, missing, errors)
-    """
     record = dist_info / "RECORD"
     if not record.exists():
         logger.warning("RECORD not found in %s", dist_info)
@@ -362,11 +306,6 @@ def copy_record_files(
 
 
 def find_package_dir(pkg: str, site_paths: Sequence[Path]) -> Path | None:
-    """
-    Locate an installed package directory by name inside site-packages paths.
-
-    Mirrors deepack.py's lookup logic.
-    """
     for sp in site_paths:
         candidate = sp / pkg
         if candidate.exists() and candidate.is_dir():
@@ -392,11 +331,6 @@ def copy_package_tree(
     site_paths: Sequence[Path],
     skip_pyc: bool,
 ) -> tuple[str, bool, str]:
-    """
-    Copy an entire installed package directory tree.
-
-    This is deepack.py's core operation.
-    """
     try:
         src = find_package_dir(pkg, site_paths)
         if not src:
@@ -431,11 +365,6 @@ def copy_package_tree(
 
 
 def generate_wheel_tags(purelib: bool) -> tuple[str, str, str]:
-    """
-    Return (interpreter, abi, platform) wheel tags.
-
-    Uses packaging.tags when available; otherwise falls back to a best guess.
-    """
     if purelib:
         return "py3", "none", "any"
 
@@ -459,11 +388,6 @@ def repack_package(
     output_base: Path,
     verbose: bool = False,
 ) -> Path | None:
-    """
-    Repack one dist-info directory into a wheel-like directory structure.
-
-    This implements repacopy.py's intended behavior.
-    """
     record = dist_info / "RECORD"
     if not record.exists():
         logger.warning("Skipping %s: RECORD file not found", dist_info.name)
@@ -533,7 +457,6 @@ def repack_package(
 
 
 def cmd_record(args: argparse.Namespace) -> int:
-    """Handle the `record` subcommand."""
     cwd = Path.cwd()
 
     if args.clean_record:
@@ -603,7 +526,6 @@ def cmd_record(args: argparse.Namespace) -> int:
 
 
 def cmd_site_copy(args: argparse.Namespace) -> int:
-    """Handle the `site-copy` subcommand (deepack.py behavior)."""
     site_paths = get_site_packages_paths(include_user=not args.no_user_site)
     output = Path(args.output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -635,7 +557,6 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
 
 
 def cmd_repack(args: argparse.Namespace) -> int:
-    """Handle the `repack` subcommand (repacopy.py behavior)."""
     if args.skip_scan:
         site_dirs = get_site_packages_paths(include_user=not args.no_user_site)
     else:
@@ -686,11 +607,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
 
 
 def cmd_entry_points(args: argparse.Namespace) -> int:
-    """
-    Handle the `entry-points` subcommand.
-
-    Combines repacopy_entry_point.py and xuser_pkgs.py.
-    """
     if args.all_sites:
         site_paths = get_site_packages_paths(
             include_user=True,
@@ -814,7 +730,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argparse parser."""
     parser = argparse.ArgumentParser(
         prog="pkgtool.py",
         description="Copy, move, and repack Python packages.",
@@ -1032,7 +947,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """CLI entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

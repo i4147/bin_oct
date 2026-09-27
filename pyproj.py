@@ -313,15 +313,6 @@ def main() -> None:
 
 
 def run(cmd: list[str], cwd: Path) -> None:
-    """Run a subprocess command, streaming its output to the terminal.
-
-    Args:
-        cmd: The command and arguments to execute (argv-style list).
-        cwd: Working directory in which to run the command.
-
-    Raises:
-        subprocess.CalledProcessError: If the command exits non-zero.
-    """
     print(f"$ {' '.join(cmd)}")
     subprocess.run(cmd, cwd=cwd, check=True)
 
@@ -337,22 +328,6 @@ def github_request(
     token: str,
     payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Perform an authenticated request against the GitHub REST API.
-
-    Args:
-        method: HTTP method (e.g. ``"GET"``, ``"POST"``).
-        url: Fully qualified request URL.
-        token: GitHub personal access token (used as a Bearer token).
-        payload: Optional JSON body to send with the request.
-
-    Returns:
-        The parsed JSON response as a dictionary, or an empty dict when the
-        response body is empty.
-
-    Raises:
-        SystemExit: If the API returns an HTTP error, with the response body
-            included in the error message.
-    """
     data: bytes | None = json.dumps(payload).encode() if payload is not None else None
 
     req: urllib.request.Request = urllib.request.Request(url, data=data, method=method)
@@ -374,14 +349,6 @@ def github_request(
 
 
 def get_github_token() -> str:
-    """Fetch GITHUB_TOKEN from the environment (loaded from ~/.env).
-
-    Returns:
-        The token string.
-
-    Raises:
-        SystemExit: If the variable is missing or empty.
-    """
     token: str | None = os.environ.get("GITHUB_TOKEN")
     if not token:
         raise SystemExit(
@@ -392,7 +359,6 @@ def get_github_token() -> str:
 
 
 def get_github_user(token: str) -> str:
-    """Return the login (username) of the authenticated GitHub user."""
     data: dict[str, Any] = github_request("GET", f"{GITHUB_API}/user", token)
     return str(data["login"])
 
@@ -404,17 +370,6 @@ def create_github_repo(
     private: bool = True,
     description: str = "",
 ) -> dict[str, Any]:
-    """Create a new repository under the authenticated user's account.
-
-    Args:
-        token: GitHub personal access token.
-        name: Repository name.
-        private: Whether to create a private repo.
-        description: Optional repository description.
-
-    Returns:
-        The JSON representation of the newly created repository.
-    """
     return github_request(
         "POST",
         f"{GITHUB_API}/user/repos",
@@ -435,17 +390,6 @@ def get_or_create_github_repo(
     *,
     private: bool = True,
 ) -> dict[str, Any]:
-    """Fetch ``user/name`` if it exists, otherwise create it.
-
-    Args:
-        token: GitHub personal access token.
-        user: Owner login (used only for the lookup path).
-        name: Repository name.
-        private: Whether to create the repo as private if missing.
-
-    Returns:
-        The JSON representation of the existing or newly created repository.
-    """
     try:
         return github_request("GET", f"{GITHUB_API}/repos/{user}/{name}", token)
     except SystemExit as exc:
@@ -462,25 +406,6 @@ def get_or_create_github_repo(
 
 
 def render_package_files(pkgname: str) -> dict[Path, str]:
-    """Return path -> content for the default src-layout package.
-
-    The generated package contains exactly two modules inside
-    ``src/<pkgname>/``:
-
-    * ``__init__.py`` -- exposes ``__version__``.
-    * ``cli.py``      -- Typer application and console entry point.
-
-    No ``__main__.py``, ``credentials.py``, ``logging.py``, ``utils.py`` or
-    ``py.typed`` marker are emitted; add them yourself if your project needs
-    them.
-
-    Args:
-        pkgname: The Python package name (also used as the project directory).
-
-    Returns:
-        A dictionary whose keys are project-relative ``Path`` objects and
-        whose values are the text content to write into each file.
-    """
     src_pkg: Path = Path("src") / pkgname
     return {
         Path(".gitignore"): GITIGNORE,
@@ -496,19 +421,6 @@ def render_package_files(pkgname: str) -> dict[Path, str]:
 
 
 def render_single_file_files(pkgname: str) -> dict[Path, str]:
-    """Return path -> content for the single-file module layout.
-
-    The layout is a single ``<pkgname>.py`` at the project root. No ``src/``
-    directory, no submodules, no ``py.typed`` marker (single-file modules
-    expose inline type hints per PEP 561).
-
-    Args:
-        pkgname: The Python module name (also used as the project directory).
-
-    Returns:
-        A dictionary whose keys are project-relative ``Path`` objects and
-        whose values are the text content to write into each file.
-    """
     return {
         Path(".gitignore"): GITIGNORE,
         Path("README.md"): f"# {pkgname}\n",
@@ -524,27 +436,6 @@ def render_single_file_files(pkgname: str) -> dict[Path, str]:
 
 
 def render_cython_files(pkgname: str) -> dict[Path, str]:
-    """Return path -> content for the Cython extension-module layout.
-
-    The layout mirrors the single-file layout (one module at the project
-    root, no ``src/`` directory, no submodules), but the module is a Cython
-    ``<pkgname>.pyx`` source file that is compiled into a native extension.
-
-    Two consequences of being a compiled extension:
-
-    * ``setup.py`` is *required* (not the legacy shim) because setuptools
-      needs ``ext_modules`` to know how to build the extension; there is no
-      declarative way to express this in pyproject.toml / setup.cfg.
-    * ``pyproject.toml`` lists ``Cython`` in ``build-system.requires`` so a
-      PEP 517 build fetches the compiler frontend on demand.
-
-    Args:
-        pkgname: The Cython module name (also used as the project directory).
-
-    Returns:
-        A dictionary whose keys are project-relative ``Path`` objects and
-        whose values are the text content to write into each file.
-    """
     return {
         Path(".gitignore"): GITIGNORE,
         Path("README.md"): f"# {pkgname}\n",
@@ -569,27 +460,6 @@ LAYOUT_CYTHON: Final[str] = "cython"
 
 
 def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[Path]]:
-    """Create the project directory tree, writing only missing files.
-
-    Existing files and directories are preserved: this function never
-    overwrites an existing file or removes an existing directory.
-
-    Args:
-        pkgname: The Python package / module name.
-        layout: One of ``LAYOUT_PACKAGE`` (src-layout pure-Python package),
-            ``LAYOUT_SINGLE`` (single-file ``<pkgname>.py`` module), or
-            ``LAYOUT_CYTHON`` (single-file ``<pkgname>.pyx`` Cython
-            extension).
-
-    Returns:
-        A tuple ``(root, created, skipped)`` where ``root`` is the absolute
-        path to the project directory, ``created`` is a list of newly
-        written file paths, and ``skipped`` is a list of pre-existing paths
-        that were left untouched.
-
-    Raises:
-        ValueError: If ``layout`` is not one of the recognised identifiers.
-    """
     root: Path = Path.cwd() / pkgname
     root.mkdir(parents=True, exist_ok=True)
 
@@ -626,17 +496,6 @@ def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[P
 
 
 def git_init_and_push(root: Path, remote_url: str) -> None:
-    """Initialise a git repo (if needed), commit, and push to ``origin``.
-
-    If the directory already contains a ``.git`` folder, ``git init`` is
-    re-run (harmless) and any existing ``origin`` remote is replaced via
-    ``git remote set-url`` instead of ``add``.
-
-    Args:
-        root: Path to the project directory that will become the repo root.
-        remote_url: URL (possibly containing an embedded token) used for the
-            initial ``git push``.
-    """
     run(["git", "init", "-b", DEFAULT_BRANCH], cwd=root)
     run(["git", "add", "."], cwd=root)
 
@@ -666,13 +525,6 @@ def git_init_and_push(root: Path, remote_url: str) -> None:
 
 
 def scrub_remote_token(root: Path, user: str, pkgname: str) -> None:
-    """Rewrite origin to remove the embedded token from .git/config.
-
-    Args:
-        root: Path to the project directory.
-        user: GitHub username that owns the repo.
-        pkgname: Repository name.
-    """
     clean_url: str = f"https://github.com/{user}/{pkgname}.git"
     run(["git", "remote", "set-url", "origin", clean_url], cwd=root)
 
@@ -683,19 +535,6 @@ def scrub_remote_token(root: Path, user: str, pkgname: str) -> None:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    """Parse command-line arguments.
-
-    ``--single-file`` and ``--cython`` are mutually exclusive: both select
-    a single-module-at-the-project-root layout, and there is no meaningful
-    way to combine them.
-
-    Args:
-        argv: Argument list (typically ``sys.argv[1:]``).
-
-    Returns:
-        The parsed ``argparse.Namespace`` with ``pkgname``, ``single_file``,
-        ``cython``, and ``git``.
-    """
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog=Path(sys.argv[0]).name,
         description=(
@@ -753,22 +592,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main() -> None:
-    """Program entry point.
-
-    Usage:
-        python init_project.py [-s|--single-file | -c|--cython] [-g|--git] <pkgname>
-
-    Without ``-g``, only the local project is scaffolded; no GitHub
-    authentication, repository creation, or git operations are performed.
-    With ``-g``, the tool also creates the remote repository (if needed)
-    and pushes the initial commit.
-
-    Layout selection:
-        * (default)     src-layout pure-Python package
-        * ``-s``        single-file ``<pkgname>.py`` module
-        * ``-c``        single-file ``<pkgname>.pyx`` Cython extension,
-                        built via a dedicated ``setup.py``
-    """
     args: argparse.Namespace = parse_args(sys.argv[1:])
     pkgname: str = args.pkgname
     single_file: bool = args.single_file

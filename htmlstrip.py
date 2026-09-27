@@ -66,7 +66,6 @@ ALL_TAGS_REGEX = re.compile(r"<[^>]*>")
 # Shared helpers
 # ===========================================================================
 def _read_text(path: Path) -> str:
-    """Read text with utf-8 then latin-1 fallback."""
     try:
         return path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -77,7 +76,6 @@ def _iter_files(
     root: Path,
     extensions: Sequence[str],
 ) -> Iterable[Path]:
-    """Yield files under `root` whose suffix matches one of `extensions`."""
     exts = tuple(
         e.lower() if e.startswith(".") else "." + e.lower() for e in extensions
     )
@@ -96,7 +94,6 @@ def _normalize_exts(raw: Sequence[str], default: Sequence[str]) -> list[str]:
 # Subcommand: tag  (remove_tag.py)
 # ===========================================================================
 def _remove_tag_from_file(path: Path, tag: str) -> bool:
-    """Remove all <tag> elements from `path` with BeautifulSoup.  True on write."""
     try:
         src = _read_text(path)
     except OSError as e:
@@ -161,11 +158,6 @@ def _meta_rx(pattern: str) -> re.Pattern[str]:
 
 
 def _remove_meta_from_file(path: Path, pattern: str) -> Optional[bool]:
-    """
-    Remove `<meta ...>` tags via regex on the ORIGINAL text (formatting preserved).
-
-    Returns True if written, False if nothing matched, None on error.
-    """
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as e:
@@ -213,10 +205,6 @@ def _strip_all_tags(
     source: str,
     preserve_markers: Sequence[str],
 ) -> tuple[str, list[str]]:
-    """
-    Strip every `<...>` tag from each line, EXCEPT lines containing a
-    preserve-marker (kept verbatim).  Returns (new_source, removed_lines).
-    """
     lines = source.split("\n")
     new_lines: list[str] = []
     removed: list[str] = []

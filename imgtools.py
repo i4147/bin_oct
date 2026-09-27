@@ -106,7 +106,6 @@ EMBED_DATA_RE = re.compile(
 
 
 def human_size(n: int) -> str:
-    """Return a human-readable byte size."""
     value = float(n)
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if abs(value) < 1024.0:
@@ -118,7 +117,6 @@ def human_size(n: int) -> str:
 
 
 def dir_size(path: Path) -> int:
-    """Recursively compute directory size in bytes."""
     total = 0
     for f in path.rglob("*"):
         if f.is_file():
@@ -130,7 +128,6 @@ def dir_size(path: Path) -> int:
 
 
 def parse_extensions(value: str | Sequence[str]) -> set[str]:
-    """Normalize extensions to a lowercase set with leading dots."""
     if isinstance(value, str):
         parts = value.split(",")
     else:
@@ -143,7 +140,6 @@ def iter_files(
     extensions: set[str],
     recursive: bool = True,
 ) -> list[Path]:
-    """Find files under paths matching extensions."""
     exts = {e.lower() for e in extensions}
     found: list[Path] = []
 
@@ -175,7 +171,6 @@ def run_command(
     timeout: int | None = None,
     capture: bool = True,
 ) -> tuple[int, str, str]:
-    """Run an external command and return (returncode, stdout, stderr)."""
     res = subprocess.run(
         cmd,
         capture_output=capture,
@@ -192,7 +187,6 @@ def parallel_map(
     use_threads: bool = False,
     desc: str = "Processing",
 ) -> list[Any]:
-    """Map func over items using processes by default, threads optionally."""
     if not items:
         return []
 

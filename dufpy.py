@@ -11,8 +11,6 @@ from xxhash import xxh64_hexdigest
 
 
 class TypeAnnotationStripper(ast.NodeTransformer):
-    """AST Node Transformer to remove type annotations for exact logic comparison."""
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
         node.returns = None
         self.generic_visit(node)

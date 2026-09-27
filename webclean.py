@@ -78,10 +78,6 @@ _PARSER_CACHE: dict[str, object] = {}
 
 
 def get_parser(lang: str, tsx: bool = False):
-    """Return a cached tree-sitter Parser for `lang`.
-
-    `lang` may be 'html', 'css', 'js', 'ts' (or 'tsx' shorthand for ts+tsx grammar).
-    """
     if lang == "tsx":
         lang, tsx = "ts", True
     key = f"{lang}:{int(tsx)}"
@@ -124,7 +120,6 @@ def get_parser(lang: str, tsx: bool = False):
 
 
 def ts_comment_ranges(text: bytes, parser) -> list[tuple[int, int]]:
-    """Collect (start_byte, end_byte) for every comment node in `text`."""
     tree = parser.parse(text)
     ranges: list[tuple[int, int]] = []
     stack = [tree.root_node]
@@ -163,7 +158,6 @@ _NO_STRIP_STYLE_TYPES = (
 
 
 def detect_script_lang(tag_bytes: bytes) -> Optional[str]:
-    """Return 'js' | 'ts' | 'tsx' | None for a <script ...> start tag."""
     low = tag_bytes.lower()
     if b"type=" not in low and b"language=" not in low:
         return "js"
@@ -190,7 +184,6 @@ def detect_script_lang(tag_bytes: bytes) -> Optional[str]:
 
 
 def detect_style_lang(tag_bytes: bytes) -> Optional[str]:
-    """Return 'css' | None for a <style ...> start tag."""
     low = tag_bytes.lower()
     if any(t in low for t in _NO_STRIP_STYLE_TYPES):
         return None
@@ -198,7 +191,6 @@ def detect_style_lang(tag_bytes: bytes) -> Optional[str]:
 
 
 def find_embedded_blocks(text: bytes, html_parser) -> list[tuple[int, int, str]]:
-    """Return (start, end, lang) for each <script>/<style> raw_text body."""
     tree = html_parser.parse(text)
     out: list[tuple[int, int, str]] = []
     stack = [tree.root_node]
@@ -255,7 +247,6 @@ def regex_html_ranges(text: bytes, keep_conditional: bool) -> list[tuple[int, in
 
 
 def regex_js_ranges(text: bytes) -> list[tuple[int, int]]:
-    """Lightweight scanner: skips strings/templates, records // and /* */."""
     ranges: list[tuple[int, int]] = []
     i, n = 0, len(text)
     quote = -1
@@ -302,7 +293,6 @@ def regex_js_ranges(text: bytes) -> list[tuple[int, int]]:
 def remove_ranges(
     text: bytes, ranges: list[tuple[int, int]], preserve_newlines: bool
 ) -> bytes:
-    """Delete each range; if `preserve_newlines`, keep \\n/\\r inside them."""
     if not ranges:
         return text
     ranges = sorted(ranges)
@@ -322,10 +312,6 @@ def remove_ranges(
 def css_remove_whole_line_comments(
     text: bytes, ranges: list[tuple[int, int]]
 ) -> tuple[bytes, int]:
-    """Delete each comment; if it is alone on a line, delete the whole line.
-
-    Port of cleancss2.py's per-comment strategy.
-    """
     if not ranges:
         return text, 0
     ranges = sorted(ranges)
@@ -364,7 +350,6 @@ def unescape_html_entities(text: bytes) -> bytes:
 def apply_removal(
     text: bytes, lang: str, ranges: list[tuple[int, int]], preserve: bool, opts: "Job"
 ) -> tuple[bytes, int]:
-    """Generic post-processing after comment ranges have been identified."""
     if not ranges:
         return text, 0
     if lang == "css" and opts.remove_whole_line_comments:
@@ -412,7 +397,6 @@ class Result:
 
 
 def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes, int]:
-    """Return (new_text, comments_removed) for one file's bytes."""
     preserve = opts.preserve_newlines
     if preserve is None:
         preserve = DEFAULT_PRESERVE_NEWLINES.get(lang, True)
@@ -436,7 +420,6 @@ def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes,
 
 
 def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
-    """HTML via tree-sitter; optionally also strips embedded JS/CSS."""
     html_parser = get_parser("html")
 
     if not opts.embedded:
@@ -475,7 +458,6 @@ def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
 
 
 def atomic_write(path: Path, data: bytes) -> None:
-    """Write `data` to `path` atomically, preserving mode bits and fsyncing."""
     st = path.stat()
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
@@ -492,7 +474,6 @@ def atomic_write(path: Path, data: bytes) -> None:
 
 
 def process_job(job: Job) -> Result:
-    """Top-level worker: read, strip, write (unless dry-run)."""
     path = Path(job.path)
     try:
         if not path.is_file():
@@ -528,7 +509,6 @@ def process_job(job: Job) -> Result:
 def discover_files(
     paths: list[str], extensions: set[str], follow_symlinks: bool
 ) -> list[Path]:
-    """Return a de-duplicated, sorted list of candidate files."""
     seen: set[Path] = set()
     out: list[Path] = []
     for raw in paths:
@@ -568,7 +548,6 @@ def discover_files(
 
 
 def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
-    """Execute jobs (serially or in a process pool), print a summary."""
     if not jobs:
         print("No files found to process.", file=sys.stderr)
         return 0
@@ -635,7 +614,6 @@ _RE_CSS_COMMENT_STR = re.compile(r"/\*.*?\*/", re.DOTALL)
 
 
 def _load_asset(src: str, base: Path) -> Optional[str]:
-    """Fetch an external CSS/JS asset (http(s)://, //, or relative path)."""
     try:
         if src.startswith(("http://", "https://")):
             with urllib.request.urlopen(src, timeout=10) as r:
@@ -656,7 +634,6 @@ def _load_asset(src: str, base: Path) -> Optional[str]:
 
 
 def _js_strip_str(js: str) -> str:
-    """Strip // and /* */ comments from a JS/TS string."""
     out: list[str] = []
     i, n = 0, len(js)
     quote: Optional[str] = None

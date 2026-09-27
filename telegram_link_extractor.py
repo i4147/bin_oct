@@ -35,7 +35,6 @@ PATTERN_PRESETS: dict[str, str] = {
 
 
 def load_credentials(env_path: Path) -> tuple[str | None, str | None]:
-    """Loads API credentials from an environment file if present."""
     if env_path.exists():
         load_dotenv(env_path)
     api_id = os.environ.get("API_ID")
@@ -44,13 +43,11 @@ def load_credentials(env_path: Path) -> tuple[str | None, str | None]:
 
 
 def extract_matches(text: str, pattern: str) -> Iterator[str]:
-    """Yields all regex matches from the given text string."""
     for match in re.findall(pattern, text):
         yield match
 
 
 async def run_extractor(args: argparse.Namespace) -> None:
-    """Core logic to initialize Telegram client, fetch messages, and extract links."""
     # Resolve API credentials
     env_file = Path(args.env).expanduser()
     env_api_id, env_api_hash = load_credentials(env_file)
@@ -115,7 +112,6 @@ async def run_extractor(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Builds and returns the command-line argument parser."""
     parser = argparse.ArgumentParser(
         description="Extract URLs/links from a Telegram channel using Telethon."
     )

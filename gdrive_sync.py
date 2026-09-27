@@ -39,7 +39,6 @@ try:
 except ImportError:  # pragma: no cover
 
     def load_dotenv(*_a, **_kw) -> bool:  # type: ignore
-        """No-op fallback if python-dotenv is not installed."""
         return False
 
 
@@ -67,11 +66,6 @@ DEFAULT_BACKUP_DIR = "./google_drive_backup"
 # Helpers
 # --------------------------------------------------------------------------- #
 def _iso_to_timestamp(value: str) -> Optional[float]:
-    """
-    Convert a Google Drive RFC-3339 timestamp into a POSIX timestamp.
-
-    Handles the trailing 'Z' that Python < 3.11 rejects in fromisoformat.
-    """
     if not value:
         return None
     try:
@@ -83,7 +77,6 @@ def _iso_to_timestamp(value: str) -> Optional[float]:
 
 
 def _sanitize(name: str) -> str:
-    """Replace filesystem-unsafe characters (matches gdrive_syncer4.py)."""
     for ch in '<>:"/\\|?*':
         name = name.replace(ch, "_")
     return name
@@ -93,15 +86,6 @@ def _sanitize(name: str) -> str:
 # Drive client
 # --------------------------------------------------------------------------- #
 class DriveClient:
-    """
-    Thin wrapper around the Drive v3 API.
-
-    Responsibilities:
-      * Authenticate (installed-app local server flow, or manual OOB code flow).
-      * Cache credentials in ``token_file`` and refresh them when expired.
-      * List / search / download / recursive-sync.
-    """
-
     def __init__(
         self,
         auth_mode: str = "installed",
@@ -127,7 +111,6 @@ class DriveClient:
 
     # ------------------------------------------------------------------ auth #
     def _authenticate(self):
-        """Return an authenticated Drive service, reusing the cached token."""
         creds: Optional[Credentials] = None
         if os.path.exists(self.token_file):
             with open(self.token_file, "rb") as fh:
@@ -147,13 +130,6 @@ class DriveClient:
         return build("drive", "v3", credentials=creds)
 
     def _installed_oauth_flow(self):
-        """
-        Local-server OAuth flow (opens a browser).
-
-        * If ``credentials_file`` exists → use it (gdrive_syncer.py behaviour).
-        * Otherwise use ``client_id`` / ``client_secret`` from env
-          (gdrive_syncer2.py behaviour).
-        """
         if os.path.exists(self.credentials_file):
             flow = InstalledAppFlow.from_client_secrets_file(
                 self.credentials_file, SCOPES
@@ -180,10 +156,6 @@ class DriveClient:
         return flow.run_local_server(port=0)
 
     def _manual_oauth_flow(self):
-        """
-        Out-of-band code entry flow (gdrive_syncer3.py / gdrive_syncer4.py).
-        Requires ``client_id`` and ``client_secret``.
-        """
         if not self.client_id or not self.client_secret:
             raise ValueError(
                 "Manual auth mode requires GOOGLE_CLIENT_ID and "
@@ -235,7 +207,6 @@ class DriveClient:
 
     # -------------------------------------------------------------- listing #
     def list_children(self, folder_id: str = "root") -> list[dict]:
-        """Paginated listing of all non-trashed children of ``folder_id``."""
         results: list[dict] = []
         page_token: Optional[str] = None
         while True:
@@ -263,7 +234,6 @@ class DriveClient:
         return results
 
     def find_folder(self, name: str, parent: str = "root") -> Optional[dict]:
-        """Find a folder by name (exact match) inside ``parent``."""
         query = (
             f"name='{name}' and mimeType='{FOLDER_MIME}' "
             f"and '{parent}' in parents and trashed=false"
@@ -274,7 +244,6 @@ class DriveClient:
 
     # ------------------------------------------------------------- download #
     def download_file(self, file_id: str, name: str, dest: str) -> bool:
-        """Download a single file with progress reporting. Returns success."""
         try:
             request = self.service.files().get_media(fileId=file_id)
             os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
@@ -304,12 +273,6 @@ class DriveClient:
         sanitize: bool = False,
         indent: int = 0,
     ) -> None:
-        """
-        Recursively sync ``folder_id`` into ``dest``.
-
-        :param skip_existing: skip files whose local mtime >= remote mtime.
-        :param sanitize:      replace filesystem-unsafe characters in names.
-        """
         prefix = "  " * indent
         print(f"{prefix}📁 Syncing: {label}")
         os.makedirs(dest, exist_ok=True)
@@ -347,7 +310,6 @@ class DriveClient:
 # Subcommand implementations
 # --------------------------------------------------------------------------- #
 def _make_client(args: argparse.Namespace) -> DriveClient:
-    """Build a :class:`DriveClient` from parsed CLI args."""
     return DriveClient(
         auth_mode=args.auth_mode,
         credentials_file=args.credentials_file,
@@ -359,11 +321,6 @@ def _make_client(args: argparse.Namespace) -> DriveClient:
 
 
 def cmd_download(args: argparse.Namespace) -> int:
-    """
-    Download a single named folder from Drive root.
-
-    Mirrors ``gdrive_downloader.py`` (no mtime skip logic).
-    """
     try:
         client = _make_client(args)
         folder = client.find_folder(args.folder)
@@ -391,12 +348,6 @@ def cmd_download(args: argparse.Namespace) -> int:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    """
-    Sync the whole Drive (or one named folder) into ``--dest``.
-
-    Mirrors ``gdrive_syncer.py`` / ``gdrive_syncer2.py`` /
-    ``gdrive_syncer3.py`` / ``gdrive_syncer4.py``.
-    """
     try:
         client = _make_client(args)
         dest = args.dest or DEFAULT_BACKUP_DIR
@@ -449,7 +400,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
 # Argument parsing
 # --------------------------------------------------------------------------- #
 def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
-    """Attach auth-related flags shared by every subcommand."""
     grp = parser.add_argument_group("authentication")
     grp.add_argument(
         "--auth-mode",
@@ -484,7 +434,6 @@ def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the top-level argument parser."""
     parser = argparse.ArgumentParser(
         prog="gdrive_sync.py",
         description="Download or sync Google Drive content (read-only).",
@@ -551,7 +500,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Entry point."""
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

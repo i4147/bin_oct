@@ -23,16 +23,6 @@ from loguru import logger
 
 
 def process_wheels(directory: Path = Path(".")) -> None:
-    """
-    Extract every .whl file in `directory` and delete the original archive
-    on success. On any failure, the original .whl is left untouched.
-
-    Parameters
-    ----------
-    directory : Path
-        Folder to scan. Defaults to the current working directory,
-        mirroring the shell glob `*.whl`.
-    """
     # `Path(".").glob("*.whl")` mirrors the shell glob `*.whl`.
     # Materialize the list first: we mutate the directory while iterating
     # (by deleting extracted files), and generators don't like that.

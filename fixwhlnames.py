@@ -47,15 +47,6 @@ Tags = tuple[str, str, str]
 
 
 def extract_metadata_from_wheel(wheel_path: Path) -> Metadata | None:
-    """
-    Extract the Name and Version fields from a wheel's METADATA file.
-
-    Args:
-        wheel_path: Path to the .whl file.
-
-    Returns:
-        A dict with "name" and "version" keys, or None if extraction fails.
-    """
     try:
         with zipfile.ZipFile(wheel_path, "r") as zf:
             metadata_files = [f for f in zf.namelist() if f.endswith(METADATA_SUFFIX)]
@@ -83,15 +74,6 @@ def extract_metadata_from_wheel(wheel_path: Path) -> Metadata | None:
 
 
 def extract_wheel_tags(filename: str) -> Tags | None:
-    """
-    Extract Python, ABI, and platform tags from a wheel filename.
-
-    Args:
-        filename: The wheel filename (basename).
-
-    Returns:
-        A tuple of (python_tag, abi_tag, platform_tag), or None if not derivable.
-    """
     for pattern in TAG_PATTERNS:
         match = re.search(pattern, filename)
         if match:
@@ -106,17 +88,6 @@ def extract_wheel_tags(filename: str) -> Tags | None:
 def reconstruct_wheel_name(
     wheel_path: Path, metadata: Metadata, original_filename: str
 ) -> str | None:
-    """
-    Build the canonical wheel filename from metadata and embedded tags.
-
-    Args:
-        wheel_path: Path to the wheel file.
-        metadata: Dict with "name" and "version".
-        original_filename: The original filename (unused fallback context).
-
-    Returns:
-        The reconstructed wheel filename, or a generic fallback, or None on error.
-    """
     name = metadata["name"]
     version = metadata["version"]
     tags = extract_wheel_tags(wheel_path.name)
@@ -149,17 +120,6 @@ def reconstruct_wheel_name(
 def _process_single_file(
     path: Path, dry_run: bool, backup_dir: Path | None
 ) -> tuple[bool, str | None]:
-    """
-    Process a single wheel file: extract metadata and rename if needed.
-
-    Args:
-        path: Path to the wheel file.
-        dry_run: If True, do not perform renames.
-        backup_dir: Directory for backups, or None to skip backups.
-
-    Returns:
-        A tuple (renamed, failed_filename). If succeeded, failed_filename is None.
-    """
     print("[{}] Processing", path.name)
     metadata = extract_metadata_from_wheel(path)
     if not metadata:
@@ -190,17 +150,6 @@ def _process_single_file(
 def fix_whl_files_by_metadata(
     directory: str = ".", dry_run: bool = True, backup: bool = True
 ) -> tuple[int, list[str]]:
-    """
-    Fix all .whl files in a directory by renaming to canonical names.
-
-    Args:
-        directory: Directory containing wheel files.
-        dry_run: If True, only report planned renames.
-        backup: If True (and not dry_run), copy originals to a backup dir.
-
-    Returns:
-        A tuple (renamed_count, failed_files).
-    """
     path = Path(directory)
     whl_files = sorted(path.glob(f"*{WHEEL_SUFFIX}"))
     if not whl_files:
@@ -238,15 +187,6 @@ def fix_whl_files_by_metadata(
 
 
 def _extract_info_worker(wheel_path: Path) -> tuple[str, Metadata | None, str | None]:
-    """
-    Worker for parallel info extraction.
-
-    Args:
-        wheel_path: Path to the wheel file.
-
-    Returns:
-        A tuple (filename, metadata, proper_name).
-    """
     metadata = extract_metadata_from_wheel(wheel_path)
     if not metadata:
         return wheel_path.name, None, None
@@ -255,12 +195,6 @@ def _extract_info_worker(wheel_path: Path) -> tuple[str, Metadata | None, str | 
 
 
 def batch_fix_with_parallel(directory: str = ".") -> None:
-    """
-    Extract wheel info in parallel using a fixed pool of 8 workers.
-
-    Args:
-        directory: Directory containing wheel files.
-    """
     path = Path(directory)
     whl_files = sorted(path.glob(f"*{WHEEL_SUFFIX}"))
     if not whl_files:
@@ -292,12 +226,6 @@ def batch_fix_with_parallel(directory: str = ".") -> None:
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    """
-    Build the CLI argument parser.
-
-    Returns:
-        Configured ArgumentParser instance.
-    """
     parser = argparse.ArgumentParser(
         description=(
             "Fix batch-renamed .whl files by reading METADATA from inside each wheel"
@@ -336,12 +264,6 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """
-    Entry point for the CLI.
-
-    Returns:
-        Process exit code.
-    """
     parser = _build_arg_parser()
     args = parser.parse_args()
     if args.info_only:

@@ -30,8 +30,6 @@ from loguru import logger
 
 @dataclass
 class FileResult:
-    """Result of stripping comments from a single file."""
-
     path: Path
     rel: str
     original_lines: int
@@ -43,12 +41,10 @@ class FileResult:
 
     @property
     def lines_removed(self) -> int:
-        """Number of lines removed from the file."""
         return self.original_lines - self.stripped_lines
 
     @property
     def bytes_saved(self) -> int:
-        """Number of bytes saved in the file."""
         return self.original_bytes - self.stripped_bytes
 
 
@@ -65,12 +61,10 @@ WHITE: Final[str] = "\x1b[97m"
 
 
 def _c(text: object, *codes: str) -> str:
-    """Wrap text in ANSI color codes and reset."""
     return "".join(codes) + str(text) + RESET
 
 
 def strip_rust(source: str) -> str:
-    """Strip line and block comments from Rust source code."""
     result: list[str] = []
     i: int = 0
     n: int = len(source)
@@ -157,7 +151,6 @@ def strip_rust(source: str) -> str:
 
 
 def strip_toml(source: str) -> str:
-    """Strip hash comments from TOML source code."""
     output: list[str] = []
     for raw_line in source.splitlines(keepends=True):
         output.append(_strip_hash_comment_from_line(raw_line))
@@ -165,7 +158,6 @@ def strip_toml(source: str) -> str:
 
 
 def _strip_hash_comment_from_line(line: str) -> str:
-    """Remove a trailing hash comment from a single line, respecting quotes."""
     result: list[str] = []
     in_sq: bool = False
     in_dq: bool = False
@@ -189,7 +181,6 @@ def _strip_hash_comment_from_line(line: str) -> str:
 
 
 def strip_js(source: str) -> str:
-    """Strip line and block comments from JavaScript/TypeScript source code."""
     result: list[str] = []
     i: int = 0
     n: int = len(source)
@@ -251,7 +242,6 @@ _PRESERVE_COMMENT: Final[re.Pattern[str]] = re.compile(
 
 
 def strip_python(source: str) -> str:
-    """Strip comments and docstrings from Python source code."""
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     except tokenize.TokenError:
@@ -263,7 +253,6 @@ def strip_python(source: str) -> str:
     lines = source.splitlines(keepends=True)
 
     def text_between(start: tuple[int, int], end: tuple[int, int]) -> str:
-        """Return the source text between two (line, col) token positions."""
         sl, sc = start
         el, ec = end
         if sl == el:
@@ -323,7 +312,6 @@ def strip_python(source: str) -> str:
 
 
 def strip_shell(source: str) -> str:
-    """Strip hash comments from shell source code, preserving a shebang."""
     output: list[str] = []
     for idx, raw_line in enumerate(source.splitlines(keepends=True)):
         if idx == 0 and raw_line.startswith("#!"):
@@ -334,7 +322,6 @@ def strip_shell(source: str) -> str:
 
 
 def _strip_shell_comment(line: str) -> str:
-    """Remove a trailing shell comment from a single line, respecting quotes."""
     result: list[str] = []
     in_sq: bool = False
     in_dq: bool = False
@@ -362,7 +349,6 @@ def _strip_shell_comment(line: str) -> str:
 
 
 def strip_lua(source: str) -> str:
-    """Strip line and long-bracket comments from Lua source code."""
     result: list[str] = []
     i: int = 0
     n: int = len(source)
@@ -421,7 +407,6 @@ def strip_lua(source: str) -> str:
 
 
 def _collapse_blank_lines(text: str, max_consecutive: int = 1) -> str:
-    """Collapse runs of blank lines to at most max_consecutive + 1 newlines."""
     pattern = re.compile("\\n{" + str(max_consecutive + 2) + ",}")
     return pattern.sub("\n" * (max_consecutive + 1), text)
 
@@ -451,7 +436,6 @@ _STRIPPER_MAP: Final[dict[str, Callable[[str], str]]] = {
 
 
 def process_file(args: tuple[Path, Path, set[str]]) -> FileResult:
-    """Read, strip comments from, and rewrite a single file."""
     path, cwd, _active_exts = args
     rel = str(path.relative_to(cwd))
     ext = path.suffix.lower()
@@ -505,7 +489,6 @@ _EXT_ICON: Final[dict[str, str]] = {
 
 
 def print_header(active_exts: set[str]) -> None:
-    """Log the CLI banner with the active target extensions."""
     exts_str = "  ".join(sorted(active_exts))
     logger.opt(colors=True).info("")
     logger.opt(colors=True).info(
@@ -515,7 +498,6 @@ def print_header(active_exts: set[str]) -> None:
 
 
 def print_file_result(r: FileResult) -> None:
-    """Log the strip result for a single file."""
     icon = _EXT_ICON.get(Path(r.rel).suffix.lower(), "📄")
     if r.error:
         status = _c(" ERROR ", BOLD, RED)
@@ -539,7 +521,6 @@ def print_file_result(r: FileResult) -> None:
 
 
 def print_summary(results: list[FileResult], elapsed: float) -> None:
-    """Log an aggregate summary of all strip results."""
     total = len(results)
     changed = sum(1 for r in results if r.changed)
     clean = sum(1 for r in results if not r.changed and (not r.error))
@@ -575,7 +556,6 @@ _POOL_SIZE: Final[int] = 8
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argument parser for the CLI."""
     p = argparse.ArgumentParser(
         description="Strip comments from source files recursively.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -597,7 +577,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def collect_files(dirs: list[str], active_exts: set[str]) -> list[Path]:
-    """Recursively collect files matching the active extensions."""
     files: list[Path] = []
     seen: set[Path] = set()
     for d in dirs:
@@ -614,7 +593,6 @@ def collect_files(dirs: list[str], active_exts: set[str]) -> list[Path]:
 
 
 def main() -> int:
-    """Entry point: parse args, dispatch work to the pool, and print results."""
     import time
 
     parser = build_parser()

@@ -37,12 +37,10 @@ NamePair: TypeAlias = tuple[str, str]
 
 
 def is_english(text: str) -> bool:
-    """Return True when *text* contains only ASCII characters."""
     return NON_ENGLISH_PATTERN.search(text) is None
 
 
 def translate_name(name: str) -> NamePair:
-    """Return ``(original_name, translated_name)`` translating the stem if non-English."""
     path = Path(name)
     stem = path.stem
     suffix = path.suffix
@@ -61,12 +59,10 @@ def translate_name(name: str) -> NamePair:
 
 
 def _translate_name_tuple(item: tuple[str]) -> NamePair:
-    """Tuple-argument wrapper around :func:`translate_name` for ``Pool.map``."""
     return translate_name(item[0])
 
 
 def _run_pool(names: Sequence[str], method: str) -> list[NamePair]:
-    """Translate *names* with a fixed 8-worker Pool using *method*."""
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_translate_name_tuple, [(name,) for name in names])
@@ -89,7 +85,6 @@ def _run_pool(names: Sequence[str], method: str) -> list[NamePair]:
 
 
 def _build_translation_map(paths: Sequence[Path], pool_method: str) -> dict[str, str]:
-    """Translate the unique non-English filenames in *paths* and return a name map."""
     unique_names: list[str] = sorted(
         {path.name for path in paths if not is_english(path.name)}
     )
@@ -107,7 +102,6 @@ def _build_translation_map(paths: Sequence[Path], pool_method: str) -> dict[str,
 
 
 def rename_files(directory: Path, pool_method: str) -> None:
-    """Translate and rename non-English filenames under *directory*."""
     if not directory.exists() or not directory.is_dir():
         logger.error(f"Not a directory: {directory}")
         return
@@ -136,7 +130,6 @@ def rename_files(directory: Path, pool_method: str) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--directory",
@@ -153,7 +146,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    """CLI entry point."""
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     directory: Path = Path(args.directory)

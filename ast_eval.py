@@ -48,19 +48,6 @@ ERROR_DIR_NAME: Final[str] = "error"
 
 
 def process_file(args: tuple[Path, int, int, bool]) -> None:
-    """Validate a single Python file and relocate it if it is invalid.
-
-    The file is parsed with :func:`ast.parse`. If parsing fails, the file is
-    copied into an ``error`` directory alongside the original file (creating
-    the directory if needed). Name collisions are resolved by appending an
-    incrementing numeric suffix.
-
-    Args:
-        args: A tuple of ``(path, counter, total, dry_run)`` where ``path`` is
-            the file to check, ``counter`` is its 1-based index within the
-            batch, ``total`` is the total number of files, and ``dry_run``
-            indicates whether filesystem changes should be suppressed.
-    """
     path, counter, total, dry_run = args
     path = Path(path)
     prefix = "[DRY RUN] " if dry_run else ""
@@ -103,15 +90,6 @@ def process_file(args: tuple[Path, int, int, bool]) -> None:
 
 
 def get_files_to_process(paths: list[str]) -> list[Path]:
-    """Collect a de-duplicated list of Python files to process.
-
-    Args:
-        paths: File or directory path strings supplied on the command line.
-            When empty, the current working directory is scanned.
-
-    Returns:
-        A list of unique :class:`Path` objects pointing at ``.py`` files.
-    """
     files: list[Path] = []
     if paths:
         for path_str in paths:
@@ -141,12 +119,6 @@ def get_files_to_process(paths: list[str]) -> list[Path]:
 
 
 def process_files(files: list[Path], dry_run: bool = False) -> None:
-    """Process every file concurrently using a fixed pool of workers.
-
-    Args:
-        files: The Python files to check.
-        dry_run: When ``True``, no files are copied or moved.
-    """
     total: int = len(files)
     if total == 0:
         return
@@ -172,11 +144,6 @@ def process_files(files: list[Path], dry_run: bool = False) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the command-line argument parser.
-
-    Returns:
-        A configured :class:`argparse.ArgumentParser` instance.
-    """
     parser = argparse.ArgumentParser(
         description=(
             "Check Python files for syntax errors and move invalid ones "
@@ -199,12 +166,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Run the syntax-checking CLI.
-
-    Returns:
-        An integer exit status: ``0`` on success, ``1`` on failure or
-        interruption.
-    """
     parser: argparse.ArgumentParser = build_parser()
     args: argparse.Namespace = parser.parse_args()
 

@@ -105,8 +105,6 @@ POOL_SIZE: int = 8
 
 @dataclass
 class Finding:
-    """A single detected ``pkg_resources`` import or usage site."""
-
     path: Path
     lineno: int
     col: int
@@ -118,8 +116,6 @@ class Finding:
 
 @dataclass
 class FileReport:
-    """Aggregated scan results for a single Python file."""
-
     path: Path
     findings: list[Finding] = field(default_factory=list)
     needs_metadata: bool = False
@@ -128,12 +124,10 @@ class FileReport:
 
     @property
     def has_findings(self) -> bool:
-        """Return ``True`` if any findings were recorded for this file."""
         return bool(self.findings)
 
 
 def scan_file(path: Path) -> FileReport:
-    """Scan a single Python file for ``pkg_resources`` imports and usages."""
     report = FileReport(path=path)
     try:
         text = path.read_text(encoding="utf-8")
@@ -210,7 +204,6 @@ def scan_file(path: Path) -> FileReport:
 
 
 def autofix_file(path: Path) -> tuple[bool, list[str]]:
-    """Apply mechanical ``pkg_resources`` replacements to a single file."""
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
@@ -275,7 +268,6 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
 
 
 def iter_python_files(root: Path) -> Iterator[Path]:
-    """Yield all Python files under ``root``, skipping common junk directories."""
     for p in root.rglob("*.py"):
         if any(part in SKIPPED_DIRS for part in p.parts):
             continue
@@ -284,7 +276,6 @@ def iter_python_files(root: Path) -> Iterator[Path]:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build the argument parser for the CLI."""
     parser = argparse.ArgumentParser(
         description="Report (and optionally autofix) deprecated pkg_resources usage in .py files."
     )
@@ -298,7 +289,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point: scan (and optionally autofix) ``pkg_resources`` usages."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 

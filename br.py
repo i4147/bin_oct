@@ -31,15 +31,6 @@ BR_SUFFIX: Final[str] = ".br"
 
 
 def decompress_stream(input_path: Path, output_path: Path) -> bool:
-    """Decompress a Brotli file from ``input_path`` into ``output_path``.
-
-    Args:
-        input_path: Path to the Brotli-compressed source file.
-        output_path: Destination path for the decompressed data.
-
-    Returns:
-        ``True`` if decompression succeeded, ``False`` otherwise.
-    """
     try:
         with open(input_path, "rb") as f_in:
             decompressor = brotli.Decompressor()
@@ -57,15 +48,6 @@ def decompress_stream(input_path: Path, output_path: Path) -> bool:
 
 
 def compress_stream(input_stream: BinaryIO, output_path: Path) -> bool:
-    """Compress a binary stream into a Brotli file at ``output_path``.
-
-    Args:
-        input_stream: Readable binary stream providing the source data.
-        output_path: Destination path for the Brotli-compressed output.
-
-    Returns:
-        ``True`` if compression succeeded, ``False`` otherwise.
-    """
     compressor = brotli.Compressor(quality=BROTLI_QUALITY)
     try:
         with open(output_path, "wb") as f_out:
@@ -83,11 +65,6 @@ def compress_stream(input_stream: BinaryIO, output_path: Path) -> bool:
 
 
 def process_directory(dir_path: Path) -> None:
-    """Archive a directory to ``<name>.tar.br`` and remove the original on success.
-
-    Args:
-        dir_path: Directory to compress.
-    """
     output_br: Path = dir_path.with_name(f"{dir_path.name}{TAR_BR_SUFFIX}")
     tar_buffer = io.BytesIO()
     try:
@@ -102,11 +79,6 @@ def process_directory(dir_path: Path) -> None:
 
 
 def process_file(path: Path) -> None:
-    """Compress a single file to ``<name>.br`` and remove the original on success.
-
-    Args:
-        path: File to compress.
-    """
     output_br: Path = path.with_name(f"{path.name}{BR_SUFFIX}")
     try:
         with open(path, "rb") as f_in:
@@ -118,11 +90,6 @@ def process_file(path: Path) -> None:
 
 
 def decompress_file(br_path: Path) -> None:
-    """Decompress a ``.br`` or ``.tar.br`` archive in place.
-
-    Args:
-        br_path: Path to the Brotli archive to decompress.
-    """
     if br_path.name.endswith(TAR_BR_SUFFIX):
         output_dir: Path = br_path.with_name(br_path.name[: -len(TAR_BR_SUFFIX)])
         tar_buffer = io.BytesIO()
@@ -151,15 +118,6 @@ def decompress_file(br_path: Path) -> None:
 def _collect_compression_targets(
     current_dir: Path, script_name: str
 ) -> tuple[list[Path], list[Path]]:
-    """Collect subdirectories and files eligible for compression.
-
-    Args:
-        current_dir: Directory to scan.
-        script_name: Name of the running script, excluded from compression.
-
-    Returns:
-        A tuple ``(subdirs, files)``.
-    """
     subdirs: list[Path] = [
         d for d in current_dir.iterdir() if d.is_dir() and not d.name.startswith(".")
     ]
@@ -172,11 +130,6 @@ def _collect_compression_targets(
 
 
 def main() -> int:
-    """Entry point: parse args and dispatch compression or decompression.
-
-    Returns:
-        Process exit code (0 on success).
-    """
     parser = argparse.ArgumentParser(description="Compress/Decompress with Brotli")
     parser.add_argument(
         "-c", "--compress", action="store_true", help="Compress mode (default)"

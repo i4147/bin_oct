@@ -19,8 +19,6 @@ STATE_FILE = Path(".translation_state.json")
 
 
 class TargetFinder(ast.NodeVisitor):
-    """Walks the AST to find lines containing docstrings and print statements."""
-
     def __init__(self):
         self.target_lines = set()
 
@@ -55,7 +53,6 @@ class TargetFinder(ast.NodeVisitor):
 
 
 def get_translator_func(backend_name):
-    """Initializes the requested translator backend and returns its callable."""
     try:
         if backend_name == "deep_translator":
             from deep_translator import GoogleTranslator
@@ -89,7 +86,6 @@ def get_translator_func(backend_name):
 
 
 def safe_translate(text, translate_func, retries=3):
-    """Translates text with exponential backoff for rate limits."""
     if not text.strip():
         return text
 
@@ -104,7 +100,6 @@ def safe_translate(text, translate_func, retries=3):
 
 
 def batch_translate(items, translate_func):
-    """Translates a list of string items concurrently in batches of 4."""
     batch_size = 4
     for i in range(0, len(items), batch_size):
         batch = items[i : i + batch_size]
@@ -128,10 +123,6 @@ def batch_translate(items, translate_func):
 
 
 def apply_replacements(source_code, replacements):
-    """
-    Applies exact token replacements keeping all surrounding whitespaces/indents intact.
-    Does replacements from bottom-to-top, right-to-left to avoid index drifting.
-    """
     lines = source_code.splitlines(keepends=True)
     # Sort descending by row and col
     replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
@@ -153,7 +144,6 @@ def apply_replacements(source_code, replacements):
 
 
 def process_file(filepath, translate_func):
-    """Processes a single Python file to translate target strings."""
     try:
         source_code = filepath.read_text(encoding="utf-8")
     except UnicodeDecodeError:

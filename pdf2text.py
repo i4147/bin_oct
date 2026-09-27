@@ -47,14 +47,6 @@ from typing import Iterator, List, Optional
 
 
 def _extract_pages_pypdf2(pdf_path: Path) -> Iterator[str]:
-    """
-    Yield extracted text for each page using PyPDF2.
-
-    This mirrors the original pdf2text.py behavior:
-        PyPDF2.PdfReader(...).pages[i].extract_text()
-
-    PyPDF2's extract_text() does not take an encoding argument.
-    """
     import PyPDF2
 
     with pdf_path.open("rb") as fh:
@@ -65,16 +57,6 @@ def _extract_pages_pypdf2(pdf_path: Path) -> Iterator[str]:
 
 
 def _extract_pages_pdfplumber(pdf_path: Path, encoding: str) -> Iterator[str]:
-    """
-    Yield extracted text for each page using pdfplumber.
-
-    This mirrors the original pdftotxt.py behavior:
-        pdfplumber.open(...).pages[i].extract_text(encoding='utf-8')
-
-    Some pdfplumber versions accept an encoding keyword; older/newer versions
-    may ignore it or reject it. We try the original call first and fall back
-    to the no-encoding call only if the installed version raises TypeError.
-    """
     import pdfplumber
 
     with pdfplumber.open(pdf_path) as pdf:
@@ -87,17 +69,6 @@ def _extract_pages_pdfplumber(pdf_path: Path, encoding: str) -> Iterator[str]:
 
 
 def extract_pages(pdf_path: Path, engine: str, encoding: str) -> Iterator[str]:
-    """
-    Yield extracted text page by page using the selected PDF engine.
-
-    Args:
-        pdf_path: Path to the input PDF.
-        engine: Either "pypdf2" or "pdfplumber".
-        encoding: Text encoding passed to pdfplumber when supported.
-
-    Yields:
-        Extracted text for each page, in page order.
-    """
     if engine == "pypdf2":
         yield from _extract_pages_pypdf2(pdf_path)
     elif engine == "pdfplumber":
@@ -112,29 +83,14 @@ def extract_pages(pdf_path: Path, engine: str, encoding: str) -> Iterator[str]:
 
 
 def write_text(path: Path, text: str, encoding: str) -> None:
-    """Write text to path using the given encoding."""
     path.write_text(text, encoding=encoding)
 
 
 def default_concat_output(pdf_path: Path) -> Path:
-    """
-    Return the default concatenated output path.
-
-    Original pdf2text.py did:
-        f.replace('.pdf', '.txt')
-
-    We preserve that behavior as closely as possible.
-    """
     return Path(str(pdf_path).replace(".pdf", ".txt"))
 
 
 def default_split_output_dir(pdf_path: Path) -> Path:
-    """
-    Return the default split output directory.
-
-    Original pdftotxt.py used the PDF stem as the directory name, e.g.
-        book.pdf -> book/
-    """
     return Path(pdf_path.stem)
 
 
@@ -150,11 +106,6 @@ def concat_text(
     encoding: str,
     quiet: bool,
 ) -> int:
-    """
-    Concatenate all PDF pages into one text file.
-
-    This is the original pdf2text.py behavior.
-    """
     if output is None:
         output = default_concat_output(pdf_path)
 
@@ -176,14 +127,6 @@ def split_text(
     parents: bool,
     quiet: bool,
 ) -> int:
-    """
-    Split each PDF page into its own text file.
-
-    This is the original pdftotxt.py behavior.
-
-    Page numbering starts at 1. The default pad width is 3, so page 1 becomes
-    "001", page 10 becomes "010", and page 100 becomes "100".
-    """
     if pad_width < 1:
         raise ValueError("--pad-width must be at least 1")
 
@@ -213,7 +156,6 @@ def split_text(
 
 
 def run_concat(args: argparse.Namespace) -> int:
-    """Dispatch function for the concat subcommand."""
     return concat_text(
         pdf_path=args.pdf,
         output=args.output,
@@ -224,7 +166,6 @@ def run_concat(args: argparse.Namespace) -> int:
 
 
 def run_split(args: argparse.Namespace) -> int:
-    """Dispatch function for the split subcommand."""
     return split_text(
         pdf_path=args.pdf,
         output_dir=args.output_dir,
@@ -237,14 +178,6 @@ def run_split(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """
-    Build the CLI parser.
-
-    Two subcommands are exposed:
-
-        concat  -> original pdf2text.py behavior
-        split   -> original pdftotxt.py behavior
-    """
     parser = argparse.ArgumentParser(
         prog="pdf_text_extractor.py",
         description="Extract text from PDF files using PyPDF2 or pdfplumber.",
@@ -334,15 +267,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """
-    Program entry point.
-
-    Args:
-        argv: Optional argument list. Defaults to sys.argv[1:].
-
-    Returns:
-        Exit status code.
-    """
     parser = build_parser()
     args = parser.parse_args(argv)
 

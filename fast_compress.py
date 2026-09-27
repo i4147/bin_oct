@@ -67,7 +67,6 @@ try:
 except ImportError:  # pragma: no cover - fallback for standalone use
 
     def fsz(num: int | float) -> str:
-        """Small fallback for dh.fsz."""
         value = float(num)
         for unit in ("B", "KB", "MB", "GB", "TB"):
             if abs(value) < 1024.0:
@@ -274,8 +273,6 @@ XZ_EXCLUDED_DIR_NAMES = frozenset(
 
 @dataclass
 class Stats:
-    """Accumulate original and compressed sizes."""
-
     original_size: int = 0
     compressed_size: int = 0
 
@@ -284,7 +281,6 @@ class Stats:
         self.compressed_size += compressed
 
     def savings(self, scale: float = 100.0) -> tuple[int, float, float]:
-        """Return (saved_bytes, compressed_percent, saved_percent)."""
         if self.original_size == 0:
             return (0, 0.0, 0.0)
         saved = self.original_size - self.compressed_size
@@ -295,8 +291,6 @@ class Stats:
 
 @dataclass
 class ScanStats:
-    """Statistics collected while scanning the tree."""
-
     dirs: int = 0
     files: int = 0
     skipped_symlinks: int = 0
@@ -313,7 +307,6 @@ class ScanStats:
 
 
 def resolve_directory(positional: str | None, flag: str | None) -> Path | None:
-    """Resolve a positional directory and/or --dir flag to an existing Path."""
     if positional is not None and flag is not None and positional != flag:
         logger.error(
             "Specify directory either positionally or with --dir, not both differently"
@@ -337,14 +330,12 @@ def is_excluded_name(
     excluded_names: set[str] | frozenset[str],
     excluded_patterns: Sequence[str],
 ) -> bool:
-    """Return True if a directory name is excluded by name or glob pattern."""
     if name in excluded_names:
         return True
     return any(fnmatch.fnmatch(name, pattern) for pattern in excluded_patterns)
 
 
 def is_editable_package_dir(path: Path) -> bool:
-    """Detect editable-package directories as in the original scripts."""
     try:
         for child in path.iterdir():
             if child.is_dir() and child.name.endswith(".egg-info"):
@@ -376,7 +367,6 @@ def collect_zstd_tasks(
     compress: bool,
     args: argparse.Namespace,
 ) -> tuple[list[tuple[Path, Path]], ScanStats]:
-    """Collect (input, output) pairs for zstd mode."""
     stats = ScanStats()
     tasks: list[tuple[Path, Path]] = []
 
@@ -507,7 +497,6 @@ def zstd_compress_file(
     remove_original: bool,
     use_writer: bool,
 ) -> tuple[bool, Path, Path, int, int, str | None]:
-    """Compress one file with zstd. Returns (ok, input, output, orig, comp, error)."""
     try:
         original_size = path.stat().st_size
         compressor = zstd.ZstdCompressor(level=level, threads=threads)
@@ -546,7 +535,6 @@ def zstd_decompress_file(
     chunk_size: int,
     remove_original: bool,
 ) -> tuple[bool, Path, Path, int, int, str | None]:
-    """Decompress one .zst file. Returns (ok, input, output, orig, comp, error)."""
     try:
         compressed_size = path.stat().st_size
         decompressor = zstd.ZstdDecompressor()
@@ -579,7 +567,6 @@ def _handle_zstd_result(
     index: int,
     total: int,
 ) -> None:
-    """Update stats/errors and print progress for one zstd result."""
     ok, path, out, original_size, compressed_size, error = result
 
     if ok:
@@ -611,7 +598,6 @@ def _handle_zstd_result(
 
 
 def run_zstd(args: argparse.Namespace) -> int:
-    """Run zstd subcommand."""
     compress = args.compress or not args.decompress
     root = resolve_directory(args.directory, args.dir_flag)
     if root is None:
@@ -748,7 +734,6 @@ def collect_xz_tasks(
     skip_extensions: set[str] | frozenset[str],
     excluded_dirs: set[str] | frozenset[str],
 ) -> list[Path]:
-    """Collect files for xz mode, sorted alphabetically."""
     tasks: list[Path] = []
     for path in root.rglob("*"):
         if not path.is_file():
@@ -775,7 +760,6 @@ def xz_compress_file(
     threads: int,
     remove_original: bool,
 ) -> tuple[bool, Path, Path, int, int, str | None]:
-    """Compress one file with lzma_mt."""
     try:
         data = path.read_bytes()
         compressed = lzma_mt.compress(data, preset=preset, threads=threads)
@@ -792,7 +776,6 @@ def xz_decompress_file(
     path: Path,
     remove_original: bool,
 ) -> tuple[bool, Path, Path, int, int, str | None]:
-    """Decompress one .xz file with lzma_mt."""
     try:
         compressed = path.read_bytes()
         data = lzma_mt.decompress(compressed)
@@ -806,7 +789,6 @@ def xz_decompress_file(
 
 
 def run_xz(args: argparse.Namespace) -> int:
-    """Run xz subcommand."""
     if lzma_mt is None:
         logger.error("lzma_mt is not installed; xz subcommand is unavailable")
         return 1
@@ -907,7 +889,6 @@ def run_xz(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the top-level argument parser."""
     parser = argparse.ArgumentParser(
         description="Recursively compress/decompress files with zstd or xz.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1109,7 +1090,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Program entry point."""
     parser = build_parser()
     args_list = list(sys.argv[1:] if argv is None else argv)
 

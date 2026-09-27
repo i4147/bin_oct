@@ -92,7 +92,6 @@ _COLOR_ON = sys.stdout.isatty()
 
 
 def cprint(msg: str, color: str = "white", end: str = "\n") -> None:
-    """Colour-aware print."""
     if _COLOR_ON and color in _ANSI:
         print(f"{_ANSI[color]}{msg}{_ANSI['reset']}", end=end)
     else:
@@ -100,7 +99,6 @@ def cprint(msg: str, color: str = "white", end: str = "\n") -> None:
 
 
 def human_size(n: float) -> str:
-    """Format bytes as B/KB/MB/GB/TB (matches dh.fsz)."""
     sign = "-" if n < 0 else ""
     n = abs(float(n))
     for unit in ("B", "KB", "MB", "GB", "TB"):
@@ -111,7 +109,6 @@ def human_size(n: float) -> str:
 
 
 def path_size(p: Path | str) -> int:
-    """Total bytes of a file or a directory tree (matches dh.gsz)."""
     p = Path(p)
     if p.is_file():
         return p.stat().st_size
@@ -121,7 +118,6 @@ def path_size(p: Path | str) -> int:
 
 
 def find_files(root: Path | str, extensions: Sequence[str]) -> list[Path]:
-    """Recursively find files ending with any of the extensions."""
     root = Path(root)
     exts = tuple(e.lower() for e in extensions)
     if root.is_file():
@@ -141,7 +137,6 @@ def run_cmd(
     timeout: Optional[int] = None,
     **kw: Any,
 ) -> tuple[int, str, str]:
-    """Run a subprocess, returning (returncode, stdout, stderr)."""
     try:
         proc = subprocess.run(
             list(cmd),
@@ -162,7 +157,6 @@ def run_cmd(
 
 
 def read_package_list(path: Path | str) -> list[str]:
-    """Read one package per line, skipping blanks and '#'-comments."""
     path = Path(path).expanduser()
     try:
         text = path.read_text(encoding="utf-8")
@@ -181,7 +175,6 @@ def read_package_list(path: Path | str) -> list[str]:
 
 
 def default_workers() -> int:
-    """min(max(1, cpu//2), 8) — matches pure_pypkg_reinstaller.py."""
     return min(max(1, (os.cpu_count() or 2) // 2), 8)
 
 
@@ -190,7 +183,6 @@ def parallel_map(
     items: Sequence[Any],
     workers: int,
 ) -> list[Any]:
-    """Map ``func`` over ``items`` using a process pool (or sequentially)."""
     if not items:
         return []
     if workers <= 1 or len(items) == 1:
@@ -200,7 +192,6 @@ def parallel_map(
 
 
 def fuzzy_partial_ratio(query: str, candidate: str) -> float:
-    """Partial-ratio score 0-100; rapidfuzz if available, else difflib."""
     if _rapidfuzz is not None:
         return float(_rapidfuzz.partial_ratio(query, candidate))
     import difflib
@@ -209,7 +200,6 @@ def fuzzy_partial_ratio(query: str, candidate: str) -> float:
 
 
 def confirm(prompt: str) -> bool:
-    """Yes/no prompt; returns True on y/yes."""
     try:
         answer = input(prompt).strip().lower()
     except (EOFError, KeyboardInterrupt):
@@ -224,15 +214,10 @@ def confirm(prompt: str) -> bool:
 def pip_run_subprocess(
     args: Sequence[str], timeout: Optional[int] = None
 ) -> tuple[int, str, str]:
-    """Run ``python -m pip <args>`` in a subprocess."""
     return run_cmd([sys.executable, "-m", "pip", *args], timeout=timeout)
 
 
 def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
-    """
-    Run pip in-process via ``pip._internal.cli.main``, capturing stdout/stderr.
-    Returns ``(returncode, stdout, stderr)``.
-    """
     try:
         from pip._internal.cli.main import main as pip_main  # type: ignore
     except ImportError as exc:
@@ -254,7 +239,6 @@ def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
 def pip_run(
     args: Sequence[str], backend: str, timeout: Optional[int] = None
 ) -> tuple[int, str, str]:
-    """Dispatch to the chosen pip backend."""
     if backend == "api":
         return pip_run_api(args)
     return pip_run_subprocess(args, timeout=timeout)
@@ -264,7 +248,6 @@ def pip_run(
 # Subcommand 1: apt-install  (aptin.py)
 # ============================================================================
 def _apt_list_all() -> list[str]:
-    """Return every package name known to pkg/apt (matches aptin.py)."""
     rc, out, _ = run_cmd(["pkg", "list-all"])
     if rc == 0:
         names: list[str] = []
@@ -290,7 +273,6 @@ def _wildcard_to_regex(pattern: str) -> re.Pattern[str]:
 
 
 def cmd_apt_install(args: argparse.Namespace) -> int:
-    """Search apt/pkg by wildcard, confirm, and install."""
     print(f"Searching for packages matching '{args.pattern}'...")
     rx = _wildcard_to_regex(args.pattern)
     matches = [p for p in _apt_list_all() if rx.search(p)]
@@ -329,7 +311,6 @@ def _apt_reinstall_one(pkg: str) -> bool:
 
 
 def cmd_apt_reinstall(args: argparse.Namespace) -> int:
-    """Sequentially reinstall every apt package listed in a file."""
     path = Path(args.file).expanduser()
     print(f"Reading packages from: {path}")
     if hasattr(os, "geteuid") and os.geteuid() != 0:
@@ -360,11 +341,6 @@ _WHEEL_META_SUFFIXES = (".dist-info/WHEEL", ".dist-info/METADATA")
 
 
 def is_pure_wheel(path: Path) -> bool:
-    """
-    Heuristic matching install_wheels.py: a wheel is "pure" if its name
-    contains ``-none-any`` or its METADATA/WHEEL declares
-    ``Root-Is-Purelib: true`` (and does not say false).
-    """
     if "-none-any" in path.stem:
         return True
     try:
@@ -392,7 +368,6 @@ def is_pure_wheel(path: Path) -> bool:
 
 
 def describe_wheel(path: Path) -> str:
-    """Human label for a wheel's platform specificity."""
     stem = path.stem
     parts = stem.split("-")
     if "none-any" in stem:
@@ -409,7 +384,6 @@ def describe_wheel(path: Path) -> str:
 
 
 def _install_one_wheel(arg: tuple[str, bool]) -> tuple[str, bool, str]:
-    """Worker: install one wheel. ``arg`` = (path_str, is_pure)."""
     path_str, is_pure = arg
     cmd = [sys.executable, "-m", "pip", "install"]
     if is_pure:
@@ -423,7 +397,6 @@ def _install_one_wheel(arg: tuple[str, bool]) -> tuple[str, bool, str]:
 
 
 def cmd_wheel_install(args: argparse.Namespace) -> int:
-    """Install every *.whl in a directory, choosing user vs system per wheel."""
     root = Path(args.directory).resolve()
     wheels = sorted(root.glob("*.whl"))
     if not wheels:
@@ -464,7 +437,6 @@ def cmd_wheel_install(args: argparse.Namespace) -> int:
 # Subcommand 4: wheel-install-local  (piu.py)
 # ============================================================================
 def cmd_wheel_install_local(args: argparse.Namespace) -> int:
-    """Install local wheel paths with pip, optionally deleting them after."""
     pip_args: list[str] = ["install"]
     if not args.no_user:
         pip_args.append("--user")
@@ -508,7 +480,6 @@ DEFAULT_WHEEL_EXCLUDES: tuple[str, ...] = (
 
 
 def _installed_versions() -> dict[str, Any]:
-    """Map normalized distribution name -> Version."""
     out: dict[str, Any] = {}
     for dist in _im.distributions():
         try:
@@ -522,7 +493,6 @@ def _installed_versions() -> dict[str, Any]:
 
 
 def cmd_wheel_move_installed(args: argparse.Namespace) -> int:
-    """Move matched wheels to ``dst`` and invalid ones to ``invalid``."""
     if parse_wheel_filename is None or Version is None:
         print("Error: 'packaging' is required for this subcommand.", file=sys.stderr)
         return 1
@@ -572,7 +542,6 @@ def cmd_wheel_move_installed(args: argparse.Namespace) -> int:
 # Subcommand 6: pip-uninstall  (piprm.py + pu.py merged)
 # ============================================================================
 def _list_installed_packages() -> list[str]:
-    """Return every installed distribution name via ``pip freeze``."""
     rc, out, _ = run_cmd([sys.executable, "-m", "pip", "freeze"])
     if rc != 0:
         return []
@@ -586,7 +555,6 @@ def _list_installed_packages() -> list[str]:
 
 
 def _cached_installed_list(cache_file: Path, max_age: float) -> list[str]:
-    """Return cached installed list; refresh if stale or missing."""
     if cache_file.exists() and (time.time() - cache_file.stat().st_mtime) < max_age:
         return [
             l.strip()
@@ -600,7 +568,6 @@ def _cached_installed_list(cache_file: Path, max_age: float) -> list[str]:
 
 
 def cmd_pip_uninstall(args: argparse.Namespace) -> int:
-    """Fuzzy-match installed packages against a prefix and uninstall them."""
     pattern = args.pattern.lower()
     cache = Path(args.cache_file)
     installed = _cached_installed_list(cache, max_age=float(args.cache_max_age))
@@ -641,7 +608,6 @@ _FLAKE8_NAME_RX = re.compile(r"^flake8-", re.IGNORECASE)
 
 
 def _find_flake8_plugins() -> list[str]:
-    """Distributions that expose flake8 entry points or start with 'flake8-'."""
     found: set[str] = set()
     for dist in _im.distributions():
         try:
@@ -661,7 +627,6 @@ def _find_flake8_plugins() -> list[str]:
 
 
 def cmd_pip_uninstall_flake8(args: argparse.Namespace) -> int:
-    """Uninstall every detected flake8 plugin."""
     print("Scanning for flake8 plugins...")
     plugins = _find_flake8_plugins()
     if args.keep_flake8:
@@ -698,9 +663,6 @@ def cmd_pip_uninstall_flake8(args: argparse.Namespace) -> int:
 def _reinstall_one_subprocess(
     arg: tuple[str, str, int, bool, bool],
 ) -> tuple[str, bool, str]:
-    """
-    Worker for pip-reinstall-list. ``arg`` = (pkg, pip_cmd, timeout, with_deps, dry).
-    """
     pkg, pip_cmd, timeout, with_deps, dry = arg
     cmd = [pip_cmd, "install", "--force-reinstall", "--upgrade"]
     if not with_deps:
@@ -722,7 +684,6 @@ def _reinstall_one_subprocess(
 
 
 def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
-    """Reinstall every package listed in a file, in parallel."""
     path = Path(args.file).expanduser()
     print(f"Reading packages from: {path}")
     print(f"Using {args.workers} parallel workers")
@@ -779,7 +740,6 @@ def _pypi_exists(name: str, timeout: int = 5) -> bool:
 
 
 def _reinstall_pypi_one(arg: tuple[str, bool, bool]) -> tuple[str, bool]:
-    """Worker: reinstall one package from PyPI. ``arg`` = (pkg, with_deps, skip_check)."""
     pkg, with_deps, skip_check = arg
     if not skip_check and not _pypi_exists(pkg):
         print(f"[SKIP] '{pkg}' not found on PyPI.")
@@ -798,7 +758,6 @@ def _reinstall_pypi_one(arg: tuple[str, bool, bool]) -> tuple[str, bool]:
 
 
 def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
-    """Reinstall PyPI packages from a list file, pruning successes in place."""
     path = Path(args.file).expanduser()
     if not path.exists():
         print(f"{path} not found.")
@@ -832,7 +791,6 @@ def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
 # Subcommand 10: pip-reinstall-entry-points  (reinstaller.py)
 # ============================================================================
 def _dist_entry_point_groups(dist: Any) -> set[str]:
-    """Best-effort set of entry-point groups exposed by a distribution."""
     try:
         eps = dist.entry_points
     except Exception:
@@ -871,7 +829,6 @@ def _packages_with_entry_points(excludes: set[str]) -> dict[str, dict[str, Any]]
 
 
 def _reinstall_one_api(arg: tuple[str, bool]) -> tuple[str, bool, str]:
-    """Reinstall a single package via pip._internal. ``arg`` = (pkg, with_deps)."""
     pkg, with_deps = arg
     cmd = ["install", "--force-reinstall", "--no-cache-dir"]
     if not with_deps:
@@ -915,7 +872,6 @@ def _prompt_reinstall(pkg: str, info: dict[str, Any], with_deps: bool) -> str:
 
 
 def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
-    """Reinstall every installed distribution that provides entry points."""
     excludes = set(args.exclude)
     all_pkgs = _packages_with_entry_points(excludes)
     if not all_pkgs:

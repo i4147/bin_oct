@@ -42,7 +42,6 @@ _POOL: Pool | None = None
 
 
 def fsz(size: int) -> str:
-    """Format a byte count into a human-readable string."""
     value: float = float(size)
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if value < 1024.0 or unit == "TB":
@@ -52,7 +51,6 @@ def fsz(size: int) -> str:
 
 
 def get_pool() -> Pool:
-    """Return the module-level multiprocessing pool, creating it if needed."""
     global _POOL
     if _POOL is None:
         _POOL = Pool(processes=MAX_WORKERS)
@@ -60,7 +58,6 @@ def get_pool() -> Pool:
 
 
 def compress_chunk(data: bytes) -> bytes:
-    """Compress a single byte chunk with Brotli at maximum settings."""
     return brotli.compress(
         data,
         quality=BROTLI_QUALITY,
@@ -70,7 +67,6 @@ def compress_chunk(data: bytes) -> bytes:
 
 
 def decompress_file(path: Path) -> bool:
-    """Decompress a single `.br` file in place, removing the source on success."""
     if path.suffix != ".br":
         return False
     out_path: Path = path.with_suffix("")
@@ -94,7 +90,6 @@ def decompress_file(path: Path) -> bool:
 
 
 def compress_in_memory(infile: Path, outfile: Path) -> bool:
-    """Compress an entire small file in memory with Brotli."""
     try:
         data: bytes = infile.read_bytes()
         if not data:
@@ -113,7 +108,6 @@ def compress_in_memory(infile: Path, outfile: Path) -> bool:
 
 
 def compress_chunked(in_path: Path, out_path: Path, file_size: int) -> bool:
-    """Compress a file in 32 KiB chunks in parallel using the multiprocessing pool."""
     try:
         chunk_count: int = (file_size + CHUNK_SIZE_SMALL - 1) // CHUNK_SIZE_SMALL
         pool: Pool = get_pool()
@@ -147,7 +141,6 @@ def compress_chunked(in_path: Path, out_path: Path, file_size: int) -> bool:
 
 
 def create_tar_archive(source_dir: Path, output_path: Path) -> bool:
-    """Create an uncompressed `.tar` archive from a directory tree."""
     try:
         with tarfile.open(output_path, "w") as tar:
             for item in source_dir.rglob("*"):
@@ -161,7 +154,6 @@ def create_tar_archive(source_dir: Path, output_path: Path) -> bool:
 
 
 def compress_tar_to_br(tar_path: Path, br_path: Path) -> bool:
-    """Compress a `.tar` archive to `.tar.br`, removing the tar on success."""
     try:
         tar_size: int = tar_path.stat().st_size
         if tar_size < CHUNK_SIZE:
@@ -192,7 +184,6 @@ def compress_tar_to_br(tar_path: Path, br_path: Path) -> bool:
 
 
 async def compress_folder_async(folder_path: Path, output_base_name: str) -> bool:
-    """Create a tar archive from a folder and compress it to `.tar.br` asynchronously."""
     loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
     tar_path: Path = Path(output_base_name + ".tar")
     br_path: Path = Path(output_base_name + ".tar.br")
@@ -219,7 +210,6 @@ async def compress_folder_async(folder_path: Path, output_base_name: str) -> boo
 
 
 def compress_file(path: Path) -> tuple[bool, int, int]:
-    """Compress a single file to `.br`, returning (success, original_size, compressed_size)."""
     out_path: Path = path.with_suffix(path.suffix + ".br")
     if out_path.exists():
         print(f"Skipping {path.name} - output already exists")
@@ -258,7 +248,6 @@ def compress_file(path: Path) -> tuple[bool, int, int]:
 
 
 def should_compress(path: Path) -> bool:
-    """Return True if the path is a regular file eligible for compression."""
     try:
         if not path.is_file() or path.is_symlink():
             return False
@@ -280,7 +269,6 @@ def should_compress(path: Path) -> bool:
 
 
 def get_files(directory: Path, mode: str = "compress") -> list[Path]:
-    """Return candidate files in a directory for the given mode (`compress` or `decompress`)."""
     if mode == "compress":
         return [
             p
@@ -291,12 +279,10 @@ def get_files(directory: Path, mode: str = "compress") -> list[Path]:
 
 
 def get_dirs(directory: Path) -> list[Path]:
-    """Return non-symlink subdirectories of the given directory."""
     return [p for p in directory.glob("*") if not p.is_symlink() and p.is_dir()]
 
 
 def extract_tar_archive(tar_path: Path, extract_dir: Path) -> bool:
-    """Extract a tar archive into the given directory."""
     try:
         with tarfile.open(tar_path, "r") as tar:
             tar.extractall(path=extract_dir)
@@ -307,7 +293,6 @@ def extract_tar_archive(tar_path: Path, extract_dir: Path) -> bool:
 
 
 async def process_compress() -> None:
-    """Compress all eligible directories and files in the current working directory."""
     cwd: Path = Path.cwd()
     print("\n🔧 Brotli Compression Settings:")
     print(f"   Quality: {BROTLI_QUALITY}/11 (maximum)")
@@ -364,7 +349,6 @@ async def process_compress() -> None:
 
 
 async def process_decompress() -> None:
-    """Decompress all `.tar.br` archives and standalone `.br` files in the cwd."""
     cwd: Path = Path.cwd()
     archives: list[Path] = [p for p in cwd.glob("*.tar.br") if p.is_file()]
     if archives:
@@ -432,7 +416,6 @@ async def process_decompress() -> None:
 
 
 async def main_async(mode: str = "compress") -> None:
-    """Dispatch to the compress or decompress workflow based on mode."""
     if mode == "compress":
         await process_compress()
     elif mode == "decompress":
@@ -442,7 +425,6 @@ async def main_async(mode: str = "compress") -> None:
 
 
 def shutdown_pool() -> None:
-    """Close and join the module-level multiprocessing pool if it exists."""
     global _POOL
     if _POOL is not None:
         _POOL.close()
@@ -451,7 +433,6 @@ def shutdown_pool() -> None:
 
 
 def main() -> None:
-    """Parse CLI arguments and run the selected workflow."""
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Multi-processed Brotli compression/decompression tool (max compression)",
         formatter_class=argparse.RawDescriptionHelpFormatter,

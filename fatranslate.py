@@ -43,18 +43,15 @@ PERSIAN_RE: Final = re.compile(
 
 
 def contains_persian(text: str) -> bool:
-    """Return True if *text* contains at least one Persian/Arabic character."""
     return bool(PERSIAN_RE.search(text))
 
 
 def read_nonempty_lines(path: Path) -> list[str]:
-    """Read a UTF-8 text file, strip each line, and drop empty lines."""
     with path.open(encoding="utf-8") as file:
         return [line.strip() for line in file if line.strip()]
 
 
 def write_json(path: Path, data: dict[str, str]) -> None:
-    """Write a UTF-8 JSON dictionary with indentation, preserving non-ASCII text."""
     with path.open("w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii=False, indent=2)
 
@@ -62,19 +59,12 @@ def write_json(path: Path, data: dict[str, str]) -> None:
 def rewrite_lines(
     path: Path, original_lines: Sequence[str], translations: dict[str, str]
 ) -> None:
-    """Rewrite *path* replacing each original line with its translation when available."""
     with path.open("w", encoding="utf-8") as file:
         for line in original_lines:
             file.write(f"{translations.get(line, line)}\n")
 
 
 def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
-    """
-    Group lines into chunks whose joined length is at most *max_chars*.
-
-    This mirrors fa_trans.py: each line contributes len(line) + 1, and a single
-    line longer than max_chars becomes its own chunk.
-    """
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
     current_length = 0
@@ -111,11 +101,6 @@ def translate_with_retry(
     retry_delay: float,
     context: str = "text",
 ) -> str | None:
-    """
-    Translate *text* with GoogleTranslator, retrying on exceptions.
-
-    Returns the translated string, or None if all attempts fail or produce empty output.
-    """
     translator = GoogleTranslator(source=source, target=target)
 
     for attempt in range(retries):
@@ -141,7 +126,6 @@ def translate_with_retry(
 def _translate_chunk_worker(
     args: tuple[list[str], str, str, int, float],
 ) -> tuple[list[str], str | None]:
-    """Multiprocessing worker: translate one newline-joined chunk of lines."""
     lines, source, target, retries, retry_delay = args
     text = "\n".join(lines)
     translated = translate_with_retry(
@@ -158,7 +142,6 @@ def _translate_chunk_worker(
 def _translate_word_worker(
     args: tuple[str, str, str, int, float],
 ) -> tuple[str, str | None]:
-    """Multiprocessing worker: translate one word/phrase."""
     word, source, target, retries, retry_delay = args
     translated = translate_with_retry(
         word,
@@ -179,12 +162,6 @@ def translate_chunks(
     retries: int,
     retry_delay: float,
 ) -> dict[str, str]:
-    """
-    Translate chunks in parallel and build a mapping original-line -> translated-line.
-
-    This reproduces fa_trans.py's chunk mapping behavior, including line-count
-    mismatch warnings.
-    """
     translations: dict[str, str] = {}
 
     pool = Pool(processes=processes)
@@ -237,12 +214,6 @@ def translate_words(
     retries: int,
     retry_delay: float,
 ) -> dict[str, str]:
-    """
-    Translate words/phrases and return a mapping original-word -> translation.
-
-    If processes <= 1, this behaves like tfa.py: sequential translation.
-    Otherwise, it behaves like trans_fa_mp.py: multiprocessing with imap_unordered.
-    """
     translations: dict[str, str] = {}
 
     if processes <= 1:
@@ -270,7 +241,6 @@ def translate_words(
 
 
 def cmd_lines(args: argparse.Namespace) -> int:
-    """Handle the `lines` subcommand, equivalent to fa_trans.py."""
     input_path: Path = args.input_file
 
     if not input_path.exists():
@@ -345,7 +315,6 @@ def cmd_lines(args: argparse.Namespace) -> int:
 
 
 def cmd_words(args: argparse.Namespace) -> int:
-    """Handle the `words` subcommand, equivalent to tfa.py or trans_fa_mp.py."""
     input_path: Path = args.input_file
 
     if not input_path.exists():
@@ -396,7 +365,6 @@ def cmd_words(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Create the argparse CLI with `lines` and `words` subcommands."""
     parser = argparse.ArgumentParser(
         description=(
             "Translate Persian text/word lists to English. "
@@ -534,7 +502,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Parse arguments, configure logging, and dispatch to the selected subcommand."""
     parser = build_parser()
     args = parser.parse_args(argv)
 

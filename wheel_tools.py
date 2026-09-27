@@ -137,12 +137,6 @@ except ImportError:  # pragma: no cover
 
 
 def human_size(num_bytes: float) -> str:
-    """Human-readable byte size.
-
-    Inlined replacement for the ``dh.fsz`` helper used by the original
-    scripts.  Produces strings such as ``"12 B"``, ``"1.50 KiB"``,
-    ``"3.25 MiB"``.
-    """
     size = float(num_bytes)
     if size < 1024:
         return f"{int(size)} B"
@@ -157,11 +151,6 @@ def run_command(
     cmd: Sequence[str],
     show_output: bool = False,
 ) -> tuple[int, str, str]:
-    """Run *cmd*, return ``(returncode, stdout, stderr)``.
-
-    Inlined replacement for the ``dh.runcmd`` helper.  When *show_output* is
-    True, stdout and stderr are also echoed to the current process's streams.
-    """
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if show_output:
         if proc.stdout:
@@ -178,11 +167,6 @@ def find_wheels(
     recursive: bool = False,
     exclude: Optional[Path] = None,
 ) -> list[Path]:
-    """Return sorted ``*.whl`` files under *directory*.
-
-    Files located under *exclude* are skipped so repeated runs do not
-    re-report wheels that have already been moved there.
-    """
     iterator = directory.rglob("*.whl") if recursive else directory.glob("*.whl")
     wheels: list[Path] = []
     for candidate in iterator:
@@ -199,7 +183,6 @@ def find_wheels(
 
 
 def read_wheel_metadata(whl: Path) -> tuple[Optional[str], Optional[str]]:
-    """Return ``(name, version)`` from the wheel's ``METADATA`` file."""
     try:
         with zipfile.ZipFile(whl, "r") as zf:
             meta_name = next((n for n in zf.namelist() if n.endswith("METADATA")), None)
@@ -221,7 +204,6 @@ def read_wheel_metadata(whl: Path) -> tuple[Optional[str], Optional[str]]:
 
 
 def split_wheel_filename(whl: Path) -> tuple[str, str]:
-    """Naive ``distribution/version`` extraction (matches ``have_script.py``)."""
     parts = whl.name.split("-")
     if len(parts) >= 3:
         return parts[0], parts[1]
@@ -229,7 +211,6 @@ def split_wheel_filename(whl: Path) -> tuple[str, str]:
 
 
 def parse_metadata_version(value: str):
-    """Port of ``mip.py``'s ``p1()`` version-tuple parser."""
     try:
         return tuple(int(part) for part in value.split(".") if part.isdigit())
     except Exception:  # noqa: BLE001
@@ -244,7 +225,6 @@ _BAD_ROOT_SUFFIXES = (".py", ".pyc", ".pyd", ".so", ".dll")
 
 
 def cmd_check(args: argparse.Namespace) -> int:
-    """Find wheels that drop importable files into ``site-packages/`` root."""
     root = Path(args.directory).resolve()
     suspicious = root / args.dest
     print(f"Scanning for .whl files recursively in: {root}\n")
@@ -304,11 +284,6 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 
 def wheel_has_entry_points(whl: Path) -> tuple[bool, Optional[str]]:
-    """Return ``(has_entry_points, dist_info_dir)`` for the wheel.
-
-    Faithfully reproduces the original's behaviour of returning
-    ``(False, None)`` on *every* failure mode.
-    """
     try:
         with zipfile.ZipFile(whl, "r") as zf:
             for info in zf.filelist:
@@ -323,7 +298,6 @@ def wheel_has_entry_points(whl: Path) -> tuple[bool, Optional[str]]:
 
 
 def cmd_entry_points(args: argparse.Namespace) -> int:
-    """List wheels that ship an ``entry_points.txt``."""
     directory = Path(args.directory)
     if not directory.exists():
         print(f"Error: Directory '{directory}' not found", file=sys.stderr)
@@ -386,14 +360,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
 
 
 def _query_pypi(name: str, timeout: float) -> int:
-    """Query PyPI for *name* and print whether it declares pure-Python info.
-
-    .. note::
-       The original ``ispure.py`` checked ``'pure' in n1`` where ``n1`` is a
-       release-file dict from the PyPI JSON API.  Since ``'pure'`` is never
-       a *key* of that dict, that check is effectively always False.  We
-       preserve the literal behavior for backward compatibility.
-    """
     url = f"https://pypi.org/pypi/{name}/json"
     try:
         resp = requests.get(url, timeout=timeout)
@@ -414,7 +380,6 @@ def _query_pypi(name: str, timeout: float) -> int:
 
 
 def cmd_pypi(args: argparse.Namespace) -> int:
-    """Query PyPI for one or more packages."""
     if not _HAVE_REQUESTS:
         print(
             "Error: the 'requests' package is required for the 'pypi' subcommand.\n"
@@ -437,7 +402,6 @@ def cmd_pypi(args: argparse.Namespace) -> int:
 
 
 def cmd_prune(args: argparse.Namespace) -> int:
-    """Delete wheels whose package is already installed at >= version."""
     directory = Path(args.directory)
     if not directory.is_dir():
         print(f"Error: '{directory}' is not a directory", file=sys.stderr)
@@ -491,7 +455,6 @@ _SO_RE = re.compile(r"\.so(\.\d+)*$")
 
 
 def _strip_file(path: Path, strip_tool: str) -> None:
-    """Run ``strip`` over *path*, echoing its output."""
     run_command([strip_tool, str(path)], show_output=True)
 
 
@@ -500,7 +463,6 @@ def _strip_with_rich(
     strip_tool: str,
     total_bytes: int,
 ) -> None:
-    """Rich-based strip loop with progress bar (mirrors ``strep.py``)."""
     console = Console()
     console.print(
         f"[bold cyan]Total number of .so files:[/] [bold yellow]{len(targets)}[/]"
@@ -528,7 +490,6 @@ def _strip_with_rich(
 
 
 def cmd_strip(args: argparse.Namespace) -> int:
-    """Strip debug symbols from loose ``.so`` files."""
     if shutil.which(args.strip_tool) is None:
         print(f"Error: '{args.strip_tool}' not found on PATH", file=sys.stderr)
         return 2
@@ -589,12 +550,10 @@ _WHEEL_NAME_RE = re.compile(
 
 
 def _matches_wheel_regex(whl: Path) -> bool:
-    """Port of ``valwheel.py``'s ``u2()``."""
     return _WHEEL_NAME_RE.match(whl.name) is not None
 
 
 def _passes_structural_check(whl: Path) -> bool:
-    """Port of ``valwheel.py``'s ``w2()`` (5-part structural check)."""
     if not _HAVE_PACKAGING:
         return True
     try:
@@ -621,7 +580,6 @@ def _passes_structural_check(whl: Path) -> bool:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    """Validate wheel filenames against PEP 427 (and optionally move bad ones)."""
     if not _HAVE_PACKAGING:
         print(
             "Error: the 'packaging' package is required for the 'validate' "
@@ -665,7 +623,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 
 def _wheel_unpacked_size(whl: Path) -> tuple[Path, int, Optional[str]]:
-    """Return ``(path, unpacked_size, error)`` — module-level for Pool pickling."""
     try:
         if not whl.exists():
             return whl, 0, f"File not found: {whl}"
@@ -684,7 +641,6 @@ def _wheel_unpacked_size(whl: Path) -> tuple[Path, int, Optional[str]]:
 
 
 def cmd_size(args: argparse.Namespace) -> int:
-    """Report total unpacked size of ``*.whl`` files."""
     directory = Path(args.directory)
     if not directory.exists():
         print(f"Error: Directory not found: {directory}", file=sys.stderr)
@@ -1014,7 +970,6 @@ python wheel_tools.py size -d ./wheels -r --json -s size
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Parse *argv* and dispatch to the chosen subcommand."""
     print_usage()
     parser = build_parser()
     args = parser.parse_args(argv)

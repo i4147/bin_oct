@@ -98,11 +98,6 @@ def iter_paths(
     include_dirs: bool = False,
     suffixes: Optional[set[str]] = None,
 ) -> Iterator[Path]:
-    """Yield every file (and optionally directory) under *paths*.
-
-    ``suffixes`` filters by lowercased suffix (e.g. ``{'.jpg', '.png'}``).
-    Results are de-duplicated and sorted for deterministic runs.
-    """
     seen: set[Path] = set()
     out: list[Path] = []
     for root in paths:
@@ -132,7 +127,6 @@ def iter_paths(
 
 
 def unique_path(target: Path) -> Path:
-    """Return *target* or ``target_1`` / ``target_2`` / … if it already exists."""
     if not target.exists():
         return target
     stem, suffix = target.stem, target.suffix
@@ -146,7 +140,6 @@ def unique_path(target: Path) -> Path:
 
 
 def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) -> bool:
-    """Rename *src* to *dst*, avoiding overwriting. Returns True on success."""
     if dst.exists() and dst != src:
         dst = unique_path(dst)
     if dry_run:
@@ -164,7 +157,6 @@ def safe_rename(src: Path, dst: Path, *, dry_run: bool, verbose: bool = True) ->
 
 
 def _common_prefix(strings: Sequence[str]) -> str:
-    """Longest common prefix of *strings* (short-circuits on empty input)."""
     if not strings:
         return ""
     return os.path.commonprefix(list(strings))
@@ -180,8 +172,6 @@ def _common_suffix(strings: Sequence[str]) -> str:
 def _lowercase_name(
     paths: Sequence[Path], *, recursive: bool, dry_run: bool, verbose: bool
 ) -> int:
-    """Lowercase file & directory names, deepest-first to avoid renames
-    cascading into children."""
     items = list(iter_paths(paths, recursive=recursive, include_dirs=True))
     items.sort(key=lambda p: len(p.parts), reverse=True)
     count = 0
@@ -202,7 +192,6 @@ def _lowercase_name(
 def _lowercase_ext(
     paths: Sequence[Path], *, recursive: bool, dry_run: bool, verbose: bool
 ) -> int:
-    """Lowercase only the *extension* of every matched file."""
     count = 0
     for p in iter_paths(paths, recursive=recursive):
         ext = p.suffix[1:]
@@ -216,7 +205,6 @@ def _lowercase_ext(
 
 
 def _lowercase_content(paths: Sequence[Path], *, dry_run: bool, verbose: bool) -> int:
-    """Lowercase the textual content of the given files."""
     count = 0
     for p in paths:
         p = Path(p)
@@ -273,7 +261,6 @@ DIM_IN_NAME = re.compile(r"\d+[xX]\d+")
 
 
 def _image_dimensions(path: Path) -> Optional[tuple[int, int]]:
-    """Return (width, height) of *path* or None if unreadable."""
     try:
         import cv2  # type: ignore
     except ImportError:
@@ -428,7 +415,6 @@ def _strip_query(name: str, style: str) -> str:
 
 
 def _strip_query_in_html(text: str) -> str:
-    """Remove query strings from .js/.css references inside HTML/JS text."""
     return _JS_CSS_REF_RE.sub(lambda m: m.group(1), text)
 
 
@@ -494,8 +480,6 @@ class NameSuggestion:
 
 
 class SourceAnalyzer:
-    """Extract a "purpose" phrase from a Python file's docstrings."""
-
     def __init__(self, path: Path) -> None:
         self.path = path
         self.tree: Optional[ast.Module] = None

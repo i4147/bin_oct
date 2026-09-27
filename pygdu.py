@@ -43,8 +43,6 @@ KEY_ESC: Final[str] = "\x1b"
 
 @dataclass
 class FSItem:
-    """A filesystem entry with aggregated size and hierarchical children."""
-
     path: Path
     name: str
     is_dir: bool
@@ -55,7 +53,6 @@ class FSItem:
 
 
 def _scan_recursive(path_str: str) -> FSItem:
-    """Recursively scan a path and return its FSItem tree (worker function)."""
     path = Path(path_str)
     try:
         if path.is_symlink():
@@ -88,14 +85,10 @@ def _scan_recursive(path_str: str) -> FSItem:
 
 
 class DiskAnalyzer:
-    """Scans a root directory and returns an aggregated FSItem tree."""
-
     def __init__(self, root_path: Path) -> None:
-        """Store the resolved root path to be analyzed."""
         self.root_path: Path = root_path.resolve()
 
     def scan(self) -> FSItem:
-        """Scan the root directory in parallel and return the aggregated tree."""
         root_item = FSItem(path=self.root_path, name=str(self.root_path), is_dir=True)
         try:
             top_level: list[Path] = list(self.root_path.iterdir())
@@ -124,7 +117,6 @@ class DiskAnalyzer:
 
 
 def get_progress_bar(item_size: int, max_size: int) -> str:
-    """Return a fixed-width ASCII progress bar for item_size/max_size."""
     if max_size == 0:
         return f"[{' ' * BAR_WIDTH}]"
     ratio = item_size / max_size
@@ -134,7 +126,6 @@ def get_progress_bar(item_size: int, max_size: int) -> str:
 
 
 def get_key() -> str:
-    """Read a single keypress from stdin, decoding simple escape sequences."""
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
@@ -148,13 +139,11 @@ def get_key() -> str:
 
 
 def clear_screen() -> None:
-    """Clear the terminal screen and move the cursor to the top-left."""
     sys.stdout.write("\x1b[2J\x1b[H")
     sys.stdout.flush()
 
 
 def draw_interface(current_node: FSItem, selected_idx: int) -> None:
-    """Render the TUI for the current directory node and selection index."""
     lines: list[str] = []
     lines.append(f"{BOLD}Directory: {current_node.path}{RESET}\n")
     max_size = max((c.size for c in current_node.children), default=1)
@@ -179,7 +168,6 @@ def draw_interface(current_node: FSItem, selected_idx: int) -> None:
 
 
 def main() -> int:
-    """Entry point: parse args, scan target, and run the interactive TUI loop."""
     target_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
     if not target_dir.is_dir():
         logger.error("{} is not a valid directory.", target_dir)
