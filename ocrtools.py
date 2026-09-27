@@ -108,7 +108,6 @@ except ImportError:
 
     logger = _FallbackLogger()  # type: ignore[assignment]
 
-
 # --------------------------------------------------------------------------
 # Constants (hard-coded values lifted into CLI defaults)
 # --------------------------------------------------------------------------
@@ -615,7 +614,7 @@ def cmd_ocr(args: argparse.Namespace) -> int:
     """pyocr.py / ruimg.py — OCR single files or whole directories."""
     _require_tesseract()
     if args.verbose if hasattr(args, "verbose") else False:
-        pass  # placeholder for symmetry
+        pass
 
     inputs = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     files = find_images(inputs, recursive=args.recursive)

@@ -16,7 +16,7 @@ ERRORS_LOG_NAME: Final[str] = "errors.txt"
 class ProcessResult(NamedTuple):
     """Outcome of processing one symlink."""
 
-    status: str  # "replaced", "error", or "skipped"
+    status: str
     msg: str
 
 

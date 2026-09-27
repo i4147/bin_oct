@@ -217,7 +217,6 @@ def write_excel(tables: dict[str, pd.DataFrame], path: Path) -> None:
 
 # ---------------------------------------------------------------- registry
 
-
 READERS = {
     "json": read_json,
     "jsonl": read_jsonl,
@@ -250,7 +249,6 @@ EXT_FOR = {
     "parquet": ".parquet",
     "excel": ".xlsx",
 }
-
 
 # ---------------------------------------------------------------- main
 

@@ -33,7 +33,6 @@ import libcst as cst
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
 
-
 # ---------------------------------------------------------------------------
 # CST transformer
 # ---------------------------------------------------------------------------
@@ -158,7 +157,7 @@ def process_file(path_str: str) -> tuple[str, str | None, bool]:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return path_str, f"parse failed: {exc}", False
-    except Exception as exc:  # defensive: never let a worker die silently
+    except Exception as exc:
         return path_str, f"parse failed: {exc!r}", False
 
     try:

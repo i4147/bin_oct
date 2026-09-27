@@ -99,7 +99,6 @@ except ImportError:
 
     logger = _FallbackLogger()  # type: ignore[assignment]
 
-
 # --------------------------------------------------------------------------- #
 # Constants / defaults (all overridable from the CLI)                          #
 # --------------------------------------------------------------------------- #
@@ -191,10 +190,10 @@ DEFAULT_SKIP_EXTS: set[str] = {
 DEFAULT_WORKERS: int = 8
 DEFAULT_THREADS: int = 4
 DEFAULT_PRESET: int = 9
-DEFAULT_CHUNK_SIZE: int = 1024 * 1024  # 1 MiB
-DEFAULT_PYLZMA_CHUNK: int = 512 * 1024  # 512 KiB (pylzmaer default)
-DEFAULT_PYLZMA_DICT: int = 256 * 1024 * 1024  # 256 MiB
-PYLZMA_MEM_THRESHOLD: int = 512 * 1024  # pylzmaer: switch to chunked above this
+DEFAULT_CHUNK_SIZE: int = 1024 * 1024
+DEFAULT_PYLZMA_CHUNK: int = 512 * 1024
+DEFAULT_PYLZMA_DICT: int = 256 * 1024 * 1024
+PYLZMA_MEM_THRESHOLD: int = 512 * 1024
 XZ_SUFFIX: str = ".xz"
 SEVENZ_SUFFIX: str = ".7z"
 TAR_SUFFIX: str = ".tar"
@@ -211,7 +210,6 @@ if _HAS_PYLZMA:
     ]
 else:
     _PYLZMA_FILTERS = []
-
 
 # --------------------------------------------------------------------------- #
 # Small shared utilities                                                       #
@@ -876,7 +874,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
 
     # 2) Discover files.
     if args.no_skip_compressed:
-        skip_exts: set[str] = {XZ_SUFFIX}  # only avoid double-xz, permit others
+        skip_exts: set[str] = {XZ_SUFFIX}
     else:
         skip_exts = DEFAULT_SKIP_EXTS
 
@@ -886,7 +884,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
         extensions=args.extensions,
         skip_extensions=skip_exts,
         exclude_patterns=args.exclude,
-        recursive=not args.auto_tar_dirs,  # xzer: only top-level files after taring
+        recursive=not args.auto_tar_dirs,
     )
     if not files:
         print("No files found to compress")

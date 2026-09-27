@@ -43,7 +43,6 @@ from loguru import logger
 # translated string.
 Translator = Callable[[str], str]
 
-
 # The requested fallback order.  DeepL is considered only when its API key is
 # available because the DeepL client cannot work without one.
 FALLBACK_BACKENDS = (
@@ -54,7 +53,6 @@ FALLBACK_BACKENDS = (
     "googletrans",
     "pygoogletranslation",
 )
-
 
 # These aliases make common language names usable while preserving the user's
 # language-code interface.
@@ -529,7 +527,7 @@ def translate_one(
             )
             return index, translated
 
-        except Exception as exc:  # Backends expose different exception types.
+        except Exception as exc:
             last_error = exc
             logger.debug(
                 "Chunk {} attempt {}/{} failed: {}",

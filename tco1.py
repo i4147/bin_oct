@@ -76,7 +76,6 @@ class BackendError(RuntimeError):
 
 TranslationFunction = Callable[[str], str]
 
-
 # These names are rejected before any import is attempted.
 _FORBIDDEN_BACKENDS = {
     "argostranslate",

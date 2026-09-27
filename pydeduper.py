@@ -54,7 +54,6 @@ except ImportError:
         brotli = None  # type: ignore
         _HAS_BROTLI = False
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -90,9 +89,9 @@ SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".venv", "venv", "node_module
 class Source:
     """A unit of Python source text (from a file, an archive member, or a decompressed stream)."""
 
-    origin: str  # human-readable identifier (path or archive::member)
-    text: str  # decoded source
-    path: Optional[Path] = None  # on-disk path if patchable, else None
+    origin: str
+    text: str
+    path: Optional[Path] = None
 
 
 @dataclass
@@ -101,13 +100,13 @@ class Definition:
 
     kind: str  # 'func' | 'class' | 'const'
     name: str
-    source: str  # normalized source (ast.unparse output)
+    source: str
     content_hash: str
     origin: str
     lineno: int
     end_lineno: int
     imports: list[str] = field(default_factory=list)
-    path: Optional[Path] = None  # None for archive/compressed members
+    path: Optional[Path] = None
 
 
 # ---------------------------------------------------------------------------

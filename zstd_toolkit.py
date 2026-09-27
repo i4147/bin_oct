@@ -50,7 +50,6 @@ except ImportError:  # pragma: no cover
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("zstd_toolkit")
 
-
 # ---------------------------------------------------------------------------
 # Defaults / constants
 # ---------------------------------------------------------------------------
@@ -191,7 +190,7 @@ def dir_size(path: Path) -> int:
 def _safe_extractall(tar: tarfile.TarFile, path: Path) -> None:
     """tarfile.extractall with the safer `data` filter when available."""
     try:
-        tar.extractall(path, filter="data")  # Python ≥ 3.12
+        tar.extractall(path, filter="data")
     except TypeError:
         tar.extractall(path)
 

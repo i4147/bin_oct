@@ -47,10 +47,10 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 # Common helpers
 # ===========================================================================
 
-MMAP_THRESHOLD = 1_048_576  # matches sonic.py's threshold for mmap reads
-DEFAULT_CHUNK_SIZE = 100_000  # matches sonic.py's external-sort chunk size
+MMAP_THRESHOLD = 1_048_576
+DEFAULT_CHUNK_SIZE = 100_000
 DEFAULT_ENCODING = "utf-8"
-DEFAULT_WORKERS = 8  # matches soniq2.py's process pool size
+DEFAULT_WORKERS = 8
 
 
 def info(msg: str) -> None:
@@ -425,7 +425,7 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     # Remove duplicates (last-first to keep indices valid).
     new_lines = lines[:]
     for lineno, _ in reversed(dupes):
-        del new_lines[lineno]  # lineno is 1-based; index of the SECOND dup
+        del new_lines[lineno]
 
     bak = path.with_suffix(path.suffix + ".bak")
     bak.write_text("".join(lines), encoding=args.encoding)
@@ -511,7 +511,7 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
                 raw = json.dumps(item, sort_keys=True, ensure_ascii=False)
             dedupe_key = raw.lower().strip() if args.lower else raw
         else:
-            dedupe_key = item  # non-dict entries dedupe by value
+            dedupe_key = item
         if dedupe_key in seen:
             continue
         seen.add(dedupe_key)

@@ -6,7 +6,7 @@ from pathlib import Path
 from lingua import LanguageDetectorBuilder
 
 BATCH_SIZE = 8
-_detector = None  # per-worker global
+_detector = None
 
 
 def _init_worker():

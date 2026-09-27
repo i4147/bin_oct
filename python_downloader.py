@@ -25,15 +25,14 @@ from typing import Iterator, Optional
 
 __version__ = "2.0.0"
 
-CHUNK = 64 * 1024  # 64 KiB streaming chunks
-BIG_FILE = 50 * 1024 * 1024  # 50 MB threshold for ranged chunked download
-CHUNK_PARTS = 4  # parallel ranged chunks for big files
+CHUNK = 64 * 1024
+BIG_FILE = 50 * 1024 * 1024
+CHUNK_PARTS = 4
 UA = f"dl/{__version__} (pip-style download manager)"
 FULL, HEAD, EMPTY = "━", "╸", " "
 
 # Global interrupt flag; workers poll this to bail out fast.
 STOP = threading.Event()
-
 
 # ---------------------------------------------------------------------------
 # formatting helpers (pip-flavoured)
@@ -380,7 +379,7 @@ class _PycurlStream(StreamResponse):
     # -- callbacks
     def _write_cb(self, data: bytes) -> int:
         if self._cancel.is_set() or STOP.is_set():
-            return 0  # abort transfer
+            return 0
         self._queue.put(data)
         return len(data)
 
@@ -577,7 +576,7 @@ def _simple_download(
     stream = backend.open(url, start=offset if offset else None, timeout=timeout)
     try:
         if offset and stream.status != 206:
-            offset = 0  # server ignored our Range header
+            offset = 0
         cl = stream.headers.get("content-length")
         total = int(cl) + offset if (cl and cl.isdigit()) else None
         bar.total = total

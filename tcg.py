@@ -18,7 +18,7 @@ EXTENSION_MAP = {
     ".bash": "bash",
     ".rs": "rust",
 }
-SCRIPT_EXTENSIONS = {".py", ".sh", ".rs"}  # <-- only these get symlink/executable
+SCRIPT_EXTENSIONS = {".py", ".sh", ".rs"}
 SCRIPT_DIRS = {
     Path.home() / "bin",
     Path.home() / "bashbin",

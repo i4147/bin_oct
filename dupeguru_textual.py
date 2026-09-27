@@ -59,7 +59,7 @@ class DuplicateGroup:
     """A group of duplicate files."""
 
     files: list[FileEntry] = field(default_factory=list)
-    match_score: float = 100.0  # For fuzzy matches
+    match_score: float = 100.0
     reason: str = "exact"
 
     @property

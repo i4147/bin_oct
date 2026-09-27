@@ -72,7 +72,6 @@ SKIP_DIRS: frozenset[str] = frozenset(
     }
 )
 
-
 # --------------------------------------------------------------------------- #
 # CST transformation
 # --------------------------------------------------------------------------- #
@@ -190,7 +189,7 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return path, 0, f"libcst parse error: {exc}"
-    except Exception as exc:  # defensive: never crash a worker
+    except Exception as exc:
         return path, 0, f"parse error: {type(exc).__name__}: {exc}"
 
     # 4. Transform the CST.
@@ -201,7 +200,7 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
         return path, 0, f"transform error: {type(exc).__name__}: {exc}"
 
     if transformer.comments_removed == 0:
-        return path, 0, None  # nothing changed; leave the file untouched
+        return path, 0, None
 
     # 5. Generate and validate the new source BEFORE touching the file.
     new_source = new_module.code

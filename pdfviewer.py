@@ -39,13 +39,12 @@ import termios
 import tty
 
 try:
-    import fitz  # PyMuPDF
-except ImportError:  # PyMuPDF >= 1.24 can also be imported as `pymupdf`
+    import fitz
+except ImportError:
     try:
         import pymupdf as fitz
     except ImportError:  # pragma: no cover
         sys.exit("PyMuPDF is required:  pip install pymupdf")
-
 
 # ---------------------------------------------------------------------------
 # ANSI escape sequences
@@ -59,7 +58,7 @@ ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 REVERSE = "\x1b[7m"
 
-HALF_BLOCK = "\u2580"  # upper half block: fg paints the top pixel, bg the bottom
+HALF_BLOCK = "\u2580"
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +75,7 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
         return None
 
     first = os.read(fd, 1)
-    if not first:  # EOF - terminal went away
+    if not first:
         return "q"
     if first != b"\x1b":
         return first.decode("utf-8", "replace")
@@ -110,8 +109,8 @@ class Viewer:
 
         self.page_index = max(0, min(page - 1, self.doc.page_count - 1))
         self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, zoom))
-        self.x = 0  # horizontal scroll, in pixels
-        self.y = 0  # vertical scroll, in pixels
+        self.x = 0
+        self.y = 0
         self.running = True
         self._cache: dict[tuple[int, int], tuple[int, int, bytes]] = {}
 
@@ -177,7 +176,7 @@ class Viewer:
 
         for i in range(cols):
             x = x0 + i
-            if x >= w:  # past the right edge of the page
+            if x >= w:
                 if not blank:
                     out.append(RESET)
                     last_fg = last_bg = None
@@ -242,7 +241,7 @@ class Viewer:
             top = self.y + row * 2
             buf.append(self._paint_row(data, w, h, top, self.x, cols))
             if row != rows - 1:
-                buf.append("\r\n")  # raw mode: \n alone doesn't return to col 0
+                buf.append("\r\n")
         buf.append(RESET)
         buf.append(self._status(cols))
 
@@ -260,7 +259,7 @@ class Viewer:
         step = rows * 2
         _, h = self.page_px_size()
         max_y = max(0, h - step)
-        if self.y >= max_y:  # already at the bottom
+        if self.y >= max_y:
             if self.page_index + 1 < self.doc.page_count:
                 self.page_index += 1
                 self.x = self.y = 0
@@ -270,12 +269,12 @@ class Viewer:
     def screen_up(self) -> None:
         rows = self.view_rows()
         step = rows * 2
-        if self.y <= 0:  # already at the top
+        if self.y <= 0:
             if self.page_index > 0:
                 self.page_index -= 1
                 self.x = 0
                 _, h = self.page_px_size()
-                self.y = max(0, h - step)  # land at the bottom of the page
+                self.y = max(0, h - step)
         else:
             self.y = max(0, self.y - step)
 
@@ -335,7 +334,7 @@ class Viewer:
             size = self.term_size()
             if size != last_size:
                 last_size = size
-                self._cache.clear()  # render width changed
+                self._cache.clear()
                 dirty = True
 
             if dirty:

@@ -62,7 +62,6 @@ except ModuleNotFoundError:  # pragma: no cover
     except ModuleNotFoundError:
         tomllib = None  # type: ignore[assignment]
 
-
 # ===========================================================================
 # Common helpers
 # ===========================================================================

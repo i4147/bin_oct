@@ -100,7 +100,7 @@ def safe_translate(text, translate_func, retries=3):
         except Exception as e:
             time.sleep((attempt + 1) * 2)
 
-    return text  # Return original if all retries fail
+    return text
 
 
 def batch_translate(items, translate_func):

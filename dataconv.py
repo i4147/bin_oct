@@ -54,8 +54,7 @@ from loguru import logger
 Tables = dict[str, list[dict[str, Any]]]
 
 # Files above this size get read via mmap (text formats only).
-MMAP_THRESHOLD = 5 * 1024 * 1024  # 5 MB
-
+MMAP_THRESHOLD = 5 * 1024 * 1024
 
 # --------------------------------------------------------------------------- #
 # Small shared helpers
@@ -786,7 +785,7 @@ def write_orc(tables: Tables, out_path: Path) -> list[Path]:
 def load_arrow(path: Path) -> Tables:
     """Arrow IPC file format."""
     ipc = _require("pyarrow.ipc")
-    ipc_feather = _require("pyarrow.feather")  # not used, just ensures dep
+    ipc_feather = _require("pyarrow.feather")
     with path.open("rb") as fh:
         reader = ipc.open_file(fh)
         return {path.stem: reader.read_all().to_pylist()}
@@ -829,7 +828,7 @@ def write_yaml(tables: Tables, out_path: Path) -> list[Path]:
 def load_toml(path: Path) -> Tables:
     """tomllib is stdlib on 3.11+; tomli for older versions."""
     try:
-        import tomllib as toml_mod  # py3.11+
+        import tomllib as toml_mod
     except ImportError:
         toml_mod = _require("tomli")
     return _as_tables(toml_mod.loads(read_text(path)), path.stem)
@@ -981,7 +980,7 @@ def load_hdf5(path: Path) -> Tables:
 def write_hdf5(tables: Tables, out_path: Path) -> list[Path]:
     """Each table becomes a key in a fresh HDF5 file."""
     pd = _require("pandas")
-    _require("tables")  # PyTables is needed for HDFStore
+    _require("tables")
     with pd.HDFStore(out_path, mode="w") as store:
         for name, rows in tables.items():
             store.put(name, pd.DataFrame(rows), format="table")
@@ -1145,7 +1144,7 @@ def write_geojson(tables: Tables, out_path: Path) -> list[Path]:
     gpd = _require("geopandas")
     shapely_wkt = _require("shapely.wkt")
     _, rows = next(iter(tables.items()))
-    df = _geo = None  # placeholder for linters
+    df = _geo = None
     import pandas as pd
 
     df = pd.DataFrame(rows)
@@ -1451,7 +1450,6 @@ WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
     "ini": write_ini,
     "fixedwidth": write_fixed_width,
 }
-
 
 # --------------------------------------------------------------------------- #
 # Job plumbing (module-level so multiprocessing can pickle it)

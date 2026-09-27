@@ -1019,7 +1019,7 @@ def _detect_jtc_language(path: Path, override: str) -> str | None:
     if override == "python":
         return "python"
     if override == "rust":
-        return None  # just-the-code auto-detects .rs
+        return None
     if override == "auto":
         return "python" if path.suffix == ".py" else None
     return None

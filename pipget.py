@@ -53,7 +53,7 @@ from pathlib import Path
 
 import httpx
 from bs4 import BeautifulSoup
-from dh import cprint  # kept for parity with the original script
+from dh import cprint
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -71,13 +71,13 @@ DEFAULT_MIRROR = "pypi"
 PAGE_TIMEOUT = 30.0
 DOWNLOAD_TIMEOUT = 120.0
 
-DOWNLOAD_DIR = Path.cwd()  # Overwritten by -d / --dir
+DOWNLOAD_DIR = Path.cwd()
 MAX_RETRIES = 2
-RETRY_DELAY = 2  # Base seconds for linear back-off
+RETRY_DELAY = 2
 DEFAULT_CONCURRENCY = 4
 CHUNK_SIZE = 32768
 
-MAX_FILE_SIZE = 1024 * 1024  # 1 MiB by default (override with --max-size)
+MAX_FILE_SIZE = 1024 * 1024
 
 SDIST_EXTENSIONS = (
     ".tar.gz",
@@ -155,7 +155,6 @@ USER_AGENT = (
 
 # Serialises multi-line output so concurrent tasks don't garble each other.
 _PRINT_LOCK = asyncio.Lock()
-
 
 # ---------------------------------------------------------------------------
 # Custom exceptions
@@ -345,7 +344,7 @@ def select_best_url(links: list, pkg_name: str, version=None):
         if not href:
             continue
 
-        url = href.split("#")[0]  # drop ``#sha256=…``
+        url = href.split("#")[0]
         filename = link.get_text().strip() or url.split("/")[-1]
 
         # Filter out non-matching versions *before* the sdist/wheel/arch

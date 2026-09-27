@@ -18,7 +18,6 @@ from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]
 
-
 LANGUAGE_CODES: dict[str, str] = {
     "auto": "auto",
     "ar": "ar",
@@ -72,7 +71,6 @@ LANGUAGE_CODES: dict[str, str] = {
     "zh-tw": "zh-tw",
 }
 
-
 DEEPL_LANGUAGE_CODES: dict[str, str] = {
     **LANGUAGE_CODES,
     "en": "EN",
@@ -84,12 +82,10 @@ DEEPL_LANGUAGE_CODES: dict[str, str] = {
     "zh-cn": "ZH",
 }
 
-
 GOOGLE_LANGUAGE_CODES: dict[str, str] = {
     **LANGUAGE_CODES,
     "zh": "zh-cn",
 }
-
 
 _TRANSLATION_LOCK = threading.Lock()
 
@@ -438,7 +434,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "alibaba": _make_alibaba,
     "watson": _make_watson,
 }
-
 
 FALLBACK_ORDER: tuple[str, ...] = (
     "deep_translator",

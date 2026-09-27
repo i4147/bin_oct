@@ -106,7 +106,6 @@ GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
 BACKUP_SUFFIX = ".pystripbak"
 
-
 # --------------------------------------------------------------------------
 # Early "nothing to do" check
 # --------------------------------------------------------------------------
@@ -639,7 +638,7 @@ def restore_from_backup(path: Path) -> tuple[Path, bool, str | None]:
     try:
         backup.unlink()
     except OSError:
-        pass  # restoration itself already succeeded; leftover backup file is harmless
+        pass
     return path, True, None
 
 

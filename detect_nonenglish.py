@@ -119,11 +119,11 @@ DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
     }
 )
 
-DEFAULT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+DEFAULT_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_WORKERS = 8
 DEFAULT_MIN_CONFIDENCE = 0.5
-SAMPLE_CHARS = 10_000  # characters used for whole-file detection
-MIN_LINE_LEN = 3  # minimum stripped line length before we try to detect
+SAMPLE_CHARS = 10_000
+MIN_LINE_LEN = 3
 
 # --------------------------------------------------------------------------- #
 # Data model
@@ -234,7 +234,7 @@ class LangdetectBackend(Backend):
     def __init__(self) -> None:
         from langdetect import DetectorFactory, detect_langs  # type: ignore
 
-        DetectorFactory.seed = 0  # deterministic results
+        DetectorFactory.seed = 0
         self._detect_langs = detect_langs
 
     def detect(self, text: str) -> tuple[str, float, bool]:
@@ -313,7 +313,6 @@ BACKEND_REGISTRY: dict[str, type[Backend]] = {
     LinguaBackend.name: LinguaBackend,
     FastLangdetectBackend.name: FastLangdetectBackend,
 }
-
 
 # --------------------------------------------------------------------------- #
 # Backend caching (one instance per backend per process)
@@ -404,7 +403,7 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     # -------- whole-file detection --------
     sample = text[:SAMPLE_CHARS]
     if len(sample.strip()) < MIN_LINE_LEN:
-        return result  # nothing meaningful to detect
+        return result
 
     lang, conf, _reliable = backend.detect(sample)
     file_is_non_english = _is_finding(lang, conf, min_conf)

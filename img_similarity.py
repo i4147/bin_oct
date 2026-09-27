@@ -54,9 +54,9 @@ SUPPORTED_EXTS = {
 
 # Default Hamming thresholds per method (mirrors each original's hardcoded value).
 DEFAULT_THRESHOLDS: dict[str, float] = {
-    "dct-phash": 4,  # dupimg.py DUP_HASH_THRESHOLD default
-    "dhash-custom": 4,  # imgdedup.py (exact-hash grouping)
-    "ahash": 8,  # imagehash defaults / folderize_images.py
+    "dct-phash": 4,
+    "dhash-custom": 4,
+    "ahash": 8,
     "phash": 8,
     "dhash": 8,
     "whash-haar": 8,
@@ -81,7 +81,6 @@ _IMAGEHASH_METHODS = {
     "colorhash",
     "crop-resistant",
 }
-
 
 # ---------------------------------------------------------------------------
 # Logging helpers (uniform across subcommands)
@@ -295,7 +294,7 @@ def distance(method: str, a: Any, b: Any) -> float:
     if method == "multihash":
         return multihash_dist(a, b)
     try:
-        return int(a - b)  # imagehash objects support subtraction → Hamming
+        return int(a - b)
     except Exception:
         return float("inf")
 
@@ -311,8 +310,8 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
     if method in ("ahash", "phash", "dhash", "whash-haar", "whash-db4"):
         return hash_size * hash_size
     if method == "colorhash":
-        return 42  # imagehash's colorhash uses 14*3 bits
-    return None  # crop-resistant has variable length
+        return 42
+    return None
 
 
 # ---------------------------------------------------------------------------

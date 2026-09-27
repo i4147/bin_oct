@@ -43,7 +43,7 @@ except ImportError:  # pragma: no cover
         return False
 
 
-import requests  # used only for the manual OOB flow
+import requests
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -378,7 +378,7 @@ def cmd_download(args: argparse.Namespace) -> int:
             folder["id"],
             dest,
             label=args.folder,
-            skip_existing=False,  # gdrive_downloader.py always re-downloads
+            skip_existing=False,
             sanitize=args.sanitize,
         )
         print(f"\nSuccessfully downloaded '{args.folder}' to {dest}")

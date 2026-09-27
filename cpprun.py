@@ -11,7 +11,7 @@ import stat
 import sys
 from pathlib import Path
 
-import sh  # pip install sh
+import sh
 
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),

@@ -57,7 +57,6 @@ try:
 except ImportError:  # pragma: no cover - optional progress display
     tqdm = None
 
-
 # ---------------------------------------------------------------------------
 # Shared constants
 # ---------------------------------------------------------------------------
@@ -100,7 +99,6 @@ EMBED_KIND_MIME = {
 EMBED_DATA_RE = re.compile(
     r"data:(?P<mime>image/(?:png|jpe?g|webp|svg\+xml)|text/css|(?:application|text)/javascript);base64,(?P<data>[A-Za-z0-9+/=]+)"
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -213,7 +211,7 @@ def parallel_map(
         for fut in iterator:
             try:
                 results.append(fut.result())
-            except Exception as exc:  # keep processing other items
+            except Exception as exc:
                 results.append(exc)
     return results
 

@@ -63,7 +63,6 @@ BOX_TL, BOX_TR, BOX_BL, BOX_BR = "╭", "╮", "╰", "╯"
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
-
 # --------------------------------------------------------------------------
 # Configuration
 # --------------------------------------------------------------------------
@@ -145,7 +144,7 @@ class GitDiffCalculator:
             if result.stdout:
                 self._parse_hunks(result.stdout)
         except Exception:
-            pass  # git integration disabled silently on failure
+            pass
 
     def _parse_hunks(self, diff_text: str):
         for line in diff_text.splitlines():

@@ -318,7 +318,7 @@ class Options:
     # annotate-mode only
     overwrite_existing: bool = True
     use_future_annotations: bool = False
-    stub_file: Optional[str] = None  # single-file only
+    stub_file: Optional[str] = None
     # mode
     remove: bool = False
 

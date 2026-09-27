@@ -88,7 +88,7 @@ def get_parser(lang: str, tsx: bool = False):
     if key in _PARSER_CACHE:
         return _PARSER_CACHE[key]
 
-    from tree_sitter import Language, Parser  # lazy third-party import
+    from tree_sitter import Language, Parser
 
     if lang == "html":
         import tree_sitter_html as m
@@ -387,9 +387,9 @@ def apply_removal(
 @dataclass(frozen=True)
 class Job:
     path: str
-    lang: str  # 'css' | 'js' | 'ts' | 'html'
-    approach: str  # 'tree-sitter' | 'regex'
-    preserve_newlines: Optional[bool]  # None -> per-language default
+    lang: str
+    approach: str
+    preserve_newlines: Optional[bool]
     collapse_blank_lines: bool
     remove_whole_line_comments: bool
     embedded: bool

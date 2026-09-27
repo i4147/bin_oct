@@ -406,7 +406,6 @@ PLUGIN_PATTERNS: dict[str, list[str]] = {
     "vim-raku": [r"vim-raku", r"raku\.vim", r"vim_raku"],
 }
 
-
 # Short-name rename map (mirrors split_lua_plugins.py behavior)
 RENAME_MAP: dict[str, str] = {
     "nvim-lspconfig": "lsp",
@@ -424,7 +423,6 @@ RENAME_MAP: dict[str, str] = {
     "nvim-bqf": "bqf",
     "nvim-illuminate": "illuminate",
 }
-
 
 # =============================================================================
 # Small shared utilities
@@ -860,9 +858,9 @@ def cmd_split(args: argparse.Namespace) -> int:
     if args.output is not None:
         out_dir = Path(args.output)
     elif strict:
-        out_dir = Path(".")  # original split_lua_plugins.py wrote to CWD
+        out_dir = Path(".")
     else:
-        out_dir = Path("plugins")  # original split_plugins.py default
+        out_dir = Path("plugins")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- Locate the `return { ... }` table --------------------------------
@@ -932,9 +930,9 @@ def cmd_split(args: argparse.Namespace) -> int:
         elif args.keep_input:
             pass
         elif strict:
-            pass  # strict default: leave input untouched
+            pass
         else:
-            input_path.unlink()  # simple default: delete input
+            input_path.unlink()
             print(f"{input_path} removed.")
 
     print(f"\nTotal files created: {len(created)}")

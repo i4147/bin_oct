@@ -73,7 +73,6 @@ DEFAULT_EXTS_BY_TOOL: dict[str, set[str]] = {
     "prettify": PRETTIFY_EXTS,
 }
 
-
 # ===========================================================================
 # Shared helpers
 # ===========================================================================
@@ -87,7 +86,7 @@ class FileResult:
     success: bool
     modified: bool = False
     bytes_processed: int = 0
-    detail: int = 0  # e.g. number of tags formatted
+    detail: int = 0
     error: Optional[str] = None
 
 

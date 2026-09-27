@@ -42,7 +42,7 @@ class TypeAnnotationStripper(ast.NodeTransformer):
 def mpf(
     func: Callable[..., Any],
     items: Iterable[Any],
-    workers: int | None = None,  # Fixed: added missing workers parameter
+    workers: int | None = None,
 ) -> list[Any]:
     n_jobs = -1 if workers is None else workers
     items_list = list(items)

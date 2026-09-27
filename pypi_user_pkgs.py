@@ -58,10 +58,10 @@ from urllib.request import Request, urlopen
 PYPI_BASE = "https://pypi.org"
 USER_AGENT = "pypi-user-packages/1.3"
 DEFAULT_MAX_MIB = 10.0
-CHUNK_SIZE = 64 * 1024  # streaming chunk for python-based backends
-ARIA2C_BIN = "aria2c"  # name of the aria2c executable on PATH
-DEFAULT_BACKEND = "httpx"  # httpx is the default backend
-DEFAULT_JOBS = 8  # hardcoded concurrency (8-core machine)
+CHUNK_SIZE = 64 * 1024
+ARIA2C_BIN = "aria2c"
+DEFAULT_BACKEND = "httpx"
+DEFAULT_JOBS = 8
 
 # Patterns for scraping the profile page.
 _PROJECT_RE = re.compile(r"^/project/([^/?#]+)/?$")
@@ -326,7 +326,7 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         written += len(data)
         if written > max_bytes:
             aborted = True
-            return 0  # returning != len(data) makes libcurl abort
+            return 0
         return fh.write(data)
 
     try:

@@ -143,7 +143,7 @@ class Translator:
                 time.sleep(self.config.delay)
 
             return result or text
-        except Exception as exc:  # third-party library exceptions vary
+        except Exception as exc:
             LOGGER.warning("Translation failed for %r: %s", text[:80], exc)
             return text
 

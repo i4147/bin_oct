@@ -55,7 +55,6 @@ class BackendError(Exception):
 TranslatorCallable = Callable[[str], str]
 Factory = Callable[[str, str, str], TranslatorCallable]
 
-
 _LANG_MAP: dict[str, dict[str, str]] = {
     "deepl": {
         "fr": "FR",

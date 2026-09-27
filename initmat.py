@@ -128,7 +128,6 @@ build/
         root / "tests" / "test_pkgname.py",
         f"""from {pkgname} import sum_as_string
 
-
 def test_sum_as_string():
     assert sum_as_string(1, 2) == "3"
 """,
@@ -140,12 +139,10 @@ def test_sum_as_string():
 
 from {pkgname} import sum_as_string
 
-
 def main() -> None:
     n = 100_000
     t = timeit.timeit(lambda: sum_as_string(1, 2), number=n)
     print(f"sum_as_string x{{n}}: {{t:.4f}}s")
-
 
 if __name__ == "__main__":
     main()

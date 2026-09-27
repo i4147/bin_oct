@@ -48,11 +48,11 @@ def load_ppm(path: Path):
         data = f.read()
 
     pixels = []
-    if fmt == b"P6":  # Binary RGB
+    if fmt == b"P6":
         for i in range(0, len(data), 3):
             if i + 2 < len(data):
                 pixels.append((data[i], data[i + 1], data[i + 2]))
-    elif fmt == b"P3":  # ASCII RGB
+    elif fmt == b"P3":
         numbers = [int(n) for n in data.split()]
         for i in range(0, len(numbers), 3):
             pixels.append((numbers[i], numbers[i + 1], numbers[i + 2]))

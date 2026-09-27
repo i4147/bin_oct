@@ -106,7 +106,6 @@ COMPARE_CHUNK: Final[int] = 1 << 16
 PNGQUANT_SUCCESS: Final[int] = 0
 PNGQUANT_ALREADY_OPTIMAL: Final[int] = 25
 
-
 # --------------------------------------------------------------------------- #
 # Result record
 # --------------------------------------------------------------------------- #

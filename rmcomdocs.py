@@ -55,7 +55,6 @@ except ImportError as _exc:  # pragma: no cover
     )
     raise SystemExit(2)
 
-
 # ---------------------------------------------------------------------------
 # Constants (configurable via CLI where sensible)
 # ---------------------------------------------------------------------------
@@ -78,7 +77,6 @@ _BASE_KEEP_PREFIXES: tuple[str, ...] = ("#!", "# type:", "# fmt:")
 # Extra prefixes preserved by t5.py.
 _TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 
-
 # ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------
@@ -88,12 +86,12 @@ _TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 class StripConfig:
     """All knobs that control the rewrite (parallel-safe / picklable)."""
 
-    engine: str = "query"  # "query" | "cursor" | "ast"
-    docstring_action: str = "pass"  # "pass" | "remove"
-    preserve_lines: bool = False  # blank out instead of splice
-    eat_trailing_newline: bool = False  # t5.py behaviour
-    remove_blank_lines: bool = False  # t5.py behaviour
-    keep_module_docstring: bool = False  # grmc_ts.py behaviour
+    engine: str = "query"
+    docstring_action: str = "pass"
+    preserve_lines: bool = False
+    eat_trailing_newline: bool = False
+    remove_blank_lines: bool = False
+    keep_module_docstring: bool = False
     keep_prefixes: tuple[str, ...] = _BASE_KEEP_PREFIXES
 
 
@@ -583,7 +581,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
         cfg = StripConfig(
             engine=engine,
             docstring_action="pass",
-            preserve_lines=True,  # matches tsrmc.py's blank-out approach
+            preserve_lines=True,
         )
         t0 = time.perf_counter()
         results = _parallel_map(files, cfg, write=False, workers=args.workers)

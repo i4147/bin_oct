@@ -66,7 +66,6 @@ except ImportError:  # pragma: no cover
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     logger = logging.getLogger("dedup_tool")
 
-
 # ===========================================================================
 # Shared helpers
 # ===========================================================================
@@ -146,7 +145,7 @@ class FunctionRecord:
     def __init__(self, name: str, body: str, lineno: int, node: ast.AST) -> None:
         self.name = name
         self.original_body = body
-        self.body = normalize_body(body)  # duplicate-group key
+        self.body = normalize_body(body)
         self.lineno = lineno
         self.node = node
 
@@ -637,7 +636,7 @@ def strip_definition_from_source(
     new_body.insert(0, import_node)
     tree.body = new_body
     new_source = ast.unparse(tree)
-    ast.parse(new_source)  # validate round-trip
+    ast.parse(new_source)
     return new_source
 
 

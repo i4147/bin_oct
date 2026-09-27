@@ -72,14 +72,13 @@ try:
 except ImportError:
     _HAS_XORHASH = False
 
-
 # ===========================================================================
 # Constants (defaults from the originals)
 # ===========================================================================
 
-CHUNK_SIZE = 8192  # dupefix / dedupsym
-BIG_CHUNK_SIZE = 32768  # dupf / symdups
-QUICK_HEAD = 4096  # dupfx's quick-hash head
+CHUNK_SIZE = 8192
+BIG_CHUNK_SIZE = 32768
+QUICK_HEAD = 4096
 DEFAULT_WORKERS = 8
 DEFAULT_EXCLUDES = (
     ".git",
@@ -91,7 +90,6 @@ DEFAULT_EXCLUDES = (
 )
 DEFAULT_SYMLINK_MANIFEST = Path.home() / ".symlink_backup.json"
 DEFAULT_STASH_DIR = Path.home() / "dups"
-
 
 # ===========================================================================
 # Logging helpers
@@ -511,9 +509,9 @@ def cmd_delete(args: argparse.Namespace) -> int:
 class SymlinkOp:
     """A single recorded replacement (used by `restore`)."""
 
-    symlink: str  # path replaced with a symlink
-    target: str  # path the symlink points at (the stashed master)
-    size: int  # original size in bytes
+    symlink: str
+    target: str
+    size: int
 
 
 def cmd_symlink(args: argparse.Namespace) -> int:

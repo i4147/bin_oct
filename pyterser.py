@@ -128,7 +128,6 @@ TERSER_SUCCESS: Final[int] = 0
 #: the inode churn, mtime bump, and crash-window risk dwarf the benefit.
 MIN_SAVINGS_BYTES: Final[int] = 2
 
-
 # --------------------------------------------------------------------------- #
 # Result record
 # --------------------------------------------------------------------------- #

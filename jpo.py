@@ -86,7 +86,6 @@ JPEGOPTIM_SUCCESS: Final[int] = 0
 #: Valid quality values accepted by jpegoptim's ``-m`` / ``--max`` option.
 QUALITY_RANGE: Final[range] = range(0, 101)
 
-
 # --------------------------------------------------------------------------- #
 # Result record
 # --------------------------------------------------------------------------- #

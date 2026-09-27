@@ -113,8 +113,8 @@ except ImportError:
 class Detection:
     """A single hypothesis about the file's format."""
 
-    name: str  # human-readable label
-    kind: str  # "archive" | "stream" | "serialized" | "unknown"
+    name: str
+    kind: str
     mime: str = "application/octet-stream"
     confidence: str = "medium"  # "high" | "medium" | "low"
 
@@ -602,7 +602,7 @@ def extract_tar(src: Path) -> None:
             if _safe_member_path(Path.cwd(), m.name) is None:
                 print(f"    SKIP (unsafe path): {m.name}")
                 continue
-            tar.extract(m, path=Path.cwd())  # nosec — path already validated
+            tar.extract(m, path=Path.cwd())
 
 
 def extract_zip(src: Path) -> None:
@@ -686,7 +686,7 @@ def extract_iso(src: Path) -> None:
                 name = child.file_identifier().decode(errors="replace")
                 if name in (".", ".."):
                     continue
-                clean = name.split(";", 1)[0]  # strip ISO version suffix
+                clean = name.split(";", 1)[0]
                 child_path = f"{path.rstrip('/')}/{name}"
                 target = _safe_member_path(Path.cwd(), clean)
                 if target is None:

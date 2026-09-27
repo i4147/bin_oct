@@ -131,7 +131,7 @@ def main() -> None:
     # Get terminal size
     term_columns, term_rows = shutil.get_terminal_size((80, 24))
     max_w = args.width or term_columns
-    max_h = args.height or (term_rows - 2)  # Leave space for file title/prompt
+    max_h = args.height or (term_rows - 2)
 
     # Determine files to render
     targets: list[Path] = []

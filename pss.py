@@ -37,8 +37,7 @@ from pathlib import Path
 DB_PATH = Path("/sdcard/data/pip.db")
 
 DEFAULT_LIMIT = 20
-TRIGRAM_MIN = 3  # FTS5 trigram cannot index/query strings shorter than 3 chars
-
+TRIGRAM_MIN = 3
 
 # ----------------------------------------------------------- introspection ---
 

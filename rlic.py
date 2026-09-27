@@ -139,7 +139,6 @@ COMMENT_EXCEPTIONS: tuple[str, ...] = (
     "# mypy",
 )
 
-
 # ---------------------------------------------------------------------------
 # Logging helpers
 # ---------------------------------------------------------------------------
@@ -219,7 +218,7 @@ def collect_files(
     if block_mode == "comment":
         wanted = extensions or {".py"}
     elif block_mode == "segment":
-        wanted = extensions  # None = accept any non-binary file
+        wanted = extensions
     else:
         wanted = extensions or DEFAULT_TEXT_EXTS
 

@@ -75,7 +75,6 @@ except ImportError:  # pragma: no cover - fallback for standalone use
             value /= 1024.0
         return f"{value:.1f} PB"
 
-
 # ---------------------------------------------------------------------------
 # Constants / defaults
 # ---------------------------------------------------------------------------
@@ -267,7 +266,6 @@ XZ_SKIP_EXTENSIONS = frozenset(
 XZ_EXCLUDED_DIR_NAMES = frozenset(
     {".git", "__pycache__", ".venv", "venv", ".env", "node_modules"}
 )
-
 
 # ---------------------------------------------------------------------------
 # Data structures

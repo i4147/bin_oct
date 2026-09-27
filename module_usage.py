@@ -127,7 +127,6 @@ STDLIB_FALLBACK: set[str] = {
     "turtle",
 }
 
-
 # ---------------------------------------------------------------------------
 # Stdlib discovery
 # ---------------------------------------------------------------------------
@@ -137,7 +136,7 @@ def collect_stdlib_modules() -> set[str]:
     """Return the set of top-level stdlib module names."""
     modules: set[str] = set()
     for info in importlib.machinery.all_suffixes():  # type: ignore[attr-defined]
-        _ = info  # only iterating for side-effects; kept for clarity
+        _ = info
     try:
         for mod in importlib.machinery.PathFinder().iter_modules() if False else ():
             _ = mod
@@ -528,7 +527,7 @@ def generate_charts(
     try:
         plt.style.use(style)
     except OSError:
-        pass  # Style name may vary by matplotlib version; ignore.
+        pass
 
     chart_dir.mkdir(parents=True, exist_ok=True)
     print("\n📊 Generating matplotlib charts...")

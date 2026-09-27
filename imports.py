@@ -332,8 +332,8 @@ def main() -> None:
     overall_start = time.time()
     cwd = Path.cwd()
     output_file = cwd / "requirements.txt"
-    std_libs: set[str] = set(STDLIB)  # Convert frozenset to set
-    pkgz: set[str] = set(get_installed_pkgs())  # Convert list to set
+    std_libs: set[str] = set(STDLIB)
+    pkgz: set[str] = set(get_installed_pkgs())
     all_local_packages: set[str] = get_local_packages(cwd)
     subdirs: list[Path] = get_valid_subdirs(cwd)
 

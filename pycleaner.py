@@ -63,7 +63,6 @@ try:
 except ImportError:
     _HAS_ZSTD = False
 
-
 # ════════════════════════════════════════════════════════════════════════
 #  0.  Shared colour / small helpers
 # ════════════════════════════════════════════════════════════════════════
@@ -132,7 +131,6 @@ _SKIP_DIRS: set[str] = {
     "output",
     "node_modules",
 }
-
 
 # ════════════════════════════════════════════════════════════════════════
 #  1.  `imports` subcommand  (merges afk2.py + afk_autoflake.py)
@@ -1347,9 +1345,7 @@ def _replace_block_in_file(path: Path, block: list[str], import_line: str) -> No
         print(yellow(f"Skipping write for {path} (would break syntax): {exc}"))
         return
 
-    import_name = import_line.strip().split()[
-        -1
-    ]  # "cprint" from "from dh import cprint"
+    import_name = import_line.strip().split()[-1]
     if _already_has_import(tree, import_name):
         if new_src != src:
             path.write_text(new_src, encoding="utf-8")

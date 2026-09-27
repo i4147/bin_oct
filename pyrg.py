@@ -118,7 +118,6 @@ _PATH_PALETTE = (
     "\x1b[93m",
 )
 
-
 # --------------------------------------------------------------------------- #
 # Small helpers
 # --------------------------------------------------------------------------- #
@@ -767,7 +766,7 @@ def worker(job: dict[str, Any]) -> FileResult:
             flags |= re.DOTALL
         try:
             compiled = re.compile(regex_pattern, flags)
-        except re.error as ex:  # item 25: never propagate opaque errors
+        except re.error as ex:
             return FileResult(path=rel_path, error=f"invalid regex: {ex}")
 
     # Cheap binary check (dh.is_binary may raise on odd files).

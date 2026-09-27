@@ -146,7 +146,7 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
                 end = last_space
 
         chunk = text[start:end].strip()
-        if chunk:  # Only add non-empty chunks
+        if chunk:
             chunks.append(chunk)
         start = end if end != start else end + 1
 

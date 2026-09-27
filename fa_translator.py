@@ -108,7 +108,6 @@ try:
 except ImportError:  # pragma: no cover - platform dependent
     _HAVE_READLINE = False
 
-
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -301,7 +300,7 @@ def split_into_chunks(lines: list[str], max_chars: int) -> list[tuple[int, int, 
     buf_len = 0
     start = 0
     for i, line in enumerate(lines):
-        n = len(line) + 1  # +1 accounts for the newline that will be added
+        n = len(line) + 1
         if buf_len + n > max_chars and buf:
             chunks.append((start, i - 1, "\n".join(buf)))
             buf, buf_len, start = [], 0, i

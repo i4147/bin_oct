@@ -20,7 +20,7 @@ import pycurl
 
 WORKERS = 8
 OUTPUT_DIR = Path("downloads")
-TIMEOUT = 30  # seconds — download timeout AND pool wait timeout
+TIMEOUT = 30
 CONNECT_TIMEOUT = 5
 USER_AGENT = "Mozilla/5.0 (compatible; PyCurlDownloader/1.0)"
 

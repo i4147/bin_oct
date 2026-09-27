@@ -400,7 +400,7 @@ def compress_multiple_files(
         List of compression results
     """
     if max_workers is None:
-        max_workers = 8  # Fixed to 8 workers as requested
+        max_workers = 8
 
     if output_dir:
         Path(output_dir).mkdir(parents=True, exist_ok=True)

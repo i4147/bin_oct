@@ -52,7 +52,6 @@ except ImportError as exc:
         "Missing dependency: xxhash. Install it with: pip install xxhash"
     ) from exc
 
-
 try:
     from colorama import Fore, Style
     from colorama import init as colorama_init
@@ -70,7 +69,6 @@ try:
     from tqdm import tqdm
 except ImportError:
     tqdm = None
-
 
 DEFAULT_IGNORED_DIRECTORIES: frozenset[str] = frozenset(
     {".git", "__pycache__", "node_modules"}

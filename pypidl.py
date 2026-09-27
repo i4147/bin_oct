@@ -82,7 +82,6 @@ try:
 except ImportError:  # pragma: no cover
     BeautifulSoup = None  # type: ignore[assignment]
 
-
 # --------------------------------------------------------------------------- #
 # Constants — defaults match the originals
 # --------------------------------------------------------------------------- #
@@ -100,11 +99,11 @@ SIMPLE_MIRRORS: dict[str, str] = {
     "tsinghua": "https://pypi.tuna.tsinghua.edu.cn/simple",
 }
 
-MIRROR_RETRIES: int = 3  # pip_get.py: `u`
-HTTP_TIMEOUT: int = 30  # pip_get.py / pipget.py: `X` / `ac`
-CHUNKED_THRESHOLD: int = 5 * 1024 * 1024  # pip_get.py: `n` (5 MiB)
-SCRAPE_RETRIES: int = 3  # pipget.py: `C`
-SCRAPE_BACKOFF: int = 2  # pipget.py: `D`
+MIRROR_RETRIES: int = 3
+HTTP_TIMEOUT: int = 30
+CHUNKED_THRESHOLD: int = 5 * 1024 * 1024
+SCRAPE_RETRIES: int = 3
+SCRAPE_BACKOFF: int = 2
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -412,7 +411,7 @@ def cmd_download(args: argparse.Namespace) -> int:
     if not files:
         raise ValueError("No downloadable files found")
     chosen = pick_wheel_then_sdist(files)
-    assert chosen is not None  # non-empty list guaranteed above
+    assert chosen is not None
     url, filename = chosen["url"], chosen["filename"]
     print(f"Found: {filename}")
     print(f"URL: {url}")

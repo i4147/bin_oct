@@ -95,7 +95,6 @@ DEFAULT_TIMEOUT: Final[float] = 300.0
 #: Chunk size used for the streaming byte-identity comparison.
 COMPARE_CHUNK: Final[int] = 1 << 16
 
-
 # --------------------------------------------------------------------------- #
 # Result record
 # --------------------------------------------------------------------------- #

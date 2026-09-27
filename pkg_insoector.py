@@ -77,7 +77,6 @@ GIT_HOSTS: tuple[str, ...] = (
     "codeberg.org",
 )
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
@@ -524,7 +523,7 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
                 if not pkg_search.exists():
                     pkg_search = site_dir / name.replace("-", "_")
                 if not pkg_search.exists():
-                    pkg_search = entry  # fall back to the .dist-info itself
+                    pkg_search = entry
             else:
                 pkg_search = entry
 

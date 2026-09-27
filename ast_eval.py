@@ -42,7 +42,6 @@ POOL_SIZE: Final[int] = 8
 ERROR_DIR_NAME: Final[str] = "error"
 """Name of the subdirectory where invalid Python files are copied."""
 
-
 # ---------------------------------------------------------------------------
 # Worker function
 # ---------------------------------------------------------------------------

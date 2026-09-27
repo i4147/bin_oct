@@ -191,7 +191,7 @@ def main() -> int:
 
     # Handle "today" keyword
     if args.date and args.date.lower() == "today":
-        args.date = None  # None means "use current date"
+        args.date = None
 
     success = squash_commits(args.count, args.date)
     return 0 if success else 1

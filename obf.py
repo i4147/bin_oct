@@ -4,7 +4,7 @@ import sys
 
 
 def varnames():
-    letters = string.ascii_letters  # a-zA-Z, 52 names
+    letters = string.ascii_letters
     for c in letters:
         yield c
     for c in letters:

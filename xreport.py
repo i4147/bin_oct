@@ -117,7 +117,6 @@ BANNER = """
   [ INTEGRITY VALIDATION & EXTRACTED SIZE SCANNER v1.4.2 ]
 """
 
-
 # --------------------------------------------------------------------------- #
 # Archive registry used by the `scan` command (25 extensions)
 # --------------------------------------------------------------------------- #
@@ -318,7 +317,7 @@ def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
         ):
             with tarfile.open(path, "r:*") as tf:
                 try:
-                    tf.extractall(dest, filter="data")  # py3.12+
+                    tf.extractall(dest, filter="data")
                 except TypeError:
                     tf.extractall(dest)
             return True, str(dest)

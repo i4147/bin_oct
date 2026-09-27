@@ -38,7 +38,7 @@ def check_and_fix_file(args):
         try:
             compile(source_text, str(filepath), "exec")
         except SyntaxError:
-            has_syntax_error = True  # File has other syntax errors, must manually tokenize to check strings
+            has_syntax_error = True
         except Exception:
             pass
 
@@ -56,7 +56,7 @@ def check_and_fix_file(args):
         pass
 
     issues = []
-    replacements = []  # Store as (start_row, start_col, end_row, end_col, new_string)
+    replacements = []
 
     for tok in tokens:
         if tok.type == tokenize.STRING:
@@ -103,13 +103,13 @@ def check_and_fix_file(args):
     for lineno in issue_lines:
         idx = lineno - 1
 
-        if idx - 1 >= 0:  # -1 line
+        if idx - 1 >= 0:
             output.append(f"  {idx}: {lines[idx - 1].rstrip('\n')}")
 
         # Target line with issue in color
         output.append(f"{RED}> {idx + 1}: {lines[idx].rstrip('\n')}{RESET}")
 
-        if idx + 1 < len(lines):  # +1 line
+        if idx + 1 < len(lines):
             output.append(f"  {idx + 2}: {lines[idx + 1].rstrip('\n')}")
 
         output.append("-" * 40)
@@ -124,10 +124,10 @@ def check_and_fix_file(args):
             r1 = r_start - 1
             r2 = r_end - 1
 
-            if r1 == r2:  # Same line string
+            if r1 == r2:
                 line = text_lines[r1]
                 text_lines[r1] = line[:c_start] + new_string + line[c_end:]
-            else:  # Multi-line string
+            else:
                 first_line = text_lines[r1]
                 last_line = text_lines[r2]
                 text_lines[r1] = first_line[:c_start] + new_string + last_line[c_end:]

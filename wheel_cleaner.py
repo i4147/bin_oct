@@ -98,7 +98,6 @@ DEFAULT_DETECTOR = "dist-info-only"
 #: File extensions that make a wheel "non-empty" for the ``no-code`` detector.
 _CODE_SUFFIXES: tuple[str, ...] = (".py", ".so", ".pyi")
 
-
 # ---------------------------------------------------------------------------
 # Detectors -- each returns True when the wheel looks "empty"
 # ---------------------------------------------------------------------------
@@ -112,7 +111,7 @@ def _dist_info_prefix(names: Sequence[str]) -> Optional[str]:
     """
     for name in names:
         if name.endswith(".dist-info/"):
-            return name  # already ends with "/"
+            return name
     for name in names:
         if ".dist-info/" in name:
             return name.split("/")[0] + "/"

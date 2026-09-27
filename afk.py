@@ -53,7 +53,6 @@ except ImportError:
 #: because the CLI no longer exposes a ``--workers`` flag.
 WORKERS = 8
 
-
 # ---------------------------------------------------------------------------
 # Data containers
 # ---------------------------------------------------------------------------

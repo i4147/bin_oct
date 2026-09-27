@@ -60,10 +60,10 @@ from loguru import logger
 # (and can be overridden on the command line).
 # --------------------------------------------------------------------------- #
 DEFAULT_WORKERS: int = 8
-DEFAULT_CHUNK_SIZE: int = 524_288  # 512 KiB — used by bzr.py / gzr.py
-DEFAULT_GZIPER_CHUNK: int = 262_144  # 256 KiB — used by gziper.py
-DEFAULT_MEM_THRESHOLD: int = 32_768  # 32 KiB  — in-memory vs. chunked cut-off
-DEFAULT_MIN_FILE_SIZE: int = 1_024  # 1 KiB   — ignore tiny files
+DEFAULT_CHUNK_SIZE: int = 524_288
+DEFAULT_GZIPER_CHUNK: int = 262_144
+DEFAULT_MEM_THRESHOLD: int = 32_768
+DEFAULT_MIN_FILE_SIZE: int = 1_024
 DEFAULT_BZ2_LEVEL: int = 9
 DEFAULT_GZ_LEVEL: int = 9
 DEFAULT_GZIPER_LEVEL: int = 9
@@ -406,7 +406,7 @@ class Tool:
     # ----- archive decompression ------------------------------------------ #
     def decompress_archive(self, archive: Path) -> bool:
         """Decompress ``foo.tar.bz2`` / ``foo.tar.gz`` and extract ``foo/``."""
-        tar_path = archive.with_suffix("")  # strip .bz2 / .gz → foo.tar
+        tar_path = archive.with_suffix("")
         # Destination: recreate the source directory in the parent of the archive.
         # (The original scripts used an off-by-one path here; this is the
         # intended behaviour and matches what the tar was created from.)

@@ -57,7 +57,6 @@ try:
 except ImportError:  # pragma: no cover
     pyodbc = None
 
-
 log = logging.getLogger("merged")
 
 
@@ -74,7 +73,7 @@ def _setup_logging(verbose: bool = False) -> None:
 # ===========================================================================
 
 DEFAULT_TEXT_ENCODINGS: tuple[str, ...] = ("utf-8", "latin-1", "cp1252", "iso-8859-1")
-DEFAULT_TEXT_CHAR_LIMIT = 1024 * 1024  # add2db's 1 MB cap
+DEFAULT_TEXT_CHAR_LIMIT = 1024 * 1024
 
 
 def _table_exists(cursor: sqlite3.Cursor, table: str) -> bool:

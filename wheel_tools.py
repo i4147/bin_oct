@@ -131,7 +131,6 @@ except ImportError:  # pragma: no cover
     _HAVE_RICH = False
     Console = None  # type: ignore
 
-
 # ===========================================================================
 # Common helpers
 # ===========================================================================
@@ -406,7 +405,7 @@ def _query_pypi(name: str, timeout: float) -> int:
         data = resp.json()
         version = data["info"]["version"]
         for release_file in data["releases"][version]:
-            if "pure" in release_file:  # literal port (see docstring)
+            if "pure" in release_file:
                 print(f"{name}: pure={release_file['pure']}")
                 print(f"  Has wheels: {'wheel' in release_file.get('packagetype', '')}")
                 return 0

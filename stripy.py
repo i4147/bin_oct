@@ -36,7 +36,6 @@ from loguru import logger
 #: Number of worker processes used to transform files in parallel.
 WORKERS: int = 8
 
-
 # ---------------------------------------------------------------------------
 # Result reporting
 # ---------------------------------------------------------------------------
@@ -325,7 +324,7 @@ def _configure_logger() -> None:
             "<level>{level: <8}</level> | "
             "<cyan>{process.name}</cyan> | {message}"
         ),
-        enqueue=True,  # multiprocessing-safe sink
+        enqueue=True,
     )
 
 

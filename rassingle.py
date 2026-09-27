@@ -39,7 +39,6 @@ LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {m
 
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
 
-
 # ---------------------------------------------------------------------------
 # discovery & parsing
 # ---------------------------------------------------------------------------

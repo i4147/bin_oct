@@ -46,7 +46,7 @@ try:
     )
 
     _HAS_TENACITY = True
-except ImportError:  # graceful degradation, only vitrans-mode loses jitter retry
+except ImportError:
     _HAS_TENACITY = False
 
 # --------------------------------------------------------------------------- #
@@ -149,7 +149,7 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     current_len = 0
     for line in lines:
         line_len = len(line) + 1
-        if line_len > max_chars:  # oversized single line, ship it alone
+        if line_len > max_chars:
             if current:
                 chunks.append(current)
                 current, current_len = [], 0

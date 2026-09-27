@@ -49,7 +49,6 @@ ERROR_DIR_NAME: Final[str] = "error"
 # Result of formatting a single file: ``(success, path_as_string)``.
 FormatResult: TypeAlias = tuple[bool, str]
 
-
 # ---------------------------------------------------------------------------
 # File classification helpers
 # ---------------------------------------------------------------------------

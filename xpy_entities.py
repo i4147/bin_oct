@@ -76,7 +76,6 @@ except ImportError:
     zstd = None  # type: ignore
     HAS_ZSTD = False
 
-
 # ---------------------------------------------------------------------------
 # Module-level constants
 # ---------------------------------------------------------------------------
@@ -563,7 +562,7 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
                     imports=infer_imports(code),
                 )
             )
-            return False  # don't recurse
+            return False
 
         def visit_ClassDef(self, node) -> bool:
             code = cst.Module([node]).code
@@ -577,7 +576,7 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
                     imports=infer_imports(code),
                 )
             )
-            return False  # don't recurse
+            return False
 
         def visit_Assign(self, node) -> None:
             for t in node.targets:

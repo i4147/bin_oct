@@ -77,7 +77,6 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Monolith/1.0"
 # Matches url(...) with optional single/double quotes around the target.
 CSS_URL_RE = re.compile(r"""url\(\s*['"]?([^)'"]+?)['"]?\s*\)""")
 
-
 # ---------------------------------------------------------------------------
 # Core archiver
 # ---------------------------------------------------------------------------

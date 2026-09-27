@@ -35,7 +35,6 @@ WHL_PATTERN = re.compile(
 # Packages whose pure-python wheel (py3-none-any) should always be removed.
 PY3_NONE_ANY_BLOCKLIST: frozenset[str] = frozenset({"pycryptodome", "matplotlib"})
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

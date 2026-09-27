@@ -65,7 +65,6 @@ try:
 except ImportError:  # pragma: no cover
     _rjsmin = None
 
-
 # ============================================================================
 # Shared helpers (previously in the `dh` module used by originals)
 # ============================================================================

@@ -284,7 +284,7 @@ def autofix_init(
         # Replace via line splicing
         lines = original.splitlines(keepends=True)
         start = all_node.lineno - 1
-        end = all_node.end_lineno  # exclusive end line index (0-based)
+        end = all_node.end_lineno
 
         # Preserve indentation if inside something (unlikely for __all__)
         new_lines = lines[:start] + [new_all_block + "\n"] + lines[end:]

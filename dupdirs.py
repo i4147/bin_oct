@@ -24,7 +24,7 @@ import xxhash
 # ---------------------------------------------------------------------------
 NUM_WORKERS = 8
 SKIP_DIR_NAMES = {".git"}
-HASH_CHUNK_SIZE = 1 << 20  # 1 MiB
+HASH_CHUNK_SIZE = 1 << 20
 MAX_DEPTH = 64
 
 

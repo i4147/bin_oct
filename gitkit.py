@@ -483,7 +483,6 @@ BACKEND_CHOICES = (
     "typer",
 )
 
-
 # ===========================================================================
 # Subcommand: checkout-previous
 # ===========================================================================
@@ -574,7 +573,7 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
         err("Working directory is not clean — commit or stash first")
         return 1
 
-    commits = be.log(ref=branch)  # newest first
+    commits = be.log(ref=branch)
     if not commits:
         print("No commits found.")
         return 0
@@ -595,7 +594,7 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
     for c in old[-5:]:
         print(f"  {c.short} - {c.date:%Y-%m-%d %H:%M} - {c.subject}")
 
-    new_head = keep[0]  # newest kept
+    new_head = keep[0]
     print(f"\nNew HEAD will be: {new_head.short} - {new_head.subject}")
 
     if not args.yes:
@@ -637,7 +636,7 @@ def cmd_cut(args: argparse.Namespace) -> int:
     cutoff = _cutoff(args.days)
     print(f"Cutoff date: {cutoff:%Y-%m-%d %H:%M:%S UTC}")
 
-    commits = be.log(ref="HEAD")  # newest first
+    commits = be.log(ref="HEAD")
     if not commits:
         print("No commits found.")
         return 0

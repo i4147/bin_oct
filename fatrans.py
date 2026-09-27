@@ -89,7 +89,6 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".pytest_cache",
 )
 
-
 # ===========================================================================
 # Shared helpers
 # ===========================================================================
@@ -403,7 +402,7 @@ def _translate_file_to_target(
                 )
             except Exception as exc:  # noqa: BLE001
                 print(f"[ERROR] Failed to translate chunk {i + 1}: {exc}")
-                results.append(chunk)  # keep original on failure
+                results.append(chunk)
             finally:
                 progress.update(1)
     finally:

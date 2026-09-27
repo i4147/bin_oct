@@ -93,7 +93,6 @@ _LINKED_BADGE_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 _MD_LINK_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[([^\]]*)\]\(([^\)]+)\)")
 
-
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------

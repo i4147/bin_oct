@@ -70,7 +70,6 @@ try:
 except ImportError:
     keyboard = None
 
-
 # ---------------------------------------------------------------------------
 # Constants (all overridable via CLI where meaningful)
 # ---------------------------------------------------------------------------
@@ -659,7 +658,7 @@ def _similar_groups(names: list[str], ratio: float = 0.8) -> list[list[str]]:
         used[i] = True
         group = [a]
         la = len(a)
-        lo = int(la * ratio * 0.9) or la  # tolerate small len drift
+        lo = int(la * ratio * 0.9) or la
         lo = max(1, int(la * 0.8))
         hi = int(la * 1.25)
         cands: list[int] = []

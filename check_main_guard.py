@@ -14,13 +14,13 @@ def has_main_guard(filepath: Path) -> bool:
         source = filepath.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError) as e:
         print(f"  ! Could not read {filepath.name}: {e}", file=sys.stderr)
-        return True  # Don't flag files we can't read
+        return True
 
     try:
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as e:
         print(f"  ! Syntax error in {filepath.name}: {e}", file=sys.stderr)
-        return True  # Don't flag unparseable files
+        return True
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.If):
@@ -58,7 +58,6 @@ def main():
 
 
 #                break
-
 
 if __name__ == "__main__":
     sys.exit(main())

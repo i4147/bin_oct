@@ -380,7 +380,7 @@ def extract_ast(
         return [], []
     ex = _ASTExtractor(source, path, include_nested, constants_only)
     ex.visit(tree)
-    for e in ex.entities:  # propagate file-level imports
+    for e in ex.entities:
         if not e.parent:
             e.imports = list(ex.imports)
     return ex.entities, ex.imports
@@ -508,7 +508,7 @@ def _get_ts_parser():
     lang = tree_sitter.Language(tree_sitter_python.language())
     try:
         _TS_PARSER = tree_sitter.Parser(lang)
-    except TypeError:  # older binding
+    except TypeError:
         p = tree_sitter.Parser()
         p.set_language(lang)
         _TS_PARSER = p

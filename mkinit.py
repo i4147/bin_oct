@@ -86,11 +86,11 @@ def has_only_main(tree: ast.Module) -> bool:
                 continue
             if node.name.startswith("_"):
                 continue
-            return False  # found another public function
+            return False
         elif isinstance(node, ast.ClassDef):
             if node.name.startswith("_"):
                 continue
-            return False  # found a public class
+            return False
     return has_main
 
 

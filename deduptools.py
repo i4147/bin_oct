@@ -465,8 +465,8 @@ def cmd_ts(args: argparse.Namespace) -> int:
     if args.exclude_self:
         exclude_names.add(Path(sys.argv[0]).name)
 
-    seen: dict[str, Declaration] = {}  # hash -> first occurrence
-    dups: dict[str, Declaration] = {}  # hash -> representative (first occurrence)
+    seen: dict[str, Declaration] = {}
+    dups: dict[str, Declaration] = {}
 
     for root in roots:
         for file in iter_py_files(root, exclude_names=exclude_names):

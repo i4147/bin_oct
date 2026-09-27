@@ -99,7 +99,7 @@ def reinstall(pkg: str) -> None:
     """
     cmd: list[str] = [
         "apt",
-        "-qq",  # quiet, suppress progress noise
+        "-qq",
         "install",
         "-y",
         "--reinstall",

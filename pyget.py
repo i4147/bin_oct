@@ -43,15 +43,14 @@ from typing import Any, Iterator
 
 __version__ = "2.0.0"
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 # Adaptive chunk sizes: bigger files -> bigger reads, fewer syscalls.
-CHUNK_SMALL: int = 64 * 1024  # files < 10 MB
-CHUNK_MEDIUM: int = 256 * 1024  # files 10–100 MB
-CHUNK_LARGE: int = 1024 * 1024  # files > 100 MB
+CHUNK_SMALL: int = 64 * 1024
+CHUNK_MEDIUM: int = 256 * 1024
+CHUNK_LARGE: int = 1024 * 1024
 BIG_FILE_THRESHOLD: int = 10 * 1024 * 1024
 HUGE_FILE_THRESHOLD: int = 100 * 1024 * 1024
 
@@ -62,7 +61,6 @@ FULL, HEAD, EMPTY = "━", "╸", " "
 
 # Set by Ctrl-C so worker threads bail out promptly.
 STOP = threading.Event()
-
 
 # ---------------------------------------------------------------------------
 # Formatting helpers
@@ -317,7 +315,7 @@ class StreamInfo:
     """Metadata about the HTTP response, before reading the body."""
 
     status: int
-    total_length: int | None  # body length as advertised (excluding offset)
+    total_length: int | None
     content_disposition: str | None
 
 
@@ -394,7 +392,7 @@ class RequestsBackend(Backend):
     name = "requests"
 
     def __init__(self) -> None:
-        import requests  # imported lazily so it's only required when selected
+        import requests
 
         self._requests = requests
 
@@ -465,7 +463,7 @@ class PycurlBackend(Backend):
         def write_cb(data: bytes) -> int:
             """libcurl write callback: push body bytes into the queue."""
             if stop_flag.is_set():
-                return 0  # abort the transfer
+                return 0
             q.put(bytes(data))
             return len(data)
 

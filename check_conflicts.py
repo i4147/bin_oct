@@ -33,7 +33,6 @@ from dh import STDLIB
 PIP_JSON = Path("/sdcard/data/pip.json")
 DEFAULT_REPORT = Path("conflict_report.json")
 
-
 # --------------------------------------------------------------------------
 # helpers
 # --------------------------------------------------------------------------
@@ -62,7 +61,7 @@ def load_pypi_names(path: Path) -> set[str]:
 def installed_distributions() -> set[str]:
     """Normalized names of distributions installed in the current interpreter."""
     try:
-        from importlib.metadata import distributions  # py3.8+
+        from importlib.metadata import distributions
     except ImportError:  # pragma: no cover - very old Python
         from importlib_metadata import distributions  # type: ignore
 
@@ -174,7 +173,7 @@ def main() -> int:
                     "kind": kind,
                 }
             )
-            continue  # stdlib takes priority; don't double-report
+            continue
 
         if key in pypi:
             conflicts.append(

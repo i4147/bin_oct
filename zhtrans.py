@@ -62,13 +62,13 @@ from loguru import logger
 # Matches CJK ideographs (BMP + extensions B–F) and compatibility ideographs.
 # Union of the regexes used by the original scripts.
 CHINESE_RE = re.compile(
-    "[\u4e00-\u9fff"  # CJK Unified Ideographs
-    "\u3400-\u4dbf"  # Extension A
-    "\U00020000-\U0002a6df"  # Extension B
-    "\U0002a700-\U0002b73f"  # Extension C
-    "\U0002b740-\U0002b81f"  # Extension D
-    "\U0002b820-\U0002ceaf"  # Extension E/F
-    "\uf900-\ufaff]"  # Compatibility Ideographs
+    "[\u4e00-\u9fff"
+    "\u3400-\u4dbf"
+    "\U00020000-\U0002a6df"
+    "\U0002a700-\U0002b73f"
+    "\U0002b740-\U0002b81f"
+    "\U0002b820-\U0002ceaf"
+    "\uf900-\ufaff]"
 )
 
 DEFAULT_EXTENSIONS = (
@@ -82,7 +82,6 @@ DEFAULT_EXTENSIONS = (
     ".xml",
     ".csv",
 )
-
 
 # --------------------------------------------------------------------------- #
 # Shared helpers                                                               #

@@ -55,11 +55,11 @@ HOME = "\x1b[H"
 CLEAR = "\x1b[2J"
 HIDE_CURSOR = "\x1b[?25l"
 SHOW_CURSOR = "\x1b[?25h"
-ENTER_ALT = "\x1b[?1049h"  # switch to the alternate screen buffer
+ENTER_ALT = "\x1b[?1049h"
 LEAVE_ALT = "\x1b[?1049l"
 REVERSE = "\x1b[7m"
 
-HALF_BLOCK = "\u2580"  # fg paints the top pixel, bg the bottom pixel
+HALF_BLOCK = "\u2580"
 
 DEVNULL = subprocess.DEVNULL
 WHITESPACE = b" \t\r\n\v\f"
@@ -96,7 +96,7 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
             pos += 1
         if pos >= n:
             raise RuntimeError("truncated PPM header")
-        if data[pos] == 0x23:  # '#' comment
+        if data[pos] == 0x23:
             while pos < n and data[pos] != 0x0A:
                 pos += 1
             continue
@@ -108,7 +108,7 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
         except ValueError:
             raise RuntimeError("malformed PPM header") from None
 
-    pos += 1  # one whitespace after maxval
+    pos += 1
     w, h, maxval = fields
     if maxval != 255:
         raise RuntimeError(f"unsupported PPM maxval {maxval}")
@@ -135,7 +135,7 @@ class Renderer:
     pixel width (gs wants a resolution, the other two take it directly).
     """
 
-    CACHE_LIMIT = 6  # rendered pages kept in memory
+    CACHE_LIMIT = 6
     BACKENDS = ("gs", "pdftoppm", "mutool")
     # A short hint used when a chosen backend is missing on PATH.
     INSTALL_HINT = {
@@ -366,14 +366,14 @@ class Renderer:
             "-dBATCH",
             "-dNOPAUSE",
             "-sDEVICE=ppmraw",
-            "-dUseCropBox",  # match the size query above
-            "-dTextAlphaBits=4",  # anti-aliased text...
-            "-dGraphicsAlphaBits=4",  # ...and graphics
+            "-dUseCropBox",
+            "-dTextAlphaBits=4",
+            "-dGraphicsAlphaBits=4",
             f"-r{dpi:.3f}",
             f"-dFirstPage={index + 1}",
             f"-dLastPage={index + 1}",
             f"-sOutputFile={out}",
-            self.path,  # as an input file -> SAFER ok
+            self.path,
         ]
         res = subprocess.run(argv, stdout=DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if res.returncode != 0:
@@ -399,7 +399,7 @@ class Renderer:
             "-scale-to-x",
             str(width),
             "-scale-to-y",
-            "-1",  # keep the aspect ratio
+            "-1",
             "-singlefile",
             self.path,
             root,
@@ -497,7 +497,7 @@ def read_key(fd: int, timeout: float | None = None) -> str | None:
         return None
 
     first = os.read(fd, 1)
-    if not first:  # EOF - terminal went away
+    if not first:
         return "q"
     if first != b"\x1b":
         return first.decode("utf-8", "replace")
@@ -520,7 +520,7 @@ class Viewer:
     MIN_ZOOM = 0.25
     MAX_ZOOM = 8.0
     ZOOM_STEP = 1.25
-    MAX_RENDER_WIDTH = 4000  # guard against absurd raster allocations
+    MAX_RENDER_WIDTH = 4000
 
     def __init__(
         self, path: str, page: int = 1, zoom: float = 1.0, backend: str | None = None
@@ -533,8 +533,8 @@ class Viewer:
 
         self.page_index = max(0, min(page - 1, self.page_count - 1))
         self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, zoom))
-        self.x = 0  # horizontal scroll, in pixels
-        self.y = 0  # vertical scroll, in pixels
+        self.x = 0
+        self.y = 0
         self.running = True
 
     # -- geometry ----------------------------------------------------------
@@ -579,7 +579,7 @@ class Viewer:
 
         for i in range(cols):
             x = x0 + i
-            if x >= w:  # past the right edge of the page
+            if x >= w:
                 if not blank:
                     out.append(RESET)
                     last_fg = last_bg = None
@@ -711,7 +711,7 @@ class Viewer:
         if value == self.zoom:
             return
         old_w = self.render_width()
-        _, old_h = self.page_px_size()  # cached from the current frame
+        _, old_h = self.page_px_size()
         frac = self.y / old_h if old_h else 0.0
         self.zoom = value
         new_w = self.render_width()
@@ -746,7 +746,7 @@ class Viewer:
         elif key in ("g", "\x1b[H", "\x1b[1~", "\x1b[7~", "\x1bOH"):
             self.x = self.y = 0
         elif key in ("G", "\x1b[F", "\x1b[4~", "\x1b[8~", "\x1bOF"):
-            self.y = 1 << 30  # draw() clamps this
+            self.y = 1 << 30
 
         elif key in ("+", "="):
             self.set_zoom(self.zoom * self.ZOOM_STEP)
@@ -774,7 +774,7 @@ class Viewer:
                 self.draw()
                 dirty = False
 
-            key = read_key(fd, 0.25)  # also wakes us up on resize
+            key = read_key(fd, 0.25)
             if key is None:
                 continue
             self.handle(key)

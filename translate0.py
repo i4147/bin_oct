@@ -16,7 +16,7 @@ from deep_translator import GoogleTranslator
 MAX_WORKERS: Final[int] = 16
 RETRY_ATTEMPTS: Final[int] = 4
 RETRY_DELAY: Final[float] = 0.6
-MAX_CHUNK_SIZE: Final[int] = 2000  # characters per chunk
+MAX_CHUNK_SIZE: Final[int] = 2000
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +42,7 @@ def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
     current_size = 0
 
     for line in lines:
-        line_size = len(line) + 1  # +1 for newline
+        line_size = len(line) + 1
 
         # If single line exceeds max_chunk_size, force it into its own chunk
         if line_size > max_chunk_size:

@@ -20,12 +20,11 @@ except ImportError:
     print("Install with: pip install tree-sitter tree-sitter-html", file=sys.stderr)
     sys.exit(1)
 
-
 # Configuration
 HTML_EXTENSIONS = {".html", ".htm", ".xhtml"}
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB limit for safety
+MAX_FILE_SIZE = 50 * 1024 * 1024
 WORKERS = 8
-CHUNK_SIZE = 1024 * 1024  # 1MB chunks for reading
+CHUNK_SIZE = 1024 * 1024
 
 # Setup logging
 logging.basicConfig(
@@ -234,7 +233,7 @@ class HTMLFormatter:
                 result.append(line)
             else:
                 blank_count += 1
-                if blank_count <= 1:  # Allow maximum 1 consecutive blank line
+                if blank_count <= 1:
                     result.append(line)
 
         return "\n".join(result)
@@ -306,7 +305,7 @@ def find_html_files(paths: list[Path]) -> Iterator[Path]:
     if not paths:
         paths = [Path.cwd()]
 
-    seen = set()  # Avoid duplicates
+    seen = set()
 
     for path in paths:
         try:

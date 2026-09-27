@@ -76,7 +76,6 @@ except ImportError:  # pragma: no cover
     parse_wheel_filename = None  # type: ignore
     Version = None  # type: ignore
 
-
 # ============================================================================
 # Shared helpers  (formerly the `dh` module)
 # ============================================================================

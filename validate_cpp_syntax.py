@@ -71,7 +71,7 @@ def check_file(path: Path):
         cmd = ["clang", "-x", "c", "-fsyntax-only", "-", "-I", str(path.parent)]
         rc, out = run(cmd, input_bytes=include_line)
     else:
-        return path, True, ""  # skip unknown
+        return path, True, ""
 
     return path, rc == 0, out
 

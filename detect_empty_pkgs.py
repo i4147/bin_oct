@@ -31,8 +31,8 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Tunables
 # ---------------------------------------------------------------------------
-WORKERS = 4  # fixed, per spec
-MIN_ARCHIVE_BYTES = 300  # total uncompressed size below this = suspicious
+WORKERS = 4
+MIN_ARCHIVE_BYTES = 300
 
 # Archive formats we know how to open.  `.whl` is a zip file.
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
@@ -67,7 +67,7 @@ METADATA_NAMES = {
     "NOTICE",
     "TODO",
     "RECORD",
-    "WHEEL",  # wheel-specific metadata
+    "WHEEL",
 }
 
 # Top-level directories that are not "real code".
@@ -254,7 +254,7 @@ def _py_is_trivial(src: str) -> bool:
             and isinstance(node.value, ast.Constant)
             and isinstance(node.value.value, str)
         ):
-            continue  # bare docstring / string literal
+            continue
         return False
     return True
 
@@ -270,7 +270,7 @@ def _check_imports_only(members):
             continue
         src = m.read().decode("utf-8", "replace")
         if not src.strip():
-            continue  # empty file, handled by another check
+            continue
         if not _py_is_trivial(src):
             return None
         saw_non_empty = True

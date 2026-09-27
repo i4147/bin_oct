@@ -21,7 +21,7 @@ from pathlib import Path
 
 # ── Configuration ──────────────────────────────────────────
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
-CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024  # 1MB
+CLIPBOARD_MAX_BYTES = 1 * 1024 * 1024
 COLORS = {
     "reset": "\033[0m",
     "bold": "\033[1m",
@@ -248,7 +248,7 @@ def main() -> None:
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,  # Merge stderr into stdout
+                stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,  # Line-buffered
             )
@@ -283,7 +283,7 @@ def main() -> None:
                     output_size += len(line.encode("utf-8"))
                     # If exceeds 1MB limit, disable clipboard copying
                     if output_size > CLIPBOARD_MAX_BYTES:
-                        output_buffer = None  # Too large, disable clipboard
+                        output_buffer = None
                         print(
                             color(
                                 f"\n[clipboard] Output exceeds {CLIPBOARD_MAX_BYTES // 1024}KB limit, skipping copy",

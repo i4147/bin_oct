@@ -74,7 +74,6 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     _HAS_NLTK = False
 
-
 # ===========================================================================
 # 1. File classification (ported from collect_chars.py + dh.py helpers)
 # ===========================================================================
@@ -480,7 +479,7 @@ def cmd_words(args: argparse.Namespace) -> int:
         if args.json:
             _write_json(
                 args.json,
-                Counter(),  # placeholder; per-file JSON is emitted inline
+                Counter(),
                 with_metadata=False,
             )
         return 0

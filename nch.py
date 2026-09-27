@@ -78,9 +78,9 @@ except Exception:  # pragma: no cover
 # --------------------------------------------------------------------------- #
 # Constants (defaults match the originals)
 # --------------------------------------------------------------------------- #
-DIR_MODE: int = 0o775  # 509
-FILE_MODE: int = 0o644  # 420
-EXEC_MODE: int = 0o755  # 493
+DIR_MODE: int = 0o775
+FILE_MODE: int = 0o644
+EXEC_MODE: int = 0o755
 
 # Any of the three x bits — used by deexec to mask them off.
 EXEC_BITS: int = st.S_IXUSR | st.S_IXGRP | st.S_IXOTH

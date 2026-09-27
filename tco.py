@@ -32,10 +32,10 @@ from translate import Translator
 # Configuration
 # ---------------------------------------------------------------------------
 
-SAVE_EVERY = 50  # persist progress every N chunks/lines
-SLEEP_BETWEEN = 0.5  # seconds between successful API calls (rate limit)
-MAX_RETRIES = 5  # retries per request on failure
-BACKOFF_BASE = 1.5  # exponential backoff multiplier (seconds)
+SAVE_EVERY = 50
+SLEEP_BETWEEN = 0.5
+MAX_RETRIES = 5
+BACKOFF_BASE = 1.5
 
 # Defaults — Chinese → English
 DEFAULT_SOURCE = "zh"
@@ -44,8 +44,7 @@ DEFAULT_TARGET = "en"
 # Hard limit imposed by the translation backend (~500 chars per query).
 # We stay a bit under to leave headroom for URL-encoding overhead.
 MAX_CHARS = 450
-CHUNK_SIZE = MAX_CHARS  # default target chars per chunk
-
+CHUNK_SIZE = MAX_CHARS
 
 # ---------------------------------------------------------------------------
 # Helpers

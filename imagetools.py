@@ -98,7 +98,6 @@ except ImportError:  # pragma: no cover
     convert_from_bytes = None  # type: ignore
     _HAS_PDF2IMAGE = False
 
-
 # ============================================================================
 # Logging
 # ============================================================================
@@ -528,7 +527,7 @@ def cmd_to_jpg(args: argparse.Namespace) -> int:
     tasks = []
     for src in files:
         if src.suffix.lower() in (".jpg", ".jpeg"):
-            continue  # already JPEG
+            continue
         dst = (out_dir / (src.stem + ".jpg")) if out_dir else src.with_suffix(".jpg")
         if dst.exists() and not args.overwrite:
             LOG.debug("skip (exists): %s", dst)
@@ -689,7 +688,7 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
         elif isinstance(p, Path) and p.is_file():
             inputs.append(str(p))
         else:
-            inputs.append(str(p))  # literal HTML string
+            inputs.append(str(p))
 
     if not inputs:
         LOG.warning("No HTML inputs found.")

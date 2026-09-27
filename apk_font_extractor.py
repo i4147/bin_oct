@@ -31,7 +31,6 @@ DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")
 FONT_EXTENSIONS: frozenset[str] = frozenset({".ttf", ".woff", ".woff2"})
 APK_TIMEOUT_SECONDS: int = 600
 
-
 # ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------

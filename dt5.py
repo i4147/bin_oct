@@ -50,7 +50,7 @@ def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
         debug_log: Path to debug log file.
         error_stderr: If True, also log errors to stderr.
     """
-    logger.remove()  # Remove default handler
+    logger.remove()
 
     # Debug level to file (rotated at 50 MB)
     logger.add(
@@ -361,7 +361,7 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
             "pygoogletranslation not installed. Run: pip install pygoogletranslation"
         )
 
-    source = map_language_code("googletrans", source)  # Use googletrans mapping
+    source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
 
     lock = threading.Lock()
@@ -435,7 +435,6 @@ DEFAULT_BACKEND_ORDER = [
     "pygoogletranslation",
 ]
 
-
 # ============================================================================
 # CHUNKING UTILITIES
 # ============================================================================
@@ -486,7 +485,7 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
 
         # Strip and store
         chunk = chunk.strip()
-        if chunk:  # Only append non-empty chunks
+        if chunk:
             chunks.append(chunk)
 
         pos = end
@@ -546,9 +545,9 @@ class TranslationState:
     source_lang: str
     target_lang: str
     chunks: list[str] = field(default_factory=list)
-    translations: dict[int, str] = field(default_factory=dict)  # index -> translated
-    failed: dict[int, str] = field(default_factory=dict)  # index -> error
-    backend_used: dict[int, str] = field(default_factory=dict)  # index -> backend
+    translations: dict[int, str] = field(default_factory=dict)
+    failed: dict[int, str] = field(default_factory=dict)
+    backend_used: dict[int, str] = field(default_factory=dict)
     completed_at: Optional[float] = None
 
     def to_json(self) -> dict:
@@ -684,7 +683,7 @@ class TranslatorEngine:
         self.target_lang = target_lang
         self.attempts = attempts_per_backend
         self.backends: list[tuple[str, Callable[[str], str]]] = []
-        self.lock = threading.Lock()  # protects state
+        self.lock = threading.Lock()
 
         order = backend_order or DEFAULT_BACKEND_ORDER
         for name in order:

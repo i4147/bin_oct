@@ -321,7 +321,7 @@ def _translate_one_line(line: str, translator: Translator, opts: dict[str, Any])
     if not stripped or looks_english(stripped, opts["detect"], opts["threshold"]):
         return line
     leading = line[: len(line) - len(line.lstrip())]
-    trailing = line[len(line.rstrip()) :]  # usually "\n"
+    trailing = line[len(line.rstrip()) :]
     translated = translator.translate(stripped)
     return f"{leading}{translated}{trailing}"
 

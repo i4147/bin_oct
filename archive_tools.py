@@ -74,13 +74,12 @@ try:
 except ImportError:
     lz4frame = None  # type: ignore
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 DEFAULT_JOBS: int = 8
-DEFAULT_TIMEOUT: int = 300  # seconds, applies to external tools
-CHUNK: int = 1024 * 1024  # 1 MiB streaming chunk
+DEFAULT_TIMEOUT: int = 300
+CHUNK: int = 1024 * 1024
 
 # External-CLI handlers (copied from ar_extract.py)
 CLI_COMMANDS: dict[str, list[str]] = {
@@ -609,8 +608,8 @@ def extract_one(
     dry_run: bool = False,
     organize: str = "flat",  # 'flat' | 'stem' | 'versioned'
     out_dir: Optional[Path] = None,
-    single_file_subdir: bool = False,  # ar_extract behaviour
-    subdir_truncate: int = 0,  # subdir.py uses 8; 0 = no truncation
+    single_file_subdir: bool = False,
+    subdir_truncate: int = 0,
     quiet: bool = False,
 ) -> ExtractResult:
     start = time.time()

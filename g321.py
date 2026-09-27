@@ -220,7 +220,7 @@ class GitPythonBackend(SubprocessBackend):
         self._repo = git.Repo(os.getcwd(), search_parent_directories=True)
 
     def is_repo(self) -> bool:
-        return True  # constructor would have raised otherwise
+        return True
 
     def count_commits(self) -> int:
         return sum(1 for _ in self._repo.iter_commits("HEAD"))
@@ -327,7 +327,6 @@ class PyGithubBackend(SubprocessBackend):
 
 
 # --- registry & factory ---------------------------------------------------
-
 
 _BACKEND_REGISTRY: dict[str, type[SubprocessBackend]] = {
     "subprocess": SubprocessBackend,

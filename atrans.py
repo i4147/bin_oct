@@ -69,7 +69,6 @@ logger.add(
     format="<red>{level}</red>: {message}",
 )
 
-
 # ---------------------------------------------------------------------------
 # Backend configuration
 # ---------------------------------------------------------------------------
@@ -181,7 +180,6 @@ _BACKEND_FACTORIES = {
     "googletrans": _make_googletrans,
 }
 
-
 # ---------------------------------------------------------------------------
 # Unified translator wrapper
 # ---------------------------------------------------------------------------
@@ -282,7 +280,7 @@ def save_output(out_path, data, lock):
         tmp_path = out_path + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, out_path)  # atomic on POSIX and Windows
+        os.replace(tmp_path, out_path)
 
 
 def append_failed(failed_path, word, lock):
@@ -416,11 +414,11 @@ def main():
     print(f"Words to translate: {len(pending)}")
 
     # -- Shared state -------------------------------------------------------
-    save_lock = threading.Lock()  # protects atomic file writes
-    counter_lock = threading.Lock()  # protects completed_count
-    print_lock = threading.Lock()  # keeps console output readable
-    failed_lock = threading.Lock()  # protects failed.txt appends
-    completed_count = [0]  # mutable list avoids `nonlocal`
+    save_lock = threading.Lock()
+    counter_lock = threading.Lock()
+    print_lock = threading.Lock()
+    failed_lock = threading.Lock()
+    completed_count = [0]
     total_pending = len(pending)
 
     # -- Worker function ----------------------------------------------------
@@ -440,7 +438,7 @@ def main():
         """
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                time.sleep(args.delay)  # per-request rate-limit delay
+                time.sleep(args.delay)
 
                 raw = translator.translate(word)
                 text = "" if raw is None else str(raw).strip()

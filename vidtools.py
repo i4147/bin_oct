@@ -80,7 +80,7 @@ def cut_video(
     Mirrors cutvid.py's c()/a() behavior by default.
     """
     try:
-        import cv2  # lazy import: reverse subcommand does not need OpenCV
+        import cv2
     except ImportError:
         print(
             "Error: OpenCV (cv2) is required for the cut subcommand. "

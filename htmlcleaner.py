@@ -29,7 +29,7 @@ ASSETS_DIR_NAME = "assets"
 CSS_SUBDIR = "css"
 JS_SUBDIR = "js"
 HTML_EXTENSIONS = {".html", ".htm"}
-MIN_INLINE_SIZE = 0  # Minimum size in bytes to extract (0 = extract all)
+MIN_INLINE_SIZE = 0
 
 
 @dataclass
@@ -109,7 +109,7 @@ class HTMLExtractor(html.parser.HTMLParser):
 
     def handle_entityref(self, name: str):
         """Handle entity references within script/style."""
-        if self.in_script:  # Scripts can contain entity-like content
+        if self.in_script:
             self.current_content.append(f"&{name};")
 
     def handle_charref(self, name: str):
@@ -119,7 +119,7 @@ class HTMLExtractor(html.parser.HTMLParser):
 
     def error(self, message: str):
         """Handle parser errors gracefully."""
-        pass  # Continue parsing despite errors
+        pass
 
 
 def compute_content_hash(content: str) -> str:
@@ -313,7 +313,7 @@ def process_html_file(path: Path) -> ExtractionResult:
             return ExtractionResult(path=path, success=False, error="Not a file")
 
         # Check file size (skip extremely large files by default)
-        MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+        MAX_FILE_SIZE = 50 * 1024 * 1024
         file_size = path.stat().st_size
 
         if file_size > MAX_FILE_SIZE:

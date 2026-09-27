@@ -51,19 +51,18 @@ try:
 except ImportError:
     gcld3 = None  # type: ignore
 
-
 # ---------------------------------------------------------------------------
 # Constants (defaults mirror the originals)
 # ---------------------------------------------------------------------------
 CHINESE_RANGES = (
-    (0x3400, 0x4DBF),  # CJK Ext A
-    (0x4E00, 0x9FFF),  # CJK Unified
-    (0xF900, 0xFAFF),  # Compatibility Ideographs
-    (0x20000, 0x2A6DF),  # Ext B
-    (0x2A700, 0x2B73F),  # Ext C
-    (0x2B740, 0x2B81F),  # Ext D
-    (0x2B820, 0x2CEAF),  # Ext E
-    (0x2CEB0, 0x2EBEF),  # Ext F
+    (0x3400, 0x4DBF),
+    (0x4E00, 0x9FFF),
+    (0xF900, 0xFAFF),
+    (0x20000, 0x2A6DF),
+    (0x2A700, 0x2B73F),
+    (0x2B740, 0x2B81F),
+    (0x2B820, 0x2CEAF),
+    (0x2CEB0, 0x2EBEF),
 )
 
 ENCODINGS = ("utf-8", "utf-8-sig", "gb18030", "gbk", "cp1252")
@@ -114,7 +113,7 @@ TXT_EXT = {
 
 DEFAULT_MOVE_TARGET = "chinese_files"
 DEFAULT_NONENG_FILE = "noneng.txt"
-PROGRESS = True  # toggled by --no-progress
+PROGRESS = True
 
 
 # ---------------------------------------------------------------------------
@@ -524,7 +523,7 @@ def _scan_detailed(root: Path, min_bytes: int, max_bytes: int) -> dict:
     for f in iter_files(root, recursive=True, skip_hidden=True):
         if f.suffix.lower() not in TXT_EXT:
             continue
-        if f.stat().st_size > 1_048_576:  # 1 MiB hard cap, like original
+        if f.stat().st_size > 1_048_576:
             stats["skipped_binary"] += 1
             continue
         stats["total_files"] += 1

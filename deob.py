@@ -65,7 +65,7 @@ def find_eval_expr(src: str) -> str | None:
 def substitute(expr: str, variables: dict[str, str]) -> str:
     def repl(m: re.Match) -> str:
         name = m.group(1) or m.group(2)
-        return variables.get(name, m.group(0))  # leave unknown vars alone
+        return variables.get(name, m.group(0))
 
     expr = re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}", repl, expr)
     expr = re.sub(r"\$([A-Za-z_][A-Za-z0-9_]*)", repl, expr)

@@ -54,7 +54,7 @@ try:
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True
-except ImportError:  # graceful degradation
+except ImportError:
     requests = None  # type: ignore
     _HAS_COLORAMA = False
 
@@ -69,7 +69,6 @@ except ImportError:  # graceful degradation
 
 # Rich is only needed by `signal`; import lazily inside that command.
 # pycurl is only needed by `show-ip --engine=pycurl`; imported lazily too.
-
 
 # ==========================================================================
 #  Common helpers
@@ -149,7 +148,7 @@ def _probe_one(
             ok = r.status_code == 200
         except requests.exceptions.RequestException:
             ok = False
-    time.sleep(delay)  # original had r(0.5) — a rate-limit pause
+    time.sleep(delay)
     color = Fore.GREEN if ok else Fore.RED
     mark = "✅" if ok else "❌"
     line = f"{color}[{idx}/{total}] {mark} {proxy}{Style.RESET_ALL}"

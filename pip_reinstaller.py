@@ -23,7 +23,7 @@ def main():
 
     # Termux: pin the interpreter so we always hit the Termux python,
     # not some other python that leaked into PATH.
-    py = sys.executable  # e.g. /data/data/com.termux/files/usr/bin/python3.12
+    py = sys.executable
 
     print(f"Total packages to reinstall: {len(pkgs)}")
     print(f"Interpreter: {py}\n")

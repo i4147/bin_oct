@@ -46,7 +46,7 @@ def run_python_file(
             str(path),
             run_name="__main__",
         )
-        _ = result  # execution succeeded
+        _ = result
         return (path, True, None, None)
     except SystemExit as e:
         code = e.code

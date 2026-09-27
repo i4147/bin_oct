@@ -59,7 +59,6 @@ __all__ = [
     "main",
 ]
 
-
 PYPI_SIMPLE_URL = "https://pypi.org/simple/"
 TSINGHUA_SIMPLE_URL = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 YANDEX_SIMPLE_URL = "https://pypi.yandex.ru/simple/"
@@ -109,7 +108,7 @@ HASH_PREFERENCE = {
 }
 
 CHUNK_SIZE = 1024 * 1024
-PARALLEL_DOWNLOAD_THRESHOLD = 5 * 1024 * 1024  # 5 MiB
+PARALLEL_DOWNLOAD_THRESHOLD = 5 * 1024 * 1024
 DEFAULT_PARALLEL_WORKERS = min(8, max(2, os.cpu_count() or 2))
 
 SIMPLE_ACCEPT_HEADER = ", ".join(

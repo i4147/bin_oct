@@ -27,10 +27,8 @@ DEFAULT_BRANCH: Final[str] = "main"
 VERSION: Final[str] = "1.4.7"
 """Version stamped into pyproject.toml, __init__.py, <pkgname>.py, <pkgname>.pyx."""
 
-
 # Load .env early so GITHUB_TOKEN is available to any subsequent code.
 load_dotenv(dotenv_path=ENV_PATH)
-
 
 # --------------------------------------------------------------------------- #
 # File templates -- shared
@@ -83,7 +81,6 @@ from setuptools import setup
 
 setup()
 '''
-
 
 # --------------------------------------------------------------------------- #
 # File templates -- package layout
@@ -162,7 +159,6 @@ if __name__ == "__main__":
     app()
 """
 
-
 # --------------------------------------------------------------------------- #
 # File templates -- single-file layout
 # --------------------------------------------------------------------------- #
@@ -224,7 +220,6 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 '''
-
 
 # --------------------------------------------------------------------------- #
 # File templates -- Cython layout
@@ -311,7 +306,6 @@ def main() -> None:
     """Console-script entry point for the ``{pkgname}`` command."""
     print("Hello from {pkgname}")
 '''
-
 
 # --------------------------------------------------------------------------- #
 # Shell helpers

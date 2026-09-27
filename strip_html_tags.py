@@ -50,7 +50,6 @@ BLOCK_TAGS = {
 }
 RAWTEXT_TAGS = {"script", "style", "textarea", "title"}
 
-
 # ---------- Phase 1: find safe split offsets ----------
 
 
@@ -68,7 +67,7 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
     splits: list[int] = []
 
     in_tag = False
-    raw_until_close: bytes | None = None  # e.g. b"</script"
+    raw_until_close: bytes | None = None
     pos = 0
     ti = 0
 
@@ -94,7 +93,7 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                     window = buf[pos - 1 - buf_start : pos - 1 - buf_start + 16]
                     if window.lower().startswith(raw_until_close):
                         raw_until_close = None
-                        in_tag = True  # we're now inside </tag>
+                        in_tag = True
                 continue
 
             if in_tag:
