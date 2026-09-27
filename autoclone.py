@@ -162,7 +162,8 @@ def display_cached_stats(cache_data):
 
 
 def main():
-    repos_file = Path("repos.txt")
+    fn = sys.argv[1]
+    repos_file = Path(fn)
     if not repos_file.exists():
         print("❌ repos.txt not found in current directory")
         sys.exit(1)
@@ -176,7 +177,7 @@ def main():
     print(f"\n📚 Found {len(repos)} repositories")
     print("🔍 Checking and cloning in one pass...")
     print("-" * 40)
-    size_limit_mb = 1
+    size_limit_mb = 5
     cloned_count = 0
     skipped_count = 0
     failed_count = 0

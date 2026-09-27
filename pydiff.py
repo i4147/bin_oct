@@ -20,17 +20,25 @@ The generated script should:
 
 from __future__ import annotations
 
+
 import sys
 from collections.abc import Iterable, Sequence
+from difflib import unified_diff
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final, Optional, Tuple
+from typing import Final
 
 from loguru import logger
 
 POOL_SIZE: Final[int] = 8
 LARGE_FILE_THRESHOLD: Final[int] = 10_000
 MIN_CHUNK_SIZE: Final[int] = 1_000
+SHOW_LIMIT: Final[int] = 10
+PREVIEW_COUNT: Final[int] = 3
+DIFF_SHOW_LIMIT: Final[int] = 100
+DIFF_PREVIEW_COUNT: Final[int] = 20
+DIFF_LOG_PATH: Final[Path] = Path("difflines_full_diff.log")
+USAGE: Final[str] = "usage: difflines.py [-d | --diff] <file1> <file2>"
 
 CODE_EXT: Final[frozenset[str]] = frozenset(
     {
@@ -51,102 +59,170 @@ CODE_EXT: Final[frozenset[str]] = frozenset(
     }
 )
 
-FileLines = tuple[Path, list[str]]
-DiffChunkArgs = tuple[list[str], "frozenset[str]", str]
+ReadResult = tuple[Path, list[str]]
+ChunkTask = tuple[int, tuple[str, ...], frozenset[str]]
+ChunkResult = tuple[int, tuple[str, ...]]
 
 
-def count_lines(path: Path) -> int:
-    return path.read_bytes().count(b"\n") + 1
-
-
-def strip_indentation(lines: Sequence[str]) -> list[str]:
-    return [line.strip(" \t") for line in lines]
-
-
-def read_file_task(path: Path) -> FileLines:
-    text: str = path.read_text(encoding="utf-8", errors="ignore")
-    lines: list[str] = text.splitlines(keepends=False)
+def read_file_task(path: Path) -> ReadResult:
+    lines: list[str] = path.read_text(encoding="utf-8", errors="ignore").splitlines()
     if path.suffix.lower() in CODE_EXT:
-        lines = strip_indentation(lines)
+        lines = [ln.strip(" \t") for ln in lines]
     return path, lines
 
 
-def filter_diff_chunk(args: DiffChunkArgs) -> list[str]:
-    chunk, exclude_set, mode = args
-    if mode == "only_in_first":
-        return [p for p in chunk if p not in exclude_set]
-    return [p for p in chunk if p in exclude_set]
+def filter_chunk(task: ChunkTask) -> ChunkResult:
+    idx, chunk, exclude = task
+    return idx, tuple(ln for ln in chunk if ln not in exclude)
 
 
-def _chunked(lines: list[str], size: int) -> list[list[str]]:
-    return [lines[i : i + size] for i in range(0, len(lines), size)]
-
-
-def report_diff_lines(path1: Path, path2: Path) -> None:
-    lines1_count: int = count_lines(path1)
-    lines2_count: int = count_lines(path2)
-
+def load_files(path1: Path, path2: Path) -> tuple[list[str], list[str]]:
+    loaded: dict[Path, list[str]] = {}
     with Pool(processes=POOL_SIZE) as pool:
-        file_map: dict[Path, list[str]] = {}
-        path: Path
-        lines: list[str]
-        for path, lines in pool.imap_unordered(read_file_task, [path1, path2]):
-            file_map[path] = lines
+        for path, lines in pool.imap_unordered(
+            read_file_task, (path1, path2), chunksize=1
+        ):
+            loaded[path] = lines
+    return loaded[path1], loaded[path2]
 
-    lines1: list[str] = file_map[path1]
-    lines2: list[str] = file_map[path2]
 
-    set1: set[str] = set(lines1)
-    set2: set[str] = set(lines2)
+def unique_parallel(lines: list[str], exclude: frozenset[str], pool: Pool) -> list[str]:
+    size: int = max(MIN_CHUNK_SIZE, len(lines) // (POOL_SIZE * 4))
+    tasks: list[ChunkTask] = [
+        (i, tuple(lines[s : s + size]), exclude)
+        for i, s in enumerate(range(0, len(lines), size))
+    ]
+    parts: dict[int, tuple[str, ...]] = {}
+    for idx, chunk in pool.imap_unordered(filter_chunk, tasks, chunksize=1):
+        parts[idx] = chunk
+    out: list[str] = []
+    extend = out.extend
+    for i in range(len(tasks)):
+        extend(parts[i])
+    return out
 
-    only_in_first: list[str]
-    if lines1_count > LARGE_FILE_THRESHOLD and lines2_count > LARGE_FILE_THRESHOLD:
-        chunk_size: int = max(MIN_CHUNK_SIZE, len(lines1) // POOL_SIZE)
-        chunks: list[list[str]] = _chunked(lines1, chunk_size)
-        frozen2: frozenset[str] = frozenset(set2)
-        args_list: list[DiffChunkArgs] = [
-            (chunk, frozen2, "only_in_first") for chunk in chunks
-        ]
-        only_in_first = []
-        with Pool(processes=POOL_SIZE) as pool:
-            partial: list[str]
-            for partial in pool.imap_unordered(filter_diff_chunk, args_list):
-                only_in_first.extend(partial)
-    else:
-        only_in_first = [p for p in lines1 if p not in set2]
 
-    only_in_second: list[str] = [p for p in lines2 if p not in set1]
-    common_count: int = len(set1 & set2)
+def unique_lines(lines: list[str], exclude: frozenset[str], pool: Pool) -> list[str]:
+    if len(lines) <= LARGE_FILE_THRESHOLD:
+        return [ln for ln in lines if ln not in exclude]
+    return unique_parallel(lines, exclude, pool)
 
-    line: str
-    if only_in_first:
-        logger.info("only in {}:", path1.name)
-        for line in only_in_first:
-            logger.opt(colors=True).info("<green>  - {}</green>", line)
 
-    if only_in_second:
-        logger.info("only in {}:", path2.name)
-        for line in only_in_second:
-            logger.opt(colors=True).info("<yellow>  - {}</yellow>", line)
+def common_preview(
+    lines1: Sequence[str], set2: frozenset[str], total: int
+) -> list[str]:
+    limit: int = total if total <= SHOW_LIMIT else PREVIEW_COUNT
+    out: list[str] = []
+    seen: set[str] = set()
+    for ln in lines1:
+        if ln in set2 and ln not in seen:
+            seen.add(ln)
+            out.append(ln)
+            if len(out) >= limit:
+                break
+    return out
 
-    logger.opt(colors=True).info(
-        "<blue>common lines: {}\nonly in {}: {}\nonly in {}: {}</blue>",
-        common_count,
-        path1.name,
-        len(only_in_first),
-        path2.name,
-        len(only_in_second),
+
+def log_section(title: str, lines: Sequence[str], total: int, color: str) -> None:
+    if total == 0:
+        return
+    logger.info("{} ({}):", title, total)
+    logc = logger.opt(colors=True)
+    limit: int = total if total <= SHOW_LIMIT else PREVIEW_COUNT
+    for ln in lines[:limit]:
+        logc.info("<{}>  - {}</{}>", color, ln, color)
+    if total > SHOW_LIMIT:
+        logger.info("  ... and {} more line(s)", total - limit)
+
+
+def log_diff(path1: Path, path2: Path, lines1: list[str], lines2: list[str]) -> None:
+    diff_lines: list[str] = list(
+        unified_diff(
+            lines1, lines2, fromfile=str(path1), tofile=str(path2), lineterm=""
+        )
     )
+    total: int = len(diff_lines)
+    if total == 0:
+        logger.info("diff: files are identical")
+        return
+    logger.info("diff ({} line(s)):", total)
+    logc = logger.opt(colors=True)
+    limit: int = total if total <= DIFF_SHOW_LIMIT else DIFF_PREVIEW_COUNT
+    for ln in diff_lines[:limit]:
+        if ln.startswith("+"):
+            logc.info("<green>{}</green>", ln)
+        elif ln.startswith("-"):
+            logc.info("<red>{}</red>", ln)
+        else:
+            logc.info("<dim>{}</dim>", ln)
+    if total > DIFF_SHOW_LIMIT:
+        DIFF_LOG_PATH.write_text("\n".join(diff_lines) + "\n", encoding="utf-8")
+        logger.info(
+            "  ... {} more line(s); full diff written to {}",
+            total - limit,
+            DIFF_LOG_PATH,
+        )
 
 
 def main(argv: Iterable[str] | None = None) -> int:
     args: list[str] = list(argv) if argv is not None else sys.argv[1:]
-    if len(args) != 2:
-        logger.error("Usage: python difflines.py <file1> <file2>")
+    show_diff: bool = False
+    names: list[str] = []
+    for arg in args:
+        if arg in ("-d", "--diff"):
+            show_diff = True
+        elif arg in ("-h", "--help"):
+            print(USAGE)
+            return 0
+        elif arg.startswith("-") and arg != "-":
+            logger.error("unknown option: {}\n{}", arg, USAGE)
+            return 1
+        else:
+            names.append(arg)
+    if len(names) != 2:
+        logger.error(USAGE)
         return 1
-    f1: Path = Path(args[0])
-    f2: Path = Path(args[1])
-    report_diff_lines(f1, f2)
+    path1: Path = Path(names[0])
+    path2: Path = Path(names[1])
+    for p in (path1, path2):
+        if not p.is_file():
+            logger.error("not a file: {}", p)
+            return 1
+    try:
+        lines1, lines2 = load_files(path1, path2)
+    except OSError as exc:
+        logger.error("read failed: {}", exc)
+        return 1
+
+    set1: frozenset[str] = frozenset(lines1)
+    set2: frozenset[str] = frozenset(lines2)
+    common_count: int = len(set1 & set2)
+
+    with Pool(processes=POOL_SIZE) as pool:
+        only1: list[str] = unique_lines(lines1, set2, pool)
+        only2: list[str] = unique_lines(lines2, set1, pool)
+
+    if show_diff:
+        try:
+            log_diff(path1, path2, lines1, lines2)
+        except OSError as exc:
+            logger.error("diff log write failed: {}", exc)
+            return 1
+
+    log_section(f"only in {path1.name}", only1, len(only1), "green")
+    log_section(f"only in {path2.name}", only2, len(only2), "yellow")
+    log_section(
+        "common", common_preview(lines1, set2, common_count), common_count, "blue"
+    )
+
+    logger.opt(colors=True).info(
+        "<blue>summary: common: {} | only in {}: {} | only in {}: {}</blue>",
+        common_count,
+        path1.name,
+        len(only1),
+        path2.name,
+        len(only2),
+    )
     return 0
 
 
