@@ -862,7 +862,7 @@ def format_output(results: list[tuple[str, str, str | None]]) -> str:
         lines: list[str] = []
 
         if multiple_files:
-            lines.append(f"# filename: {Path(name).name}")
+            lines.append(f"# File: {Path(name).name}")
 
         lines.extend(line for line in content.splitlines() if line.strip())
         sections.append("\n".join(lines))
