@@ -42,7 +42,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-
 # ===========================================================================
 # Optional third-party imports (all graceful)
 # ===========================================================================
@@ -236,11 +235,11 @@ def collect_files(
     follow_symlinks: bool,
     min_size: int,
     excludes: Iterable[str],
-) -> List[Path]:
+) -> list[Path]:
     """Walk `root` and return candidate files honoring exclusion rules."""
     exclude_set = set(excludes)
     iterator = root.rglob("*") if recursive else root.iterdir()
-    out: List[Path] = []
+    out: list[Path] = []
     for p in iterator:
         if any(part in exclude_set for part in p.parts):
             continue
@@ -262,23 +261,23 @@ def collect_files(
 # ===========================================================================
 
 
-def _hash_worker(args: Tuple[Path, str, int]) -> Tuple[Path, Optional[str]]:
+def _hash_worker(args: tuple[Path, str, int]) -> tuple[Path, Optional[str]]:
     path, algorithm, chunk_size = args
     return path, hash_file(path, algorithm, chunk_size)
 
 
-def _quick_worker(path: Path) -> Tuple[Path, Optional[str]]:
+def _quick_worker(path: Path) -> tuple[Path, Optional[str]]:
     return path, quick_hash(path)
 
 
 def find_duplicates(
-    files: List[Path],
+    files: list[Path],
     *,
     algorithm: str,
     workers: int,
     quick_first: bool,
     chunk_size: int,
-) -> Dict[str, List[Path]]:
+) -> dict[str, list[Path]]:
     """Group files by content hash. Optional quick-hash pre-filter.
 
     Mirrors the phase layout of dupfx.py:
@@ -287,7 +286,7 @@ def find_duplicates(
       phase 3: full hash on survivors
     """
     # Phase 1 — group by size
-    by_size: Dict[int, List[Path]] = defaultdict(list)
+    by_size: dict[int, list[Path]] = defaultdict(list)
     for p in files:
         try:
             by_size[p.stat().st_size].append(p)
@@ -300,7 +299,7 @@ def find_duplicates(
 
     # Phase 2 — optional quick-hash
     if quick_first:
-        by_quick: Dict[str, List[Path]] = defaultdict(list)
+        by_quick: dict[str, list[Path]] = defaultdict(list)
         with ThreadPoolExecutor(max_workers=workers) as ex:
             for path, h in ex.map(_quick_worker, candidates):
                 if h:
@@ -310,7 +309,7 @@ def find_duplicates(
             return {}
 
     # Phase 3 — full hash
-    by_hash: Dict[str, List[Path]] = defaultdict(list)
+    by_hash: dict[str, list[Path]] = defaultdict(list)
     jobs = [(p, algorithm, chunk_size) for p in candidates]
     if workers <= 1:
         results = (_hash_worker(j) for j in jobs)
@@ -335,7 +334,7 @@ def find_duplicates(
 # ===========================================================================
 
 
-def select_keeper(group: List[Path], policy: str) -> Path:
+def select_keeper(group: list[Path], policy: str) -> Path:
     """Return the file to keep. Mirrors dupfx.py's `l()` helper."""
     if not group:
         raise ValueError("empty group")
@@ -550,14 +549,14 @@ def cmd_symlink(args: argparse.Namespace) -> int:
         stash.mkdir(parents=True, exist_ok=True)
 
     # Load any pre-existing manifest to append to.
-    manifest: Dict = {}
+    manifest: dict = {}
     if manifest_path.exists():
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except Exception:
             manifest = {}
-    operations: List[Dict] = manifest.get("operations", [])
-    stash_map: Dict[str, Dict] = manifest.get("stash", {})
+    operations: list[dict] = manifest.get("operations", [])
+    stash_map: dict[str, dict] = manifest.get("stash", {})
 
     # ---- Phase: move masters to stash --------------------------------------
     info(f"{len(groups)} duplicate group(s)")
@@ -657,8 +656,8 @@ def cmd_restore(args: argparse.Namespace) -> int:
         err(f"could not read manifest: {e}")
         return 1
 
-    stash_map: Dict = manifest.get("stash", {})
-    operations: List[Dict] = manifest.get("operations", [])
+    stash_map: dict = manifest.get("stash", {})
+    operations: list[dict] = manifest.get("operations", [])
 
     # Restore each recorded symlink back to a real copy.
     restored = 0

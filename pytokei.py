@@ -36,7 +36,6 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
-
 # ---------------------------------------------------------------------------
 # Configuration constants (originally hardcoded in both scripts)
 # ---------------------------------------------------------------------------

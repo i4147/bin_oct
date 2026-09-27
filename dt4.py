@@ -13,7 +13,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import loguru
 from deep_translator import GoogleTranslator
-from deep_translator.exceptions import TranslationNotFound, NotValidPayload
+from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger
 
 # Constants
@@ -123,7 +123,7 @@ def signal_handler(sig, frame) -> None:
     logger.info("Shutdown signal received. Waiting for current tasks to complete...")
 
 
-def split_into_chunks(text: str, chunk_size: int) -> List[str]:
+def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     """
     Split text into chunks of approximately chunk_size characters.
     Preserves word boundaries by splitting at the last space before chunk_size.
@@ -153,7 +153,7 @@ def split_into_chunks(text: str, chunk_size: int) -> List[str]:
     return chunks
 
 
-def load_existing_output(output_path: Path) -> Dict[str, str]:
+def load_existing_output(output_path: Path) -> dict[str, str]:
     """Load existing output JSON if it exists."""
     if output_path.exists():
         try:
@@ -164,7 +164,7 @@ def load_existing_output(output_path: Path) -> Dict[str, str]:
     return {}
 
 
-def save_json_atomic(data: Dict[str, str], output_path: Path) -> None:
+def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
     """Atomically save JSON data to file."""
     temp_path = output_path.with_suffix(".tmp")
     try:
@@ -370,7 +370,7 @@ def translate_chunk(
     delay: float,
     max_retries: int = MAX_RETRIES,
     backoff_base: int = BACKOFF_BASE,
-) -> Tuple[int, Optional[str]]:
+) -> tuple[int, Optional[str]]:
     """Translate a single chunk with retries and backoff."""
     if shutdown_flag:
         return index, None
@@ -403,14 +403,14 @@ def translate_chunk(
 
 
 def process_chunks(
-    chunks: List[str],
+    chunks: list[str],
     translator: Callable[[str], str],
     workers: int,
     delay: float,
     save_every: int,
     output_path: Path,
     failed_path: Path,
-    existing_output: Dict[str, str],
+    existing_output: dict[str, str],
 ) -> None:
     """Process all chunks with threading and periodic saving."""
     results = existing_output.copy()

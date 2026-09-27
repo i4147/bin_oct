@@ -31,12 +31,11 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from functools import wraps
 from pathlib import Path
 from typing import Callable, Dict, Optional
-from functools import wraps
 
 from loguru import logger
-
 
 # ============================================================================
 # CONFIGURATION & LOGGING
@@ -547,9 +546,9 @@ class TranslationState:
     source_lang: str
     target_lang: str
     chunks: list[str] = field(default_factory=list)
-    translations: Dict[int, str] = field(default_factory=dict)  # index -> translated
-    failed: Dict[int, str] = field(default_factory=dict)  # index -> error
-    backend_used: Dict[int, str] = field(default_factory=dict)  # index -> backend
+    translations: dict[int, str] = field(default_factory=dict)  # index -> translated
+    failed: dict[int, str] = field(default_factory=dict)  # index -> error
+    backend_used: dict[int, str] = field(default_factory=dict)  # index -> backend
     completed_at: Optional[float] = None
 
     def to_json(self) -> dict:

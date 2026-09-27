@@ -12,7 +12,6 @@ from typing import Any, Callable, Iterable, Iterator
 
 from loguru import logger
 
-
 WORKERS = 8
 CHUNK_SIZE = 64 * 1024
 DETECTION_SIZE = 4000

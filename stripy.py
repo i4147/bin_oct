@@ -33,7 +33,6 @@ from typing import Sequence
 import libcst as cst
 from loguru import logger
 
-
 #: Number of worker processes used to transform files in parallel.
 WORKERS: int = 8
 

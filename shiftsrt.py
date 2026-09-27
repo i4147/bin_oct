@@ -36,7 +36,7 @@ from typing import List, Optional, Sequence, Tuple
 SHIFT_RE = re.compile(
     r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})"
 )
-FALLBACK_ENCODINGS: Tuple[str, ...] = ("utf-8", "cp1252", "latin1")
+FALLBACK_ENCODINGS: tuple[str, ...] = ("utf-8", "cp1252", "latin1")
 
 
 def parse_ts_correct(ts: str) -> int:
@@ -124,7 +124,7 @@ def process_srt_file(
         raise
 
 
-def _worker(payload: Tuple[str, float, str, str]) -> Tuple[str, Optional[str]]:
+def _worker(payload: tuple[str, float, str, str]) -> tuple[str, Optional[str]]:
     path_str, shift_sec, math_mode, encoding = payload
     try:
         process_srt_file(Path(path_str), shift_sec, math_mode, encoding)
@@ -137,10 +137,10 @@ def collect_srt_files(
     paths: Sequence[Path],
     recursive: bool,
     assume_yes: bool,
-) -> List[Path]:
+) -> list[Path]:
     if not paths:
         paths = [Path.cwd()]
-    result: List[Path] = []
+    result: list[Path] = []
     for p in paths:
         if p.is_dir():
             iterator = p.rglob("*.srt") if recursive else p.glob("*.srt")

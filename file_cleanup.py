@@ -43,7 +43,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
-
 # ===========================================================================
 # Common helpers
 # ===========================================================================
@@ -68,7 +67,7 @@ def err(msg: str) -> None:
 
 def read_lines(
     path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = False
-) -> List[str]:
+) -> list[str]:
     """Read lines from a text file, using mmap for files > MMAP_THRESHOLD.
 
     Blank-line skipping mirrors the originals: a line is kept only if
@@ -76,7 +75,7 @@ def read_lines(
     """
     if not path.exists():
         raise FileNotFoundError(path)
-    lines: List[str] = []
+    lines: list[str] = []
     size = path.stat().st_size
     if size > MMAP_THRESHOLD:
         with (
@@ -116,11 +115,11 @@ def write_lines(
             f.write(line + "\n")
 
 
-def dedupe_preserving_order(lines: Iterable[str]) -> Tuple[List[str], List[str]]:
+def dedupe_preserving_order(lines: Iterable[str]) -> tuple[list[str], list[str]]:
     """Return (unique_lines, removed_lines) preserving first-occurrence order."""
     seen: set = set()
-    unique: List[str] = []
-    removed: List[str] = []
+    unique: list[str] = []
+    removed: list[str] = []
     for line in lines:
         if line in seen:
             removed.append(line)
@@ -138,20 +137,20 @@ def backup_file(path: Path) -> Path:
 
 
 def sort_lines(
-    lines: List[str],
+    lines: list[str],
     *,
     key: Optional[Callable] = None,
     reverse: bool = False,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     workers: int = 1,
-) -> List[str]:
+) -> list[str]:
     """In-memory sort; falls back to external merge-sort above `chunk_size`."""
     if len(lines) <= chunk_size:
         return sorted(lines, key=key, reverse=reverse)
 
     # External sort — same idea as sonic.py: sort chunks on disk, then merge.
     tmp_dir = Path(tempfile.gettempdir())
-    chunk_files: List[Path] = []
+    chunk_files: list[Path] = []
     for i in range(0, len(lines), chunk_size):
         piece = sorted(lines[i : i + chunk_size], key=key, reverse=reverse)
         cf = tmp_dir / f".fc_sort_{os.getpid()}_{i}.tmp"
@@ -265,7 +264,7 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         )
 
     # --- Dedupe -------------------------------------------------------------
-    removed: List[str] = []
+    removed: list[str] = []
     if args.unique:
         middle, removed = dedupe_preserving_order(middle)
 
@@ -380,7 +379,7 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
         return s.strip() == ""
 
     # Find adjacent-duplicate indices (1-based, matching the original output).
-    dupes: List[Tuple[int, str]] = []
+    dupes: list[tuple[int, str]] = []
     i = 0
     while i < len(lines) - 1:
         w, p = lines[i], lines[i + 1]
@@ -502,7 +501,7 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
 
     # --- Dedup --------------------------------------------------------------
     seen: set = set()
-    unique: List[Any] = []
+    unique: list[Any] = []
     for item in data:
         if isinstance(item, dict):
             if args.key:

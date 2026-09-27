@@ -20,7 +20,6 @@ import re
 import sys
 from pathlib import Path
 
-
 # ----------------------------------------------------------------------
 # 1. Extract every NAME='...' / NAME="..." assignment in the file
 # ----------------------------------------------------------------------

@@ -41,7 +41,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-
 # ===========================================================================
 # Common helpers
 # ===========================================================================
@@ -71,7 +70,7 @@ def iter_files(
     recursive: bool = True,
     include_hidden: bool = False,
     exclude_names: Iterable[str] = (),
-) -> List[Path]:
+) -> list[Path]:
     """Return files under `root` respecting hidden/exclude rules.
 
     Rule used by every folderize original: skip files starting with '.'
@@ -79,7 +78,7 @@ def iter_files(
     """
     exclude = set(exclude_names)
     it = root.rglob("*") if recursive else root.glob("*")
-    out: List[Path] = []
+    out: list[Path] = []
     for p in it:
         if not p.is_file() or p.is_symlink():
             continue
@@ -146,7 +145,7 @@ def cmd_info(args: argparse.Namespace) -> int:
     total_size = 0
     n_files = 0
     n_dirs = 0
-    ext_sizes: Dict[str, int] = defaultdict(int)
+    ext_sizes: dict[str, int] = defaultdict(int)
 
     for p in root.rglob("*"):
         if p.is_dir():
@@ -161,7 +160,7 @@ def cmd_info(args: argparse.Namespace) -> int:
             ext = p.suffix.lower() if p.suffix else "(no extension)"
             ext_sizes[ext] += sz
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append(f"Total size: {human_size(total_size)}")
     lines.append("")
     lines.append("File extensions:")
@@ -242,7 +241,7 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
 
-    sizes: Dict[str, int] = {}
+    sizes: dict[str, int] = {}
     try:
         for entry in root.iterdir():
             if entry.is_symlink():
@@ -339,7 +338,7 @@ def cmd_list(args: argparse.Namespace) -> int:
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
 
-    entries: List[Tuple[int, Path]] = []
+    entries: list[tuple[int, Path]] = []
     for p in root.iterdir():
         if p.is_symlink():
             continue
@@ -428,7 +427,7 @@ def cmd_split_range(args: argparse.Namespace) -> int:
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
 
-    files: List[Tuple[Path, int]] = []
+    files: list[tuple[Path, int]] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
             continue
@@ -463,7 +462,7 @@ def cmd_split_range(args: argparse.Namespace) -> int:
 
     # -- Compute size-range buckets ------------------------------------------
     all_sizes = sorted(s for _, s in files)
-    buckets: List[Tuple[int, int, str]] = []
+    buckets: list[tuple[int, int, str]] = []
     per = len(all_sizes) // n_dirs
     rem = len(all_sizes) % n_dirs
     idx = 0
@@ -507,7 +506,7 @@ def cmd_split_range(args: argparse.Namespace) -> int:
 # ===========================================================================
 
 # Files-per-folder thresholds from the original foldesize.py `a()` helper.
-_COUNT_THRESHOLDS: Tuple[Tuple[int, int], ...] = (
+_COUNT_THRESHOLDS: tuple[tuple[int, int], ...] = (
     (100, 10),
     (500, 25),
     (1000, 50),
@@ -534,7 +533,7 @@ def cmd_split_count(args: argparse.Namespace) -> int:
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
 
-    files: List[Dict] = []
+    files: list[dict] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
             continue
@@ -557,8 +556,8 @@ def cmd_split_count(args: argparse.Namespace) -> int:
     # -- Partition ------------------------------------------------------------
     if args.max_mb:
         max_bytes = int(args.max_mb * 1024 * 1024)
-        chunks: List[List[Dict]] = []
-        cur: List[Dict] = []
+        chunks: list[list[dict]] = []
+        cur: list[dict] = []
         cur_size = 0
         for f in files:
             if cur_size + f["size"] > max_bytes and cur:
@@ -651,7 +650,7 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
     sorted_files = sorted(files, key=lambda p: sizes_by_path[p], reverse=True)
 
     # Greedy allocation ------------------------------------------------------
-    bins: List[Dict] = [{"files": [], "size": 0} for _ in range(n_dirs)]
+    bins: list[dict] = [{"files": [], "size": 0} for _ in range(n_dirs)]
     for f in sorted_files:
         sz = sizes_by_path[f]
         i = min(range(n_dirs), key=lambda j: bins[j]["size"])
@@ -660,7 +659,7 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
 
     # Create directories -----------------------------------------------------
     existing = {p.name for p in root.iterdir() if p.is_dir()}
-    created: List[Tuple[str, int, int]] = []
+    created: list[tuple[str, int, int]] = []
     for b in bins:
         if not b["files"]:
             continue
@@ -737,7 +736,7 @@ def cmd_split_even(args: argparse.Namespace) -> int:
     per = n // n_dirs
     rem = n % n_dirs
     existing = {p.name for p in root.iterdir() if p.is_dir()}
-    plan: List[Tuple[str, int, int]] = []  # (name, start, end_exclusive)
+    plan: list[tuple[str, int, int]] = []  # (name, start, end_exclusive)
     idx = 0
     for i in range(n_dirs):
         start = idx

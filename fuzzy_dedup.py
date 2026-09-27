@@ -54,7 +54,8 @@ except ImportError as exc:
 
 
 try:
-    from colorama import Fore, Style, init as colorama_init
+    from colorama import Fore, Style
+    from colorama import init as colorama_init
 except ImportError:
     Fore = None
     Style = None
@@ -176,7 +177,7 @@ def hash_files(
 def exact_duplicate_groups(
     hashes: Mapping[Path, FileHash],
 ) -> dict[str, list[Path]]:
-    groups: DefaultDict[str, list[Path]] = defaultdict(list)
+    groups: defaultdict[str, list[Path]] = defaultdict(list)
 
     for item in hashes.values():
         groups[item.exact].append(item.path)

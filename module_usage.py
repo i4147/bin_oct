@@ -45,7 +45,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-
 # ---------------------------------------------------------------------------
 # Defaults (originally hardcoded in both scripts)
 # ---------------------------------------------------------------------------

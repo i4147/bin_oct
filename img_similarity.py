@@ -33,7 +33,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -54,7 +53,7 @@ SUPPORTED_EXTS = {
 }
 
 # Default Hamming thresholds per method (mirrors each original's hardcoded value).
-DEFAULT_THRESHOLDS: Dict[str, float] = {
+DEFAULT_THRESHOLDS: dict[str, float] = {
     "dct-phash": 4,  # dupimg.py DUP_HASH_THRESHOLD default
     "dhash-custom": 4,  # imgdedup.py (exact-hash grouping)
     "ahash": 8,  # imagehash defaults / folderize_images.py
@@ -166,8 +165,8 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
     """imagehash-based hashes; supports the 7 algorithms the originals used."""
     if not (_require("PIL", method) and _require("imagehash", method)):
         return None
-    from PIL import Image  # type: ignore
     import imagehash  # type: ignore
+    from PIL import Image  # type: ignore
 
     try:
         with Image.open(path) as im:
@@ -192,12 +191,12 @@ def hash_imagehash(path: Path, method: str, hash_size: int = 8):
         return None
 
 
-def hash_multihash(path: Path, hash_size: int = 8) -> Optional[Dict[str, Any]]:
+def hash_multihash(path: Path, hash_size: int = 8) -> Optional[dict[str, Any]]:
     """folderimg.py: dict of phash/dhash/ahash for weighted comparison."""
     if not (_require("PIL", "multihash") and _require("imagehash", "multihash")):
         return None
-    from PIL import Image  # type: ignore
     import imagehash  # type: ignore
+    from PIL import Image  # type: ignore
 
     try:
         with Image.open(path) as im:
@@ -212,7 +211,7 @@ def hash_multihash(path: Path, hash_size: int = 8) -> Optional[Dict[str, Any]]:
         return None
 
 
-def feature_hist(path: Path, size: Tuple[int, int] = (64, 64)) -> Optional[Any]:
+def feature_hist(path: Path, size: tuple[int, int] = (64, 64)) -> Optional[Any]:
     """organize_images.py: HSV histogram (8 bins × 3 channels) + raw pixels."""
     if not (_require("cv2", "hist") and _require("numpy", "hist")):
         return None
@@ -323,11 +322,11 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
 
 def collect_images(
     root: Path, recursive: bool, exclude_parts: Iterable[str]
-) -> List[Path]:
+) -> list[Path]:
     """Return files under `root` whose suffix is supported, excluding dirs."""
     ex_set = {p for p in exclude_parts if p}
     iterator = root.rglob("*") if recursive else root.glob("*")
-    out: List[Path] = []
+    out: list[Path] = []
     for p in iterator:
         if not p.is_file():
             continue
@@ -341,9 +340,9 @@ def collect_images(
 
 def compute_features(
     paths: Sequence[Path], method: str, hash_size: int, workers: int
-) -> List[Tuple[Path, Any]]:
+) -> list[tuple[Path, Any]]:
     """Compute features for all paths; returns [(path, feature), ...]."""
-    items: List[Tuple[Path, Any]] = []
+    items: list[tuple[Path, Any]] = []
     if workers <= 1 or len(paths) <= 1:
         for p in paths:
             f = extract_feature(p, method, hash_size)
@@ -366,12 +365,12 @@ def compute_features(
 
 
 def group_items(
-    items: Sequence[Tuple[Path, Any]],
+    items: Sequence[tuple[Path, Any]],
     method: str,
     threshold: float,
     similarity_mode: bool,
     hash_size: int,
-) -> List[List[Path]]:
+) -> list[list[Path]]:
     """
     Greedy grouping: O(n²) pairwise comparison, matches every original's
     semantics. Returns a list of path groups (singletons included).
@@ -387,14 +386,14 @@ def group_items(
     else:
         dist_threshold = float(threshold)
 
-    groups: List[List[Path]] = []
+    groups: list[list[Path]] = []
     assigned: set = set()
     n = len(items)
     for i in range(n):
         pi, fi = items[i]
         if pi in assigned:
             continue
-        g: List[Path] = [pi]
+        g: list[Path] = [pi]
         assigned.add(pi)
         for j in range(i + 1, n):
             pj, fj = items[j]
@@ -710,8 +709,8 @@ def cmd_cluster(args: argparse.Namespace) -> int:
         print("No images found!")
         return 0
 
-    features: List[Any] = []
-    valid: List[Path] = []
+    features: list[Any] = []
+    valid: list[Path] = []
     for i, p in enumerate(paths):
         if i % 10 == 0:
             print(f"Processing {i}/{len(paths)}...")
@@ -735,14 +734,14 @@ def cmd_cluster(args: argparse.Namespace) -> int:
 
     # Greedy agglomerative merge, faithful to organize_images.py.
     n = len(feats_arr)
-    clusters: Dict[int, List[int]] = {i: [i] for i in range(n)}
-    centroids: Dict[int, Any] = {i: feats_arr[i].copy() for i in range(n)}
+    clusters: dict[int, list[int]] = {i: [i] for i in range(n)}
+    centroids: dict[int, Any] = {i: feats_arr[i].copy() for i in range(n)}
     max_iter = n * 2
     it = 0
     while len(clusters) > k and it < max_iter:
         it += 1
         best_sim = -1.0
-        best_pair: Optional[Tuple[int, int]] = None
+        best_pair: Optional[tuple[int, int]] = None
         keys = list(clusters.keys())
         for i in range(len(keys)):
             for j in range(i + 1, len(keys)):

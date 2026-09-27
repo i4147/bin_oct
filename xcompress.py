@@ -27,8 +27,8 @@ import bz2
 import contextlib
 import gzip
 import hashlib
-import lzma
 import logging
+import lzma
 import multiprocessing as mp
 import os
 import shutil

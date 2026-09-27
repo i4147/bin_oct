@@ -42,8 +42,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
 
-from fastwalk import walk_files
 from dh import SKIP_DIRS
+from fastwalk import walk_files
 
 cwd = Path.cwd().resolve()
 # --------------------------------------------------------------------------- #

@@ -232,7 +232,7 @@ def run_parallel(
     workers: int,
     operation: str,
     dry_run: bool = False,
-) -> List[TaskResult]:
+) -> list[TaskResult]:
     """Run *worker* over *tasks* in a process pool while printing progress."""
     if not tasks:
         return []
@@ -265,7 +265,7 @@ def run_parallel(
         )
         sys.stdout.flush()
 
-    results: List[TaskResult] = []
+    results: list[TaskResult] = []
     try:
         with Pool(processes=workers) as pool:
             for res in pool.imap_unordered(worker, tasks):
@@ -525,10 +525,10 @@ def _should_skip_path(p: Path) -> bool:
 
 def discover_targets(
     root: Path, args: argparse.Namespace
-) -> Tuple[List[Path], List[Path]]:
+) -> tuple[list[Path], list[Path]]:
     """Return (files, dirs) to operate on based on CLI filters."""
-    files: List[Path] = []
-    dirs: List[Path] = []
+    files: list[Path] = []
+    dirs: list[Path] = []
 
     if args.targets in ("files", "both"):
         it: Iterable[Path] = root.rglob("*") if args.recursive else root.iterdir()
@@ -617,7 +617,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
         f"(level {args.level}, threads {args.threads}, workers {args.workers})"
     )
 
-    results: List[TaskResult] = []
+    results: list[TaskResult] = []
 
     if dirs:
         worker = partial(

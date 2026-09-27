@@ -23,9 +23,8 @@ from pathlib import Path
 from typing import Iterator
 
 from dh import is_binary
-
-from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
+from elftools.elf.elffile import ELFFile
 
 WORKERS = 8
 

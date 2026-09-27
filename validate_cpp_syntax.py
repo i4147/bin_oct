@@ -11,9 +11,9 @@ If no paths are given, scans the current directory (non-recursive) for
 Reports only files that fail. Uses multiprocessing with 8 workers.
 """
 
+import multiprocessing as mp
 import subprocess
 import sys
-import multiprocessing as mp
 from pathlib import Path
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}

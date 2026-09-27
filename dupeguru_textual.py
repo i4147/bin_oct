@@ -20,6 +20,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
+from textual.widget import Widget
 from textual.widgets import (
     Button,
     DataTable,
@@ -34,8 +35,6 @@ from textual.widgets import (
     Static,
     Switch,
 )
-from textual.widget import Widget
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Core Logic

@@ -12,10 +12,10 @@ Usage:
 If no input is provided, the current directory is scanned recursively.
 """
 
-import os
-import sys
 import ast
 import multiprocessing as mp
+import os
+import sys
 
 OUTPUT_DIR = "output"
 CLASSES_DIR = os.path.join(OUTPUT_DIR, "classes")

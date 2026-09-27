@@ -49,7 +49,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
@@ -223,7 +222,7 @@ class GitPythonGit(GitBackend):
     """Local git via GitPython."""
 
     def _repo(self, path: Path):
-        from git import Repo, InvalidGitRepositoryError
+        from git import InvalidGitRepositoryError, Repo
 
         try:
             return Repo(str(path))

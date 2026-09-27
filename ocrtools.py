@@ -60,7 +60,9 @@ except ImportError:
     HAS_PIL = False
 
 try:
-    from skimage import color as skcolor, filters as skfilters, io as skiio
+    from skimage import color as skcolor
+    from skimage import filters as skfilters
+    from skimage import io as skiio
     from skimage.filters import threshold_local
     from skimage.util import img_as_ubyte
 

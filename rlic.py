@@ -36,13 +36,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-
 # ---------------------------------------------------------------------------
 # Constants (from the originals)
 # ---------------------------------------------------------------------------
 
 # mlic.py's default extension whitelist.
-DEFAULT_TEXT_EXTS: Set[str] = {
+DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",
     ".md",
     ".rst",
@@ -92,7 +91,7 @@ DEFAULT_TEXT_EXTS: Set[str] = {
 }
 
 # mlic2.py's binary extension blacklist.
-BINARY_EXTS: Set[str] = {
+BINARY_EXTS: set[str] = {
     ".pyc",
     ".pyo",
     ".pyd",
@@ -131,7 +130,7 @@ BINARY_EXTS: Set[str] = {
 }
 
 # pylic.py: lines starting with any of these are NOT treated as generic comments.
-COMMENT_EXCEPTIONS: Tuple[str, ...] = (
+COMMENT_EXCEPTIONS: tuple[str, ...] = (
     "#!",
     "# type",
     "# fmt",
@@ -176,7 +175,7 @@ class Occurrence:
     start: int
     end: int
     normalized: str
-    raw_lines: List[str] = field(default_factory=list)
+    raw_lines: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -208,8 +207,8 @@ def _is_probably_text(path: Path) -> bool:
 
 
 def collect_files(
-    root: Path, *, block_mode: str, extensions: Optional[Set[str]]
-) -> List[Path]:
+    root: Path, *, block_mode: str, extensions: Optional[set[str]]
+) -> list[Path]:
     """Return candidate files under `root` for the chosen block-mode.
 
     paragraph  -- extension whitelist (mlic/mlic2), plus heuristic for
@@ -224,7 +223,7 @@ def collect_files(
     else:
         wanted = extensions or DEFAULT_TEXT_EXTS
 
-    out: List[Path] = []
+    out: list[Path] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
             continue
@@ -260,10 +259,10 @@ def _normalize(lines: Sequence[str]) -> str:
 
 
 def extract_paragraph_blocks(
-    lines: List[str], min_lines: int, min_chars: int
-) -> List[Occurrence]:
+    lines: list[str], min_lines: int, min_chars: int
+) -> list[Occurrence]:
     """mlic/mlic2: consecutive non-blank lines form a block."""
-    blocks: List[Occurrence] = []
+    blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
     while i < n:
@@ -271,7 +270,7 @@ def extract_paragraph_blocks(
             i += 1
             continue
         start = i
-        raw: List[str] = [lines[i]]
+        raw: list[str] = [lines[i]]
         i += 1
         while i < n and lines[i].strip():
             raw.append(lines[i])
@@ -299,16 +298,16 @@ def _is_generic_comment(line: str) -> bool:
     return not any(s.startswith(prefix) for prefix in COMMENT_EXCEPTIONS)
 
 
-def extract_comment_blocks(lines: List[str], min_lines: int) -> List[Occurrence]:
+def extract_comment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]:
     """pylic.py: runs of consecutive generic `#` lines become blocks."""
-    blocks: List[Occurrence] = []
+    blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
     while i < n:
         if _is_generic_comment(lines[i]):
             start = i
-            raw: List[str] = []
-            stripped: List[str] = []
+            raw: list[str] = []
+            stripped: list[str] = []
             while i < n and _is_generic_comment(lines[i]):
                 raw.append(lines[i])
                 stripped.append(lines[i].strip())
@@ -329,9 +328,9 @@ def extract_comment_blocks(lines: List[str], min_lines: int) -> List[Occurrence]
     return blocks
 
 
-def extract_segment_blocks(lines: List[str], min_lines: int) -> List[Occurrence]:
+def extract_segment_blocks(lines: list[str], min_lines: int) -> list[Occurrence]:
     """tlic.py: segments are delimited by lines starting with `#!`."""
-    blocks: List[Occurrence] = []
+    blocks: list[Occurrence] = []
     i = 0
     n = len(lines)
     while i < n:
@@ -339,8 +338,8 @@ def extract_segment_blocks(lines: List[str], min_lines: int) -> List[Occurrence]
             i += 1
             continue
         start = i
-        raw: List[str] = []
-        stripped: List[str] = []
+        raw: list[str] = []
+        stripped: list[str] = []
         while i < n and not lines[i].lstrip().startswith("#!"):
             raw.append(lines[i])
             stripped.append(lines[i].strip())
@@ -361,7 +360,7 @@ def extract_segment_blocks(lines: List[str], min_lines: int) -> List[Occurrence]
 
 def extract_blocks(
     path: Path, block_mode: str, min_lines: int, min_chars: int
-) -> List[Occurrence]:
+) -> list[Occurrence]:
     """Dispatch to the right extractor for the given mode."""
     try:
         with path.open("r", encoding="utf-8", errors="replace") as f:
@@ -389,7 +388,7 @@ def extract_blocks(
 # ---------------------------------------------------------------------------
 
 
-def _worker_scan(args: Tuple[Path, str, int, int]) -> Tuple[Path, List[Occurrence]]:
+def _worker_scan(args: tuple[Path, str, int, int]) -> tuple[Path, list[Occurrence]]:
     path, block_mode, min_lines, min_chars = args
     return path, extract_blocks(path, block_mode, min_lines, min_chars)
 
@@ -400,9 +399,9 @@ def scan_directory(
     block_mode: str,
     min_lines: int,
     min_chars: int,
-    extensions: Optional[Set[str]],
+    extensions: Optional[set[str]],
     workers: int,
-) -> Dict[str, List[Occurrence]]:
+) -> dict[str, list[Occurrence]]:
     """Group occurrences of identical blocks across all files under `root`."""
     files = collect_files(root, block_mode=block_mode, extensions=extensions)
     if not files:
@@ -415,7 +414,7 @@ def scan_directory(
         f"min-chars={min_chars}, workers={workers})..."
     )
 
-    groups: Dict[str, List[Occurrence]] = defaultdict(list)
+    groups: dict[str, list[Occurrence]] = defaultdict(list)
 
     if workers <= 1 or len(files) == 1:
         for f in files:
@@ -444,7 +443,7 @@ def _preview(text: str, limit: int = 200) -> str:
     return text[:limit] + ("..." if len(text) > limit else "")
 
 
-def print_report(groups: Dict[str, List[Occurrence]]) -> None:
+def print_report(groups: dict[str, list[Occurrence]]) -> None:
     """Print the found blocks to stdout (mirrors mlic/mlic2/pylic/tlic)."""
     if not groups:
         print("No repeated multiline blocks found.")
@@ -464,7 +463,7 @@ def print_report(groups: Dict[str, List[Occurrence]]) -> None:
             print(f"    {o.path}:{o.start + 1}-{o.end + 1}")
 
 
-def save_report(groups: Dict[str, List[Occurrence]], path: Path) -> None:
+def save_report(groups: dict[str, list[Occurrence]], path: Path) -> None:
     """Write a plain-text report (mlic/mlic2 behavior)."""
     try:
         with path.open("w", encoding="utf-8") as f:
@@ -489,8 +488,8 @@ def save_report(groups: Dict[str, List[Occurrence]], path: Path) -> None:
 
 
 def _remove_lines(
-    path: Path, line_indices: Set[int], validate_python: bool
-) -> Tuple[int, bool]:
+    path: Path, line_indices: set[int], validate_python: bool
+) -> tuple[int, bool]:
     """Remove 0-based line indices from `path`.
 
     Returns (lines_removed, success). When `validate_python` is True and
@@ -525,13 +524,13 @@ def _remove_lines(
 
 
 def remove_blocks(
-    groups: Dict[str, List[Occurrence]], validate_python: bool
-) -> Tuple[int, int]:
+    groups: dict[str, list[Occurrence]], validate_python: bool
+) -> tuple[int, int]:
     """Remove every occurrence of every block in `groups`.
 
     Files are updated once (union of all line indices). Returns (files, lines).
     """
-    per_file: Dict[Path, Set[int]] = defaultdict(set)
+    per_file: dict[Path, set[int]] = defaultdict(set)
     for occ_list in groups.values():
         for o in occ_list:
             per_file[o.path].update(range(o.start, o.end + 1))
@@ -554,11 +553,11 @@ def remove_blocks(
 # ---------------------------------------------------------------------------
 
 
-def _parse_extensions(raw: Optional[Sequence[str]]) -> Optional[Set[str]]:
+def _parse_extensions(raw: Optional[Sequence[str]]) -> Optional[set[str]]:
     """Normalise a list of extensions into a lowercase set with leading dots."""
     if not raw:
         return None
-    out: Set[str] = set()
+    out: set[str] = set()
     for e in raw:
         if not e:
             continue

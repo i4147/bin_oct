@@ -36,7 +36,6 @@ from typing import Callable, Iterator, Sequence
 
 from dh import cprint
 
-
 # ─────────────────────────────────────────────────────────────────────
 # Names that must never be shortened (builtins, dunders, magic args).
 # ─────────────────────────────────────────────────────────────────────

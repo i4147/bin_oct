@@ -43,9 +43,8 @@ from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 # Optional third-party imports
 # ---------------------------------------------------------------------------
 try:
-    from fontTools.ttLib import TTFont
-    from fontTools.ttLib import woff2
     from fontTools.pens.ttGlyphPen import TTGlyphPen
+    from fontTools.ttLib import TTFont, woff2
 
     HAS_FONTTOOLS = True
 except ImportError:
@@ -74,14 +73,14 @@ def unique_path(path: Path) -> Path:
 def collect_files(
     paths: Sequence[str],
     extensions: Sequence[str],
-) -> List[Path]:
+) -> list[Path]:
     """
     Collect files from given paths (files or directories).
     If no paths given, scan the current working directory recursively.
     Extensions are matched case-insensitively and should include the dot (e.g. '.ttf').
     """
     ext_set = {ext.lower() for ext in extensions}
-    result: List[Path] = []
+    result: list[Path] = []
 
     if not paths:
         paths = [str(Path.cwd())]
@@ -105,7 +104,7 @@ def collect_files(
 
     # Remove duplicates while preserving order
     seen = set()
-    unique: List[Path] = []
+    unique: list[Path] = []
     for f in result:
         if f not in seen:
             seen.add(f)
@@ -115,10 +114,10 @@ def collect_files(
 
 def run_parallel(
     func: Callable,
-    items: List,
+    items: list,
     workers: int,
     *args,
-) -> List:
+) -> list:
     """Run func(item, *args) for each item, using a multiprocessing pool if workers > 1."""
     if workers <= 1 or len(items) <= 1:
         return [func(item, *args) for item in items]
@@ -309,7 +308,7 @@ def cmd_otf2ttf(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> Tuple[str, str]:
+def _otf2ttf_fontforge_worker(src: Path, keep_source: bool) -> tuple[str, str]:
     """Convert OTF to TTF using FontForge Python bindings. Returns (status, message)."""
     try:
         import fontforge

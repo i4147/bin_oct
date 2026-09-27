@@ -48,7 +48,6 @@ from urllib.parse import urlparse
 import requests
 from loguru import logger
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------

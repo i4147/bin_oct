@@ -13,7 +13,6 @@ from pathlib import Path
 
 import sh  # pip install sh
 
-
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),
     ".cpp": ("clang++", ("clang++", "g++")),

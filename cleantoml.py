@@ -25,7 +25,8 @@ def _get_parser() -> Any:
     global _parser
     if _parser is None:
         import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
-        from tree_sitter import Language, Parser  # type: ignore[import-untyped]
+        from tree_sitter import Language  # type: ignore[import-untyped]
+        from tree_sitter import Parser
 
         _parser = Parser(Language(tstoml.language()))
     return _parser

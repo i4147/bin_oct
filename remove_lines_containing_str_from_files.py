@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 import sys
-from pathlib import Path
 from multiprocessing import Pool
-from dh import get_nobinary, gsz, fsz
+from pathlib import Path
+
+from dh import fsz, get_nobinary, gsz
 
 
 def clean_text(text, strtofind):

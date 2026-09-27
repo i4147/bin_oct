@@ -124,12 +124,7 @@ except ImportError:  # pragma: no cover
 
 try:
     from rich.console import Console
-    from rich.progress import (
-        BarColumn,
-        Progress,
-        TaskProgressColumn,
-        TextColumn,
-    )
+    from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 
     _HAVE_RICH = True
 except ImportError:  # pragma: no cover
@@ -162,7 +157,7 @@ def human_size(num_bytes: float) -> str:
 def run_command(
     cmd: Sequence[str],
     show_output: bool = False,
-) -> Tuple[int, str, str]:
+) -> tuple[int, str, str]:
     """Run *cmd*, return ``(returncode, stdout, stderr)``.
 
     Inlined replacement for the ``dh.runcmd`` helper.  When *show_output* is
@@ -183,14 +178,14 @@ def find_wheels(
     directory: Path,
     recursive: bool = False,
     exclude: Optional[Path] = None,
-) -> List[Path]:
+) -> list[Path]:
     """Return sorted ``*.whl`` files under *directory*.
 
     Files located under *exclude* are skipped so repeated runs do not
     re-report wheels that have already been moved there.
     """
     iterator = directory.rglob("*.whl") if recursive else directory.glob("*.whl")
-    wheels: List[Path] = []
+    wheels: list[Path] = []
     for candidate in iterator:
         if not candidate.is_file():
             continue
@@ -204,7 +199,7 @@ def find_wheels(
     return sorted(wheels)
 
 
-def read_wheel_metadata(whl: Path) -> Tuple[Optional[str], Optional[str]]:
+def read_wheel_metadata(whl: Path) -> tuple[Optional[str], Optional[str]]:
     """Return ``(name, version)`` from the wheel's ``METADATA`` file."""
     try:
         with zipfile.ZipFile(whl, "r") as zf:
@@ -226,7 +221,7 @@ def read_wheel_metadata(whl: Path) -> Tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def split_wheel_filename(whl: Path) -> Tuple[str, str]:
+def split_wheel_filename(whl: Path) -> tuple[str, str]:
     """Naive ``distribution/version`` extraction (matches ``have_script.py``)."""
     parts = whl.name.split("-")
     if len(parts) >= 3:
@@ -309,7 +304,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 # ===========================================================================
 
 
-def wheel_has_entry_points(whl: Path) -> Tuple[bool, Optional[str]]:
+def wheel_has_entry_points(whl: Path) -> tuple[bool, Optional[str]]:
     """Return ``(has_entry_points, dist_info_dir)`` for the wheel.
 
     Faithfully reproduces the original's behaviour of returning
@@ -345,8 +340,8 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
 
     print(f"Checking {len(wheels)} .whl file(s) in '{directory}'...\n")
 
-    with_ep: List[Tuple[Path, str, str, str]] = []
-    without_ep: List[Tuple[Path, str, str]] = []
+    with_ep: list[tuple[Path, str, str, str]] = []
+    without_ep: list[tuple[Path, str, str]] = []
 
     for whl in wheels:
         name, version = split_wheel_filename(whl)
@@ -454,7 +449,7 @@ def cmd_prune(args: argparse.Namespace) -> int:
         print("Run this script in a directory containing .whl files.")
         return 1
 
-    installed: Dict[str, str] = {
+    installed: dict[str, str] = {
         dist.metadata["Name"].lower(): dist.version
         for dist in importlib.metadata.distributions()
         if dist.metadata["Name"]
@@ -502,7 +497,7 @@ def _strip_file(path: Path, strip_tool: str) -> None:
 
 
 def _strip_with_rich(
-    targets: List[Path],
+    targets: list[Path],
     strip_tool: str,
     total_bytes: int,
 ) -> None:
@@ -670,7 +665,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 # ===========================================================================
 
 
-def _wheel_unpacked_size(whl: Path) -> Tuple[Path, int, Optional[str]]:
+def _wheel_unpacked_size(whl: Path) -> tuple[Path, int, Optional[str]]:
     """Return ``(path, unpacked_size, error)`` — module-level for Pool pickling."""
     try:
         if not whl.exists():
@@ -712,8 +707,8 @@ def cmd_size(args: argparse.Namespace) -> int:
     jobs = max(1, args.jobs)
     print(f"Processing wheels ({jobs} worker(s))...\n")
 
-    results: List[Tuple[Path, int]] = []
-    errors: List[Tuple[Path, str]] = []
+    results: list[tuple[Path, int]] = []
+    errors: list[tuple[Path, str]] = []
 
     with Pool(jobs) as pool:
         for whl, size, error in pool.imap_unordered(_wheel_unpacked_size, wheels):

@@ -44,8 +44,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 # Type aliases
-WheelInfo = Dict[str, object]
-PackageInfo = Dict[str, str]
+WheelInfo = dict[str, object]
+PackageInfo = dict[str, str]
 
 # Constants
 DEFAULT_DEST = "empty_wheels"
@@ -178,7 +178,7 @@ def is_empty_wheel(wheel_path: Path, method: str = DEFAULT_METHOD) -> bool:
         raise ValueError(f"Unknown method: {method}")
 
 
-def parse_wheel_name(wheel_path: Path) -> Tuple[Optional[str], Optional[str]]:
+def parse_wheel_name(wheel_path: Path) -> tuple[Optional[str], Optional[str]]:
     """
     Extract package name and version from wheel filename.
 
@@ -197,7 +197,7 @@ def parse_wheel_name(wheel_path: Path) -> Tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def get_installed_packages() -> Dict[str, str]:
+def get_installed_packages() -> dict[str, str]:
     """
     Get dictionary of installed packages (name.lower() -> version).
 
@@ -250,7 +250,7 @@ def get_package_info(package_name: str) -> Optional[PackageInfo]:
     return None
 
 
-def get_package_location(package_name: str) -> Tuple[Optional[str], bool]:
+def get_package_location(package_name: str) -> tuple[Optional[str], bool]:
     """
     Get installation location and whether package has files outside dist-info.
 
@@ -284,7 +284,7 @@ def get_package_location(package_name: str) -> Tuple[Optional[str], bool]:
 
 
 def check_installed_package(
-    wheel_path: Path, installed_packages: Dict[str, str]
+    wheel_path: Path, installed_packages: dict[str, str]
 ) -> Optional[WheelInfo]:
     """
     Check if an empty wheel corresponds to an installed package.
@@ -313,7 +313,7 @@ def check_installed_package(
     return None
 
 
-def find_wheels(directory: Path, recursive: bool = False) -> List[Path]:
+def find_wheels(directory: Path, recursive: bool = False) -> list[Path]:
     """
     Find all .whl files in directory (optionally recursively).
 
@@ -349,7 +349,7 @@ def move_wheel(wheel_path: Path, dest_dir: Path) -> Path:
     return dest_path
 
 
-def scan_site_packages() -> List[Path]:
+def scan_site_packages() -> list[Path]:
     """
     Scan site-packages for empty installed packages (using RECORD method).
 

@@ -41,7 +41,6 @@ import sys
 from pathlib import Path
 from typing import Iterator, List, Optional
 
-
 # ---------------------------------------------------------------------------
 # Page extraction helpers
 # ---------------------------------------------------------------------------
@@ -334,7 +333,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     """
     Program entry point.
 

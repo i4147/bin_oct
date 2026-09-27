@@ -218,7 +218,7 @@ def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
 # ---------------------------------------------------------------------------
 
 
-def verify_so_load(path: Path) -> Tuple[bool, str]:
+def verify_so_load(path: Path) -> tuple[bool, str]:
     """Try to load `path` via ``ctypes.CDLL``. Returns (ok, message)."""
     if not path.exists():
         return False, "File does not exist"
@@ -234,7 +234,7 @@ def verify_so_load(path: Path) -> Tuple[bool, str]:
         return False, f"{type(e).__name__}: {e}"
 
 
-def count_symbols(path: Path, timeout: float = 10.0) -> Tuple[bool, int, str]:
+def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
     """Run ``nm`` on `path`. Returns (has_symbols, count, note)."""
     try:
         res = subprocess.run(
@@ -290,7 +290,7 @@ def cmd_sort(args: argparse.Namespace) -> int:
 # ===========================================================================
 
 
-def _test_executable(path: Path, timeout: float) -> Tuple[Path, Optional[str]]:
+def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
     """Probe an executable; return (path, None) on OK else (path, error_str)."""
     for probe in PROBE_ARGS:
         try:
@@ -371,7 +371,7 @@ def cmd_sanity(args: argparse.Namespace) -> int:
     print("Testing binaries in parallel...")
 
     workers = args.workers or (os.cpu_count() or 4)
-    failures: list[Tuple[Path, str]] = []
+    failures: list[tuple[Path, str]] = []
 
     with _futures.ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(_test_executable, p, args.timeout): p for p in candidates}

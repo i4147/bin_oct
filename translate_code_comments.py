@@ -53,7 +53,6 @@ from typing import Iterable, Iterator, Sequence
 
 from deep_translator import GoogleTranslator
 
-
 LOGGER = logging.getLogger("merged_translator")
 
 DEFAULT_EXCLUDED_DIRS = frozenset(

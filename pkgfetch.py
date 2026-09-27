@@ -50,7 +50,6 @@ from packaging.utils import (
 )
 from packaging.version import InvalidVersion, Version
 
-
 __all__ = [
     "Link",
     "Package",

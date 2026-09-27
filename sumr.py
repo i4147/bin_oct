@@ -47,7 +47,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-
 # ============================================================================
 # Shared helpers
 # ============================================================================
@@ -150,7 +149,7 @@ class NLTKFrequencySummarizer:
         top = self._select_top(scores, count)
         return " ".join(sentences[i] for i in top)
 
-    def get_scores(self, text: str) -> Dict[str, float]:
+    def get_scores(self, text: str) -> dict[str, float]:
         """Return a mapping {sentence -> score}, ordered by original text."""
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
@@ -165,13 +164,13 @@ class NLTKFrequencySummarizer:
         """Collapse all whitespace into single spaces (summa.py behavior)."""
         return re.sub(r"\s+", " ", text).strip()
 
-    def _tokenize_sentences(self, text: str) -> List[str]:
+    def _tokenize_sentences(self, text: str) -> list[str]:
         """Sentence-tokenize and drop sentences with <= 2 words."""
         from nltk.tokenize import sent_tokenize  # type: ignore
 
         return [s.strip() for s in sent_tokenize(text) if len(s.split()) > 2]
 
-    def _word_frequencies(self, sentences: Sequence[str]) -> Dict[str, float]:
+    def _word_frequencies(self, sentences: Sequence[str]) -> dict[str, float]:
         """
         Count alnum non-stopword tokens. If variant == "summa", normalize
         each count by the grand total (summa.py behavior).
@@ -194,14 +193,14 @@ class NLTKFrequencySummarizer:
     def _score_sentences(
         self,
         sentences: Sequence[str],
-        freqs: Dict[str, float],
-    ) -> Dict[int, float]:
+        freqs: dict[str, float],
+    ) -> dict[int, float]:
         """
         Score each sentence using the variant-appropriate denominator.
         """
         from nltk.tokenize import word_tokenize  # type: ignore
 
-        scores: Dict[int, float] = {}
+        scores: dict[int, float] = {}
         for i, sentence in enumerate(sentences):
             tokens = word_tokenize(sentence.lower())
             if self.variant == "simple":
@@ -221,7 +220,7 @@ class NLTKFrequencySummarizer:
         return scores
 
     @staticmethod
-    def _select_top(scores: Dict[int, float], k: int) -> List[int]:
+    def _select_top(scores: dict[int, float], k: int) -> list[int]:
         """Return the indices of the k highest-scoring sentences, in order."""
         top = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)[:k]
         return sorted(top)

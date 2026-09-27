@@ -49,7 +49,8 @@ from urllib import request as urlrequest
 # --- third-party imports (declared explicitly per requirement 8) -----------
 try:
     import requests  # type: ignore
-    from colorama import Fore, Style, init as colorama_init  # type: ignore
+    from colorama import Fore, Style
+    from colorama import init as colorama_init  # type: ignore
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True
@@ -108,9 +109,9 @@ def get_local_ip() -> str:
         return socket.gethostbyname(socket.gethostname())
 
 
-def read_dns_servers(path: Path) -> List[str]:
+def read_dns_servers(path: Path) -> list[str]:
     """Parse `nameserver` lines from a resolv.conf-style file (deduped)."""
-    servers: List[str] = []
+    servers: list[str] = []
     try:
         if path.exists():
             for line in path.read_text(encoding="utf-8").splitlines():
@@ -137,7 +138,7 @@ def read_dns_servers(path: Path) -> List[str]:
 
 def _probe_one(
     idx: int, total: int, proxy: str, timeout: float, delay: float
-) -> Tuple[str, Optional[str]]:
+) -> tuple[str, Optional[str]]:
     """Test a single proxy. Returns (colored_status_line, valid_proxy_or_None)."""
     proxy = proxy.strip()
     proxies = {"http": f"http://{proxy}", "https": f"https://{proxy}"}
@@ -175,7 +176,7 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
 
     total = len(proxies)
     jobs = [(i, total, p) for i, p in enumerate(proxies, start=1)]
-    valid: List[str] = []
+    valid: list[str] = []
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         for line, good in pool.map(
@@ -326,7 +327,7 @@ class PingStats:
         self.max_time: Optional[float] = None
         self.stddev_time: Optional[float] = None
         self.packet_loss_percent: float = 0.0
-        self.responses: List[dict] = []
+        self.responses: list[dict] = []
 
     def __str__(self) -> str:
         out = f"\n--- {self.host} ping statistics ---\n"
@@ -435,7 +436,7 @@ def cmd_ping(args: argparse.Namespace) -> int:
 #  4) set-dns  (from set_dns.py)
 # ==========================================================================
 
-DNS_PROVIDERS: dict[str, List[str]] = {
+DNS_PROVIDERS: dict[str, list[str]] = {
     "DNS.Watch": ["84.200.69.80", "84.200.70.40"],
     "Comodo Secure DNS": ["8.26.56.26", "8.20.247.20"],
     "Level3 DNS": ["209.244.0.3", "209.244.0.4"],
@@ -601,7 +602,7 @@ class SignalMeter:
     @staticmethod
     def strength_to_bars(
         strength: Optional[int], top: int = -30, bottom: int = -120
-    ) -> Tuple[str, int]:
+    ) -> tuple[str, int]:
         """Return (bar string, percentage) — same formula as the original."""
         if strength is None:
             return ("N/A", 0)

@@ -65,7 +65,6 @@ from urllib.robotparser import RobotFileParser
 import requests
 from bs4 import BeautifulSoup
 
-
 # --------------------------------------------------------------------------- #
 # Shared helpers                                                              #
 # --------------------------------------------------------------------------- #
@@ -283,8 +282,9 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 
 def cmd_import_check(args: argparse.Namespace) -> int:
-    from loguru import logger
     import site
+
+    from loguru import logger
 
     logger.remove()
     logger.add(

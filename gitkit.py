@@ -50,7 +50,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-
 # ===========================================================================
 # Data structures & logging
 # ===========================================================================
@@ -63,7 +62,7 @@ class CommitInfo:
     sha: str
     subject: str
     timestamp: int
-    parents: List[str] = field(default_factory=list)
+    parents: list[str] = field(default_factory=list)
 
     @property
     def short(self) -> str:
@@ -149,13 +148,13 @@ class GitBackend:
             args.append("--untracked-files=no")
         return bool(self._run(*args, check=False).stdout.strip())
 
-    def status_porcelain(self) -> List[str]:
+    def status_porcelain(self) -> list[str]:
         return self._run("status", "--porcelain", check=False).stdout.splitlines()
 
     # --- History ----------------------------------------------------------
     def log(
         self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False
-    ) -> List[CommitInfo]:
+    ) -> list[CommitInfo]:
         args = ["log", "--format=%H%x00%s%x00%ct%x00%P"]
         if n:
             args.append(f"-n{n}")
@@ -163,7 +162,7 @@ class GitBackend:
             args.append("--reverse")
         args.append(ref)
         out = self._run(*args, check=False).stdout
-        commits: List[CommitInfo] = []
+        commits: list[CommitInfo] = []
         for line in out.splitlines():
             if not line.strip():
                 continue
@@ -221,7 +220,7 @@ class GitBackend:
         self._git(*args)
 
     # --- History diffs ----------------------------------------------------
-    def deleted_files_in_history(self) -> Dict[str, str]:
+    def deleted_files_in_history(self) -> dict[str, str]:
         """Return {path: sha_of_commit_that_deleted_it} — earliest deletion wins."""
         out = self._run(
             "log",
@@ -230,7 +229,7 @@ class GitBackend:
             "--name-only",
             check=False,
         ).stdout
-        deletions: Dict[str, str] = {}
+        deletions: dict[str, str] = {}
         current_sha: Optional[str] = None
         for line in out.splitlines():
             line = line.strip()
@@ -242,7 +241,7 @@ class GitBackend:
                 deletions[line] = current_sha
         return deletions
 
-    def files_added_in_last(self, n: int) -> List[Path]:
+    def files_added_in_last(self, n: int) -> list[Path]:
         """Return paths (resolved under repo) added in the last `n` commits."""
         out = self._run(
             "log",
@@ -253,7 +252,7 @@ class GitBackend:
             "--diff-filter=A",
             check=False,
         ).stdout
-        added: List[Path] = []
+        added: list[Path] = []
         for line in out.splitlines():
             if not line.strip():
                 continue
@@ -302,7 +301,7 @@ class GitPythonBackend(GitBackend):
 
     def log(
         self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False
-    ) -> List[CommitInfo]:
+    ) -> list[CommitInfo]:
         if self._r is None:
             return super().log(ref=ref, n=n, reverse=reverse)
         try:
@@ -871,13 +870,13 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
 # ===========================================================================
 
 
-def _pending_deletions_matching_history(be: GitBackend) -> List[str]:
+def _pending_deletions_matching_history(be: GitBackend) -> list[str]:
     """Return paths that are (a) currently deleted in the working tree and
     (b) known to have been deleted before in history."""
     historical = set(be.deleted_files_in_history().keys())
     if not historical:
         return []
-    pending: List[str] = []
+    pending: list[str] = []
     for line in be.status_porcelain():
         if len(line) < 4:
             continue

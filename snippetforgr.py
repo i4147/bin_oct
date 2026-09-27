@@ -57,7 +57,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-
 # =====================================================================
 # Shared constants and helpers
 # =====================================================================
@@ -939,9 +938,9 @@ def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int
 def cmd_html(args: argparse.Namespace) -> int:
     """Entry point for the ``html`` subcommand (pycodex.py)."""
     try:
-        import requests  # noqa: F401
         import bs4  # noqa: F401
         import loguru  # noqa: F401
+        import requests  # noqa: F401
     except ImportError as exc:
         print(
             f"html subcommand requires: requests, beautifulsoup4, loguru ({exc})",

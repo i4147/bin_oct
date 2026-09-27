@@ -34,7 +34,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-
 WORKERS = 6
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 

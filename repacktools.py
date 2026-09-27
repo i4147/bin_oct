@@ -74,7 +74,7 @@ import sys
 import sysconfig
 import tempfile
 import zipfile
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from functools import partial
 from multiprocessing import Pool, cpu_count

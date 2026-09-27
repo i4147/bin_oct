@@ -33,7 +33,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Sequence
 
-
 # =============================================================================
 # Shared plugin-reference regex table (used by `folderize`)
 # =============================================================================

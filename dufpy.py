@@ -5,8 +5,8 @@ from os import scandir as os_scandir
 from pathlib import Path
 from typing import Any
 
-from joblib import Parallel, delayed
 from dh import cprint, get_pyfiles
+from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest
 
 

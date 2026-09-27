@@ -52,7 +52,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
 
-
 # ============================================================================
 # Shared helpers
 # ============================================================================
@@ -453,14 +452,12 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     try:
         from reportlab.lib.enums import TA_CENTER  # type: ignore
         from reportlab.lib.pagesizes import letter  # type: ignore
-        from reportlab.lib.styles import (  # type: ignore
-            ParagraphStyle,
-            getSampleStyleSheet,
-        )
+        from reportlab.lib.styles import ParagraphStyle  # type: ignore
+        from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib.units import inch  # type: ignore
-        from reportlab.platypus import (  # type: ignore
+        from reportlab.platypus import (
             PageBreak,
-            Paragraph,
+            Paragraph,  # type: ignore
             SimpleDocTemplate,
             Spacer,
         )
@@ -674,7 +671,8 @@ def _convert_markdown2(
         try:
             from pygments import highlight  # type: ignore
             from pygments.formatters import HtmlFormatter  # type: ignore
-            from pygments.lexers import TextLexer, get_lexer_by_name  # type: ignore
+            from pygments.lexers import TextLexer  # type: ignore
+            from pygments.lexers import get_lexer_by_name
         except ImportError:
             warn("pygments not installed — skipping code highlighting")
             pygments = False

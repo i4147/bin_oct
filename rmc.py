@@ -46,19 +46,20 @@ code" with certainty, since both are just '#'-prefixed text. Treat this as
 a best-effort safety net, not a guarantee.
 """
 
+import argparse
 import ast
+import functools
 import io
+import multiprocessing as mp
 import os
 import re
 import sys
 import tempfile
 import tokenize as _tokenize
-import argparse
-import functools
-import multiprocessing as mp
 from pathlib import Path
-from dh import DOC_TH1, DOC_TH2
+
 import libcst as cst
+from dh import DOC_TH1, DOC_TH2
 
 # --------------------------------------------------------------------------
 # Constants

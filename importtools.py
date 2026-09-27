@@ -980,8 +980,8 @@ def _should_skip(path: Path) -> bool:
 def cmd_find_py2(ns: argparse.Namespace) -> int:
     try:
         import tree_sitter_python as tsp
-        from tree_sitter import Language, Parser
         from rapidfuzz import fuzz
+        from tree_sitter import Language, Parser
     except ImportError as exc:
         LOG.error(f"find-py2 needs tree_sitter, tree_sitter_python, rapidfuzz: {exc}")
         return 2

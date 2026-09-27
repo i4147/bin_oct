@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-import pandas as pd
-import pickle
-import json
 import glob
+import json
 import os
+import pickle
 from pathlib import Path
+
+import pandas as pd
 
 
 def load_pkl_file(filepath):

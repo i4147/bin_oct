@@ -55,11 +55,7 @@ import shutil
 import subprocess
 import sys
 import time
-from concurrent.futures import (
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-    as_completed,
-)
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from difflib import get_close_matches
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence

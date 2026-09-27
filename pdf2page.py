@@ -64,12 +64,12 @@ from typing import Dict, List, Sequence, Tuple
 
 
 def _extract_plumber(
-    pdf_path: str, page_indices: Sequence[int], opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], opts: dict
+) -> list[tuple[int, str]]:
     """Extract text from pages using pdfplumber."""
     import pdfplumber  # noqa: F401
 
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
     with pdfplumber.open(pdf_path) as pdf:
         for idx in page_indices:
             try:
@@ -85,13 +85,13 @@ def _extract_plumber(
 
 
 def _extract_fitz(
-    pdf_path: str, page_indices: Sequence[int], opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], opts: dict
+) -> list[tuple[int, str]]:
     """Extract text from pages using PyMuPDF (fitz). Supports --sort."""
     import fitz  # type: ignore
 
     sort = bool(opts.get("sort", False))
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
     doc = fitz.open(pdf_path)
     try:
         for idx in page_indices:
@@ -111,12 +111,12 @@ def _extract_fitz(
 
 
 def _extract_pypdf(
-    pdf_path: str, page_indices: Sequence[int], opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], opts: dict
+) -> list[tuple[int, str]]:
     """Extract text from pages using pypdf."""
     from pypdf import PdfReader  # type: ignore
 
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
     with open(pdf_path, "rb") as fh:
         reader = PdfReader(fh)
         for idx in page_indices:
@@ -133,12 +133,12 @@ def _extract_pypdf(
 
 
 def _extract_pypdf2(
-    pdf_path: str, page_indices: Sequence[int], opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], opts: dict
+) -> list[tuple[int, str]]:
     """Extract text from pages using PyPDF2."""
     import PyPDF2  # type: ignore
 
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
     with open(pdf_path, "rb") as fh:
         reader = PyPDF2.PdfReader(fh)
         for idx in page_indices:
@@ -155,15 +155,15 @@ def _extract_pypdf2(
 
 
 def _extract_pdfminer(
-    pdf_path: str, page_indices: Sequence[int], opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], opts: dict
+) -> list[tuple[int, str]]:
     """Extract text from pages using pdfminer.six, honouring LAParams options."""
     from pdfminer.high_level import extract_text  # type: ignore
     from pdfminer.layout import LAParams  # type: ignore
 
     laparams = None
     if not opts.get("no_laparams", False):
-        kw: Dict = {
+        kw: dict = {
             "detect_vertical": bool(opts.get("detect_vertical", False)),
             "all_texts": bool(opts.get("all_texts", False)),
         }
@@ -180,7 +180,7 @@ def _extract_pdfminer(
         laparams = LAParams(**kw)
 
     password = opts.get("password") or ""
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
     for idx in page_indices:
         try:
             text = (
@@ -214,8 +214,8 @@ _THREAD_BACKENDS = {"fitz", "plumber"}
 
 
 def _extract_chunk(
-    pdf_path: str, page_indices: Sequence[int], backend: str, opts: Dict
-) -> List[Tuple[int, str]]:
+    pdf_path: str, page_indices: Sequence[int], backend: str, opts: dict
+) -> list[tuple[int, str]]:
     """Dispatcher used by the executors (must remain a top-level function)."""
     return _BACKENDS[backend](pdf_path, page_indices, opts)
 
@@ -263,7 +263,7 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
     raise ValueError(f"Unknown backend: {backend}")
 
 
-def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> List[Path]:
+def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> list[Path]:
     """Resolve CLI inputs into a de-duplicated, sorted list of PDF paths.
 
     If `inputs` is empty, the current directory is scanned.  Directories are
@@ -273,7 +273,7 @@ def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> List[Path]:
         inputs = ["."]
 
     seen: set = set()
-    result: List[Path] = []
+    result: list[Path] = []
     for item in inputs:
         path = Path(item).expanduser()
         if path.is_file():
@@ -314,7 +314,7 @@ def _format_name(template: str, stem: str, page: int, total: int) -> str:
     return template.format(stem=stem, page=page, total=total, w=width)
 
 
-def _build_opts(args: argparse.Namespace) -> Dict:
+def _build_opts(args: argparse.Namespace) -> dict:
     """Collect backend options into a picklable dict."""
     return {
         "sort": args.sort,
@@ -369,7 +369,7 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
     print(f"Processing {pdf.name} ({len(page_indices)}/{total} pages) -> {out_dir}")
 
     # 4. Filter skip-existing
-    to_process: List[int] = []
+    to_process: list[int] = []
     skipped = 0
     for idx in page_indices:
         name = _format_name(args.name_template, pdf.stem, idx + 1, total)
@@ -385,7 +385,7 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
     # 5. Chunk the workload
     workers = max(1, args.workers)
     if len(to_process) <= workers:
-        chunks: List[List[int]] = [[idx] for idx in to_process]
+        chunks: list[list[int]] = [[idx] for idx in to_process]
     else:
         chunk_size = max(1, (len(to_process) + workers - 1) // workers)
         chunks = [
@@ -400,7 +400,7 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
     if parallel == "auto":
         parallel = "thread" if args.backend in _THREAD_BACKENDS else "process"
 
-    results: List[Tuple[int, str]] = []
+    results: list[tuple[int, str]] = []
     try:
         if parallel == "none" or workers == 1 or len(chunks) == 1:
             for chunk in chunks:

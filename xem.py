@@ -5,6 +5,7 @@ import re
 import sys
 from collections.abc import Iterable
 from pathlib import Path
+
 from dh import MIME2EXT, get_nobinary
 
 OUTPUT_DIR = Path("extracted_base64")

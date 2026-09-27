@@ -39,7 +39,6 @@ from typing import Callable, Iterable
 
 from loguru import logger
 
-
 # A translator callable accepts one source-language string and returns the
 # translated string.
 Translator = Callable[[str], str]

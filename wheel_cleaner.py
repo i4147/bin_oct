@@ -96,7 +96,7 @@ DEFAULT_DEST = "empty_wheels"
 DEFAULT_DETECTOR = "dist-info-only"
 
 #: File extensions that make a wheel "non-empty" for the ``no-code`` detector.
-_CODE_SUFFIXES: Tuple[str, ...] = (".py", ".so", ".pyi")
+_CODE_SUFFIXES: tuple[str, ...] = (".py", ".so", ".pyi")
 
 
 # ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ def _detect_no_payload(zf: zipfile.ZipFile, names: Sequence[str]) -> bool:
 
 DetectorFn = Callable[[zipfile.ZipFile, Sequence[str]], bool]
 
-DETECTORS: Dict[str, DetectorFn] = {
+DETECTORS: dict[str, DetectorFn] = {
     "dist-info-only": _detect_dist_info_only,
     "record": _detect_record,
     "no-code": _detect_no_code,
@@ -191,12 +191,12 @@ detectors:
 """
 
 
-def resolve_detectors(raw: Optional[Iterable[str]]) -> List[str]:
+def resolve_detectors(raw: Optional[Iterable[str]]) -> list[str]:
     """Expand ``--detect`` values (repeatable, comma separated, ``all``)."""
     if not raw:
         return [DEFAULT_DETECTOR]
 
-    chosen: List[str] = []
+    chosen: list[str] = []
     for item in raw:
         for part in str(item).split(","):
             part = part.strip().lower()
@@ -240,14 +240,14 @@ def wheel_is_empty(path: Path, detectors: Sequence[str], quiet: bool = False) ->
 
 def find_wheels(
     directory: Path, recursive: bool, exclude: Optional[Path] = None
-) -> List[Path]:
+) -> list[Path]:
     """Collect ``*.whl`` files in *directory*, optionally recursively.
 
     Files located inside *exclude* (typically the destination folder) are
     skipped so repeated runs do not re-report already-moved wheels.
     """
     candidates = directory.rglob("*.whl") if recursive else directory.glob("*.whl")
-    result: List[Path] = []
+    result: list[Path] = []
     for candidate in candidates:
         if not candidate.is_file():
             continue
@@ -274,7 +274,7 @@ def unique_path(directory: Path, name: str) -> Path:
     return target
 
 
-def parse_wheel_name(path: Path) -> Tuple[Optional[str], Optional[str]]:
+def parse_wheel_name(path: Path) -> tuple[Optional[str], Optional[str]]:
     """Best-effort ``(distribution, version)`` extraction from a wheel name.
 
     Mirrors ``ewhl2.py``: take the first two dash-separated components of the
@@ -296,7 +296,7 @@ def default_site_packages() -> Path:
 # ---------------------------------------------------------------------------
 
 
-def installed_packages() -> Dict[str, str]:
+def installed_packages() -> dict[str, str]:
     """Map of ``distribution-name.lower() -> version`` for the current env."""
     try:
         proc = subprocess.run(
@@ -309,7 +309,7 @@ def installed_packages() -> Dict[str, str]:
         print(f"Warning: could not list installed packages: {exc}", file=sys.stderr)
         return {}
 
-    packages: Dict[str, str] = {}
+    packages: dict[str, str] = {}
     for line in proc.stdout.strip().splitlines():
         if "==" in line:
             name, version = line.split("==", 1)
@@ -317,7 +317,7 @@ def installed_packages() -> Dict[str, str]:
     return packages
 
 
-def pip_show(name: str) -> Optional[Dict[str, str]]:
+def pip_show(name: str) -> Optional[dict[str, str]]:
     """Return the parsed output of ``pip show <name>`` (or ``None``)."""
     try:
         proc = subprocess.run(
@@ -329,7 +329,7 @@ def pip_show(name: str) -> Optional[Dict[str, str]]:
         return None
     if proc.returncode != 0:
         return None
-    info: Dict[str, str] = {}
+    info: dict[str, str] = {}
     for line in proc.stdout.strip().splitlines():
         if ": " in line:
             key, value = line.split(": ", 1)
@@ -337,7 +337,7 @@ def pip_show(name: str) -> Optional[Dict[str, str]]:
     return info
 
 
-def pip_show_location_and_files(name: str) -> Tuple[Optional[str], bool]:
+def pip_show_location_and_files(name: str) -> tuple[Optional[str], bool]:
     """Return ``(location, has_real_files)`` from ``pip show -f <name>``.
 
     ``has_real_files`` is True when the ``Files:`` section lists anything
@@ -397,9 +397,9 @@ def is_empty_dist_info(dist_info: Path) -> bool:
     return True
 
 
-def find_empty_installed_packages(site_packages: Path) -> List[str]:
+def find_empty_installed_packages(site_packages: Path) -> list[str]:
     """List ``*.dist-info`` directories in *site_packages* that are empty."""
-    found: List[str] = []
+    found: list[str] = []
     if not site_packages.is_dir():
         return found
     for entry in sorted(site_packages.iterdir()):
@@ -436,14 +436,14 @@ def cmd_wheels(args: argparse.Namespace) -> int:
         f"(detectors: {', '.join(detectors)})"
     )
 
-    installed: Dict[str, str] = {}
+    installed: dict[str, str] = {}
     if args.check_installed:
         installed = installed_packages()
         print(f"Found {len(installed)} installed package(s) in the current environment")
 
-    empty: List[Path] = []
-    valid: List[Path] = []
-    conflicts: List[Tuple[Path, str, str]] = []
+    empty: list[Path] = []
+    valid: list[Path] = []
+    conflicts: list[tuple[Path, str, str]] = []
 
     for wheel in wheels:
         if wheel_is_empty(wheel, detectors, quiet=args.quiet):

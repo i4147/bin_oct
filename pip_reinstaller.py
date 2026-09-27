@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-import os, subprocess, sys, time
+import os
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 

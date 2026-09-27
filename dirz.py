@@ -43,7 +43,7 @@ def format_size(num_bytes: int) -> str:
     # Unreachable: the loop always returns on the last iteration.
 
 
-def walk_files(root: Path) -> Iterator[Tuple[os.DirEntry, Optional[str]]]:
+def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
     """Yield ``(DirEntry, top_level_name)`` for every regular file under *root*.
 
     Traversal is depth-first using an explicit LIFO stack plus ``os.scandir``.
@@ -79,7 +79,7 @@ def walk_files(root: Path) -> Iterator[Tuple[os.DirEntry, Optional[str]]]:
     # the root itself; for subdirectories it's the name of the first-level
     # subdirectory under root that contains them.
 
-    stack: list[Tuple[str, Optional[str]]] = [(str(root), None)]
+    stack: list[tuple[str, Optional[str]]] = [(str(root), None)]
 
     while stack:
         current_path, top_level = stack.pop()

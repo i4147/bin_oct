@@ -2,10 +2,7 @@
 import sys
 from pathlib import Path
 
-from py_subtitle_extractor import (
-    extract_subtitle_tracks,
-    extract_subtitles_as_srt,
-)
+from py_subtitle_extractor import extract_subtitle_tracks, extract_subtitles_as_srt
 
 
 def main() -> None:

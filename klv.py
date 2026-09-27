@@ -48,9 +48,9 @@ DEFAULT_WORKERS = 8
 DEFAULT_BATCH_SIZE = 100
 
 
-def fallback_version_key(v: str) -> Tuple[Any, ...]:
+def fallback_version_key(v: str) -> tuple[Any, ...]:
     parts = re.split(r"[._-]", v)
-    key: List[Tuple[Any, ...]] = []
+    key: list[tuple[Any, ...]] = []
     for part in parts:
         if part.isdigit():
             key.append((0, int(part), ""))
@@ -91,7 +91,7 @@ def compare_versions(a: str, b: str) -> int:
         return 0
 
 
-def parse_wheel_or_metadata(name: str) -> Optional[Tuple[str, str]]:
+def parse_wheel_or_metadata(name: str) -> Optional[tuple[str, str]]:
     if name.endswith(".whl"):
         stem = name[:-4]
     elif name.endswith(".metadata"):
@@ -101,8 +101,8 @@ def parse_wheel_or_metadata(name: str) -> Optional[Tuple[str, str]]:
     parts = stem.split("-")
     if len(parts) < 5:
         return None
-    pkg_parts: List[str] = []
-    ver_parts: List[str] = []
+    pkg_parts: list[str] = []
+    ver_parts: list[str] = []
     in_ver = False
     for i, part in enumerate(parts):
         if not in_ver and (
@@ -122,7 +122,7 @@ def parse_wheel_or_metadata(name: str) -> Optional[Tuple[str, str]]:
     return None
 
 
-def parse_targz(name: str) -> Optional[Tuple[str, str]]:
+def parse_targz(name: str) -> Optional[tuple[str, str]]:
     if name.endswith(".tar.gz"):
         stem = name[:-7]
     elif name.endswith(".tgz"):
@@ -140,7 +140,7 @@ def parse_targz(name: str) -> Optional[Tuple[str, str]]:
     return None
 
 
-def parse_deb(name: str) -> Optional[Tuple[str, str]]:
+def parse_deb(name: str) -> Optional[tuple[str, str]]:
     parts = name.split("_")
     if len(parts) >= 2:
         return parts[0], parts[1]
@@ -151,7 +151,7 @@ def normalize_package_name(name: str) -> str:
     return NORMALIZE_RE.sub("-", name).lower()
 
 
-def parse_metadata_filename(path: Path) -> Tuple[str, str, Path]:
+def parse_metadata_filename(path: Path) -> tuple[str, str, Path]:
     stem = path.stem
     m = METADATA_RE.match(stem)
     if not m:
@@ -162,7 +162,7 @@ def parse_metadata_filename(path: Path) -> Tuple[str, str, Path]:
     return pkg, ver, path
 
 
-def parse_url(url: str) -> Optional[Tuple[str, str, Tuple[int, ...], str, str]]:
+def parse_url(url: str) -> Optional[tuple[str, str, tuple[int, ...], str, str]]:
     m = ANDROID_RE.search(url)
     if m:
         pkg = m.group(1)
@@ -180,7 +180,7 @@ def parse_url(url: str) -> Optional[Tuple[str, str, Tuple[int, ...], str, str]]:
     return None
 
 
-def extensions_for_type(file_type: str) -> Tuple[str, ...]:
+def extensions_for_type(file_type: str) -> tuple[str, ...]:
     if file_type == "wheel":
         return (".whl", ".metadata")
     if file_type == "deb":
@@ -194,7 +194,7 @@ def extensions_for_type(file_type: str) -> Tuple[str, ...]:
 
 def find_files(
     directory: Path, extensions: Sequence[str], recursive: bool
-) -> List[Path]:
+) -> list[Path]:
     iterator = directory.rglob("*") if recursive else directory.glob("*")
     return [
         p
@@ -203,9 +203,9 @@ def find_files(
     ]
 
 
-def process_clean_file(path: Path) -> Optional[Tuple[str, str, Path]]:
+def process_clean_file(path: Path) -> Optional[tuple[str, str, Path]]:
     name = path.name
-    parsed: Optional[Tuple[str, str]] = None
+    parsed: Optional[tuple[str, str]] = None
     if name.endswith(".whl") or name.endswith(".metadata"):
         parsed = parse_wheel_or_metadata(name)
     elif name.endswith(".tar.gz") or name.endswith(".tgz"):
@@ -219,14 +219,14 @@ def process_clean_file(path: Path) -> Optional[Tuple[str, str, Path]]:
 
 
 def process_clean_files(
-    files: List[Path], workers: int
-) -> Dict[str, List[Tuple[str, Path]]]:
+    files: list[Path], workers: int
+) -> dict[str, list[tuple[str, Path]]]:
     if workers <= 1:
         results = [process_clean_file(f) for f in files]
     else:
         with mp.Pool(processes=workers) as pool:
             results = pool.map(process_clean_file, files)
-    package_map: Dict[str, List[Tuple[str, Path]]] = defaultdict(list)
+    package_map: dict[str, list[tuple[str, Path]]] = defaultdict(list)
     for rec in results:
         if rec:
             pkg, ver, path = rec
@@ -235,14 +235,14 @@ def process_clean_files(
 
 
 def process_metadata_files(
-    files: List[Path], workers: int
-) -> Dict[str, List[Tuple[str, Path]]]:
+    files: list[Path], workers: int
+) -> dict[str, list[tuple[str, Path]]]:
     if workers <= 1:
         results = [parse_metadata_filename(f) for f in files]
     else:
         with mp.Pool(processes=workers) as pool:
             results = pool.map(parse_metadata_filename, files)
-    package_map: Dict[str, List[Tuple[str, Path]]] = defaultdict(list)
+    package_map: dict[str, list[tuple[str, Path]]] = defaultdict(list)
     for pkg, ver, path in results:
         norm = normalize_package_name(pkg)
         package_map[norm].append((ver, path))
@@ -250,10 +250,10 @@ def process_metadata_files(
 
 
 def process_metadata_batches(
-    files: List[Path], workers: int, batch_size: int
-) -> Dict[str, List[Tuple[str, Path]]]:
+    files: list[Path], workers: int, batch_size: int
+) -> dict[str, list[tuple[str, Path]]]:
     batches = [files[i : i + batch_size] for i in range(0, len(files), batch_size)]
-    all_map: Dict[str, List[Tuple[str, Path]]] = defaultdict(list)
+    all_map: dict[str, list[tuple[str, Path]]] = defaultdict(list)
     for batch in batches:
         batch_map = process_metadata_files(batch, workers)
         for k, v in batch_map.items():
@@ -261,7 +261,7 @@ def process_metadata_batches(
     return dict(all_map)
 
 
-def find_latest_version(versions: List[Tuple[str, Path]]) -> Optional[Tuple[str, Path]]:
+def find_latest_version(versions: list[tuple[str, Path]]) -> Optional[tuple[str, Path]]:
     if not versions:
         return None
     best = versions[0]
@@ -272,11 +272,11 @@ def find_latest_version(versions: List[Tuple[str, Path]]) -> Optional[Tuple[str,
 
 
 def remove_old_versions(
-    package_map: Dict[str, List[Tuple[str, Path]]],
+    package_map: dict[str, list[tuple[str, Path]]],
     dry_run: bool,
     backup_dir: Optional[Path],
     verbose: bool,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     deleted = 0
     kept = 0
     for pkg, versions in package_map.items():
@@ -313,7 +313,7 @@ def remove_old_versions(
 
 
 def cmd_urls(args: argparse.Namespace) -> int:
-    lines: List[str] = []
+    lines: list[str] = []
     if args.input:
         p = Path(args.input)
         if p.exists():
@@ -325,7 +325,7 @@ def cmd_urls(args: argparse.Namespace) -> int:
     else:
         lines = [line.strip() for line in sys.stdin if line.strip()]
 
-    groups: Dict[Tuple[str, str], Dict[str, Tuple[Tuple[int, ...], str]]] = defaultdict(
+    groups: dict[tuple[str, str], dict[str, tuple[tuple[int, ...], str]]] = defaultdict(
         dict
     )
     for url in lines:
@@ -339,7 +339,7 @@ def cmd_urls(args: argparse.Namespace) -> int:
         if arch not in groups[key] or ver > groups[key][arch][0]:
             groups[key][arch] = (ver, url)
 
-    results: List[Dict[str, str]] = []
+    results: list[dict[str, str]] = []
     print("-" * 40)
     print("LATEST ARMv7 (armeabi_v7a/armv7l/linux_arm) WHEELS")
     print("-" * 40)

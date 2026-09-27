@@ -455,8 +455,8 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
         )
 
     try:
-        from aliyunsdkcore.client import AcsClient
         from aliyunsdkalimt.request.v20181012 import TranslateGeneralRequest
+        from aliyunsdkcore.client import AcsClient
     except Exception as exc:
         raise BackendError(
             "install it with: pip install aliyun-python-sdk-alimt"
@@ -573,7 +573,7 @@ _BACKEND_FACTORIES = {
 }
 
 
-def _backend_chain(preferred: str) -> List[str]:
+def _backend_chain(preferred: str) -> list[str]:
     """Return the preferred backend followed by the remaining default choices."""
     if preferred == "default":
         return list(_DEFAULT_CHAIN)
@@ -582,7 +582,7 @@ def _backend_chain(preferred: str) -> List[str]:
 
 def _select_backend(
     preferred: str, source: str, target: str, script_path: str
-) -> Tuple[str, TranslationFunction]:
+) -> tuple[str, TranslationFunction]:
     """Initialize the first usable backend in the configured fallback chain."""
     if preferred in _FORBIDDEN_BACKENDS:
         raise BackendError(
@@ -643,13 +643,13 @@ def _load_existing(path: Path) -> "OrderedDict[str, str]":
 
 
 def _read_pending(
-    input_path: Path, existing: Dict[str, str], continue_job: bool
-) -> Tuple[List[str], int]:
+    input_path: Path, existing: dict[str, str], continue_job: bool
+) -> tuple[list[str], int]:
     """Stream the input once and return unique pending words plus total input count."""
     if not input_path.is_file():
         raise BackendError(f"input file does not exist: {input_path}")
 
-    pending: List[str] = []
+    pending: list[str] = []
     seen_pending = set()
     total = 0
 
@@ -668,7 +668,7 @@ def _read_pending(
     return pending, total
 
 
-def _atomic_save(path: Path, results: Dict[str, str]) -> None:
+def _atomic_save(path: Path, results: dict[str, str]) -> None:
     """Write the current mapping to a temporary file and atomically replace output."""
     path.parent.mkdir(parents=True, exist_ok=True)
     directory = str(path.parent)
@@ -711,7 +711,7 @@ def _translate_one(
     translator: TranslationFunction,
     delay: float,
     failed_path: Path,
-) -> Tuple[str, Optional[str]]:
+) -> tuple[str, Optional[str]]:
     """Translate one word with three attempts and exponential retry backoff."""
     last_error = "empty or identity translation"
 

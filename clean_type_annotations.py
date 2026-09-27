@@ -30,7 +30,6 @@ from pathlib import Path
 
 import libcst as cst
 
-
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
 

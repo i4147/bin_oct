@@ -311,9 +311,9 @@ def convert_font(
 # ---------------------------------------------------------------------------
 
 
-def find_font_files(paths: Sequence[Path]) -> List[Path]:
+def find_font_files(paths: Sequence[Path]) -> list[Path]:
     """Find supported font files recursively, with case-insensitive suffixes."""
-    files: List[Path] = []
+    files: list[Path] = []
 
     for path in paths:
         if path.is_file():
@@ -332,7 +332,7 @@ def find_font_files(paths: Sequence[Path]) -> List[Path]:
 
     # Deduplicate by resolved path while preserving order.
     seen = set()
-    unique: List[Path] = []
+    unique: list[Path] = []
     for f in files:
         resolved = f.resolve()
         if resolved not in seen:
@@ -535,8 +535,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("No font files found.")
         return 0
 
-    to_convert: List[Path] = []
-    already_target: List[Path] = []
+    to_convert: list[Path] = []
+    already_target: list[Path] = []
 
     for f in font_files:
         if detect_format(f) == args.output_format:
@@ -583,7 +583,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         for f in to_convert
     ]
 
-    all_results: List[ConversionResult] = []
+    all_results: list[ConversionResult] = []
 
     # Single file: run in-process to keep output simple and avoid pool overhead.
     if len(worker_args) == 1:

@@ -100,11 +100,11 @@ def ensure_dir(path: Path) -> None:
 def collect_files(
     inputs: Sequence[Path],
     recursive: bool = True,
-    extensions: Optional[Set[str]] = None,
-) -> List[Path]:
+    extensions: Optional[set[str]] = None,
+) -> list[Path]:
     if not inputs:
         inputs = [Path.cwd()]
-    result: List[Path] = []
+    result: list[Path] = []
     for p in inputs:
         if p.is_file():
             if extensions is None or p.suffix.lower().lstrip(".") in extensions:
@@ -155,12 +155,12 @@ def split_text_range(
     max_chars: int,
     boundary_order: Sequence[str],
     strip_mode: str,
-) -> List[str]:
+) -> list[str]:
     if min_chars < 0 or max_chars <= 0:
         raise ValueError("min_chars must be >= 0 and max_chars > 0")
     if min_chars > max_chars:
         min_chars, max_chars = max_chars, min_chars
-    parts: List[str] = []
+    parts: list[str] = []
     pos = 0
     n = len(text)
     while pos < n:
@@ -190,8 +190,8 @@ def split_text_target_window(
     max_chars: int,
     boundary_order: Sequence[str],
     strip_mode: str,
-) -> List[str]:
-    parts: List[str] = []
+) -> list[str]:
+    parts: list[str] = []
     pos = 0
     n = len(text)
     while pos < n:
@@ -229,14 +229,14 @@ def split_text_sentences(
     max_chars: int,
     tokenizer: str,
     strip_mode: str,
-) -> List[str]:
+) -> list[str]:
     if tokenizer == "nltk" and _sent_tokenize is not None:
         sentences = _sent_tokenize(text)
     elif tokenizer == "words":
         sentences = WORD_RE.findall(text)
     else:
         sentences = re.split(r"(?<=[.!?])\s+", text)
-    parts: List[str] = []
+    parts: list[str] = []
     current = ""
     for sent in sentences:
         if len(current) + len(sent) <= max_chars:
@@ -276,7 +276,7 @@ class SplitCharsConfig:
     algorithm: str
     min_chars: int
     max_chars: int
-    boundary_order: List[str]
+    boundary_order: list[str]
     strip_mode: str
     target: int
     window: int
@@ -285,10 +285,10 @@ class SplitCharsConfig:
     output_same_dir: bool
     pad_width: int
     recursive: bool
-    extensions: Optional[Set[str]]
+    extensions: Optional[set[str]]
 
 
-def process_split_chars_file(path: Path, config: SplitCharsConfig) -> Tuple[Path, int]:
+def process_split_chars_file(path: Path, config: SplitCharsConfig) -> tuple[Path, int]:
     if is_binary(path):
         print(f"Skipping binary file: {path}")
         return path, 0
@@ -489,10 +489,10 @@ def cmd_split_by_letter(args: argparse.Namespace) -> int:
     return 0
 
 
-def collect_part_files(paths: Sequence[Path]) -> List[Path]:
+def collect_part_files(paths: Sequence[Path]) -> list[Path]:
     if not paths:
         paths = [Path.cwd()]
-    result: List[Path] = []
+    result: list[Path] = []
     for p in paths:
         if p.is_dir():
             result.extend(
@@ -509,14 +509,14 @@ def cmd_merge_parts(args: argparse.Namespace) -> int:
     if not part_files:
         print("No .part files found")
         return 1
-    groups: Dict[Tuple[Path, str], List[Tuple[int, Path]]] = {}
+    groups: dict[tuple[Path, str], list[tuple[int, Path]]] = {}
     for p in part_files:
         m = PART_RE.match(p.name)
         if not m:
             continue
         key = (p.parent.resolve(), m.group("prefix"))
         groups.setdefault(key, []).append((int(m.group("num")), p))
-    outputs: List[Path] = []
+    outputs: list[Path] = []
     for (parent, prefix), items in groups.items():
         items.sort(key=lambda x: x[0])
         out_path = parent / prefix
@@ -544,7 +544,7 @@ def cmd_merge_text(args: argparse.Namespace) -> int:
     if args.extensions:
         exts = {e.lower().lstrip(".") for e in args.extensions}
         files = [f for f in files if f.suffix.lower().lstrip(".") in exts]
-    valid: List[Tuple[Path, str]] = []
+    valid: list[tuple[Path, str]] = []
     for f in files:
         if is_binary(f):
             continue
@@ -574,7 +574,7 @@ def cmd_merge_text(args: argparse.Namespace) -> int:
     else:
         out_dir = cwd / "merged"
         ensure_dir(out_dir)
-        groups: Dict[str, List[Tuple[Path, str]]] = {}
+        groups: dict[str, list[tuple[Path, str]]] = {}
         for f, text in valid:
             ext = f.suffix.lower().lstrip(".")
             groups.setdefault(ext, []).append((f, text))

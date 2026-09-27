@@ -67,14 +67,12 @@ except Exception:  # pragma: no cover
     filetype = None  # type: ignore
 
 try:
-    from dh import (  # type: ignore
-        BIN_EXT as DH_BIN_EXT,
-        MIME2EXT as DH_MIME2EXT,
-        SHEBANG_MAP as DH_SHEBANG_MAP,
-        TXT_EXT as DH_TXT_EXT,
-        get_files as dh_get_files,
-        is_binary as dh_is_binary,
-    )
+    from dh import BIN_EXT as DH_BIN_EXT  # type: ignore
+    from dh import MIME2EXT as DH_MIME2EXT
+    from dh import SHEBANG_MAP as DH_SHEBANG_MAP
+    from dh import TXT_EXT as DH_TXT_EXT
+    from dh import get_files as dh_get_files
+    from dh import is_binary as dh_is_binary
 except Exception:  # pragma: no cover
     DH_BIN_EXT = None
     DH_MIME2EXT = None

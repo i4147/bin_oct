@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 import datetime
 import os
+import re
 import shutil
 import stat
 import sys
-import re
 from pathlib import Path
 
 REVERSE = "-r" in sys.argv

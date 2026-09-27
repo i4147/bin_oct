@@ -28,7 +28,6 @@ from urllib.request import Request, urlopen
 
 from loguru import logger
 
-
 WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500
 DEFAULT_DELAY: Final[float] = 1.5

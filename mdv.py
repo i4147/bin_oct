@@ -9,7 +9,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 try:
-    from readchar import key as RKEY, readkey
+    from readchar import key as RKEY
+    from readchar import readkey
 
     HAVE_READCHAR = True
 except Exception:

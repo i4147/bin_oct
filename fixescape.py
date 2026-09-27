@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 import argparse
+import io
 import multiprocessing as mp
 import pathlib
-import warnings
-import tokenize
 import re
-import io
 import sys
+import tokenize
+import warnings
 
 # ANSI color codes
 RED = "\033[91m"

@@ -57,7 +57,7 @@ from bs4 import BeautifulSoup
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_MIME_TYPES: Dict[str, str] = {
+DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",
     ".js": "application/javascript",
     ".svg": "image/svg+xml",
@@ -97,7 +97,7 @@ class Monolith:
         prettify: bool = False,
         inject_meta_charset: bool = True,
         user_agent: str = DEFAULT_USER_AGENT,
-        mime_types: Optional[Dict[str, str]] = None,
+        mime_types: Optional[dict[str, str]] = None,
     ) -> None:
         self.timeout = timeout
         self.encoding = encoding
@@ -113,7 +113,7 @@ class Monolith:
         self.base_url: str = ""
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
-        self._cache: Dict[str, bytes] = {}
+        self._cache: dict[str, bytes] = {}
 
     # -- low-level helpers --------------------------------------------------
 

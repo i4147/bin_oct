@@ -28,6 +28,7 @@ from collections import defaultdict
 from io import StringIO
 from pathlib import Path
 from typing import Any
+
 from dh import append_text, runcmd
 
 OUTPUT_FILE = Path("compressed.txt")

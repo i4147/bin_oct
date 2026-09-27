@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import os
-from os.path import dirname as dirn, isfile as isf, join as jn
+from os.path import dirname as dirn
+from os.path import isfile as isf
+from os.path import join as jn
 from pathlib import Path
 
 

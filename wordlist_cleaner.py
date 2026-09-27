@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import List, Set
 
 
-def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> List[str]:
+def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[str]:
     """
     Reads a file into memory, returning a list of stripped lines.
     Uses mmap for faster memory mapping if the file size exceeds the threshold.
@@ -67,7 +67,7 @@ def process_similar(
             pattern_groups[pattern].append(word)
 
     # Identify words that fall into groups larger than 1 (meaning they have similar counterparts)
-    similar_words: Set[str] = set()
+    similar_words: set[str] = set()
     for group in pattern_groups.values():
         if len(group) > 1:
             for word in group:

@@ -51,7 +51,6 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-
 # ===========================================================================
 # Shared helpers
 # ===========================================================================
@@ -84,7 +83,7 @@ def unique_path(p: Path) -> Path:
 
 def _collect_by_ext(
     root: Path, exts: Iterable[str], recursive: bool = True
-) -> List[Path]:
+) -> list[Path]:
     """Return files under `root` whose suffix (lowercased) matches `exts`."""
     exts = {e.lower() for e in exts}
     iterator = root.rglob("*") if recursive else root.glob("*")
@@ -193,7 +192,7 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
 def _render_roff(text: str) -> str:
     """Very small roff → Markdown translator (man2md.py's `a()`)."""
     lines = text.splitlines()
-    out: List[str] = []
+    out: list[str] = []
     in_fence = False
     pending_tp = False
     _bold = re.compile(r"\.B\s+(.+)")
@@ -498,8 +497,8 @@ def _style_hash(style_path: Path) -> str:
 
 
 def _convert_one_to_html(
-    args_tuple: Tuple[Path, Optional[str]],
-) -> Tuple[Path, Optional[Path]]:
+    args_tuple: tuple[Path, Optional[str]],
+) -> tuple[Path, Optional[Path]]:
     """Convert a single source file to HTML (mk_html.py's `d()`)."""
     src, stylesheet = args_tuple
     dest = src.with_suffix(".html")
@@ -561,7 +560,7 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
         stylesheet = hashed
 
     # --- Discover sources ---------------------------------------------------
-    sources: List[Path] = []
+    sources: list[Path] = []
     for ext in (".rst", ".txt", ".md"):
         sources.extend(root.rglob(f"*{ext}"))
     if args.force:

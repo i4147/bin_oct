@@ -15,7 +15,6 @@ from typing import Any, Callable
 
 from loguru import logger
 
-
 Translator = Callable[[str], str]
 
 REQUEST_LOCK = threading.Lock()

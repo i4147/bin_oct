@@ -55,7 +55,6 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
 
-
 # --------------------------------------------------------------------------- #
 # Constants                                                                    #
 # --------------------------------------------------------------------------- #
@@ -148,14 +147,14 @@ def translate_with_retries(
     return None
 
 
-def chunk_lines(lines: Sequence[str], max_chars: int) -> List[List[str]]:
+def chunk_lines(lines: Sequence[str], max_chars: int) -> list[list[str]]:
     """Group `lines` into chunks of total size (len+1 per line) <= max_chars.
 
     A line longer than `max_chars` gets its own chunk. Mirrors the algorithm
     from chintrans.py so line counts stay aligned with the translation output.
     """
-    chunks: List[List[str]] = []
-    current: List[str] = []
+    chunks: list[list[str]] = []
+    current: list[str] = []
     total = 0
     for line in lines:
         size = len(line) + 1
@@ -175,7 +174,7 @@ def chunk_lines(lines: Sequence[str], max_chars: int) -> List[List[str]]:
     return chunks
 
 
-def read_stripped_lines(path: Path) -> List[str]:
+def read_stripped_lines(path: Path) -> list[str]:
     """Read non-empty, stripped lines from `path` (used by chunked/line modes)."""
     with path.open(encoding="utf-8") as fh:
         return [w.strip() for w in fh if w.strip()]
@@ -240,7 +239,7 @@ def _worker_walk_file(task):
         stats["total_lines"] = len(lines)
 
         translator = build_translator(source, target)
-        out: List[str] = []
+        out: list[str] = []
         found_any = False
 
         for line in lines:
@@ -445,10 +444,10 @@ def _collect_walk_files(
     paths: Sequence[str],
     extensions: Sequence[str],
     excludes: Iterable[str],
-) -> List[Path]:
+) -> list[Path]:
     """Expand file/dir arguments into a flat list of file paths to process."""
     exclude_set = {Path(p).resolve() for p in excludes}
-    found: List[Path] = []
+    found: list[Path] = []
 
     for raw in paths:
         p = Path(raw)
@@ -534,7 +533,7 @@ def _translate_python_source(
 ) -> str:
     """.py-aware translation: handles triple-quoted docstrings and # comments."""
     lines = text.splitlines(keepends=True)
-    out: List[str] = []
+    out: list[str] = []
     in_doc = False
     delim: Optional[str] = None
 

@@ -9,16 +9,15 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import termios
 import textwrap
 import tty
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
-import termios
 
 from loguru import logger
-
 
 WORKERS: int = 8
 PDF_SUFFIXES: frozenset[str] = frozenset({".pdf"})

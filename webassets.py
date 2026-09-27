@@ -52,7 +52,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-
 # ============================================================================
 # Optional third-party dependencies (pure-Python backends)
 # ============================================================================

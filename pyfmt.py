@@ -39,11 +39,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Callable, Iterable, Iterator, Sequence
-from concurrent.futures import (
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-    as_completed,
-)
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path

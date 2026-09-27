@@ -61,7 +61,7 @@ def write_json_file(
         )
 
 
-def get_files_in_dir(directory: Path, extensions: List[str]) -> List[Path]:
+def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
     """Recursively finds files in a directory matching specific extensions."""
     files = []
     for ext in extensions:
@@ -101,16 +101,16 @@ def process_toml(filepath: Path) -> None:
 # ==========================================
 
 
-def _element_to_dict_recursive(element: Any) -> Dict[str, Any]:
+def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
     """
     Recursive helper to convert a parsed ElementTree Element into a dictionary.
     Mimics the structure of xmltodict for standard/defused ElementTree.
     """
-    node_dict: Dict[str, Any] = {element.tag: {} if element.attrib else None}
+    node_dict: dict[str, Any] = {element.tag: {} if element.attrib else None}
     children = list(element)
 
     if children:
-        child_accumulator: Dict[str, Any] = {}
+        child_accumulator: dict[str, Any] = {}
         for child in children:
             child_parsed = _element_to_dict_recursive(child)
             for k, v in child_parsed.items():
@@ -334,7 +334,7 @@ def main() -> int:
 
     # --- Dispatch: XML ---
     elif args.command == "xml":
-        target_files: List[Path] = []
+        target_files: list[Path] = []
 
         if args.inputs:
             for p in args.inputs:

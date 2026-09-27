@@ -16,7 +16,7 @@ Behavior:
 """
 
 from pathlib import Path
-from zipfile import ZipFile, BadZipFile
+from zipfile import BadZipFile, ZipFile
 
 # `loguru` gives us pretty, colored, timestamped logs out of the box.
 from loguru import logger

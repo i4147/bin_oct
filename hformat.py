@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+import sys
+from pathlib import Path
+
 from bs4 import BeautifulSoup
 from dh import get_files, mpf
-import sys
 
 
 def process_file(path) -> bool:

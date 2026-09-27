@@ -16,7 +16,6 @@ from typing import Callable, Iterable, TypeAlias
 
 from loguru import logger
 
-
 Translator: TypeAlias = Callable[[str], str]
 
 

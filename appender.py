@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 from pathlib import Path
 
-
 if __name__ == "__main__":
     fn = Path.home() / "prompt.txt"  # (sys.argv[1])
     text = fn.read_text(encoding="utf-8")

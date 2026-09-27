@@ -3,8 +3,8 @@ import argparse
 import os
 import subprocess
 import sys
-from typing import Tuple, Optional, List
 from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
 
 
 class GitBackend(ABC):
@@ -53,7 +53,7 @@ class GitBackend(ABC):
         pass
 
     @abstractmethod
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         pass
 
     @abstractmethod
@@ -115,7 +115,7 @@ class SubprocessBackend(GitBackend):
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
             capture_output=True,
@@ -197,7 +197,7 @@ class GitpythonBackend(GitBackend):
         except TypeError:
             return "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         try:
             self.repo.remotes.origin.push(branch)
             return True, None
@@ -277,7 +277,7 @@ class LibGit2Backend(GitBackend):
         except Exception:
             return "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         try:
             self.repo.remotes["origin"].push(
                 [f"refs/heads/{branch}:refs/heads/{branch}"]
@@ -357,7 +357,7 @@ class DulwichBackend(GitBackend):
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
             capture_output=True,
@@ -434,7 +434,7 @@ class PyGithubBackend(GitBackend):
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
             capture_output=True,
@@ -510,7 +510,7 @@ class TyperBackend(GitBackend):
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
             capture_output=True,
@@ -586,7 +586,7 @@ class GhBackend(GitBackend):
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
 
-    def push_upstream(self, branch: str) -> Tuple[bool, Optional[str]]:
+    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
             capture_output=True,
@@ -642,7 +642,7 @@ def get_backend(backend_name: str) -> GitBackend:
         return SubprocessBackend()
 
 
-def get_available_backends(preferred_backend: str) -> List[str]:
+def get_available_backends(preferred_backend: str) -> list[str]:
     all_backends = [
         "subprocess",
         "gitpython",

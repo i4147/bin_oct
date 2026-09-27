@@ -115,7 +115,7 @@ ARCHIVE_SUFFIXES = (
 )
 
 # Fallback stdlib list — used only when sys.stdlib_module_names is missing.
-_STDLIB_FALLBACK: Set[str] = {
+_STDLIB_FALLBACK: set[str] = {
     "abc",
     "aifc",
     "argparse",
@@ -333,7 +333,7 @@ _STDLIB_FALLBACK: Set[str] = {
 }
 
 # Names that are never real PyPI packages (blocklist inherited from imports4).
-_BLOCKLIST: Set[str] = {
+_BLOCKLIST: set[str] = {
     "pip",
     "setuptools",
     "wheel",
@@ -373,12 +373,12 @@ def is_valid_module_name(name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def load_pip_packages(path: str | os.PathLike | None) -> Set[str]:
+def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
     """
     Read a pip-list file (one package per line, optional version spec).
     Returns normalised names.
     """
-    out: Set[str] = set()
+    out: set[str] = set()
     if not path:
         return out
     p = Path(path)
@@ -398,11 +398,11 @@ def load_pip_packages(path: str | os.PathLike | None) -> Set[str]:
     return out
 
 
-def load_mapping(path: str | os.PathLike | None) -> Dict[str, str]:
+def load_mapping(path: str | os.PathLike | None) -> dict[str, str]:
     """
     Read a `module = package` mapping file. Returns {norm(module): package}.
     """
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     if not path:
         return out
     p = Path(path)
@@ -420,7 +420,7 @@ def load_mapping(path: str | os.PathLike | None) -> Dict[str, str]:
     return out
 
 
-def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> Set[str]:
+def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> set[str]:
     """
     Return the set of known stdlib module names.
 
@@ -430,7 +430,7 @@ def load_stdlib(source: str, extra_file: str | os.PathLike | None) -> Set[str]:
       - 'both'     unions the two (default, safest).
     extra_file: optional file of extra stdlib-like names (one per line).
     """
-    mods: Set[str] = set()
+    mods: set[str] = set()
     if source in ("embedded", "both"):
         mods |= _STDLIB_FALLBACK
     if source in ("python", "both"):
@@ -495,9 +495,9 @@ def iter_candidate_files(
                 yield p
 
 
-def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> Set[str]:
+def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[str]:
     """Collect names of local modules/packages under `root`."""
-    local: Set[str] = set()
+    local: set[str] = set()
     ignore_set = set(ignore)
     for dirpath, dirnames, filenames in os.walk(Path(root)):
         dirnames[:] = [
@@ -527,7 +527,7 @@ _FROM_RE = re.compile(r"^\s*from\s+([A-Za-z0-9_.]+)\s+import")
 _DYN_RE = re.compile(r'(?:import_module|__import__)\(\s*[\'"]([\w.]+)[\'"]\s*\)')
 
 
-def extract_ast(source: str) -> Dict[str, Set[str]]:
+def extract_ast(source: str) -> dict[str, set[str]]:
     """Extract imports via AST (handles dynamic and relative imports)."""
     res = _EMPTY_RESULT()
     try:
@@ -576,7 +576,7 @@ def extract_ast(source: str) -> Dict[str, Set[str]]:
     return res
 
 
-def extract_regex(source: str) -> Dict[str, Set[str]]:
+def extract_regex(source: str) -> dict[str, set[str]]:
     """Extract imports via regex (line-based; ignores relative imports)."""
     res = _EMPTY_RESULT()
     for line in source.splitlines():
@@ -595,7 +595,7 @@ def extract_regex(source: str) -> Dict[str, Set[str]]:
     return res
 
 
-def extract_imports(source: str, extractor: str = "ast") -> Dict[str, Set[str]]:
+def extract_imports(source: str, extractor: str = "ast") -> dict[str, set[str]]:
     """Dispatch to the chosen extractor."""
     if extractor == "regex":
         return extract_regex(source)
@@ -607,12 +607,12 @@ def extract_imports(source: str, extractor: str = "ast") -> Dict[str, Set[str]]:
 # ---------------------------------------------------------------------------
 
 
-def _merge_into(dst: Dict[str, Set[str]], src: Dict[str, Set[str]]) -> None:
+def _merge_into(dst: dict[str, set[str]], src: dict[str, set[str]]) -> None:
     for k in dst:
         dst[k] |= src.get(k, set())
 
 
-def _extract_from_notebook(text: str, extractor: str) -> Dict[str, Set[str]]:
+def _extract_from_notebook(text: str, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     try:
         nb = json.loads(text)
@@ -626,7 +626,7 @@ def _extract_from_notebook(text: str, extractor: str) -> Dict[str, Set[str]]:
     return res
 
 
-def _extract_from_zip(path: Path, extractor: str) -> Dict[str, Set[str]]:
+def _extract_from_zip(path: Path, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     try:
         with zipfile.ZipFile(path) as zf:
@@ -643,7 +643,7 @@ def _extract_from_zip(path: Path, extractor: str) -> Dict[str, Set[str]]:
     return res
 
 
-def _extract_from_tar(path: Path, extractor: str) -> Dict[str, Set[str]]:
+def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
     res = _EMPTY_RESULT()
     low = path.name.lower()
     if low.endswith(".tar.zst"):
@@ -691,7 +691,7 @@ def _extract_from_tar(path: Path, extractor: str) -> Dict[str, Set[str]]:
 
 def process_path(
     path: str | os.PathLike, extractor: str = "ast"
-) -> Dict[str, Set[str]]:
+) -> dict[str, set[str]]:
     """Extract imports from any supported file type."""
     p = Path(path)
     low = p.name.lower()
@@ -719,7 +719,7 @@ def process_path(
 # ---------------------------------------------------------------------------
 
 
-def _file_cache_key(path: Path) -> Tuple[float, str]:
+def _file_cache_key(path: Path) -> tuple[float, str]:
     try:
         st = path.stat()
         with path.open("rb") as f:
@@ -729,7 +729,7 @@ def _file_cache_key(path: Path) -> Tuple[float, str]:
         return 0.0, "0"
 
 
-def load_cache(path: Path) -> Dict[str, Any]:
+def load_cache(path: Path) -> dict[str, Any]:
     try:
         with path.open(encoding="utf-8") as f:
             return json.load(f)
@@ -737,7 +737,7 @@ def load_cache(path: Path) -> Dict[str, Any]:
         return {}
 
 
-def save_cache(path: Path, data: Dict[str, Any]) -> None:
+def save_cache(path: Path, data: dict[str, Any]) -> None:
     try:
         with path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, sort_keys=True)
@@ -745,11 +745,11 @@ def save_cache(path: Path, data: Dict[str, Any]) -> None:
         pass
 
 
-def _result_to_json(res: Dict[str, Set[str]]) -> Dict[str, List[str]]:
+def _result_to_json(res: dict[str, set[str]]) -> dict[str, list[str]]:
     return {k: sorted(v) for k, v in res.items()}
 
 
-def _result_from_json(obj: Dict[str, List[str]]) -> Dict[str, Set[str]]:
+def _result_from_json(obj: dict[str, list[str]]) -> dict[str, set[str]]:
     return {k: set(v) for k, v in obj.items()}
 
 
@@ -757,7 +757,7 @@ def _result_from_json(obj: Dict[str, List[str]]) -> Dict[str, Set[str]]:
 # Parallel worker
 # ---------------------------------------------------------------------------
 
-_WORKER_STATE: Dict[str, Any] = {}
+_WORKER_STATE: dict[str, Any] = {}
 
 
 def _init_worker(extractor: str, cache_file: Optional[str]) -> None:
@@ -769,7 +769,7 @@ def _init_worker(extractor: str, cache_file: Optional[str]) -> None:
         _WORKER_STATE["cache"] = {}
 
 
-def _worker_one(path_str: str) -> Tuple[str, Dict[str, Set[str]]]:
+def _worker_one(path_str: str) -> tuple[str, dict[str, set[str]]]:
     extractor = _WORKER_STATE.get("extractor", "ast")
     cache = _WORKER_STATE.get("cache") or {}
     p = Path(path_str)
@@ -792,14 +792,14 @@ def _worker_one(path_str: str) -> Tuple[str, Dict[str, Set[str]]]:
 
 
 def filter_packages(
-    imports: Set[str],
-    stdlib: Set[str],
-    local: Set[str],
-    pip_pkgs: Set[str],
-    mapping: Dict[str, str],
-    installed: Optional[Set[str]],
+    imports: set[str],
+    stdlib: set[str],
+    local: set[str],
+    pip_pkgs: set[str],
+    mapping: dict[str, str],
+    installed: Optional[set[str]],
     include_unknown: bool,
-) -> Set[str]:
+) -> set[str]:
     """
     Reduce a set of raw import names to a set of requirements entries.
 
@@ -810,7 +810,7 @@ def filter_packages(
       4. Apply module->package mapping when a match exists.
       5. If pip_pkgs is non-empty, require membership unless --include-unknown.
     """
-    out: Set[str] = set()
+    out: set[str] = set()
     stdlib_n = {norm(s) for s in stdlib}
     local_n = {norm(l) for l in local}
     pip_n = {norm(p) for p in pip_pkgs}
@@ -874,7 +874,7 @@ def run_scan(args: argparse.Namespace) -> int:
     local = detect_local_modules(root, args.ignore)
     print(f"[i] Detected {len(local)} local modules")
 
-    installed: Optional[Set[str]] = None
+    installed: Optional[set[str]] = None
     if args.check_installed:
         installed = _pip_freeze(args.pip_cmd)
         if installed is not None:
@@ -883,14 +883,14 @@ def run_scan(args: argparse.Namespace) -> int:
             )
 
     # Load cache if requested.
-    cache: Dict[str, Any] = {}
+    cache: dict[str, Any] = {}
     cache_path = Path(args.cache) if args.cache else None
     if cache_path and not args.no_cache and cache_path.exists():
         cache = load_cache(cache_path)
         print(f"[i] Loaded cache ({len(cache)} entries)")
 
     # Process (parallel if workers > 1).
-    results: List[Tuple[str, Dict[str, Set[str]]]] = []
+    results: list[tuple[str, dict[str, set[str]]]] = []
     workers = max(1, args.workers)
     if workers > 1 and len(files) > 1:
         with mp.Pool(
@@ -910,8 +910,8 @@ def run_scan(args: argparse.Namespace) -> int:
             results.append(_worker_one(str(f)))
 
     # Merge.
-    all_imports: Set[str] = set()
-    all_relative: Set[str] = set()
+    all_imports: set[str] = set()
+    all_relative: set[str] = set()
     for _, res in results:
         all_imports |= res.get("imports", set())
         all_imports |= {d.split(".", 1)[0] for d in res.get("dynamic", set())}
@@ -971,7 +971,7 @@ def _write_lines(path: str | os.PathLike, lines: Sequence[str]) -> None:
             f.write(f"{line}\n")
 
 
-def _pip_freeze(pip_cmd: str) -> Optional[Set[str]]:
+def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:
     """Return normalised names of installed packages, or None on failure."""
     try:
         proc = subprocess.run(
@@ -983,7 +983,7 @@ def _pip_freeze(pip_cmd: str) -> Optional[Set[str]]:
     except FileNotFoundError:
         print(f"[!] `{pip_cmd}` not found; skipping installed check", file=sys.stderr)
         return None
-    out: Set[str] = set()
+    out: set[str] = set()
     for raw in proc.stdout.splitlines():
         line = raw.decode("utf-8", "ignore").strip()
         if not line or line.startswith(("#", "-e")):
@@ -1001,8 +1001,8 @@ def _pip_freeze(pip_cmd: str) -> Optional[Set[str]]:
 _METADATA_RE = re.compile(r"^Requires-Dist:\s*([^\s;]+)")
 
 
-def _parse_metadata(path: Path) -> List[str]:
-    reqs: List[str] = []
+def _parse_metadata(path: Path) -> list[str]:
+    reqs: list[str] = []
     try:
         with path.open(encoding="utf-8", errors="ignore") as f:
             for line in f:
@@ -1020,7 +1020,7 @@ def run_metadata(args: argparse.Namespace) -> int:
         print(f"[!] directory not found: {root}", file=sys.stderr)
         return 2
 
-    found: List[str] = []
+    found: list[str] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in set(args.ignore)]
         for name in filenames:

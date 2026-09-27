@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-import sys, string
+import string
+import sys
 
 
 def varnames():

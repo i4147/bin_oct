@@ -159,7 +159,7 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
         print("⚠️  /system/bin directory not found!")
         return 1
 
-    system_hashes: Dict[str, str] = {}
+    system_hashes: dict[str, str] = {}
     print("📂 Scanning /system/bin files...")
     for path in system_dir.iterdir():
         try:
@@ -178,8 +178,8 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
         out_dir = work_dir / out_dir
     out_dir.mkdir(exist_ok=True)
 
-    matches: List[Tuple[str, str]] = []
-    moved: List[Tuple[str, str]] = []
+    matches: list[tuple[str, str]] = []
+    moved: list[tuple[str, str]] = []
 
     print("🔍 Scanning current directory...")
     for path in work_dir.iterdir():
@@ -232,7 +232,7 @@ def cmd_check_system_bin(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def get_dpkg_installed_packages() -> List[str]:
+def get_dpkg_installed_packages() -> list[str]:
     """Return installed dpkg package names."""
     try:
         result = run_cmd(["dpkg", "-l"], check=False)
@@ -241,7 +241,7 @@ def get_dpkg_installed_packages() -> List[str]:
     if result.returncode != 0:
         return []
 
-    packages: List[str] = []
+    packages: list[str] = []
     for line in result.stdout.splitlines():
         if line.startswith("ii"):
             parts = line.split()
@@ -283,7 +283,7 @@ def is_doc_path(path_str: str, mode: str) -> bool:
 
 def check_package_missing_full(
     pkg: str, filter_mode: str, timeout: float
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check one dpkg package and return missing-file details."""
     try:
         result = run_cmd(["dpkg", "-L", pkg], timeout=timeout, check=False)
@@ -313,7 +313,7 @@ def check_package_missing_full(
             "error": f"dpkg -L returned {result.returncode}",
         }
 
-    missing: List[str] = []
+    missing: list[str] = []
     checked = 0
 
     for line in result.stdout.strip().splitlines():
@@ -346,7 +346,7 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
     workers = args.workers or (os.cpu_count() or 1)
     print(f"Scanning {len(packages)} packages...")
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
 
     with ProcessPoolExecutor(max_workers=workers) as executor:
         future_to_pkg = {
@@ -413,7 +413,7 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def get_package_files(pkg: str) -> List[str]:
+def get_package_files(pkg: str) -> list[str]:
     """Return file list for a dpkg or rpm package."""
     for cmd in (["dpkg", "-L", pkg], ["rpm", "-ql", pkg]):
         try:
@@ -463,9 +463,9 @@ def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def parse_dpkg_status(status_text: str) -> Dict[str, Dict[str, List[str]]]:
+def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
     """Parse /var/lib/dpkg/status into package dependency/provides info."""
-    packages: Dict[str, Dict[str, List[str]]] = {}
+    packages: dict[str, dict[str, list[str]]] = {}
 
     for block in re.split(r"\n\s*\n", status_text.strip()):
         pkg_match = re.search(r"^Package:\s*(.+)$", block, flags=re.MULTILINE)
@@ -481,7 +481,7 @@ def parse_dpkg_status(status_text: str) -> Dict[str, Dict[str, List[str]]]:
         if "install ok installed" not in status:
             continue
 
-        depends: List[str] = []
+        depends: list[str] = []
         for dep_line in depends_matches:
             for alt in dep_line.split(","):
                 alt = alt.strip()
@@ -492,7 +492,7 @@ def parse_dpkg_status(status_text: str) -> Dict[str, Dict[str, List[str]]]:
                 if match:
                     depends.append(match.group(1))
 
-        provides: List[str] = []
+        provides: list[str] = []
         for prov_line in provides_matches:
             for token in prov_line.split(","):
                 token = token.strip()
@@ -515,13 +515,13 @@ def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
 
     packages = parse_dpkg_status(status_path.read_text(errors="replace"))
 
-    providers: Dict[str, Set[str]] = {}
+    providers: dict[str, set[str]] = {}
     for pkg, info in packages.items():
         providers.setdefault(pkg, set()).add(pkg)
         for provided in info["provides"]:
             providers.setdefault(provided, set()).add(pkg)
 
-    reverse_deps: Dict[str, Set[str]] = {pkg: set() for pkg in packages}
+    reverse_deps: dict[str, set[str]] = {pkg: set() for pkg in packages}
     for pkg, info in packages.items():
         for dep in info["depends"]:
             for provider in providers.get(dep, []):
@@ -544,7 +544,7 @@ def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def load_keep_file(path: Path) -> Set[str]:
+def load_keep_file(path: Path) -> set[str]:
     """Load a keep-list file."""
     try:
         return {line.strip() for line in path.read_text().splitlines() if line.strip()}
@@ -558,20 +558,20 @@ def save_keep_file(path: Path, keep: Iterable[str]) -> None:
     path.write_text("\n".join(sorted(keep)) + ("\n" if keep else ""), encoding="utf-8")
 
 
-def termux_get_installed(pkg_cmd: str) -> Set[str]:
+def termux_get_installed(pkg_cmd: str) -> set[str]:
     """Return installed Termux package names."""
     result = run_cmd([pkg_cmd, "list-installed"], check=False)
-    installed: Set[str] = set()
+    installed: set[str] = set()
     for line in result.stdout.strip().splitlines():
         if line:
             installed.add(line.split("/")[0])
     return installed
 
 
-def termux_get_deps(pkg: str, pkg_cmd: str) -> Set[str]:
+def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
     """Return direct dependencies of a Termux package."""
     result = run_cmd([pkg_cmd, "show", pkg], check=False)
-    deps: Set[str] = set()
+    deps: set[str] = set()
 
     for line in result.stdout.splitlines():
         if line.startswith("Depends:") or line.startswith("Pre-Depends:"):
@@ -583,11 +583,11 @@ def termux_get_deps(pkg: str, pkg_cmd: str) -> Set[str]:
     return deps
 
 
-def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> Tuple[List[str], Set[str]]:
+def analyze_termux_orphans(pkg_cmd: str, keep_file: Path) -> tuple[list[str], set[str]]:
     """Return Termux orphan package list and current keep set."""
     installed = termux_get_installed(pkg_cmd)
     keep = load_keep_file(keep_file)
-    depended: Set[str] = set()
+    depended: set[str] = set()
 
     for pkg in installed:
         for dep in termux_get_deps(pkg, pkg_cmd):
@@ -666,14 +666,14 @@ def cmd_list_installed_sizes(args: argparse.Namespace) -> int:
         print("apt command not found.")
         return 1
 
-    package_names: List[str] = []
+    package_names: list[str] = []
     for line in result.stdout.splitlines():
         if line and not line.startswith("Listing"):
             parts = line.split()
             if parts:
                 package_names.append(parts[0].split("/")[0])
 
-    rows: List[Tuple[str, int]] = []
+    rows: list[tuple[str, int]] = []
 
     for pkg in package_names:
         try:
@@ -844,7 +844,7 @@ def cmd_suggest_removals(args: argparse.Namespace) -> int:
         print(f"Error querying dpkg: {exc}")
         return 1
 
-    package_sizes: List[Tuple[str, int]] = []
+    package_sizes: list[tuple[str, int]] = []
     for line in result.stdout.splitlines():
         parts = line.split()
         if len(parts) >= 2:
@@ -852,13 +852,13 @@ def cmd_suggest_removals(args: argparse.Namespace) -> int:
 
     history_path = Path(args.history).expanduser()
     if not history_path.exists():
-        history_lines: List[str] = []
+        history_lines: list[str] = []
     else:
         history_lines = history_path.read_text(
             encoding="utf-8", errors="replace"
         ).splitlines()
 
-    used_packages: Set[str] = set()
+    used_packages: set[str] = set()
     for line in history_lines:
         for pkg, _ in package_sizes:
             if re.search(rf"\b{re.escape(pkg)}\b", line):
@@ -934,7 +934,7 @@ def cmd_save_deb_names(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------
 
 
-def _show_big_worker(pkg: str) -> Tuple[str, int, bool]:
+def _show_big_worker(pkg: str) -> tuple[str, int, bool]:
     """Worker: return package download size in bytes."""
     try:
         result = run_cmd(["apt", "show", pkg], timeout=10, check=False)
@@ -951,7 +951,7 @@ def _show_big_worker(pkg: str) -> Tuple[str, int, bool]:
         return (pkg, 0, False)
 
 
-def _save_package_json(path: str, payload: Dict[str, Any]) -> bool:
+def _save_package_json(path: str, payload: dict[str, Any]) -> bool:
     """Save package JSON payload."""
     try:
         output_path = Path(path)
@@ -980,8 +980,8 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
         print("Make sure you have internet connection and run 'pkg update' first.")
         return 1
 
-    package_names: List[str] = []
-    seen: Set[str] = set()
+    package_names: list[str] = []
+    seen: set[str] = set()
     for line in list_result.stdout.strip().splitlines():
         if line and not line.startswith("Listing") and "/" in line:
             pkg = line.split("/", 1)[0]
@@ -996,8 +996,8 @@ def cmd_show_big_packages(args: argparse.Namespace) -> int:
     print(f"📦 Found {len(package_names)} available packages.")
     print(f"🚀 Using {args.workers} parallel processes...")
 
-    large_packages: Dict[str, int] = {}
-    all_packages: Dict[str, int] = {}
+    large_packages: dict[str, int] = {}
+    all_packages: dict[str, int] = {}
     no_size = 0
 
     with Pool(processes=args.workers) as pool:

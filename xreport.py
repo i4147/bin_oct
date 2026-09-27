@@ -121,7 +121,7 @@ BANNER = """
 # --------------------------------------------------------------------------- #
 # Archive registry used by the `scan` command (25 extensions)
 # --------------------------------------------------------------------------- #
-ARCHIVE_TYPES: Dict[str, str] = {
+ARCHIVE_TYPES: dict[str, str] = {
     ".tar": "TAR Archive (.tar)",
     ".tar.gz": "GZip Tarball (.tar.gz)",
     ".tgz": "GZip Tarball (.tgz)",
@@ -150,10 +150,10 @@ ARCHIVE_TYPES: Dict[str, str] = {
 }
 
 # Match longest extension first so ".tar.gz" wins over ".gz".
-_SORTED_EXTS: Tuple[str, ...] = tuple(sorted(ARCHIVE_TYPES, key=len, reverse=True))
+_SORTED_EXTS: tuple[str, ...] = tuple(sorted(ARCHIVE_TYPES, key=len, reverse=True))
 
 
-def detect_archive(path: Path) -> Tuple[Optional[str], Optional[str]]:
+def detect_archive(path: Path) -> tuple[Optional[str], Optional[str]]:
     """Return ``(extension, description)`` if ``path`` looks like an archive."""
     name = path.name.lower()
     for ext in _SORTED_EXTS:
@@ -196,7 +196,7 @@ def _zstd_frame_size(path: Path) -> int:
     return int(path.stat().st_size * 3.2)
 
 
-def analyze_archive(path: Path) -> Dict[str, Any]:
+def analyze_archive(path: Path) -> dict[str, Any]:
     """
     Analyse one archive and return the same dict shape as the originals:
 
@@ -301,7 +301,7 @@ def analyze_archive(path: Path) -> Dict[str, Any]:
     }
 
 
-def extract_archive(path: Path, dest_root: Path) -> Tuple[bool, str]:
+def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
     """Extract ``path`` under ``dest_root/<name>_extracted``."""
     ext, _ = detect_archive(path)
     dest = dest_root / f"{path.name}_extracted"
@@ -365,7 +365,7 @@ def cmd_scan(
     if banner:
         print(f"\x1b[38;5;82m{BANNER}\x1b[0m")
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     for p in root.rglob("*"):
         if not p.is_file():
             continue
@@ -459,10 +459,10 @@ def _count_stream(reader) -> int:
 
 
 # Each handler: (path) -> (uncompressed_size | None, error | None)
-_SizeHandler = Callable[[Path], Tuple[Optional[int], Optional[str]]]
+_SizeHandler = Callable[[Path], tuple[Optional[int], Optional[str]]]
 
 
-def _h_tar(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_tar(path: Path) -> tuple[Optional[int], Optional[str]]:
     try:
         with tarfile.open(path, "r:*") as tf:
             return sum(m.size for m in tf.getmembers() if m.isfile()), None
@@ -470,7 +470,7 @@ def _h_tar(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_zstd(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_zstd(path: Path) -> tuple[Optional[int], Optional[str]]:
     if zstd is None:
         return None, "zstandard not installed"
     try:
@@ -493,7 +493,7 @@ def _h_zstd(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_xz(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_xz(path: Path) -> tuple[Optional[int], Optional[str]]:
     try:
         with lzma.open(path, "rb") as f:
             return _count_stream(f), None
@@ -501,7 +501,7 @@ def _h_xz(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_gzip(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_gzip(path: Path) -> tuple[Optional[int], Optional[str]]:
     try:
         with gzip.open(path, "rb") as f:
             return _count_stream(f), None
@@ -509,7 +509,7 @@ def _h_gzip(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_bz2(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_bz2(path: Path) -> tuple[Optional[int], Optional[str]]:
     try:
         with bz2.open(path, "rb") as f:
             return _count_stream(f), None
@@ -517,7 +517,7 @@ def _h_bz2(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_7z(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_7z(path: Path) -> tuple[Optional[int], Optional[str]]:
     if py7zr is None:
         return None, "py7zr not installed"
     try:
@@ -530,7 +530,7 @@ def _h_7z(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-def _h_zip(path: Path) -> Tuple[Optional[int], Optional[str]]:
+def _h_zip(path: Path) -> tuple[Optional[int], Optional[str]]:
     try:
         with zipfile.ZipFile(path, "r") as z:
             return sum(i.file_size for i in z.infolist()), None
@@ -538,7 +538,7 @@ def _h_zip(path: Path) -> Tuple[Optional[int], Optional[str]]:
         return None, str(e)
 
 
-SIZE_HANDLERS: Dict[str, Tuple[str, _SizeHandler]] = {
+SIZE_HANDLERS: dict[str, tuple[str, _SizeHandler]] = {
     ".zst": ("zstd", _h_zstd),
     ".xz": ("xz", _h_xz),
     ".gz": ("gzip", _h_gzip),

@@ -61,7 +61,7 @@ def load_env_token() -> Optional[str]:
     return None
 
 
-def normalize_repo(spec: str) -> Tuple[str, str]:
+def normalize_repo(spec: str) -> tuple[str, str]:
     s = spec.strip().rstrip("/")
     if s.endswith(".git"):
         s = s[:-4]
