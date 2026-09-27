@@ -11,6 +11,8 @@ def process_file(path: str | Path) -> tuple[bool, Path]:
     path = Path(path)
     if not path.exists() or not path.stat().st_size:
         return (False, path)
+    if sum(1 for _ in path.open()) == 1:
+        return (False, path)
     ret = runcmd(
         ["prettier", "-w", str(path).replace("/storage/emulated/0", "/sdcard")],
         show_output=True,
@@ -21,7 +23,7 @@ def process_file(path: str | Path) -> tuple[bool, Path]:
 
 
 def main() -> None:
-    cwd = str(Path.cwd())
+    cwd = Path.cwd()
     args = sys.argv[1:]
     files = (
         [Path(f) for f in args]

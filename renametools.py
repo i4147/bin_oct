@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 """
-renamekit.py — unified file / directory renaming & normalization toolkit.
+renametools.py — unified file / directory renaming & normalization toolkit.
 
 Subcommands
 -----------
@@ -13,55 +13,55 @@ Subcommands
 
 Mapping from original scripts
 -----------------------------
-  addimgsize_to_filenames.py    ->  renamekit.py images
-  clean_names.py                ->  renamekit.py clean-names -r --apply
-  fname_recommender.py          ->  renamekit.py suggest-names
-  fname_recommender.py -a       ->  renamekit.py suggest-names --apply
-  loname.py                     ->  renamekit.py lowercase --target name
-  lower_ext.py                  ->  renamekit.py lowercase --target ext
-  lower_ext.py -a               ->  renamekit.py lowercase --target ext
-  lowerer.py FILE               ->  renamekit.py lowercase --target content FILE
-  lowername.py                  ->  renamekit.py lowercase --target name
-  lowername.py --dry-run        ->  renamekit.py lowercase --target name --dry-run
-  normalize_jscss_filenames.py  ->  renamekit.py jscss --query-style any
-  normjscss.py                  ->  renamekit.py jscss --query-style param --also-html
-  pnr.py -r STR                 ->  renamekit.py pnr -r STR
-  pnr.py -s A B --recursive     ->  renamekit.py pnr -s A B --recursive
-  pnr.py -t IMG --dry-run       ->  renamekit.py pnr -t IMG --dry-run
+  addimgsize_to_filenames.py    ->  renametools.py images
+  clean_names.py                ->  renametools.py clean-names -r --apply
+  fname_recommender.py          ->  renametools.py suggest-names
+  fname_recommender.py -a       ->  renametools.py suggest-names --apply
+  loname.py                     ->  renametools.py lowercase --target name
+  lower_ext.py                  ->  renametools.py lowercase --target ext
+  lower_ext.py -a               ->  renametools.py lowercase --target ext
+  lowerer.py FILE               ->  renametools.py lowercase --target content FILE
+  lowername.py                  ->  renametools.py lowercase --target name
+  lowername.py --dry-run        ->  renametools.py lowercase --target name --dry-run
+  normalize_jscss_filenames.py  ->  renametools.py jscss --query-style any
+  normjscss.py                  ->  renametools.py jscss --query-style param --also-html
+  pnr.py -r STR                 ->  renametools.py pnr -r STR
+  pnr.py -s A B --recursive     ->  renametools.py pnr -s A B --recursive
+  pnr.py -t IMG --dry-run       ->  renametools.py pnr -t IMG --dry-run
 
 Examples
 --------
   # Lowercase every file & directory name under ./assets (recursive):
-  python renamekit.py lowercase --target name -r assets/
+  python renametools.py lowercase --target name -r assets/
 
   # Lowercase only file extensions, preview first:
-  python renamekit.py lowercase --target ext --dry-run .
+  python renametools.py lowercase --target ext --dry-run .
 
   # Lowercase the contents of one file:
-  python renamekit.py lowercase --target content script.py
+  python renametools.py lowercase --target content script.py
 
   # Add image dimensions to filenames:
-  python renamekit.py images --root ./photos --separator _
+  python renametools.py images --root ./photos --separator _
 
   # Preview cleaning of media filenames:
-  python renamekit.py clean-names -r .
+  python renametools.py clean-names -r .
   # ...apply:
-  python renamekit.py clean-names -r --apply .
+  python renametools.py clean-names -r --apply .
 
   # JS/CSS filename cleanup (broad query stripping):
-  python renamekit.py jscss --query-style any .
+  python renametools.py jscss --query-style any .
 
   # ...with HTML rewriting and only ?key=val patterns:
-  python renamekit.py jscss --query-style param --also-html .
+  python renametools.py jscss --query-style param --also-html .
 
   # Suggest Python filenames from docstrings:
-  python renamekit.py suggest-names ./src
-  python renamekit.py suggest-names ./src --apply
+  python renametools.py suggest-names ./src
+  python renametools.py suggest-names ./src --apply
 
   # Path-name renamer:
-  python renamekit.py pnr -r "_backup" --dry-run .
-  python renamekit.py pnr -s "IMG_" "photo_" --recursive .
-  python renamekit.py pnr -t "chapter" --recursive ./books
+  python renametools.py pnr -r "_backup" --dry-run .
+  python renametools.py pnr -s "IMG_" "photo_" --recursive .
+  python renametools.py pnr -t "chapter" --recursive ./books
 
 Optional third-party packages (used only where explicitly needed):
   * opencv-python  — for the ``images`` subcommand (import cv2)
@@ -82,7 +82,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
 
-log = logging.getLogger("renamekit")
+log = logging.getLogger("renametools")
 
 
 def iter_paths(
@@ -711,7 +711,7 @@ def _add_paths(p: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="renamekit",
+        prog="renametools",
         description=(
             "Unified renamer / normalizer: lowercase, images, clean-names, "
             "jscss, suggest-names, pnr."
