@@ -2,18 +2,20 @@
 """
 Duplicate File Finder and Remover
 
-Generate a Python script that scans a directory (recursively by default) for duplicate files
-by content, using a multi-phase approach (size grouping -> quick hash -> full hash) with
-multiprocessing.Pool.apply_async for parallelism. The script should:
-- Skip .git directories, symlinks (by default), and files smaller than --min-size.
-- Use xxhash.xxh64 for hashing (quick hash reads head/tail, full hash reads entire file).
-- Deduplicate hardlinks (same inode/device) by only reporting one representative per inode.
-- Choose which duplicate to keep via --keep {first,oldest,newest} (default oldest).
-- Support --dry-run to only list what would be deleted.
-- Use loguru for all logging output.
-- Use pathlib exclusively for path operations.
-- Include full type annotations and docstrings on all functions and module-level constants.
-- Delete duplicates via Path.unlink() and print(a summary including bytes freed.)
+Scan a directory (recursively by default) for duplicate files by content, using a
+multi-phase approach (size grouping -> quick hash -> full hash) with
+multiprocessing.Pool.apply_async for parallelism. The script:
+
+- Skips .git directories unless --all/-a is given. Symlinks are always skipped.
+- Uses xxhash.xxh64 for hashing (quick hash reads head/tail, full hash reads entire file).
+- Deduplicates hardlinks (same inode/device) by reporting one representative per inode.
+- Chooses which duplicate to keep via --keep {first,oldest,newest} (default oldest).
+- Only deletes when --remove/-r is passed; otherwise it reports only.
+- Supports --dry-run to list what would be deleted without deleting.
+- Uses loguru for warnings/errors and plain print() for user-facing progress.
+- Uses pathlib exclusively for path operations.
+- Includes full type annotations and docstrings on all functions and module constants.
+- Deletes duplicates via Path.unlink() and prints a summary including bytes freed.
 """
 
 from __future__ import annotations
@@ -27,13 +29,23 @@ from pathlib import Path
 from loguru import logger
 from xxhash import xxh64
 
-DEFAULT_BLOCK: int = 32768
+# Size of the head/tail sample used by quick_hash, in bytes.
 QUICK_READ: int = 4096
+
+# Chunk size used when streaming a full-file hash.
 CHUNK_SIZE: int = 65536
+
+# Number of worker processes used for hashing.
 POOL_WORKERS: int = 8
 
 
 def file_stat_key(p: Path) -> tuple[int, int] | None:
+    """
+    Return a (inode, device) tuple identifying the physical file behind ``p``.
+
+    Returns ``None`` if the file cannot be stat'ed. Used to collapse hardlinks
+    so that only one representative per physical inode is considered.
+    """
     try:
         st = p.stat()
         return (st.st_ino, st.st_dev)
@@ -42,6 +54,15 @@ def file_stat_key(p: Path) -> tuple[int, int] | None:
 
 
 def quick_hash(path: Path, n: int = QUICK_READ) -> str:
+    """
+    Compute a fast, non-authoritative hash of a file's head and tail.
+
+    Reads the first ``n`` bytes and, if the file is larger, the last ``n`` bytes.
+    This is used as a cheap pre-filter before committing to a full hash.
+
+    Raises:
+        OSError: If the file cannot be opened or read.
+    """
     h = xxh64()
     try:
         size = path.stat().st_size
@@ -61,6 +82,13 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
 
 
 def full_hash(path: Path) -> tuple[str, Path]:
+    """
+    Compute the authoritative xxh64 hash of a file's entire contents.
+
+    Returns:
+        A ``(hexdigest, path)`` tuple. On error, the hexdigest is ``""`` so the
+        caller can skip the entry without special-casing.
+    """
     try:
         if not path.stat().st_size:
             return ("", path)
@@ -83,27 +111,38 @@ def iter_files(
     root: Path,
     recursive: bool,
     follow_symlinks: bool,
-    min_size: int,
+    include_git: bool = False,
 ) -> Iterator[Path]:
+    """
+    Yield candidate regular files under ``root``.
+
+    Symlinks are always skipped. ``.git`` directories are skipped unless
+    ``include_git`` is True (i.e. ``--all`` was passed).
+    """
     if recursive:
         iterator: Iterable[Path] = root.rglob("*")
     else:
         iterator = root.iterdir()
     for p in iterator:
-        if ".git" in p.parts:
+        if not include_git and ".git" in p.parts:
             continue
         if not p.is_file():
             continue
+        # Symlinks are always skipped (unless explicitly followed).
         if p.is_symlink() and not follow_symlinks:
             continue
-        try:
-            if p.stat().st_size >= min_size:
-                yield p
-        except OSError:
-            continue
+        yield p
 
 
 def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
+    """
+    Select the file to keep from a list of duplicate representatives.
+
+    Policies:
+        - "first": lexicographically smallest path.
+        - "oldest": smallest mtime.
+        - "newest": largest mtime.
+    """
     if not files:
         raise ValueError("Empty file list")
     if policy == "first":
@@ -117,16 +156,30 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
 
 
 def main() -> None:
+    """CLI entry point: parse arguments, run the multi-phase scan, act on results."""
     cwd = Path.cwd()
     p = argparse.ArgumentParser(
         description="Find and delete duplicate files by content."
     )
     p.add_argument(
-        "-r",
         "--recursive",
         action="store_true",
         default=True,
         help="Search directories recursively (default: True).",
+    )
+    p.add_argument(
+        "-r",
+        "--remove",
+        action="store_true",
+        default=False,
+        help="Actually delete duplicate files. Without this flag, only report them.",
+    )
+    p.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        default=False,
+        help="Include .git directories in the search (symlinks are still skipped).",
     )
     p.add_argument(
         "-n",
@@ -142,12 +195,6 @@ def main() -> None:
         help="Follow symlinks to files.",
     )
     p.add_argument(
-        "--min-size",
-        type=int,
-        default=1,
-        help="Minimum file size (bytes) to consider. Default 1 (skip zero-size).",
-    )
-    p.add_argument(
         "-k",
         "--keep",
         choices=("first", "oldest", "newest"),
@@ -158,10 +205,18 @@ def main() -> None:
 
     root = Path.cwd()
 
+    # ---------------------------------------------------------------------
+    # Phase 1: scan and group by file size.
+    # ---------------------------------------------------------------------
     print("Phase 1: Scanning files and grouping by size...")
     size_groups: defaultdict[int, list[Path]] = defaultdict(list)
     total_files = 0
-    for f in iter_files(root, args.recursive, args.follow_symlinks, args.min_size):
+    for f in iter_files(
+        root,
+        args.recursive,
+        args.follow_symlinks,
+        include_git=args.all,
+    ):
         total_files += 1
         try:
             size = f.stat().st_size
@@ -182,6 +237,9 @@ def main() -> None:
         f"{len(candidates)} size-groups to examine."
     )
 
+    # ---------------------------------------------------------------------
+    # Phase 2: quick hash (head/tail) to narrow candidates.
+    # ---------------------------------------------------------------------
     print("Phase 2: Quick hash comparison...")
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
 
@@ -211,6 +269,9 @@ def main() -> None:
         f"{len(need_full)} groups need full hash."
     )
 
+    # ---------------------------------------------------------------------
+    # Phase 3: full hash to confirm duplicates.
+    # ---------------------------------------------------------------------
     print("Phase 3: Full hash comparison...")
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = (
         defaultdict(list)
@@ -230,6 +291,9 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"Skipping {fpath}: {e}")
 
+    # ---------------------------------------------------------------------
+    # Phase 4: reduce hardlinks, choose keeper, build deletion list.
+    # ---------------------------------------------------------------------
     print("Phase 4: Processing results...")
     to_delete: list[Path] = []
     for entries in full_groups.values():
@@ -250,11 +314,7 @@ def main() -> None:
         print("No duplicate files found.")
         return
 
-    print(f"\nFound {len(to_delete)} duplicate files to delete.")
-    if args.dry_run:
-        print("DRY RUN - Files that would be deleted:")
-    else:
-        print("Files to be deleted:")
+    print(f"\nFound {len(to_delete)} duplicate files.")
     for p_del in to_delete:
         try:
             rel_path = p_del.relative_to(cwd)
@@ -262,10 +322,23 @@ def main() -> None:
             rel_path = p_del
         print(f"  {rel_path}")
 
+    # ---------------------------------------------------------------------
+    # Report-only mode: no -r / --remove.
+    # ---------------------------------------------------------------------
+    if not args.remove:
+        print(
+            f"\nReport-only mode. {len(to_delete)} files would be deleted.\n"
+            "Run with -r/--remove to actually delete them."
+        )
+        return
+
     if args.dry_run:
         print(f"\nDry-run complete. {len(to_delete)} files would be deleted.")
         return
 
+    # ---------------------------------------------------------------------
+    # Deletion phase.
+    # ---------------------------------------------------------------------
     removed = 0
     failed = 0
     freed_space = 0
