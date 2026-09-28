@@ -4,7 +4,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from dh import fsz, gsz  # format & get size funcs
+from dh import fsz, gsz
 
 
 def clean_pycache(start_dir: Path = Path.cwd()) -> None:

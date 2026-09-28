@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that scans a given directory for immediate subdirectories that are Git repositories and checks each one's working tree status in parallel using multiprocessing.
+For each repository it should run "git status --porcelain" with a timeout, determine whether it has uncommitted changes, and produce a concise summary listing up to five changed files (with a "+N more" indicator if there are additional ones), or report "Clean" if there are none, handling errors like timeouts, non-git directories, or git command failures gracefully.
+The script should use a process pool sized by CPU count to check repositories concurrently and then print or return the results, clearly distinguishing repositories with changes, clean repositories, and repositories that failed to check."""
 
 import subprocess
 import sys

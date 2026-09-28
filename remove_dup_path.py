@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that takes a hardcoded Termux-style PATH string, splits it into individual directory entries by colon, and deduplicates them using a set while checking whether duplicates existed.
+It should print a "dup found" message if duplicates were removed, then print the counts and sorted contents of both the original and deduplicated entry lists separated by a divider line.
+Finally, it should append a new export PATH line built from the deduplicated entries to the user's ~/.bashrc file."""
 
 from pathlib import Path
 

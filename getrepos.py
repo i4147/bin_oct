@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that fetches a GitHub user's public repositories using PyGithub, optionally authenticating with a personal access token loaded from a .env file via python-dotenv.
+The script should accept a username and optional timeout, display a live countdown timer in the console (running in a background thread) while waiting for the API response, and return the list of repository objects.
+It must gracefully handle GithubException errors such as user-not-found (404), invalid/expired token (401), and rate-limit-exceeded (403), printing clear, user-friendly error messages for each case, and should notify the user if no public repositories are found."""
 
 import json
 import sys
@@ -7,7 +9,6 @@ import threading
 import time
 from os import getenv
 from pathlib import Path
-
 from dotenv import load_dotenv
 from github import Auth, Github, GithubException
 

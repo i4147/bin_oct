@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that uses the ast module to statically analyze one or more Python source files (paths given via argparse command-line arguments) and detect whether each file's module-level executable statements are properly wrapped in an `if __name__ == "__main__":` guard.
+It should parse each file into an AST, identify top-level statements that are not function/class definitions, imports, docstrings, or the guard itself, and flag files where such "bare" executable code exists outside the guard.
+The script should report results (e.g., which files pass or fail the check) to stdout and exit with an appropriate status code reflecting overall success or failure, making it suitable as a lint-style check in CI pipelines."""
 
 import argparse
 import ast

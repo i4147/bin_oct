@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python CLI script that scans the current directory for subtitle files (.srt), optionally recursively via a -r/--recursive flag, and renames them to a simplified "E<episode number>" format by stripping leading junk text and extracting episode numbers matched from patterns like "S01E02" or "1x02".
+It should use regex to detect and remove common/quality tags (e.g., HDTV, WEBDL, BLURAY) and other noise, print a colored preview of proposed renames using the "dh" module's colored function, and only actually perform the renaming on disk when a -w/--write flag is passed.
+Files where no episode number can be extracted should be skipped from renaming."""
 
 import argparse
 import re
 from pathlib import Path
-
 from dh import colored
 
 VIDEO_EXTS = {".srt"}

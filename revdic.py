@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes a JSON file path as its single argument, loads the JSON object from that file, and reverses its key-value mappings using a reverse_dict function imported from a local module named dh.
+The script should then overwrite the same file with the reversed dictionary, writing it as UTF-8 encoded JSON with indentation of 2 spaces, sorted keys, and ensure_ascii disabled so non-ASCII characters are preserved as-is.
+After successfully writing the file, it should print "done" to indicate completion."""
 
 import json
 import sys
-
 from dh import reverse_dict
 
 if __name__ == "__main__":

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python CLI utility that scans a directory tree for Python source files—both loose files and files packed inside common archive/compression formats (zip, tar variants, gzip, bzip2, xz, zstandard, brotli)—and extracts top-level function and class definitions from each file using tree-sitter (with the tree_sitter_python grammar) for AST-based parsing.
+It should read and write text files safely with UTF-8 encoding and normalized newlines, deduplicate or key extracted code objects via SHA-256 hashing of their content, and support parallel processing across multiple files using multiprocessing for speed.
+Use argparse to expose configurable options (e.g., input path, output destination) and loguru for structured logging of progress and errors, gracefully degrading when optional dependencies like tree_sitter, zstandard, or brotli are unavailable."""
 
 import argparse
 import ast
@@ -14,7 +16,6 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-
 from loguru import logger
 
 try:

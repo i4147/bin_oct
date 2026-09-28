@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes a file path as its single argument, reads the file's text content using UTF-8 encoding with error replacement for invalid bytes, decodes any HTML entities in that content using the standard library's unescape function, and then overwrites the same file in place with the unescaped text.
+The script should run as a standalone module invoked via the command line, using sys.argv to obtain the target file path and pathlib.Path for file reading and writing.
+It should exit cleanly by returning None from main through SystemExit."""
 
 import sys
 from html import unescape

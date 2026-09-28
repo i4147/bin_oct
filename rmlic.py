@@ -1,9 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that removes license/copyright header blocks from a batch of text or source files.
+It should load a license file (e.g.
+"/sdcard/lic") and split its content into separate boilerplate patterns using runs of at least 3 blank lines as delimiters, then convert each pattern into a whitespace-tolerant, case-insensitive regex (escaping special characters while allowing flexible newline/whitespace matching) to strip matching blocks from each target file's content.
+For each processed file it should compare file size before and after cleaning, only rewrite the file if content chang statusors using helper functions like cprint, fsz, gsz, and get_nobinary from a local "dh" module.
+The script should be designed to process multiple files, using a worker count constant (NUM_WORKERS = 8) to support concurrent/parallel processing."""
 
 import re
 from pathlib import Path
-
 from dh import cprint, fsz, get_nobinary, gsz
 
 LIC_FILE = Path("/sdcard/lic")

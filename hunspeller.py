@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that spell-checks text files using hunspell (en_US dictionary), processing files line by line in parallel via multiprocessing to speed up large inputs.
+For each line, it should tokenize words with a regex, detect misspelled alphabetic words, and either report them along with suggested corrections or, when an autofix flag is enabled, automatically replace them with the top suggestion while preserving the original word's capitalization style (title case, uppercase) and any surrounding apostrophes.
+It should accept input via argparse (e.g., file path(s) and an autofix option), print or write corrected text and/or a summary of misspelled words with suggestions, and track counts of misspelled and fixed words.
+Include proper handling for command-line argument parsing and use sys for exit codes or error output."""
 
 import argparse
 import re
 import sys
 from multiprocessing import Pool, cpu_count
-
 import hunspell
 
 

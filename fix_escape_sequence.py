@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans .py files under given paths for string literals containing invalid backslash escape sequences (which trigger DeprecationWarning/SyntaxWarning) and automatically fixes them by doubling the offending backslashes, using the tokenize module to accurately locate string and f-string tokens while skipping raw strings and common directories like __pycache__ and .venv.
+It should support multiprocessing for scanning multiple files in parallel, accept command-line arguments (e.g., target paths, a dry-run/check-only mode, verbosity), and output a summary report listing which files were modified along with the line/column positions and counts of fixed escape sequences.
+The script must exclude itself (SELF_PATH) from processing and handle both regular strings and f-strings differently depending on whether the running Python version exposes FSTRING_START tokens."""
 
 import argparse
 import io
@@ -11,7 +13,6 @@ from pathlib import Path
 
 VALID_ESCAPES: frozenset[str] = frozenset("\\'\"abfnrtv\n\r01234567xNuU")
 HAS_FSTRING_TOKENS: bool = hasattr(tokenize, "FSTRING_START")
-
 SKIP_DIRS: frozenset[str] = frozenset(
     {
         "__pycache__",
@@ -35,9 +36,7 @@ SKIP_DIRS: frozenset[str] = frozenset(
         ".vscode",
     }
 )
-
 SELF_PATH: Path = Path(__file__).resolve()
-
 Fix = tuple[tuple[int, int], tuple[int, int], str]
 Result = tuple[str, str, int, int]
 
@@ -89,10 +88,8 @@ def fix_source(src: str) -> str:
         tokens = list(tokenize.generate_tokens(io.StringIO(src).readline))
     except (tokenize.TokenError, IndentationError, SyntaxError):
         return src
-
     fixes: list[Fix] = []
     fstring_raw: list[bool] = []
-
     for tok in tokens:
         t = tok.type
         if t == tokenize.STRING:
@@ -109,10 +106,8 @@ def fix_source(src: str) -> str:
                 nb = _fix_body(tok.string)
                 if nb is not None and nb != tok.string:
                     fixes.append((tok.start, tok.end, nb))
-
     if not fixes:
         return src
-
     lines = src.splitlines(keepends=True)
     for (sr, sc), (er, ec), new in sorted(fixes, key=lambda f: f[0], reverse=True):
         if sr == er:
@@ -168,27 +163,22 @@ def process_file(path_str: str, dry_run: bool, quiet: bool) -> Result:
         src = p.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return (path_str, "skipped", 0, 0)
-
     warns = syntax_warnings(src, path_str)
     if warns is None:
         return (path_str, "error", 0, 0)
     if not warns:
         return (path_str, "clean", 0, 0)
-
     fixed = fix_source(src)
     if fixed == src:
         return (path_str, "unfixable", len(warns), len(warns))
-
     remaining = syntax_warnings(fixed, path_str)
     if remaining is None:
         return (path_str, "error", len(warns), len(warns))
-
     if not dry_run:
         try:
             p.write_text(fixed, encoding="utf-8")
         except OSError:
             return (path_str, "error", len(warns), len(warns))
-
     status = "fixed" if not remaining else "partial"
     return (path_str, status, len(warns), len(remaining))
 
@@ -200,7 +190,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-q", "--quiet", action="store_true")
     ap.add_argument("-j", "--jobs", type=int, default=8)
     args = ap.parse_args(argv)
-
     targets: list[str] = []
     for p in args.paths:
         if p.is_dir():
@@ -211,18 +200,14 @@ def main(argv: list[str] | None = None) -> int:
             targets.append(str(p))
         else:
             print(f"error: not found: {p}", file=sys.stderr)
-
     if not targets:
         print("no files to process")
         return 0
-
     tasks: list[tuple[str, bool, bool]] = [
         (t, args.dry_run, args.quiet) for t in targets
     ]
-
     with mp.Pool(args.jobs) as pool:
         results: list[Result] = pool.starmap(process_file, tasks)
-
     counts: dict[str, int] = {}
     for path, status, before, after in results:
         counts[status] = counts.get(status, 0) + 1
@@ -236,9 +221,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"unfixable: {path}  ({before} warning(s))")
         elif status == "error":
             print(f"error: {path}", file=sys.stderr)
-
     print("summary: " + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())))
-
     bad = counts.get("error", 0) + counts.get("partial", 0) + counts.get("unfixable", 0)
     return 1 if bad else 0
 

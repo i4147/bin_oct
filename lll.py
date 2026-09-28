@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively lists all files under the current working directory, sorted by modification time from newest to oldest, while skipping directories and excluded folders such as .mypy_cache, .ruff_cache, .git, and __pycache__.
+For each file it should print the truncated filename, a formatted file size (using helper functions fsz and gsz from a module named dh, with special handling and padding for the size string width), and the last-modified time in HH:MM format, all rendered with ANSI escape codes for colored, blinking terminal output.
+Symlinks should be detected and labeled distinctly with a "symlink" marker and a different color instead of showing a computed size.
+The script runs only when executed directly (via the __main__ guard) and outputs directly to stdout with no return value or file writing."""
 
 import datetime
 from pathlib import Path
-
 from dh import fsz, gsz
 
 EXCLUDED = {".mypy_cache", ".ruff_cache", ".git", "__pycache__"}

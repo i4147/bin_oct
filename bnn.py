@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that recursively finds files under one or more given input paths and performs search-and-replace of a specified string across them, skipping directories, symlinks, and (optionally) binary files by sniffing for null bytes.
+It should process files in parallel using joblib, write changes safely via a temporary file before replacing the original, and track per-file statistics (success/failure, number of replacements, size before/after) in a FileStats dataclass, logging a formatted summary line for each processed file.
+Include argparse-based CLI input handling and logging configuration for reporting progress and errors."""
 
 import argparse
 import logging
@@ -8,7 +10,6 @@ import tempfile
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-
 from joblib import Parallel, delayed
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")

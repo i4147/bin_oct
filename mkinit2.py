@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that automatically regenerates an `__init__.py` file for a package by scanning all top-level `.py` modules (excluding `__init__.py` and files starting with underscore) in a given directory, using the `ast` module to parse each file and extract public function and class names (those not starting with underscore).
+It should build a mapping of module names to their public symbols, opt merging with an existing `__init__.py`'s current imports and `__all__` list by parsing it with `ast` as well.
+The script should support parallel processing of modules via `multiprocessing` for speed, use `shutil` for any file backup/copy operations, and write out updated `from .module import Name` statements plus a sorted `__all__` list, printing warnings to stderr for files that fail to parse."""
+
 import ast
 import multiprocessing as mp
 import shutil
@@ -44,7 +48,6 @@ def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]
         tree = ast.parse("".join(original_lines), filename=str(init_file))
     except SyntaxError:
         return existing_imports, existing_all, original_lines
-
     for node in tree.body:
         if isinstance(node, ast.ImportFrom) and node.module is None and node.level == 1:
             for alias in node.names:
@@ -58,7 +61,6 @@ def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]
                                 elt.value, str
                             ):
                                 existing_all.add(elt.value)
-
     return existing_imports, existing_all, original_lines
 
 
@@ -69,37 +71,27 @@ def main():
     if not modules:
         print("No Python modules found in the current directory.")
         return
-
     print(f"Found {len(modules)} Python module(s). Parsing in parallel...")
-
     with mp.Pool(processes=8) as pool:
         results = pool.map(process_module, modules)
-
     module_public: dict[str, list[str]] = {}
     for module_name, public_names in results:
         module_public[module_name] = public_names
         print(f"  - {module_name}.py: {len(public_names)} public name(s)")
-
     modules_with_public = [
         (name, names) for name, names in module_public.items() if names
     ]
-
     init_file = cwd / "__init__.py"
-
     if init_file.exists():
         backup_file = init_file.with_suffix(".py.bak")
         shutil.copy2(init_file, backup_file)
         print(f"\nBackup created: {backup_file}")
-
         existing_imports, existing_all, original_lines = parse_existing_init(init_file)
-
         while original_lines and original_lines[-1].strip() == "":
             original_lines.pop()
-
         new_lines = list(original_lines)
         if new_lines:
             new_lines.append("")
-
         appended_any = False
         for module_name, public_names in modules_with_public:
             missing = [n for n in public_names if n not in existing_imports]
@@ -108,9 +100,7 @@ def main():
                 new_lines.append(f"from .{module_name} import {names_str}")
                 existing_imports.update(missing)
                 appended_any = True
-
         merged_all = sorted(existing_all | existing_imports)
-
         cleaned_lines = []
         skip = False
         for line in new_lines:
@@ -126,18 +116,14 @@ def main():
             cleaned_lines.append(line)
         while cleaned_lines and cleaned_lines[-1].strip() == "":
             cleaned_lines.pop()
-
         if merged_all:
             cleaned_lines.append("")
             all_str = ", ".join(repr(name) for name in merged_all)
             cleaned_lines.append(f"__all__ = [{all_str}]")
-
         cleaned_lines.append("")
         new_content = "\n".join(cleaned_lines)
-
         with open(init_file, "w", encoding="utf-8") as f:
             f.write(new_content)
-
         if appended_any:
             print(f"\nUpdated {init_file} (appended missing imports).")
         else:
@@ -160,7 +146,6 @@ def main():
         if lines:
             lines.append("")
         init_content = "\n".join(lines)
-
         with open(init_file, "w", encoding="utf-8") as f:
             f.write(init_content)
         print(f"\nCreated {init_file}")

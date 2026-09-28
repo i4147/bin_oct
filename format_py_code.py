@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that takes a source file path, reads and normalizes its content by ensuring a trailing newline, then uses the tokenize module to walk through all tokens in the file.
+Based on token types (INDENT, DEDENT, NEWLINE, COMMENT, etc.), the script reconstructs the code with consistent 4-space indentation and formatting rules, writing tokens to an output buffer while tracking indentation level and line-start state via helper functions for writing text and inserting newlines.
+The end result is a reformatted version of the Python source file, effectively acting as a simple custom code formatter/pretty-printer."""
 
 import io
 import sys

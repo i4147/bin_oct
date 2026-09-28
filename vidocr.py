@@ -22,6 +22,7 @@ Mapping from original scripts:
 
 Requires: opencv-python, numpy, pytesseract (+ tesseract-ocr binary on PATH).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -37,16 +38,16 @@ import pytesseract
 
 
 def parse_hms(value: str) -> float:
-    parts = value.strip().split(':')
+    parts = value.strip().split(":")
     if len(parts) != 3:
-        raise ValueError(f'Invalid time format: {value}. Expected HH:MM:SS')
+        raise ValueError(f"Invalid time format: {value}. Expected HH:MM:SS")
     h, m, s = parts
     return int(h) * 3600 + int(m) * 60 + float(s)
 
 
 def parse_srt_time(value: str) -> float:
-    h, m, rest = value.split(':')
-    s, ms = rest.replace(',', '.').split('.')
+    h, m, rest = value.split(":")
+    s, ms = rest.replace(",", ".").split(".")
     return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000.0
 
 
@@ -57,7 +58,7 @@ def format_srt_time(t: float) -> str:
     ms = int(round((s - int(s)) * 1000))
     if ms == 1000:
         ms = 999
-    return f'{h:02d}:{m:02d}:{int(s):02d},{ms:03d}'
+    return f"{h:02d}:{m:02d}:{int(s):02d},{ms:03d}"
 
 
 def _ocr_worker(
@@ -67,15 +68,13 @@ def _ocr_worker(
     t, frame = payload
     try:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        _, binary = cv2.threshold(
-            gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU
-        )
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
         text = pytesseract.image_to_string(binary, config=config).strip()
         if text:
-            print(f'[{format_srt_time(t)}] {text}')
+            print(f"[{format_srt_time(t)}] {text}")
         return t, text
     except Exception:
-        return t, ''
+        return t, ""
 
 
 def _frames_similar(a: np.ndarray, b: np.ndarray, threshold: float) -> bool:
@@ -97,7 +96,7 @@ def extract_frames(
 ) -> list[tuple[float, np.ndarray]]:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
-        raise OSError(f'Cannot open video: {video_path}')
+        raise OSError(f"Cannot open video: {video_path}")
     fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
     step = max(1, int(fps / sample_fps))
     idx = 0
@@ -116,7 +115,7 @@ def extract_frames(
             break
         if idx % step == 0:
             h = frame.shape[0]
-            cropped = frame[int(h * crop_bottom):].copy()
+            cropped = frame[int(h * crop_bottom) :].copy()
             if prev is None or not _frames_similar(prev, cropped, diff_threshold):
                 frames.append((ts, cropped))
                 prev = cropped
@@ -130,10 +129,10 @@ def extract_frames(
 def read_srt(path: Path) -> list[dict]:
     if not path.is_file():
         return []
-    lines = path.read_text(encoding='utf-8').splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
     entries: list[dict] = []
     time_re = re.compile(
-        r'(\d{2}:\d{2}:\d{2}[.,]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[.,]\d{3})'
+        r"(\d{2}:\d{2}:\d{2}[.,]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[.,]\d{3})"
     )
     i = 0
     while i < len(lines):
@@ -152,21 +151,20 @@ def read_srt(path: Path) -> list[dict]:
         while i < len(lines) and lines[i].strip():
             body.append(lines[i].strip())
             i += 1
-        text = '\n'.join(body)
+        text = "\n".join(body)
         if text:
-            entries.append({'start': start, 'end': end, 'text': text})
+            entries.append({"start": start, "end": end, "text": text})
     return entries
 
 
 def write_srt(path: Path, segments: list[dict]) -> None:
-    with path.open('w', encoding='utf-8') as f:
+    with path.open("w", encoding="utf-8") as f:
         for i, seg in enumerate(segments, 1):
-            f.write(f'{i}\n')
+            f.write(f"{i}\n")
             f.write(
-                f'{format_srt_time(seg["start"])} --> '
-                f'{format_srt_time(seg["end"])}\n'
+                f"{format_srt_time(seg['start'])} --> {format_srt_time(seg['end'])}\n"
             )
-            f.write(f'{seg["text"]}\n\n')
+            f.write(f"{seg['text']}\n\n")
 
 
 def merge_segments(segments: list[dict], gap: float = 1.0) -> list[dict]:
@@ -175,10 +173,10 @@ def merge_segments(segments: list[dict], gap: float = 1.0) -> list[dict]:
     out: list[dict] = []
     cur = dict(segments[0])
     for seg in segments[1:]:
-        same = seg['text'] == cur['text']
-        close = seg['start'] - cur['end'] <= gap
+        same = seg["text"] == cur["text"]
+        close = seg["start"] - cur["end"] <= gap
         if same and close:
-            cur['end'] = seg['end']
+            cur["end"] = seg["end"]
         else:
             out.append(cur)
             cur = dict(seg)
@@ -194,7 +192,7 @@ def run(
     resume: bool = False,
     sample_fps: float = 2.0,
     workers: Optional[int] = None,
-    lang: str = 'fas',
+    lang: str = "fas",
     crop_bottom: float = 0.75,
     diff_threshold: float = 0.97,
     merge_gap: float = 1.0,
@@ -207,40 +205,41 @@ def run(
     if resume and output_path.is_file():
         existing = read_srt(output_path)
         if existing and start is None:
-            start = max(s['end'] for s in existing)
-            print(f'Resuming from {format_srt_time(start)}')
+            start = max(s["end"] for s in existing)
+            print(f"Resuming from {format_srt_time(start)}")
 
-    span = ''
+    span = ""
     if start is not None and end is not None:
-        span = f' from {format_srt_time(start)} to {format_srt_time(end)}'
+        span = f" from {format_srt_time(start)} to {format_srt_time(end)}"
     elif start is not None:
-        span = f' from {format_srt_time(start)} to end'
+        span = f" from {format_srt_time(start)} to end"
     elif end is not None:
-        span = f' from start to {format_srt_time(end)}'
+        span = f" from start to {format_srt_time(end)}"
 
-    print(f'[1/3] Extracting frames ({sample_fps} fps sample{span})…')
+    print(f"[1/3] Extracting frames ({sample_fps} fps sample{span})…")
     frames = extract_frames(
         video, sample_fps, crop_bottom, start, end, diff_threshold, verbose
     )
-    print(f'      {len(frames)} unique frames queued for OCR')
+    print(f"      {len(frames)} unique frames queued for OCR")
 
-    config = f'--oem 3 --psm 6 -l {lang}'
-    print(f'[2/3] Running OCR with {workers} worker(s)…')
+    config = f"--oem 3 --psm 6 -l {lang}"
+    print(f"[2/3] Running OCR with {workers} worker(s)…")
 
     worker = partial(_ocr_worker, config=config)
     with mp.Pool(processes=workers) as pool:
         results = pool.map(worker, frames)
 
     fresh = [
-        {'start': t, 'end': t + 1.0 / sample_fps, 'text': text}
-        for t, text in results if text
+        {"start": t, "end": t + 1.0 / sample_fps, "text": text}
+        for t, text in results
+        if text
     ]
 
     if resume and output_path.is_file():
         existing = read_srt(output_path)
         if existing:
             if start is not None:
-                kept = [s for s in existing if s['end'] <= start]
+                kept = [s for s in existing if s["end"] <= start]
                 all_segs = kept + fresh
             else:
                 all_segs = existing + fresh
@@ -249,42 +248,75 @@ def run(
     else:
         all_segs = fresh
 
-    all_segs.sort(key=lambda s: s['start'])
+    all_segs.sort(key=lambda s: s["start"])
     merged = merge_segments(all_segs, merge_gap)
-    print(f'[3/3] Writing {len(merged)} subtitle(s) -> {output}')
+    print(f"[3/3] Writing {len(merged)} subtitle(s) -> {output}")
     write_srt(output_path, merged)
-    print('Done.')
+    print("Done.")
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description='Extract burned-in subtitles from a video using OCR.',
+        description="Extract burned-in subtitles from a video using OCR.",
     )
-    p.add_argument('video', help='Path to the video file')
+    p.add_argument("video", help="Path to the video file")
     p.add_argument(
-        'output', nargs='?', default='extracted_subs.srt',
-        help='Output SRT file (default: extracted_subs.srt)',
+        "output",
+        nargs="?",
+        default="extracted_subs.srt",
+        help="Output SRT file (default: extracted_subs.srt)",
     )
-    p.add_argument('-s', '--start', dest='start_time',
-                   help='Start time for extraction (HH:MM:SS)')
-    p.add_argument('-e', '--end', dest='end_time',
-                   help='End time for extraction (HH:MM:SS)')
-    p.add_argument('-r', '--resume', action='store_true',
-                   help='Resume from previous run (appends to existing SRT)')
-    p.add_argument('--sample-fps', type=float, default=2.0,
-                   help='Frames per second to sample (default: 2.0)')
-    p.add_argument('--workers', type=int, default=4,
-                   help='Number of OCR worker processes (default: 4)')
-    p.add_argument('--lang', default='fas',
-                   help='Tesseract language code (default: fas)')
-    p.add_argument('--crop-bottom', type=float, default=0.75,
-                   help='Top fraction of frame to ignore (default: 0.75)')
-    p.add_argument('--diff-threshold', type=float, default=0.97,
-                   help='Frame similarity threshold (default: 0.97)')
-    p.add_argument('--merge-gap', type=float, default=1.0,
-                   help='Max gap in seconds to merge identical lines (default: 1.0)')
-    p.add_argument('-v', '--verbose', action='store_true',
-                   help='Print per-frame progress while scanning')
+    p.add_argument(
+        "-s", "--start", dest="start_time", help="Start time for extraction (HH:MM:SS)"
+    )
+    p.add_argument(
+        "-e", "--end", dest="end_time", help="End time for extraction (HH:MM:SS)"
+    )
+    p.add_argument(
+        "-r",
+        "--resume",
+        action="store_true",
+        help="Resume from previous run (appends to existing SRT)",
+    )
+    p.add_argument(
+        "--sample-fps",
+        type=float,
+        default=2.0,
+        help="Frames per second to sample (default: 2.0)",
+    )
+    p.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Number of OCR worker processes (default: 4)",
+    )
+    p.add_argument(
+        "--lang", default="fas", help="Tesseract language code (default: fas)"
+    )
+    p.add_argument(
+        "--crop-bottom",
+        type=float,
+        default=0.75,
+        help="Top fraction of frame to ignore (default: 0.75)",
+    )
+    p.add_argument(
+        "--diff-threshold",
+        type=float,
+        default=0.97,
+        help="Frame similarity threshold (default: 0.97)",
+    )
+    p.add_argument(
+        "--merge-gap",
+        type=float,
+        default=1.0,
+        help="Max gap in seconds to merge identical lines (default: 1.0)",
+    )
+    p.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print per-frame progress while scanning",
+    )
     return p
 
 
@@ -294,12 +326,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     if (
         args.output
-        and re.match(r'\d{1,2}:\d{2}:\d{2}', args.output)
+        and re.match(r"\d{1,2}:\d{2}:\d{2}", args.output)
         and not args.start_time
         and not args.end_time
     ):
         args.end_time = args.output
-        args.output = 'extracted_subs.srt'
+        args.output = "extracted_subs.srt"
 
     start = parse_hms(args.start_time) if args.start_time else None
     end = parse_hms(args.end_time) if args.end_time else None
@@ -321,5 +353,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())

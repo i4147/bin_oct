@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that deduplicates and extracts Python function/class definitions from a large collection of source files, including files nested inside archives (zip, tar variants, gzip, bz2, xz, zstd, brotli).
+It should use tree-sitter (with an ast-based fallback) to parse each file and pull out top-level functions and classes, normalize their text (e.g.
+line endings) and hash each extracted object with SHA-256 to detect and skip duplicates across files.
+The script should process files in parallel via multiprocessing, log progress and errors with loguru, accept input/output paths and options through argparse, and write the deduplicated, extracted code objects to the specified output location."""
 
 import argparse
 import ast
@@ -14,7 +17,6 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from pathlib import Path
-
 import brotli
 import tree_sitter_python
 import zstandard as zstd

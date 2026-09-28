@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans the entire commit history of the current Git repository to find every file that has ever been deleted, then restores those files to the working directory.
+It should verify the current directory is a Git repository root, run "git log --diff-filter=D" to build a map of deleted file paths to the commit hash right before their deletion (keeping only the earliest/original deletion per path), and print progress messages with emoji indicators throughout.
+For each deleted file it should determine the appropriate commit to recover the content from and then check it out, restoring the files while handling and reporting any Git command errors gracefully."""
 
 import subprocess
 from pathlib import Path

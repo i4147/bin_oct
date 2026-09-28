@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively finds all files with a given log extension under a directory, then cleans each file in place by stripping ANSI/terminal escape sequences, carriage returns, and other control characters (using a set of precompiled regex patterns), and collapsing multiple consecutive spaces into one.
+It should choose between two cleaning strategies based on file size: read small files normally with readlines/writelines, but use memory-mapped file I/O (mmap) for files exceeding a defined size threshold (1MB) to handle large files efficiently.
+The script should process files concurrently using a worker pool (e.g., 4 workers), and each cleaning function should return a tuple indicating the file path, success status, and a message describing the outcome or any error encountered."""
 
 import mmap
 import re
 from pathlib import Path
-
 from dh import mpf
 
 LOG_EXT = ".log"

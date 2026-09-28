@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that reads lines of text from standard input, treating each line as a word or phrase to be alphabetized according to traditional Persian (Farsi) alphabetical order rather than Unicode code point order.
+It should define a sort-key function that normalizes character variants (e.g., mapping "آ" to "ا", "ي" and "ئ" to "ی", "ة" to "ه") and assigns each character a rank based on a custom-defined Persian alphabet sequence, so that words containing characters outside this mapping still sort predictably by being ranked last.
+The script should use this key function together with Python's sorting mechanism to output the input lines sorted in correct Persian alphabetical order."""
 
 import sys
 

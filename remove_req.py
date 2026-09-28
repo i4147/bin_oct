@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that removes a specific "Requires-Dist" dependency line from all installed package METADATA files under Termux's Python site-packages directory.
+The script should determine the current Python version to build the site-packages path, accept the dependency name to remove as a command-line argument, then recursively search for all METADATA files within that directory.
+For each METADATA file, it should check whether a line matching "Requires-Dist: <given text>" exists, and if so, remove that line, rewrite the file with the remaining content, and print a message indicating which package (parent directory name) was updated."""
 
 import sys
 from pathlib import Path

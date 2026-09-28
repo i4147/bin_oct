@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that adds a shebang line (or a comment-based marker) to the top of files if it's missing, choosing the correct comment syntax based on file extension via a predefined mapping (Python, Shell, JS/TS, C-family, Ruby, SQL, INI, LaTeX, etc.).
+It should accept one or more file/directory paths as input, recursively process files (using a chunked, multiprocessing pool for performance), and safely rewrite each file in place using a temporary file plus atomic replace, skipping unsupported extensions and files that already contain the marker.
+It should log progress and errors with loguru, support small-file and large-file handling differently for efficiency, and expose command-line arguments (e.g., via argparse) to control the desired shebang/comment text and target paths."""
 
 import argparse
 import shutil
@@ -11,14 +13,12 @@ from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-
 from loguru import logger
 
 POOL_SIZE: int = 8
 CHUNK_SIZE: int = 10_000
 SMALL_FILE_BYTES: int = 1 << 20
 DEFAULT_COMMENT: str = "#"
-
 COMMENT_MAP: dict[str, str] = {
     ".vim": '"',
     ".lua": "--",
@@ -323,7 +323,6 @@ def _parse_args(
 ) -> tuple[argparse.Namespace, Path | None, list[tuple[int, int]]]:
     parser = _build_parser()
     ns = parser.parse_args(list(argv[1:]))
-
     raw_ranges: list[tuple[int, int | None]]
     if ns.ranges is not None:
         try:
@@ -336,14 +335,11 @@ def _parse_args(
     else:
         parser.error("provide <start_line> [end_line] or --ranges")
         return ns, None, []
-
     if not raw_ranges:
         parser.error("no ranges specified")
-
     for s, _ in raw_ranges:
         if s < 1:
             parser.error("line numbers must be >= 1")
-
     file_path: Path | None
     if ns.filename == "-":
         file_path = None
@@ -352,12 +348,10 @@ def _parse_args(
         if not file_path.exists():
             logger.error("File {} not found.", file_path)
             raise SystemExit(1)
-
     if file_path is None and ns.output is not None:
         parser.error("-o is not allowed when reading from stdin")
     if file_path is None and ns.backup:
         parser.error("-b is not allowed when reading from stdin")
-
     if file_path is not None and ns.output is not None:
         try:
             if Path(ns.output).resolve() == file_path.resolve():
@@ -366,18 +360,15 @@ def _parse_args(
                 )
         except OSError:
             pass
-
     return ns, file_path, _normalize_ranges(raw_ranges)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(argv) if argv is not None else sys.argv
     ns, file_path, ranges = _parse_args(args)
-
     is_stdin = file_path is None
     comment_char = _resolve_comment_char(file_path, ns.comment_char)
     errors = "strict" if ns.strict else "surrogateescape"
-
     read_encoding = ns.encoding
     write_encoding = ns.encoding
     if not is_stdin:
@@ -387,11 +378,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         ):
             read_encoding = "utf-8-sig"
             write_encoding = "utf-8-sig"
-
     initial_stat = None if is_stdin else file_path.stat()
     file_size = initial_stat.st_size if initial_stat is not None else 0
     use_pool = file_size >= SMALL_FILE_BYTES
-
     if ns.dry_run:
         mode = "dry-run"
     elif is_stdin:
@@ -400,11 +389,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         mode = "output"
     else:
         mode = "atomic"
-
     total = ChunkResult([])
     temp_path: Path | None = None
     success = False
-
     try:
         with ExitStack() as stack:
             if is_stdin:
@@ -415,13 +402,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "r", encoding=read_encoding, errors=errors, newline=""
                     )
                 )
-
             chunks = _chunk_iter(infile, CHUNK_SIZE)
             arg_iter = _arg_iter(
                 chunks, ranges, comment_char, ns.remove, ns.preserve_shebang
             )
             results = _dispatch(arg_iter, use_pool)
-
             if mode == "dry-run":
                 for res in results:
                     _accumulate(total, res)
@@ -455,7 +440,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for res in results:
                     _accumulate(total, res)
                     tmp.writelines(res.lines)
-
         if mode == "atomic" and temp_path is not None:
             if total.changed == 0:
                 try:
@@ -479,7 +463,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                 temp_path.replace(file_path)
                 temp_path = None
-
         success = True
     finally:
         if not success and temp_path is not None and temp_path.exists():
@@ -487,7 +470,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 temp_path.unlink()
             except OSError:
                 pass
-
     if ns.stats:
         action = "un-commented" if ns.remove else "commented"
         if mode == "dry-run":
@@ -522,7 +504,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     total.skipped,
                     total.blanks,
                 )
-
     return 0
 
 

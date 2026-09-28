@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that automatically fixes indentation in a Python source file based on simple heuristics rather than full parsing.
+It should take an input file path and an optional output path (defaulting to overwriting or a new file) plus a configurable indent size, read the file line by line, and track an indentation level that increases after lines ending in a colon belonging to block-starting keywords (like def, class, if, for, while, try, except, etc.) and decreases after block-ending statements (return, break, continue, pass, raise) when appropriate.
+It should rewrite each non-empty line with the recalculated indentation while preserving blank lines, print a Persian error message and return False if the input file does not exist, and otherwise return True after writing the corrected lines to the output path."""
 
 import sys
 from pathlib import Path

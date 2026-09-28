@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that scans a directory of built wheel files, using zipfile to inspect each wheel's contents and identify "empty" wheels (those lacking actual .py files or code directories outside dist-info/__pycache__ metadata).
+It should parse package name and version from each wheel filename, cross-reference against the currently installed pip packages (obtained via "pip list --format=freeze" through subprocess) to determine version matches, and print diagnostic messages for unreadable or empty wheels.
+The script should use argparse to accept configurable input parameters (such as the wheel directory path) and leverage pathlib and shutil for file handling, ultimately helping the user identify and manage improperly built or empty wheel packages."""
 
 import argparse
 import shutil

@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that defines a BatToShConverter class for translating Windows .bat/.cmd batch files into POSIX shell scripts.
+The class should maintain a mapping of common batch commands (echo off, pause, cls, exit, cd, dir, del, copy, move, ren, type, findstr, if exist) to their shell equivalents, and provide a method to convert a single line by stripping line endings, converting REM comments to "#", translating %VAR% environment variable syntax to $VAR, handling "set" declarations and "if ...
+==" comparisons, then applying the command map via regex matching against known patterns.
+The script should track counts of successfully converted lines and errors, and be runnable as a command-line tool (using sys and pathlib.Path) that reads an input batch file and writes out the converted shell script."""
 
 import re
 import sys

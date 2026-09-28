@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans all top-level files and directories in the current working directory (skipping the script itself, its log file, and files with archive/compressed extensions such as .tar, .7z, .br, .gz, .xz, .zip, .whl), and compresses each entry individually into a .7z archive using py7zr, first tarring directories into a temporary .tar file before compression.
+It should auto-select the best available py7zr compression method by checking for LZMA2, LZMA, or PPMd in that order of preference, and use Python's multiprocessing to process multiple entries in parallel, leveraging all but one CPU core.
+The script must log its progress, warnings, and errors both to the console and to a "compress.log" file with timestamps, process names, and log levels."""
 
 import logging
 import multiprocessing as mp
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path
-
 import py7zr
 
 BASE_DIR = Path.cwd()

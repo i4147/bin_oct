@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans all `.json` files in the current working directory (skipping the designated output file itself), parses each as JSON, and searches nested dictionaries/lists for objects containing a "mime-type" key structured with an "@type" field and "glob" entries holding "@pattern" values like "*.ext".
+For every match it maps the MIME type string to the corresponding file extension (formatted as ".ext"), aggregating results into a dictionary of MIME type to a list of unique extensions using a defaultdict of sets.
+The script should handle malformed or unracefully without crashing, and finally write the aggregated mapping as formatted JSON to a file named "mime_to_ext.json" in the current directory."""
 
 import json
 from collections import defaultdict

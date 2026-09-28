@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that scans one or more directory trees to find duplicate files by content, using a multi-stage approach for efficiency: first group files by exact size, then by a partial hash of the first 64KB, and finally confirm true duplicates with a full hash (e.g., MD5/BLAKE2), using multiprocessing to parallelize hashing.
+It should skip symlinks and common irrelevant directories (like .git, node_modules, venv, __pycache__, build/dist folders, and OS/IDE cache directories), and provide a helper to format byte sizes into human-readable strings (B, KiB, MiB, etc.).
+The script should accept root paths via argparse, walk the filesystem recursively while handling OSErrors gracefully, and output groups of duplicate files along with reclaimable space statistics."""
 
 import argparse
 import hashlib
@@ -13,7 +15,6 @@ from typing import Iterable, Iterator
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16
 DIGEST_BYTES = 16
-
 SKIP_DIRS = frozenset(
     {
         ".git",
@@ -117,7 +118,6 @@ def find_duplicates(
     by_size: dict[int, list[Path]] = defaultdict(list)
     seen_inodes: set[tuple[int, int]] = set()
     n_files = 0
-
     for p in walk_files(roots):
         try:
             st = p.stat()
@@ -131,13 +131,10 @@ def find_duplicates(
             continue
         seen_inodes.add(key)
         by_size[st.st_size].append(p)
-
     log(f"Scanned {n_files} file(s).")
-
     size_groups = {s: ps for s, ps in by_size.items() if len(ps) > 1}
     if not size_groups:
         return []
-
     size_of: dict[str, int] = {}
     partial_tasks: list[tuple[str, int | None]] = []
     for size, paths in size_groups.items():
@@ -145,9 +142,7 @@ def find_duplicates(
             sp = str(p)
             size_of[sp] = size
             partial_tasks.append((sp, PARTIAL_SIZE))
-
     log(f"{len(partial_tasks)} candidate(s) share a size; partial-hashing...")
-
     partial_groups: dict[tuple[int, str], list[Path]] = defaultdict(list)
     with mp.Pool(processes=workers) as pool:
         for path, digest, _read, err in pool.imap_unordered(
@@ -157,17 +152,13 @@ def find_duplicates(
                 log(f"WARN: {path}: {err}")
                 continue
             partial_groups[(size_of[path], digest)].append(Path(path))
-
     full_tasks: list[tuple[str, int | None]] = []
     for paths in partial_groups.values():
         if len(paths) > 1:
             full_tasks.extend((str(p), None) for p in paths)
-
     if not full_tasks:
         return []
-
     log(f"{len(full_tasks)} candidate(s) share a partial hash; full-hashing...")
-
     full_groups: dict[tuple[int, str], list[Path]] = defaultdict(list)
     with mp.Pool(processes=workers) as pool:
         for path, digest, size, err in pool.imap_unordered(
@@ -177,7 +168,6 @@ def find_duplicates(
                 log(f"WARN: {path}: {err}")
                 continue
             full_groups[(size, digest)].append(Path(path))
-
     return [paths for paths in full_groups.values() if len(paths) > 1]
 
 
@@ -218,10 +208,8 @@ def main(argv: list[str] | None = None) -> int:
         "-q", "--quiet", action="store_true", help="Suppress progress messages"
     )
     args = ap.parse_args(argv)
-
     if not args.paths:
         args.paths = [Path(".")]
-
     for p in args.paths:
         if not p.exists():
             print(f"error: path does not exist: {p}", file=sys.stderr)
@@ -232,18 +220,15 @@ def main(argv: list[str] | None = None) -> int:
             print(msg, file=sys.stderr)
 
     log(f"Scanning {len(args.paths)} root(s) with {args.workers} worker(s)...")
-
     groups = find_duplicates(
         roots=list(args.paths),
         workers=max(1, args.workers),
         min_size=args.min_size,
         log=log,
     )
-
     if not groups:
         print("No duplicates found.")
         return 0
-
     prepared: list[tuple[list[Path], int]] = []
     total_redundant = 0
     total_bytes = 0
@@ -256,13 +241,11 @@ def main(argv: list[str] | None = None) -> int:
         prepared.append((paths, sz))
         total_redundant += len(paths) - 1
         total_bytes += sz * (len(paths) - 1)
-
     mode = "APPLY" if args.apply else "DRY-RUN"
     print(
         f"=== {mode}: {len(prepared)} group(s), {total_redundant} redundant "
         f"file(s), {human_size(total_bytes)} reclaimable ===\n"
     )
-
     removed = 0
     reclaimed = 0
     for i, (paths, sz) in enumerate(prepared, 1):
@@ -280,13 +263,11 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(f"  REMOVE   {p}")
         print()
-
     if args.apply:
         print(f"Removed {removed} file(s), reclaimed {human_size(reclaimed)}.")
     else:
         print(
-            f"Dry run complete. Re-run with -a/--apply to delete "
-            f"{total_redundant} file(s)."
+            f"Dry run complete. Re-run with -a/--apply to delete {total_redundant} file(s)."
         )
     return 0
 

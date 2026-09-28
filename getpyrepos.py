@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that uses the GitHub REST API and the requests library to fetch all public repositories for a given GitHub username, paginating through results (100 per page, sorted by last updated), and filters them to keep only repositories whose primary language is Python.
+For each matching repository, collect key metadata such as name, full name, description, URL, star count, fork count, language, creation date, last updated date, and privacy status into a list of dictionaries.
+The script should handle HTTP request errors gracefully using try/except around each API call, and it should import json, sys, and datetime/timedelta utilities, suggesting the results are intended to be output as JSON and possibly filtered or reported based on recent activity dates."""
 
 import json
 import sys
 from datetime import datetime, timedelta
-
 import requests
 
 

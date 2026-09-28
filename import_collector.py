@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans the current directory for Python source files (using a helper `is_python_file` from a local `dh` module), parses each file's AST to collect top-level imported module/package names, and determines whether each one is actually installed by checking `importlib.metadata` and falling back to `importlib.util.find_spec`.
+It should use a predefined mapping (PACKAGE_MAPPING) to translate import names that differ from their PyPI package names (e.g.
+"cv2" to "opencv-python", "PIL" to "Pillow").
+The script should write the aggregated results to an "importz.txt" file and also generate a pip install shell script listing any missing dependencies.
+Include a `main()` entry point that orchestrates directory traversal, import collection, status checking, and output file generation."""
 
 import ast
 import importlib.metadata
 import importlib.util
 import sys
 from pathlib import Path
-
 from dh import is_python_file
 
 PACKAGE_MAPPING = {

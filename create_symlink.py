@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans two directories, ~/bashbin and ~/bin, for files with .sh and .py extensions respectively, and creates an extensionless symlink in the same directory pointing to each matching file.
+For each script, the symlink name should be the file's stem (filename without extension), resolved to the absolute path of the target file.
+If a non-symlink file already exists at the target symlink path, the script should delete it and replace it with the symlink; if a symlink already exists there, it should be left untouched; otherwise a new symlink is created.
+The script should print a "Created: <symlink_name> -> <target_filename>" message each time a new symlink is created, and run this process for both directories when executed as the main module."""
 
 from pathlib import Path
 

@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that searches GitHub for Python repositories created within the last 10 days, sorted by star count in descending order, using the GitHub REST API.
+It should load a GITHUB_TOKEN from a .env file in the user's home directory for authentication, fetch up to 50 results via requests, and raise an error if the token is missing.
+The script should write each repository's full name and star count to a local file named "ghpy10.txt" and print a confirmation message showing how many repositories were saved."""
 
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import requests
 from dotenv import load_dotenv
 

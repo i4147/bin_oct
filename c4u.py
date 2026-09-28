@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that checks installed system packages for available updates and tracks their state over time.
+It should retrieve the list of installed packages (via a helper like get_installed_packages), compare installed versions against the latest available versions, and store results (package name, installed/latest version, upgradable flag, timestamp, and any errors) as PackageInfo dataclass records persisted in a JSON state file (default "pkgs_state.json") through a PackageStateManager class that can load and save this state.
+The script should use multiprocessing (Pool, cpu_count) to check package versions concurrently for performance, and should set up dual logging (console plus a "pkg_updater.log" file) with timestamps and configurable verbosity via a setup_logging function.
+Overall it acts as a package update checker/tracker that outputs upgradable package information both to logs and to a persisted JSON state file."""
 
 import json
 import logging
@@ -9,7 +12,6 @@ from dataclasses import asdict, dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
-
 from dh import get_installed_packages
 
 

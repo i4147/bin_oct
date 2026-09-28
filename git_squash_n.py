@@ -27,7 +27,6 @@ import shutil
 from datetime import datetime
 
 
-# ---- Utilities ----
 def run(cmd, cwd=None, capture=False, check=True):
     if capture:
         res = subprocess.run(
@@ -53,7 +52,6 @@ def is_git_repo(path="."):
         return False
 
 
-# ---- Backend abstraction ----
 class Backend:
     def __init__(self, repo_path="."):
         self.repo_path = os.path.abspath(repo_path)
@@ -90,13 +88,12 @@ class Backend:
         return self.fallback.rev_parse(rev)
 
 
-# ---- Subprocess backend (git CLI) ----
 class SubprocessBackend(Backend):
     def __init__(self, repo_path="."):
         self.repo_path = os.path.abspath(repo_path)
 
     def ensure_clean_worktree(self, force=False):
-        # returns tuple (was_clean_before, stash_made)
+
         st = run(["git", "status", "--porcelain"], cwd=self.repo_path, capture=True)
         dirty = bool(st.stdout.strip())
         stash_made = False
@@ -105,7 +102,6 @@ class SubprocessBackend(Backend):
                 "Working tree is dirty. Commit or use --force to stash changes before running."
             )
         if dirty and force:
-            # stash uncommitted changes
             run(
                 [
                     "git",
@@ -142,7 +138,7 @@ class SubprocessBackend(Backend):
         return shas
 
     def write_combined_diff(self, base_rev, head_rev, out_patch_path):
-        # Use --binary so binary files are included
+
         with open(out_patch_path, "wb") as f:
             p = subprocess.Popen(
                 ["git", "diff", "--binary", f"{base_rev}..{head_rev}"],
@@ -158,8 +154,7 @@ class SubprocessBackend(Backend):
         return out_patch_path
 
     def write_commits_metadata(self, base_rev, head_rev, out_meta_path):
-        # We'll collect per-commit sha, author, date, subject, files changed
-        # Use format markers to parse
+
         git_log_fmt = "---%n%H|%an|%ae|%ad|%s"
         res = run(
             [
@@ -191,7 +186,6 @@ class SubprocessBackend(Backend):
                 current["subject"] = parts[4] if len(parts) > 4 else ""
                 current["files"] = []
             elif current is not None:
-                # name-only lines (files) or empty
                 if line.strip():
                     current["files"].append(line.strip())
         if current:
@@ -212,8 +206,7 @@ class SubprocessBackend(Backend):
         return True
 
     def apply_patch_index(self, patch_path):
-        # Try to apply the patch with index (preserve mode and index if possible)
-        # First try 'git apply --index'
+
         res = run(
             ["git", "apply", "--index", patch_path],
             cwd=self.repo_path,
@@ -222,13 +215,13 @@ class SubprocessBackend(Backend):
         )
         if res.returncode == 0:
             return True
-        # If --index failed, try without index
+
         res2 = run(
             ["git", "apply", patch_path], cwd=self.repo_path, capture=True, check=False
         )
         if res2.returncode == 0:
             return True
-        # As last resort, try 'git am' if patch is in mbox format — unlikely here
+
         raise RuntimeError(
             f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}"
         )
@@ -243,7 +236,6 @@ class SubprocessBackend(Backend):
         run(cmd, cwd=self.repo_path)
 
 
-# ---- Fallback wrapper: attempt to use other modules but call subprocess for core ops ----
 class GenericBackend(Backend):
     def __init__(self, name, repo_path="."):
         super().__init__(repo_path)
@@ -251,7 +243,7 @@ class GenericBackend(Backend):
         self.repo_path = os.path.abspath(repo_path)
         self.subprocess = SubprocessBackend(self.repo_path)
         self._available = {}
-        # Attempt to import module if we can (best-effort)
+
         if name == "gitpython":
             try:
                 import git as gitpy
@@ -277,13 +269,11 @@ class GenericBackend(Backend):
             except Exception:
                 self._available["dulwich"] = False
         elif name == "pygithub":
-            # PyGithub is not a local git backend; mark as unavailable for local ops
             self._available["pygithub"] = False
         elif name == "typer":
             # typer is a CLI helper, not a git backend
             self._available["typer"] = False
 
-    # All operations delegated to subprocess backend; but announce fallback
     def _announce_fallback(self, op):
         print(
             f"[{self.name}] operation '{op}' not fully supported by this backend or module not installed; falling back to git CLI (subprocess)."
@@ -293,7 +283,7 @@ class GenericBackend(Backend):
         if not any(self._available.values()):
             self._announce_fallback("ensure_clean_worktree")
             return self.subprocess.ensure_clean_worktree(force)
-        # If some module available, still use subprocess for reliability
+
         self._announce_fallback("ensure_clean_worktree")
         return self.subprocess.ensure_clean_worktree(force)
 
@@ -352,7 +342,6 @@ class GenericBackend(Backend):
         return self.subprocess.commit(message, allow_empty)
 
 
-# ---- Main orchestration ----
 def create_backend(name, repo_path="."):
     name = (name or "subprocess").lower()
     if name in ("subprocess", "git"):
@@ -399,7 +388,6 @@ def main():
 
     backend = create_backend(args.backend, repo_path)
 
-    # Ensure clean tree or stash if forced
     try:
         was_clean, stash_made = backend.ensure_clean_worktree(force=args.force)
     except Exception as e:
@@ -417,7 +405,7 @@ def main():
         commits = backend.get_last_n_commits(args.N)
     except Exception as e:
         print("Error getting last N commits:", e, file=sys.stderr)
-        # restore stash if made
+
         if stash_made:
             run(["git", "stash", "pop"], cwd=repo_path)
         sys.exit(1)
@@ -426,7 +414,6 @@ def main():
     try:
         base_rev = backend.rev_parse(f"HEAD~{args.N}")
     except subprocess.CalledProcessError:
-        # if HEAD~N doesn't exist, compute by rev-list
         try:
             base_rev = backend.rev_parse(f"{commits[0]}^")
         except Exception as e:
@@ -440,7 +427,6 @@ def main():
     for c in commits:
         print("  ", c)
 
-    # Write patch and metadata
     patch_path = os.path.abspath(args.patch_file)
     meta_path = os.path.abspath(args.meta_file)
     if args.dry_run:
@@ -470,8 +456,6 @@ def main():
             print("[dry-run] Would pop stash")
         return
 
-    # Backup current HEAD ref in case we need to restore
-    # We will use git reflog/backups; also store HEAD SHA
     backup_head = orig_head
 
     try:
@@ -481,9 +465,8 @@ def main():
         print("Applying patch:", patch_path)
         backend.apply_patch_index(patch_path)
 
-        # Stage everything and commit with aggregated message
         backend.add_all()
-        # Build commit message from metadata
+
         with open(meta_path, "r", encoding="utf-8") as f:
             meta = json.load(f)
         commit_msgs = []
@@ -497,7 +480,6 @@ def main():
         new_head = backend.get_head()
         print("Created new single commit:", new_head)
 
-        # Optionally pop stash
         if stash_made:
             print("Restoring stashed uncommitted changes (pop stash)")
             run(["git", "stash", "pop"], cwd=repo_path)

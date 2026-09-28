@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that implements a custom LZ77-style byte compressor for one or more input files (using helper utilities such as file listing and size reporting imported from a local "dh" module).
+It should use a fixed-size hash table over 4-byte sequences to find matches within bounded offset ranges, encode literal runs and copy runs into compact variable-length tagged binary formats (including a varint encoder), and write out compressed representations while printing progress or size statistics to the console.
+The script should be runnable from the command line, accepting file or directory paths via sys.argv and using pathlib.Path for filesystem handling."""
 
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf
 
 _HASH_TABLE_SIZE = 1 << 14

@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script for a Termux (Android) environment that scans the directories listed in the PATH environment variable to build an inventory of all executable commands, tracking each command's file path and source directory, and detecting name conflicts when the same command exists in multiple PATH directories.
+It should also parse a shell aliases file (handling line continuations) using a regular expression to extract defined alias names, distinguishing them from real commands.
+The script should skip inaccessible or non-existent directories gracefully and use pathlib/os utilities to safely check file executability.
+Overall, it serves as a diagnostic/reporting tool to help identify duplicate commands and catalog available aliases versus binaries on a Termux system."""
 
 import os
 import re

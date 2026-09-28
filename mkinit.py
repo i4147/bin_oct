@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a package directory tree using the ast module to statically analyze .py files without importing them.
+It should provide helper functions to identify valid module files and valid subpackages (skipping private/underscore-prefixed names and requiring __init__.py for subpackages), safely parse a module into an AST while handling decode or syntax errors by returning None, and extract lists of public (non-underscore, non-"main") top-level function and class names from a parsed module.
+It should also include a function that detects whether a module contains only a "main" entry-point function/definition, useful for filtering out script-only modules when building package documentation or export summaries.
+Inputs are filesystem Path objects; outputs are booleans or lists of names derived from static AST inspection."""
 
 import ast
 from pathlib import Path
@@ -28,7 +31,6 @@ def parse_module(path: Path) -> ast.Module | None:
         source = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return None
-
     try:
         return ast.parse(source, filename=str(path))
     except SyntaxError:
@@ -76,7 +78,6 @@ def has_only_main(tree: ast.Module) -> bool:
 def build_init_content(project_dir: Path) -> str:
     import_lines: list[str] = []
     exported_names: list[str] = []
-
     module_files = sorted(
         (
             p
@@ -85,26 +86,20 @@ def build_init_content(project_dir: Path) -> str:
         ),
         key=lambda p: p.name,
     )
-
     subpackages = sorted(
         (p for p in project_dir.iterdir() if is_valid_subpackage(p)),
         key=lambda p: p.name,
     )
-
     for module_path in module_files:
         tree = parse_module(module_path)
         if tree is None:
             continue
-
         if has_only_main(tree):
             continue
-
         module_name = module_path.stem
         functions = get_public_functions(tree)
         classes = get_public_classes(tree)
-
         names = list(dict.fromkeys(classes + functions))
-
         if names:
             import_list = ", ".join(names)
             import_lines.append(
@@ -113,26 +108,20 @@ def build_init_content(project_dir: Path) -> str:
             exported_names.extend(names)
         else:
             import_lines.append(f"from . import {module_name}")
-
             exported_names.append(module_name)
-
     for pkg in subpackages:
         import_lines.append(f"from . import {pkg.name}")
         exported_names.append(pkg.name)
-
     exported_names = list(dict.fromkeys(exported_names))
-
     parts: list[str] = []
     if import_lines:
         parts.append("\n".join(import_lines))
-
     if exported_names:
         all_block = ["__all__ = ["]
         for name in exported_names:
             all_block.append(f'    "{name}",')
         all_block.append("]")
         parts.append("\n".join(all_block))
-
     return "\n\n".join(parts) + "\n" if parts else ""
 
 
@@ -151,16 +140,13 @@ def clean_content(text: str) -> str:
 def create_init_file(project_dir: Path | None = None) -> Path:
     if project_dir is None:
         project_dir = Path.cwd()
-
     project_dir = project_dir.resolve()
     if not project_dir.is_dir():
         raise NotADirectoryError(f"{project_dir} is not a directory")
-
     init_path = project_dir / "__init__.py"
     content = build_init_content(project_dir)
     content = clean_content(content)
     init_path.write_text(content, encoding="utf-8")
-
     return init_path
 
 

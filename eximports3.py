@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans all .py files in the current working directory (using a helper get_files function) and, for each file, parses its AST to extract the top-level names of imported modules from both "import" and "from ...
+import" statements, skipping files that fail to parse due to syntax or encoding errors.
+It should process the files in parallel using a helper mpf function, aggregate all unique module names across the codebase, and write them one per line into a requirements.txt file, using a helper unique_path function to avoid overwriting an existing file with that name.
+Finally, it should print a confirmation message showing the name of the created output file."""
 
 import ast
 from pathlib import Path
-
 from dh import get_files, mpf, unique_path
 
 

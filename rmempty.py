@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that recursively scans the current working directory for empty files (excluding symlinks, files inside .git directories, and files named __init__.py), then reports their count and relative paths using colored console output via a helper module (dh, providing cprint and get_files).
+Before deleting anything, it should give the user a configurable timeout window to press any key and abort the operation, using non-blocking stdin polling via select.
+If not aborted, it deletes each empty file, tracks how many were successfully deleted versus failed (printing errors for failures), and exits with an appropriate status code (0 if no empty files found or after successful cleanup, 1 if aborted by the user)."""
 
 import sys
 from pathlib import Path
-
 from dh import cprint, get_files
 
 TIMEOUT = 0

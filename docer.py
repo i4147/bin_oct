@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes a file path as its single argument and moves that file into a fixed destination folder, /sdcard/doc, creating the folder first if it does not already exist.
+The script should read the source file's bytes, write them to a new file of the same name inside /sdcard/doc, then delete the original file, printing "done." on success.
+If a file with the same name already exists in the destination folder, it must not overwrite it; instead it should print a message stating the target file exists and instruct the user to remove it and try again, leaving the original file untouched.
+The file path should be accessed via sys.argv and handled using pathlib.Path."""
 
 import sys
 from pathlib import Path

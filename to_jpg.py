@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility script that converts image files (such as PNG or other formats supported by OpenCV/Pillow) into JPG format, flattening any transparency onto a white background.
+It should accept one or more file or directory paths as input, using a helper "get_files" function to gather files to process, and skip files that are already JPG or unsupported.
+For each convertible file, it should compare the file size before and after conversion, avoid overwriting existing JPG files by generating a unique output path when needed, and print colored console status messages summarizing the conversion (including size change).
+The script should prefer OpenCV (with NumPy) for image decoding and alpha blending if available, falling back to Pillow otherwise."""
 
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf, rrs, unique_path
 
 try:

@@ -20,7 +20,6 @@ The generated script should:
 
 from __future__ import annotations
 
-
 import sys
 from collections.abc import Iterable, Sequence
 from difflib import unified_diff
@@ -126,13 +125,13 @@ def common_preview(
 def log_section(title: str, lines: Sequence[str], total: int, color: str) -> None:
     if total == 0:
         return
-    logger.info("{} ({}):", title, total)
+    print("{} ({}):", title, total)
     logc = logger.opt(colors=True)
     limit: int = total if total <= SHOW_LIMIT else PREVIEW_COUNT
     for ln in lines[:limit]:
         logc.info("<{}>  - {}</{}>", color, ln, color)
     if total > SHOW_LIMIT:
-        logger.info("  ... and {} more line(s)", total - limit)
+        print("  ... and {} more line(s)", total - limit)
 
 
 def log_diff(path1: Path, path2: Path, lines1: list[str], lines2: list[str]) -> None:
@@ -143,9 +142,9 @@ def log_diff(path1: Path, path2: Path, lines1: list[str], lines2: list[str]) -> 
     )
     total: int = len(diff_lines)
     if total == 0:
-        logger.info("diff: files are identical")
+        print("diff: files are identical")
         return
-    logger.info("diff ({} line(s)):", total)
+    print("diff ({} line(s)):", total)
     logc = logger.opt(colors=True)
     limit: int = total if total <= DIFF_SHOW_LIMIT else DIFF_PREVIEW_COUNT
     for ln in diff_lines[:limit]:
@@ -157,7 +156,7 @@ def log_diff(path1: Path, path2: Path, lines1: list[str], lines2: list[str]) -> 
             logc.info("<dim>{}</dim>", ln)
     if total > DIFF_SHOW_LIMIT:
         DIFF_LOG_PATH.write_text("\n".join(diff_lines) + "\n", encoding="utf-8")
-        logger.info(
+        print(
             "  ... {} more line(s); full diff written to {}",
             total - limit,
             DIFF_LOG_PATH,

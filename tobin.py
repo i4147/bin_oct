@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that takes a file path as a command-line argument and moves it into a "sbin" directory located in the user's home folder.
+Before moving, if a file with the same name already exists at the destination, the script must compute and compare the SHA-256 hashes (read in 32768-byte chunks) of both the source and destination files.
+If the hashes match, it should print messages indicating the target exists and the hashes are equal, delete the source file, and exit with status code 1 instead of moving it.
+If the destination does not exist or the hashes differ, the script should rename/move the source file into the destination directory."""
 
 import sys
 from hashlib import sha256

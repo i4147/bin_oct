@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that batch-translates subtitle or text files (e.g., JSON/SRT-like structures) using pluggable translator backends such as Google Translate and DeepL, with a language-code normalization table mapping common locale variants to each backend's expected codes.
+It should support concurrent translation via a thread pool for speed, use difflib's SequenceMatcher to detect and preserve near-duplicate or unchanged segments, and rely on argparse for CLI options (input/output paths, source/target languages, backend selection, concurrency level).
+Include logging via loguru for progress and error reporting, safe temporary file handling for atomic writes, and dynamic module loading (importlib) to allow optional/custom translator backend plugins to be loaded at runtime."""
 
 import argparse
 import importlib.util
@@ -13,11 +15,9 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Callable, Iterable, TypeAlias
-
 from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]
-
 LANGUAGE_CODES: dict[str, str] = {
     "auto": "auto",
     "ar": "ar",
@@ -70,7 +70,6 @@ LANGUAGE_CODES: dict[str, str] = {
     "zh-cn": "zh-cn",
     "zh-tw": "zh-tw",
 }
-
 DEEPL_LANGUAGE_CODES: dict[str, str] = {
     **LANGUAGE_CODES,
     "en": "EN",
@@ -81,12 +80,10 @@ DEEPL_LANGUAGE_CODES: dict[str, str] = {
     "zh": "ZH",
     "zh-cn": "ZH",
 }
-
 GOOGLE_LANGUAGE_CODES: dict[str, str] = {
     **LANGUAGE_CODES,
     "zh": "zh-cn",
 }
-
 _TRANSLATION_LOCK = threading.Lock()
 
 
@@ -100,10 +97,8 @@ class RequestLimiter:
         with self._lock:
             now = time.monotonic()
             remaining = self.delay - (now - self._last_request)
-
             if remaining > 0:
                 time.sleep(remaining)
-
             self._last_request = time.monotonic()
 
 
@@ -112,14 +107,11 @@ def _map_language(
     mapping: dict[str, str],
 ) -> str:
     normalized = language.strip().lower()
-
     if normalized not in mapping:
         supported = ", ".join(sorted(mapping))
         raise ValueError(
-            f"Unsupported language code {language!r}. "
-            f"Supported codes include: {supported}"
+            f"Unsupported language code {language!r}. Supported codes include: {supported}"
         )
-
     return mapping[normalized]
 
 
@@ -135,10 +127,8 @@ def _make_deep_translator(source: str, target: str) -> Translator:
             target=mapped_target,
         )
         result = translator.translate(text)
-
         if not isinstance(result, str):
             raise TypeError("deep_translator returned a non-string result")
-
         return result
 
     return translate
@@ -148,10 +138,8 @@ def _make_deepl(source: str, target: str) -> Translator:
     import deepl
 
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
-
     if not api_key:
         raise RuntimeError("DEEPL_API_KEY is not set")
-
     mapped_source = _map_language(source, DEEPL_LANGUAGE_CODES)
     mapped_target = _map_language(target, DEEPL_LANGUAGE_CODES)
 
@@ -162,12 +150,9 @@ def _make_deepl(source: str, target: str) -> Translator:
             source_lang=None if mapped_source == "auto" else mapped_source,
             target_lang=mapped_target,
         )
-
         translated = getattr(result, "text", result)
-
         if not isinstance(translated, str):
             raise TypeError("deepl returned a non-string result")
-
         return translated
 
     return translate
@@ -185,10 +170,8 @@ def _make_translate(source: str, target: str) -> Translator:
             to_lang=mapped_target,
         )
         result = client.translate(text)
-
         if not isinstance(result, str):
             raise TypeError("translate returned a non-string result")
-
         return result
 
     return translate
@@ -207,10 +190,8 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             from_language=mapped_source,
             to_language=mapped_target,
         )
-
         if not isinstance(result, str):
             raise TypeError("translators returned a non-string result")
-
         return result
 
     return translate
@@ -230,12 +211,9 @@ def _make_googletrans(source: str, target: str) -> Translator:
                 src=mapped_source,
                 dest=mapped_target,
             )
-
         translated = getattr(result, "text", result)
-
         if not isinstance(translated, str):
             raise TypeError("googletrans returned a non-string result")
-
         return translated
 
     return translate
@@ -255,19 +233,15 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
                 src=mapped_source,
                 dest=mapped_target,
             )
-
         translated = getattr(result, "text", result)
-
         if isinstance(result, dict):
             translated = (
                 result.get("translatedText")
                 or result.get("translation")
                 or result.get("text")
             )
-
         if not isinstance(translated, str):
             raise TypeError("pygoogletranslation returned an unsupported result")
-
         return translated
 
     return translate
@@ -287,10 +261,8 @@ def _make_boto3(source: str, target: str) -> Translator:
             TargetLanguageCode=mapped_target,
         )
         translated = result.get("TranslatedText")
-
         if not isinstance(translated, str):
             raise TypeError("boto3 returned no translated text")
-
         return translated
 
     return translate
@@ -307,10 +279,8 @@ def _make_azure(source: str, target: str) -> Translator:
     ).rstrip("/")
     api_key = os.environ.get("AZURE_TRANSLATOR_KEY", "").strip()
     region = os.environ.get("AZURE_TRANSLATOR_REGION", "").strip()
-
     if not api_key:
         raise RuntimeError("AZURE_TRANSLATOR_KEY is not set")
-
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
 
@@ -333,18 +303,14 @@ def _make_azure(source: str, target: str) -> Translator:
             },
             method="POST",
         )
-
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise RuntimeError(f"Azure request failed: {exc}") from exc
-
         translated = payload[0]["translations"][0]["text"]
-
         if not isinstance(translated, str):
             raise TypeError("Azure returned no translated text")
-
         return translated
 
     return translate
@@ -358,10 +324,8 @@ def _make_baidu(source: str, target: str) -> Translator:
 
     app_id = os.environ.get("BAIDU_APP_ID", "").strip()
     secret_key = os.environ.get("BAIDU_SECRET_KEY", "").strip()
-
     if not app_id or not secret_key:
         raise RuntimeError("BAIDU_APP_ID and BAIDU_SECRET_KEY must both be set")
-
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
 
@@ -370,7 +334,6 @@ def _make_baidu(source: str, target: str) -> Translator:
         sign = hashlib.md5(
             f"{app_id}{text}{salt}{secret_key}".encode("utf-8")
         ).hexdigest()
-
         payload = urllib.parse.urlencode(
             {
                 "q": text,
@@ -381,27 +344,20 @@ def _make_baidu(source: str, target: str) -> Translator:
                 "sign": sign,
             }
         ).encode("utf-8")
-
         request = urllib.request.Request(
             "https://fanyi-api.baidu.com/api/trans/vip/translate",
             data=payload,
             method="POST",
         )
-
         with urllib.request.urlopen(request, timeout=60) as response:
             result = json.loads(response.read().decode("utf-8"))
-
         if "error_code" in result:
             raise RuntimeError(
-                f"Baidu error {result['error_code']}: "
-                f"{result.get('error_msg', 'unknown error')}"
+                f"Baidu error {result['error_code']}: {result.get('error_msg', 'unknown error')}"
             )
-
         translated = "\n".join(item["dst"] for item in result.get("trans_result", []))
-
         if not translated:
             raise TypeError("Baidu returned no translated text")
-
         return translated
 
     return translate
@@ -409,15 +365,13 @@ def _make_baidu(source: str, target: str) -> Translator:
 
 def _make_alibaba(source: str, target: str) -> Translator:
     raise RuntimeError(
-        "Alibaba backend requires a product-specific API integration and "
-        "is not configured by this script"
+        "Alibaba backend requires a product-specific API integration and is not configured by this script"
     )
 
 
 def _make_watson(source: str, target: str) -> Translator:
     raise RuntimeError(
-        "Watson backend requires a product-specific API integration and "
-        "is not configured by this script"
+        "Watson backend requires a product-specific API integration and is not configured by this script"
     )
 
 
@@ -434,7 +388,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "alibaba": _make_alibaba,
     "watson": _make_watson,
 }
-
 FALLBACK_ORDER: tuple[str, ...] = (
     "deep_translator",
     "translate",
@@ -460,9 +413,7 @@ def _select_backend(
             raise ValueError(
                 f"Unknown backend {requested!r}. Available backends: {choices}"
             )
-
         return requested, BACKEND_FACTORIES[requested](source, target)
-
     for backend in FALLBACK_ORDER:
         if (
             backend == "deepl"
@@ -472,7 +423,6 @@ def _select_backend(
             ).strip()
         ):
             continue
-
         module_name = {
             "deep_translator": "deep_translator",
             "deepl": "deepl",
@@ -481,10 +431,8 @@ def _select_backend(
             "googletrans": "googletrans",
             "pygoogletranslation": "pygoogletranslation",
         }[backend]
-
         if not _module_available(module_name):
             continue
-
         try:
             translator = BACKEND_FACTORIES[backend](source, target)
         except Exception as exc:
@@ -494,9 +442,7 @@ def _select_backend(
                 exc,
             )
             continue
-
         return backend, translator
-
     raise RuntimeError(
         "No usable translation backend was found. Install one of: "
         + ", ".join(FALLBACK_ORDER)
@@ -506,62 +452,47 @@ def _select_backend(
 def _split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         raise ValueError("chunk_size must be greater than zero")
-
     chunks: list[str] = []
     position = 0
     text_length = len(text)
-
     while position < text_length:
         remaining = text_length - position
         end = min(position + chunk_size, text_length)
-
         if remaining > chunk_size:
             split_at = text.rfind(None, position, end)
-
             if split_at < position:
                 split_at = end
             else:
                 split_at += 1
-
             if split_at <= position:
                 split_at = end
         else:
             split_at = end
-
         chunk = text[position:split_at].strip()
-
         if chunk:
             chunks.append(chunk)
-
         position = split_at
-
     return chunks
 
 
 def _load_output(path: Path) -> dict[str, str]:
     if not path.exists():
         return {}
-
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON in {path}: {exc}") from exc
-
     if not isinstance(payload, dict):
         raise ValueError(f"{path} must contain a JSON object")
-
     output: dict[str, str] = {}
-
     for key, value in payload.items():
         if isinstance(key, str) and isinstance(value, str):
             output[key] = value
-
     return output
 
 
 def _atomic_save(path: Path, translations: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     ordered = {
         str(index): translations[str(index)]
         for index in sorted(
@@ -569,7 +500,6 @@ def _atomic_save(path: Path, translations: dict[str, str]) -> None:
         )
         if str(index) in translations
     }
-
     with NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
@@ -588,20 +518,16 @@ def _atomic_save(path: Path, translations: dict[str, str]) -> None:
         temporary.write("\n")
         temporary.flush()
         os.fsync(temporary.fileno())
-
     temporary_path.replace(path)
 
 
 def _is_identity_translation(original: str, translated: str) -> bool:
     left = " ".join(original.split()).casefold()
     right = " ".join(translated.split()).casefold()
-
     if not right:
         return True
-
     if left == right:
         return True
-
     return SequenceMatcher(None, left, right).ratio() >= 0.995
 
 
@@ -615,24 +541,19 @@ def _translate_with_retry(
 ) -> tuple[int, str]:
     if source.strip().lower() == target.strip().lower():
         return index, text
-
     last_error: Exception | None = None
-
     for attempt in range(1, 4):
         try:
             limiter.wait()
             translated = translator(text).strip()
-
             if _is_identity_translation(text, translated):
                 raise RuntimeError("Translation result appears identical to the source")
-
             logger.debug(
                 "Chunk {} translated successfully on attempt {}",
                 index,
                 attempt,
             )
             return index, translated
-
         except Exception as exc:
             last_error = exc
             logger.exception(
@@ -641,13 +562,10 @@ def _translate_with_retry(
                 attempt,
                 exc,
             )
-
             if attempt < 3:
                 time.sleep(2 ** (attempt - 1))
-
     if last_error is None:
         last_error = RuntimeError("Unknown translation failure")
-
     raise RuntimeError(
         f"Chunk {index} failed after 3 attempts: {last_error}"
     ) from last_error
@@ -655,7 +573,6 @@ def _translate_with_retry(
 
 def _append_failed(path: Path, index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     with path.open("a", encoding="utf-8") as file:
         file.write(f"{index}\n")
 
@@ -728,44 +645,33 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse_args()
-
     if not 1 <= args.workers <= 2:
         raise ValueError("--workers must be 1 or 2")
-
     if args.delay < 0:
         raise ValueError("--delay cannot be negative")
-
     if args.save_every <= 0:
         raise ValueError("--save-every must be greater than zero")
-
     if not args.input.exists():
         raise FileNotFoundError(f"Input file does not exist: {args.input}")
-
     text = args.input.read_text(encoding="utf-8")
     chunks = _split_chunks(text, args.chunk_size)
-
     translations: dict[str, str] = {}
-
     if not args.no_continue:
         translations = _load_output(args.output)
-
     pending: list[tuple[int, str]] = [
         (index, chunk)
         for index, chunk in enumerate(chunks)
         if str(index) not in translations
     ]
-
     if not pending:
         _atomic_save(args.output, translations)
         logger.info("All {} chunks are already translated", len(chunks))
         return 0
-
     backend_name, translator = _select_backend(
         args.backend,
         args.source,
         args.target,
     )
-
     logger.info(
         "Using backend={} workers={} pending={} total={}",
         backend_name,
@@ -773,16 +679,13 @@ def main() -> int:
         len(pending),
         len(chunks),
     )
-
     limiter = RequestLimiter(args.delay)
     completed_since_save = 0
     executor = ThreadPoolExecutor(
         max_workers=args.workers,
         thread_name_prefix="translator",
     )
-
     futures: dict[Future[tuple[int, str]], int] = {}
-
     try:
         for index, chunk in pending:
             future = executor.submit(
@@ -795,15 +698,12 @@ def main() -> int:
                 args.target,
             )
             futures[future] = index
-
         for future in as_completed(futures):
             index = futures[future]
-
             try:
                 completed_index, translated = future.result()
                 translations[str(completed_index)] = translated
                 completed_since_save += 1
-
                 if completed_since_save >= args.save_every:
                     _atomic_save(args.output, translations)
                     completed_since_save = 0
@@ -811,31 +711,24 @@ def main() -> int:
                         "Saved progress after completing chunk {}",
                         completed_index,
                     )
-
             except Exception as exc:
                 logger.error("Chunk {} permanently failed: {}", index, exc)
                 _append_failed(args.failed, index)
                 completed_since_save += 1
-
                 if completed_since_save >= args.save_every:
                     _atomic_save(args.output, translations)
                     completed_since_save = 0
-
     except KeyboardInterrupt:
         logger.error("Interrupted; saving completed translations")
         for future in futures:
             future.cancel()
-
         _atomic_save(args.output, translations)
         executor.shutdown(wait=False, cancel_futures=True)
         return 130
-
     finally:
         if completed_since_save:
             _atomic_save(args.output, translations)
-
         executor.shutdown(wait=True)
-
     logger.info(
         "Finished: {} translated, {} pending failures",
         len(translations),
@@ -858,7 +751,6 @@ if __name__ == "__main__":
         retention=3,
         enqueue=True,
     )
-
     try:
         raise SystemExit(main())
     except KeyboardInterrupt:

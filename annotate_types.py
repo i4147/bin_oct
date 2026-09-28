@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that applies type stub (.pyi) annotations from a typeshed-style file onto a target Python source file using libcst's ApplyTypeAnnotationsVisitor, then outputs or writes back the annotated source.
+It should include a CSTTransformer (TypeshedSanitizer) that sanitizes references to the internal "_typeshed" module by rewriting imports and attribute accesses to use "typing" (e.g., "Any") instead, so the stub types remain valid outside typeshed.
+The script should accept file paths via argparse, parse both source and stub files with libcst/ast, apply the annotation visitor with a CodemodContext, and likely support showing a diff (via difflib) of the changes, optionally invoking subprocess/tempfile for formatting or validation steps before finalizing output."""
 
 import argparse
 import ast
@@ -9,7 +11,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
@@ -93,8 +94,7 @@ def generate_stub(py_path: Path, output_stub_path: Path, verbose: bool = False) 
         generated_stubs = list(Path(tmp_out_dir).rglob("*.pyi"))
         if not generated_stubs:
             raise RuntimeError(
-                f"stubgen finished but no .pyi file was generated in output directory. "
-                f"Output: {result.stdout.strip()}"
+                f"stubgen finished but no .pyi file was generated in output directory. Output: {result.stdout.strip()}"
             )
         target_stub = next(
             (s for s in generated_stubs if s.stem == py_path.stem),
@@ -246,7 +246,7 @@ def main() -> int:
     parser.add_argument(
         "--future-annotations",
         action="store_true",
-        help="Enable 'from __future__ import annotations' support.",
+        help="Enable '' support.",
     )
     parser.add_argument(
         "-d",

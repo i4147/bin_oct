@@ -106,9 +106,7 @@ def main():
             print("No text files found to process")
         return 0
     if not args.quiet and (not args.verbose):
-        print(
-            f"Processing {len(files_to_process)} file(s) with {args.jobs} worker(s)..."
-        )
+        print(f"Processing {len(files_to_process)} file(s) with 8 worker(s)...")
     converted_count = 0
     skipped_count = 0
     error_count = 0

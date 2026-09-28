@@ -29,23 +29,14 @@ from pathlib import Path
 from loguru import logger
 from xxhash import xxh64
 
-# Size of the head/tail sample used by quick_hash, in bytes.
 QUICK_READ: int = 4096
 
-# Chunk size used when streaming a full-file hash.
 CHUNK_SIZE: int = 65536
 
-# Number of worker processes used for hashing.
 POOL_WORKERS: int = 8
 
 
 def file_stat_key(p: Path) -> tuple[int, int] | None:
-    """
-    Return a (inode, device) tuple identifying the physical file behind ``p``.
-
-    Returns ``None`` if the file cannot be stat'ed. Used to collapse hardlinks
-    so that only one representative per physical inode is considered.
-    """
     try:
         st = p.stat()
         return (st.st_ino, st.st_dev)
@@ -54,15 +45,6 @@ def file_stat_key(p: Path) -> tuple[int, int] | None:
 
 
 def quick_hash(path: Path, n: int = QUICK_READ) -> str:
-    """
-    Compute a fast, non-authoritative hash of a file's head and tail.
-
-    Reads the first ``n`` bytes and, if the file is larger, the last ``n`` bytes.
-    This is used as a cheap pre-filter before committing to a full hash.
-
-    Raises:
-        OSError: If the file cannot be opened or read.
-    """
     h = xxh64()
     try:
         size = path.stat().st_size
@@ -82,13 +64,6 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
 
 
 def full_hash(path: Path) -> tuple[str, Path]:
-    """
-    Compute the authoritative xxh64 hash of a file's entire contents.
-
-    Returns:
-        A ``(hexdigest, path)`` tuple. On error, the hexdigest is ``""`` so the
-        caller can skip the entry without special-casing.
-    """
     try:
         if not path.stat().st_size:
             return ("", path)
@@ -113,12 +88,6 @@ def iter_files(
     follow_symlinks: bool,
     include_git: bool = False,
 ) -> Iterator[Path]:
-    """
-    Yield candidate regular files under ``root``.
-
-    Symlinks are always skipped. ``.git`` directories are skipped unless
-    ``include_git`` is True (i.e. ``--all`` was passed).
-    """
     if recursive:
         iterator: Iterable[Path] = root.rglob("*")
     else:
@@ -128,21 +97,13 @@ def iter_files(
             continue
         if not p.is_file():
             continue
-        # Symlinks are always skipped (unless explicitly followed).
+
         if p.is_symlink() and not follow_symlinks:
             continue
         yield p
 
 
 def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
-    """
-    Select the file to keep from a list of duplicate representatives.
-
-    Policies:
-        - "first": lexicographically smallest path.
-        - "oldest": smallest mtime.
-        - "newest": largest mtime.
-    """
     if not files:
         raise ValueError("Empty file list")
     if policy == "first":
@@ -156,7 +117,6 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
 
 
 def main() -> None:
-    """CLI entry point: parse arguments, run the multi-phase scan, act on results."""
     cwd = Path.cwd()
     p = argparse.ArgumentParser(
         description="Find and delete duplicate files by content."
@@ -205,9 +165,6 @@ def main() -> None:
 
     root = Path.cwd()
 
-    # ---------------------------------------------------------------------
-    # Phase 1: scan and group by file size.
-    # ---------------------------------------------------------------------
     print("Phase 1: Scanning files and grouping by size...")
     size_groups: defaultdict[int, list[Path]] = defaultdict(list)
     total_files = 0
@@ -237,9 +194,6 @@ def main() -> None:
         f"{len(candidates)} size-groups to examine."
     )
 
-    # ---------------------------------------------------------------------
-    # Phase 2: quick hash (head/tail) to narrow candidates.
-    # ---------------------------------------------------------------------
     print("Phase 2: Quick hash comparison...")
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
 
@@ -269,9 +223,6 @@ def main() -> None:
         f"{len(need_full)} groups need full hash."
     )
 
-    # ---------------------------------------------------------------------
-    # Phase 3: full hash to confirm duplicates.
-    # ---------------------------------------------------------------------
     print("Phase 3: Full hash comparison...")
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = (
         defaultdict(list)
@@ -291,9 +242,6 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"Skipping {fpath}: {e}")
 
-    # ---------------------------------------------------------------------
-    # Phase 4: reduce hardlinks, choose keeper, build deletion list.
-    # ---------------------------------------------------------------------
     print("Phase 4: Processing results...")
     to_delete: list[Path] = []
     for entries in full_groups.values():
@@ -322,9 +270,6 @@ def main() -> None:
             rel_path = p_del
         print(f"  {rel_path}")
 
-    # ---------------------------------------------------------------------
-    # Report-only mode: no -r / --remove.
-    # ---------------------------------------------------------------------
     if not args.remove:
         print(
             f"\nReport-only mode. {len(to_delete)} files would be deleted.\n"
@@ -336,9 +281,6 @@ def main() -> None:
         print(f"\nDry-run complete. {len(to_delete)} files would be deleted.")
         return
 
-    # ---------------------------------------------------------------------
-    # Deletion phase.
-    # ---------------------------------------------------------------------
     removed = 0
     failed = 0
     freed_space = 0

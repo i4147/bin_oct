@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes two directory paths as arguments, expands environment variables and user home references in each, and resolves them to absolute paths.
+It should verify both directories exist, then create (or reuse) a "common" folder in the current working directory.
+The script must find filenames that exist in both source and target directories, report their count, and for each common file compare file sizes between the two locations (printing whether the sizes match), then move the common files from the source and/or target into the "common" folder.
+It should print clear status/progress messages throughout, including errors if either input directory is missing."""
 
 import shutil
 import sys

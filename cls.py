@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans all files in the current working directory (non-recursively, ignoring subdirectories) and, for each file, extracts a label from its filename stem: if the stem contains a hyphen, take the substring before the first hyphen, otherwise use the whole stem.
+Collect these labels into a list preserving the order files were found via Path.glob("*").
+Finally, print all collected labels on a single line separated by three spaces, with no trailing newline structure beyond the final print's default behavior."""
 
 from pathlib import Path
 

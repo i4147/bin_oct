@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python tool that recursively scans a directory tree, identifies source code files by extension across dozens of programming languages (JS, TS, Ruby, PHP, Java, C/C++, C#, Go, Rust, Swift, Kotlin, Scala, Lua, R, Julia, Dart, Elixir, Erlang, Haskell, Clojure, F#, Nim, etc.), and strips comments from each file using the appropriate tree-sitter grammar/parser for that language, dynamically importing the correct tree-sitter language module based on a file-extension-to-module mapping.
+It should process files in parallel using multiprocessing, track per-file results (success/failure, number of comments removed, processing time, file size, error messages) in a dataclass, and report overall statistics after the run.
+Include robust error handling so that unsupported file types or parsing failures for a single file don't crash the whole batch job."""
+
 import importlib
 import multiprocessing as mp
 import os
@@ -6,7 +10,6 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-
 from tree_sitter import Language, Node, Parser
 
 PathLike = str | Path
@@ -346,13 +349,11 @@ def process_files_parallel(
                         )
                     else:
                         print(
-                            f"• [{result.file_type:6}] {result.path}: "
-                            f"no comments ({result.processing_time:.3f}s)"
+                            f"• [{result.file_type:6}] {result.path}: no comments ({result.processing_time:.3f}s)"
                         )
                 else:
                     print(
-                        f"✗ [{result.file_type:6}] {result.path}: "
-                        f"ERROR - {result.error_message}"
+                        f"✗ [{result.file_type:6}] {result.path}: ERROR - {result.error_message}"
                     )
                 if completed % 25 == 0 and completed < total_files:
                     print(f"\nProgress: {completed}/{total_files} files processed\n")

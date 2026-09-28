@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Persian-English dictionary tool in Python that loads word pairs from a JSON file (default ~/dic.json) into forward (Farsi-to-English) and reverse (English-to-Farsi) lookup dictionaries, exiting with an error via logging if the file is missing or invalid.
+It should provide interactive lookup with readline-based tab autocompletion over all known words, an exact translate function checking both dictionaries, and a fuzzy search fallback (using difflib.get_close_matches) to suggest close matches when no exact translation is found.
+The script uses argparse for CLI options, faprint for formatted output, and subprocess/shutil presumably for auxiliary terminal or file operations."""
 
 import argparse
 import json
@@ -11,7 +13,6 @@ import sys
 from difflib import get_close_matches
 from pathlib import Path
 from typing import Final
-
 from faprint import faprint
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

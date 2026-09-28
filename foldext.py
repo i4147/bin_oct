@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that reorganizes all files within a given directory into subfolders named after each file's extension (using "no_extension" for files without one), skipping .gitignore files and anything inside a .git directory.
+It should recursively scan the target path, group files by extension while tracking counts and total sizes, then move each file into its corresponding extension-named subfolder, appending a numeric suffix to the filename if a collision occurs at the destination, silently ignoring any move errors.
+After moving files, it should clean up by removing any now-empty directories left behind, processing them from deepest to shallowest so nested empty folders are properly removed."""
 
 import contextlib
 import shutil
 from pathlib import Path
-
 from dh import gsz
 
 

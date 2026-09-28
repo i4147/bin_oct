@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that converts HTML files into clean Markdown documents.
+It should accept one or more HTML file paths (or a directory to scan) as arguments, read each file, strip out unwanted elements such as scripts, styles, comments, navigation, footers, asides, iframes, noscript tags, and forms using BeautifulSoup, then convert the cleaned HTML to Markdown via the html_to_markdown library with options like GitHub-flavored formatting, header/link/image extraction enabled and structured data extraction disabled.
+The script should support parallel processing using multiprocessing based on available CPU cores, skip files that don't have .html/.htm extensions with a warning, write the resulting Markdown next to each source file (or to a specified output location), and report success/failure status for each processed file, exiting with an appropriate status code via argparse-based CLI handling."""
 
 import argparse
 import sys
 from multiprocessing import cpu_count
 from pathlib import Path
-
 from bs4 import BeautifulSoup
 from html_to_markdown import Options, convert
 

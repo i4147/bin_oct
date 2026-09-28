@@ -1,18 +1,17 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""[Tool: think]
+  Params: {"content":"The user wants a prompt describing the code, not code generation. This is a simple single-response task, no tools needed."}
+Write a Python script that recursively finds all TOML files under a given directory and strips comments from each using a tree-sitter TOML parser, trimming trailing spaces/tabs left before removed comments while preserving valid UTF-8 content. It should process files concurrently using a multiprocessing Pool with a fixed worker count (8), overwrite each file in place with the cleaned content, and track per-file timing along with original and resulting byte sizes (leveraging a helper like dh.fsz for size formatting). The script should print a progress report listing each processed file name (aligned/padded to a fixed width), its processing time, and size before/after, then output a final summary of total files processed, total time elapsed, and overall size reduction. It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
 
 import sys
 import time
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final, Optional
-
 from dh import fsz
 
 _parser: Optional[Any] = None
-
 _WORKERS: Final[int] = 8
-
 _NAME_WIDTH: Final[int] = 50
 
 
@@ -31,7 +30,6 @@ def remove_toml_comments(content: str) -> str:
     parser: Any = _get_parser()
     source: bytes = content.encode("utf-8")
     tree: Any = parser.parse(source)
-
     ranges: list[tuple[int, int]] = []
     stack: list[Any] = [tree.root_node]
     while stack:
@@ -40,19 +38,14 @@ def remove_toml_comments(content: str) -> str:
             ranges.append((node.start_byte, node.end_byte))
         else:
             stack.extend(node.children)
-
     if not ranges:
         return content
-
     result: bytearray = bytearray(source)
-
     for start, end in sorted(ranges, reverse=True):
         s: int = start
-
         while s > 0 and result[s - 1] in (0x20, 0x09):
             s -= 1
         del result[s:end]
-
     return result.decode("utf-8")
 
 
@@ -91,19 +84,16 @@ def main() -> int:
         paths = [Path(arg) for arg in sys.argv[1:]]
     else:
         paths = [Path.cwd()]
-
     toml_files: list[Path] = collect_toml_files(paths)
     if not toml_files:
         print("No .toml files found to process.")
         return 0
-
     print(f"Found {len(toml_files)} TOML file(s) to process...")
     print("-" * 40)
     print(
         f"{'Filename':<50} {'Time (ms)':<10} {'Before':<12} {'After':<12} {'Ratio':<8}"
     )
     print("-" * 40)
-
     results: list[tuple[str, float, int, int]] = []
     with Pool(processes=_WORKERS) as pool:
         for result in pool.imap_unordered(process_file, toml_files):
@@ -119,7 +109,6 @@ def main() -> int:
                 f"{display_name:<{_NAME_WIDTH}} {time_taken:>8.2f}  "
                 f"{fsz(before_size):<12} {fsz(after_size):<12} {ratio:>6.1f}%"
             )
-
     print("-" * 40)
     total_before: int = sum(r[2] for r in results)
     total_after: int = sum(r[3] for r in results)
@@ -127,8 +116,7 @@ def main() -> int:
     total_time: float = sum(r[1] for r in results)
     print(f"Total: {len(results)} file(s) processed in {total_time:.2f} ms")
     print(
-        f"Size reduction: {fsz(total_before)} -> {fsz(total_after)} "
-        f"({total_ratio:.1f}% of original)"
+        f"Size reduction: {fsz(total_before)} -> {fsz(total_after)} ({total_ratio:.1f}% of original)"
     )
     return 0
 

@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans the current directory for all Markdown files (.md and .markdown), then strips out Markdown image syntax and HTML image/badge elements (including standalone img tags, images wrapped in links, and images wrapped in paragraph tags) using regular expressions.
+It should process files in parallel using a multiprocessing pool of 8 worker processes, overwrite each file only if its content changed, and print a per-file status message indicating whether it was updated, skipped, or errored, plus a summary of how many files were discovered before processing begins."""
 
 import multiprocessing as mp
 import re

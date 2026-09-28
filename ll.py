@@ -1,4 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line script that lists the contents of a directory (defaulting to the current directory, or a path given as an argument) similar to `ls -l`, showing for each entry its permissions, size (human-readable, e.g.
+"4.2 KB"), and last-modified timestamp.
+For directories it should recursively compute total size across all files (handling symlinks and avoiding double-counting hardlinks via device/inode tracking), while regular files and symlinks use their own size directly.
+Support a "-r" flag to reverse the sort order and a "-d"/"--lscolors" flag to colorize output similar to LS_COLORS/dircolors conventions.
+Use standard library modules only (os, stat, pathlib, shutil, datetime, re) and print a neatly formatted, column-aligned listing to stdout."""
+
 import datetime
 import os
 import re
@@ -160,7 +166,6 @@ def main():
     cwd = Path.cwd()
     term_w = shutil.get_terminal_size(fallback=(80, 24)).columns
     ls_colors = load_ls_colors() if USE_LS_COLORS else {}
-
     dirz = []
     otherz = []
     entries = [p for p in cwd.iterdir()]
@@ -181,12 +186,10 @@ def main():
             continue
     otherz.sort(key=lambda t: t[1], reverse=REVERSE)
     dirz.sort(key=lambda t: t[0].name.lower(), reverse=REVERSE)
-
     SIZE_W = 8
     TIME_W = 5
     fixed = SIZE_W + TIME_W + 2
     name_w = max(0, term_w - fixed)
-
     TIME_COLOR = "\x1b[38;2;255;127;80m"
 
     def emit(p, size, ctime, is_dir=False):
@@ -197,7 +200,6 @@ def main():
         name_disp = truncate(name, name_w)
         pad = name_w - visible_len(name_disp)
         pad = max(pad, 0)
-
         if USE_LS_COLORS:
             color_code = get_ls_color(p, ls_colors, is_dir)
             if color_code:

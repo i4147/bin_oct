@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that automatically finds and downloads the best-matching English subtitles for a given MKV video file using the subliminal and babelfish libraries.
+It should take the video file path (and an optional output directory) as input, validate the file's existence and extension, scan the video to log metadata such as name, size, duration, and hashes, then query multiple subtitle providers (e.g., opensubtitles, podnapisi, addic7ed, tvsubtitles) for the best English subtitle match.
+The script should save the downloaded subtitle file into the specified or default output directory, log progress and errors via both print statements and the logging module, and gracefully handle exceptions such as missing files or provider errors, returning a boolean success status."""
 
 import logging
 import sys
 from pathlib import Path
-
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.providers import ProviderError

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that converts a temperature from Celsius to Fahrenheit using the command line.
+The script should accept a single command-line argument representing the temperature in Celsius as an integer, apply the standard conversion formula (F = C * 9/5 + 32), and print the resulting Fahrenheit value formatted to two decimal places.
+Use sys.argv to read the input and ensure the code runs under the standard "if __name__ == '__main__'" entry point."""
 
 import sys
 

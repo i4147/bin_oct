@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line tool that automatically translates the comments, docstrings, and print-statement string literals found in a given Python source file into another language (e.g., using an external translation API), while leaving actual code logic untouched.
+The script should use the ast module combined with a NodeVisitor to precisely locate translatable targets (print call string arguments, and docstrings of functions, async functions, classes, and modules), and use tokenize/regex to safely parse and reconstruct string and comment tokens including their quote styles and prefixes.
+It should support concurrent translation requests via ThreadPoolExecutor for speed, persist progress in a local JSON state file (.translation_state.json) to allow resuming interrupted runs, and accept command-line arguments (via argparse) for specifying the input file and other options.
+Output should be the modified source file with translated text substituted in place, preserving original formatting and code structure as much as possible."""
+
 import argparse
 import ast
 import json
@@ -11,9 +16,7 @@ from io import BytesIO
 from pathlib import Path
 
 STRING_RE = re.compile(r'^([rufbRUFB]*)([\'"]{3}|[\'"]{1})(.*)\2$', flags=re.DOTALL)
-
 COMMENT_RE = re.compile(r"^(#+)(\s*)(.*)$", flags=re.DOTALL)
-
 STATE_FILE = Path(".translation_state.json")
 
 
@@ -87,14 +90,12 @@ def get_translator_func(backend_name):
 def safe_translate(text, translate_func, retries=3):
     if not text.strip():
         return text
-
     for attempt in range(retries):
         try:
             res = translate_func(text)
             return res if res else text
         except Exception as e:
             time.sleep((attempt + 1) * 2)
-
     return text
 
 
@@ -103,7 +104,6 @@ def batch_translate(items, translate_func):
     for i in range(0, len(items), batch_size):
         batch = items[i : i + batch_size]
         batch_results = [None] * len(batch)
-
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
             futures = {
                 executor.submit(safe_translate, item["content"], translate_func): idx
@@ -112,31 +112,24 @@ def batch_translate(items, translate_func):
             for future in as_completed(futures):
                 idx = futures[future]
                 batch_results[idx] = future.result()
-
         for item, translated_content in zip(batch, batch_results):
             item["translated_content"] = translated_content
-
         time.sleep(1.0)
 
 
 def apply_replacements(source_code, replacements):
     lines = source_code.splitlines(keepends=True)
-
     replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
-
     for start_row, start_col, end_row, end_col, new_text in replacements:
         r1, r2 = start_row - 1, end_row - 1
-
         if r1 == r2:
             line = lines[r1]
             lines[r1] = line[:start_col] + new_text + line[end_col:]
         else:
             start_line, end_line = lines[r1], lines[r2]
             lines[r1] = start_line[:start_col] + new_text + end_line[end_col:]
-
             for i in range(r1 + 1, r2 + 1):
                 lines[i] = ""
-
     return "".join(lines)
 
 
@@ -146,19 +139,15 @@ def process_file(filepath, translate_func):
     except UnicodeDecodeError:
         print(f"  -> Skipping (not UTF-8 readable)")
         return False
-
     try:
         tree = ast.parse(source_code)
     except SyntaxError:
         print(f"  -> Skipping (Original file has syntax errors)")
         return False
-
     finder = TargetFinder()
     finder.visit(tree)
-
     tokens = list(tokenize.tokenize(BytesIO(source_code.encode("utf-8")).readline))
     items = []
-
     for tok in tokens:
         if tok.type == tokenize.COMMENT:
             m = COMMENT_RE.match(tok.string)
@@ -187,23 +176,18 @@ def process_file(filepath, translate_func):
                             "content": m.group(3),
                         }
                     )
-
     if not items:
         return True
-
     batch_translate(items, translate_func)
-
     replacements = []
     for item in items:
         orig = item["content"]
         trans = item.get("translated_content", orig)
-
         if trans and trans != orig:
             if item["type"] == "comment":
                 new_text = f"{item['prefix']}{item['space']}{trans}"
             else:
                 new_text = f"{item['prefix']}{item['quote']}{trans}{item['quote']}"
-
             replacements.append(
                 (
                     item["tok"].start[0],
@@ -213,12 +197,9 @@ def process_file(filepath, translate_func):
                     new_text,
                 )
             )
-
     if not replacements:
         return True
-
     new_source = apply_replacements(source_code, replacements)
-
     if new_source != source_code:
         try:
             ast.parse(new_source)
@@ -227,7 +208,6 @@ def process_file(filepath, translate_func):
         except SyntaxError as e:
             print(f"  -> Validation failed after translation: {e}. Reverting changes.")
             return False
-
     return True
 
 
@@ -258,9 +238,7 @@ def main():
         choices=["deep_translator", "googletrans", "translate", "translators"],
         help="Translation backend (default: deep_translator)",
     )
-
     args = parser.parse_args()
-
     files_to_process = []
     for inp in args.inputs:
         p = Path(inp)
@@ -268,32 +246,23 @@ def main():
             files_to_process.append(p)
         elif p.is_dir():
             files_to_process.extend(p.rglob("*.py"))
-
     files_to_process = sorted(list(set(p.resolve() for p in files_to_process)))
-
     if not files_to_process:
         print("No Python files found to process.")
         return
-
     print(f"Initializing {args.backend}...")
     translate_func = get_translator_func(args.backend)
-
     state = load_state()
-
     print(f"Found {len(files_to_process)} file(s). Beginning batch translation...")
-
     for p in files_to_process:
         if str(p) in state["processed_files"]:
             print(f"[{p.name}] - Skipping (Already processed)")
             continue
-
         print(f"[{p.name}] - Processing...")
         success = process_file(p, translate_func)
-
         if success:
             state["processed_files"].append(str(p))
             save_state(state)
-
     print("\nAll tasks completed!")
 
 

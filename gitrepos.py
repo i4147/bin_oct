@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that fetches a GitHub user's public repositories using the GitHub REST API and writes a formatted summary to a text file.
+It should take a username and an output file path as inputs, calling the GitHub API endpoint for that user's repos, and for each repository record its name, description, URL, star count, fork count, and primary language.
+The script must handle cases where no repositories are found, and gracefully catch and report network request errors and JSON parsing errors, printing a success message with the repository count once the file is written."""
 
 import json
 from pathlib import Path
-
 import requests
 
 

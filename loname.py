@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that renames files to lowercase filenames, using a custom `mpf` (multiprocessing) helper and a `unique_path` utility imported from a local `dh` module.
+For each file, it checks existence (falling back to a lowercased path if the original doesn't exist), skips files already lowercase, and if the target lowercase name already exists it resolves the conflict via `unique_path` before renaming, printing the old and new names.
+When run without arguments it processes only the top-level files in the current directory; when run with any argument it recursively processes all files in the current directory tree, excluding `.git` paths and symlinks."""
 
 import sys
 from pathlib import Path
-
 from dh import mpf, unique_path
 
 

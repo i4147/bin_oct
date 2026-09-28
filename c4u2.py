@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that checks installed packages (retrieved via a helper like get_installed_packages) against the latest versions available on PyPI, using pycurl to query each package's PyPI JSON API endpoint with a configurable timeout and worker limit.
+The script should compare installed versions with the latest release using packaging.version.Version, load and cache previous results from a JSON file at /sdcard/upgradable.json to avoid redundant work, and handle errors gracefully (e.g., failed HTTP requests or malformed JSON) by returning None or skipping the package.
+It should print progress for packages with available updates and persist the final upgradable-packages results back to the JSON results file, using cprint for formatted console output."""
 
 import json
 import time
 from io import BytesIO
 from pathlib import Path
-
 import pycurl
 from dh import cprint, get_installed_packages
 from packaging.version import Version

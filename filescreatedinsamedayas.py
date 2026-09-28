@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that accepts a filename as its single argument and finds all other files in the same directory that were created (or, on non-Windows platforms, last modified) on the same calendar day as the given file.
+It should use os.stat to retrieve timestamps, handle the platform difference between Windows creation time and Unix modification time, and gracefully handle errors like a missing filename argument or a nonexistent file.
+The script should print the input file's name and creation date, then list any matching files sorted chronologically along with their timestamps, or state that none were found."""
 
 import os
 import sys

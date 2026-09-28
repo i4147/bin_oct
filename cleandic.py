@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line script that takes a JSON dictionary file path as its single argument, containing either a dict of original-to-translated string pairs or a list of objects with "orig" and "translated" keys.
+The script should identify entries where the original and translated text are identical (indicating a failed translation), remove these from the data, and overwrite the original JSON file with only the successfully translated entries in the same structure format.
+It should print how many records were kept, and if any failed entries exist, append the untranslated original strings to a "failed.txt" file in the same directory (creating it if needed, or appending to existing content); if there are no failures, it should print a message indicating that failed.txt creation was skipped.
+Include basic error handling for missing files, invalid arguments, and unsupported JSON structures."""
+
 import json
 import sys
 from pathlib import Path
@@ -8,16 +13,12 @@ def main():
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <dic.json>")
         sys.exit(1)
-
     json_path = Path(sys.argv[1])
-
     if not json_path.is_file():
         print(f"Error: file not found: {json_path}")
         sys.exit(1)
-
     with json_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
-
     if isinstance(data, dict):
         items = list(data.items())
     elif isinstance(data, list):
@@ -25,32 +26,24 @@ def main():
     else:
         print("Error: unsupported JSON structure (expected dict or list).")
         sys.exit(1)
-
     good = []
     failed = []
-
     for orig, translated in items:
         if orig == translated:
             failed.append(orig)
         else:
             good.append((orig, translated))
-
     if isinstance(data, dict):
         good_data = dict(good)
     else:
         good_data = [{"orig": o, "translated": t} for o, t in good]
-
     with json_path.open("w", encoding="utf-8") as f:
         json.dump(good_data, f, ensure_ascii=False, indent=2)
-
     print(f"Kept {len(good)} records in {json_path}")
-
     if not failed:
         print("No failed records — skipped creating failed.txt")
         return
-
     failed_path = json_path.with_name("failed.txt")
-
     if failed_path.exists():
         existing = failed_path.read_text(encoding="utf-8")
         with failed_path.open("a", encoding="utf-8") as f:

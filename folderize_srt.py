@@ -1,8 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that scans a directory for .srt subtitle files and determines the dominant spoken language in each file using majority-vote language detection with the lingua library.
+For each SRT file it should strip out sequence numbers and timestamp lines, split the remaining subtitle text into batches, and detect the language of each line in parallel using a multiprocessing Pool for performance.
+It should tally detected languages across all lines with a Counter and report the most frequent language (name and ISO 639-1 code) per file, gracefully handling lines where detection fails or returns no result."""
+
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 from lingua import LanguageDetectorBuilder
 
 BATCH_SIZE = 8
@@ -36,7 +39,6 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             raw_lines = f.readlines()
-
         text_lines = []
         skipped_count = 0
         for line in raw_lines:
@@ -45,17 +47,13 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
                 skipped_count += 1
                 continue
             text_lines.append(s)
-
         if not text_lines:
             return None
-
         batches = [
             text_lines[i : i + BATCH_SIZE]
             for i in range(0, len(text_lines), BATCH_SIZE)
         ]
-
         batch_results = pool.map(_detect_batch, batches)
-
         line_count = 0
         lang_counter = Counter()
         iso_lookup = {}
@@ -66,14 +64,11 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
                     lang_counter[name] += 1
                     iso_lookup[name] = iso
                     print(
-                        f"      Line {line_count}: {name} - "
-                        f'"{line[:50]}{"..." if len(line) > 50 else ""}"'
+                        f'      Line {line_count}: {name} - "{line[:50]}{"..." if len(line) > 50 else ""}"'
                     )
-
         if lang_counter:
             most_common_name, _ = lang_counter.most_common(1)[0]
             most_common_iso = iso_lookup[most_common_name]
-
             print(f"\n   📊 Statistics:")
             print(f"      Total lines processed: {line_count}")
             print(f"      Lines skipped: {skipped_count}")
@@ -81,65 +76,48 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
             for lang_name, count in lang_counter.most_common():
                 pct = (count / line_count) * 100
                 print(f"         {lang_name}: {count} votes ({pct:.1f}%)")
-
             return (most_common_name, most_common_iso)
-
     except Exception as e:
         print(f"  ⚠ Error reading {file_path.name}: {e}")
-
     return None
 
 
 def organize_subtitles(directory: Path = Path.cwd()) -> None:
     print(f"🔍 Scanning directory: {directory.absolute()}\n")
-
     srt_files = get_srt_files(directory)
-
     if not srt_files:
         print("❌ No .srt files found in the directory.")
         return
-
     print(f"📊 Found {len(srt_files)} SRT file(s)")
     print(f"⚙️  Using {cpu_count()} worker processes (batch size = {BATCH_SIZE})\n")
     print("=" * 80)
-
     language_folders = {}
-
     with Pool(initializer=_init_worker) as pool:
         for file_path in srt_files:
             print(f"\n📄 Processing: {file_path.name}")
             print("─" * 80)
-
             detected = detect_language_majority_vote(file_path, pool)
-
             if detected:
                 lang_name, lang_code = detected
                 print(f"\n   ✅ FINAL RESULT: {lang_name} ({lang_code})")
-
                 folder_name = f"{lang_name}_{lang_code}".lower()
                 language_folders.setdefault(folder_name, []).append(file_path)
             else:
                 print(f"\n   ⚠ Could not detect language")
-
             print("=" * 80)
-
     print(f"\n📁 Creating folders and moving files...\n")
-
     total_moved = 0
     for folder_name, files in sorted(language_folders.items()):
         folder_path = directory / folder_name
         folder_path.mkdir(exist_ok=True)
-
         print(f"📂 {folder_name.upper()} ({len(files)} file(s))")
         for file_path in files:
             new_path = folder_path / file_path.name
             file_path.rename(new_path)
             print(f"   ➜ {file_path.name}")
             total_moved += 1
-
     print(
-        f"\n✅ Complete! Moved {total_moved} file(s) into "
-        f"{len(language_folders)} language folder(s)."
+        f"\n✅ Complete! Moved {total_moved} file(s) into {len(language_folders)} language folder(s)."
     )
 
 

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility that scans a directory tree for .gitignore files and ensures a specific line is appended to each one if it is not already present.
+It should define a ProcessResult dataclass to capture per-file outcomes (path, success, whether it was modified, error message, and status message), validate and sanitize the input line (stripping whitespace and removing embedded newlines with a logged warning), and check for existing occurrences before writing.
+File updates should verify the parent directory is writable, and the workload should be parallelized across multiple .gitignore files using multiprocessing.Pool with cpu_count-based worker allocation, with progress and errors reported via the logging module."""
 
 import logging
 import os

@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that batch-converts HTML/HTM files to Markdown using the external "rhtml2md" tool.
+It should accept file and/or directory paths as command-line arguments, recursively collecting HTML files when a directory is given via a "get_files" helper, or default to scanning the current working directory if no arguments are provided.
+For each matching file, it should run "rhtml2md" via a "runcmd" helper, write the resulting text to a sibling ".md" file, print a success confirmation, and log errors to stderr while continuing with other files; processing across all files should run in parallel using an "mpf" helper."""
 
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf, runcmd
 
 

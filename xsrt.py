@@ -49,6 +49,7 @@ Assumptions / documented deviations:
       prints the error and exits 1.  Probe format (CSV vs JSON) is not
       user-visible; JSON is used.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -92,10 +93,14 @@ def require_ffmpeg() -> None:
 def probe_subtitles(video: Path) -> list[dict]:
     cmd: list[str] = [
         "ffprobe",
-        "-v", "error",
-        "-select_streams", "s",
-        "-show_entries", PROBE_ENTRIES,
-        "-of", "json",
+        "-v",
+        "error",
+        "-select_streams",
+        "s",
+        "-show_entries",
+        PROBE_ENTRIES,
+        "-of",
+        "json",
         str(video),
     ]
     try:
@@ -103,7 +108,9 @@ def probe_subtitles(video: Path) -> list[dict]:
             cmd, capture_output=True, text=True
         )
     except FileNotFoundError:
-        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
+        raise MissingToolError(
+            "ffmpeg/ffprobe is required but not installed."
+        ) from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or f"ffprobe failed on {video}")
     return json.loads(proc.stdout).get("streams", [])
@@ -128,7 +135,9 @@ def run_ffmpeg(args: list[str]) -> None:
             ["ffmpeg", *args], capture_output=True, text=True
         )
     except FileNotFoundError:
-        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
+        raise MissingToolError(
+            "ffmpeg/ffprobe is required but not installed."
+        ) from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or "ffmpeg failed")
 
@@ -215,7 +224,9 @@ def cmd_extract(args: argparse.Namespace) -> int:
         else:
             print(f"Extracting subtitle stream {info.stream_index}->{dest}")
         try:
-            extract_one(video, info.relative_index, dest, overwrite=not args.no_overwrite)
+            extract_one(
+                video, info.relative_index, dest, overwrite=not args.no_overwrite
+            )
         except MissingToolError as exc:
             print(exc)
             return 1

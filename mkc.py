@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes a single C or C++ source file path as an argument and compiles it into a stripped executable.
+The script should verify the file exists, choose clang for .c files and clang++ for .cpp files, and reject any other extension with an error.
+It should compile the source into an output binary named after the file's stem, then run the strip command on the resulting binary to remove debug symbols, printing status messages for each successful step.
+If compilation fails, it should print the captured stderr output and exit with a non-zero status code, and it should also print a usage message and exit if no source file argument is provided."""
 
 import subprocess
 import sys

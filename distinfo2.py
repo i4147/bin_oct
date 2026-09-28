@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python cleanup script that recursively scans the current working directory for Python package ".dist-info" folders and strips out unnecessary license/metadata files to reduce package size.
+For each matching folder, it should delete a nested "licenses" subdirectory if present, remove any files whose names match a predefined blacklist (e.g., LICENSE, NOTICE, AUTHORS, COPYING variants, INSTALLER, REQUESTED, direct_url.json, etc.), while preserving a small allowed set (METADATA, RECORD, WHEEL, top_level.txt), and print each removed path.
+It should also detect the running Python version and remove the entire dist-info folder if it ends up empty (or nearly empty) after cleanup.
+The script uses only standard library modules (shutil, sys, pathlib) plus a custom "cprint" helper from a local "dh" module for colored console output."""
 
 import shutil
 import sys
 from pathlib import Path
-
 from dh import cprint
 
 major, minor, _, _, _ = sys.version_info

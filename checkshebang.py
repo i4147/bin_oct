@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans all ".py" files under the current working directory to detect ones containing more than one shebang line (a line starting with "#!").
+For each file, it reads its text with UTF-8 encoding (ignoring decode errors), splits it into lines, and counts how many lines begin with "#!"; if the count exceeds one, it prints the file path with a message indicating it has 2 shebangs and increments a counter.
+After scanning all files, it prints a summary line showing the total number of files flagged as having duplicate shebangs."""
 
 from pathlib import Path
 

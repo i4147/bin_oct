@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that converts HTML files to Markdown files in place, using the `markdownify` library to perform the conversion and helper functions `get_files` and `mpf` from a local `dh` module for file discovery and multiprocessing execution.
+For each input HTML file, the script should read its content, convert it to Markdown, and write the result to a new file with the same base name but a `.md` extension.
+It should accept command-line arguments that can be individual file paths or directory paths; for directories, it should recursively collect all `.html` files, and if no arguments are given it should default to scanning the current working directory.
+The discovered files should then be processed in parallel via the `mpf` utility."""
 
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf
 from markdownify import markdownify
 

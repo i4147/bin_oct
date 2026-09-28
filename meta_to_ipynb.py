@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that parses a Python package's metadata file (e.g., PKG-INFO or METADATA in the core metadata email-header format) to extract structured package information as JSON.
+The script should read lines from the metadata section, handle multi-line continuation values (indented lines) while excluding fields that can repeat like Requires-Dist, Provides-Extra, Dynamic, Classifier, Keywords, and Project-URL, and stop parsing when it reaches a blank line or the description body.
+It should build a dictionary mapping metadata keys (such as Author, Author-Email, Maintainer, Home-Page, License, etc.) to their corresponding values, tracking the line number where the metadata section ends.
+The output is intended to be used programmatically, likely printed as JSON or returned for further processing by build tools or package inspection utilities."""
 
 import json
 import re

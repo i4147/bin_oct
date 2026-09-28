@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scrapes GitHub's trending Python repositories page (https://github.com/trending/python) for daily, weekly, and monthly timeframes using requests and BeautifulSoup.
+For each timeframe, it should parse repository entries into a Repo dataclass capturing name, URL, description, stars, language, and timeframe, extracting these fields from the HTML article elements via CSS selectors.
+The results should then be saved as output files (e.g., CSV and/or JSON) into a "trending_repos" output directory, with the script handling missing description/language/star fields gracefully by defaulting to empty strings or "0"."""
 
 import csv
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-
 import requests
 from bs4 import BeautifulSoup
 

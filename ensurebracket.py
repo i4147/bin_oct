@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that checks whether brackets, braces, and parentheses are balanced in one or more source files.
+It should accept file paths as command-line arguments, or if none are given, discover all ".py" files in the current directory via a helper "get_files" function from a local "dh" module.
+For each file, read its text and use a stack-based algorithm to verify matching of "()", "[]", and "{}", printing the filename when the file's brackets are fully balanced.
+When multiple files are provided, process them concurrently using a multiprocessing Pool (spawn context, 8 workers) with a bounded pending-task queue (max size 16) to limit memory usage, while single-file input is processed synchronously."""
 
 import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
-
 from dh import get_files
 
 MAX_QUEUE = 16

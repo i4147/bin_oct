@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that counts the total number of characters in a text file specified as a command-line argument.
+The script should accept exactly one argument, the path to the input file, and print a usage message and exit with an error code if the argument count is incorrect.
+It should open the file using UTF-8 encoding, read its full contents, compute the character count, and print a message showing the filename and the count.
+If the specified file does not exist, it should catch the FileNotFoundError, print an appropriate error message, and exit with a non-zero status code."""
 
 import sys
 from pathlib import Path

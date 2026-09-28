@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that batch-runs multiple static analysis and linting tools (mypy,yrefly, pylint) against Python source files and produces JSON reports summarizing each tool's results.
+For each target file, it should invoke every configured tool as a subprocess, gracefully skip tools that are not installed (checking via shutil.which), and capture exit codes, combined stdout/stderr output, and error status into a structured dictionary.
+The script should write the collected results for each analyzed file into a report directory as JSON, and print progress messages while processing files."""
+
 import json
 import shutil
 import subprocess
@@ -15,13 +19,11 @@ TOOLS = {
 
 def execute_tool(cmd_base: list[str], target_file: Path) -> dict:
     tool_name = cmd_base[0]
-
     if shutil.which(tool_name) is None:
         return {
             "status": "skipped",
             "error": f"Executable '{tool_name}' not found in PATH.",
         }
-
     cmd = cmd_base + [str(target_file)]
     try:
         proc = subprocess.run(
@@ -50,10 +52,8 @@ def analyze_file(py_file: Path, report_dir: Path) -> None:
         "filepath": str(py_file.resolve()),
         "tools": {},
     }
-
     for tool_name, cmd_base in TOOLS.items():
         report_data["tools"][tool_name] = execute_tool(cmd_base, py_file)
-
     output_json = report_dir / f"{py_file.stem}.json"
     output_json.write_text(json.dumps(report_data, indent=2), encoding="utf-8")
     print(f"  -> Report saved: {output_json}")
@@ -63,9 +63,7 @@ def main() -> None:
     current_dir = Path.cwd()
     report_dir = current_dir / "report"
     report_dir.mkdir(exist_ok=True)
-
     script_name = Path(__file__).name
-
     py_files = sorted(
         [
             f
@@ -73,17 +71,14 @@ def main() -> None:
             if f.is_file() and f.suffix == ".py" and f.name != script_name
         ]
     )
-
     if not py_files:
         print("No .py files found in current directory.")
         return
-
     print(
         f"Found {len(py_files)} Python file(s). Generating reports in '{report_dir.name}/'...\n"
     )
     for py_file in py_files:
         analyze_file(py_file, report_dir)
-
     print("\nCompleted analysis for all files.")
 
 

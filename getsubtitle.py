@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script using the subliminal and babelfish libraries that automatically finds and downloads the best-matching English subtitles for a given MKV video file.
+The function should accept a video file path and an optional output directory, scan the video to identify it, then query multiple subtitle providers (opensubtitles, podnapisi, addic7ed, tvsubtitles) to fetch the best English subtitle match.
+It should save the resulting subtitle as an .srt file named after the video (with an ".en.srt" suffix) into the specified or default output directory, log progress and errors via the logging module, and return a boolean indicating success or failure, handling cases like missing files, scan errors, or no subtitles found."""
 
 import logging
 import sys
 from pathlib import Path
-
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.video import scan_video

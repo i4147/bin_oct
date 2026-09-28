@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively walks the current working directory using a custom iterator-based DirectoryWalker class (which maintains a stack of directories and lazily lists files, pushing subdirectories for later traversal while skipping symlinked directories).
+For every file found that is a regular file named "README.pdf", the script should rename it to match its parent directory's name with a ".pdf" extension, placing it in the same directory.
+It should skip the rename if a file with the target name already exists, print a confirmation message showing the original and new file paths on success, and print the exception message if the rename operation fails due to an OSError."""
 
 import os
 from os.path import dirname as dirn

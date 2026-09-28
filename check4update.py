@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that lists all currently installed packages (via importlib.metadata), normalizes their names, and concurrently queries the PyPI JSON API using pycurl and multiprocessing to fetch each package's latest published version.
+For each installed package, it should compare the local version against the latest available version on PyPI and report packages that are outdated, printing warnings when a lookup fails or a version cannot be determined.
+Input is the local Python environment's installed distributions; output is console messages summarizing version comparisons and any errors encountered during the HTTP requests."""
 
 import json
 import multiprocessing as mp
@@ -8,7 +10,6 @@ from importlib import metadata
 from io import BytesIO
 from operator import itemgetter
 from pathlib import Path
-
 import pycurl
 
 
@@ -21,7 +22,6 @@ def get_installed_packages() -> dict[str, str]:
     for distribution in metadata.distributions():
         name = distribution.metadata.get("Name")
         version = distribution.metadata.get("Version")
-
         if name and version:
             packages[_normalize_name(name)] = version
     return dict(sorted(packages.items(), key=itemgetter(0)))
@@ -74,13 +74,10 @@ def main():
         return
     print(f"Found {len(installed_packages)} installed packages")
     print("Checking for updates from PyPI...")
-
     with mp.Pool(processes=8) as pool:
         latest_versions = pool.map(get_latest_version, installed_packages.items())
         updatable_packages = pool.map(compare_versions, latest_versions)
-
     updatable_packages = [pkg for pkg in updatable_packages if pkg is not None]
-
     if updatable_packages:
         print("\n" + "=" * 40)
         print("UPDATABLE PACKAGES:")
@@ -89,19 +86,16 @@ def main():
         for pkg_name, current_version, latest_version in updatable_packages:
             print(f"{pkg_name:30s} {current_version:15s} -> {latest_version}")
             requirements_lines.append(f"{pkg_name}=={latest_version}\n")
-
         import sysconfig
 
         site_packages = Path(sysconfig.get_paths()["purelib"])
         requirements_path = site_packages / "requirements.txt"
-
         with open(requirements_path, "w") as f:
             f.writelines(sorted(requirements_lines))
         print(f"\n{len(updatable_packages)} packages can be updated")
         print(f"Upgradable packages saved to: {requirements_path}")
     else:
         print("\nAll packages are up to date!")
-
     print("\n" + "=" * 40)
     print("SUMMARY:")
     print(f"Total packages checked: {len(installed_packages)}")

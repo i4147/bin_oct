@@ -1,5 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility that extracts an embedded Python script from a shell heredoc block (matching patterns like "python - <<'PY' ...
+PY" or "python3 -u <<TAG") using a regex to locate the start marker and delimiter tag, then finds the matching closing tag (handling both normal newline-delimited and flattened/inline cases) to isolate and return the stripped Python source code along with the tag name.
+It should raise a ValueError with a descriptive message if the heredoc start pattern or closing delimiter cannot be found.
+The script also includes a function to reformat flattened, single-line-ish code by reinserting proper line breaks using Python's tokenize module, since heredocs are sometimes minified or joined onto fewer lines.
+This is useful for recovering readable, well-formatted Python source that was embedded inline within shell scripts or CI configuration files."""
 
 import io
 import re

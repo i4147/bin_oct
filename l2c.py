@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script for Termux (Android) that copies a specific line from a text file to the system clipboard.
+It should accept two command-line arguments: a filename and a zero-based line index, read the file's lines, strip whitespace from the selected line, and pass that content to the "termux-clipboard-set" utility via a subprocess call using stdin.
+The script should expose a main() function invoked through the standard "if __name__ == '__main__'" entry point, and be structured so it can be run directly from the terminal with the filename and index as arguments."""
 
 import subprocess
 import sys

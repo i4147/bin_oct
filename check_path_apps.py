@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans the directories listed in the system's PATH environment variable to detect executable files that share the same name across multiple locations.
+It should read the PATH variable, iterate through each valid directory, and identify files that are executable, mapping each filename to the list of directories where it appears.
+For any filename found in more than one directory, the script should print the duplicate name along with all its locations, marking the first occurrence as ACTIVE and the rest as SHADOWED to indicate which one would actually be executed by the shell.
+The script should handle permission errors gracefully by skipping inaccessible directories with a warning message, and print a final message if no duplicates are found."""
 
 import os
 from collections import defaultdict

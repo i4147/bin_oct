@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that performs a find-and-replace operation across all .py files in the current working directory.
+It should accept exactly two command-line arguments, the text to search for and the text to replace it with, decoding escape sequences (like \\n) in both so multi-line snippets can be passed as strings.
+For each Python file found, it should read the content, check whether the old text is present, and if so replace all occurrences and write the file back, printing a checkmark and filename for each modified file while catching and reporting any read/write errors per file.
+It should also print usage instructions and exit gracefully if the wrong number of arguments is given or if no Python files are found, and print a summary of how many files were found and what replacement is being performed before processing."""
 
 import sys
 from pathlib import Path

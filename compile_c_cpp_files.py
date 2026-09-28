@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans the current working directory for all .c and .cpp files, then compiles each one in parallel using multiprocessing (invoking clang for .c files and clang++ for .cpp files, each with a 60-second timeout), producing an executable output named after the source file without its extension.
+It should build a list of compile tasks, print how many .c and .cpp files were found, and if none are found, print a message and exit.
+For each compiled file, capture stdout/stderr via subprocess and report a success message with the source and output filenames, or a failure message including the compiler's stderr, a timeout notice, or a generic exception message, returning a tuple of the file path, a boolean success flag, and the status message for aggregation after the parallel pool completes."""
 
 import subprocess
 import sys

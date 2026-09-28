@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line tool that automatically detects Russian/Cyrillic text lines in a source file (using a Unicode regex covering Cyrillic ranges) and translates them to another language via the deep_translator GoogleTranslator API, running translations concurrently across multiple worker threads/processes (configurable, default up to 8 workers) with retry logic (attempts and delay constants) for failed API calls.
+The script should batch lines into size-limited chunks (max ~2000 characters) before sending them for translation to optimize API usage, periodically save progress (every 10 chunks) to avoid data loss, and gracefully handle Ctrl+C interruption via a signal handler that sets a global flag and saves partial progress before exiting.
+It should use argparse for CLI options (likely input/output file paths and worker count), loguru for structured logging of progress/warnings/errors, and JSON for reading/writing state or results, ultimately producing a translated version of the input file with the Cyrillic content replaced or supplemented by its translation."""
+
 import argparse
 import json
 import multiprocessing as mp
@@ -10,7 +14,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Final
-
 from deep_translator import GoogleTranslator
 from loguru import logger
 
@@ -22,7 +25,6 @@ SAVE_INTERVAL: Final[int] = 10
 CYRILLIC_RE: Final[re.Pattern[str]] = re.compile(
     r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]"
 )
-
 interrupted: bool = False
 
 
@@ -42,7 +44,6 @@ def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
     chunks: list[list[str]] = []
     current_chunk: list[str] = []
     current_size: int = 0
-
     for line in lines:
         line_size = len(line) + 1
         if line_size > max_chunk_size:
@@ -114,13 +115,11 @@ def save_progress(
             for line in all_lines
             if line in results and results[line] and results[line] != line
         }
-
         failed = [
             line
             for line in all_lines
             if line in results and (not results[line] or results[line] == line)
         ]
-
         if output_type == "text":
             with output_path.open("w", encoding="utf-8") as f:
                 for line in all_lines:
@@ -130,7 +129,6 @@ def save_progress(
                         f.write(f"{line}\n")
             saved_name = output_path.name
             shown_translated = sum(1 for line in all_lines if line in results)
-
         elif output_type == "json":
             json_data = {
                 "metadata": {
@@ -149,14 +147,11 @@ def save_progress(
             }
             with json_path.open("w", encoding="utf-8") as f:
                 json.dump(json_data, f, ensure_ascii=False, indent=2)
-
             with failed_path.open("w", encoding="utf-8") as f:
                 for line in failed:
                     f.write(f"{line}\n")
-
             saved_name = json_path.name
             shown_translated = len(successful)
-
         elif output_type == "merged":
             shown_translated = 0
             with output_path.open("w", encoding="utf-8") as f:
@@ -172,15 +167,10 @@ def save_progress(
                     else:
                         f.write("\n")
             saved_name = output_path.name
-
         else:
             logger.error("Unknown output type: {}", output_type)
             return
-
-        msg = (
-            f"Progress saved: {shown_translated}/{len(all_lines)} lines translated "
-            f"(Output: {saved_name})"
-        )
+        msg = f"Progress saved: {shown_translated}/{len(all_lines)} lines translated (Output: {saved_name})"
         if output_type == "json":
             msg += f" | failed: {len(failed)} (see {failed_path.name})"
         print(msg)
@@ -192,7 +182,6 @@ def main() -> None:
     global interrupted
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
     parser = argparse.ArgumentParser(
         description="Translate lines in a text file with progress saving."
     )
@@ -235,67 +224,52 @@ def main() -> None:
         help=f"Save progress interval in seconds (default: {SAVE_INTERVAL})",
     )
     args = parser.parse_args()
-
     if not args.input:
         parser.error("the following arguments are required: -i/--input")
-
     input_path = Path(args.input)
     if not input_path.exists():
         logger.error("Input file not found: {}", input_path)
         return
-
     try:
         with input_path.open(encoding="utf-8") as f:
             all_lines = [w.rstrip("\n") for w in f if w.strip() != ""]
     except Exception as e:
         logger.error("Error reading input file: {}", e)
         return
-
     if not all_lines:
         print(f"No non-empty lines found in {input_path.name}")
         return
-
     source_lang = args.source
     target_lang = args.target
-
     if source_lang.lower() == "ru" or source_lang.lower().startswith("ru"):
         to_translate_raw = [line for line in all_lines if contains_cyrillic(line)]
         skipped_lines = [line for line in all_lines if not contains_cyrillic(line)]
     else:
         to_translate_raw = list(all_lines)
         skipped_lines = []
-
     print(
-        f"Loaded {len(all_lines)} lines: "
-        f"{len(to_translate_raw)} flagged for translation, "
-        f"{len(skipped_lines)} skipped"
+        f"Loaded {len(all_lines)} lines: {len(to_translate_raw)} flagged for translation, {len(skipped_lines)} skipped"
     )
-
     if not to_translate_raw:
         print(f"No lines to translate for source_lang={source_lang}")
         return
-
     seen: set[str] = set()
     to_translate_unique: list[str] = []
     for line in to_translate_raw:
         if line not in seen:
             seen.add(line)
             to_translate_unique.append(line)
-
     print(
         f"Deduplicated: {len(to_translate_unique)} unique lines to translate "
         f"(from {len(to_translate_raw)} total flagged)"
     )
-
     results: dict[str, str] = {}
     remaining_to_translate = list(to_translate_unique)
-
     output_path = input_path.with_name(
         f"{input_path.stem}_{target_lang}{input_path.suffix}"
     )
     json_path = input_path.with_name(f"{input_path.stem}_{target_lang}.json")
     failed_path = input_path.with_name(f"{input_path.stem}_{target_lang}_failed.txt")
-
     save_progress(
         all_lines,
         results,
@@ -306,7 +280,6 @@ def main() -> None:
         target_lang,
         args.output_type,
     )
-
     if remaining_to_translate and not interrupted:
         chunks = create_chunks(remaining_to_translate, args.max_chunk_size)
         num_workers = min(max(1, args.max_workers), len(chunks))
@@ -315,7 +288,6 @@ def main() -> None:
             f"remaining lines (max {args.max_chunk_size} chars per chunk), "
             f"using {num_workers} worker(s)"
         )
-
         last_save_time = time.time()
         save_lock = threading.Lock()
 
@@ -339,7 +311,6 @@ def main() -> None:
 
         save_thread = threading.Thread(target=periodic_save, daemon=True)
         save_thread.start()
-
         try:
             with mp.Pool(processes=num_workers) as pool:
                 async_results = [
@@ -352,16 +323,13 @@ def main() -> None:
                     )
                     for chunk in chunks
                 ]
-
                 completed = 0
                 total = len(async_results)
-
                 for async_result, chunk in async_results:
                     if interrupted:
                         print("Interrupted. Waiting for running tasks to complete...")
                         pool.terminate()
                         break
-
                     completed += 1
                     try:
                         original_lines, translated_text = async_result.get()
@@ -405,8 +373,7 @@ def main() -> None:
                                 original_lines[0] if original_lines else "", ""
                             )[:60]
                             print(
-                                f"Translated chunk {completed}/{total} "
-                                f"(sample: '{sample_src}' → '{sample_tgt}')"
+                                f"Translated chunk {completed}/{total} (sample: '{sample_src}' → '{sample_tgt}')"
                             )
                         else:
                             if not interrupted:
@@ -436,7 +403,6 @@ def main() -> None:
                                 (chunk[0][:60] + "...") if chunk else "",
                                 e,
                             )
-
                     if time.time() - last_save_time >= args.save_interval:
                         with save_lock:
                             save_progress(
@@ -450,13 +416,11 @@ def main() -> None:
                                 args.output_type,
                             )
                             last_save_time = time.time()
-
         except KeyboardInterrupt:
             logger.warning("Keyboard interrupt detected. Saving progress...")
             interrupted = True
         except Exception as e:
             logger.error("Unexpected error: {}", e)
-
     save_progress(
         all_lines,
         results,
@@ -467,7 +431,6 @@ def main() -> None:
         target_lang,
         args.output_type,
     )
-
     if interrupted:
         logger.warning("Process was interrupted. Progress has been saved.")
         print("You can resume by running the command again.")
@@ -476,8 +439,7 @@ def main() -> None:
             1 for line in all_lines if line in results and results[line] != line
         )
         print(
-            f"Translation complete: {translated_count}/{len(all_lines)} "
-            f"lines translated successfully"
+            f"Translation complete: {translated_count}/{len(all_lines)} lines translated successfully"
         )
 
 

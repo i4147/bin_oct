@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python script that takes a source and destination directory as arguments and moves all top-level subdirectories from the source into the destination.
+The script should validate that both directories exist and are not identical, then compare subdirectory names in the destination to avoid overwriting existing folders, skipping any that already exist there and printing a clear status message (using emojis) for each moved or skipped subdirectory.
+It should print summary header information showing resolved source and destination paths before processing, and use pathlib.Path for filesystem checks and shutil.move for the actual move operation.
+The script should handle edge cases gracefully, such as an empty source directory, and report progress and results to standard output throughout execution."""
 
 import sys
 from pathlib import Path

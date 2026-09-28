@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility script that discovers project Python files (via a helper module "dh" providing get_pyfiles and mpf) and processes each one to strip comments and docstrings using the tokenize module, then collapses the remaining code into non-empty, stripped lines.
+Include a helper function that shortens identifier names by removing vowels (leaving names starting with underscore untouched), intended for lightweight code minification or obfuscation analysis.
+The script should read each target file's source as UTF-8, apply the comment/docstring removal, and prepare the cleaned lines for further processing such as writing output or import handling."""
 
 import io
 import re
 import sys
 import tokenize
 from pathlib import Path
-
 from dh import get_pyfiles, mpf
 
 

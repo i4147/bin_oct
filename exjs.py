@@ -1,9 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that extracts inline `<script>` blocks from HTML files and saves each one as a separate `.js` file inside a local `js/` directory (created if missing).
+It should use BeautifulSoup to parse each HTML file, find all script tags, and write their contents to randomly named files (via a `get_random_filename` helper), skipping the save and printing a colored warning if a filename collision occurs.
+Input files come from command-line arguments if provided, otherwise the script should automatically discover all `.html`/`htm` files in the current working directory using a `get_files` helper.
+Processing of multiple files should be parallelized using an `mpf` (multiprocessing/multithreading) helper, and status/progress messages should be printed with colored output via a `cprint` helper.
+These helper functions (`cprint`, `get_files`, `get_random_filename`, `mpf`) are imported from a local module named `dh`."""
 
 import sys
 from pathlib import Path
-
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
 from dh import cprint, get_files, get_random_filename, mpf

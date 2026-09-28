@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that converts a given Gregorian date (year, month, day) into its equivalent Persian (Jalali/Hijri Shamsi) calendar date, outputting the result as a formatted Persian string containing the weekday name, day, month name, and year, all rendered in Persian numerals and Farsi month/weekday names.
+It should include helper functions for the Gregorian-to-Jalali date algorithm, converting ASCII digits to Persian digit characters, and computing the correct weekday using Python's datetime module.
+The script relies on a custom "faprint" module for output display and is structured as reusable functions rather than a single monolithic script."""
+
 from __future__ import annotations
 
 import datetime

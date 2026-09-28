@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that uses git subprocess commands to help clean up local git branches that have already been merged into the main branch.
+The script should detect whether the current directory is a git repository, determine the repository's main branch (via origin's HEAD or by checking for "main"/"master"), list all local branches, and identify which ones are safe to delete because their changes are already merged.
+It should print clear status/error messages for failed git commands and prompt or perform deletion of the merged branches, ensuring the currently checked-out branch is excluded from deletion.
+Use Python's subprocess and shutil modules, with proper error handling for CalledProcessError."""
 
 import shutil
 import subprocess

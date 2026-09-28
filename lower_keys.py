@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that takes a JSON file path as a command-line argument, reads and parses the file's contents, and converts all top-level keys to lowercase while preserving their values.
+The script should then overwrite the original file with the modified data, using UTF-8 encoding, disabling ASCII-only output, and formatting the JSON with an indent of 2 spaces.
+Finally, it should print a confirmation message indicating that the file was successfully updated."""
 
 import json
 import sys

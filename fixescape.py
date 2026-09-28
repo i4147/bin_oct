@@ -1,4 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line tool that scans one or more Python source files (optionally recursively) to detect string literals containing invalid escape sequences, which trigger SyntaxWarning or SyntaxError, using tokenize and compile checks.
+It should use multiprocessing to process files in parallel, print colored (red/cyan ANSI) diagnostic messages showing the file, line, and offending string, and optionally auto-fix the issues in place by converting problematic strings to raw strings or properly escaping backslashes when a "fix" flag is passed via argparse."""
+
 import argparse
 import io
 import multiprocessing as mp
@@ -16,7 +19,6 @@ RESET = "\033[0m"
 def check_and_fix_file(args):
     filepath_str, fix = args
     filepath = pathlib.Path(filepath_str)
-
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             source_text = f.read()
@@ -27,10 +29,8 @@ def check_and_fix_file(args):
             [f"{RED}Error reading {filepath_str}: {e}{RESET}"],
             None,
         )
-
     has_warning = False
     has_syntax_error = False
-
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always", SyntaxWarning)
         try:
@@ -39,20 +39,15 @@ def check_and_fix_file(args):
             has_syntax_error = True
         except Exception:
             pass
-
         has_warning = any("invalid escape sequence" in str(warn.message) for warn in w)
-
     if not has_warning and not has_syntax_error:
         return filepath_str, False, [], None
-
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source_text).readline))
     except tokenize.TokenError:
         pass
-
     issues = []
     replacements = []
-
     for tok in tokens:
         if tok.type == tokenize.STRING:
             with warnings.catch_warnings(record=True) as w2:
@@ -61,17 +56,14 @@ def check_and_fix_file(args):
                     compile(tok.string, "<string>", "eval")
                 except Exception:
                     pass
-
                 if any("invalid escape sequence" in str(warn.message) for warn in w2):
                     m = re.match(r'^([a-zA-Z_]*)(["\'].*)$', tok.string, re.DOTALL)
                     if m:
                         prefix = m.group(1)
                         rest = m.group(2)
-
                         if "r" not in prefix.lower():
                             prefix = prefix.replace("u", "").replace("U", "")
                             new_string = prefix + "r" + rest
-
                             replacements.append(
                                 (
                                     tok.start[0],
@@ -82,37 +74,27 @@ def check_and_fix_file(args):
                                 )
                             )
                             issues.append((tok.start[0], tok.string, new_string))
-
     if not issues:
         return filepath_str, False, [], None
-
     lines = source_text.splitlines(keepends=True)
     output = []
     output.append(f"{CYAN}File: {filepath}{RESET}")
-
     issue_lines = sorted(list(set(line_num for line_num, _, _ in issues)))
     for lineno in issue_lines:
         idx = lineno - 1
-
         if idx - 1 >= 0:
             output.append(f"  {idx}: {lines[idx - 1].rstrip('\n')}")
-
         output.append(f"{RED}> {idx + 1}: {lines[idx].rstrip('\n')}{RESET}")
-
         if idx + 1 < len(lines):
             output.append(f"  {idx + 2}: {lines[idx + 1].rstrip('\n')}")
-
         output.append("-" * 40)
-
     new_content = None
     if fix and replacements:
         replacements.sort(key=lambda x: (x[0], x[1]), reverse=True)
         text_lines = source_text.splitlines(keepends=True)
-
         for r_start, c_start, r_end, c_end, new_string in replacements:
             r1 = r_start - 1
             r2 = r_end - 1
-
             if r1 == r2:
                 line = text_lines[r1]
                 text_lines[r1] = line[:c_start] + new_string + line[c_end:]
@@ -120,12 +102,9 @@ def check_and_fix_file(args):
                 first_line = text_lines[r1]
                 last_line = text_lines[r2]
                 text_lines[r1] = first_line[:c_start] + new_string + last_line[c_end:]
-
                 for i in range(r2, r1, -1):
                     del text_lines[i]
-
         new_content = "".join(text_lines)
-
     return filepath_str, True, output, new_content
 
 
@@ -146,9 +125,7 @@ def main():
         help="Directory to scan (default: current directory)",
     )
     args = parser.parse_args()
-
     base_path = pathlib.Path(args.path)
-
     if base_path.is_file():
         files = [base_path]
     else:
@@ -159,13 +136,10 @@ def main():
             and "venv" not in f.parts
             and "__pycache__" not in f.parts
         ]
-
     if not files:
         print("No Python files found.")
         sys.exit(0)
-
     tasks = [(str(f), args.apply) for f in files]
-
     with mp.Pool(8) as pool:
         for filepath_str, has_issues, output_lines, new_content in pool.imap_unordered(
             check_and_fix_file, tasks
@@ -173,7 +147,6 @@ def main():
             if has_issues:
                 for line in output_lines:
                     print(line)
-
                 if args.apply and new_content is not None:
                     try:
                         with open(filepath_str, "w", encoding="utf-8") as f:

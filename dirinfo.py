@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that recursively scans a directory (defaulting to the current directory) to compute total file size, file and folder counts, the set of distinct file extensions encountered, and the total size consumed per extension, using a helper `fsz` from a local `dh` module to format byte sizes into human-readable strings.
+The script should output a text summary (optionally written to a given file via argparse) listing the total size, sorted list of extensions, file/folder counts, and a breakdown of size per extension sorted by size descending.
+It should also use matplotlib to generate a chart visualizing the size distribution across file extensions.
+Handle inaccessible files gracefully by treating unreadable file sizes as zero rather than raising an exception."""
 
 import argparse
 import operator
 import sys
 from collections import defaultdict
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 from dh import fsz
 

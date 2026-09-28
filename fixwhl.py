@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility that scans a folder of `.whl` files, opens each wheel as a zip archive, and extracts the package name and version from its embedded `.dist-info/METADATA` file using email header parsing, canonicalizing the name (lowercase, dashes to underscores).
+Use this metadata to restore or rename each wheel file to reflect its proper canonical name/version, moving files with duplicate or conflicting target names into a `_wheel_name_conflicts` subfolder instead of overwriting.
+Include a helper that generates a safe, non-colliding destination path by appending an incrementing numeric suffix when a file with the same name already exists, and track encountered package versions using a dictionary of sets keyed by package name."""
 
 from collections import defaultdict
 from email.parser import Parser
 from pathlib import Path
 from zipfile import ZipFile
-
 from packaging.utils import canonicalize_name
 
 

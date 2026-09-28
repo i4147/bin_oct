@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that converts a pip freeze output file into a JSON file mapping package names to their versions.
+The function should accept an input file path (default "pip.freeze") and an output file path (default "packages.json"), read the input line by line, split each line on "==" to extract the package name and version, and store them in a dictionary.
+It should then write this dictionary as indented JSON to the output file and print a confirmation message showing how many packages were saved.
+The script should run this conversion automatically when executed as the main module."""
 
 import json
 from pathlib import Path

@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that compares two directory trees given as arguments and reports differences between them, using SHA-256 hashing (via a chunked read helper) to detect files that differ in content despite matching names.
+It should identify entries (files/directories) present only in the first directory, only in the second, or in both but with differing content, printing results via a "cprint" helper (likely with color-coded output).
+Additionally, it should generate an executable shell script that replicates the missing directories and files from the source tree into the destination tree, using "mkdir -p" and "cp -a" commands with properly shell-quoted paths, and set the script's executable permission bits after writing it."""
 
 import shlex
 import stat
 import sys
 from hashlib import sha256
 from pathlib import Path
-
 from dh import cprint
 
 CHUNK_SIZE = 32768

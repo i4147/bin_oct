@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans all installed package `.dist-info` directories across the system, user, and site-packages locations, and for each package inspects its RECORD file to detect whether it ifacts (`.so` or `.pyd` files).
+It should use multiprocessing (one worker per CPU core) to check packages in parallel and collect the lowercase names of those containing binaries into a set.
+Finally, it should read a given requirements.txt file (default path "requirements.txt"), print an error and exit gracefully if the file doesn't exist, and otherwise use the detected binary-package set to clean or filter the requirements file entries accordingly."""
 
 import csv
 import os

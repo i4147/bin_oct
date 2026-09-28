@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python wrapper script for a command-line tool named "felo" that intercepts calls to it, locates the real "felo" executable (checking a hardcoded Termux npm-global path first, then falling back to searching PATH while excluding itself to avoid recursion), and transparently forwards all command-line arguments to it via subprocess.
+The script must log each invocation to a timestamped, uniquely-named log file under ~/tmp/apps (creating the directory if needed), recording metadata such as the invocation timestamp, current working directory, and the full command arguments in a formatted header.
+It should also capture and log the command's execution details (such as output and/or exit status), and finally exit with the same return code as the real felo process so it behaves as a faithful passthrough/logging proxy."""
 
 import datetime
 import os

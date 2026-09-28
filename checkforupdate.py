@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line script that scans all installed pip packages, checks PyPI for each package's latest available version, and reports which ones have updates available.
+The tool should be resumable and interruption-safe: it saves progress (already-processed packages and their results) to a JSON state file in a ".package_updates" folder under the user's home directory, reloading that state on startup so re-runs can skip already-checked packages, and it should gracefully handle Ctrl+C (SIGINT) by immediately persisting the current state before exiting.
+Results should also be written to a human-readable text file summarizing which packages have newer versions on PyPI compared to the locally installed version, using version comparison (via the "packaging" library) rather than simple string comparison.
+Use "importlib.metadata" to enumerate installed packages and their versions, and "requests" to query the PyPI JSON API for each package, including reasonable handling of network errors or missing packages, plus timestamps for when checks were performed."""
+
 import importlib.metadata
 import json
 import signal
@@ -6,7 +11,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-
 import requests
 from packaging import version
 

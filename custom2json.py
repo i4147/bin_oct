@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that parses a custom "magic" definitions file (in the style of freedesktop.org's shared-mime-info magic rules) to extract MIME type signatures.
+The script reads the file byte-by-byte with latin-1 decoding, identifies MIME type section headers written as "[mimetype]", skips blank lines and comment lines starting with "#" or "!", and parses signature lines matching a pattern like "optional_rule_index>offset=value" using a regex, converting the extracted value into both raw bytes and an uppercase hexadecimal string representation.
+It should warn on stderr if a signature rule appears outside any section, and organize the parsed results into a dictionary keyed by MIME type, where each entry holds a list of rule dictionaries containing rule_index, offset, value_bytes, and hex.
+Include helper functions for converting bytes to hex and for parsing an individual magic line, and structure the code to eventually support exporting the parsed data (e.g., as JSON) for further use."""
 
 import json
 import re

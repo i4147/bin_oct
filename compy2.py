@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that compresses a Python source file (or files) to reduce token count while preserving functionality, intended for feeding code into an LLM.
+It should use the ast and tokenize modules to strip comments and shebang lines, remove standard library imports, and rename local variables and functions to short single/double-letter identifiers while protecting dunder methods, builtins, keywords, and names like self/cls from being renamed.
+The script should process files in parallel using multiprocessing (configurable worker count), write the compressed output to a file (default compressed.txt), and prepend a note explaining that the code has been compressed and that identifiers were renamed freely.
+It should accept file paths via argparse and rely on an external helper module (dh) for running shell commands."""
 
 import argparse
 import ast
@@ -15,17 +18,14 @@ from collections import defaultdict
 from io import StringIO
 from pathlib import Path
 from typing import Any
-
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8
-
 COMPRESSION_NOTE = (
     "# NOTE: This code is compressed. Standard library imports have been removed. "
     "You may rename variables and functions freely."
 )
-
 PROTECTED_NAMES = {
     "__name__",
     "__main__",
@@ -63,10 +63,8 @@ PROTECTED_NAMES = {
     "self",
     "cls",
 }
-
 BUILTIN_NAMES = set(dir(builtins))
 KEYWORDS = set(keyword.kwlist)
-
 SHORT_NAMES = [
     *list("abcdefghijklmnopqrstuvwxyz"),
     *list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
@@ -75,47 +73,34 @@ SHORT_NAMES = [
 
 def strip_comments_and_shebang(source: str) -> str:
     lines = source.splitlines()
-
     if lines and lines[0].startswith("#!"):
         lines[0] = ""
-
     source = "\n".join(lines)
-
     result: list[tokenize.TokenInfo] = []
-
     try:
         tokens = tokenize.generate_tokens(StringIO(source).readline)
-
         for item in tokens:
             if item.type == token.COMMENT:
                 continue
-
             result.append(item)
-
         return tokenize.untokenize(result)
-
     except tokenize.TokenError:
         return source
 
 
 def get_stdlib_modules() -> set[str]:
     modules = set(getattr(sys, "stdlib_module_names", set()))
-
     if not modules:
         modules.update(sys.builtin_module_names)
-
         stdlib_dir = Path(sysconfig.get_paths().get("stdlib", ""))
-
         if stdlib_dir.exists():
             for item in stdlib_dir.iterdir():
                 if item.name.startswith("_"):
                     continue
-
                 if item.is_file() and item.suffix == ".py":
                     modules.add(item.stem)
                 elif item.is_dir() and (item / "__init__.py").exists():
                     modules.add(item.name)
-
     return modules
 
 
@@ -125,7 +110,6 @@ STDLIB_MODULES = get_stdlib_modules()
 def is_stdlib_import(module_name: str | None) -> bool:
     if not module_name:
         return False
-
     root = module_name.split(".", 1)[0]
     return root in STDLIB_MODULES
 
@@ -141,7 +125,6 @@ def is_docstring_expr(node: ast.stmt) -> bool:
 def is_terminating_statement(node: ast.stmt) -> bool:
     if isinstance(node, (ast.Return, ast.Raise, ast.Break, ast.Continue)):
         return True
-
     if isinstance(node, ast.If):
         return (
             bool(node.body)
@@ -149,42 +132,32 @@ def is_terminating_statement(node: ast.stmt) -> bool:
             and block_terminates(node.body)
             and block_terminates(node.orelse)
         )
-
     if isinstance(node, ast.Try):
         branches = [node.body, *[handler.body for handler in node.handlers]]
-
         if node.orelse:
             branches.append(node.orelse)
-
         return bool(branches) and all(block_terminates(branch) for branch in branches)
-
     return False
 
 
 def block_terminates(statements: list[ast.stmt]) -> bool:
     if not statements:
         return False
-
     for statement in statements:
         if is_terminating_statement(statement):
             return True
-
     return False
 
 
 def make_short_name(index: int) -> str:
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     base = len(alphabet)
-
     if index < base:
         return alphabet[index]
-
     result = ""
-
     while index >= 0:
         result = alphabet[index % base] + result
         index = index // base - 1
-
     return result
 
 
@@ -205,10 +178,8 @@ class AnnotationStripper(ast.NodeTransformer):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
         self.generic_visit(node)
-
         if node.value is None:
             return None
-
         return ast.copy_location(
             ast.Assign(
                 targets=[node.target],
@@ -227,11 +198,9 @@ class AnnotationStripper(ast.NodeTransformer):
         ]:
             argument.annotation = None
             argument.type_comment = None
-
         if arguments.vararg:
             arguments.vararg.annotation = None
             arguments.vararg.type_comment = None
-
         if arguments.kwarg:
             arguments.kwarg.annotation = None
             arguments.kwarg.type_comment = None
@@ -245,23 +214,18 @@ class ImportCleaner(ast.NodeTransformer):
 
     def visit_Import(self, node: ast.Import) -> ast.AST | None:
         kept = [alias for alias in node.names if not is_stdlib_import(alias.name)]
-
         if not kept:
             return None
-
         node.names = kept
         return node
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.AST | None:
         if node.module == "__future__":
             return None
-
         if node.level > 0:
             return node
-
         if is_stdlib_import(node.module):
             return None
-
         return node
 
     @staticmethod
@@ -269,21 +233,16 @@ class ImportCleaner(ast.NodeTransformer):
         cleaned: list[ast.stmt] = []
         first_real_statement = True
         terminated = False
-
         for statement in statements:
             if terminated:
                 continue
-
             if first_real_statement and is_docstring_expr(statement):
                 first_real_statement = False
                 continue
-
             first_real_statement = False
             cleaned.append(statement)
-
             if is_terminating_statement(statement):
                 terminated = True
-
         return cleaned
 
 
@@ -310,16 +269,12 @@ class Simplifier(ast.NodeTransformer):
 
     def visit_If(self, node: ast.If) -> ast.AST:
         self.generic_visit(node)
-
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
-
         node.test = self._shorten_boolean_constant(node.test)
-
         bool_return = self._convert_boolean_return_pattern(node)
         if bool_return is not None:
             return ast.copy_location(bool_return, node)
-
         return node
 
     def visit_While(self, node: ast.While) -> ast.AST:
@@ -356,15 +311,12 @@ class Simplifier(ast.NodeTransformer):
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
         node.finalbody = self._simplify_block(node.finalbody)
-
         for handler in node.handlers:
             handler.body = self._simplify_block(handler.body)
-
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
         self.generic_visit(node)
-
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
@@ -380,7 +332,6 @@ class Simplifier(ast.NodeTransformer):
                 ),
                 node,
             )
-
         return node
 
     def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
@@ -394,11 +345,9 @@ class Simplifier(ast.NodeTransformer):
     def _simplify_block(self, statements: list[ast.stmt]) -> list[ast.stmt]:
         output: list[ast.stmt] = []
         terminated = False
-
         for statement in statements:
             if terminated:
                 continue
-
             if (
                 isinstance(statement, ast.If)
                 and statement.orelse
@@ -408,12 +357,9 @@ class Simplifier(ast.NodeTransformer):
                 statement.orelse = []
                 output.append(statement)
                 output.extend(else_body)
-
                 if block_terminates(else_body):
                     terminated = True
-
                 continue
-
             if (
                 isinstance(statement, ast.If)
                 and not statement.orelse
@@ -422,53 +368,40 @@ class Simplifier(ast.NodeTransformer):
                 and not statement.body[0].orelse
             ):
                 inner = statement.body[0]
-
                 statement.test = ast.BoolOp(
                     op=ast.And(),
                     values=[statement.test, inner.test],
                 )
                 statement.body = inner.body
-
             output.append(statement)
-
             if is_terminating_statement(statement):
                 terminated = True
-
         return output
 
     @staticmethod
     def _shorten_boolean_constant(expression: ast.expr) -> ast.expr:
         if isinstance(expression, ast.Constant) and expression.value is True:
             return ast.copy_location(ast.Constant(value=1), expression)
-
         if isinstance(expression, ast.Constant) and expression.value is False:
             return ast.copy_location(ast.Constant(value=0), expression)
-
         return expression
 
     @staticmethod
     def _convert_boolean_return_pattern(node: ast.If) -> ast.Return | None:
         if len(node.body) != 1 or len(node.orelse) != 1:
             return None
-
         true_branch = node.body[0]
         false_branch = node.orelse[0]
-
         if not isinstance(true_branch, ast.Return):
             return None
-
         if not isinstance(false_branch, ast.Return):
             return None
-
         if not isinstance(true_branch.value, ast.Constant):
             return None
-
         if not isinstance(false_branch.value, ast.Constant):
             return None
-
         left = true_branch.value.value
         right = false_branch.value.value
-
         if left is True and right is False:
             return ast.Return(
                 value=ast.Call(
@@ -477,7 +410,6 @@ class Simplifier(ast.NodeTransformer):
                     keywords=[],
                 )
             )
-
         if left is False and right is True:
             return ast.Return(
                 value=ast.UnaryOp(
@@ -485,14 +417,12 @@ class Simplifier(ast.NodeTransformer):
                     operand=node.test,
                 )
             )
-
         return None
 
     @staticmethod
     def _fold_expression_if_shorter(node: ast.expr) -> ast.expr:
         if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
             return node
-
         try:
             before = ast.unparse(node)
             compiled = compile(
@@ -503,7 +433,6 @@ class Simplifier(ast.NodeTransformer):
             value = eval(compiled, {"__builtins__": {}}, {})
             folded = ast.Constant(value=value)
             after = ast.unparse(folded)
-
         except (
             ArithmeticError,
             MemoryError,
@@ -514,10 +443,8 @@ class Simplifier(ast.NodeTransformer):
             NameError,
         ):
             return node
-
         if len(after) < len(before):
             return ast.copy_location(folded, node)
-
         return node
 
 
@@ -535,7 +462,6 @@ class NameCollector(ast.NodeVisitor):
         for alias in node.names:
             if alias.name == "*":
                 continue
-
             name = alias.asname or alias.name
             self.imported_names.add(name)
 
@@ -570,13 +496,10 @@ class NameCollector(ast.NodeVisitor):
             *arguments.args,
             *arguments.kwonlyargs,
         ]
-
         if arguments.vararg:
             all_arguments.append(arguments.vararg)
-
         if arguments.kwarg:
             all_arguments.append(arguments.kwarg)
-
         for argument in all_arguments:
             self._add_name(argument.arg)
 
@@ -601,13 +524,11 @@ class NameRenamer(ast.NodeTransformer):
     def visit_Name(self, node: ast.Name) -> ast.AST:
         if node.id in self.mapping:
             node.id = self.mapping[node.id]
-
         return node
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
-
         self._rename_arguments(node.args)
         self.generic_visit(node)
         return node
@@ -615,7 +536,6 @@ class NameRenamer(ast.NodeTransformer):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
-
         self._rename_arguments(node.args)
         self.generic_visit(node)
         return node
@@ -623,7 +543,6 @@ class NameRenamer(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
-
         self.generic_visit(node)
         return node
 
@@ -637,10 +556,8 @@ class NameRenamer(ast.NodeTransformer):
 
     def visit_keyword(self, node: ast.keyword) -> ast.AST:
         self.generic_visit(node)
-
         if node.arg is not None and node.arg in self.mapping:
             node.arg = self.mapping[node.arg]
-
         return node
 
     def _rename_arguments(self, arguments: ast.arguments) -> None:
@@ -649,13 +566,10 @@ class NameRenamer(ast.NodeTransformer):
             *arguments.args,
             *arguments.kwonlyargs,
         ]
-
         if arguments.vararg:
             all_arguments.append(arguments.vararg)
-
         if arguments.kwarg:
             all_arguments.append(arguments.kwarg)
-
         for argument in all_arguments:
             if argument.arg in self.mapping:
                 argument.arg = self.mapping[argument.arg]
@@ -664,25 +578,19 @@ class NameRenamer(ast.NodeTransformer):
 def build_name_mapping(tree: ast.AST) -> dict[str, str]:
     collector = NameCollector()
     collector.visit(tree)
-
     candidates = sorted(collector.names, key=lambda value: (-len(value), value))
     reserved = set(collector.names) | BUILTIN_NAMES | PROTECTED_NAMES | KEYWORDS
-
     mapping: dict[str, str] = {}
     index = 0
-
     for old_name in candidates:
         while True:
             new_name = make_short_name(index)
             index += 1
-
             if new_name not in reserved:
                 break
-
         if len(new_name) < len(old_name):
             mapping[old_name] = new_name
             reserved.add(new_name)
-
     return mapping
 
 
@@ -695,50 +603,37 @@ def join_simple_lines(source: str) -> str:
 
     def is_simple_statement(line: str) -> bool:
         stripped = line.strip()
-
         if not stripped:
             return False
-
         if stripped.endswith(":"):
             return False
-
         return True
 
     index = 0
-
     while index < len(lines):
         current = lines[index]
         current_indent = indentation(current)
-
         if not is_simple_statement(current):
             output.append(current)
             index += 1
             continue
-
         group = [current.strip()]
         index += 1
-
         while index < len(lines):
             candidate = lines[index]
-
             if indentation(candidate) != current_indent:
                 break
-
             if not is_simple_statement(candidate):
                 break
-
             group.append(candidate.strip())
             index += 1
-
         output.append(f"{current_indent}{';'.join(group)}")
-
     return "\n".join(output)
 
 
 def compact_spacing(source: str) -> str:
     source = re.sub(r",\s+", ",", source)
     source = re.sub(r":\s+", ":", source)
-
     operators = [
         r"\*\*",
         r"//",
@@ -771,62 +666,48 @@ def compact_spacing(source: str) -> str:
         r"\|",
         r"\^",
     ]
-
     for operator in operators:
         source = re.sub(rf"\s*({operator})\s*", r"\1", source)
-
     return source
 
 
 def compress_source(source: str, filename: str = "<input>") -> str:
     source = strip_comments_and_shebang(source)
-
     tree = ast.parse(source, filename=filename)
-
     tree = AnnotationStripper().visit(tree)
     ast.fix_missing_locations(tree)
-
     tree = ImportCleaner().visit(tree)
     ast.fix_missing_locations(tree)
-
     tree = Simplifier().visit(tree)
     ast.fix_missing_locations(tree)
-
     mapping = build_name_mapping(tree)
     tree = NameRenamer(mapping).visit(tree)
     ast.fix_missing_locations(tree)
-
     result = ast.unparse(tree)
     result = join_simple_lines(result)
     result = compact_spacing(result)
-
     return "\n".join(line for line in result.splitlines() if line.strip())
 
 
 def discover_python_files(inputs: list[str]) -> list[Path]:
     roots = [Path(item) for item in inputs] if inputs else [Path.cwd()]
     found: set[Path] = set()
-
     for root in roots:
         if root.is_file():
             if root.suffix == ".py" and root.name != OUTPUT_FILE.name:
                 found.add(root.resolve())
             continue
-
         if root.is_dir():
             for path in root.rglob("*.py"):
                 if path.name == OUTPUT_FILE.name:
                     continue
-
                 if path.is_file():
                     found.add(path.resolve())
-
     return sorted(found, key=lambda path: str(path))
 
 
 def process_file(path_string: str) -> tuple[str, str, str | None]:
     path = Path(path_string)
-
     try:
         source = path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -836,7 +717,6 @@ def process_file(path_string: str) -> tuple[str, str, str | None]:
             return str(path), "", f"Unable to read {path}: {error}"
     except Exception as error:
         return str(path), "", f"Unable to read {path}: {error}"
-
     try:
         compressed = compress_source(source, str(path))
         return str(path), compressed, None
@@ -852,22 +732,16 @@ def format_output(results: list[tuple[str, str, str | None]]) -> str:
         for name, content, error in results
         if error is None and content.strip()
     ]
-
     if not successful:
         return ""
-
     multiple_files = len(successful) > 1
     sections: list[str] = []
-
     for name, content in successful:
         lines: list[str] = []
-
         if multiple_files:
             lines.append(f"# File: {Path(name).name}")
-
         lines.extend(line for line in content.splitlines() if line.strip())
         sections.append("\n".join(lines))
-
     return "\n".join(sections)
 
 
@@ -884,46 +758,34 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     args = parse_arguments()
     files = discover_python_files(args.inputs)
-
     if not files:
         print("No Python files found.", file=sys.stderr)
         OUTPUT_FILE.write_text("", encoding="utf-8")
         return 1
-
     paths = [str(path) for path in files]
-
     if len(paths) == 1:
         results = [process_file(paths[0])]
     else:
         with mp.Pool(processes=WORKERS) as pool:
             results = list(pool.imap_unordered(process_file, paths))
-
     results.sort(key=lambda item: item[0])
-
     for _, _, error in results:
         if error:
             print(error, file=sys.stderr)
-
     output = format_output(results)
-
     output = "\n".join(line for line in output.splitlines() if line.strip())
-
     if output:
         output += "\n"
         output += COMPRESSION_NOTE + "\n"
-
     single_py_file = (
         len(args.inputs) == 1
         and Path(args.inputs[0]).is_file()
         and Path(args.inputs[0]).suffix == ".py"
     )
-
     if not single_py_file:
         OUTPUT_FILE.write_text(output, encoding="utf-8")
-
     cmd = ["termux-clipboard-set", output]
     runcmd(cmd, show_output=True)
-
     return 0
 
 

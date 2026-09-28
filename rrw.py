@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that normalizes files either passed as arguments or discovered recursively via a helper module (dh.get_files/is_binary) starting from the current working directory, skipping binary files.
+For Python (.py) files it parses the source into an AST and regenerates formatted code using astor, overwriting the file and printing a colored checkmark or cross symbol to indicate success or parse failure; for all other text files it applies Unicode NFD normalization and overwrites the file with the result.
+Include an optional (currently disabled) backup mechanism that would save the original content to a ".bak" file before modification, and wrap file reading/writing in exception handling so errors are silently skipped."""
 
 import ast
 import sys
 import unicodedata
 from pathlib import Path
-
 import astor
 from dh import get_files, is_binary
 

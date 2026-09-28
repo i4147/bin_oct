@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that compresses each top-level directory and eligible top-level file (excluding archives, wheels, and logs) in the current working directory into individual 7z archives, first packing directories into tar files before 7z compression using py7zr with preset level 9, while file-level compression is delegated to helper functions from the dh module (fsz, gsz).
+It should run compression tasks in parallel using multiprocessing, log progress and errors with timestamps and process names to both a file (compress.log) and the console, and safely remove the original directories/files after successful compression, handling deletion errors gracefully.
+The script must only process items located directly at the root level (not nested), verified via path resolution."""
 
 import logging
 import multiprocessing as mp
@@ -7,7 +9,6 @@ import shutil
 import tarfile
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import py7zr
 from dh import fsz, gsz
 

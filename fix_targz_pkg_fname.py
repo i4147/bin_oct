@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that extracts a Python package's name and version from a `.tar.gz` source distribution without fully unpacking it.
+It should open the tarball, locate the top-level directory, and search for `PKG-INFO` or `METADATA` files first, parsing the `Name:` and `Version:` fields via regex.
+If those files are missing or lack the info, it should fall back to inspecting `setup.py`, `setup.cfg`, or `pyproject.toml` for `name = ...` and `version = ...` patterns.
+The function should take a tar file path as input and return a tuple of (name, version), using `None` for values that cannot be determined."""
+
 import re
 import tarfile
 from pathlib import Path

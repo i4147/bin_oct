@@ -1,9 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that recursively scans a directory of `.py` source files, uses the `ast` module to statically extract module-level constant assignments (both plain `Assign` and annotated `AnnAssign` nodes whose target names are uppercase and whose values are literal constants), and records each constant's name, value, and inferred type.
+The script should compute a fast content hash (via `xxhash.xxh64`) for each file—likely to detect duplicates or track changes—and use `joblib.Parallel` to process multiple files concurrently for performance.
+Errors encountered during parsing or hashing should be logged to an `output/error.log` file rather than raised, and the collected constants should ultimately be written out to a generated `output/const.py` file.
+Include standard setup for creating the output directory and configuring the logging format with timestamps and severity levels."""
+
 import ast
 import logging
 import operator
 from pathlib import Path
-
 from joblib import Parallel, delayed
 from xxhash import xxh64
 

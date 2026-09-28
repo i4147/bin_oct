@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that converts a CSV file into a JSON file.
+The script should take the input CSV file path as a command-line argument, read it using csv.DictReader to preserve column headers as keys, and write the resulting list of records to a JSON file with the same base name but a .json extension, using indented, UTF-8 friendly formatting.
+If no input file argument is provided, it should print a usage message and exit with a non-zero status code."""
 
 import csv
 import json

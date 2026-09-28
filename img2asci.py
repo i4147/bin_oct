@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that converts one or more image files into colored ASCII art and prints them directly to the terminal.
+It should accept image file paths as command-line arguments, or if none are given, automatically discover image files (jpg, png, bmp, webp) in the current working directory using a helper `get_files` function.
+Use the `ascii_magic` library's `AsciiArt.from_image` to render each image, sizing the output to the current terminal width with a width ratio of 2 and preserving color (non-monochrome).
+If only a single file is provided or found, process it directly and exit; otherwise, process multiple files concurrently using a multiprocessing pool of 8 workers."""
 
 import os
 import sys
 from pathlib import Path
-
 from ascii_magic import AsciiArt
 from dh import get_files
 

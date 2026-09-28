@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that takes exactly two arguments, a filename and a prefix string, and prepends the prefix followed by a space to the beginning of every non-blank line in that file, leaving blank lines unchanged.
+The script should validate that exactly two arguments are provided and that the given file exists, printing a usage or error message to stderr and exiting with status 1 otherwise.
+It should read the file's lines preserving line endings, modify them in place by rewriting the file with the added prefix, and finally print a confirmation message indicating the file was updated."""
 
 import sys
 from pathlib import Path

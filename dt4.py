@@ -1,4 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line tool that translates a large text file by splitting it into chunks (configurable chunk size) and translating each chunk via deep_translator (supporting multiple backend engines and language code mappings like Google, DeepL, MyMemory), using a thread pool with configurable worker count, retry-with-backoff logic, and inter-request delay to avoid rate limits.
+It should accept arguments for input/output/failed-chunk file paths, source/target languages, number of workers, delay, chunk size, and periodic save interval, writing successfully translated chunks incrementally to a JSON output file and logging failed chunks to a separate text file, while gracefully handling interrupts (e.g., SIGINT) to save progress before exiting, using loguru for logging throughout."""
+
 import argparse
 import json
 import os
@@ -10,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Dict, List, Optional, Tuple
-
 import loguru
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
@@ -28,7 +30,6 @@ DEFAULT_CHUNK_SIZE = 2500
 DEFAULT_SAVE_EVERY = 10
 MAX_RETRIES = 3
 BACKOFF_BASE = 2
-
 LANG_MAPPING = {
     "deep_translator": {
         "en": "english",
@@ -103,7 +104,6 @@ LANG_MAPPING = {
         "ar": "ar",
     },
 }
-
 shutdown_flag = False
 
 
@@ -122,24 +122,19 @@ def signal_handler(sig, frame) -> None:
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     if not text:
         return []
-
     chunks = []
     start = 0
     length = len(text)
-
     while start < length:
         end = min(start + chunk_size, length)
-
         if end < length and not text[end].isspace():
             last_space = text.rfind(" ", start, end)
             if last_space > start:
                 end = last_space
-
         chunk = text[start:end].strip()
         if chunk:
             chunks.append(chunk)
         start = end if end != start else end + 1
-
     return chunks
 
 
@@ -166,7 +161,6 @@ def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
 
 
 def is_identity_translation(text: str, translated: str) -> bool:
-
     norm_orig = text.lower().strip()
     norm_trans = translated.lower().strip()
     return norm_orig == norm_trans
@@ -195,7 +189,6 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
         import deepl
     except ImportError:
         raise ImportError("deepl package not installed")
-
     source_lang = LANG_MAPPING["deepl"].get(source, source)
     target_lang = LANG_MAPPING["deepl"].get(target, target)
 
@@ -221,7 +214,6 @@ def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
         from translate import Translator
     except ImportError:
         raise ImportError("translate package not installed")
-
     source_lang = LANG_MAPPING["translate"].get(source, source)
     target_lang = LANG_MAPPING["translate"].get(target, target)
 
@@ -241,7 +233,6 @@ def make_translators_bing_translator(source: str, target: str) -> Callable[[str]
         import translators as ts
     except ImportError:
         raise ImportError("translators package not installed")
-
     source_lang = LANG_MAPPING["translators_bing"].get(source, source)
     target_lang = LANG_MAPPING["translators_bing"].get(target, target)
 
@@ -265,10 +256,8 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
         from googletrans import Translator
     except ImportError:
         raise ImportError("googletrans package not installed")
-
     source_lang = LANG_MAPPING["googletrans"].get(source, source)
     target_lang = LANG_MAPPING["googletrans"].get(target, target)
-
     lock = Lock()
 
     def translate(text: str) -> str:
@@ -291,10 +280,8 @@ def make_pygoogletranslation_translator(
         from pygoogletranslation import Translator
     except ImportError:
         raise ImportError("pygoogletranslation package not installed")
-
     source_lang = LANG_MAPPING["pygoogletranslation"].get(source, source)
     target_lang = LANG_MAPPING["pygoogletranslation"].get(target, target)
-
     lock = Lock()
 
     def translate(text: str) -> str:
@@ -322,7 +309,6 @@ def select_backend(
         ("googletrans", make_googletrans_translator),
         ("pygoogletranslation", make_pygoogletranslation_translator),
     ]
-
     if backend:
         for name, factory in backends:
             if name == backend:
@@ -332,14 +318,12 @@ def select_backend(
                     logger.warning(f"Backend {backend} not available")
                     break
         raise ValueError(f"Specified backend {backend} not available")
-
     for name, factory in backends:
         try:
             return factory(source, target)
         except ImportError:
             logger.debug(f"Backend {name} not available")
             continue
-
     raise RuntimeError("No translation backend available")
 
 
@@ -353,7 +337,6 @@ def translate_chunk(
 ) -> tuple[int, Optional[str]]:
     if shutdown_flag:
         return index, None
-
     for attempt in range(max_retries):
         try:
             if attempt > 0:
@@ -362,22 +345,18 @@ def translate_chunk(
                     f"Retry {attempt + 1}/{max_retries} for chunk {index} after {backoff}s delay"
                 )
                 time.sleep(backoff)
-
             translated = translator(chunk)
             time.sleep(delay)
-
             if is_identity_translation(chunk, translated):
                 logger.warning(
                     f"Identity translation detected for chunk {index}, retrying"
                 )
                 raise ValueError("Identity translation detected")
-
             return index, translated
         except Exception as e:
             logger.error(f"Attempt {attempt + 1} failed for chunk {index}: {e}")
             if attempt == max_retries - 1:
                 return index, None
-
     return index, None
 
 
@@ -393,24 +372,20 @@ def process_chunks(
 ) -> None:
     results = existing_output.copy()
     failed_indices = set()
-
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(translate_chunk, chunk, i, translator, delay): i
             for i, chunk in enumerate(chunks)
         }
-
         for future in as_completed(futures):
             if shutdown_flag:
                 break
-
             index = futures[future]
             try:
                 chunk_index, translated = future.result()
                 if translated is not None:
                     results[str(chunk_index)] = translated
                     logger.info(f"Translated chunk {chunk_index}")
-
                     if len(results) % save_every == 0:
                         save_json_atomic(results, output_path)
                         logger.info(f"Periodic save after {len(results)} chunks")
@@ -420,10 +395,8 @@ def process_chunks(
             except Exception as e:
                 failed_indices.add(index)
                 logger.error(f"Unexpected error processing chunk {index}: {e}")
-
     if results and not shutdown_flag:
         save_json_atomic(results, output_path)
-
     if failed_indices:
         with failed_path.open("a", encoding="utf-8") as f:
             for index in sorted(failed_indices):
@@ -474,31 +447,23 @@ def main() -> None:
     parser.add_argument(
         "--no-continue", action="store_true", help="Start fresh, ignore existing output"
     )
-
     args = parser.parse_args()
-
     if args.workers < 1 or args.workers > 2:
         parser.error("Workers must be between 1 and 2")
-
     setup_logging()
     logger.info(f"Starting translation with args: {vars(args)}")
-
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
-
     if not input_path.exists():
         logger.error(f"Input file {input_path} does not exist")
         sys.exit(1)
-
     existing_output = {}
     if not args.no_continue and output_path.exists():
         existing_output = load_existing_output(output_path)
         logger.info(f"Loaded existing output with {len(existing_output)} chunks")
-
     try:
         with input_path.open("r", encoding="utf-8") as f:
             text = f.read()
@@ -506,10 +471,8 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Failed to read input file: {e}")
         sys.exit(1)
-
     chunks = split_into_chunks(text, args.chunk_size)
     logger.info(f"Split text into {len(chunks)} chunks")
-
     if existing_output:
         chunks = [
             chunk for i, chunk in enumerate(chunks) if str(i) not in existing_output
@@ -517,18 +480,15 @@ def main() -> None:
         logger.info(
             f"Skipping {len(existing_output)} already translated chunks, processing {len(chunks)} remaining"
         )
-
     if not chunks:
         logger.info("No new chunks to process")
         return
-
     try:
         translator = select_backend(args.source, args.target, args.backend)
         logger.info(f"Using {translator.__module__} backend")
     except Exception as e:
         logger.error(f"Failed to initialize translator: {e}")
         sys.exit(1)
-
     try:
         process_chunks(
             chunks=chunks,
@@ -543,7 +503,6 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Processing failed: {e}")
         sys.exit(1)
-
     logger.info("Translation completed successfully")
 
 

@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python utility that recursively scans a directory (or a given list of files) and strips unwanted blank lines from text files, while safely skipping binary files.
+It should use a custom is_binary/fsz helper module (dh) plus its own signature-based and heuristic binary-detection logic (checking common magic bytes and non-text byte ratios in the first 8KB, using mmap for large files above a 1MB threshold for efficiency).
+The script should support two cleanup modes: completely removing all blank lines, or collapsing consecutive blank lines down to a single blank line, and it should process multiple files concurrently using a ProcessPoolExecutor for speed.
+It should accept command-line arguments (via argparse) to specify target paths, choose the blank-line handling mode, and control other options like verbosity, then print colorized (ANSI-coded) progress and summary output showing which files were modified, skipped as binary, or left unchanged."""
 
 import argparse
 import mmap
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-
 from dh import fsz, is_binary
 
 MMAP_THRESHOLD = 1024 * 1024

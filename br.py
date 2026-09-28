@@ -100,7 +100,7 @@ def decompress_file(br_path: Path) -> None:
                     open(tmp_tar, "rb") as tf,
                     tarfile.open(fileobj=tf, mode="r") as tar,
                 ):
-                    tar.extractall(path=output_dir.parent)
+                    tar.extractall(path=output_dir.parent, filter="data")
                 tmp_tar.unlink()
                 br_path.unlink()
                 print(f"Removed archive: {br_path.name}")

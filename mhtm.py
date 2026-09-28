@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that recursively finds HTML files under one or more given directories (or accepts individual file paths), then validates and minifies each file in place using the minify_html library.
+It should use a custom HTMLParser subclass to check that tags are properly nested/closed before or after minification, collecting and reporting mismatched or unclosed tag errors per file.
+The script should process files in parallel using multiprocessing for speed, print a summary of successes, failures, and validation errors, and support command-line arguments (via argparse) to control input paths and behavior, exiting with a non-zero status code if any file fails validation or minification."""
 
 import argparse
 import multiprocessing as mp
@@ -8,7 +10,6 @@ from collections.abc import Callable, Generator, Iterable
 from functools import partial
 from html.parser import HTMLParser
 from pathlib import Path
-
 import minify_html as mh
 
 
@@ -82,7 +83,6 @@ BACKENDS: dict[str, Callable[[str], str]] = {
     "minify-html": _minify_html_backend,
 }
 DEFAULT_BACKEND: str = "minify-html"
-
 POOL_METHODS: tuple[str, ...] = ("map", "starmap", "apply_async", "imap_unordered")
 DEFAULT_POOL_METHOD: str = "imap_unordered"
 
@@ -94,26 +94,20 @@ def process_file(path: Path, backend: str) -> tuple[str, int, int, str]:
         data = path.read_text(encoding="utf-8")
     except OSError as e:
         return rel, 0, 0, f"read error: {e}"
-
     before = len(data.encode("utf-8"))
-
     try:
         minified = minify_fn(data)
     except Exception as e:
         return rel, before, before, f"minify error: {e}"
-
     errors = validate_html(minified)
     if errors:
         return rel, before, before, f"invalid html: {'; '.join(errors[:3])}"
-
     if minified == data:
         return rel, before, before, ""
-
     try:
         path.write_text(minified, encoding="utf-8")
     except OSError as e:
         return rel, before, before, f"write error: {e}"
-
     after = len(minified.encode("utf-8"))
     return rel, before, after, ""
 
@@ -151,21 +145,17 @@ def run_pool(
         if pool_method == "map":
             args_iter = ((f, backend) for f in files)
             yield from pool.starmap(process_file, args_iter)
-
         elif pool_method == "starmap":
             args_iter = ((f, backend) for f in files)
             yield from pool.starmap(process_file, args_iter)
-
         elif pool_method == "apply_async":
             async_results = [
                 pool.apply_async(process_file, (f, backend)) for f in files
             ]
             for ar in async_results:
                 yield ar.get()
-
         elif pool_method == "imap_unordered":
             yield from pool.imap_unordered(_starmap_adapter(backend), files)
-
         else:
             raise ValueError(f"unknown pool method: {pool_method}")
 
@@ -218,17 +208,14 @@ def _fmt_bytes(n: int) -> str:
 def main() -> int:
     args = parse_args()
     targets: list[Path] = args.paths or [Path.cwd()]
-
     files = list(iter_html_files(targets))
     if not files:
         print("no HTML files found", file=sys.stderr)
         return 1
-
     changed_count = 0
     error_count = 0
     total_before = 0
     total_after = 0
-
     for rel, before, after, err in run_pool(
         files, args.backend, args.pool_method, args.jobs
     ):
@@ -244,7 +231,6 @@ def main() -> int:
                 f"{rel}: minified {_fmt_bytes(before)} -> {_fmt_bytes(after)} "
                 f"(saved {_fmt_bytes(saved)})"
             )
-
     total_saved = total_before - total_after
     print(f"\nTotal input size:  {_fmt_bytes(total_before)}")
     print(f"Total output size: {_fmt_bytes(total_after)}")

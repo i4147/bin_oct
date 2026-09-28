@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility that scans files in a given directory (or the current directory by default) that lack a file extension, reads each file's first line to detect a shebang (e.g., "#!/usr/bin/env python", "#!/bin/bash", "#!/usr/bin/node", etc.), and uses a predefined mapping from shebang patterns to appropriate extensions (.py, .sh, .js, .rb, .pl, .lua, .php, etc.) to rename the file accordingly.
+It should use regular expressions to match shebang lines flexibly, handle file reading/renaming safely with try/except blocks, and use shutil/os/pathlib for filesystem operations.
+The script should print or log which files were renamed and to what, and skip files where no matching shebang is found or where the file already has an extension."""
 
 import os
 import re

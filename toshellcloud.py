@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-from __future__ import annotations
+#!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that recursively scans a target directory (given as a command-line argument, defaulting to the current directory) for all ".py" files and rewrites any that begin with a Termux-specific shebang line (such as "#!/data/data/com.termux/files/usr/bin/python" or its "env"/"python3" variants) to use the standard "#!/usr/bin/env python" or "#!/usr/bin/env python3" form.
+It should use multiprocessing.Pool to process files in parallel, read and write each file as UTF-8, and for each file return a tuple of the file path, a boolean indicating whether it was modified, and an optional message explaining why it was skipped or reporting an error (e.g., no shebang found, not a Termux shebang, or an exception).
+The script should validate that the provided directory exists and is indeed a directory, printing an error message otherwise."""
 
 import sys
 from multiprocessing import Pool

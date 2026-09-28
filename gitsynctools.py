@@ -1,13 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
-
 """git_sync_tool.py
-
 Usage:
     python git_sync_tool.py commit [options]
     python git_sync_tool.py push [options]
     python git_sync_tool.py sync [options]
-
 Mapping:
     agagc.py        -> python git_sync_tool.py push --create-repo --auto-init --no-reuse-existing-repo --remote-name origin --description "new git repo" --token-auth persistent --token-url-format oauth2 --set-upstream --init-if-missing
     gagc.py         -> python git_sync_tool.py commit --add-mode star --init-if-missing
@@ -27,7 +23,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
-
 from dotenv import load_dotenv
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 from github import Github, GithubException
@@ -597,15 +592,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     commit = sub.add_parser("commit")
     add_common(commit)
-
     push = sub.add_parser("push")
     add_common(push)
-
     sync = sub.add_parser("sync")
     add_common(sync, push_to_fork_default=True)
     sync.add_argument("--commit", action="store_true")
     sync.add_argument("--allow-dirty", action="store_true")
-
     return parser
 
 

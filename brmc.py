@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that strips docstrings from Python source files using AST parsing, while preserving each file's module-level docstring if present.
+It should accept a directory (via a helper function get_pyfiles from a local dh module) to discover .py files, process them in parallel using multiprocessing, and report how many docstrings were removed per file.
+The core function should parse source into an AST, walk it to locate string-literal expression statements (docstrings) with their line/column spans, remove them from the source text while leaving the module docstring intact, and return the modified source along with a count of removals; syntax errors should be handled gracefully by returning the original source unchanged."""
 
 import argparse
 import ast
 import multiprocessing as mp
 from pathlib import Path
-
 from dh import get_pyfiles
 
 

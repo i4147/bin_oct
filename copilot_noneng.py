@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that scans a list of files and/or directories (skipping symlinks and binary files) and, for each text file's lines, runs multiple language-detection libraries—gcld3, pycld2, and langdetect—to identify the language(s) present, reading files with UTF-8 then falling back to Latin-1 encoding.
+The script should support multiprocessing for parallel processing of files, use thread locks to safely print progress and accumulate results across workers, and output the collected detection results (e.g., as JSON) via a command-line interface built with argparse.
+It is intended for comparing or aggregating language-identification outcomes across a codebase or text corpus."""
 
 import argparse
 import json
@@ -9,7 +11,6 @@ import threading
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
-
 import gcld3
 import pycld2 as cld2
 from dh import is_binary

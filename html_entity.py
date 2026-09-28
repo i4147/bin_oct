@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that recursively processes text files (either passed as CLI arguments or discovered via a helper `get_nobinary` function that lists non-binary files under the current directory) and replaces common HTML entities (like `&lt;`, `&amp;`, `&nbsp;`, `&mdash;`, etc.) with their corresponding Unicode characters using a precompiled regex and lookup table.
+It should read each file as UTF-8, only rewrite the file if content actually changed, use `multiprocessing` to process files in parallel for performance, and track/report which files were changed versus which raised errors during processing."""
 
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
-
 from dh import get_nobinary
 
 HTML_ENTITIES = {

@@ -30,7 +30,6 @@ import cv2
 import pytesseract
 from PIL import Image
 
-
 _ANSI = {"cyan": "\033[36m", "blue": "\033[34m", "reset": "\033[0m"}
 
 
@@ -48,16 +47,12 @@ def ocr_frame(
     oem: int,
     invert: bool,
 ):
-    resized = cv2.resize(
-        frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC
-    )
+    resized = cv2.resize(frame, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     if invert:
         gray = 255 - gray
     config = f"--oem {oem} --psm {psm}"
-    return pytesseract.image_to_string(
-        Image.fromarray(gray), lang=lang, config=config
-    )
+    return pytesseract.image_to_string(Image.fromarray(gray), lang=lang, config=config)
 
 
 def emit(
@@ -85,16 +80,12 @@ def worker(
         if item is None:
             break
         frame_num, frame = item
-        text = ocr_frame(
-            frame, opts.scale, opts.lang, opts.psm, opts.oem, opts.invert
-        )
+        text = ocr_frame(frame, opts.scale, opts.lang, opts.psm, opts.oem, opts.invert)
         emit(frame_num, text, out_path, opts.min_chars)
         done_q.put((frame_num, text))
 
 
-def run_threaded(
-    video: Path, out_path: Path, opts: argparse.Namespace
-) -> None:
+def run_threaded(video: Path, out_path: Path, opts: argparse.Namespace) -> None:
     cap = cv2.VideoCapture(str(video))
     in_q: "Queue" = Queue(maxsize=opts.queue_size)
     done_q: "Queue" = Queue()
@@ -130,18 +121,14 @@ def run_threaded(
         w.join()
 
 
-def run_sequential(
-    video: Path, out_path: Path, opts: argparse.Namespace
-) -> None:
+def run_sequential(video: Path, out_path: Path, opts: argparse.Namespace) -> None:
     cap = cv2.VideoCapture(str(video))
     frame_num = opts.frame_start
     while True:
         ok, frame = cap.read()
         if not ok:
             break
-        text = ocr_frame(
-            frame, opts.scale, opts.lang, opts.psm, opts.oem, opts.invert
-        )
+        text = ocr_frame(frame, opts.scale, opts.lang, opts.psm, opts.oem, opts.invert)
         emit(frame_num, text, out_path, opts.min_chars)
         frame_num += 1
     cap.release()
@@ -226,9 +213,7 @@ def main(argv: Optional[list] = None) -> int:
         args.frame_start = 1 if args.mode == "threaded" else 0
 
     out_path: Path = (
-        args.output
-        if args.output is not None
-        else args.input.with_suffix(".txt")
+        args.output if args.output is not None else args.input.with_suffix(".txt")
     )
 
     if args.mode == "threaded":

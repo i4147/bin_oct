@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python utility that merges the text contents of multiple files found under a working directory into one or more consolidated output files.
+It should read files safely (ignoring undecodable/binary content via helper functions like get_nobinary, get_random_filename, and should_skip from a "dh" module), optionally filter files by a list of extensions, and skip empty or unreadable files, printing a message if nothing qualifies.
+It must support two modes: merging everything into a single randomly-named output file (reusing the shared extension when all filtered files share one), or grouping files by extension into separate output files inside a "mer..." subdirectory.
+The script should use argparse to expose these options (input paths, extension filter, group-by-extension flag) as CLI arguments and return the list of generated output file paths."""
 
 import argparse
 from pathlib import Path
-
 from dh import get_nobinary, get_random_filename, should_skip
 
 

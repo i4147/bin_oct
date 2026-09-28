@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans the current directory tree for license files using a custom "dh" helper module to list all files and extract filenames and extensions.
+It should identify files whose name starts with "LICENSE" (case-insensitive) and whose extension is empty or one of .md, .txt, .rst, skipping symlinks and non-files.
+For each match found, print its filename and extension, then print the total count of matched files, and finally clear the contents of every matched license file by overwriting it with an empty string."""
 
 from pathlib import Path
-
 import dh
 
 EXT = [".md", ".txt", ".rst"]

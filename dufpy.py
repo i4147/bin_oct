@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that recursively finds all `.py` files under given directories (using a `get_pyfiles` helper) and strips type annotations from each file's source code.
+It should use the `ast` module with a custom `NodeTransformer` subclass to remove function argument/return annotations and convert annotated assignments into plain assignments (or `pass` if no value), then regenerate source code from the modified AST.
+File processing should run in parallel via `joblib.Parallel`/`delayed` (with a configurable worker count), use `xxhash` to detect whether content actually changed before rewriting files, and print progress/status messages using a `cprint` helper, skipping files that fail to read or parse."""
+
 import ast
 from collections.abc import Callable, Iterable
 from os import scandir as os_scandir
 from pathlib import Path
 from typing import Any
-
 from dh import cprint, get_pyfiles
 from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest
@@ -31,7 +34,6 @@ class TypeAnnotationStripper(ast.NodeTransformer):
         if node.value is not None:
             new_node = ast.Assign(targets=[node.target], value=node.value)
             return ast.copy_location(new_node, node)
-
         pass_node = ast.Pass()
         return ast.copy_location(pass_node, node)
 
@@ -51,11 +53,9 @@ def process_file(path: str | Path) -> tuple[str, str] | None:
     try:
         code = p.read_text(encoding="utf-8")
         parsed = ast.parse(code)
-
         stripper = TypeAnnotationStripper()
         parsed = stripper.visit(parsed)
         ast.fix_missing_locations(parsed)
-
         unparsed = ast.unparse(parsed)
         digest = xxh64_hexdigest(unparsed.encode("utf-8"))
         return digest, str(p)
@@ -66,26 +66,20 @@ def process_file(path: str | Path) -> tuple[str, str] | None:
 def main() -> None:
     cwd: Path = Path.cwd()
     files: list[Path] = list(get_pyfiles(cwd))
-
     file_dict: dict[str, list[str]] = {}
-
     raw_results = mpf(process_file, files)
     results: list[tuple[str, str]] = [res for res in raw_results if res is not None]
-
     for digest, path in results:
         file_dict.setdefault(digest, []).append(path)
-
     for digest, paths in file_dict.items():
         if len(paths) > 1:
             print(f"files with hash: {digest}")
             for path in paths:
                 print(f"  - {path}")
-
     deleted: int = 0
     for paths in file_dict.values():
         if len(paths) <= 1:
             continue
-
         for path in paths[1:]:
             file_path = Path(path)
             if file_path.exists():
@@ -95,7 +89,6 @@ def main() -> None:
                     deleted += 1
                 except OSError as e:
                     print(f"Failed to remove {path}: {e}")
-
     if deleted:
         cprint(f"{deleted} files removed.", "cyan")
     else:
