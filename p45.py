@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility function that takes a file path to a Python source file and reformats/cleans it in place, while first creating a ".bak" backup copy of the original content.
+It should read the file line by line, stripping out lines containing "# type:" comments and shebang lines ("#!..."), while carefully detecting and preserving multi-line docstrings (using triple-quote markers imported as DOC_TH1 and DOC_TH2 from a "dh" module) so their internal content is not mistakenly altered.
+The function should use the ast module for parsing/validation support and handle file I/O errors gracefully, printing errors to stderr (e.g., when the file doesn't exist or the backup can't be created) rather than raising exceptions.
+It relies on standard libraries like sys, textwrap, and pathlib.Path for path handling."""
 
 import ast
 import sys
 import textwrap
 from pathlib import Path
-
 from dh import DOC_TH1, DOC_TH2
-
-
 def format_python_file(path: Path) -> None:
     if not path.exists():
         print(f"Error: File not found at {path}", file=sys.stderr)
@@ -129,8 +129,6 @@ def format_python_file(path: Path) -> None:
         print(f"AST Syntax Error: {e}", file=sys.stderr)
         Path(backup_path).replace(path)
         print(f"Restored {path} from backup.")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python format_python.py <path>")

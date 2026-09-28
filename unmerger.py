@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that splits a single merged text file back into multiple separate files.
+The input file contains multiple file contents concatenated together, each preceded by a marker line in the format "# File: <path>"; the script should parse this file using a regex to extract each path and its corresponding content.
+For each extracted file, it must create any necessary parent directories, and if a file already exists at that path, it should avoid overwriting it by generating a unique filename (appending an incrementing counter like "_1", "_2" before the extension).
+The script takes the merged file path as a single command-line argument, writes out each reconstructed file, and prints a status line for each ("Created" or "Renamed to") showing the final path used."""
 
 import re
 import sys
 from pathlib import Path
-
-
 def parse_merged_file(path):
     with open(path, "r") as f:
         content = f.read()
@@ -18,8 +19,6 @@ def parse_merged_file(path):
             file_content = parts[i + 1].lstrip("\n").rstrip()
             files[path] = file_content
     return files
-
-
 def get_unique_path(path):
     path = Path(path)
     if not path.exists():
@@ -34,8 +33,6 @@ def get_unique_path(path):
         if not new_path.exists():
             return new_path
         counter += 1
-
-
 def main():
     if len(sys.argv) < 2:
         print("Usage: python script.py <input_file>")
@@ -49,7 +46,5 @@ def main():
         unique_path.write_text(file_content)
         status = "Renamed to" if unique_path.name != path.name else "Created"
         print(f"{status}: {unique_path}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,18 +1,16 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that spell-checks a text file using the pyspellchecker library, processing the file line by line in parallel with a multiprocessing Pool for performance.
+For each line, it should scan words (including handling apostrophes and preserving original casing such as title-case or all-caps) and either report misspelled words with suggested corrections to the console, or, if an autofix flag is enabled, automatically replace misspelled words with the best correction while preserving the original word's capitalization style.
+It should accept input via argparse (e.g., file path and an autofix option), track counts of misspelled and fixed words, and output the corrected text (if autofixing) or a report of misspellings and suggestions."""
 
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
-
 from spellchecker import SpellChecker
-
-
 def process_line(line: str, autofix: bool = False) -> tuple:
     spell = SpellChecker()
     misspelled_count = 0
     fixed_count = 0
-
     def check_and_replace(match):
         nonlocal misspelled_count, fixed_count
         word = match.group(0)
@@ -43,11 +41,8 @@ def process_line(line: str, autofix: bool = False) -> tuple:
                 print(f"Misspelled: '{word}' | Suggestions: {suggestions}")
                 return word
         return word
-
     updated_line = re.sub(r"[a-zA-Z']+", check_and_replace, line)
     return updated_line, misspelled_count, fixed_count
-
-
 def process_file(path: str, autofix: bool = False, num_processes: int | None = None):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -102,8 +97,6 @@ def process_file(path: str, autofix: bool = False, num_processes: int | None = N
             print(
                 f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix."
             )
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Detect and optionally autofix misspelled words in a file using parallel processing."

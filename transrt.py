@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that translates the text content of an SRT subtitle file into another language while preserving timing and formatting.
+It should use argparse to accept an input SRT file path, source language, and target language, parse the file with pysrt, and use deep_translator's GoogleTranslator to perform the translation.
+To minimize API calls, subtitle entries should be grouped into batches (joined with a delimiter like " ||| ") up to a maximum character limit (e.g., 2000 characters) before being sent for translation, then split back apart and reassigned to each subtitle's text field.
+The script should print progress messages for batch preparation and processing, include a short delay between batch requests to avoid rate limiting, and handle translation errors per batch without stopping the entire process."""
 
 import argparse
 import os
 import time
-
 import pysrt
 from deep_translator import GoogleTranslator
-
-
 def translate_srt(input_file, source_lang, target_lang):
     subs = pysrt.open(input_file, encoding="utf-8")
     translator = GoogleTranslator(source=source_lang, target=target_lang)
@@ -45,8 +45,6 @@ def translate_srt(input_file, source_lang, target_lang):
     output_file = f"translated_{os.path.basename(input_file)}"
     subs.save(output_file, encoding="utf-8")
     print(f"Translation complete! Saved to {output_file}")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Translate SRT files in chunks.")
     parser.add_argument("-i", "--input", required=True)

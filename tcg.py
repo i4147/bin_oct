@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Termux-focused Python CLI utility that reads script source code from the Android clipboard via termux-clipboard-get and saves it as a new executable script file.
+The script should take a target filename as an argument, infer the scripting language (python, bash, sh, or rust) from the file extension, and replace or insert the appropriate Termux-specific shebang line at the top of the clipboard content.
+It should place the resulting file into the correct script directory (such as ~/bin, ~/bashbin, or ~/.cargo/bin depending on language), make it executable, and also keep an archived copy under ~/isaac/may/scripts.
+Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong."""
 
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-
 TERMUX_SHEBANGS = {
     "python": "#!/data/data/com.termux/files/home/.local/bin/python",
     "bash": "#!/data/data/com.termux/files/usr/bin/bash",
@@ -25,8 +27,6 @@ SCRIPT_DIRS = {
     Path.home() / ".cargo" / "bin",
 }
 ARCHIVE_DIR = Path.home() / "isaac" / "may" / "scripts"
-
-
 def get_clipboard_content() -> str:
     try:
         result = subprocess.run(
@@ -39,12 +39,8 @@ def get_clipboard_content() -> str:
     except FileNotFoundError:
         print("Error: termux-clipboard-get not found", file=sys.stderr)
         sys.exit(1)
-
-
 def get_language_from_extension(filename: str) -> str:
     return EXTENSION_MAP.get(Path(filename).suffix.lower(), "bash")
-
-
 def replace_shebang(content: str, lang: str) -> str:
     lines = content.splitlines()
     if lines and lines[0].startswith("#!"):
@@ -52,8 +48,6 @@ def replace_shebang(content: str, lang: str) -> str:
     lines.insert(0, TERMUX_SHEBANGS[lang])
     result = "\n".join(lines)
     return result if result.endswith("\n") else result + "\n"
-
-
 def archive_existing_file(path: Path) -> None:
     if not path.exists():
         return
@@ -70,8 +64,6 @@ def archive_existing_file(path: Path) -> None:
     except OSError as e:
         print(f"❌ Failed to archive: {e}", file=sys.stderr)
         sys.exit(1)
-
-
 def create_symlink(script_path: Path) -> None:
     if script_path.suffix.lower() == ".rs":
         return
@@ -84,8 +76,6 @@ def create_symlink(script_path: Path) -> None:
             print(f"  → Symlink: {symlink_path.name}")
         except OSError as e:
             print(f"  ⚠️  Symlink failed: {e}", file=sys.stderr)
-
-
 def main() -> None:
     archive = "-a" in sys.argv
     args = [arg for arg in sys.argv[1:] if arg != "-a"]
@@ -99,7 +89,6 @@ def main() -> None:
         if not ans == "y":
             sys.exit(0)
     output_path = Path(filename)
-
     is_script_dir = (
         Path.cwd() in SCRIPT_DIRS or Path.cwd().name == "bin"
     ) and output_path.suffix.lower() in SCRIPT_EXTENSIONS
@@ -123,7 +112,5 @@ def main() -> None:
     if is_script_dir:
         output_path.chmod(0o755)
         create_symlink(output_path)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

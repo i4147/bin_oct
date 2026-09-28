@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python script that sanity-checks all installed Termux Python packages by verifying their recorded distribution files actually exist on disk and by validating their declared dependencies against the set of currently installed packages.
+It should use importlib.metadata to enumerate installed distributions, log results via the logging module to stdout with INFO-level formatting, and accept a repeatable "-i/--ignore" command-line argument for specifying glob patterns or filenames (e.g., "*.md") to skip during the missing-file check, always excluding ".pyc" files automatically.
+The script should report which package files are missing and which dependencies are broken or unsatisfied, helping identify corrupted or incomplete package installations."""
 
 import argparse
 import importlib.metadata
@@ -7,14 +9,11 @@ import logging
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Sanity check installed Termux Python packages."
@@ -27,15 +26,11 @@ def parse_arguments():
         help="Glob pattern or filename to ignore when checking package files (e.g., '*.md'). Can be used multiple times.",
     )
     return parser.parse_args()
-
-
 def should_ignore_file(path: Path, ignore_patterns: list[str]) -> bool:
     if path.suffix == ".pyc":
         return True
     name = path.name
     return any(fnmatch(name, pattern) for pattern in ignore_patterns)
-
-
 def check_package_files(dist, ignore_patterns: list[str]) -> list[str]:
     missing_files = []
     if dist.files is None:
@@ -47,8 +42,6 @@ def check_package_files(dist, ignore_patterns: list[str]) -> list[str]:
         if not path.exists():
             missing_files.append(str(package_file))
     return missing_files
-
-
 def check_package_dependencies(
     dist, installed_map: dict[str, str]
 ) -> tuple[list[str], list[str]]:
@@ -71,8 +64,6 @@ def check_package_dependencies(
             broken_deps.append(base_requirement)
             clean_reqs_for_file.append(base_requirement)
     return broken_deps, clean_reqs_for_file
-
-
 def main():
     args = parse_arguments()
     logging.info("Starting Termux site-packages verification scan...\n")
@@ -119,7 +110,5 @@ def main():
     logging.info(f"Total packages evaluated: {len(distributions)}")
     logging.info(f"Packages with missing files: {corrupted_packages_count}")
     logging.info(f"Packages with missing dependencies: {broken_deps_count}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

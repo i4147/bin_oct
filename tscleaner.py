@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans the current working directory for source code files (based on file suffix mappings such as .ts, .tsx, .js, .cpp, etc.) and parses each one using the appropriate tree-sitter language grammar, skipping common build/dependency/VCS directories like .git, node_modules, __pycache__, dist, and build.
+It should use a multiprocessing Pool (with a configurable worker count) to parse files in parallel for performance, and load the correct tree-sitter language module dynamically per file extension via a dataclass-based language specification table.
+The script should handle file access safely (checking file type/permissions via os and stat), collect and report parsing results or errors for each processed file, and exit with an appropriate status code reflecting overall success or failure."""
 
 import os
 import stat
@@ -8,7 +10,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 WORKERS = 8
 ROOT = Path.cwd()
 SKIP_DIRECTORY_NAMES = frozenset(
@@ -30,14 +31,10 @@ SKIP_DIRECTORY_NAMES = frozenset(
         "vendor",
     }
 )
-
-
 @dataclass(frozen=True, slots=True)
 class LanguageSpec:
     module_name: str
     language_function: str
-
-
 SUFFIX_SPECS: tuple[tuple[str, LanguageSpec], ...] = (
     (".d.ts", LanguageSpec("tree_sitter_typescript", "language_typescript")),
     (".tsx", LanguageSpec("tree_sitter_typescript", "language_tsx")),
@@ -70,22 +67,16 @@ SUFFIX_SPECS: tuple[tuple[str, LanguageSpec], ...] = (
     (".zsh", LanguageSpec("tree_sitter_bash", "language")),
     (".ksh", LanguageSpec("tree_sitter_bash", "language")),
 )
-
-
 def language_spec_for(path: Path) -> LanguageSpec | None:
     name = path.name.lower()
     for suffix, spec in SUFFIX_SPECS:
         if name.endswith(suffix):
             return spec
     return None
-
-
 def is_source_file(path: Path) -> bool:
     return (
         not path.is_symlink() and path.is_file() and language_spec_for(path) is not None
     )
-
-
 def iter_source_files(root: Path) -> list[Path]:
     files: list[Path] = []
     try:
@@ -106,26 +97,17 @@ def iter_source_files(root: Path) -> list[Path]:
     except OSError as exc:
         print(f"error: cannot scan {root}: {exc}", file=sys.stderr)
     return files
-
-
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
-
     from tree_sitter import Language
-
     module = import_module(spec.module_name)
     language_factory = getattr(module, spec.language_function)
     return Language(language_factory())
-
-
 def make_parser(spec: LanguageSpec) -> Any:
     from tree_sitter import Parser
-
     parser = Parser()
     parser.language = get_language(spec)
     return parser
-
-
 def collect_comment_ranges(root_node: Any) -> list[tuple[int, int]]:
     ranges: list[tuple[int, int]] = []
     stack = [root_node]
@@ -139,8 +121,6 @@ def collect_comment_ranges(root_node: Any) -> list[tuple[int, int]]:
             stack.extend(reversed(children))
     ranges.sort()
     return ranges
-
-
 def remove_comment_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes:
     if not ranges:
         return source
@@ -153,8 +133,6 @@ def remove_comment_ranges(source: bytes, ranges: list[tuple[int, int]]) -> bytes
         previous_end = end
     output.extend(source[previous_end:])
     return bytes(output)
-
-
 def atomic_write(path: Path, content: bytes) -> None:
     if not content:
         return
@@ -171,8 +149,6 @@ def atomic_write(path: Path, content: bytes) -> None:
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
-
-
 def process_file(path_text: str) -> tuple[str, int, str | None]:
     path = Path(path_text)
     try:
@@ -191,8 +167,6 @@ def process_file(path_text: str) -> tuple[str, int, str | None]:
         return str(path), len(ranges), None
     except (OSError, ValueError, TypeError, ImportError, AttributeError) as exc:
         return str(path), 0, str(exc)
-
-
 def main() -> int:
     files = iter_source_files(ROOT)
     if not files:
@@ -219,7 +193,5 @@ def main() -> int:
         f"\nComments removed: {comments_removed}"
     )
     return 1 if failures else 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

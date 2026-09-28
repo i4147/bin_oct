@@ -1,32 +1,26 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that searches PyPI for packages matching a given query string.
+It should query the PyPI JSON API, filter package names containing the query text (case-insensitive), and return a list of Package dataclass instances holding each package's name, version, summary, and PyPI URL, optionally limited to a maximum number of results.
+Use argparse to accept the search query and an optional result limit from the command line, and print each matching package's formatted details to stdout, while gracefully handling and reporting network/request errors to stderr."""
 
 import argparse
 import json
 import sys
 from dataclasses import dataclass
-
 import requests
-
-
 @dataclass
 class Package:
     name: str
     version: str
     summary: str
     url: str
-
     def __str__(self) -> str:
         return f"{self.name} ({self.version})\n  {self.summary}\n  {self.url}"
-
-
 class PyPISearch:
     BASE_URL = "https://pypi.org/pypi"
     SEARCH_URL = "https://pypi.org/pypi/_/json"
-
     def __init__(self, timeout: int = 10):
         self.timeout = timeout
-
     def search(self, query: str, limit: int | None = None) -> list[Package]:
         try:
             response = requests.get(
@@ -54,7 +48,6 @@ class PyPISearch:
             if limit and len(results) >= limit:
                 break
         return sorted(results, key=lambda p: p.name.lower())
-
     def search_json(self, query: str, limit: int | None = None) -> str:
         results = self.search(query, limit)
         return json.dumps(
@@ -69,8 +62,6 @@ class PyPISearch:
             ],
             indent=2,
         )
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Search PyPI packages",
@@ -110,7 +101,5 @@ def main():
         for pkg in results:
             print(pkg)
             print()
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that recursively converts DOS/Windows line endings (CRLF) to Unix line endings (LF) across a given list of files and/or directories.
+It should use argparse to accept target paths, skip binary files (via an is_binary check) and common non-source directories like .git, __pycache__, and .idea, and perform the actual line-ending conversion using a dos2unix helper function.
+To speed up processing of large file trees, it should parallelize the conversion work across multiple files using a multiprocessing Pool with a configurable worker count, and use loguru to log per-file results (converted, already Unix format, skipped, or errored) as well as an overall summary."""
 
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
-
 from dh import is_binary
 from dos2unix import dos2unix
 from loguru import logger
-
 MAX_WORKERS = 8
 CHUNK_SIZE = 32768
 SKIP_DIRS = {
@@ -20,12 +20,8 @@ SKIP_DIRS = {
     ".egg-info",
     ".idea",
 }
-
-
 def should_skip_dir(directory: Path) -> bool:
     return directory.name in SKIP_DIRS
-
-
 def convert_file(path: Path) -> tuple[str, bool, str]:
     path = Path(path)
     try:
@@ -45,8 +41,6 @@ def convert_file(path: Path) -> tuple[str, bool, str]:
             return (str(path), False, f"Read/Write error: {e}")
     except Exception as e:
         return (str(path), False, f"Error: {e}")
-
-
 def find_text_files(paths: list[Path]) -> list[Path]:
     files = []
     for path in paths:
@@ -60,8 +54,6 @@ def find_text_files(paths: list[Path]) -> list[Path]:
                 if text_file.is_file() and not is_binary(text_file):
                     files.append(text_file)
     return files
-
-
 def get_input_paths(input_args: list[str] | None) -> list[Path]:
     if not input_args:
         return [Path.cwd()]
@@ -73,8 +65,6 @@ def get_input_paths(input_args: list[str] | None) -> list[Path]:
         else:
             logger.warning(f"Path does not exist: {arg}")
     return paths
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Convert DOS/Windows line endings (CRLF) to Unix (LF)",
@@ -137,7 +127,5 @@ def main():
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

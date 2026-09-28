@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that recursively finds and deletes empty directories under a given root path, processing subdirectories from deepest to shallowest so that nested empty directories cascade properly.
+It should accept the root directory as input via argparse, along with optional --dry-run (to only report what would be deleted without deleting) and --verbose flags, and output the count and list of removed directories.
+The script must skip certain protected directories by name (e.g., "tmp", "cache", "bin", ".git", "etc", "config", "var") or by path component, as well as any directory whose name starts with "mc" and whose parent is named "tmp", printing a skip message for each excluded directory when verbose mode is enabled."""
 
 import argparse
 import sys
 from pathlib import Path
-
 EXCLUDED_NAMES: set[str] = {"tmp", "cache", "bin", ".git", "etc", "config", "var"}
 EXCLUDED_PATH_COMPONENTS: set[str] = {".git", "tmp", "etc", "var", "config"}
-
-
 def is_excluded(path: Path, root_path: Path) -> bool:
     if path.name in EXCLUDED_NAMES:
         return True
@@ -19,8 +18,6 @@ def is_excluded(path: Path, root_path: Path) -> bool:
     except ValueError:
         pass
     return bool(path.name.startswith("mc") and path.parent.name == "tmp")
-
-
 def delete_empty_dirs_iterative(
     root: Path, dry_run: bool = False, verbose: bool = False
 ) -> tuple[int, list[Path]]:
@@ -67,8 +64,6 @@ def delete_empty_dirs_iterative(
                 file=sys.stderr,
             )
     return removed_count, removed_dirs_list
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Find and remove empty directories, excluding specified ones."
@@ -113,7 +108,5 @@ def main() -> None:
             print(f"- {d_path.relative_to(root_path)}")
     else:
         print("No empty dir.")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that converts GNU gettext binary .mo files into .po text files using the msgunfmt utility.
+It should first verify that msgunfmt is installed and accessible on the system, exiting with an error if not.
+Given one or more .mo file paths (via argparse), it should run msgunfmt on each, write the output to a corresponding .po file, validate that the result is non-empty, and optionally delete the original .mo file after a successful conversion.
+The script should support a verbose flag for detailed progress messages and handle errors gracefully, such as missing files, non-.mo extensions, failed subprocess calls, and empty output, printing clear error or warning messages for each case."""
 
 import argparse
 import subprocess
 import sys
 from pathlib import Path
-
-
 def check_msgunfmt() -> bool:
     try:
         subprocess.run(
@@ -18,8 +19,6 @@ def check_msgunfmt() -> bool:
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
-
-
 def mo_to_po(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
     mo_path = Path(mo_path)
     if not mo_path.exists():
@@ -57,13 +56,10 @@ def mo_to_po(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
         if po_path.exists():
             po_path.unlink()
         return False
-
-
 def mo_to_po_python_only(
     mo_path, remove_orig: bool = True, verbose: bool = False
 ) -> bool:
     import struct
-
     mo_path = Path(mo_path)
     po_path = mo_path.with_suffix(".po")
     try:
@@ -121,8 +117,6 @@ def mo_to_po_python_only(
         if po_path.exists():
             po_path.unlink()
         return False
-
-
 def process_directory(
     directory: Path,
     recursive: bool = False,
@@ -150,8 +144,6 @@ def process_directory(
         else:
             fail_count += 1
     print(f"\nSummary: {success_count} converted, {fail_count} failed")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Convert .mo files to .po files in-place",
@@ -209,7 +201,5 @@ Examples:
     else:
         print(f"Error: Path does not exist: {path}")
         sys.exit(1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

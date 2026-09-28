@@ -1,21 +1,20 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that loads and inspects a pickle (.pkl) file specified as the first command-line argument.
+It should validate that the file exists and warn if it doesn't have a .pkl extension, then load it with pickle.load and print its type and approximate size.
+The script should recursively convert the loaded object into a JSON-serializable form (handling primitives, lists/tuples, dicts, sets, and falling back to string representation for other objects) and pretty-print its contents, with dict contents shown via json.dumps formatting.
+It must also handle and report errors gracefully, such as a missing file or a pickle that fails to load."""
 
 import json
 import pickle
 import sys
 from pathlib import Path
 from typing import Any
-
-
 def is_json_serializable(obj: Any) -> bool:
     try:
         json.dumps(obj)
         return True
     except (TypeError, ValueError):
         return False
-
-
 def serialize_for_json(obj: Any) -> Any:
     if isinstance(obj, (str, int, float, bool, type(None))):
         return obj
@@ -29,8 +28,6 @@ def serialize_for_json(obj: Any) -> Any:
         return str(obj)
     else:
         return str(obj)
-
-
 def main():
     if len(sys.argv) < 2:
         print("Usage: python script.py <pickle_file>")
@@ -73,7 +70,5 @@ def main():
             print(f"\n⚠ Converted non-serializable objects → {json_path}")
         except Exception as e:
             print(f"\n✗ Cannot convert to JSON: {e}")
-
-
 if __name__ == "__main__":
     main()

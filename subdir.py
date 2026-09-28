@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility script that recursively finds and extracts common archive formats (zip, whl, tar, tar.gz/tgz, tar.bz2/tbz2, tar.xz/txz, and 7z) within a given directory.
+For each archive found, it should create a safely-named, non-colliding output folder (appending an incrementing suffix like "_1", "_2" if the target name already exists) and extract the archive's contents into it, using the appropriate library (tarfile, zipfile, or py7zr) based on the file extension.
+The extraction functions should return a boolean success indicator and gracefully handle exceptions such as corrupted or unsupported archive files without crashing the script.
+Include necessary imports (shutil, tarfile, zipfile, pathlib.Path, py7zr) to support these file operations."""
 
 import shutil
 import tarfile
 import zipfile
 from pathlib import Path
-
 import py7zr
-
-
 def safe_mkdir(base: Path) -> Path:
     if not base.exists():
         base.mkdir()
@@ -20,8 +20,6 @@ def safe_mkdir(base: Path) -> Path:
             candidate.mkdir()
             return candidate
         i += 1
-
-
 def unzip_file(archive: Path, target_dir: Path) -> bool:
     archive_lower = archive.name.lower()
     try:
@@ -54,8 +52,6 @@ def unzip_file(archive: Path, target_dir: Path) -> bool:
         FileNotFoundError,
     ):
         return False
-
-
 def main() -> None:
     cwd = Path.cwd()
     for item in cwd.iterdir():
@@ -77,7 +73,5 @@ def main() -> None:
             print(f"[OK] Unzipped and removed: {item.name}")
         else:
             print(f"[SKIP] Not a zip or unzip failed: {item.name}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

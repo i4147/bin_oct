@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that reformats a given Python source file by reorganizing its top-level statements: it should read the file, preserve a leading shebang line and the module docstring if present, separate out any `if __name__ == "__main__":` block from other top-level nodes, and then sort or reorder the remaining code elements according to some defined criteria (e.g., grouping imports, functions, classes) while reconstructing the file with the shebang, docstring, sorted code, and the main block appropriately placed.
+The script takes a file path as input, parses it using the `ast` module, handles read/parse errors gracefully by printing an error message and returning early, and writes or outputs the reorganized source code.
+It should be usable as a command-line tool via `sys.argv` and `pathlib.Path`."""
 
 import ast
 import sys
 from pathlib import Path
-
-
 def sort_python_script(path: Path) -> None:
     try:
         source_code = path.read_text(encoding="utf-8")
@@ -102,8 +102,6 @@ def sort_python_script(path: Path) -> None:
         print(f"Successfully sorted and saved: {tmp_path}")
     except Exception as e:
         print(f"Error writing to {path}: {e}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python sort_script.py <path_to_python_script>")

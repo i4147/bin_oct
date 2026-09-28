@@ -1,20 +1,18 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python class named WheelInspector that inspects Python wheel (.whl) package files using zipfile, with an optional verbose logging mode (printing "[INSPECT]" prefixed messages) and using loguru as an import.
+It should implement an inspect_wheel method that takes a wheel file Path, returns an error dict if the file doesn't exist, and otherwise opens the zip archive to collect the filename, size in MB, total file count, list of all contained files, and a breakdown of file types.
+It must also parse the METADATA file (if present) into a key-value dictionary by splitting lines on the first colon, and read the WHEEL file's content for further processing.
+The output should be a structured dictionary summarizing the wheel's contents and metadata for inspection purposes."""
 
 import zipfile
 from pathlib import Path
-
 from loguru import logger
-
-
 class WheelInspector:
     def __init__(self, verbose: bool = False) -> None:
         self.verbose = verbose
-
     def log(self, message: str) -> None:
         if self.verbose:
             print(f"[INSPECT] {message}")
-
     def inspect_wheel(self, wheel_path: Path) -> dict:
         if not wheel_path.exists():
             return {"error": f"File not found: {wheel_path}"}
@@ -48,7 +46,6 @@ class WheelInspector:
                 return info
         except Exception as e:
             return {"error": str(e)}
-
     def validate_wheel(self, wheel_path: Path) -> tuple[bool, list[str]]:
         issues = []
         try:
@@ -69,7 +66,6 @@ class WheelInspector:
         except Exception as e:
             issues.append(f"Error reading wheel: {e!s}")
         return len(issues) == 0, issues
-
     def inspect_directory(self, directory: Path) -> list[dict]:
         wheels = list(directory.glob("*.whl"))
         results = []
@@ -81,7 +77,6 @@ class WheelInspector:
             info["issues"] = issues
             results.append(info)
         return results
-
     def print_inspection(self, wheel_path: Path) -> None:
         info = self.inspect_wheel(wheel_path)
         if "error" in info:
@@ -117,11 +112,8 @@ class WheelInspector:
             for issue in issues:
                 print(f"  - {issue}")
         print(f"{'=' * 40}\n")
-
-
 def main() -> None:
     import argparse
-
     parser = argparse.ArgumentParser(description="Inspect and validate .whl files")
     parser.add_argument("wheel", nargs="?", help="Path to .whl file or directory")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
@@ -135,7 +127,5 @@ def main() -> None:
     elif path.is_dir():
         for p in path.rglob("*.whl"):
             inspector.print_inspection(p)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

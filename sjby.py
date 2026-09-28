@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python command-line script that reads a JSON file path from the command line arguments and loads its top-level object into memory.
+Support an optional "-v" flag placed before the path: without it, sort the object's keys by the length of the key string; with it, sort keys by the length of the value when the value is a list (treating non-list values as length 0).
+Rebuild the dictionary in the resulting sorted order, serialize it back to JSON with an indent of 2 and non-ASCII characters preserved, validate the serialized string by parsing it again, and then overwrite the original file with this formatted, sorted JSON.
+If no file path argument is provided, the script should exit with a non-zero status code."""
+
 import json
 import sys
 from pathlib import Path
 from typing import Any, Callable
-
-
 def main() -> None:
     args = sys.argv[1:]
     verbose = False
@@ -24,7 +27,5 @@ def main() -> None:
     serialized: str = json.dumps(sorted_data, ensure_ascii=False, indent=2)
     json.loads(serialized)
     path.write_text(serialized, encoding="utf-8")
-
-
 if __name__ == "__main__":
     main()

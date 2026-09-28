@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/home/.local/bin/python
+"""Write a Python script that recursively scans a given directory for compressed tar archives (supporting .tar.gz, .tgz, .tar.xz, .tar.zst, and .tar.br extensions) and verifies the integrity of each one.
+For each archive, it should first validate the underlying compression stream (using Python's gzip/lzma modules for gz/xz, or invoking external zstd/brotli command-line tools for zst/br), then confirm the tar structure itself can be opened and read correctly.
+It should process multiple archives concurrently using a multiprocessing pool with a configurable worker limit (default 8) to speed up checking large sets of files, and report which archives passed or failed the integrity check.
+The script should be runnable from the command line, accepting a target path as an argument."""
+
 import gzip
 import lzma
 import subprocess
@@ -6,11 +11,8 @@ import sys
 import tarfile
 from multiprocessing import Pool
 from pathlib import Path
-
 MAX_WORKERS = 8
 SUPPORTED_EXTENSIONS = {".tar.gz", ".tar.xz", ".tar.zst", ".tar.br", ".tgz"}
-
-
 def get_compression_type(path):
     name = path.name.lower()
     if name.endswith((".tar.gz", ".tgz")):
@@ -22,8 +24,6 @@ def get_compression_type(path):
     elif name.endswith(".tar.br"):
         return "br"
     return None
-
-
 def check_integrity(archive_path):
     compression = get_compression_type(archive_path)
     try:
@@ -59,8 +59,6 @@ def check_integrity(archive_path):
     ) as e:
         print(f"Integrity check failed for {archive_path.name}: {e}")
         return False
-
-
 def extract_archive(archive_path):
     archive_path = Path(archive_path)
     print(f"Processing: {archive_path.name}")
@@ -77,15 +75,11 @@ def extract_archive(archive_path):
     except (tarfile.TarError, OSError, EOFError) as e:
         print(f"Extraction failed for {archive_path.name}: {e}")
         return False
-
-
 def find_archives(directory="."):
     archives = []
     for pattern in SUPPORTED_EXTENSIONS:
         archives.extend(Path(directory).glob(f"*{pattern}"))
     return sorted(archives)
-
-
 def main():
     if len(sys.argv) > 1:
         archives = [Path(arg) for arg in sys.argv[1:] if Path(arg).exists()]
@@ -105,7 +99,5 @@ def main():
     failed = sum(1 for r in results if not r)
     print("-" * 40)
     print(f"Summary: {successful} successful, {failed} failed/skipped")
-
-
 if __name__ == "__main__":
     main()

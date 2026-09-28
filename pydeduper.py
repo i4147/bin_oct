@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that recursively scans a directory (or archive files like zip, tar, whl, and various compressed formats such as gz, bz2, xz, zst, br) for Python source files, and extracts top-level definitions—functions, classes, and constants/type aliases—using the ast module.
+It should deduplicate these definitions across the entire codebase by computing content hashes (e.g., via hashlib), using multiprocessing for parallel file/archive processing to speed up scanning.
+The script should output the deduplicated, unique definitions into organized files grouped by kind (e.g., funcs.py, classes.py, const.py), while logging progress and issues using loguru if available, falling back to the standard logging module otherwise, and should be configurable via argparse command-line arguments (such as input path, output directory, and worker count)."""
 
 import argparse
 import ast
@@ -15,39 +17,30 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
-
 try:
     from loguru import logger
-
     _HAS_LOGURU = True
 except ImportError:  # pragma: no cover
     import logging
-
     logger = logging.getLogger("pydedup")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     _HAS_LOGURU = False
-
 try:
     import zstandard as zstd  # type: ignore
-
     _HAS_ZSTD = True
 except ImportError:
     zstd = None  # type: ignore
     _HAS_ZSTD = False
-
 try:
     import brotli  # type: ignore
-
     _HAS_BROTLI = True
 except ImportError:
     try:
         import brotlicffi as brotli  # type: ignore
-
         _HAS_BROTLI = True
     except ImportError:
         brotli = None  # type: ignore
         _HAS_BROTLI = False
-
 ARCHIVE_SUFFIXES = (
     ".zip",
     ".whl",
@@ -61,22 +54,15 @@ ARCHIVE_SUFFIXES = (
 )
 COMPRESSED_SUFFIXES = (".gz", ".bz2", ".xz", ".lzma", ".zst", ".br")
 PYTHON_SUFFIX = ".py"
-
 KIND_ORDER = ("func", "class", "const")
 KIND_TO_FILE_DEFAULT = {"func": "funcs.py", "class": "classes.py", "const": "const.py"}
-
 TYPEVAR_NAMES = {"TypeVar", "NewType", "ParamSpec", "TypeVarTuple"}
-
 SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".venv", "venv", "node_modules"}
-
-
 @dataclass
 class Source:
     origin: str
     text: str
     path: Optional[Path] = None
-
-
 @dataclass
 class Definition:
     kind: str  # 'func' | 'class' | 'const'
@@ -88,15 +74,11 @@ class Definition:
     end_lineno: int
     imports: list[str] = field(default_factory=list)
     path: Optional[Path] = None
-
-
 def _success(msg: str, *args) -> None:
     if _HAS_LOGURU:
         logger.success(msg, *args)
     else:
         logger.info(msg, *args)
-
-
 def _setup_logging(level: str, verbose: bool) -> None:
     lvl = "DEBUG" if verbose else level.upper()
     if _HAS_LOGURU:
@@ -117,8 +99,6 @@ def _setup_logging(level: str, verbose: bool) -> None:
     else:
         valid = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
         logging.getLogger().setLevel(lvl if lvl in valid else "INFO")
-
-
 def _safe_read_text(path: Path) -> Optional[str]:
     try:
         return path.read_text(encoding="utf-8")
@@ -131,8 +111,6 @@ def _safe_read_text(path: Path) -> Optional[str]:
     except OSError as exc:
         logger.error(f"cannot read {path}: {exc}")
         return None
-
-
 def _decompress(path: Path) -> Optional[bytes]:
     suffix = path.suffix.lower()
     try:
@@ -160,8 +138,6 @@ def _decompress(path: Path) -> Optional[bytes]:
     except Exception as exc:  # noqa: BLE001
         logger.error(f"decompression failed for {path}: {exc}")
     return None
-
-
 def _iter_zip(path: Path) -> Iterator[Source]:
     try:
         with zipfile.ZipFile(path) as zf:
@@ -180,8 +156,6 @@ def _iter_zip(path: Path) -> Iterator[Source]:
                 yield Source(origin=f"{path}::{info.filename}", text=text, path=None)
     except (zipfile.BadZipFile, OSError) as exc:
         logger.error(f"cannot open zip {path}: {exc}")
-
-
 def _iter_tar(path: Path) -> Iterator[Source]:
     try:
         with tarfile.open(path, "r:*") as tf:
@@ -204,8 +178,6 @@ def _iter_tar(path: Path) -> Iterator[Source]:
                 yield Source(origin=f"{path}::{member.name}", text=text, path=None)
     except (tarfile.TarError, OSError) as exc:
         logger.error(f"cannot open tar {path}: {exc}")
-
-
 def _iter_compressed(path: Path) -> Iterator[Source]:
     raw = _decompress(path)
     if raw is None:
@@ -214,11 +186,8 @@ def _iter_compressed(path: Path) -> Iterator[Source]:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         text = raw.decode("latin-1")
-
     if ".py" in path.name or "def " in text or "class " in text:
         yield Source(origin=str(path), text=text, path=None)
-
-
 def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
     root = root.resolve()
     utils_dir = (root / "utils").resolve()
@@ -229,26 +198,21 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
             resolved = path.resolve()
         except OSError:
             continue
-
         try:
             resolved.relative_to(utils_dir)
             continue
         except ValueError:
             pass
-
         if any(part in SKIP_DIRS for part in path.relative_to(root).parts[:-1]):
             continue
-
         name_lower = path.name.lower()
         if name_lower.endswith(PYTHON_SUFFIX):
             text = _safe_read_text(path)
             if text is not None:
                 yield Source(origin=str(path), text=text, path=path)
             continue
-
         if not include_archives:
             continue
-
         full_suffixes = "".join(path.suffixes).lower()
         if full_suffixes.endswith((".zip", ".whl")):
             yield from _iter_zip(path)
@@ -258,12 +222,8 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
             yield from _iter_tar(path)
         elif full_suffixes.endswith(COMPRESSED_SUFFIXES):
             yield from _iter_compressed(path)
-
-
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
 def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
     used: set[str] = set()
     for sub in ast.walk(node):
@@ -275,7 +235,6 @@ def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
                 cur = cur.value
             if isinstance(cur, ast.Name):
                 used.add(cur.id)
-
     result: list[str] = []
     seen: set[str] = set()
     for top in tree.body:
@@ -292,8 +251,6 @@ def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
                     seen.add(stmt)
                     result.append(stmt)
     return result
-
-
 def _is_literal_value(node: ast.AST) -> bool:
     if isinstance(node, ast.Constant):
         return True
@@ -305,8 +262,6 @@ def _is_literal_value(node: ast.AST) -> bool:
             for k, v in zip(node.keys, node.values)
         )
     return False
-
-
 def _is_typevar_call(node: ast.Assign) -> bool:
     value = node.value
     if not isinstance(value, ast.Call):
@@ -317,8 +272,6 @@ def _is_typevar_call(node: ast.Assign) -> bool:
     if isinstance(func, ast.Attribute):
         return func.attr in TYPEVAR_NAMES
     return False
-
-
 def _const_names(node: ast.AST, mode: str) -> list[str]:
     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
         names = [node.target.id]
@@ -333,7 +286,6 @@ def _const_names(node: ast.AST, mode: str) -> list[str]:
         return []
     if not names:
         return []
-
     if mode == "uppercase":
         if not all(n.isupper() for n in names):
             if not (isinstance(node, ast.Assign) and _is_typevar_call(node)):
@@ -342,8 +294,6 @@ def _const_names(node: ast.AST, mode: str) -> list[str]:
         if not (isinstance(node, ast.Assign) and _is_literal_value(node.value)):
             return []
     return names
-
-
 def extract_definitions(
     text: str,
     origin: str,
@@ -355,7 +305,6 @@ def extract_definitions(
     except SyntaxError as exc:
         logger.warning(f"syntax error in {origin}: {exc}")
         return []
-
     out: list[Definition] = []
     for node in tree.body:
         kind: Optional[str] = None
@@ -389,13 +338,9 @@ def extract_definitions(
             )
         )
     return out
-
-
 def _worker(payload: tuple[str, str, Optional[Path], str]) -> list[Definition]:
     text, origin, path, const_mode = payload
     return extract_definitions(text, origin, path, const_mode)
-
-
 def _collect_all(
     sources: list[Source],
     workers: int,
@@ -413,8 +358,6 @@ def _collect_all(
     for r in results:
         out.extend(r)
     return out
-
-
 def group_duplicates(
     defs: Iterable[Definition],
     min_occurs: int = 2,
@@ -425,8 +368,6 @@ def group_duplicates(
         key = f"{d.kind}::{d.name}" if match_mode == "name" else d.content_hash
         groups[key].append(d)
     return {k: v for k, v in groups.items() if len(v) >= min_occurs}
-
-
 def _read_existing_hashes(path: Path) -> set[str]:
     if not path.exists():
         return set()
@@ -442,8 +383,6 @@ def _read_existing_hashes(path: Path) -> set[str]:
         except Exception:  # noqa: BLE001
             continue
     return hashes
-
-
 def write_utils(
     groups: dict[str, list[Definition]],
     utils_dir: Path,
@@ -457,7 +396,6 @@ def write_utils(
     by_kind: dict[str, list[Definition]] = defaultdict(list)
     for group in groups.values():
         by_kind[group[0].kind].append(group[0])
-
     written: dict[str, Path] = {}
     for kind in KIND_ORDER:
         reps = by_kind.get(kind, [])
@@ -469,7 +407,6 @@ def write_utils(
         if not new_reps:
             logger.info(f"no new objects for {target}")
             continue
-
         deduped: list[Definition] = []
         seen_names: set[str] = set()
         for r in new_reps:
@@ -482,7 +419,6 @@ def write_utils(
             deduped.append(r)
         if not deduped:
             continue
-
         if not (target.exists() and target.stat().st_size > 0):
             imports: list[str] = []
             for r in deduped:
@@ -493,23 +429,19 @@ def write_utils(
                 if imp not in seen_imports:
                     seen_imports.add(imp)
                     uniq_imports.append(imp)
-
         if target.exists() and target.stat().st_size > 0:
             base = target.read_text(encoding="utf-8").rstrip() + "\n\n"
         else:
             base = '"""Auto-generated by pydedup."""\n\n'
             if uniq_imports:
                 base += "\n".join(uniq_imports) + "\n\n"
-
         body = "\n\n".join(r.source for r in deduped) + "\n"
         text = base + body
-
         try:
             ast.parse(text)
         except SyntaxError as exc:
             logger.error(f"generated {target} has syntax errors — skipping: {exc}")
             continue
-
         if dry_run:
             logger.info(f"[dry-run] would write {len(deduped)} object(s) to {target}")
         else:
@@ -517,8 +449,6 @@ def write_utils(
             _success(f"wrote {len(deduped)} object(s) to {target}")
         written[kind] = target
     return written
-
-
 def _insert_imports(lines: list[str], imports: list[str]) -> list[str]:
     if not imports:
         return lines
@@ -539,8 +469,6 @@ def _insert_imports(lines: list[str], imports: list[str]) -> list[str]:
     except SyntaxError:
         return imports + lines
     return lines[:insert_at] + imports + lines[insert_at:]
-
-
 def _patch_file(
     path: Path,
     defs: list[Definition],
@@ -553,9 +481,7 @@ def _patch_file(
     except OSError as exc:
         logger.error(f"cannot read {path}: {exc}")
         return
-
     lines = text.splitlines(keepends=True)
-
     for d in sorted(defs, key=lambda x: x.lineno, reverse=True):
         start = d.lineno - 1
         end = d.end_lineno
@@ -563,11 +489,9 @@ def _patch_file(
             logger.warning(f"invalid line range for '{d.name}' in {path}")
             continue
         del lines[start:end]
-
     names_by_kind: dict[str, list[str]] = defaultdict(list)
     for d in defs:
         names_by_kind[d.kind].append(d.name)
-
     import_lines: list[str] = []
     for kind in KIND_ORDER:
         names = names_by_kind.get(kind)
@@ -577,16 +501,13 @@ def _patch_file(
         full_module = ".".join(list(utils_rel.parts) + [module])
         names_sorted = ", ".join(sorted(set(names)))
         import_lines.append(f"from {full_module} import {names_sorted}\n")
-
     patched = _insert_imports(lines, import_lines)
     new_text = "".join(patched)
-
     try:
         ast.parse(new_text)
     except SyntaxError as exc:
         logger.error(f"patched {path} has syntax errors — original preserved: {exc}")
         return
-
     if dry_run:
         logger.info(
             f"[dry-run] would patch {path}: -{len(defs)} definition(s), +imports"
@@ -594,8 +515,6 @@ def _patch_file(
     else:
         path.write_text(new_text, encoding="utf-8")
         _success(f"patched {path}: -{len(defs)} definition(s)")
-
-
 def patch_originals(
     groups: dict[str, list[Definition]],
     utils_dir: Path,
@@ -609,9 +528,7 @@ def patch_originals(
         utils_rel = utils_dir.relative_to(root)
     except ValueError:
         utils_rel = Path("utils")
-
     file_map = {"func": func_file, "class": class_file, "const": const_file}
-
     by_file: dict[Path, list[Definition]] = defaultdict(list)
     for group in groups.values():
         for d in group:
@@ -619,11 +536,8 @@ def patch_originals(
                 logger.warning(f"cannot patch archive/compressed member {d.origin}")
                 continue
             by_file[d.path].append(d)
-
     for path, defs in by_file.items():
         _patch_file(path, defs, utils_rel, file_map, dry_run)
-
-
 def _add_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--dir",
@@ -698,14 +612,10 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
         action="store_true",
         help="show what would happen without writing anything",
     )
-
-
 def _resolve_utils_dir(args: argparse.Namespace) -> Path:
     if args.utils_dir is not None:
         return args.utils_dir.resolve()
     return (args.dir / "utils").resolve()
-
-
 def _load_sources(args: argparse.Namespace) -> list[Source]:
     root = args.dir.resolve()
     if not root.exists():
@@ -718,8 +628,6 @@ def _load_sources(args: argparse.Namespace) -> list[Source]:
     sources = list(iter_sources(root, include_archives=include_archives))
     logger.info(f"scanned {root}: {len(sources)} source unit(s)")
     return sources
-
-
 def _extract_and_group(
     args: argparse.Namespace,
 ) -> tuple[list[Definition], dict[str, list[Definition]]]:
@@ -734,17 +642,13 @@ def _extract_and_group(
         f"(min-occurs={args.min_occurs}, match-mode={args.match_mode})"
     )
     return defs, groups
-
-
 def cmd_report(args: argparse.Namespace) -> int:
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates found")
         return 0
-
     total = sum(len(g) for g in groups.values())
     _success(f"{len(groups)} duplicate group(s) covering {total} definition(s)")
-
     for key, group in sorted(
         groups.items(), key=lambda kv: (-len(kv[1]), kv[1][0].kind, kv[1][0].name)
     ):
@@ -760,14 +664,11 @@ def cmd_report(args: argparse.Namespace) -> int:
         if len({d.content_hash for d in group}) > 1:
             print(f"  note: grouped by {args.match_mode}, contents differ")
     return 0
-
-
 def cmd_copy(args: argparse.Namespace) -> int:
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates to copy")
         return 0
-
     utils_dir = _resolve_utils_dir(args)
     written = write_utils(
         groups,
@@ -783,14 +684,11 @@ def cmd_copy(args: argparse.Namespace) -> int:
     verb = "would write" if args.dry_run else "wrote"
     _success(f"{verb} {len(written)} file(s) into {utils_dir}")
     return 0
-
-
 def cmd_move(args: argparse.Namespace) -> int:
     _, groups = _extract_and_group(args)
     if not groups:
         _success("no duplicates to move")
         return 0
-
     utils_dir = _resolve_utils_dir(args)
     written = write_utils(
         groups,
@@ -800,15 +698,12 @@ def cmd_move(args: argparse.Namespace) -> int:
         args.const_file,
         dry_run=args.dry_run,
     )
-
     patchable: dict[str, list[Definition]] = {
         key: group for key, group in groups.items() if group[0].kind in written
     }
-
     if not patchable:
         logger.warning("nothing was written; skipping originals patching")
         return 0
-
     patch_originals(
         patchable,
         utils_dir,
@@ -819,8 +714,6 @@ def cmd_move(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
     )
     return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pydedup",
@@ -830,7 +723,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
     p_report = subparsers.add_parser(
         "report",
         help="show duplicate groups without modifying anything",
@@ -838,7 +730,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_args(p_report)
     p_report.set_defaults(func=cmd_report)
-
     p_copy = subparsers.add_parser(
         "copy",
         help="copy one representative of each duplicate group into utils/",
@@ -850,7 +741,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_args(p_copy)
     p_copy.set_defaults(func=cmd_copy)
-
     p_move = subparsers.add_parser(
         "move",
         help="copy into utils/ and patch the originals with imports",
@@ -862,20 +752,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_args(p_move)
     p_move.set_defaults(func=cmd_move)
-
     return parser
-
-
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     _setup_logging(args.log_level, args.verbose)
-
     if not hasattr(args, "func"):
         parser.print_help()
         return 2
-
     try:
         return int(args.func(args) or 0)
     except KeyboardInterrupt:
@@ -889,7 +773,5 @@ def main(argv: Optional[list[str]] = None) -> int:
         else:
             logger.exception(f"fatal: {exc}")
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

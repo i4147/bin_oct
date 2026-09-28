@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python/OpenCV-based multiprocessing script for Termux/Android that scans a folder of images (jpg, jpeg, png, bmp, tiff, webp), detects whether each image contains at least one human face using a Haar cascade classifier (with resizing to a max dimension of 640 for speed), and sorts/copies or moves images into separate output folders based on whether a face was detected.
+It should use multiprocessing.Pool with a worker count based on cpu_count for parallel processing, display progress with tqdm, and log all actions/errors (including missing OpenCV cascade files or unreadable images) both to console and to a log file in the home directory via the logging module.
+The script should exit gracefully with an informative error if OpenCV is not installed or the cascade classifier fails to load."""
 
 import logging
 import shutil
@@ -7,9 +9,7 @@ import sys
 import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 from tqdm import tqdm
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -21,7 +21,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 try:
     import cv2
-
     FACE_DETECTION_AVAILABLE = True
 except ImportError:
     FACE_DETECTION_AVAILABLE = False
@@ -36,18 +35,13 @@ cascade_path = [
     "frontalface_alt2.xml",
     "frontalface_alt_tree.xml",
 ]
-
-
 def is_image_file(path: Path) -> bool:
     return path.suffix.lower() in IMAGE_EXTENSIONS
-
-
 def create_face_detector(cascade_path):
     face_cascade = cv2.CascadeClassifier(CASCADE_DIR + cascade_path[0])
     if face_cascade.empty():
         logger.error("Failed to load cascade classifier")
         return None
-
     def detect_face(image_path: Path) -> bool:
         try:
             image = cv2.imread(str(image_path))
@@ -73,10 +67,7 @@ def create_face_detector(cascade_path):
         except Exception as e:
             logger.error(f"Face detection error for {image_path.name}: {e}")
             return True
-
     return detect_face
-
-
 def process_image_batch(args):
     image_path, current_dir, noface_dir, cascade_path = args
     detect_face = create_face_detector(cascade_path)
@@ -100,8 +91,6 @@ def process_image_batch(args):
     except Exception as e:
         logger.error(f"Error processing {image_path.name}: {e}")
         return image_path, None, False, True
-
-
 def collect_images(directory: Path, exclude_dir: Path) -> list:
     images = []
     try:
@@ -113,8 +102,6 @@ def collect_images(directory: Path, exclude_dir: Path) -> list:
     except Exception as e:
         logger.error(f"Error scanning directory: {e}")
     return images
-
-
 def process_images(num_workers: int | None = None):
     current_dir = Path.cwd()
     noface_dir = Path("/sdcard/DCIM/noface")
@@ -166,8 +153,6 @@ def process_images(num_workers: int | None = None):
         print(f"\n📁 Moved to: {noface_dir}")
     print("-" * 40)
     return True
-
-
 def main():
     print("🔍 Checking for Haar cascade file...")
     if not cascade_path:
@@ -193,7 +178,5 @@ def main():
             print(f"\n⚠️ Invalid worker count: {sys.argv[1]}, using auto-detection")
     success = process_images(num_workers)
     sys.exit(0 if success else 1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

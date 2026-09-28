@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python script that converts text to and from Morse code using argparse for handling input arguments, based on a dictionary mapping A-Z letters, digits 0-9, and spaces (as "/") to their Morse code equivalents, plus a reverse dictionary for decoding.
+It should implement text_to_morse and morse_to_text functions that convert strings character-by-character (passing through any unrecognized characters unchanged), and an encrypt_file function that reads a text file with pathlib, encodes its contents to Morse code, and writes the result to an output file, handling file read errors gracefully.
+Include a main block that parses command-line arguments to let the user choose encode/decode mode and specify input/output file paths."""
 
 import argparse
 import sys
 from pathlib import Path
-
 MORSE_CODE_DICT = {
     "A": ".-",
     "B": "-...",
@@ -45,8 +46,6 @@ MORSE_CODE_DICT = {
     " ": "/",
 }
 REVERSE_MORSE_DICT = {v: k for k, v in MORSE_CODE_DICT.items()}
-
-
 def text_to_morse(text: str) -> str:
     morse = []
     for char in text.upper():
@@ -55,8 +54,6 @@ def text_to_morse(text: str) -> str:
         else:
             morse.append(char)
     return " ".join(morse)
-
-
 def morse_to_text(morse: str) -> str:
     text = []
     morse_chars = morse.split(" ")
@@ -66,8 +63,6 @@ def morse_to_text(morse: str) -> str:
         elif code:
             text.append(code)
     return "".join(text)
-
-
 def encrypt_file(input_filename, output_filename) -> None:
     try:
         content = Path(input_filename).read_text(encoding="utf-8")
@@ -77,8 +72,6 @@ def encrypt_file(input_filename, output_filename) -> None:
         sys.exit(1)
     except Exception:
         sys.exit(1)
-
-
 def decrypt_file(input_filename, output_filename) -> None:
     try:
         morse_content = Path(input_filename).read_text(encoding="utf-8")
@@ -88,8 +81,6 @@ def decrypt_file(input_filename, output_filename) -> None:
         sys.exit(1)
     except Exception:
         sys.exit(1)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Morse Code Encryptor/Decryptor")
     parser.add_argument("input_file", help="Input file name")
@@ -109,7 +100,5 @@ def main() -> None:
         encrypt_file(args.input_file, args.output_file)
     elif args.decrypt:
         decrypt_file(args.input_file, args.output_file)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

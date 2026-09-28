@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line unit conversion tool in Python that supports converting values between units of length, mass, and volume (e.g., nm/mm/cm/m/km/in/ft/mile/ly for length, mg/g/kg/ton/oz/lb for mass, and ml/l/cl/dl/fl oz/pint/quart for volume), using dictionaries that map each unit's abbreviation and full name to its base-unit conversion factor (meters, kilograms, or liters respectively).
+It should use argparse to accept inputs such as the value, source unit, and target unit from the command line, use regex to parse or validate unit strings, and leverage Python's decimal module with increased precision for accurate numeric conversions.
+The output should be the converted value printed to the console, with the script structured around a UnitConverter class containing the conversion tables and logic to look up units and compute the converted result."""
 
 import argparse
 import math
 import re
 from decimal import getcontext
-
 getcontext().prec = 28
-
-
 class UnitConverter:
     LENGTH_TO_METERS = {
         "nm": 1e-09,
@@ -71,7 +70,6 @@ class UnitConverter:
         "gal": 3.78541,
     }
     TEMP_UNITS = {"c", "f", "k", "celsius", "fahrenheit", "kelvin"}
-
     @staticmethod
     def convert(value: float, from_unit: str, to_unit: str) -> float:
         from_unit = from_unit.lower().strip()
@@ -102,7 +100,6 @@ class UnitConverter:
         ):
             return UnitConverter._convert_temperature(value, from_unit, to_unit)
         raise ValueError(f"Cannot convert between {from_unit} and {to_unit}")
-
     @staticmethod
     def _convert_temperature(value: float, from_unit: str, to_unit: str) -> float:
         from_unit = from_unit[0].lower()
@@ -119,8 +116,6 @@ class UnitConverter:
             return kelvin * 9 / 5 - 459.67
         else:
             return kelvin
-
-
 class Calculator:
     def __init__(self):
         self.constants = {
@@ -162,7 +157,6 @@ class Calculator:
             "round": round,
             "factorial": math.factorial,
         }
-
     def _tokenize(self, expression: str) -> list:
         expression = expression.replace("^", "**")
         pattern = r"\n            (\d+\.?\d*(?:[eE][+-]?\d+)?)|  # Numbers (including scientific notation)\n            ([a-zA-Z_]\w*)|                 # Variables/functions/units\n            ([+\-*/%()])|                   # Operators and parentheses\n            (\*\*)|                          # Power operator\n            (\"|\')|                          # Quote characters (for unit conversion)\n            (\s+)                            # Whitespace\n        "
@@ -172,7 +166,6 @@ class Calculator:
             if token and (not token.isspace()):
                 tokens.append(token)
         return tokens
-
     def _parse_unit_conversion(self, tokens: list) -> list:
         result = []
         i = 0
@@ -197,7 +190,6 @@ class Calculator:
             result.append(tokens[i])
             i += 1
         return result
-
     def evaluate(self, expression: str) -> float | str:
         try:
             tokens = self._tokenize(expression)
@@ -219,7 +211,6 @@ class Calculator:
             return "Error: Invalid expression syntax"
         except Exception as e:
             return f"Error: {e!s}"
-
     def format_result(self, result: float | str) -> str:
         if isinstance(result, str):
             return result
@@ -236,8 +227,6 @@ class Calculator:
         else:
             formatted = f"{result:.15f}".rstrip("0").rstrip(".")
             return formatted
-
-
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qalc",
@@ -274,8 +263,6 @@ def create_parser() -> argparse.ArgumentParser:
         help="Start interactive calculator mode",
     )
     return parser
-
-
 def format_result_with_options(result: float | str, format_type: str = "auto") -> str:
     if isinstance(result, str):
         return result
@@ -299,8 +286,6 @@ def format_result_with_options(result: float | str, format_type: str = "auto") -
             return f"{result:.10e}"
         return str(result)
     return result
-
-
 def main():
     parser = create_parser()
     args = parser.parse_args()
@@ -336,7 +321,5 @@ def main():
         print(formatted)
     else:
         parser.print_help()
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

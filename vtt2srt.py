@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that converts a WebVTT subtitle file into SRT format.
+It should take a VTT file path as a command-line argument, read its contents, strip the "WEBVTT" header, then parse each cue block by detecting lines containing "-->" timestamps, converting the timestamp separator from periods to commas, and prefixing each cue with a sequential numeric index as required by SRT.
+The converted subtitle text should be written to a new file with the same name but a ".srt" extension, and the script should print a confirmation message once the file is saved."""
 
 import sys
 from pathlib import Path
-
-
 def convert_vtt_to_srt(vtt_content: str) -> str:
     lines = vtt_content.splitlines()
     srt_lines = []
@@ -30,8 +30,6 @@ def convert_vtt_to_srt(vtt_content: str) -> str:
         else:
             i += 1
     return "\n".join(srt_lines)
-
-
 if __name__ == "__main__":
     fn = Path(sys.argv[1])
     vtt = fn.read_text(encoding="utf-8")

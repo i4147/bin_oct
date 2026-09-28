@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that plots a mathematical function given as a string argument in the form 'f(x)=expression' (e.g.
+'f(x)=sin(x)').
+The script should parse the expression, safely evaluate it over a range of x values using numpy with support for common functions like sin, cos, tan, arctan, sqrt, exp, log, pi, and e, then generate and save a plot using matplotlib with the Agg backend.
+It should handle errors gracefully, such as missing arguments, malformed input without an "=" sign, or evaluation errors, printing usage instructions and examples when needed.
+The plot should clip the y-axis range based on the 1st and 99th percentiles of finite y-values to avoid distortion from asymptotes or outliers, filtering out non-finite values before plotting."""
 
 import sys
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
 matplotlib.use("Agg")
 if len(sys.argv) < 2:
     print("Usage: python script.py 'f(x)=expression'")
@@ -21,8 +23,6 @@ if "=" not in input_str:
     sys.exit(1)
 function_expr = input_str.split("=", 1)[1].strip()
 print(f"Plotting: {input_str}")
-
-
 def f(x):
     return eval(
         function_expr,
@@ -43,8 +43,6 @@ def f(x):
             "e": np.e,
         },
     )
-
-
 x = np.linspace(-10, 10, 1000)
 try:
     y = f(x)

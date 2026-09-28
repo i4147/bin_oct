@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that extracts and decodes QR codes from an image file provided as a single command-line argument.
+It should open the image with Pillow, convert it to RGB if needed, and use pyzbar to detect and decode any QR codes present, filtering results to only the "QRCODE" type.
+The script must validate that exactly one argument is given and that the file exists, printing usage or error messages otherwise, and gracefully handle exceptions during decoding by printing an error to stderr and returning an empty list.
+Finally, it should print the number of QR codes found along with their decoded text content, or a message indicating none were found."""
 
 import os
 import sys
-
 from PIL import Image
 from pyzbar import pyzbar
-
-
 def extract_qr_data_zbar(image_path):
     try:
         with Image.open(image_path) as img:
@@ -22,8 +22,6 @@ def extract_qr_data_zbar(image_path):
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return []
-
-
 def main():
     if len(sys.argv) != 2:
         print("Usage: python qr_extractor.py <path_to_qrcode_image>")
@@ -41,7 +39,5 @@ def main():
         print("-" * 40)
     else:
         print("No QR codes found in the image.")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

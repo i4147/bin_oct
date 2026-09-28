@@ -1,18 +1,16 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that reads a text file of URLs (passed as the first argument) where each line contains a URL with a "series" segment followed by a movie name, and groups these URLs by that extracted movie name.
+For each URL, it should decode and sanitize the movie name into a safe filename, skip and report lines with invalid or malformed URLs (missing the "series" segment), and write each group's URLs into a separate text file named after the movie inside a "split_movies" subdirectory created next to the input file.
+The script should handle missing/invalid input file arguments by printing usage instructions and exiting with an error code."""
 
 import re
 import sys
 from pathlib import Path
 from urllib.parse import unquote
-
-
 def safe_filename(name: str) -> str:
     name = unquote(name).strip()
     name = re.sub(r'[<>:"/\\|?*\x00-\x1F]', "_", name)
     return name.strip(" .") or "unknown_movie"
-
-
 def extract_movie_name(url: str) -> str | None:
     parts = url.split("/")
     try:
@@ -21,8 +19,6 @@ def extract_movie_name(url: str) -> str | None:
     except (ValueError, IndexError):
         return None
     return unquote(movie_name)
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print(f"Usage: python {Path(sys.argv[0]).name} movies.txt")
@@ -51,7 +47,5 @@ def main() -> None:
             file.write("\n")
         print(f"Saved {len(urls)} URL(s) to {output_file}")
     print(f"\nFinished: {len(movies)} movie(s) processed.")
-
-
 if __name__ == "__main__":
     main()

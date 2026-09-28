@@ -1,18 +1,16 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that recursively finds and compiles .py files into bytecode (.pyc) using the compileall module, relying on a helper module "dh" (with get_pyfiles and mpf) to enumerate target Python files.
+It should accept command-line arguments to control optimization level (0, 1, or 2 via -o/--optimize), whether to use legacy pyc placement (removing/replacing any old-style .pyc next to the source), and whether to delete the original .py source file after successful compilation.
+The script should skip symlinks, nonexistent paths, and anything under a .git directory, recurse into directories to process all contained .py files, and set the PYTHONPYCACHEPREFIX environment variable to "__pycache__" before processing, printing an error and returning a nonzero status if an invalid optimize level is supplied."""
 
 import compileall
 import os
 import sys
 from pathlib import Path
-
 from dh import get_pyfiles, mpf
-
 REMOVE_ORIG = False
 LEGACY_MODE = False
 OPTIMIZE_LEVEL = 0
-
-
 def process_file(path) -> bool | None:
     path = Path(path)
     if not path.exists() or path.is_symlink():
@@ -31,8 +29,6 @@ def process_file(path) -> bool | None:
             path.unlink()
         return True
     return False
-
-
 def main():
     global REMOVE_ORIG, LEGACY_MODE, OPTIMIZE_LEVEL
     os.environ["PYTHONPYCACHEPREFIX"] = "__pycache__"
@@ -93,7 +89,5 @@ def main():
         return 0
     mpf(process_file, files)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

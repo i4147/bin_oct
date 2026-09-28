@@ -1,24 +1,19 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans a given directory (skipping .git, __pycache__, node_moduleseles, and symlinks) to find image files with a specified extension list, then uses Tesseract OCR (via pytesseract and Pillow) to extract English text from each image using page segmentation mode 6, printing each result to stdout separated by dashed lines.
+The script should process files concurrently using joblib's Parallel with 2 jobs for efficiency, and include helper functions for breadth-first directory traversal (get_files) and parallel task execution (mpf) that can be reused with arbitrary processing functions."""
 
 import sys
 from collections import deque
 from collections.abc import Callable
 from pathlib import Path
-
 from PIL import Image
 from pytesseract import image_to_string
-
-
 def mpf(process_function: Callable, files: list[Path], **kwargs):
     from joblib import Parallel, delayed
-
     file_strings = [str(f) for f in files]
     return Parallel(n_jobs=2)(
         delayed(process_function)(file_str, **kwargs) for file_str in file_strings
     )
-
-
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
     path = Path(path)
     skip_dirs = {".git", "__pycache__", "node_modules"}
@@ -37,8 +32,6 @@ def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
         except (PermissionError, OSError, FileNotFoundError):
             continue
     return files
-
-
 def extract_text(image_path: Path) -> str:
     try:
         with Image.open(image_path) as img:
@@ -51,8 +44,6 @@ def extract_text(image_path: Path) -> str:
     except Exception as e:
         print(f"Error processing {image_path.name}: {e}")
         return ""
-
-
 def process_file(path: Path) -> None:
     path = Path(path)
     txtfile = path.with_suffix(".txt")
@@ -69,8 +60,6 @@ def process_file(path: Path) -> None:
             print(f"✗ Failed to write {txtfile.name}: {e}")
     else:
         print(f"⚠ No significant text in {path.name}")
-
-
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -89,7 +78,5 @@ def main() -> None:
     else:
         print(f"Using {max_workers} worker(s) for memory safety...")
         mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

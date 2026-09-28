@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a given directory (recursively or not) for script files and renames them based on the shebang line found at the top of each file.
+It should read the first line of each file, detect known interpreters such as python, python3, python2, bash, sh, zsh, ksh, or dash (handling both direct paths and "/usr/bin/env" style shebangs), and map them to the appropriate extension (.py or .sh).
+If a file's current extension doesn't match the detected interpreter's expected extension, the script should rename the file accordingly, avoiding overwrites by appending a numeric suffix when a filename collision occurs.
+It should handle unreadable files gracefully by printing an error message instead of crashing."""
 
 import os
 import sys
-
 SHEBANG_MAP = {
     "python": ".py",
     "python3": ".py",
@@ -15,8 +17,6 @@ SHEBANG_MAP = {
     "dash": ".sh",
 }
 TARGET_EXTENSIONS = {".py", ".sh"}
-
-
 def detect_shebang(path):
     try:
         with open(path, encoding="utf-8", errors="ignore") as f:
@@ -33,13 +33,9 @@ def detect_shebang(path):
     except OSError as e:
         print(f"Error reading {path}: {e}")
     return None
-
-
 def should_rename(path, target_ext):
     current_ext = os.path.splitext(path)[1].lower()
     return current_ext != target_ext
-
-
 def rename_file(path, target_ext):
     directory = os.path.dirname(path)
     basename = os.path.splitext(os.path.basename(path))[0]
@@ -60,8 +56,6 @@ def rename_file(path, target_ext):
         print(f"Error renaming {path} to {new_path}: {e}")
         return None
     return None
-
-
 def main():
     dry_run = "--dry-run" in sys.argv or "-n" in sys.argv
     verbose = "--verbose" in sys.argv or "-v" in sys.argv
@@ -101,7 +95,5 @@ def main():
     else:
         print(f"  Renamed: {renamed_count} files")
     print(f"  Skipped: {skipped_count} files")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

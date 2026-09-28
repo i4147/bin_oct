@@ -1,15 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that cleans up pip-installed package RECORD files (from *.dist-info directories) by removing entries for .pyc files, direct_url.json, INSTALLER, and LICENSE files.
+The script should locate site-packages directories (falling back to the user site-packages if the standard ones aren't available), then scan and rewrite each RECORD CSV file found, printing a summary of how many entries were removed from each file and reporting any errors encountered during processing.
+It should accept command-line arguments via argparse and support running against the discovered site-packages paths."""
 
 import argparse
 import csv
 import sys
 from pathlib import Path
-
-
 def find_site_packages() -> list[str]:
     import site
-
     site_packages = site.getsitepackages()
     valid_paths = [p for p in site_packages if p is not None]
     if not valid_paths:
@@ -17,8 +16,6 @@ def find_site_packages() -> list[str]:
         if user_site and Path(user_site).exists():
             valid_paths = [user_site]
     return valid_paths
-
-
 def update_record_file(record_path: Path) -> bool:
     try:
         with record_path.open(encoding="utf-8") as f:
@@ -48,8 +45,6 @@ def update_record_file(record_path: Path) -> bool:
     except Exception as e:
         print(f"  Error processing {record_path}: {e}", file=sys.stderr)
         return False
-
-
 def scan_and_update(site_packages_dirs) -> tuple[int, int]:
     total_updated = 0
     total_files = 0
@@ -62,8 +57,6 @@ def scan_and_update(site_packages_dirs) -> tuple[int, int]:
             if path.name == "RECORD" and update_record_file(path):
                 total_updated += 1
     return total_files, total_updated
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Remove .pyc and direct_url.json references from RECORD files in site-packages"
@@ -89,7 +82,5 @@ def main() -> None:
     print("Summary:")
     print(f"  Total RECORD files found: {total_files}")
     print(f"  Files that would be/are updated: {total_updated}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool that translates chunked text files (e.g., JSON or text chunks produced by a text-splitting pipeline) into a target language using a selectable translation backend such as googletrans or pygoogletranslation, with language code normalization and alias handling to reconcile different backend naming conventions (e.g., zh vs zh-CN, pt vs pt-BR).
+The script should support concurrent translation via a thread pool with rate-limiting locks to avoid overwhelming translation APIs, read input chunk files from a directory, write translated output to corresponding files, and log progress/errors via loguru to both a rotating log file and stderr.
+It should be driven by command-line arguments (e.g., input/output paths, source/target languages, backend choice, concurrency level) parsed with argparse, and handle retries or failures gracefully for individual chunks without stopping the entire batch job."""
 
 import argparse
 import importlib
@@ -12,17 +14,12 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
-
 from loguru import logger
-
 Translator = Callable[[str], str]
-
 REQUEST_LOCK = threading.Lock()
 GOOGLETRANS_LOCK = threading.Lock()
 PYGOOGLETRANSLATION_LOCK = threading.Lock()
 LAST_REQUEST_TIME = 0.0
-
-
 def configure_logging() -> None:
     logger.remove()
     logger.add(
@@ -33,17 +30,12 @@ def configure_logging() -> None:
         retention=3,
     )
     logger.add(sys.stderr, level="ERROR")
-
-
 def normalize_language(language: str) -> str:
     return language.strip().replace("_", "-").lower()
-
-
 def language_aliases(language: str) -> list[str]:
     normalized = normalize_language(language)
     base = normalized.split("-", 1)[0]
     aliases = [normalized, base]
-
     if base == "zh":
         aliases.extend(["zh-cn", "zh-CN", "zh"])
     elif base == "he":
@@ -56,14 +48,10 @@ def language_aliases(language: str) -> list[str]:
         aliases.extend(["en-us", "en-US", "en"])
     elif base == "fr":
         aliases.extend(["fr-fr", "fr-FR", "fr"])
-
     return list(dict.fromkeys(aliases))
-
-
 def backend_language(language: str, backend: str) -> str:
     normalized = normalize_language(language)
     base = normalized.split("-", 1)[0]
-
     maps: dict[str, dict[str, str]] = {
         "deepl": {
             "en": "EN",
@@ -119,36 +107,25 @@ def backend_language(language: str, backend: str) -> str:
             "no": "no",
         },
     }
-
     backend_map = maps.get(backend, {})
     return backend_map.get(normalized, backend_map.get(base, base))
-
-
 def import_optional(module_name: str) -> Any:
     return importlib.import_module(module_name)
-
-
 def _make_deep_translator(source: str, target: str) -> Translator:
     from_lang = backend_language(source, "deep_translator")
     to_lang = backend_language(target, "deep_translator")
-
     def translate(text: str) -> str:
         module = import_optional("deep_translator")
         translator = module.GoogleTranslator(source=from_lang, target=to_lang)
         result = translator.translate(text)
         return str(result)
-
     return translate
-
-
 def _make_deepl(source: str, target: str) -> Translator:
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("DEEPL_API_KEY is not set")
-
     source_lang = backend_language(source, "deepl")
     target_lang = backend_language(target, "deepl")
-
     def translate(text: str) -> str:
         module = import_optional("deepl")
         client = module.Translator(api_key)
@@ -158,14 +135,10 @@ def _make_deepl(source: str, target: str) -> Translator:
             target_lang=target_lang,
         )
         return str(result)
-
     return translate
-
-
 def _make_translate(source: str, target: str) -> Translator:
     from_lang = backend_language(source, "translate")
     to_lang = backend_language(target, "translate")
-
     def translate(text: str) -> str:
         module = import_optional("translate")
         translator = module.Translator(
@@ -173,14 +146,10 @@ def _make_translate(source: str, target: str) -> Translator:
             to_lang=to_lang,
         )
         return str(translator.translate(text))
-
     return translate
-
-
 def _make_translators_bing(source: str, target: str) -> Translator:
     from_language = backend_language(source, "translators_bing")
     to_language = backend_language(target, "translators_bing")
-
     def translate(text: str) -> str:
         module = import_optional("translators")
         result = module.translate_text(
@@ -190,14 +159,10 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             to_language=to_language,
         )
         return str(result)
-
     return translate
-
-
 def _make_googletrans(source: str, target: str) -> Translator:
     source_lang = backend_language(source, "googletrans")
     target_lang = backend_language(target, "googletrans")
-
     def translate(text: str) -> str:
         module = import_optional("googletrans")
         with GOOGLETRANS_LOCK:
@@ -208,14 +173,10 @@ def _make_googletrans(source: str, target: str) -> Translator:
                 dest=target_lang,
             )
             return str(result.text)
-
     return translate
-
-
 def _make_pygoogletranslation(source: str, target: str) -> Translator:
     source_lang = backend_language(source, "pygoogletranslation")
     target_lang = backend_language(target, "pygoogletranslation")
-
     def translate(text: str) -> str:
         module = import_optional("pygoogletranslation")
         with PYGOOGLETRANSLATION_LOCK:
@@ -231,10 +192,7 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
             if hasattr(result, "text"):
                 return str(result.text)
             return str(result)
-
     return translate
-
-
 def _make_boto3(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("boto3")
@@ -245,52 +203,37 @@ def _make_boto3(source: str, target: str) -> Translator:
             TargetLanguageCode=target,
         )
         return str(result["TranslatedText"])
-
     return translate
-
-
 def _make_baidu(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("baidu")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
         raise RuntimeError("Unsupported baidu package API")
-
     return translate
-
-
 def _make_alibaba(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("alibaba")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
         raise RuntimeError("Unsupported alibaba package API")
-
     return translate
-
-
 def _make_watson(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("ibm_watson")
         raise RuntimeError(f"Unsupported watson package API: {module.__name__}")
-
     return translate
-
-
 def _make_azure(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         import_optional("requests")
         endpoint = os.environ.get("AZURE_TRANSLATOR_ENDPOINT", "").strip()
         key = os.environ.get("AZURE_TRANSLATOR_KEY", "").strip()
         region = os.environ.get("AZURE_TRANSLATOR_REGION", "").strip()
-
         if not endpoint or not key:
             raise RuntimeError(
                 "AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required"
             )
-
         import requests
-
         response = requests.post(
             f"{endpoint.rstrip('/')}/translate",
             params={"api-version": "3.0", "from": source, "to": target},
@@ -305,10 +248,7 @@ def _make_azure(source: str, target: str) -> Translator:
         response.raise_for_status()
         payload = response.json()
         return str(payload[0]["translations"][0]["text"])
-
     return translate
-
-
 FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -322,7 +262,6 @@ FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "watson": _make_watson,
     "azure": _make_azure,
 }
-
 FALLBACK_ORDER = [
     "deepl",
     "deep_translator",
@@ -331,21 +270,14 @@ FALLBACK_ORDER = [
     "googletrans",
     "pygoogletranslation",
 ]
-
-
 def wait_for_request_slot(delay: float) -> None:
     global LAST_REQUEST_TIME
-
     with REQUEST_LOCK:
         now = time.monotonic()
         remaining = delay - (now - LAST_REQUEST_TIME)
-
         if remaining > 0:
             time.sleep(remaining)
-
         LAST_REQUEST_TIME = time.monotonic()
-
-
 def select_backend(
     requested: str | None,
     source: str,
@@ -353,21 +285,16 @@ def select_backend(
 ) -> tuple[str, Translator]:
     candidates = [requested] if requested else FALLBACK_ORDER
     failures: list[str] = []
-
     for name in candidates:
         if name is None:
             continue
-
         backend = name.strip().lower()
         factory = FACTORIES.get(backend)
-
         if factory is None:
             failures.append(f"{backend}: unsupported backend")
             continue
-
         try:
             translator = factory(source, target)
-
             if (
                 backend == "deepl"
                 and not os.environ.get(
@@ -376,57 +303,40 @@ def select_backend(
                 ).strip()
             ):
                 raise RuntimeError("DEEPL_API_KEY is not set")
-
             logger.info("Using translator backend: {}", backend)
             return backend, translator
         except Exception as exc:
             failures.append(f"{backend}: {exc}")
             logger.debug("Backend unavailable: {}", failures[-1])
-
             if requested:
                 break
-
     details = "; ".join(failures)
     raise RuntimeError(f"No usable translation backend found: {details}")
-
-
 def split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         raise ValueError("chunk size must be greater than zero")
-
     chunks: list[str] = []
     position = 0
     length = len(text)
-
     while position < length:
         end = min(position + chunk_size, length)
-
         if end < length:
             boundary = text.rfind(" ", position, end)
             if boundary > position:
                 end = boundary
-
         chunk = text[position:end].strip()
-
         if chunk:
             chunks.append(chunk)
-
         position = end
-
     return chunks
-
-
 def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
     if not continue_mode or not path.exists():
         return {}
-
     try:
         with path.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
-
         if not isinstance(payload, dict):
             raise ValueError("output JSON must contain an object")
-
         return {
             str(key): str(value)
             for key, value in payload.items()
@@ -435,18 +345,14 @@ def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
     except Exception as exc:
         logger.error("Could not load existing output {}: {}", path, exc)
         return {}
-
-
 def atomic_save(path: Path, results: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     fd, temporary_name = tempfile.mkstemp(
         prefix=f".{path.name}.",
         suffix=".tmp",
         dir=str(path.parent),
         text=True,
     )
-
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(
@@ -458,7 +364,6 @@ def atomic_save(path: Path, results: dict[str, str]) -> None:
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
-
         os.replace(temporary_name, path)
         logger.debug("Saved {} translated chunks to {}", len(results), path)
     except Exception:
@@ -467,15 +372,10 @@ def atomic_save(path: Path, results: dict[str, str]) -> None:
         except FileNotFoundError:
             pass
         raise
-
-
 def append_failed(path: Path, index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     with path.open("a", encoding="utf-8") as handle:
         handle.write(f"{index}\n")
-
-
 def translate_with_retry(
     index: int,
     text: str,
@@ -484,18 +384,14 @@ def translate_with_retry(
     attempts: int = 3,
 ) -> tuple[int, str]:
     last_error: Exception | None = None
-
     for attempt in range(1, attempts + 1):
         try:
             wait_for_request_slot(delay)
             translated = translator(text).strip()
-
             if not translated:
                 raise RuntimeError("translator returned empty text")
-
             if translated.casefold() == text.casefold():
                 raise RuntimeError("translator returned identity output")
-
             logger.debug(
                 "Translated chunk {} on attempt {}",
                 index,
@@ -510,18 +406,13 @@ def translate_with_retry(
                 attempt,
                 exc,
             )
-
             if attempt < attempts:
                 time.sleep(2 ** (attempt - 1))
-
     if last_error is None:
         raise RuntimeError("translation failed without an exception")
-
     raise RuntimeError(
         f"chunk {index} failed after {attempts} attempts: {last_error}"
     ) from last_error
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Translate a text file in independently processed chunks.",
@@ -594,48 +485,35 @@ def parse_args() -> argparse.Namespace:
         help="Ignore an existing output file.",
     )
     return parser.parse_args()
-
-
 def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
         raise ValueError("--workers must be between 1 and 2")
-
     if args.delay < 0:
         raise ValueError("--delay must not be negative")
-
     if args.chunk_size <= 0:
         raise ValueError("--chunk-size must be greater than zero")
-
     if args.save_every <= 0:
         raise ValueError("--save-every must be greater than zero")
-
-
 def run(args: argparse.Namespace) -> int:
     validate_args(args)
-
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
-
     if not input_path.exists():
         raise FileNotFoundError(f"Input file does not exist: {input_path}")
-
     text = input_path.read_text(encoding="utf-8")
     chunks = split_chunks(text, args.chunk_size)
     results = load_results(output_path, not args.no_continue)
-
     backend_name, translator = select_backend(
         args.backend,
         args.source,
         args.target,
     )
-
     pending: list[tuple[int, str]] = [
         (index, chunk)
         for index, chunk in enumerate(chunks)
         if str(index) not in results
     ]
-
     logger.info(
         "Backend={}, chunks={}, already translated={}, pending={}",
         backend_name,
@@ -643,13 +521,10 @@ def run(args: argparse.Namespace) -> int:
         len(results),
         len(pending),
     )
-
     if not pending:
         atomic_save(output_path, results)
         return 0
-
     completed_since_save = 0
-
     with ThreadPoolExecutor(
         max_workers=args.workers,
         thread_name_prefix="translator",
@@ -664,11 +539,9 @@ def run(args: argparse.Namespace) -> int:
             ): index
             for index, chunk in pending
         }
-
         try:
             for future in as_completed(futures):
                 index = futures[future]
-
                 try:
                     result_index, translated = future.result()
                     results[str(result_index)] = translated
@@ -678,14 +551,12 @@ def run(args: argparse.Namespace) -> int:
                         result_index + 1,
                         len(chunks),
                     )
-
                     if completed_since_save >= args.save_every:
                         atomic_save(output_path, results)
                         completed_since_save = 0
                 except Exception as exc:
                     logger.error("Chunk {} failed: {}", index, exc)
                     append_failed(failed_path, index)
-
         except KeyboardInterrupt:
             logger.error("Interrupted; cancelling unfinished translations")
             for future in futures:
@@ -693,14 +564,10 @@ def run(args: argparse.Namespace) -> int:
             executor.shutdown(wait=False, cancel_futures=True)
             atomic_save(output_path, results)
             return 130
-
     atomic_save(output_path, results)
     return 0
-
-
 def main() -> int:
     configure_logging()
-
     try:
         args = parse_args()
         return run(args)
@@ -710,7 +577,5 @@ def main() -> int:
     except Exception as exc:
         logger.exception("Fatal error: {}", exc)
         return 1
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

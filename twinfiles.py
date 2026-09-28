@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans the current working directory for pairs of files sharing the same base name but with two different user-specified extensions.
+The script should prompt the user to enter two file extensions and choose which one (1 or 2) to delete when both files of a pair exist, automatically normalizing the extensions to include a leading dot if missing.
+It should walk all files matching the first extension, check whether a matching file with the second extension exists in the same location, and if so, delete the file corresponding to the chosen extension while keeping the other, printing a message showing which file was deleted and which was kept.
+The script should exit cleanly via SystemExit after processing all matches."""
 
 from pathlib import Path
-
-
 def main() -> None:
     cwd = Path.cwd()
     ext1 = input("ext 1 :").strip()
@@ -24,7 +25,5 @@ def main() -> None:
                 else:
                     print(f"[✖] {twin}  (keeping {path})")
                     twin.unlink()
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

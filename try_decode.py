@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that attempts to decode a binary file at a given path using a broad list of common and extra text encodings (UTF-8, UTF-16/32 variants, Latin-1, Windows codepages, GBK, Big5, Shift-JIS, KOI8, Mac encodings, etc.), reporting which encodings succeed and showing a truncated preview (default 500 characters) of the decoded text for verification.
+It should accept a file path, an optional output path to save the successfully decoded text, and an optional preview chunk size, printing a clear error if the input file does not exist.
+The script is intended to help users identify the correct character encoding of an unknown text file by trying multiple candidates and displaying readable samples of each successful decode."""
 
 import sys
 from pathlib import Path
-
 COMMON_ENCODINGS = [
     "utf-8",
     "utf-8-sig",
@@ -57,22 +58,16 @@ EXTRA_ENCODINGS = [
     "mac_iceland",
     "mac_latin2",
 ]
-
-
 def try_decode(file_content: bytes, encoding: str):
     try:
         decoded = file_content.decode(encoding)
         return (True, decoded)
     except (UnicodeDecodeError, LookupError):
         return (False, None)
-
-
 def get_first_chunk(text: str, chunk_size: int = 500) -> str:
     if len(text) <= chunk_size:
         return text
     return text[:chunk_size] + "...\n[truncated...]"
-
-
 def decode_file(path: str, output_path: str | None = None, show_chunk: int = 500):
     path = Path(path)
     if not path.exists():
@@ -154,8 +149,6 @@ def decode_file(path: str, output_path: str | None = None, show_chunk: int = 500
     except Exception as e:
         print(f"Error saving file: {e}")
         return False
-
-
 def main():
     if len(sys.argv) < 2:
         print("Usage: python decode_file.py <path> [output_path]")
@@ -165,7 +158,5 @@ def main():
     path = sys.argv[1]
     output_path = sys.argv[2] if len(sys.argv) > 2 else None
     decode_file(path, output_path)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

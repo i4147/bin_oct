@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that parses large HTML files in parallel to extract readable text content while stripping tags, scripts, styles, and other non-visible elements.
+The script should locate safe byte-offset split points (avoiding breaking inside tags or raw-text elements like script/style/textarea) so an HTML file can be divided into roughly equal chunks and processed concurrently using multiprocessing, then merge the extracted text in the correct order, inserting appropriate line breaks for block-level elements (like div, p, li, table rows, etc.).
+It should handle command-line input/output file paths, use a custom HTMLParser subclass to track parsing state, and rely on temporary files for intermediate processing."""
 
 import multiprocessing as mp
 import os
@@ -7,7 +9,6 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}
 BLOCK_TAGS = {
     "address",
@@ -49,21 +50,16 @@ BLOCK_TAGS = {
     "ul",
 }
 RAWTEXT_TAGS = {"script", "style", "textarea", "title"}
-
-
 def _find_safe_splits(path: Path, n: int) -> list[int]:
     size = path.stat().st_size
     if n <= 1 or size == 0:
         return []
-
     targets = [size * i // n for i in range(1, n)]
     splits: list[int] = []
-
     in_tag = False
     raw_until_close: bytes | None = None
     pos = 0
     ti = 0
-
     CHUNK = 1 << 20
     with path.open("rb") as f:
         buf = b""
@@ -76,7 +72,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                     break
             b = buf[pos - buf_start]
             pos += 1
-
             if raw_until_close is not None:
                 if b == ord("<"):
                     # peek
@@ -86,12 +81,10 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                         raw_until_close = None
                         in_tag = True
                 continue
-
             if in_tag:
                 if b == ord(">"):
                     in_tag = False
                 continue
-
             if b == ord("<"):
                 end = buf_start + len(buf)
                 window = buf[pos - 1 - buf_start : pos - 1 - buf_start + 16]
@@ -101,7 +94,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                     while j < len(window) and window[j : j + 1].isalpha():
                         name += window[j : j + 1]
                         j += 1
-
                     in_tag = True
                 else:
                     j = 1
@@ -114,39 +106,31 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
                         raw_until_close = b"</" + tagname
                     in_tag = True
                 continue
-
             while ti < len(targets) and pos >= targets[ti]:
                 splits.append(pos)
                 ti += 1
-
     while len(splits) < n - 1:
         splits.append(size)
     return splits
-
-
 class _TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self._skip_depth = 0
         self._chunks: list[str] = []
         self._pending_space = False
-
     def handle_starttag(self, tag, attrs):
         if tag in SKIP_CONTENT_TAGS:
             self._skip_depth += 1
         elif tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_startendtag(self, tag, attrs):
         if tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_endtag(self, tag):
         if tag in SKIP_CONTENT_TAGS and self._skip_depth:
             self._skip_depth -= 1
         elif tag in BLOCK_TAGS:
             self._pending_space = True
-
     def handle_data(self, data):
         if self._skip_depth:
             return
@@ -154,11 +138,8 @@ class _TextExtractor(HTMLParser):
             self._chunks.append(" ")
             self._pending_space = False
         self._chunks.append(data)
-
     def get_text(self) -> str:
         return " ".join("".join(self._chunks).split())
-
-
 def _parse_slice(args: tuple[str, int, int]) -> str:
     path_str, start, end = args
     parser = _TextExtractor()
@@ -174,31 +155,23 @@ def _parse_slice(args: tuple[str, int, int]) -> str:
             parser.feed(data.decode("utf-8", errors="replace"))
     parser.close()
     return parser.get_text()
-
-
 def process_file(path: Path, workers: int | None = None) -> bool:
     if workers is None:
         workers = min(4, os.cpu_count() or 1)
-
     size = path.stat().st_size
     if size == 0:
         return True
-
     splits = _find_safe_splits(path, workers)
     bounds = [0, *splits, size]
     ranges = [(str(path), bounds[i], bounds[i + 1]) for i in range(len(bounds) - 1)]
-
     try:
         try:
             ctx = mp.get_context("fork")
         except ValueError:
             ctx = mp.get_context()
-
         with ctx.Pool(processes=workers) as pool:
             pieces = pool.map(_parse_slice, ranges)
-
         text = " ".join(p for p in pieces if p)
-
         with NamedTemporaryFile(
             "w",
             encoding="utf-8",
@@ -214,8 +187,6 @@ def process_file(path: Path, workers: int | None = None) -> bool:
     except Exception as e:
         print(f"error: {e}", file=sys.stderr)
         return False
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print(f"usage: {sys.argv[0]} FILE [workers]", file=sys.stderr)
@@ -223,7 +194,5 @@ def main() -> None:
     path = Path(sys.argv[1])
     workers = int(sys.argv[2]) if len(sys.argv) > 2 else None
     raise SystemExit(0 if process_file(path, workers) else 1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility script that scans the current working directory for files likely to be Python source, using a helper function that checks a shebang line for "python" or looks for common Python syntax indicators (like "def ", "import ", "class ", "print(") in the first 1KB of the file, falling back to checking the ".py" extension.
+For each identified Python file, it should invoke the external "ruff format" command via subprocess to auto-format the file, handling errors such as timeouts (30s limit), missing ruff installation, or other exceptions gracefully by returning a success flag and error message.
+The script's main function should iterate through the detected files, apply the formatting, and report the results."""
 
 import subprocess
 from pathlib import Path
-
-
 def is_python_file(path: Path):
     try:
         with Path(path).open("r", encoding="utf-8", errors="ignore") as f:
@@ -31,8 +31,6 @@ def is_python_file(path: Path):
         return path.suffix.lower() == ".py"
     except:
         return False
-
-
 def format_with_ruff(path: Path):
     try:
         result = subprocess.run(
@@ -51,8 +49,6 @@ def format_with_ruff(path: Path):
         return False, "ruff not installed or not in PATH"
     except Exception as e:
         return False, str(e)
-
-
 def main() -> None:
     cwd = Path()
     python_files = [
@@ -75,7 +71,5 @@ def main() -> None:
     if errors:
         for _error in errors:
             pass
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

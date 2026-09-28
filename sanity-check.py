@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that uses a custom "dh" module's runcmd helper to perform a system package sanity check on a Debian/Ubuntu-based machine.
+It should list all installed packages via dpkg-query, then for each package run "dpkg -l" to verify its status is "ii" (properly installed), printing warnings for any package not in a healthy state and tracking an issue count.
+It should also include a function that runs "apt-get -s upgrade" (simulated upgrade) to check for available updates, returning the raw output.
+The main function should print progress messages and a summary of installed package count and any detected issues, handling errors gracefully by printing an error message and exiting on failure where appropriate."""
 
 import sys
-
 from dh import runcmd
-
-
 def get_installed_packages() -> list[str]:
     try:
         _ret, txt, _err = runcmd(
@@ -16,8 +16,6 @@ def get_installed_packages() -> list[str]:
     except:
         print("Error listing installed packages")
         sys.exit(1)
-
-
 def check_package_health(package_name: str):
     try:
         _ret, txt, _err = runcmd(["dpkg", "-l", package_name], show_output=True)
@@ -30,16 +28,12 @@ def check_package_health(package_name: str):
                 return (False, f"Status: {status}")
     except:
         return (False, "Error checking package")
-
-
 def check_for_updates() -> str:
     try:
         _res, txt, _err = runcmd(["apt-get", "-s", "upgrade"], show_output=True)
         return txt
     except:
         return "Error checking for updates"
-
-
 def main() -> None:
     print("=== Installed Packages Sanity Check ===")
     installed_pkgs = get_installed_packages()
@@ -66,7 +60,5 @@ def main() -> None:
         print("All packages are properly installed.")
     else:
         print("Some packages may need attention.")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

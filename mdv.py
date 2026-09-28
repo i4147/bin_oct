@@ -1,29 +1,24 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line tool named "mdview" that reads a Markdown file (given as an optional positional argument, defaulting to README.md) and renders it in the terminal using the rich library's Markdown and Console classes.
+The script should build its argument parser with argparse, handle errors gracefully by printing readable messages to stderr for cases like missing files, permission errors, or invalid UTF-8 encoding, and return appropriate non-zero exit codes on failure.
+It should optionally use the readchar library, if available, to support paginated or key-driven navigation of the rendered content, falling back gracefully when readchar is not installed."""
 
 import argparse
 import sys
 from pathlib import Path
-
 from rich.console import Console
 from rich.markdown import Markdown
-
 try:
     from readchar import key as RKEY
     from readchar import readkey
-
     HAVE_READCHAR = True
 except Exception:
     HAVE_READCHAR = False
-
-
 def read_markdown(path: str | Path) -> str:
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"File not found: {path}")
     return path.read_text(encoding="utf-8")
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mdview",
@@ -37,8 +32,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to a Markdown file (default: README.md)",
     )
     return parser
-
-
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -98,7 +91,5 @@ def main() -> int:
         except (EOFError, KeyboardInterrupt):
             break
     return 0
-
-
 if __name__ == "__main__":
     sys.exit(main())

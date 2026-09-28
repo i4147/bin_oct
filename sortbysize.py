@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans all top-level entries (files and directories) in a given root folder, skipping symbolic links.
+For each entry, it computes the total size in bytes—recursively summing file sizes for directories (again skipping symlinks) or reading the file size directly for files—and stores the result as a dictionary with "name" and "size" keys.
+The script sorts these entries in descending order by size and, when run directly, applies this to the current working directory, then writes the sorted list as indented JSON to a file named after the current directory (e.g., "foldername.json") in the current working directory."""
 
 import json
 import operator
 from pathlib import Path
-
-
 def sort_by_size(root_folder: Path):
     items = []
     for path in root_folder.glob("*"):
@@ -22,8 +22,6 @@ def sort_by_size(root_folder: Path):
         items.append({"name": path.name, "size": size})
     items.sort(key=operator.itemgetter("size"), reverse=True)
     return items
-
-
 if __name__ == "__main__":
     cwd = Path.cwd()
     data = sort_by_size(cwd)

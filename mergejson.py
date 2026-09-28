@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that merges two or more JSON files into a single JSON output file.
+It should accept multiple input file paths and an output file path via argparse, load each file's JSON content, and combine them: lists are concatenated, dictionaries are deep-merged recursively (nested dictionaries merged key by key, with later files' values overwriting earlier ones for non-dict keys), and other JSON types are handled or rejected appropriately.
+The script must validate that all input files have matching top-level JSON types, printing a clear error and exiting with a non-zero status if there's a type mismatch, a missing file, or invalid JSON syntax.
+Finally, it should write the merged result to the specified output file as formatted JSON."""
 
 import argparse
 import json
 import sys
-
-
 def deep_merge(dict1, dict2):
     if dict1 is None:
         return dict2
@@ -18,8 +19,6 @@ def deep_merge(dict1, dict2):
         else:
             merged[key] = value
     return merged
-
-
 def merge_json_files(input_files, output_file):
     merged_data = None
     for path in input_files:
@@ -55,8 +54,6 @@ def merge_json_files(input_files, output_file):
     except OSError as e:
         print(f"Error writing to output file: {e}")
         sys.exit(1)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Merge two or more JSON files into one."

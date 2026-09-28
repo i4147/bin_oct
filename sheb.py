@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively scans a directory tree and normalizes shebang lines in Python scripts for Termux compatibility.
+It should skip empty files and __init__.py files, and detect Python files either by the ".py" extension or by inspecting the first non-comment line for typical Python syntax (import, from, class, def) or an existing python shebang.
+For each detected file, it should either replace an existing shebang line with "#!/data/data/com.termux/files/usr/bin/env python" (inserting a blank line after it if needed) or prepend this shebang if the file contains Python code but lacks one, leaving other files untouched."""
 
 import os
 from pathlib import Path
-
 TARGET_SHEBANG = "#!/data/data/com.termux/files/usr/bin/env python"
-
-
 def is_python_file(path) -> bool:
     if Path(path).stat().st_size == 0 or path.endswith("__init__.py"):
         return False
@@ -27,8 +26,6 @@ def is_python_file(path) -> bool:
             return False
     except (OSError, UnicodeDecodeError):
         return False
-
-
 def process_file(path) -> None:
     Path(path)
     with Path(path).open("r+", encoding="utf-8") as f:
@@ -53,8 +50,6 @@ def process_file(path) -> None:
         print(f"{os.path.relpath(path)} updated.")
     if "bin" in path.split(os.sep):
         Path(path).chmod(0o755)
-
-
 def traverse_directory(directory: Path) -> None:
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -63,7 +58,5 @@ def traverse_directory(directory: Path) -> None:
                 continue
             if is_python_file(path):
                 process_file(path)
-
-
 if __name__ == "__main__":
     traverse_directory(Path.cwd())

@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that converts an M4A audio file to MP3 using ffmpeg via a helper "runcmd" function from a local "dh" module.
+It should take an input file path and an optional bitrate (default "64k"), validate that the file exists and warn if it lacks the .m4a extension, then build and run the appropriate ffmpeg command to produce an output file with the same name but .mp3 extension.
+After conversion it should print the input and output file sizes in MB along with the compression ratio, and it must handle missing ffmpeg or subprocess errors gracefully by printing an error message and exiting with a non-zero status."""
 
 import os
 import subprocess
 import sys
 from pathlib import Path
-
 from dh import runcmd
-
-
 def convert_m4a_to_mp3(input_file, bitrate="64k"):
     if not os.path.exists(input_file):
         print(f"Error: Input file '{input_file}' not found.")
@@ -51,8 +50,6 @@ def convert_m4a_to_mp3(input_file, bitrate="64k"):
         print("macOS: brew install ffmpeg")
         print("Windows: Download from https://ffmpeg.org/download.html")
         sys.exit(1)
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python script.py <input_file.m4a>")

@@ -1,11 +1,10 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that takes a text file path, backs it up (creating a ".bak" copy), then restructures its content by splitting each paragraph into sentences using a regex-based sentence boundary detector (avoiding false splits on abbreviations like "Mr." or single-letter initials), and rewrapping each sentence's words onto lines within a maximum line-length constraint, preserving blank lines between paragraphs.
+It should handle missing files and read/write errors gracefully by printing descriptive error messages, and print a confirmation message showing the backup file's location before performing the restructuring."""
 
 import re
 import sys
 from pathlib import Path
-
-
 def restructure_text_file(path: Path) -> None:
     if not path.is_file():
         print(f"Error: File not found at {path}")
@@ -72,8 +71,6 @@ def restructure_text_file(path: Path) -> None:
         print(f"File successfully restructured: {path}")
     except Exception as e:
         print(f"Error writing to file {path}: {e}")
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python script_name.py <filename>")

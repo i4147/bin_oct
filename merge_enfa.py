@@ -1,10 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that scans a directory for paired translation files—English source files and their corresponding Farsi (suffix "_fa") counterparts—and merges them into a single JSON dictionary mapping English text to Farsi translations.
+The script should load and preserve any existing output dictionary (default "dic_en_fa.json") and a set of previously failed entries (default "failed-en.txt"), gracefully handling missing or malformed files by starting fresh with a warning message.
+It should identify matching English/Farsi file pairs based on filename patterns (accounting for file extensions), then merge new translations into the existing dictionary while tracking entries that fail to pair or parse correctly.
+Print progress messages using emoji-prefixed status indicators (e.g., 📖, ⚠️) throughout the process to inform the user of loading and merging progress."""
 
 import json
 from pathlib import Path
-
-
 def merge_translation_files(
     base_dir=".", output_file="dic_en_fa.json", failed_file="failed-en.txt"
 ):
@@ -96,7 +97,5 @@ def merge_translation_files(
     print(f"✅ Dictionary saved → {output_file}")
     print(f"⚠️  Failed entries saved → {failed_file}")
     return dictionary, failed_entries
-
-
 if __name__ == "__main__":
     merge_translation_files()

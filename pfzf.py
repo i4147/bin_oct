@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a terminal-based interactive fuzzy finder in Python that reads a list of candidate strings (e.g., piped from stdin) and lets the user type a query to filter and rank them in real time.
+It should implement a fuzzy matching algorithm scoring candidates based on match completeness, consecutive character runs, matches at word/path boundaries or camelCase transitions, and proximity, while penalizing gaps and longer overall text length.
+The script must use termios/tty to put the terminal into raw mode and select for non-blocking keyboard input, dynamically re-render the filtered/sorted list with highlighted matched characters as the user types, support navigation (up/down) and selection, and finally print the chosen entry to stdout upon confirmation (e.g., Enter key), similar to tools like fzf."""
 
 import os
 import select
 import sys
 import termios
 import tty
-
-
 def fuzzy_score(query, text):
     if not query:
         return (0, [])
@@ -52,8 +52,6 @@ def fuzzy_score(query, text):
         score -= (positions[i] - positions[i - 1] - 1) * 2
     score -= len(text) * 0.5
     return (score, positions)
-
-
 def render_match(text, positions, width, selected=False):
     RESET = "\033[0m"
     SELECTED = "\033[7m"
@@ -85,17 +83,12 @@ def render_match(text, positions, width, selected=False):
     visible_len = len(display)
     result.append(" " * max(0, width - visible_len - 1))
     return "".join(result)
-
-
 def get_terminal_size():
     try:
         import shutil
-
         return shutil.get_terminal_size()
     except:
         return os.terminal_size((80, 24))
-
-
 def read_key():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -104,7 +97,6 @@ def read_key():
         ch = os.read(fd, 1)
         if ch == b"\x1b":
             import select
-
             if select.select([sys.stdin], [], [], 0.01)[0]:
                 seq = os.read(fd, 2)
                 if seq == b"[A":
@@ -162,23 +154,15 @@ def read_key():
                 return None
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
-
 def clear_screen():
     sys.stdout.write("\033[2J\033[H")
     sys.stdout.flush()
-
-
 def move_cursor(row, col=0):
     sys.stdout.write(f"\033[{row + 1};{col + 1}H")
     sys.stdout.flush()
-
-
 def clear_line():
     sys.stdout.write("\033[2K\r")
     sys.stdout.flush()
-
-
 def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%"):
     items = list(items)
     if not items:
@@ -190,7 +174,6 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
     selected_idx = 0
     scroll_offset = 0
     selected_items = set()
-
     def get_matches(q):
         if not q:
             return [(item, 0, []) for item in items]
@@ -201,7 +184,6 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
                 scored.append((score, item, positions))
         scored.sort(key=lambda x: (-x[0], items.index(x[1])))
         return [(item, score, positions) for score, item, positions in scored]
-
     def redraw():
         cols, rows = get_terminal_size()
         height = rows - 2
@@ -249,7 +231,6 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
         cursor_col = len(prompt) + cursor_pos + 1
         sys.stdout.write(f"\033[{rows};{cursor_col}H")
         sys.stdout.flush()
-
     try:
         while True:
             redraw()
@@ -333,8 +314,6 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
         sys.stdout.write("\033[?25h")
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
-
-
 def fzf_filter(query, items):
     results = []
     for item in items:
@@ -343,8 +322,6 @@ def fzf_filter(query, items):
             results.append((score, item, positions))
     results.sort(key=lambda x: -x[0])
     return [item for _, item, _ in results]
-
-
 if __name__ == "__main__":
     test_items = [
         "src/components/Button.tsx",

@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a stripping sequence numbers, timestamp lines, and HTML/formatting tags, leaving only the spoken dialogue lines.
+It should take the input SRT file path as the first argument and an optional output text file path as the second (defaulting to the same filename with a .txt extension), then write the cleaned text to that output file using UTF-8 encoding.
+If no input file is provided, it should print a usage message and exit with an error code.
+After successful conversion, it should print a confirmation message showing the source and destination file paths."""
 
 import re
 import sys
 from pathlib import Path
-
 TIMESTAMP_RE = re.compile(r"\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}")
 TAG_RE = re.compile(r"<[^>]+>|{\w+}")
-
-
 def srt_to_text(srt_path: Path) -> str:
     lines = srt_path.read_text(encoding="utf-8", errors="ignore").splitlines()
     out = []
@@ -23,8 +23,6 @@ def srt_to_text(srt_path: Path) -> str:
         line = TAG_RE.sub("", line)
         out.append(line)
     return "\n".join(out)
-
-
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: srt2txt.py file.srt [out.txt]")
@@ -34,7 +32,5 @@ def main() -> None:
     text = srt_to_text(src)
     dst.write_text(text, encoding="utf-8")
     print(f"✔ Converted: {src} → {dst}")
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,24 +1,19 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that renames font files (e.g., TTF/OTF) based on their embedded metadata.
+It should use fontTools to open each font, extract the family and subfamily/style names from the name table (preferring the Windows/US-English record, falling back to ASCII-printable entries), sanitize these strings into safe filename components, and rename each file to a "Family-Style" pattern, appending "Regular" when no distinct style is found or when style duplicates the family.
+It should process one or more input files or directories (via a helper that enumerates font files), skip or report files where a family name cannot be determined, avoid overwriting existing files by generating a unique path, and print colored status/error messages for each processed file while tracking and returning an overall error count."""
 
 import re
 import sys
 from pathlib import Path
-
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.ttFont import TTFont
-
-
 def is_ascii_printable(s: str) -> bool:
     return all(32 <= ord(c) <= 126 for c in s)
-
-
 def clean_filename(s: str) -> str:
     s = re.sub(r"[^\w\\-\.]", "", s)
     return s.strip("_-.")
-
-
 def get_best_name(font: TTFont, name_id: int):
     fallback = None
     for rec in font["name"].names:
@@ -33,8 +28,6 @@ def get_best_name(font: TTFont, name_id: int):
         if is_ascii_printable(name):
             fallback = name
     return fallback
-
-
 def get_font_names(path) -> tuple[str, str] | tuple[None, None]:
     font = TTFont(path)
     family = get_best_name(font, 1)
@@ -46,8 +39,6 @@ def get_font_names(path) -> tuple[str, str] | tuple[None, None]:
     if subfamily.lower() == family.lower():
         subfamily = "Regular"
     return (family, subfamily)
-
-
 def process_file(fn: Path) -> int:
     Path(path)
     try:
@@ -80,8 +71,6 @@ def process_file(fn: Path) -> int:
     fn.rename(new_path)
     cprint(f"{new_path.name}", "green")
     return 0
-
-
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -99,7 +88,5 @@ def main() -> None:
         process_file(files[0])
         sys.exit(0)
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

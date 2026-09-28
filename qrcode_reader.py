@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that reads and decodes QR codes from an image file specified as a command-line argument, using PIL for image loading and pyzbar for QR detection.
+For each QR code found, it should print the decoded data, code type, and bounding box position (left, top, width, height), then print the first decoded value separately as a summary.
+The script must handle missing arguments by printing usage instructions, and gracefully handle errors such as a missing image file or other processing exceptions by printing an error message and exiting with a non-zero status code."""
 
 import sys
-
 from PIL import Image
 from pyzbar.pyzbar import decode
-
-
 def read_qr_code(image_path):
     try:
         img = Image.open(image_path)
@@ -34,8 +33,6 @@ def read_qr_code(image_path):
     except Exception as e:
         print(f"Error processing image: {e}")
         sys.exit(1)
-
-
 def main():
     if len(sys.argv) < 2:
         print("Usage: python qr_reader.py <image_path>")
@@ -47,7 +44,5 @@ def main():
     if results:
         print("First QR code data only:")
         print(results[0])
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

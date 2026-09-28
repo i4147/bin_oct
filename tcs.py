@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that reads a text file and copies a specified portion of its lines to the system clipboard using Termux's `termux-clipboard-set` command (for use on Android/Termux environments).
+It should accept a file path along with either a start/end line range or a list of specific line numbers (via a "-s" flag for selective mode) to extract, join the selected lines, and pipe them to the clipboard command through a subprocess.
+The script must handle and report errors gracefully, including missing files, out-of-range line numbers, the `termux-clipboard-set` binary not being found (e.g., Termux:API not installed), and any non-zero exit codes or exceptions from the clipboard subprocess, printing descriptive messages to stderr and exiting with a non-zero status on failure."""
 
 import subprocess
 import sys
 from pathlib import Path
-
-
 def send_to_process(txt: str) -> None:
     try:
         process = subprocess.Popen(
@@ -32,8 +32,6 @@ def send_to_process(txt: str) -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-
-
 def selective_copy(path: Path, lines: list[str]) -> None:
     cl = [p for p in lines if p != "-s"]
     selected = []
@@ -44,8 +42,6 @@ def selective_copy(path: Path, lines: list[str]) -> None:
             selected.append(nl[k])
     content = "".join(selected)
     send_to_process(content)
-
-
 def copy_lines_to_clipboard(
     path: str | Path, start_line: int | None = None, end_line: int | None = None
 ) -> None:
@@ -80,8 +76,6 @@ def copy_lines_to_clipboard(
         print("No content selected to copy.", file=sys.stderr)
         sys.exit(1)
     send_to_process(content)
-
-
 def main() -> None:
     if len(sys.argv) < 2 or len(sys.argv) > 5:
         print(f"Usage: {sys.argv[0]} <path> [start_line] [end_line]", file=sys.stderr)
@@ -131,7 +125,5 @@ def main() -> None:
         copy_lines_to_clipboard(path, start_line, end_line)
     else:
         selective_copy(path, sys.argv[2:])
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

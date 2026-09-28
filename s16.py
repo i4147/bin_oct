@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that spl or more large text files into smaller chunk files of at most 15,850 characters each, using a `dh.mpf_map` helper to apply the processing to multiple file paths (e.g., given via command-line arguments).
+For each input file, read its UTF-8 text and repeatedly split it near the size limit, preferring to break at the last newline within the limit, falling back to the last whitespace, or otherwise cutting at the exact character count.
+Write each resulting chunk to a new file in the same directory, reusing the original stem with a zero-padded numeric suffix (width based on the total chunk count, minimum 3 digits) appended before the extension, preserving UTF-8 encoding.
+The script should skip empty files and catch and report any errors encountered while processing a given file without crashing the whole run."""
 
 import sys
 from pathlib import Path
-
 from dh import mpf_map
-
 CHUNKSIZE = 15_850
-
-
 def split_at_boundary(text: str, max_size: int) -> tuple[str, str]:
     if len(text) <= max_size:
         return text, ""
@@ -24,8 +23,6 @@ def split_at_boundary(text: str, max_size: int) -> tuple[str, str]:
     if whitespace_pos > 0:
         return text[:whitespace_pos], text[whitespace_pos:]
     return text[:max_size], text[max_size:]
-
-
 def process_file(path: Path) -> None:
     path = Path(path)
     try:
@@ -48,8 +45,6 @@ def process_file(path: Path) -> None:
             part_num += 1
     except Exception as error:
         print(f"An error occurred during file splitting: {error}")
-
-
 def get_files(path: Path) -> list[Path]:
     return [
         file
@@ -57,8 +52,6 @@ def get_files(path: Path) -> list[Path]:
         if file.is_file()
         and not file.stem.endswith(tuple(f"_{number:03d}" for number in range(1000)))
     ]
-
-
 def main() -> int:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -78,7 +71,5 @@ def main() -> int:
     elif files:
         mpf_map(process_file, files)
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

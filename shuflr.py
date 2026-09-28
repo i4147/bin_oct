@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line utility that reads a text file (using mmap for files larger than 5MB, falling back to standard reading otherwise) and shuffles its lines using multiple selectable shuffling methods, such as "basic" (random.shuffle), "crypto" (secure random via secrets), and "shuffle3", each applied a configurable number of repeat passes.
+The script should accept the input file path, an optional output filename prefix, a list of shuffle methods, and a repeat count as parameters, print progress information like file size and line counts, and write the shuffled results to separate output files named according to the method used, preserving the original line count and encoding (UTF-8).
+It should be structured with argparse for CLI usage and use pathlib for file handling."""
 
 import argparse
 import mmap
@@ -7,8 +9,6 @@ import os
 import random
 import secrets
 from pathlib import Path
-
-
 def enhanced_shuffle(
     input_file, output_file_prefix=None, methods=None, repeats=3
 ) -> None:
@@ -57,21 +57,15 @@ def enhanced_shuffle(
             f"Shuffled {original_count} lines using method '{method}' with {repeats} passes"
         )
         print(f"Output written to: {output_path}")
-
-
 def crypto_shuffle(lst) -> None:
     for i in range(len(lst) - 1, 0, -1):
         j = secrets.randbelow(i + 1)
         lst[i], lst[j] = lst[j], lst[i]
-
-
 def shuffle3(lst) -> None:
     sys_random = random.SystemRandom()
     for i in range(len(lst) - 1, 0, -1):
         j = sys_random.randint(0, i)
         lst[i], lst[j] = lst[j], lst[i]
-
-
 def test_randomness(input_file) -> None:
     method_to_test = "crypto"
     print(f"Testing randomness with method: {method_to_test}")
@@ -100,8 +94,6 @@ def test_randomness(input_file) -> None:
         print(
             f"Shuffle {i + 1}: {changes} out of {len(current_lines)} positions changed"
         )
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Randomize lines in a file")
     parser.add_argument("input_file", help="Input file to shuffle")
@@ -136,7 +128,5 @@ def main() -> None:
             methods=["basic", "crypto", "shuffle3"],
             repeats=args.repeats,
         )
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

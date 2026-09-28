@@ -1,14 +1,12 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that minifies JavaScript files (.js, .jsx, .jsm, .jsc) in place using the external "terser" tool with compress and mangle options.
+It should accept optional file or directory arguments (defaulting to the current working directory when none are given), skip already-minified files (ending in ".min.js") and files under "site-packages"/"notebook" paths, and skip single-line files.
+For each qualifying file it should record the size before and after minification (via helper functions gsz and rrs from a local "dh" module), overwrite the file with the minified output, and process multiple files in parallel using the "mpf" helper, while handling terser errors gracefully by printing them to stderr."""
 
 import sys
 from pathlib import Path
-
 from dh import get_files, gsz, mpf, rrs, runcmd
-
 EXT = [".js", ".jsx", ".jsm", ".jsc"]
-
-
 def safe_run(path: Path) -> bool:
     cmd = ["terser", "--compress", "--mangle", "--", str(path)]
     res, txt, err = runcmd(cmd, show_output=False)
@@ -17,8 +15,6 @@ def safe_run(path: Path) -> bool:
         return False
     path.write_text(txt, encoding="utf8")
     return True
-
-
 def process_file(path):
     path = Path(path)
     if path.name.endswith(".min.js"):
@@ -36,8 +32,6 @@ def process_file(path):
         after = gsz(path)
         rrs(path, before, after)
     return
-
-
 def main():
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -55,7 +49,5 @@ def main():
         process_file(files[0])
         sys.exit(0)
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

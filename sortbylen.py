@@ -1,16 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that reads lines from a text file and sorts them by their character length, writing the result back to the same file in place.
+It should use a helper function `read_lines` imported from a local module `dh` to load the file's lines while preserving line endings, and expose a `sort_by_length` function that sorts a list of strings by length with an optional reverse flag.
+The script should accept the file path as a command-line argument and support an optional `-r` flag to sort in descending (reverse) order instead of ascending; if no path is provided, it should print a usage message and exit with status code 1.
+After sorting and overwriting the file, it should print a confirmation message showing the filename and whether reverse order was used."""
 
 import sys
 from pathlib import Path
-
 from dh import read_lines
-
-
 def sort_by_length(lines: list[str], reverse: bool = False) -> list[str]:
     return sorted(lines, key=len, reverse=reverse)
-
-
 if __name__ == "__main__":
     args = sys.argv[1:]
     reverse = False

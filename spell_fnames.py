@@ -1,13 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a command-line Python script that checks the spelling of words embedded in a filename (its stem, excluding extension) using Hunspell.
+It should locate an available Hunspell dictionary from a predefined list of paths (falling back with an error message if none exist), split the filename stem into words by stripping non-letter characters and separating camelCase boundaries, then filter out short (length ≤2) or numeric tokens before checking each remaining word against the dictionary.
+For any misspelled words found, it should use Hunspell's suggestion feature to propose a corrected version of the filename stem, printing or returning the suggested fix.
+The script should be runnable via argparse from the command line, accepting a filename as input."""
 
 import argparse
 import re
 import sys
 from pathlib import Path
-
 import hunspell
-
 DICT_PATHS = [
     (
         "/data/data/com.termux/files/usr/share/hunspell/en_US.dic",
@@ -20,8 +21,6 @@ DICT_PATHS = [
 ]
 WORD_SPLIT_RE = re.compile(r"[^A-Za-z]+")
 CAMEL_SPLIT_RE = re.compile(r"(?<=[a-z])(?=[A-Z])")
-
-
 def load_spellchecker():
     for dic, aff in DICT_PATHS:
         if Path(dic).exists() and Path(aff).exists():
@@ -32,8 +31,6 @@ def load_spellchecker():
         file=sys.stderr,
     )
     sys.exit(1)
-
-
 def split_words(stem: str):
     words = []
     for chunk in WORD_SPLIT_RE.split(stem):
@@ -43,8 +40,6 @@ def split_words(stem: str):
             if sub:
                 words.append(sub)
     return words
-
-
 def find_misspelled(words, checker):
     misspelled = []
     for w in words:
@@ -53,8 +48,6 @@ def find_misspelled(words, checker):
         if not checker.spell(w):
             misspelled.append(w)
     return misspelled
-
-
 def suggest_fix(stem: str, misspelled_words, checker):
     new_stem = stem
     for w in misspelled_words:
@@ -67,8 +60,6 @@ def suggest_fix(stem: str, misspelled_words, checker):
                 best = best.capitalize()
             new_stem = re.sub(re.escape(w), best, new_stem, count=1)
     return new_stem
-
-
 def scan(root: Path, checker, autofix: bool):
     found_any = False
     for path in sorted(root.rglob("*")):
@@ -94,8 +85,6 @@ def scan(root: Path, checker, autofix: bool):
                         print(f"  -> renamed to: {new_path.name}")
     if not found_any:
         print("No misspelled filenames found.")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Detect misspelled words in filenames recursively."
@@ -119,7 +108,5 @@ def main():
         sys.exit(1)
     checker = load_spellchecker()
     scan(root, checker, args.autofix)
-
-
 if __name__ == "__main__":
     main()

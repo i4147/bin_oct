@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""This script is a static dependency analyzer for Python projects that scans a directory tree to build a module dependency graph based on import statements, using AST parsing (with multiprocessing for performance) to resolve both absolute and relative imports into fully-qualified module names.
+It takes a root directory path (and optional exclusion path, package mode/name settings, and a maximum results limit defaulting to 10) as input via command-line arguments, then analyzes each Python file's imports and their transitive dependencies, likely using a BFS/queue-based traversal to compute dependency relationships.
+The output is a report identifying modules with the most dependencies or dependents, helping developers understand coupling and complexity within the codebase.
+Notable behaviors include skipping `__pycache__` directories, handling both package-style (`__init__.py`) and flat module layouts, and gracefully falling back to string-based path comparison when `Path.is_relative_to` is unavailable or fails."""
 
 import argparse
 import ast
@@ -8,18 +11,13 @@ from collections import deque
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 MAX_DEFAULT = 10
-
-
 @dataclass
 class ModuleInfo:
     path: Path
     fullname: str
     source: str
     deps: set[str]
-
-
 def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
     files = []
     for p in sorted(root.rglob("*.py")):
@@ -34,8 +32,6 @@ def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
                     continue
         files.append(p)
     return files
-
-
 def module_fullname_for_path(
     root: Path, path: Path, package_mode: bool, package_name: str | None
 ) -> str:
@@ -52,8 +48,6 @@ def module_fullname_for_path(
         return ".".join([prefix] + parts)
     else:
         return ".".join(parts)
-
-
 def resolve_relative_import(
     curr_fullname: str, module: str | None, level: int
 ) -> str | None:
@@ -69,8 +63,6 @@ def resolve_relative_import(
     if not target_parts:
         return None
     return ".".join(target_parts)
-
-
 def analyze_file(args) -> ModuleInfo:
     path, root, package_mode, package_name, full_map = args
     src = path.read_text(encoding="utf8")
@@ -115,8 +107,6 @@ def analyze_file(args) -> ModuleInfo:
                 ):
                     normalized.add(candidate)
     return ModuleInfo(path=path, fullname=fullname, source=src, deps=normalized)
-
-
 def topological_sort(
     modules: dict[str, ModuleInfo],
 ) -> tuple[list[str], list[set[str]]]:
@@ -141,8 +131,6 @@ def topological_sort(
         ordered += sorted(remaining)
         cycles = [remaining]
     return ordered, cycles
-
-
 def build_merged_source(
     modules: dict[str, ModuleInfo], ordered: list[str], out_module_name: str
 ) -> str:
@@ -198,8 +186,6 @@ def build_merged_source(
     lines.append("")
     lines.append("# End of merged package")
     return "\n".join(lines)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Merge a small Python library into a single-file package."
@@ -306,7 +292,5 @@ def main():
     print(f"Modules merged ({len(modules)}): {', '.join(ordered)}")
     if cycles:
         print("Cycles (approx):", cycles)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

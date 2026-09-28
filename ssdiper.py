@@ -1,14 +1,13 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that recursively collvia a helper `get_files` function from module `dh`) and computes ssdeep fuzzy hashes for each file, skipping files smaller than a configurable minimum size and gracefully handling missing/unreadable files.
+It should then pairwise-compare all computed hashes using ssdeep.compare, collect pairs whose similarity score meets or exceeds a configurable threshold (default 70), and record these similar file pairs with their scores, using relative paths where possible.
+The script should output the results as JSON, sorted by similarity score in descending order using operator for sorting."""
 
 import json
 import operator
 from pathlib import Path
-
 import ssdeep
 from dh import get_files
-
-
 def calculate_ssdeep_hash(path: Path, min_file_size: int = 1):
     try:
         if path.stat().st_size < min_file_size:
@@ -27,8 +26,6 @@ def calculate_ssdeep_hash(path: Path, min_file_size: int = 1):
     except Exception as e:
         print(f"An unexpected error occurred for {path}: {e}")
         return None
-
-
 def compare_files(paths: list[Path], similarity_threshold: int = 70):
     file_hashes = {}
     for path in paths:
@@ -62,16 +59,12 @@ def compare_files(paths: list[Path], similarity_threshold: int = 70):
                 )
     similarities.sort(key=operator.itemgetter("similarity_score"), reverse=True)
     return similarities
-
-
 def save_to_json(data, filename: str = "simz.json") -> None:
     try:
         with Path(filename).open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"Error saving data to JSON file '{filename}': {e}")
-
-
 if __name__ == "__main__":
     cwd = Path.cwd()
     MIN_SIMILARITY_THRESHOLD = 50

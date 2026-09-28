@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python command-line script that compares two text files and prints their differences in unified diff format.
+It should accept two file path arguments via argparse, read each file's lines with a helper function that first tries default encoding and falls back to UTF-16 on a UnicodeDecodeError, then use difflib.unified_diff to compute the differences between the two files.
+If any differences are found, the script should write them to stdout and exit with status code 1; otherwise it exits normally with status 0."""
 
 import argparse
 import difflib
 import sys
-
-
 def _read_lines(filename):
     try:
         with open(filename) as f:
@@ -13,8 +13,6 @@ def _read_lines(filename):
     except UnicodeDecodeError:
         with open(filename, encoding="utf_16") as f:
             return f.readlines()
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("first", metavar="FILE")
@@ -28,7 +26,5 @@ def main():
     if diffs:
         sys.stdout.writelines(diffs)
         sys.exit(1)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

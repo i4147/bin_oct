@@ -1,15 +1,14 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility script that recursively scans a given directory (skipping .git and __pycache__ folders and symlinks) to collect files matching specified extensions, with special handling for gzip-compressed man page files (e.g., .1.gz, .3.gz, .3am.gz, .3form.gz, .3menu.gz, etc.).
+It should decompress such .gz files to temporary files as needed, then run an external command (via runcmd) on each collected file—likely for linting, formatting, or processing man pages—printing colored status output (via cprint) and progress info (via mpf) for each processed file.
+The script is invoked from the command line with a target path and optional extension filters, and cleans up temporary files after processing."""
 
 import gzip
 import sys
 from collections import deque
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-
 from dh import cprint, mpf, runcmd
-
-
 def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
     path = Path(path)
     skip_dirs = {".git", "__pycache__"}
@@ -48,8 +47,6 @@ def get_files(path: str | Path, ext: list[str] | None = None) -> list[Path]:
             ):
                 files.append(item)
     return files
-
-
 def safe_run(path) -> bool:
     path = Path(path)
     is_gzipped = path.suffix == ".gz"
@@ -76,8 +73,6 @@ def safe_run(path) -> bool:
     finally:
         if is_gzipped and Path(tmp_path).exists():
             Path(tmp_path).unlink()
-
-
 def process_file(path) -> bool:
     path = Path(path)
     if not path.exists():
@@ -89,8 +84,6 @@ def process_file(path) -> bool:
         return True
     cprint("[ERROR]", "red")
     return False
-
-
 def main() -> None:
     args = sys.argv[1:]
     cwd = Path.cwd()
@@ -113,7 +106,5 @@ def main() -> None:
     all_exts = base_exts + [f"{ext}.gz" for ext in base_exts]
     files = [Path(p) for p in args] if args else get_files(cwd, ext=all_exts)
     mpf(process_file, files)
-
-
 if __name__ == "__main__":
     raise SystemExit(main())

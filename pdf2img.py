@@ -1,14 +1,11 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python script that batch-converts PDF files into JPG images using pdf2image, saving each PDF's pages as separate high-resolution (300 DPI) JPG files inside a dedicated subfolder named after the PDF (created under a given output directory).
+The script should take a PDF file path and output folder as inputs, generate images per page via convert_from_path with multithreading, rename the resulting JPEG files with a consistent naming pattern (e.g., filename_page_N.jpg), and handle errors gracefully by printing warnings for missing expected files and catching exceptions during conversion, returning a boolean indicating success or failure."""
 
 import shutil
 from pathlib import Path
-
 from pdf2image import convert_from_path
-
 POPPLER_PATH = None
-
-
 def convert_pdf_to_jpg(pdf_path: Path, output_folder: Path) -> bool:
     try:
         print(f"Converting '{pdf_path.name}'...")
@@ -46,8 +43,6 @@ def convert_pdf_to_jpg(pdf_path: Path, output_folder: Path) -> bool:
             except Exception as cleanup_e:
                 print(f"Error during cleanup of '{pdf_output_dir}': {cleanup_e}")
         return False
-
-
 def process_directory(start_dir: Path, output_base_dir: Path) -> None:
     print(f"Starting PDF to JPG conversion in directory: {start_dir}")
     print(f"Output will be saved in: {output_base_dir}")
@@ -74,8 +69,6 @@ def process_directory(start_dir: Path, output_base_dir: Path) -> None:
     print(f"Successfully converted and removed: {converted_count} PDF files.")
     print(f"Failed to convert: {failed_count} PDF files.")
     print("------------------------")
-
-
 if __name__ == "__main__":
     cwdectory = Path.cwd()
     output_directory = cwdectory / "output_jpgs"

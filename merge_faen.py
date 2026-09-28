@@ -1,19 +1,19 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""Write a Python utility module that manages a persistent word-translation cache and a failed-words tracking file for a translation pipeline.
+It should provide a function to load existing translations from a JSON file into a dictionary, gracefully handling missing files, invalid JSON, or a non-dictionary top-level structure by logging warnings and returning an empty dictionary.
+It should also provide a function to load previously failed words from a plain text file (one word per line) into a set, stripping whitespace and skipping empty lines, while handling missing files or read errors via logging.
+Both functions should print/log informative messages about how many entries were loaded, and the module should configure basic logging with timestamps at INFO level."""
 
 import json
 import logging
 import os
 from pathlib import Path
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-
-
 def load_existing_translations(json_path: str) -> dict[str, str]:
     if os.path.exists(json_path):
         try:
@@ -31,8 +31,6 @@ def load_existing_translations(json_path: str) -> dict[str, str]:
         except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Could not load existing JSON file: {e}")
     return {}
-
-
 def load_failed_words(failed_path: str) -> set[str]:
     if os.path.exists(failed_path):
         try:
@@ -43,8 +41,6 @@ def load_failed_words(failed_path: str) -> set[str]:
         except OSError as e:
             logger.warning(f"Could not load failed words file: {e}")
     return set()
-
-
 def process_file_pair(
     fa_path: Path, en_path: Path
 ) -> tuple[dict[str, str], set[str], list[str]]:
@@ -80,8 +76,6 @@ def process_file_pair(
     except Exception as e:
         logger.error(f"Unexpected error processing {fa_path.name}: {e}")
         return {}, set(), [f"Unexpected error: {e}"]
-
-
 def merge_translations(src_dir: str = "."):
     output_json = "dic_fa_en.json"
     output_failed = "failed-fa.txt"
@@ -150,11 +144,8 @@ def merge_translations(src_dir: str = "."):
     print(f"Total translations in dictionary: {len(translations)}")
     print(f"Total failed words: {len(failed_words)}")
     print("=" * 40)
-
-
 if __name__ == "__main__":
     import time
-
     start_time = time.time()
     try:
         merge_translations()

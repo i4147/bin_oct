@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-from __future__ import annotations
+"""A rooted-Android network utility script that runs the device's `ip addr` command via subprocess, parses its output with regex to extract network interfaces and their IPv4 addresses along with up/down state, and selects the most relevant active interface based on a defined priority order (wlan, eth, rmnet, tun, ppp) while excluding loopback.
+It then takes that interface's public IP and queries the ip-api.com geolocation web service to retrieve and display location details (country, region, city, ISP, coordinates).
+The script uses dataclasses to structure interface and location data, supports command-line arguments via argparse, and logs status/errors through the logging module."""
 
 import argparse
 import json
@@ -10,22 +12,17 @@ import sys
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-
 BLACKLIST_IFACES_PREFIX = "lo"
 INTERFACE_PRIORITY = ["wlan", "eth", "rmnet", "tun", "ppp"]
 DEBUG_LEVEL = logging.WARNING
 IP_BIN = Path("/system/bin/ip")
 GEOIP_URL = "http://ip-api.com/json/{}"
 logging.basicConfig(level=DEBUG_LEVEL, format="%(levelname)s: %(message)s")
-
-
 @dataclass
 class NetworkInterface:
     name: str
     ip: str
     is_up: bool = False
-
-
 @dataclass
 class LocationInfo:
     country: str = ""
@@ -34,19 +31,15 @@ class LocationInfo:
     isp: str = ""
     lat: float = 0.0
     lon: float = 0.0
-
     def display(self) -> str:
         if not self.country:
             return "Location: Unknown"
         parts = [self.city, self.region, self.country]
         location = ", ".join(p for p in parts if p)
         return f"Location: {location}"
-
-
 class IPAddressManager:
     def __init__(self):
         self.interfaces: dict[str, str] = {}
-
     def parse_ip_addr_output(self, output: str) -> dict[str, str]:
         ip_map = {}
         current_iface = None
@@ -62,7 +55,6 @@ class IPAddressManager:
                 if ip_match:
                     ip_map[current_iface] = ip_match.group(1)
         return ip_map
-
     def get_interfaces(self, specific_iface: str | None = None) -> dict[str, str]:
         cmd = [str(IP_BIN), "addr", "show"]
         if specific_iface:
@@ -73,7 +65,6 @@ class IPAddressManager:
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get interfaces: {e}")
             return {}
-
     def get_primary_ip(self) -> str | None:
         interfaces = self.get_interfaces()
         filtered = {
@@ -86,7 +77,6 @@ class IPAddressManager:
                 if iface.startswith(prefix):
                     return filtered[iface]
         return next(iter(filtered.values()), None)
-
     def get_all_ips(self) -> list[str]:
         interfaces = self.get_interfaces()
         filtered = {
@@ -103,8 +93,6 @@ class IPAddressManager:
             if filtered[iface] not in ips:
                 ips.append(filtered[iface])
         return ips
-
-
 class GeoIPLookup:
     @staticmethod
     def lookup(ip: str) -> LocationInfo:
@@ -126,13 +114,10 @@ class GeoIPLookup:
         except Exception as e:
             logging.debug(f"Geolocation failed for {ip}: {e}")
         return LocationInfo()
-
-
 class MyIPApp:
     def __init__(self):
         self.ip_manager = IPAddressManager()
         self.geo_lookup = GeoIPLookup()
-
     def parse_args(self, args: list[str]) -> argparse.Namespace:
         parser = argparse.ArgumentParser(
             description="Display IP and location information (Termux)",
@@ -153,7 +138,6 @@ class MyIPApp:
             "interface", nargs="?", help="Show IP for specific interface"
         )
         return parser.parse_args(args)
-
     def display_ip_info(self, ip: str, show_location: bool, interface: str = ""):
         iface_str = f" [{interface}]" if interface else ""
         print(f"IP: {ip}{iface_str}")
@@ -162,7 +146,6 @@ class MyIPApp:
             print(location.display())
             if location.isp:
                 print(f"ISP: {location.isp}")
-
     def run(self):
         config = self.parse_args(sys.argv[1:])
         if config.verbose:
@@ -192,12 +175,8 @@ class MyIPApp:
             else:
                 print("No active network interface found")
                 sys.exit(1)
-
-
 def main():
     app = MyIPApp()
     app.run()
-
-
 if __name__ == "__main__":
     main()
