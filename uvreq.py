@@ -4,6 +4,8 @@ For each package name found, it should print the name to the console and append 
 The script should read uv.lock encoding as UTF-8, process the file's content line by line, and run this logic automatically when executed as the main program via a main() entry point."""
 
 from pathlib import Path
+
+
 def process_file(path: str) -> None:
     path = Path(path)
     content = path.read_text(encoding="utf-8")
@@ -14,7 +16,11 @@ def process_file(path: str) -> None:
             print(pkg_name)
             with Path("requirements.txt").open("a", encoding="utf-8") as f:
                 f.write(pkg_name + "\n")
+
+
 def main() -> None:
     process_file("uv.lock")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -11,8 +11,11 @@ import sys
 import tarfile
 from multiprocessing import Pool
 from pathlib import Path
+
 MAX_WORKERS = 8
 SUPPORTED_EXTENSIONS = {".tar.gz", ".tar.xz", ".tar.zst", ".tar.br", ".tgz"}
+
+
 def get_compression_type(path):
     name = path.name.lower()
     if name.endswith((".tar.gz", ".tgz")):
@@ -24,6 +27,8 @@ def get_compression_type(path):
     elif name.endswith(".tar.br"):
         return "br"
     return None
+
+
 def check_integrity(archive_path):
     compression = get_compression_type(archive_path)
     try:
@@ -59,6 +64,8 @@ def check_integrity(archive_path):
     ) as e:
         print(f"Integrity check failed for {archive_path.name}: {e}")
         return False
+
+
 def extract_archive(archive_path):
     archive_path = Path(archive_path)
     print(f"Processing: {archive_path.name}")
@@ -75,11 +82,15 @@ def extract_archive(archive_path):
     except (tarfile.TarError, OSError, EOFError) as e:
         print(f"Extraction failed for {archive_path.name}: {e}")
         return False
+
+
 def find_archives(directory="."):
     archives = []
     for pattern in SUPPORTED_EXTENSIONS:
         archives.extend(Path(directory).glob(f"*{pattern}"))
     return sorted(archives)
+
+
 def main():
     if len(sys.argv) > 1:
         archives = [Path(arg) for arg in sys.argv[1:] if Path(arg).exists()]
@@ -99,5 +110,7 @@ def main():
     failed = sum(1 for r in results if not r)
     print("-" * 40)
     print(f"Summary: {successful} successful, {failed} failed/skipped")
+
+
 if __name__ == "__main__":
     main()

@@ -6,6 +6,8 @@ At the end, it should print a summary showing the total number of JSON files che
 
 import argparse
 from pathlib import Path
+
+
 def remove_second_if_first_exists(root: Path, dry_run: bool = True) -> None:
     removed = 0
     checked = 0
@@ -26,6 +28,8 @@ def remove_second_if_first_exists(root: Path, dry_run: bool = True) -> None:
     print("\n--- Summary ---")
     print(f"Checked: {checked}")
     print(f"Removed: {removed}" if not dry_run else "Dry run only. No files removed.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Remove .txt files if a .json file with the same name exists."

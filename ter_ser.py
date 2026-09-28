@@ -6,7 +6,10 @@ For each qualifying file it should record the size before and after minification
 import sys
 from pathlib import Path
 from dh import get_files, gsz, mpf, rrs, runcmd
+
 EXT = [".js", ".jsx", ".jsm", ".jsc"]
+
+
 def safe_run(path: Path) -> bool:
     cmd = ["terser", "--compress", "--mangle", "--", str(path)]
     res, txt, err = runcmd(cmd, show_output=False)
@@ -15,6 +18,8 @@ def safe_run(path: Path) -> bool:
         return False
     path.write_text(txt, encoding="utf8")
     return True
+
+
 def process_file(path):
     path = Path(path)
     if path.name.endswith(".min.js"):
@@ -32,6 +37,8 @@ def process_file(path):
         after = gsz(path)
         rrs(path, before, after)
     return
+
+
 def main():
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -49,5 +56,7 @@ def main():
         process_file(files[0])
         sys.exit(0)
     mpf(process_file, files)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

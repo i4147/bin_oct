@@ -5,6 +5,8 @@ The script has no external inputs beyond the current directory contents and prod
 
 from pathlib import Path
 from dh import cprint, gsz
+
+
 def main() -> None:
     root = Path.cwd()
     kp = {}
@@ -27,5 +29,7 @@ def main() -> None:
             cprint(f"{k}:", "cyan")
             for i in v:
                 print(f"    - {i}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

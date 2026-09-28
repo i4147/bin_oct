@@ -5,6 +5,8 @@ It should handle missing files and read/write errors gracefully by printing desc
 import re
 import sys
 from pathlib import Path
+
+
 def restructure_text_file(path: Path) -> None:
     if not path.is_file():
         print(f"Error: File not found at {path}")
@@ -71,6 +73,8 @@ def restructure_text_file(path: Path) -> None:
         print(f"File successfully restructured: {path}")
     except Exception as e:
         print(f"Error writing to file {path}: {e}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python script_name.py <filename>")

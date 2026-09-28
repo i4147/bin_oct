@@ -7,6 +7,8 @@ When processing a single file, exit with status code 1 afterward; when processin
 import sys
 from pathlib import Path
 from dh import cprint, get_nobinary, mpf
+
+
 def process_file(path: str | Path) -> None:
     path = Path(path)
     content = path.read_text(encoding="utf-8")
@@ -16,6 +18,8 @@ def process_file(path: str | Path) -> None:
         return
     path.write_text(new_content, encoding="utf-8")
     cprint(f"{path.name} (updated)", "cyan")
+
+
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -33,5 +37,7 @@ def main() -> None:
         process_file(files[0])
         sys.exit(1)
     mpf(process_file, files)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

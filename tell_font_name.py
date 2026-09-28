@@ -9,11 +9,17 @@ from pathlib import Path
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.ttFont import TTFont
+
+
 def is_ascii_printable(s: str) -> bool:
     return all(32 <= ord(c) <= 126 for c in s)
+
+
 def clean_filename(s: str) -> str:
     s = re.sub(r"[^\w\\-\.]", "", s)
     return s.strip("_-.")
+
+
 def get_best_name(font: TTFont, name_id: int):
     fallback = None
     for rec in font["name"].names:
@@ -28,6 +34,8 @@ def get_best_name(font: TTFont, name_id: int):
         if is_ascii_printable(name):
             fallback = name
     return fallback
+
+
 def get_font_names(path) -> tuple[str, str] | tuple[None, None]:
     font = TTFont(path)
     family = get_best_name(font, 1)
@@ -39,6 +47,8 @@ def get_font_names(path) -> tuple[str, str] | tuple[None, None]:
     if subfamily.lower() == family.lower():
         subfamily = "Regular"
     return (family, subfamily)
+
+
 def process_file(fn: Path) -> int:
     Path(path)
     try:
@@ -71,6 +81,8 @@ def process_file(fn: Path) -> int:
     fn.rename(new_path)
     cprint(f"{new_path.name}", "green")
     return 0
+
+
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -88,5 +100,7 @@ def main() -> None:
         process_file(files[0])
         sys.exit(0)
     mpf(process_file, files)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

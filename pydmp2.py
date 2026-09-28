@@ -4,6 +4,8 @@ It should traverse all paths under the root in reverse sorted order (so nested e
 The script should run as a standalone program via a main function invoked through the standard `if __name__ == "__main__"` entry point."""
 
 from pathlib import Path
+
+
 def main() -> None:
     count = 0
     root = Path.cwd()
@@ -13,5 +15,7 @@ def main() -> None:
             path.rmdir()
             count += 1
     print(f"total {count} empty dirs removed")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

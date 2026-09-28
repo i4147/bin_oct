@@ -6,6 +6,7 @@ Include a main block that parses command-line arguments to let the user choose e
 import argparse
 import sys
 from pathlib import Path
+
 MORSE_CODE_DICT = {
     "A": ".-",
     "B": "-...",
@@ -46,6 +47,8 @@ MORSE_CODE_DICT = {
     " ": "/",
 }
 REVERSE_MORSE_DICT = {v: k for k, v in MORSE_CODE_DICT.items()}
+
+
 def text_to_morse(text: str) -> str:
     morse = []
     for char in text.upper():
@@ -54,6 +57,8 @@ def text_to_morse(text: str) -> str:
         else:
             morse.append(char)
     return " ".join(morse)
+
+
 def morse_to_text(morse: str) -> str:
     text = []
     morse_chars = morse.split(" ")
@@ -63,6 +68,8 @@ def morse_to_text(morse: str) -> str:
         elif code:
             text.append(code)
     return "".join(text)
+
+
 def encrypt_file(input_filename, output_filename) -> None:
     try:
         content = Path(input_filename).read_text(encoding="utf-8")
@@ -72,6 +79,8 @@ def encrypt_file(input_filename, output_filename) -> None:
         sys.exit(1)
     except Exception:
         sys.exit(1)
+
+
 def decrypt_file(input_filename, output_filename) -> None:
     try:
         morse_content = Path(input_filename).read_text(encoding="utf-8")
@@ -81,6 +90,8 @@ def decrypt_file(input_filename, output_filename) -> None:
         sys.exit(1)
     except Exception:
         sys.exit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Morse Code Encryptor/Decryptor")
     parser.add_argument("input_file", help="Input file name")
@@ -100,5 +111,7 @@ def main() -> None:
         encrypt_file(args.input_file, args.output_file)
     elif args.decrypt:
         decrypt_file(args.input_file, args.output_file)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

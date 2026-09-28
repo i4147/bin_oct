@@ -9,6 +9,8 @@ import os
 import time
 import pysrt
 from deep_translator import GoogleTranslator
+
+
 def translate_srt(input_file, source_lang, target_lang):
     subs = pysrt.open(input_file, encoding="utf-8")
     translator = GoogleTranslator(source=source_lang, target=target_lang)
@@ -45,6 +47,8 @@ def translate_srt(input_file, source_lang, target_lang):
     output_file = f"translated_{os.path.basename(input_file)}"
     subs.save(output_file, encoding="utf-8")
     print(f"Translation complete! Saved to {output_file}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Translate SRT files in chunks.")
     parser.add_argument("-i", "--input", required=True)

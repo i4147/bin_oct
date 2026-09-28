@@ -7,8 +7,11 @@ After successful conversion, it should print a confirmation message showing the 
 import re
 import sys
 from pathlib import Path
+
 TIMESTAMP_RE = re.compile(r"\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}")
 TAG_RE = re.compile(r"<[^>]+>|{\w+}")
+
+
 def srt_to_text(srt_path: Path) -> str:
     lines = srt_path.read_text(encoding="utf-8", errors="ignore").splitlines()
     out = []
@@ -23,6 +26,8 @@ def srt_to_text(srt_path: Path) -> str:
         line = TAG_RE.sub("", line)
         out.append(line)
     return "\n".join(out)
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: srt2txt.py file.srt [out.txt]")
@@ -32,5 +37,7 @@ def main() -> None:
     text = srt_to_text(src)
     dst.write_text(text, encoding="utf-8")
     print(f"✔ Converted: {src} → {dst}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

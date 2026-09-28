@@ -12,9 +12,12 @@ from multiprocessing import get_context
 from pathlib import Path
 from textwrap import dedent
 from dh import get_files, unique_path
+
 cwd = Path.cwd()
 cwdname = cwd.name
 BASE_DIR = Path(f"{cwdname}_doc")
+
+
 def format_markdown(module_name: str, module_doc: str, functions, classes) -> str:
     parts = [f"# Module `{module_name}`\n"]
     if module_doc:
@@ -28,6 +31,8 @@ def format_markdown(module_name: str, module_doc: str, functions, classes) -> st
         for name, doc in classes:
             parts.extend((f"### `{name}`\n", doc + "\n"))
     return "\n".join(parts).strip() + "\n"
+
+
 def extract_ast_docs(src: str) -> tuple[str, list, list]:
     try:
         tree = ast.parse(src)
@@ -48,6 +53,8 @@ def extract_ast_docs(src: str) -> tuple[str, list, list]:
             if doc:
                 classes.append((node.name, doc))
     return (module_doc, functions, classes)
+
+
 def extract_from_file(py_path: str) -> tuple[str, str, str, list, list]:
     try:
         src = Path(py_path).read_text(encoding="utf-8")
@@ -57,6 +64,8 @@ def extract_from_file(py_path: str) -> tuple[str, str, str, list, list]:
     if not module_doc and not functions and not classes:
         return None
     return (module_doc, functions, classes)
+
+
 def extract_from_importable(name: str):
     try:
         module = importlib.import_module(name)
@@ -70,11 +79,15 @@ def extract_from_importable(name: str):
         if not doc:
             return None
         return (doc, [], [])
+
+
 def module_to_md_paths(name: str) -> tuple[str, str]:
     parts = name.split(".")
     folder = BASE_DIR.joinpath(*parts[:-1])
     filename = f"{parts[-1]}.md"
     return (str(folder), str(folder / filename))
+
+
 def file_to_md_paths(py_file: str, root: str) -> tuple[str, str]:
     rel = Path(py_file).relative_to(root)
     parts = list(rel.parts)
@@ -83,6 +96,8 @@ def file_to_md_paths(py_file: str, root: str) -> tuple[str, str]:
     print(outfile)
     input("press any key to continue...")
     return (str(outfile.parent), str(outfile))
+
+
 def save_markdown(folder: str, path: str, content: str) -> None:
     folderpath = Path(folder)
     if not folderpath.exists():
@@ -91,6 +106,8 @@ def save_markdown(folder: str, path: str, content: str) -> None:
     if outpath.exists():
         outpath = unique_path(outpath)
     outpath.write_text(content, encoding="utf-8")
+
+
 def process_importable_task(name: str) -> None:
     print(f"processing module {name}")
     result = extract_from_importable(name)
@@ -100,6 +117,8 @@ def process_importable_task(name: str) -> None:
     folder, out_path = module_to_md_paths(name)
     md = format_markdown(name, module_doc, functions, classes)
     save_markdown(folder, out_path, md)
+
+
 def process_file_task(py_file) -> None:
     path = Path(py_file)
     root = str(path.parent)
@@ -113,6 +132,8 @@ def process_file_task(py_file) -> None:
     folder, out_path = file_to_md_paths(py_file, root)
     md = format_markdown(module_name, module_doc, functions, classes)
     save_markdown(folder, out_path, md)
+
+
 def main() -> None:
     if not BASE_DIR.exists():
         BASE_DIR.mkdir(exist_ok=True)
@@ -132,5 +153,7 @@ def main() -> None:
                 pending.popleft().get()
         while pending:
             pending.popleft().get()
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

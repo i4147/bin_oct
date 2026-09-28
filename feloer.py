@@ -6,7 +6,7 @@ Prepend an AI-generated "how to reproduce this" prompt as a module
 docstring to every self-contained .py file in the current directory.
 
 Uses the felo CLI:
-    felo superagent "<prompt>"
+    felo superagent --query "..." --accept-language en --timeout 300 --json --verbose
 
 Usage:
     python annotate_felo.py --dry-run
@@ -67,7 +67,6 @@ def clean_response(text: str) -> str:
     m = re.search(r"^\s*Received\s*:", text, re.MULTILINE | re.IGNORECASE)
     if m:
         after = text[m.end() :]
-
         after = after.split("\n", 1)[1] if "\n" in after else ""
         after = re.sub(r"^\s*\n+", "", after)
         text = after
@@ -120,9 +119,21 @@ def has_module_docstring(body: str) -> bool:
 def ask_felo(code: str) -> str:
     prompt = PROMPT_TEMPLATE.format(code=code)
 
+    cmd = [
+        FELO_CMD,
+        FELO_SUBCMD,
+        "--query",
+        prompt,
+        "--accept-language",
+        "en",
+        "--timeout",
+        "300",
+        "--json",
+        "--verbose",
+    ]
+
     proc = subprocess.run(
-        [FELO_CMD, FELO_SUBCMD, prompt],
-        input=prompt,
+        cmd,
         capture_output=True,
         text=True,
         encoding="utf-8",

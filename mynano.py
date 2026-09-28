@@ -11,19 +11,24 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.log import TextLog
 from textual.widgets import Footer, Header, TextEditor
+
+
 class BasicEditor(App):
     BINDINGS = [
         ("o", "open_file", "Open"),
         ("s", "save_file", "Save"),
         ("q", "app_quit", "Quit"),
     ]
+
     def __init__(self, filename: str | None = None) -> None:
         super().__init__()
         self.filename = filename
         self.is_dirty = False
+
     def setup_readline(self) -> None:
         readline.parse_and_bind("tab: complete")
         readline.set_completer(rlcompleter.Completer(namespace=sys.modules).complete)
+
     def compose(self) -> ComposeResult:
         self.setup_readline()
         yield Header()
@@ -31,6 +36,7 @@ class BasicEditor(App):
             yield TextEditor(id="editor", name="editor")
             yield TextLog(id="log", height=2, panel=True, label="Status")
         yield Footer()
+
     def on_mount(self) -> None:
         editor = self.query_one(TextEditor)
         log = self.query_one(TextLog)
@@ -48,6 +54,7 @@ class BasicEditor(App):
                 self.title = "Basic Editor - New File"
         else:
             log.write("New file. Use Ctrl+O to open or Ctrl+S to save.")
+
     def action_open_file(self) -> None:
         log = self.query_one(TextLog)
         editor = self.query_one(TextEditor)
@@ -66,6 +73,7 @@ class BasicEditor(App):
             log.write(f"Error: File '{self.filename}' not found.")
         except Exception as e:
             log.write(f"Error opening file: {e}")
+
     def action_save_file(self) -> None:
         log = self.query_one(TextLog)
         editor = self.query_one(TextEditor)
@@ -87,6 +95,7 @@ class BasicEditor(App):
             self.is_dirty = False
         except Exception as e:
             log.write(f"Error saving file: {e}")
+
     def action_app_quit(self) -> None:
         log = self.query_one(TextLog)
         editor = self.query_one(TextEditor)
@@ -103,6 +112,7 @@ class BasicEditor(App):
                 log.write(f"Error during quit confirmation: {e}")
         else:
             self.exit()
+
     def on_text_editor_changed(self, event: TextEditor.Changed) -> None:
         self.is_dirty = True
         self.query_one(Footer).key_display = [
@@ -112,6 +122,8 @@ class BasicEditor(App):
         ]
         if self.is_dirty:
             self.query_one(Footer).key_display.append(("Ctrl+S", "Save", "warning"))
+
+
 if __name__ == "__main__":
     initial_filename = sys.argv[1] if len(sys.argv) > 1 else None
     app = BasicEditor(filename=initial_filename)

@@ -28,5 +28,5 @@ def process_file(path) -> bool:
 if __name__ == "__main__":
     args = sys.argv[1:]
     cwd = Path.cwd()
-    files = [Path(p) for p in args] if args else get_files(cwd, ext == [".html"])
+    files = [Path(p) for p in args] if args else get_files(cwd, ext=[".html"])
     mpf(process_file, files)

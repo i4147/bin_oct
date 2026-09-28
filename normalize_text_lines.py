@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unicodedata
 from pathlib import Path
+
+
 def normalize_line(line: str) -> str:
     text = unicodedata.normalize("NFKC", line)
     text = "".join(char for char in text if char.isprintable())
@@ -18,6 +20,8 @@ def normalize_line(line: str) -> str:
     text = text.casefold()
     text = "_".join(text.split())
     return text
+
+
 def normalize_file_in_place(path: Path) -> None:
     with (
         path.open("r", encoding="utf-8", newline="") as source,
@@ -36,6 +40,8 @@ def normalize_file_in_place(path: Path) -> None:
             content = line.rstrip("\r\n")
             temporary.write(normalize_line(content) + "\n")
     temporary_path.replace(path)
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         print(f"Usage: {Path(sys.argv[0]).name} INPUT_FILE", file=sys.stderr)
@@ -52,5 +58,7 @@ def main() -> None:
             file=sys.stderr,
         )
         raise SystemExit(1)
+
+
 if __name__ == "__main__":
     main()

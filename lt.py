@@ -6,6 +6,7 @@ Symlinks should be highlighted in magenta, regular files in green, directories i
 import datetime
 from pathlib import Path
 from dh import fsz, gsz
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     dirz = []

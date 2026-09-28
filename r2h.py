@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from dh import get_files
 from docutils.core import publish_parts
+
+
 def rst_to_html(content: str) -> str:
     try:
         parts = publish_parts(
@@ -25,6 +27,8 @@ def rst_to_html(content: str) -> str:
     except Exception as e:
         print(f"Conversion error details: {e}")
         raise
+
+
 def process_file(path):
     path = Path(path)
     content = path.read_text(encoding="utf-8")
@@ -32,6 +36,8 @@ def process_file(path):
     html_path = path.with_suffix(".html")
     html_path.write_text(html_content, encoding="utf-8")
     path.unlink()
+
+
 def main() -> None:
     cwd = Path.cwd()
     args = sys.argv[1:]
@@ -41,5 +47,7 @@ def main() -> None:
         sys.exit(1)
     for f in files:
         process_file(f)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

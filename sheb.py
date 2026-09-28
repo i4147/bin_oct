@@ -5,7 +5,10 @@ For each detected file, it should either replace an existing shebang line with "
 
 import os
 from pathlib import Path
+
 TARGET_SHEBANG = "#!/data/data/com.termux/files/usr/bin/env python"
+
+
 def is_python_file(path) -> bool:
     if Path(path).stat().st_size == 0 or path.endswith("__init__.py"):
         return False
@@ -26,6 +29,8 @@ def is_python_file(path) -> bool:
             return False
     except (OSError, UnicodeDecodeError):
         return False
+
+
 def process_file(path) -> None:
     Path(path)
     with Path(path).open("r+", encoding="utf-8") as f:
@@ -50,6 +55,8 @@ def process_file(path) -> None:
         print(f"{os.path.relpath(path)} updated.")
     if "bin" in path.split(os.sep):
         Path(path).chmod(0o755)
+
+
 def traverse_directory(directory: Path) -> None:
     for root, _, files in os.walk(directory):
         for filename in files:
@@ -58,5 +65,7 @@ def traverse_directory(directory: Path) -> None:
                 continue
             if is_python_file(path):
                 process_file(path)
+
+
 if __name__ == "__main__":
     traverse_directory(Path.cwd())

@@ -1,103 +1,117 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-"""Write a Python wrapper script for a command-line tool named "felo" that intercepts calls to it, locates the real "felo" executable (checking a hardcoded Termux npm-global path first, then falling back to searching PATH while excluding itself to avoid recursion), and transparently forwards all command-line arguments to it via subprocess.
-The script must log each invocation to a timestamped, uniquely-named log file under ~/tmp/apps (creating the directory if needed), recording metadata such as the invocation timestamp, current working directory, and the full command arguments in a formatted header.
-It should also capture and log the command's execution details (such as output and/or exit status), and finally exit with the same return code as the real felo process so it behaves as a faithful passthrough/logging proxy."""
 
 import datetime
 import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 LOG_DIR = Path.home() / "tmp" / "apps"
-REAL_FELO = "/data/data/com.termux/files/home/.npm-global/bin/felo"
-
-
-def find_real_felo():
-    if os.path.isfile(REAL_FELO) and os.access(REAL_FELO, os.X_OK):
-        if os.path.realpath(REAL_FELO) != os.path.realpath(__file__):
-            return REAL_FELO
-    path_dirs = os.environ.get("PATH", "").split(":")
-    script_path = os.path.realpath(__file__)
-    for path_dir in path_dirs:
-        candidate = os.path.join(path_dir, "felo")
-        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
-            if os.path.realpath(candidate) != script_path:
-                return candidate
-    return None
+FELO_SCRIPT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 
 
 def create_log_file():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    milliseconds = int(time.time() * 400) % 1000
-    log_file = LOG_DIR / f"felo_{timestamp}_{milliseconds:03d}.txt"
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    log_file = LOG_DIR / f"felo_{timestamp}.txt"
+
     counter = 1
     while log_file.exists():
-        log_file = LOG_DIR / f"felo_{timestamp}_{milliseconds:03d}_{counter}.txt"
+        log_file = LOG_DIR / f"felo_{timestamp}_{counter}.txt"
         counter += 1
+
     return log_file
 
 
-def write_log_header(log_file, command_args):
+def write_log_header(log_file, cmd_args):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-    cwd = os.getcwd()
-    with open(log_file, "a") as f:
-        f.write("=== felo Command Log ===\n")
-        f.write(f"Timestamp: {timestamp}\n")
-        f.write(f"Command: felo {' '.join(command_args)}\n")
-        f.write("================================\n\n")
+
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write("================================\n")
+        f.write(f"Started: {timestamp}\n")
+        f.write(f"Working directory: {os.getcwd()}\n")
+        f.write(f"Arguments: {cmd_args!r}\n")
+        f.write("--- Output ---\n")
 
 
 def write_log_footer(log_file, exit_code):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-    with open(log_file, "a") as f:
-        f.write("\n================================\n")
-        f.write(f"Exit Code: {exit_code}\n")
-        f.write(f"Completed: {timestamp}\n")
+
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write("\n--- End ---\n")
+        f.write(f"Finished: {timestamp}\n")
+        f.write(f"Exit code: {exit_code}\n")
         f.write("================================\n")
 
 
 def main():
-    real_felo = find_real_felo()
-    if not real_felo:
-        print("Error: Could not find the real felo binary", file=sys.stderr)
-        print("Please install felo first: npm install -g felo-ai", file=sys.stderr)
-        sys.exit(1)
     log_file = create_log_file()
-    command_args = sys.argv[1:]
-    write_log_header(log_file, command_args)
-    command = [real_felo] + ["superagent"] + command_args
+    cmd_args = sys.argv[1:]
+
+    if not cmd_args:
+        print("Usage: felo <query>", file=sys.stderr)
+        return 2
+
+    query = " ".join(cmd_args)
+
+    cmd = [
+        "node",
+        FELO_SCRIPT,
+        "--query",
+        query,
+        "--accept-language",
+        "en",
+        "--timeout",
+        "300",
+        "--json",
+        "--verbose",
+    ]
+
+    process = None
+    exit_code = 1
+
+    write_log_header(log_file, cmd_args)
+
     try:
-        with open(log_file, "a") as log_f:
+        with open(log_file, "a", encoding="utf-8") as log_f:
             process = subprocess.Popen(
-                command,
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True,
             )
-            for line in process.stdout:
-                sys.stdout.write(line)
-                sys.stdout.flush()
-                log_f.write(line)
-                log_f.flush()
-            process.wait()
-            exit_code = process.returncode
+
+            if process.stdout is not None:
+                for line in process.stdout:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                    log_f.write(line)
+                    log_f.flush()
+
+            exit_code = process.wait()
+
     except KeyboardInterrupt:
         exit_code = 130
         print("\nInterrupted by user", file=sys.stderr)
+
+        if process is not None and process.poll() is None:
+            process.terminate()
+            process.wait()
+
     except Exception as e:
-        exit_code = 1
         error_msg = f"Error running command: {e}\n"
         sys.stderr.write(error_msg)
-        with open(log_file, "a") as log_f:
+
+        with open(log_file, "a", encoding="utf-8") as log_f:
             log_f.write(error_msg)
-    write_log_footer(log_file, exit_code)
-    print(f"Log saved to: {log_file}", file=sys.stderr)
-    sys.exit(exit_code)
+
+    finally:
+        write_log_footer(log_file, exit_code)
+        print(f"Log saved to: {log_file}", file=sys.stderr)
+
+    return exit_code
 
 
 if __name__ == "__main__":

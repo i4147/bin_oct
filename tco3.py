@@ -15,11 +15,14 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 from loguru import logger
+
 Translator = Callable[[str], str]
 REQUEST_LOCK = threading.Lock()
 GOOGLETRANS_LOCK = threading.Lock()
 PYGOOGLETRANSLATION_LOCK = threading.Lock()
 LAST_REQUEST_TIME = 0.0
+
+
 def configure_logging() -> None:
     logger.remove()
     logger.add(
@@ -30,8 +33,12 @@ def configure_logging() -> None:
         retention=3,
     )
     logger.add(sys.stderr, level="ERROR")
+
+
 def normalize_language(language: str) -> str:
     return language.strip().replace("_", "-").lower()
+
+
 def language_aliases(language: str) -> list[str]:
     normalized = normalize_language(language)
     base = normalized.split("-", 1)[0]
@@ -49,6 +56,8 @@ def language_aliases(language: str) -> list[str]:
     elif base == "fr":
         aliases.extend(["fr-fr", "fr-FR", "fr"])
     return list(dict.fromkeys(aliases))
+
+
 def backend_language(language: str, backend: str) -> str:
     normalized = normalize_language(language)
     base = normalized.split("-", 1)[0]
@@ -109,23 +118,32 @@ def backend_language(language: str, backend: str) -> str:
     }
     backend_map = maps.get(backend, {})
     return backend_map.get(normalized, backend_map.get(base, base))
+
+
 def import_optional(module_name: str) -> Any:
     return importlib.import_module(module_name)
+
+
 def _make_deep_translator(source: str, target: str) -> Translator:
     from_lang = backend_language(source, "deep_translator")
     to_lang = backend_language(target, "deep_translator")
+
     def translate(text: str) -> str:
         module = import_optional("deep_translator")
         translator = module.GoogleTranslator(source=from_lang, target=to_lang)
         result = translator.translate(text)
         return str(result)
+
     return translate
+
+
 def _make_deepl(source: str, target: str) -> Translator:
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("DEEPL_API_KEY is not set")
     source_lang = backend_language(source, "deepl")
     target_lang = backend_language(target, "deepl")
+
     def translate(text: str) -> str:
         module = import_optional("deepl")
         client = module.Translator(api_key)
@@ -135,10 +153,14 @@ def _make_deepl(source: str, target: str) -> Translator:
             target_lang=target_lang,
         )
         return str(result)
+
     return translate
+
+
 def _make_translate(source: str, target: str) -> Translator:
     from_lang = backend_language(source, "translate")
     to_lang = backend_language(target, "translate")
+
     def translate(text: str) -> str:
         module = import_optional("translate")
         translator = module.Translator(
@@ -146,10 +168,14 @@ def _make_translate(source: str, target: str) -> Translator:
             to_lang=to_lang,
         )
         return str(translator.translate(text))
+
     return translate
+
+
 def _make_translators_bing(source: str, target: str) -> Translator:
     from_language = backend_language(source, "translators_bing")
     to_language = backend_language(target, "translators_bing")
+
     def translate(text: str) -> str:
         module = import_optional("translators")
         result = module.translate_text(
@@ -159,10 +185,14 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             to_language=to_language,
         )
         return str(result)
+
     return translate
+
+
 def _make_googletrans(source: str, target: str) -> Translator:
     source_lang = backend_language(source, "googletrans")
     target_lang = backend_language(target, "googletrans")
+
     def translate(text: str) -> str:
         module = import_optional("googletrans")
         with GOOGLETRANS_LOCK:
@@ -173,10 +203,14 @@ def _make_googletrans(source: str, target: str) -> Translator:
                 dest=target_lang,
             )
             return str(result.text)
+
     return translate
+
+
 def _make_pygoogletranslation(source: str, target: str) -> Translator:
     source_lang = backend_language(source, "pygoogletranslation")
     target_lang = backend_language(target, "pygoogletranslation")
+
     def translate(text: str) -> str:
         module = import_optional("pygoogletranslation")
         with PYGOOGLETRANSLATION_LOCK:
@@ -192,7 +226,10 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
             if hasattr(result, "text"):
                 return str(result.text)
             return str(result)
+
     return translate
+
+
 def _make_boto3(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("boto3")
@@ -203,26 +240,38 @@ def _make_boto3(source: str, target: str) -> Translator:
             TargetLanguageCode=target,
         )
         return str(result["TranslatedText"])
+
     return translate
+
+
 def _make_baidu(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("baidu")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
         raise RuntimeError("Unsupported baidu package API")
+
     return translate
+
+
 def _make_alibaba(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("alibaba")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
         raise RuntimeError("Unsupported alibaba package API")
+
     return translate
+
+
 def _make_watson(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("ibm_watson")
         raise RuntimeError(f"Unsupported watson package API: {module.__name__}")
+
     return translate
+
+
 def _make_azure(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         import_optional("requests")
@@ -234,6 +283,7 @@ def _make_azure(source: str, target: str) -> Translator:
                 "AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required"
             )
         import requests
+
         response = requests.post(
             f"{endpoint.rstrip('/')}/translate",
             params={"api-version": "3.0", "from": source, "to": target},
@@ -248,7 +298,10 @@ def _make_azure(source: str, target: str) -> Translator:
         response.raise_for_status()
         payload = response.json()
         return str(payload[0]["translations"][0]["text"])
+
     return translate
+
+
 FACTORIES: dict[str, Callable[[str, str], Translator]] = {
     "deep_translator": _make_deep_translator,
     "deepl": _make_deepl,
@@ -270,6 +323,8 @@ FALLBACK_ORDER = [
     "googletrans",
     "pygoogletranslation",
 ]
+
+
 def wait_for_request_slot(delay: float) -> None:
     global LAST_REQUEST_TIME
     with REQUEST_LOCK:
@@ -278,6 +333,8 @@ def wait_for_request_slot(delay: float) -> None:
         if remaining > 0:
             time.sleep(remaining)
         LAST_REQUEST_TIME = time.monotonic()
+
+
 def select_backend(
     requested: str | None,
     source: str,
@@ -312,6 +369,8 @@ def select_backend(
                 break
     details = "; ".join(failures)
     raise RuntimeError(f"No usable translation backend found: {details}")
+
+
 def split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         raise ValueError("chunk size must be greater than zero")
@@ -329,6 +388,8 @@ def split_chunks(text: str, chunk_size: int) -> list[str]:
             chunks.append(chunk)
         position = end
     return chunks
+
+
 def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
     if not continue_mode or not path.exists():
         return {}
@@ -345,6 +406,8 @@ def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
     except Exception as exc:
         logger.error("Could not load existing output {}: {}", path, exc)
         return {}
+
+
 def atomic_save(path: Path, results: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary_name = tempfile.mkstemp(
@@ -372,10 +435,14 @@ def atomic_save(path: Path, results: dict[str, str]) -> None:
         except FileNotFoundError:
             pass
         raise
+
+
 def append_failed(path: Path, index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(f"{index}\n")
+
+
 def translate_with_retry(
     index: int,
     text: str,
@@ -413,6 +480,8 @@ def translate_with_retry(
     raise RuntimeError(
         f"chunk {index} failed after {attempts} attempts: {last_error}"
     ) from last_error
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Translate a text file in independently processed chunks.",
@@ -485,6 +554,8 @@ def parse_args() -> argparse.Namespace:
         help="Ignore an existing output file.",
     )
     return parser.parse_args()
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
         raise ValueError("--workers must be between 1 and 2")
@@ -494,6 +565,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--chunk-size must be greater than zero")
     if args.save_every <= 0:
         raise ValueError("--save-every must be greater than zero")
+
+
 def run(args: argparse.Namespace) -> int:
     validate_args(args)
     input_path = Path(args.input)
@@ -566,6 +639,8 @@ def run(args: argparse.Namespace) -> int:
             return 130
     atomic_save(output_path, results)
     return 0
+
+
 def main() -> int:
     configure_logging()
     try:
@@ -577,5 +652,7 @@ def main() -> int:
     except Exception as exc:
         logger.exception("Fatal error: {}", exc)
         return 1
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

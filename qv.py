@@ -7,12 +7,16 @@ If no files are found, print "No files found." and exit; otherwise combine all f
 import argparse
 import pydoc
 from pathlib import Path
+
+
 def collect_files(root: Path, recursive: bool) -> list[Path]:
     paths = root.rglob("*") if recursive else root.iterdir()
     return sorted(
         (path for path in paths if path.is_file()),
         key=lambda path: str(path).lower(),
     )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="View files in the current directory with paging."
@@ -40,5 +44,7 @@ def main() -> None:
         output.append("=" * 40)
         output.append(content)
     pydoc.pager("\n".join(output))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

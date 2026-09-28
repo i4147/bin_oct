@@ -11,13 +11,18 @@ from collections import deque
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+
 MAX_DEFAULT = 10
+
+
 @dataclass
 class ModuleInfo:
     path: Path
     fullname: str
     source: str
     deps: set[str]
+
+
 def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
     files = []
     for p in sorted(root.rglob("*.py")):
@@ -32,6 +37,8 @@ def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
                     continue
         files.append(p)
     return files
+
+
 def module_fullname_for_path(
     root: Path, path: Path, package_mode: bool, package_name: str | None
 ) -> str:
@@ -48,6 +55,8 @@ def module_fullname_for_path(
         return ".".join([prefix] + parts)
     else:
         return ".".join(parts)
+
+
 def resolve_relative_import(
     curr_fullname: str, module: str | None, level: int
 ) -> str | None:
@@ -63,6 +72,8 @@ def resolve_relative_import(
     if not target_parts:
         return None
     return ".".join(target_parts)
+
+
 def analyze_file(args) -> ModuleInfo:
     path, root, package_mode, package_name, full_map = args
     src = path.read_text(encoding="utf8")
@@ -107,6 +118,8 @@ def analyze_file(args) -> ModuleInfo:
                 ):
                     normalized.add(candidate)
     return ModuleInfo(path=path, fullname=fullname, source=src, deps=normalized)
+
+
 def topological_sort(
     modules: dict[str, ModuleInfo],
 ) -> tuple[list[str], list[set[str]]]:
@@ -131,6 +144,8 @@ def topological_sort(
         ordered += sorted(remaining)
         cycles = [remaining]
     return ordered, cycles
+
+
 def build_merged_source(
     modules: dict[str, ModuleInfo], ordered: list[str], out_module_name: str
 ) -> str:
@@ -186,6 +201,8 @@ def build_merged_source(
     lines.append("")
     lines.append("# End of merged package")
     return "\n".join(lines)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Merge a small Python library into a single-file package."
@@ -292,5 +309,7 @@ def main():
     print(f"Modules merged ({len(modules)}): {', '.join(ordered)}")
     if cycles:
         print("Cycles (approx):", cycles)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

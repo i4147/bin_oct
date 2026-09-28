@@ -7,6 +7,8 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <pkg_list_file>")
@@ -47,5 +49,7 @@ def main():
             print("  ok")
         time.sleep(0.2)
     print(f"\nDone. Failures logged to {failed_file}")
+
+
 if __name__ == "__main__":
     main()

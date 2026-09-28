@@ -8,9 +8,12 @@ import os
 import sys
 from pathlib import Path
 from dh import get_pyfiles, mpf
+
 REMOVE_ORIG = False
 LEGACY_MODE = False
 OPTIMIZE_LEVEL = 0
+
+
 def process_file(path) -> bool | None:
     path = Path(path)
     if not path.exists() or path.is_symlink():
@@ -29,6 +32,8 @@ def process_file(path) -> bool | None:
             path.unlink()
         return True
     return False
+
+
 def main():
     global REMOVE_ORIG, LEGACY_MODE, OPTIMIZE_LEVEL
     os.environ["PYTHONPYCACHEPREFIX"] = "__pycache__"
@@ -89,5 +94,7 @@ def main():
         return 0
     mpf(process_file, files)
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

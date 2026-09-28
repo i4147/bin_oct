@@ -9,7 +9,10 @@ from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
 from dh import fsz, get_files, gsz
+
 MAX_QUEUE = 4
+
+
 def process_file(path) -> bool | None:
     path = Path(path)
     if not path.exists():
@@ -18,6 +21,8 @@ def process_file(path) -> bool | None:
         return None
     compileall.compile_file(path, legacy=False, optimize=0)
     return True
+
+
 def main() -> None:
     cwd = Path.cwd()
     before = gsz(cwd)
@@ -38,5 +43,7 @@ def main() -> None:
     elif before > after:
         sign = "-"
     print(f"space changed : {sign} {fsz(diff_size)}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

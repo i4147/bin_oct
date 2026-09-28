@@ -9,46 +9,62 @@ import subprocess
 import sys
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
+
+
 class GitBackend(ABC):
     @abstractmethod
     def run_command(self, cmd, check=True):
         pass
+
     @abstractmethod
     def is_git_repo(self) -> bool:
         pass
+
     @abstractmethod
     def get_dir_name(self) -> str:
         pass
+
     @abstractmethod
     def init_repo(self):
         pass
+
     @abstractmethod
     def get_remote_url(self) -> Optional[str]:
         pass
+
     @abstractmethod
     def create_remote_repo(self, repo_name: str):
         pass
+
     @abstractmethod
     def fetch_origin(self) -> bool:
         pass
+
     @abstractmethod
     def add_all_files(self):
         pass
+
     @abstractmethod
     def has_changes(self) -> bool:
         pass
+
     @abstractmethod
     def commit(self, message: str):
         pass
+
     @abstractmethod
     def get_current_branch(self) -> str:
         pass
+
     @abstractmethod
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         pass
+
     @abstractmethod
     def pull_rebase(self, branch: str):
         pass
+
+
 class SubprocessBackend(GitBackend):
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
@@ -57,41 +73,52 @@ class SubprocessBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         result = subprocess.run(
             ["git", "rev-parse", "--git-dir"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.run_command(["git", "init"])
+
     def get_remote_url(self) -> Optional[str]:
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"], capture_output=True, text=True
         )
         return result.stdout.strip() if result.returncode == 0 else None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         result = subprocess.run(
             ["git", "fetch", "origin"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def add_all_files(self):
         self.run_command(["git", "add", "-A"])
+
     def has_changes(self) -> bool:
         status = subprocess.run(
             ["git", "status", "--porcelain"], capture_output=True, text=True
         )
         return bool(status.stdout.strip())
+
     def commit(self, message: str):
         self.run_command(["git", "commit", "-m", message])
+
     def get_current_branch(self) -> str:
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"], capture_output=True, text=True
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
@@ -101,16 +128,21 @@ class SubprocessBackend(GitBackend):
         if push_result.returncode == 0:
             return True, None
         return False, push_result.stderr
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class GitpythonBackend(GitBackend):
     def __init__(self):
         try:
             import git
+
             self.git = git
         except ImportError:
             raise ImportError("GitPython not installed")
         self.repo = None
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -118,21 +150,26 @@ class GitpythonBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         try:
             self.repo = self.git.Repo(".")
             return True
         except self.git.InvalidGitRepositoryError:
             return False
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.repo = self.git.Repo.init(".")
+
     def get_remote_url(self) -> Optional[str]:
         try:
             return self.repo.remote("origin").url
         except (ValueError, AttributeError):
             return None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
         remote_url = self.run_command(
@@ -141,39 +178,50 @@ class GitpythonBackend(GitBackend):
         ).stdout.strip()
         if not self.get_remote_url():
             self.repo.create_remote("origin", remote_url)
+
     def fetch_origin(self) -> bool:
         try:
             self.repo.remotes.origin.fetch()
             return True
         except Exception:
             return False
+
     def add_all_files(self):
         self.repo.index.add(["."])
+
     def has_changes(self) -> bool:
         return bool(self.repo.index.diff("HEAD")) or bool(self.repo.untracked_files)
+
     def commit(self, message: str):
         self.repo.index.commit(message)
+
     def get_current_branch(self) -> str:
         try:
             return self.repo.active_branch.name
         except TypeError:
             return "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         try:
             self.repo.remotes.origin.push(branch)
             return True, None
         except Exception as e:
             return False, str(e)
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class LibGit2Backend(GitBackend):
     def __init__(self):
         try:
             import pygit2
+
             self.pygit2 = pygit2
         except ImportError:
             raise ImportError("pygit2 not installed")
         self.repo = None
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -181,35 +229,44 @@ class LibGit2Backend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         try:
             self.repo = self.pygit2.Repository(".")
             return True
         except KeyError:
             return False
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.repo = self.pygit2.init_repository(".")
+
     def get_remote_url(self) -> Optional[str]:
         try:
             return self.repo.remotes["origin"].url
         except KeyError:
             return None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         try:
             self.repo.remotes["origin"].fetch()
             return True
         except Exception:
             return False
+
     def add_all_files(self):
         self.repo.index.add_all()
         self.repo.index.write()
+
     def has_changes(self) -> bool:
         self.repo.index.read()
         return bool(self.repo.status_file_flags())
+
     def commit(self, message: str):
         self.repo.index.write()
         tree = self.repo.index.write_tree()
@@ -217,11 +274,13 @@ class LibGit2Backend(GitBackend):
         self.repo.create_commit(
             "HEAD", author, author, message, tree, [self.repo.head.target]
         )
+
     def get_current_branch(self) -> str:
         try:
             return self.repo.active_branch.shorthand
         except Exception:
             return "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         try:
             self.repo.remotes["origin"].push(
@@ -230,16 +289,21 @@ class LibGit2Backend(GitBackend):
             return True, None
         except Exception as e:
             return False, str(e)
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class DulwichBackend(GitBackend):
     def __init__(self):
         try:
             import dulwich.repo
+
             self.dulwich = dulwich
         except ImportError:
             raise ImportError("dulwich not installed")
         self.repo = None
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -247,45 +311,56 @@ class DulwichBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         try:
             self.repo = self.dulwich.repo.Repo(".")
             return True
         except self.dulwich.repo.NotGitRepository:
             return False
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.repo = self.dulwich.repo.Repo.init(".")
+
     def get_remote_url(self) -> Optional[str]:
         try:
             config = self.repo.get_config()
             return config.get((b"remote", b"origin"), b"url").decode()
         except Exception:
             return None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         try:
             self.repo.fetch("origin")
             return True
         except Exception:
             return False
+
     def add_all_files(self):
         self.run_command(["git", "add", "-A"])
+
     def has_changes(self) -> bool:
         self.run_command(["git", "status", "--porcelain"], check=False)
         status = subprocess.run(
             ["git", "status", "--porcelain"], capture_output=True, text=True
         )
         return bool(status.stdout.strip())
+
     def commit(self, message: str):
         self.run_command(["git", "commit", "-m", message])
+
     def get_current_branch(self) -> str:
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"], capture_output=True, text=True
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
@@ -295,16 +370,21 @@ class DulwichBackend(GitBackend):
         if push_result.returncode == 0:
             return True, None
         return False, push_result.stderr
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class PyGithubBackend(GitBackend):
     def __init__(self):
         try:
             from github import Github
+
             self.Github = Github
         except ImportError:
             raise ImportError("PyGithub not installed")
         self.repo = None
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -312,41 +392,52 @@ class PyGithubBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         result = subprocess.run(
             ["git", "rev-parse", "--git-dir"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.run_command(["git", "init"])
+
     def get_remote_url(self) -> Optional[str]:
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"], capture_output=True, text=True
         )
         return result.stdout.strip() if result.returncode == 0 else None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         result = subprocess.run(
             ["git", "fetch", "origin"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def add_all_files(self):
         self.run_command(["git", "add", "-A"])
+
     def has_changes(self) -> bool:
         status = subprocess.run(
             ["git", "status", "--porcelain"], capture_output=True, text=True
         )
         return bool(status.stdout.strip())
+
     def commit(self, message: str):
         self.run_command(["git", "commit", "-m", message])
+
     def get_current_branch(self) -> str:
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"], capture_output=True, text=True
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
@@ -356,15 +447,20 @@ class PyGithubBackend(GitBackend):
         if push_result.returncode == 0:
             return True, None
         return False, push_result.stderr
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class TyperBackend(GitBackend):
     def __init__(self):
         try:
             import typer
+
             self.typer = typer
         except ImportError:
             raise ImportError("typer not installed")
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -372,41 +468,52 @@ class TyperBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         result = subprocess.run(
             ["git", "rev-parse", "--git-dir"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.run_command(["git", "init"])
+
     def get_remote_url(self) -> Optional[str]:
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"], capture_output=True, text=True
         )
         return result.stdout.strip() if result.returncode == 0 else None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         result = subprocess.run(
             ["git", "fetch", "origin"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def add_all_files(self):
         self.run_command(["git", "add", "-A"])
+
     def has_changes(self) -> bool:
         status = subprocess.run(
             ["git", "status", "--porcelain"], capture_output=True, text=True
         )
         return bool(status.stdout.strip())
+
     def commit(self, message: str):
         self.run_command(["git", "commit", "-m", message])
+
     def get_current_branch(self) -> str:
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"], capture_output=True, text=True
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
@@ -416,15 +523,20 @@ class TyperBackend(GitBackend):
         if push_result.returncode == 0:
             return True, None
         return False, push_result.stderr
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 class GhBackend(GitBackend):
     def __init__(self):
         try:
             import subprocess as sp
+
             self.sp = sp
         except ImportError:
             raise ImportError("gh cli not installed")
+
     def run_command(self, cmd, check=True):
         print(f"Running: {' '.join(cmd)}")
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -432,41 +544,52 @@ class GhBackend(GitBackend):
             print(f"Error: {result.stderr}")
             sys.exit(1)
         return result
+
     def is_git_repo(self) -> bool:
         result = subprocess.run(
             ["git", "rev-parse", "--git-dir"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def get_dir_name(self) -> str:
         return os.path.basename(os.getcwd())
+
     def init_repo(self):
         self.run_command(["git", "init"])
+
     def get_remote_url(self) -> Optional[str]:
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"], capture_output=True, text=True
         )
         return result.stdout.strip() if result.returncode == 0 else None
+
     def create_remote_repo(self, repo_name: str):
         self.run_command(["gh", "repo", "create", repo_name, "--public", "--source=."])
+
     def fetch_origin(self) -> bool:
         result = subprocess.run(
             ["git", "fetch", "origin"], capture_output=True, text=True
         )
         return result.returncode == 0
+
     def add_all_files(self):
         self.run_command(["git", "add", "-A"])
+
     def has_changes(self) -> bool:
         status = subprocess.run(
             ["git", "status", "--porcelain"], capture_output=True, text=True
         )
         return bool(status.stdout.strip())
+
     def commit(self, message: str):
         self.run_command(["git", "commit", "-m", message])
+
     def get_current_branch(self) -> str:
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"], capture_output=True, text=True
         )
         return branch_result.stdout.strip() if branch_result.returncode == 0 else "main"
+
     def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
         push_result = subprocess.run(
             ["git", "push", "--set-upstream", "origin", branch],
@@ -476,8 +599,11 @@ class GhBackend(GitBackend):
         if push_result.returncode == 0:
             return True, None
         return False, push_result.stderr
+
     def pull_rebase(self, branch: str):
         self.run_command(["git", "pull", "origin", branch, "--rebase"])
+
+
 def is_transient_error(error_message: str) -> bool:
     transient_errors = [
         "RPC failed",
@@ -493,6 +619,8 @@ def is_transient_error(error_message: str) -> bool:
         "try again",
     ]
     return any(err.lower() in error_message.lower() for err in transient_errors)
+
+
 def get_backend(backend_name: str) -> GitBackend:
     backends = {
         "subprocess": SubprocessBackend,
@@ -514,6 +642,8 @@ def get_backend(backend_name: str) -> GitBackend:
         print(f"Backend {backend_name} not available: {e}")
         print(f"Falling back to subprocess backend")
         return SubprocessBackend()
+
+
 def get_available_backends(preferred_backend: str) -> list[str]:
     all_backends = [
         "subprocess",
@@ -528,6 +658,8 @@ def get_available_backends(preferred_backend: str) -> list[str]:
         all_backends.remove(preferred_backend)
         all_backends.insert(0, preferred_backend)
     return all_backends
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Git repository initialization and GitHub push"
@@ -634,5 +766,7 @@ def main():
             sys.exit(1)
     print(f"\n✅ Success! Repository '{repo_name}' is now on GitHub.")
     print(f"View it at: https://github.com/{repo_name}")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

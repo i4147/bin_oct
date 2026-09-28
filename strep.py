@@ -11,10 +11,15 @@ from zipfile import ZipFile
 from dh import fsz, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
+
 SO_PATTERN = re.compile(r"\.so(\.\d+)*$")
 console = Console()
+
+
 def process_file(path: Path) -> None:
     _ret, _, _ = runcmd(["strip", str(path)], show_output=True)
+
+
 def process_whl(whl_path: Path) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -27,11 +32,15 @@ def process_whl(whl_path: Path) -> None:
             for path in tmpdir.rglob("*"):
                 if path.is_file():
                     zf.write(path, path.relative_to(tmpdir))
+
+
 def collect_files(cwd: Path, args: list[str]) -> list[Path]:
     if args:
         return [Path(p) for p in args]
     so_files = [p for p in cwd.rglob("*") if SO_PATTERN.search(p.name) and p.is_file()]
     return so_files
+
+
 def show_summary(files: list[Path]) -> None:
     total_size = sum(f.stat().st_size for f in files if f.is_file())
     console.print(
@@ -40,6 +49,8 @@ def show_summary(files: list[Path]) -> None:
     console.print(
         f"[bold cyan]Total size of .so files:[/] [bold yellow]{fsz(total_size)}[/]"
     )
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]

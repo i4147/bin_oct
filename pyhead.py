@@ -5,6 +5,7 @@ If this text-mode read fails for any reason, it should fall back to opening the 
 
 import sys
 from pathlib import Path
+
 if __name__ == "__main__":
     fn = Path(sys.argv[1])
     try:

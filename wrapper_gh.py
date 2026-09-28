@@ -10,8 +10,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 REAL_GH = "/data/data/com.termux/files/usr/bin/gh"
+
+
 def find_real_gh():
     if (
         os.path.isfile(REAL_GH)
@@ -30,6 +33,8 @@ def find_real_gh():
         ):
             return candidate
     return None
+
+
 def create_log_file():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -40,6 +45,8 @@ def create_log_file():
         log_file = LOG_DIR / f"gh_{timestamp}_{milliseconds:03d}_{counter}.log"
         counter += 1
     return log_file
+
+
 def write_log_header(log_file, command_args):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     cwd = os.getcwd()
@@ -48,6 +55,8 @@ def write_log_header(log_file, command_args):
         f.write(f"Timestamp: {timestamp}\n")
         f.write(f"Command: gh {' '.join(command_args)}\n")
         f.write("================================\n\n")
+
+
 def write_log_footer(log_file, exit_code):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     with open(log_file, "a") as f:
@@ -55,6 +64,8 @@ def write_log_footer(log_file, exit_code):
         f.write(f"Exit Code: {exit_code}\n")
         f.write(f"Completed: {timestamp}\n")
         f.write("================================\n")
+
+
 def main():
     real_gh = find_real_gh()
     if not real_gh:
@@ -94,5 +105,7 @@ def main():
     write_log_footer(log_file, exit_code)
     print(f"Log saved to: {log_file}", file=sys.stderr)
     sys.exit(exit_code)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

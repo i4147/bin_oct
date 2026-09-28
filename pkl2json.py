@@ -9,6 +9,8 @@ import os
 import pickle
 from pathlib import Path
 import pandas as pd
+
+
 def load_pkl_file(filepath):
     try:
         with open(filepath, "rb") as f:
@@ -23,6 +25,8 @@ def load_pkl_file(filepath):
     except Exception as e:
         print(f"Error loading {filepath}: {e}")
         return None
+
+
 def main():
     pkl_files = sorted(glob.glob("*.pkl"))
     if not pkl_files:
@@ -54,5 +58,7 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(records, f, ensure_ascii=False, indent=2, sort_keys=True)
     print(f"\n✓ Wrote {len(records)} records to {output_file}")
+
+
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ The script should read all lines from the file, filter out any lines containing 
 After completing the operation, it should print "done." to indicate success."""
 
 from pathlib import Path
+
 if __name__ == "__main__":
     fn = Path.home() / ".bash_history"
     nl = []

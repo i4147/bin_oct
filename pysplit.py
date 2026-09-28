@@ -6,6 +6,8 @@ The output files should be named using the original stem and suffix with a zero-
 import sys
 from pathlib import Path
 from dh import is_binary
+
+
 def split_file_into_parts(path: Path, n: int) -> None:
     if n <= 0:
         raise ValueError("n must be a positive integer")
@@ -31,6 +33,8 @@ def split_file_into_parts(path: Path, n: int) -> None:
         part_path.write_text("".join(lines[start:end]), encoding="utf-8")
         print(f"Created: {part_path}")
         start = end
+
+
 def main() -> None:
     if len(sys.argv) != 3:
         print("Usage: python script.py <n> <path>")
@@ -45,5 +49,7 @@ def main() -> None:
         print(f"Error: file not found: {path}", file=sys.stderr)
         sys.exit(1)
     split_file_into_parts(path, n)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

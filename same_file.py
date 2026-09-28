@@ -6,6 +6,8 @@ For any other OSError encountered during the check, it should print an error mes
 
 import sys
 from pathlib import Path
+
+
 def samefile(path1: str, path2: str) -> bool:
     try:
         return Path(path1).samefile(path2)

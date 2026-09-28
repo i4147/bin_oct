@@ -6,6 +6,7 @@ It should handle unreadable files gracefully by printing an error message instea
 
 import os
 import sys
+
 SHEBANG_MAP = {
     "python": ".py",
     "python3": ".py",
@@ -17,6 +18,8 @@ SHEBANG_MAP = {
     "dash": ".sh",
 }
 TARGET_EXTENSIONS = {".py", ".sh"}
+
+
 def detect_shebang(path):
     try:
         with open(path, encoding="utf-8", errors="ignore") as f:
@@ -33,9 +36,13 @@ def detect_shebang(path):
     except OSError as e:
         print(f"Error reading {path}: {e}")
     return None
+
+
 def should_rename(path, target_ext):
     current_ext = os.path.splitext(path)[1].lower()
     return current_ext != target_ext
+
+
 def rename_file(path, target_ext):
     directory = os.path.dirname(path)
     basename = os.path.splitext(os.path.basename(path))[0]
@@ -56,6 +63,8 @@ def rename_file(path, target_ext):
         print(f"Error renaming {path} to {new_path}: {e}")
         return None
     return None
+
+
 def main():
     dry_run = "--dry-run" in sys.argv or "-n" in sys.argv
     verbose = "--verbose" in sys.argv or "-v" in sys.argv
@@ -95,5 +104,7 @@ def main():
     else:
         print(f"  Renamed: {renamed_count} files")
     print(f"  Skipped: {skipped_count} files")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

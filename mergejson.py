@@ -7,6 +7,8 @@ Finally, it should write the merged result to the specified output file as forma
 import argparse
 import json
 import sys
+
+
 def deep_merge(dict1, dict2):
     if dict1 is None:
         return dict2
@@ -19,6 +21,8 @@ def deep_merge(dict1, dict2):
         else:
             merged[key] = value
     return merged
+
+
 def merge_json_files(input_files, output_file):
     merged_data = None
     for path in input_files:
@@ -54,6 +58,8 @@ def merge_json_files(input_files, output_file):
     except OSError as e:
         print(f"Error writing to output file: {e}")
         sys.exit(1)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Merge two or more JSON files into one."

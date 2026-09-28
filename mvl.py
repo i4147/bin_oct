@@ -4,6 +4,8 @@ It should accept four arguments: the source file path, the start line number, th
 The script should handle file-not-found and other exceptions gracefully by printing an error message, print a success confirmation message when the move completes, and print a usage message if the wrong number of command-line arguments is provided."""
 
 import sys
+
+
 def move_lines(src_file: str, start_line: int, end_line: int, dest_file: str) -> None:
     try:
         with open(src_file, encoding="utf-8") as f:
@@ -23,6 +25,8 @@ def move_lines(src_file: str, start_line: int, end_line: int, dest_file: str) ->
         print(f"Error: The file {src_file} was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print(

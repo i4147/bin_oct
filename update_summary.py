@@ -4,6 +4,8 @@ It should preserve the existing header lines at the top of SUMMARY.md (everythin
 After writing the updated file, it should print a message stating how many chapters were added."""
 
 from pathlib import Path
+
+
 def find_md_files():
     cwd = Path.cwd()
     md_files = []
@@ -11,6 +13,8 @@ def find_md_files():
         rel_path = path.relative_to(cwd)
         md_files.append(rel_path)
     return md_files
+
+
 def update_summary() -> None:
     md_files = find_md_files()
     md_files.sort()
@@ -32,5 +36,7 @@ def update_summary() -> None:
         f.write("\n")
         f.writelines(new_entries)
     print(f"Updated SUMMARY.md with {len(new_entries)} chapters.")
+
+
 if __name__ == "__main__":
     update_summary()

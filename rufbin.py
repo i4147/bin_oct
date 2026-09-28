@@ -5,6 +5,8 @@ The script's main function should iterate through the detected files, apply the 
 
 import subprocess
 from pathlib import Path
+
+
 def is_python_file(path: Path):
     try:
         with Path(path).open("r", encoding="utf-8", errors="ignore") as f:
@@ -31,6 +33,8 @@ def is_python_file(path: Path):
         return path.suffix.lower() == ".py"
     except:
         return False
+
+
 def format_with_ruff(path: Path):
     try:
         result = subprocess.run(
@@ -49,6 +53,8 @@ def format_with_ruff(path: Path):
         return False, "ruff not installed or not in PATH"
     except Exception as e:
         return False, str(e)
+
+
 def main() -> None:
     cwd = Path()
     python_files = [
@@ -71,5 +77,7 @@ def main() -> None:
     if errors:
         for _error in errors:
             pass
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

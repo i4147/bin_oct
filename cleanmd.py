@@ -11,6 +11,8 @@ from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
 from typing import NamedTuple
+
+
 class Color(Enum):
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -30,26 +32,35 @@ class Color(Enum):
     BRIGHT_MAGENTA = "\033[95m"
     BRIGHT_CYAN = "\033[96m"
     BRIGHT_WHITE = "\033[97m"
+
+
 class Styling:
     @staticmethod
     def style(text: str, color: Color, bold: bool = False) -> str:
         bold_code = Color.BOLD.value if bold else ""
         return f"{bold_code}{color.value}{text}{Color.RESET.value}"
+
     @staticmethod
     def success(text: str) -> str:
         return Styling.style(text, Color.BRIGHT_GREEN)
+
     @staticmethod
     def error(text: str) -> str:
         return Styling.style(text, Color.BRIGHT_RED)
+
     @staticmethod
     def warning(text: str) -> str:
         return Styling.style(text, Color.BRIGHT_YELLOW)
+
     @staticmethod
     def info(text: str) -> str:
         return Styling.style(text, Color.BRIGHT_CYAN)
+
     @staticmethod
     def dim(text: str) -> str:
         return Styling.style(text, Color.DIM)
+
+
 class ImageStats(NamedTuple):
     path: Path
     rel_path: str
@@ -58,12 +69,16 @@ class ImageStats(NamedTuple):
     original_size: int
     final_size: int
     error: str | None
+
+
 @dataclass
 class ProcessingConfig:
     workers: int = 4
     chunk_size: int = 8192
     encoding: str = "utf-8"
     backup: bool = False
+
+
 class MarkdownPatterns:
     INLINE_IMAGE = re.compile(r"!\[([^\[\]]*)\]\(([^\)]+)\)", re.MULTILINE)
     HTML_IMG_TAG = re.compile(r"<img\b[^>]*>", re.IGNORECASE | re.MULTILINE)
@@ -77,10 +92,13 @@ class MarkdownPatterns:
     )
     FIGURE_TAG = re.compile(r"<figure\b[^>]*>.*?</figure>", re.DOTALL | re.IGNORECASE)
     EMPTY_LINK = re.compile(r"\[\]\(([^\)]+)\)", re.MULTILINE)
+
+
 class MarkdownImageRemover:
     def __init__(self, config: ProcessingConfig):
         self.config = config
         self.patterns = MarkdownPatterns()
+
     def remove_images(self, content: str) -> tuple[str, int]:
         original_len = len(content)
         count = 0
@@ -108,6 +126,7 @@ class MarkdownImageRemover:
         content = re.sub(r"^\n+", "", content)
         content = re.sub(r"\n+$", "\n", content)
         return content, count
+
     def _remove_pattern(self, content: str, pattern: re.Pattern) -> tuple[str, int]:
         matches = list(pattern.finditer(content))
         if not matches:
@@ -115,6 +134,8 @@ class MarkdownImageRemover:
         for match in reversed(matches):
             content = content[: match.start()] + content[match.end() :]
         return content, len(matches)
+
+
 def get_markdown_files(path: Path) -> list[Path]:
     if path.is_file():
         if path.suffix.lower() in {".md", ".markdown", ".txt"}:
@@ -127,6 +148,8 @@ def get_markdown_files(path: Path) -> list[Path]:
             + list(path.rglob("*.txt"))
         )
     return []
+
+
 def process_file(path: Path, config: ProcessingConfig) -> ImageStats:
     try:
         original_content = path.read_text(encoding=config.encoding)
@@ -159,9 +182,13 @@ def process_file(path: Path, config: ProcessingConfig) -> ImageStats:
             final_size=0,
             error=str(e),
         )
+
+
 def worker_process_file(args: tuple[Path, ProcessingConfig]) -> ImageStats:
     path, config = args
     return process_file(path, config)
+
+
 class Reporter:
     @staticmethod
     def print_header():
@@ -172,6 +199,7 @@ class Reporter:
         )
         print(Styling.style("=" * 40, Color.BRIGHT_CYAN, bold=True))
         print()
+
     @staticmethod
     def print_file_result(stats: ImageStats):
         if stats.error:
@@ -192,6 +220,7 @@ class Reporter:
             f"{Styling.dim(Reporter._format_size(stats.final_size))} "
             f"{Styling.dim(f'(-{reduction_pct:.1f}%)')}"
         )
+
     @staticmethod
     def print_summary(results: list[ImageStats]):
         print()
@@ -219,6 +248,7 @@ class Reporter:
             f"{Styling.dim(f'(-{reduction_pct:.1f}%)')}"
         )
         print()
+
     @staticmethod
     def _format_size(size: int) -> str:
         for unit in ("B", "KB", "MB", "GB"):
@@ -226,6 +256,8 @@ class Reporter:
                 return f"{size:.1f}{unit}"
             size /= 1024
         return f"{size:.1f}TB"
+
+
 def main():
     Reporter.print_header()
     args = sys.argv[1:]
@@ -268,5 +300,7 @@ def main():
     Reporter.print_summary(results)
     failed_count = sum(1 for r in results if r.error)
     sys.exit(1 if failed_count > 0 else 0)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

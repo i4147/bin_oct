@@ -6,6 +6,8 @@ The script should raise descriptive ValueError exceptions for invalid month or d
 
 import datetime
 import sys
+
+
 class PersianDateConverter:
     PERSIAN_MONTHS = [
         "Farvardin",
@@ -22,9 +24,11 @@ class PersianDateConverter:
         "Esfand",
     ]
     PERSIAN_MONTH_LENGTHS = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29]
+
     @staticmethod
     def is_persian_leap_year(year):
         return (year * 33 + 33) % 132 < 6
+
     @staticmethod
     def persian_to_gregorian(persian_year, persian_month, persian_day):
         if persian_month < 1 or persian_month > 12:
@@ -53,12 +57,14 @@ class PersianDateConverter:
         ref_date = datetime.date(622, 3, 19)
         result_date = ref_date + datetime.timedelta(days=days)
         return result_date.year, result_date.month, result_date.day
+
     @staticmethod
     def days_since(gregorian_year, gregorian_month, gregorian_day):
         input_date = datetime.date(gregorian_year, gregorian_month, gregorian_day)
         today = datetime.date.today()
         delta = today - input_date
         return delta.days, input_date, today
+
     @staticmethod
     def format_days_since(days):
         if days < 0:
@@ -96,10 +102,13 @@ class PersianDateConverter:
                 return f"{years} years and {months} months ago"
             else:
                 return f"{years} years, {months} months, and {remaining_days} days ago"
+
     @staticmethod
     def format_persian_date(year, month, day):
         month_name = PersianDateConverter.PERSIAN_MONTHS[month - 1]
         return f"{year}/{month:02d}/{day:02d} ({month_name})"
+
+
 def main():
     if len(sys.argv) != 4:
         print("Usage: python convert_date.py <day> <month> <year>")
@@ -167,5 +176,7 @@ def main():
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         sys.exit(1)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

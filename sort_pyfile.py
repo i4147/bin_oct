@@ -6,6 +6,8 @@ It should be usable as a command-line tool via `sys.argv` and `pathlib.Path`."""
 import ast
 import sys
 from pathlib import Path
+
+
 def sort_python_script(path: Path) -> None:
     try:
         source_code = path.read_text(encoding="utf-8")
@@ -102,6 +104,8 @@ def sort_python_script(path: Path) -> None:
         print(f"Successfully sorted and saved: {tmp_path}")
     except Exception as e:
         print(f"Error writing to {path}: {e}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python sort_script.py <path_to_python_script>")

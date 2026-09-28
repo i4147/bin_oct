@@ -8,6 +8,8 @@ import sys
 import json
 import quopri
 from pathlib import Path
+
+
 def decode_value(value, params):
     encoding = None
     charset = "utf-8"
@@ -28,6 +30,8 @@ def decode_value(value, params):
         except LookupError:
             return data.decode("utf-8", errors="replace")
     return value
+
+
 def parse_vcard(input_path):
     logical_lines = []
     with input_path.open("r", encoding="utf-8") as f:
@@ -76,6 +80,8 @@ def parse_vcard(input_path):
             }
         )
     return result
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python vcard_to_json.py <input.vcf>")
@@ -89,5 +95,7 @@ def main():
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     print(f"Converted '{input_path}' -> '{output_path}'")
+
+
 if __name__ == "__main__":
     main()

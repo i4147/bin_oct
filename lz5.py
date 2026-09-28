@@ -12,6 +12,8 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 import lz4.frame
 from dh import fsz
+
+
 def get_folder_size(folder_path):
     total = 0
     for dirpath, _dirnames, filenames in os.walk(folder_path):
@@ -20,6 +22,8 @@ def get_folder_size(folder_path):
             if os.path.exists(fp):
                 total += os.path.getsize(fp)
     return total
+
+
 def compress_folder(folder_path):
     folder = Path(folder_path)
     if not folder.is_dir():
@@ -54,6 +58,8 @@ def compress_folder(folder_path):
         }
     except Exception as e:
         return {"folder": folder.name, "error": str(e), "status": "error"}
+
+
 def decompress_file(path):
     file = Path(path)
     if not file.suffix == ".lz4" or not file.stem.endswith(".tar"):
@@ -73,6 +79,8 @@ def decompress_file(path):
         return f"Decompressed: {file} -> {folder_path}"
     except Exception as e:
         return f"Error decompressing {file}: {e}"
+
+
 def print_compression_report(results):
     successful = [r for r in results if r.get("status") == "success"]
     errors = [r for r in results if r.get("status") == "error"]
@@ -121,6 +129,8 @@ def print_compression_report(results):
     print(
         f"Average compression ratio: {(total_original / total_compressed if total_compressed > 0 else 0):.2f}x"
     )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Compress/decompress folders with LZ4",
@@ -161,5 +171,7 @@ def main():
         for result in results:
             print(result)
         print(f"\n{action} complete!")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

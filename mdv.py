@@ -8,17 +8,23 @@ import sys
 from pathlib import Path
 from rich.console import Console
 from rich.markdown import Markdown
+
 try:
     from readchar import key as RKEY
     from readchar import readkey
+
     HAVE_READCHAR = True
 except Exception:
     HAVE_READCHAR = False
+
+
 def read_markdown(path: str | Path) -> str:
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"File not found: {path}")
     return path.read_text(encoding="utf-8")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mdview",
@@ -32,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to a Markdown file (default: README.md)",
     )
     return parser
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -91,5 +99,7 @@ def main() -> int:
         except (EOFError, KeyboardInterrupt):
             break
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

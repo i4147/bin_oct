@@ -7,6 +7,8 @@ The size/formatting helper functions `gsz` and `fsz` should be imported from a l
 import shutil
 from pathlib import Path
 from dh import fsz, gsz  # format & get size funcs
+
+
 def clean_pycache(start_dir: Path = Path.cwd()) -> None:
     removed = 0
     sz = 0
@@ -20,6 +22,8 @@ def clean_pycache(start_dir: Path = Path.cwd()) -> None:
         print(f"   • dirs removed: {removed}")
     else:
         print("nothing found.")
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     clean_pycache(cwd)

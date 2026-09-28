@@ -5,6 +5,8 @@ The script must validate that both files exist before processing, printing an er
 
 import sys
 from pathlib import Path
+
+
 def get_common_lines(file1_path: str, file2_path: str):
     path1 = Path(file1_path)
     path2 = Path(file2_path)
@@ -22,6 +24,8 @@ def get_common_lines(file1_path: str, file2_path: str):
                 common.append(clean_line)
                 seen.add(clean_line)
                 print(clean_line)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python script.py <file1> <file2>")

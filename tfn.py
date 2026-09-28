@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 from dh import FONTEXT, unique_path
 from fontTools.ttLib import TTFont
+
 STYLE_MAPPING = {
     "normal": "Regular",
     "regular": "Regular",
@@ -26,6 +27,8 @@ STYLE_MAPPING = {
     "extended": "Extended",
     "narrow": "Narrow",
 }
+
+
 def get_font_name_and_style(font_path):
     font_path.suffix.lower()
     try:
@@ -56,6 +59,8 @@ def get_font_name_and_style(font_path):
     except Exception as e:
         print(f"  Warning: Could not read {font_path.name}: {e}")
         return (None, None)
+
+
 def sanitize_filename(name) -> str:
     if not name:
         return "Unknown"
@@ -64,6 +69,8 @@ def sanitize_filename(name) -> str:
     while "__" in sanitized:
         sanitized = sanitized.replace("__", "_")
     return sanitized
+
+
 def rename_font_file(
     font_path: Path, apply: bool = False
 ) -> tuple[str | None, str | None]:
@@ -91,6 +98,8 @@ def rename_font_file(
             return (None, None)
     else:
         return (font_path.name, new_name)
+
+
 def process_directory(
     directory: Path, recursive: bool = True, apply: bool = False
 ) -> int:
@@ -108,6 +117,8 @@ def process_directory(
         elif item.is_dir() and recursive:
             renamed_count += process_directory(item, recursive, apply)
     return renamed_count
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Rename font files based on their internal metadata",
@@ -142,5 +153,7 @@ Examples:
     else:
         print(f"\n{renamed_count} font file(s) would be renamed.")
         print("Use -a or --apply to apply these changes.")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

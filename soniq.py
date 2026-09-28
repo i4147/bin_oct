@@ -8,9 +8,14 @@ import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from dh import is_binary
+
 THRESHOLD = 1024 * 1024
+
+
 def _process_chunk(chunk: list[str]) -> list[str]:
     return [line.strip() for line in chunk if line.strip()]
+
+
 def read_lines(path: Path) -> list[str]:
     sz = path.stat().st_size
     try:
@@ -24,6 +29,8 @@ def read_lines(path: Path) -> list[str]:
     except (UnicodeDecodeError, ValueError) as e:
         print(f"Warning: Could not read file as text: {e}")
         return []
+
+
 def sort_uniq(
     path: Path, start: int | None = None, end: int | None = None
 ) -> tuple[int, list[str]]:
@@ -69,6 +76,8 @@ def sort_uniq(
             "\n".join(final_lines) + ("\n" if final_lines else ""), encoding="utf-8"
         )
     return (lines_removed, list(duplicates))
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     quiet = "--quiet" in args or "-q" in args

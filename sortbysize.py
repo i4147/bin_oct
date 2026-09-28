@@ -6,6 +6,8 @@ The script sorts these entries in descending order by size and, when run directl
 import json
 import operator
 from pathlib import Path
+
+
 def sort_by_size(root_folder: Path):
     items = []
     for path in root_folder.glob("*"):
@@ -22,6 +24,8 @@ def sort_by_size(root_folder: Path):
         items.append({"name": path.name, "size": size})
     items.sort(key=operator.itemgetter("size"), reverse=True)
     return items
+
+
 if __name__ == "__main__":
     cwd = Path.cwd()
     data = sort_by_size(cwd)

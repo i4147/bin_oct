@@ -5,6 +5,8 @@ It should walk all files matching the first extension, check whether a matching 
 The script should exit cleanly via SystemExit after processing all matches."""
 
 from pathlib import Path
+
+
 def main() -> None:
     cwd = Path.cwd()
     ext1 = input("ext 1 :").strip()
@@ -25,5 +27,7 @@ def main() -> None:
                 else:
                     print(f"[✖] {twin}  (keeping {path})")
                     twin.unlink()
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

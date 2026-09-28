@@ -5,8 +5,10 @@ It should use pathlib for path handling and read the input file in binary mode."
 
 import pickle as pkl
 from pathlib import Path
+
 if __name__ == "__main__":
     import sys
+
     fn = Path(sys.argv[1].strip())
     with fn.open("rb") as f:
         data = pkl.load(f)

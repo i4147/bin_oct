@@ -7,6 +7,8 @@ import asyncio
 import sys
 from pathlib import Path
 from pyppeteer import launch
+
+
 async def main():
     url = sys.argv[1]
     browser = await launch()
@@ -25,4 +27,6 @@ async def main():
     }""")
     print(dimensions)
     await browser.close()
+
+
 asyncio.get_event_loop().run_until_complete(main())

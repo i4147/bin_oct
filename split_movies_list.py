@@ -7,10 +7,14 @@ import re
 import sys
 from pathlib import Path
 from urllib.parse import unquote
+
+
 def safe_filename(name: str) -> str:
     name = unquote(name).strip()
     name = re.sub(r'[<>:"/\\|?*\x00-\x1F]', "_", name)
     return name.strip(" .") or "unknown_movie"
+
+
 def extract_movie_name(url: str) -> str | None:
     parts = url.split("/")
     try:
@@ -19,6 +23,8 @@ def extract_movie_name(url: str) -> str | None:
     except (ValueError, IndexError):
         return None
     return unquote(movie_name)
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print(f"Usage: python {Path(sys.argv[0]).name} movies.txt")
@@ -47,5 +53,7 @@ def main() -> None:
             file.write("\n")
         print(f"Saved {len(urls)} URL(s) to {output_file}")
     print(f"\nFinished: {len(movies)} movie(s) processed.")
+
+
 if __name__ == "__main__":
     main()

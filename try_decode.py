@@ -5,6 +5,7 @@ The script is intended to help users identify the correct character encoding of 
 
 import sys
 from pathlib import Path
+
 COMMON_ENCODINGS = [
     "utf-8",
     "utf-8-sig",
@@ -58,16 +59,22 @@ EXTRA_ENCODINGS = [
     "mac_iceland",
     "mac_latin2",
 ]
+
+
 def try_decode(file_content: bytes, encoding: str):
     try:
         decoded = file_content.decode(encoding)
         return (True, decoded)
     except (UnicodeDecodeError, LookupError):
         return (False, None)
+
+
 def get_first_chunk(text: str, chunk_size: int = 500) -> str:
     if len(text) <= chunk_size:
         return text
     return text[:chunk_size] + "...\n[truncated...]"
+
+
 def decode_file(path: str, output_path: str | None = None, show_chunk: int = 500):
     path = Path(path)
     if not path.exists():
@@ -149,6 +156,8 @@ def decode_file(path: str, output_path: str | None = None, show_chunk: int = 500
     except Exception as e:
         print(f"Error saving file: {e}")
         return False
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python decode_file.py <path> [output_path]")
@@ -158,5 +167,7 @@ def main():
     path = sys.argv[1]
     output_path = sys.argv[2] if len(sys.argv) > 2 else None
     decode_file(path, output_path)
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

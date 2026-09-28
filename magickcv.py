@@ -17,6 +17,7 @@ from PIL import (
     ImageFont,
     ImageOps,
 )
+
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,
     "box": Image.Resampling.BOX,
@@ -25,12 +26,16 @@ RESAMPLING = {
     "bicubic": Image.Resampling.BICUBIC,
     "lanczos": Image.Resampling.LANCZOS,
 }
+
+
 def parse_color(value: str) -> tuple[int, int, int, int]:
     try:
         rgb = ImageColor.getcolor(value, "RGBA")
         return rgb
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"invalid color: {value}") from exc
+
+
 def parse_geometry(value: str) -> tuple[int | None, int | None, str]:
     match = re.fullmatch(r"(?:(\d+)?x?(\d+)?)?([!%^<>]*)", value.strip())
     if not match or not match.group(0):
@@ -41,16 +46,22 @@ def parse_geometry(value: str) -> tuple[int | None, int | None, str]:
     if width is None and height is None:
         raise argparse.ArgumentTypeError(f"invalid geometry: {value}")
     return width, height, flags
+
+
 def parse_offset(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"([+-]?\d+)([+-]\d+)", value.replace(" ", ""))
     if not match:
         raise argparse.ArgumentTypeError(f"invalid offset: {value}")
     return int(match.group(1)), int(match.group(2))
+
+
 def parse_crop(value: str) -> tuple[int, int, int, int]:
     match = re.fullmatch(r"(\d+)x(\d+)([+-]\d+)([+-]\d+)", value.replace(" ", ""))
     if not match:
         raise argparse.ArgumentTypeError(f"invalid crop geometry: {value}")
     return tuple(map(int, match.groups()))
+
+
 def parse_sigma(value: str) -> tuple[float, float]:
     parts = value.split("x")
     try:
@@ -59,32 +70,46 @@ def parse_sigma(value: str) -> tuple[float, float]:
     except ValueError as exc:
         raise argparse.ArgumentTypeError(f"invalid radius/sigma: {value}") from exc
     return radius, sigma
+
+
 def parse_point(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"([+-]?\d+),([+-]?\d+)", value.replace(" ", ""))
     if not match:
         raise argparse.ArgumentTypeError(f"invalid point: {value}")
     return int(match.group(1)), int(match.group(2))
+
+
 def parse_size(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"(\d+)x(\d+)", value.strip())
     if not match:
         raise argparse.ArgumentTypeError(f"invalid size: {value}")
     return int(match.group(1)), int(match.group(2))
+
+
 def parse_quality(value: str) -> int:
     quality = int(value)
     if not 0 <= quality <= 100:
         raise argparse.ArgumentTypeError("quality must be between 0 and 100")
     return quality
+
+
 def parse_percent(value: str) -> float:
     parsed = float(value.rstrip("%"))
     return parsed / 100.0 if value.endswith("%") else parsed
+
+
 def pil_to_array(image: Image.Image) -> np.ndarray:
     return np.array(image.convert("RGBA"), dtype=np.uint8)
+
+
 def array_to_pil(array: np.ndarray) -> Image.Image:
     if array.ndim == 2:
         return Image.fromarray(array, "L").convert("RGBA")
     if array.shape[2] == 3:
         return Image.fromarray(array, "RGB").convert("RGBA")
     return Image.fromarray(array, "RGBA")
+
+
 def flatten_alpha(
     image: Image.Image, background: tuple[int, int, int, int]
 ) -> Image.Image:
@@ -93,6 +118,8 @@ def flatten_alpha(
     canvas = Image.new("RGBA", image.size, background)
     canvas.alpha_composite(image)
     return canvas.convert("RGB")
+
+
 def load_image(path: Path, page: int = 0) -> Image.Image:
     suffix = path.suffix.lower()
     if suffix in {".gif", ".webp", ".tif", ".tiff"}:
@@ -103,6 +130,8 @@ def load_image(path: Path, page: int = 0) -> Image.Image:
                 raise ValueError(f"page {page} does not exist in {path}")
             return source.convert("RGBA")
     return Image.open(path).convert("RGBA")
+
+
 def load_frames(path: Path) -> list[Image.Image]:
     with Image.open(path) as source:
         frames = []
@@ -110,6 +139,8 @@ def load_frames(path: Path) -> list[Image.Image]:
             source.seek(frame)
             frames.append(source.convert("RGBA"))
         return frames
+
+
 def resize_image(
     image: Image.Image,
     geometry: tuple[int | None, int | None, str],
@@ -159,6 +190,8 @@ def resize_image(
     if ">" in flags and source_width > width and source_height > height:
         return image
     return image.resize(result_size, RESAMPLING[filter_name])
+
+
 def extent_image(
     image: Image.Image,
     size: tuple[int, int],
@@ -170,6 +203,8 @@ def extent_image(
     x, y = gravity_position(result.size, image.size, gravity)
     result.alpha_composite(image, (x, y))
     return result
+
+
 def gravity_position(
     container: tuple[int, int], item: tuple[int, int], gravity: str
 ) -> tuple[int, int]:
@@ -187,6 +222,8 @@ def gravity_position(
         "southeast": (cw - iw, ch - ih),
     }
     return positions.get(gravity.lower(), positions["center"])
+
+
 def crop_image(
     image: Image.Image,
     crop: tuple[int, int, int, int],
@@ -196,18 +233,24 @@ def crop_image(
     result = Image.new("RGBA", (width, height), background)
     result.alpha_composite(image, (-x, -y))
     return result
+
+
 def rotate_image(
     image: Image.Image, angle: float, background: tuple[int, int, int, int]
 ) -> Image.Image:
     return image.rotate(
         angle, expand=True, resample=Image.Resampling.BICUBIC, fillcolor=background
     )
+
+
 def opencv_blur(image: Image.Image, radius: float, sigma: float) -> Image.Image:
     array = pil_to_array(image)
     kernel = max(3, round(radius * 2 + 1) | 1)
     sigma = sigma if sigma > 0 else radius
     blurred = cv2.GaussianBlur(array, (kernel, kernel), sigmaX=sigma, sigmaY=sigma)
     return array_to_pil(blurred)
+
+
 def sharpen_image(
     image: Image.Image, radius: float, sigma: float, amount: float, threshold: int
 ) -> Image.Image:
@@ -222,23 +265,33 @@ def sharpen_image(
         np.uint8
     )
     return array_to_pil(result)
+
+
 def median_image(image: Image.Image, size: int) -> Image.Image:
     array = pil_to_array(image)
     kernel = max(3, int(size) | 1)
     return array_to_pil(cv2.medianBlur(array, kernel))
+
+
 def despeckle_image(image: Image.Image) -> Image.Image:
     array = pil_to_array(image)
     return array_to_pil(cv2.medianBlur(array, 3))
+
+
 def edge_image(image: Image.Image, radius: float) -> Image.Image:
     gray = np.array(image.convert("L"))
     blurred = cv2.GaussianBlur(gray, (0, 0), max(radius, 0.1))
     edges = cv2.Canny(blurred, 50, 150)
     return Image.fromarray(edges, "L").convert("RGBA")
+
+
 def emboss_image(image: Image.Image) -> Image.Image:
     array = pil_to_array(image)
     kernel = np.array([[-2, -1, 0], [-1, 1, 1], [0][1][2]], dtype=np.float32)
     result = cv2.filter2D(array, -1, kernel) + 128
     return array_to_pil(np.clip(result, 0, 255).astype(np.uint8))
+
+
 def normalize_image(image: Image.Image, equalize: bool = False) -> Image.Image:
     array = pil_to_array(image)
     rgb = array[:, :, :3]
@@ -250,6 +303,8 @@ def normalize_image(image: Image.Image, equalize: bool = False) -> Image.Image:
         rgb = cv2.normalize(rgb, None, 0, 255, cv2.NORM_MINMAX)
     array[:, :, :3] = rgb
     return array_to_pil(array)
+
+
 def contrast_stretch(image: Image.Image, low: float, high: float) -> Image.Image:
     array = pil_to_array(image)
     rgb = array[:, :, :3].astype(np.float32)
@@ -259,6 +314,8 @@ def contrast_stretch(image: Image.Image, low: float, high: float) -> Image.Image
         return image
     array[:, :, :3] = np.clip((rgb - lo) * 255 / (hi - lo), 0, 255).astype(np.uint8)
     return array_to_pil(array)
+
+
 def gamma_image(image: Image.Image, gamma: float) -> Image.Image:
     array = pil_to_array(image)
     lut = np.clip(((np.arange(256) / 255.0) ** (1.0 / gamma)) * 255, 0, 255).astype(
@@ -266,6 +323,8 @@ def gamma_image(image: Image.Image, gamma: float) -> Image.Image:
     )
     array[:, :, :3] = cv2.LUT(array[:, :, :3], lut)
     return array_to_pil(array)
+
+
 def modulate_image(
     image: Image.Image, brightness: float, saturation: float, hue: float
 ) -> Image.Image:
@@ -277,15 +336,21 @@ def modulate_image(
     hsv[:, :, 0] = (hsv[:, :, 0] + hue / 2.0) % 180
     array[:, :, :3] = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
     return array_to_pil(array)
+
+
 def tint_image(
     image: Image.Image, color: tuple[int, int, int, int], amount: float
 ) -> Image.Image:
     overlay = Image.new("RGBA", image.size, color)
     return Image.blend(image, overlay, max(0, min(1, amount)))
+
+
 def threshold_image(image: Image.Image, threshold: int) -> Image.Image:
     gray = np.array(image.convert("L"))
     _, result = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
     return Image.fromarray(result, "L").convert("RGBA")
+
+
 def adaptive_threshold_image(
     image: Image.Image, block_size: int, constant: float
 ) -> Image.Image:
@@ -300,10 +365,14 @@ def adaptive_threshold_image(
         constant,
     )
     return Image.fromarray(result, "L").convert("RGBA")
+
+
 def negate_image(image: Image.Image) -> Image.Image:
     array = pil_to_array(image)
     array[:, :, :3] = 255 - array[:, :, :3]
     return array_to_pil(array)
+
+
 def sepia_image(image: Image.Image) -> Image.Image:
     array = pil_to_array(image)
     rgb = array[:, :, :3].astype(np.float32)
@@ -313,6 +382,8 @@ def sepia_image(image: Image.Image) -> Image.Image:
     )
     array[:, :, :3] = np.clip(rgb @ matrix.T, 0, 255).astype(np.uint8)
     return array_to_pil(array)
+
+
 def channel_image(image: Image.Image, channel: str) -> Image.Image:
     array = pil_to_array(image)
     mapping = {"r": 0, "g": 1, "b": 2, "a": 3}
@@ -320,6 +391,8 @@ def channel_image(image: Image.Image, channel: str) -> Image.Image:
     if channel not in mapping:
         raise ValueError("channel must be one of r, g, b, a")
     return Image.fromarray(array[:, :, mapping[channel]], "L").convert("RGBA")
+
+
 def composite_image(
     base: Image.Image,
     overlay: Image.Image,
@@ -369,6 +442,8 @@ def composite_image(
     )
     a[:, :, 3] = np.maximum(a[:, :, 3], b[:, :, 3])
     return array_to_pil(a)
+
+
 def draw_text(
     image: Image.Image,
     text: str,
@@ -405,6 +480,8 @@ def draw_text(
         stroke_fill=stroke,
     )
     return result
+
+
 def append_images(
     images: list[Image.Image], vertical: bool, background: tuple[int, int, int, int]
 ) -> Image.Image:
@@ -425,6 +502,8 @@ def append_images(
             result.alpha_composite(image, (x, (height - image.height) // 2))
             x += image.width
     return result
+
+
 def montage_images(
     images: list[Image.Image],
     tile: tuple[int, int],
@@ -443,6 +522,8 @@ def montage_images(
         y = row * cell_height + (cell_height - thumbnail.height) // 2
         result.alpha_composite(thumbnail, (x, y))
     return result
+
+
 def save_image(
     image: Image.Image,
     output: Path,
@@ -464,11 +545,15 @@ def save_image(
     elif suffix in {".bmp", ".ppm", ".pgm"}:
         image = flatten_alpha(image, background)
     image.save(output, **params)
+
+
 def identify(path: Path) -> None:
     with Image.open(path) as image:
         width, height = image.size
         frames = getattr(image, "n_frames", 1)
         print(f"{path}: {width}x{height} {image.mode} {image.format} frames={frames}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="magickcv")
     parser.add_argument("inputs", nargs="*")
@@ -540,6 +625,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-compression", type=int)
     parser.add_argument("-page", type=int, default=0)
     return parser
+
+
 def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Image:
     if args.resize:
         image = resize_image(image, parse_geometry(args.resize), "resize", args.filter)
@@ -662,6 +749,8 @@ def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Imag
             args.gravity,
         )
     return image
+
+
 def apply_draw(
     image: Image.Image,
     command: str,
@@ -704,6 +793,8 @@ def apply_draw(
     else:
         raise ValueError(f"unsupported draw operation: {command}")
     return result
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -743,5 +834,7 @@ def main() -> int:
             )
     save_image(image, output, args.quality, args.background, args.compression)
     return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

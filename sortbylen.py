@@ -7,8 +7,12 @@ After sorting and overwriting the file, it should print a confirmation message s
 import sys
 from pathlib import Path
 from dh import read_lines
+
+
 def sort_by_length(lines: list[str], reverse: bool = False) -> list[str]:
     return sorted(lines, key=len, reverse=reverse)
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     reverse = False
