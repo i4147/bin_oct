@@ -1,50 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-"""strip_comments.py
 
-Safely remove comments, docstrings, type annotations, and repeated blank
-lines from Python files using LibCST.
-
-Backup / restore model
-----------------------
-This tool overwrites files in place. There is no way to "undo" that after
-the fact unless the original content was saved somewhere first. To make
---reverse actually work (rather than pretend to), a strip operation must
-first write a sidecar backup file (default: "<file>.pystripbak") next to
-the original *before* overwriting it.
-
-Backups are OPT-IN. By default this script writes NO backup file and the
-original bytes are gone the moment a file is rewritten. To enable
-backups, pass --backup. Only files stripped with --backup can later be
-restored by --reverse: --reverse reads the sidecar back, restores the
-original content, and then deletes the sidecar.
-
-If you delete the sidecar files, or run without --backup, there is
-nothing to reverse. This is a hard requirement of doing destructive,
-in-place edits without a VCS: either you keep a copy of the original, or
-you don't, and no flag can restore data that was never kept. If your files
-are already tracked in git, `git checkout -- <path>` is an alternative to
---reverse that doesn't require sidecar files at all, provided the file has
-no other uncommitted changes. For throwaway use on scratch files, the
-default (no backup) is the fast path; for anything you care about, either
-pass --backup or have the file under version control.
-
-Commented-out code detection (heuristic, not exact)
-----------------------------------------------------
-"Skip comments that are commented-out code" is implemented via a heuristic:
-a run of one or more consecutive comment lines is treated as commented-out
-code (and therefore preserved, never stripped) if, after removing the
-leading '#' and one optional space from every line in the run, the
-resulting text parses successfully with ast.parse().
-
-This heuristic is NOT exact. It will have false positives (plain English
-comments that happen to be syntactically valid Python, e.g. a comment that
-is just an identifier or a short phrase using words like a function call)
-and false negatives (multi-line commented-out code that isn't valid Python
-on its own, e.g. a commented-out `else:` block missing its `if`). There is
-no purely syntactic way to distinguish "prose comment" from "commented-out
-code" with certainty, since both are just '#'-prefixed text. Treat this as
-a best-effort safety net, not a guarantee.
-"""
 
 import argparse
 import ast
@@ -792,7 +747,7 @@ def main(argv=None):
 
     summary = (
         f"\nProcessed {total_count} file(s): {changed_count} changed, "
-        f"{GREEN}{format_size(bytes_reduced_total)}{RESET} reduced, {error_count} error(s)."
+        f"{GREEN}{format_size(bytes_reduced_total)}{RESET} reduced"
     )
     print(summary, file=sys.stderr if error_count else sys.stdout)
     return 2 if error_count else 0

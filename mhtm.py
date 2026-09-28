@@ -1,24 +1,77 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-"""Minify HTML files in place using minify-html (default backend), with
-support for additional backends, multiple multiprocessing pool strategies,
-and recursive directory input.
-
-Usage examples:
-    python minify_html_cli.py                       # process CWD recursively
-    python minify_html_cli.py file.html dir/         # mix of files and dirs
-    python minify_html_cli.py -b minify-html         # explicit backend
-    python minify_html_cli.py --pool-method starmap  # explicit pool method
-"""
-
 from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
 import sys
 from collections.abc import Callable, Generator, Iterable
+from functools import partial
+from html.parser import HTMLParser
 from pathlib import Path
 
 import minify_html as mh
+
+
+class _HTMLValidator(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._stack: list[str] = []
+        self.errors: list[str] = []
+        self._void = {
+            "area",
+            "base",
+            "br",
+            "col",
+            "embed",
+            "hr",
+            "img",
+            "input",
+            "link",
+            "meta",
+            "param",
+            "source",
+            "track",
+            "wbr",
+        }
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        if tag not in self._void:
+            self._stack.append(tag)
+
+    def handle_startendtag(self, tag: str, attrs) -> None:
+        pass
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._void:
+            return
+        if not self._stack:
+            self.errors.append(f"unexpected </{tag}>")
+            return
+        if self._stack[-1] == tag:
+            self._stack.pop()
+            return
+        if tag in self._stack:
+            while self._stack and self._stack[-1] != tag:
+                self.errors.append(f"unclosed <{self._stack.pop()}>")
+            if self._stack:
+                self._stack.pop()
+        else:
+            self.errors.append(f"stray </{tag}>")
+
+    def close(self) -> None:
+        super().close()
+        while self._stack:
+            self.errors.append(f"unclosed <{self._stack.pop()}>")
+
+
+def validate_html(data: str) -> list[str]:
+    v = _HTMLValidator()
+    try:
+        v.feed(data)
+        v.close()
+    except Exception as e:
+        return [f"parse error: {e}"]
+    return v.errors
 
 
 def _minify_html_backend(data: str) -> str:
@@ -34,28 +87,35 @@ POOL_METHODS: tuple[str, ...] = ("map", "starmap", "apply_async", "imap_unordere
 DEFAULT_POOL_METHOD: str = "imap_unordered"
 
 
-def process_file(path: Path, backend: str) -> tuple[str, bool, str]:
+def process_file(path: Path, backend: str) -> tuple[str, int, int, str]:
     rel = str(path)
     minify_fn = BACKENDS[backend]
     try:
         data = path.read_text(encoding="utf-8")
     except OSError as e:
-        return rel, False, f"read error: {e}"
+        return rel, 0, 0, f"read error: {e}"
+
+    before = len(data.encode("utf-8"))
 
     try:
         minified = minify_fn(data)
-    except Exception as e:  # noqa: BLE001 - backend errors should not crash the pool
-        return rel, False, f"minify error: {e}"
+    except Exception as e:
+        return rel, before, before, f"minify error: {e}"
+
+    errors = validate_html(minified)
+    if errors:
+        return rel, before, before, f"invalid html: {'; '.join(errors[:3])}"
 
     if minified == data:
-        return rel, False, ""
+        return rel, before, before, ""
 
     try:
         path.write_text(minified, encoding="utf-8")
     except OSError as e:
-        return rel, False, f"write error: {e}"
+        return rel, before, before, f"write error: {e}"
 
-    return rel, True, ""
+    after = len(minified.encode("utf-8"))
+    return rel, before, after, ""
 
 
 def iter_html_files(targets: Iterable[Path]) -> Generator[Path, None, None]:
@@ -77,23 +137,24 @@ def iter_html_files(targets: Iterable[Path]) -> Generator[Path, None, None]:
                         yield p
 
 
+def _starmap_adapter(backend: str) -> Callable[[Path], tuple[str, int, int, str]]:
+    return partial(process_file, backend=backend)
+
+
 def run_pool(
     files: list[Path],
     backend: str,
     pool_method: str,
     processes: int,
-) -> Generator[tuple[str, bool, str], None, None]:
+) -> Generator[tuple[str, int, int, str], None, None]:
     with mp.Pool(processes=processes) as pool:
         if pool_method == "map":
             args_iter = ((f, backend) for f in files)
-
-            results = pool.starmap(process_file, args_iter)
-            yield from results
+            yield from pool.starmap(process_file, args_iter)
 
         elif pool_method == "starmap":
             args_iter = ((f, backend) for f in files)
-            results = pool.starmap(process_file, args_iter)
-            yield from results
+            yield from pool.starmap(process_file, args_iter)
 
         elif pool_method == "apply_async":
             async_results = [
@@ -103,21 +164,10 @@ def run_pool(
                 yield ar.get()
 
         elif pool_method == "imap_unordered":
-            args_iter = ((f, backend) for f in files)
-            yield from (
-                pool.starmap_async(process_file, args_iter).get()
-                if False
-                else pool.imap_unordered(_starmap_adapter(backend), files)
-            )
+            yield from pool.imap_unordered(_starmap_adapter(backend), files)
 
-        else:  # pragma: no cover - guarded by argparse choices
+        else:
             raise ValueError(f"unknown pool method: {pool_method}")
-
-
-def _starmap_adapter(backend: str) -> Callable[[Path], tuple[str, bool, str]]:
-    from functools import partial
-
-    return partial(process_file, backend=backend)
 
 
 def parse_args() -> argparse.Namespace:
@@ -153,6 +203,18 @@ def parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 
+def _fmt_bytes(n: int) -> str:
+    sign = "-" if n < 0 else ""
+    n = abs(n)
+    for unit in ("B", "KiB", "MiB", "GiB"):
+        if n < 1024 or unit == "GiB":
+            if unit == "B":
+                return f"{sign}{n} {unit}"
+            return f"{sign}{n:.2f} {unit}"
+        n /= 1024
+    return f"{sign}{n:.2f} GiB"
+
+
 def main() -> int:
     args = parse_args()
     targets: list[Path] = args.paths or [Path.cwd()]
@@ -164,17 +226,31 @@ def main() -> int:
 
     changed_count = 0
     error_count = 0
+    total_before = 0
+    total_after = 0
 
-    for rel, changed, err in run_pool(files, args.backend, args.pool_method, args.jobs):
+    for rel, before, after, err in run_pool(
+        files, args.backend, args.pool_method, args.jobs
+    ):
+        total_before += before
+        total_after += after
         if err:
             error_count += 1
             print(f"{rel}: {err}", file=sys.stderr)
-        elif changed:
+        elif after != before:
             changed_count += 1
-            print(f"{rel}: minified")
+            saved = before - after
+            print(
+                f"{rel}: minified {_fmt_bytes(before)} -> {_fmt_bytes(after)} "
+                f"(saved {_fmt_bytes(saved)})"
+            )
 
+    total_saved = total_before - total_after
+    print(f"\nTotal input size:  {_fmt_bytes(total_before)}")
+    print(f"Total output size: {_fmt_bytes(total_after)}")
+    print(f"Total space freed: {_fmt_bytes(total_saved)}")
     print(
-        f"\nDone: {changed_count}/{len(files)} file(s) minified, {error_count} error(s)."
+        f"Done: {changed_count}/{len(files)} file(s) minified, {error_count} error(s)."
     )
     return 0 if error_count == 0 else 2
 

@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 
-WORKERS = 6
+WORKERS = 8
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
 
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)

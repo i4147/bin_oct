@@ -49,9 +49,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-DEFAULT_GITHUB_USERNAME = "unforgivenii147"
+DEFAULT_GITHUB_USERNAME = "iho147"
 DEFAULT_GIT_EMAIL = "adnanonagh@gmail.com"
-DEFAULT_GIT_USER = "unforgivenii147"
+DEFAULT_GIT_USER = "iho147"
 DEFAULT_ENV_FILE = Path.home() / ".env"
 DEFAULT_GLOBAL_GITIGNORE = Path.home() / ".gitignore"
 DEFAULT_DESCRIPTION = "created with python"
