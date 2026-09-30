@@ -63,7 +63,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
 
-from dh import cprint, rrs
 from fastwalk import walk_files
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset(

@@ -43,16 +43,13 @@ from __future__ import annotations
 import argparse
 import contextlib
 import fnmatch
-import heapq
 import json
 import os
 import sys
-import threading
-from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass, field
+from collections.abc import Sequence
+from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any
 
 import zstandard as zstd
 from loguru import logger

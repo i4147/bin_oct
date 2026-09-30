@@ -50,9 +50,8 @@ import subprocess
 import sys
 import tarfile
 import zipfile
-from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple
+from typing import Any, Iterable, Iterator, Optional, Sequence
 
 try:
     from tqdm import tqdm as _tqdm

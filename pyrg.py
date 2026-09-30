@@ -37,14 +37,13 @@ import os
 import re
 import sys
 import time
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TextIO
 
 from dh import is_binary
-from fastwalk import walk_files  # noqa: F401  (kept for API compatibility)
 from loguru import logger
 
 logger.remove()

@@ -56,7 +56,7 @@ import shutil
 import site
 import sys
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any, Sequence
 
 logger = logging.getLogger("pkgtool")
 

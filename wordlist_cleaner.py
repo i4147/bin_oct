@@ -20,7 +20,6 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Set
 
 
 def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[str]:

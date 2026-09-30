@@ -6,7 +6,6 @@ that are not exported in __init__.py
 
 import ast
 from pathlib import Path
-from typing import Dict
 
 from loguru import logger
 

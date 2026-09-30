@@ -91,12 +91,11 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import textwrap
 import zipfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 try:
     from packaging.tags import parse_tag

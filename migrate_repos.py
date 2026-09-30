@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/home/.local/bin/python
 import argparse
-import fnmatch
 import logging
 import os
 import shutil

@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence
 
 import zstandard as zstd
 

@@ -54,7 +54,6 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any
 
 try:
     import zstandard as zstd  # type: ignore

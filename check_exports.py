@@ -12,7 +12,6 @@ Usage:
 import argparse
 import ast
 from pathlib import Path
-from typing import Dict
 
 from loguru import logger
 

@@ -60,7 +60,7 @@ from collections import Counter
 from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 try:  # pragma: no cover
     import nltk

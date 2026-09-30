@@ -9,7 +9,7 @@ import shutil
 import sys
 import tarfile
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 
 import cramjam  # type: ignore[import-untyped]
 from loguru import logger

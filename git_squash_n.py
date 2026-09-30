@@ -22,8 +22,6 @@ import os
 import subprocess
 import sys
 import json
-import tempfile
-import shutil
 from datetime import datetime
 
 

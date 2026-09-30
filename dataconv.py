@@ -42,7 +42,7 @@ import sqlite3
 import sys
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 from loguru import logger
 

@@ -47,7 +47,7 @@ import base64
 import re
 import sys
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import requests

@@ -49,7 +49,7 @@ import string
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Iterator, Sequence
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8

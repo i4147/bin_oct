@@ -38,12 +38,11 @@ import re
 import socket
 import string
 import subprocess
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 from urllib import request as urlrequest
 
 try:

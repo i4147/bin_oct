@@ -34,9 +34,8 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
-import sys
 from pathlib import Path
-from typing import Callable, Final, Optional, Protocol
+from typing import Final, Optional, Protocol
 
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException

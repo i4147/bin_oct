@@ -37,7 +37,7 @@ import multiprocessing
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Sequence
 
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen

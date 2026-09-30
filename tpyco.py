@@ -14,7 +14,6 @@ import ast
 import json
 import multiprocessing
 import re
-import sys
 import time
 import tokenize
 from dataclasses import dataclass

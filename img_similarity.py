@@ -31,7 +31,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Iterable, Optional, Sequence
 
 SUPPORTED_EXTS = {
     ".jpg",

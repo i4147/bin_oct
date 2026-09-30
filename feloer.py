@@ -3,29 +3,23 @@
 annotate_felo.py
 
 Prepend an AI-generated "how to reproduce this" prompt as a module
-docstring to every self-contained .py file in the current directory.
+docstring to one or more self-contained .py files.
 
 Uses the felo CLI:
     felo superagent --query "..." --accept-language en --timeout 300 --json --verbose
-
-Usage:
-    python annotate_felo.py --dry-run
-    python annotate_felo.py
-    python annotate_felo.py --recursive --delay 2
 """
 
 from __future__ import annotations
 
 import argparse
-import glob
+import fnmatch
 import os
 import re
 import subprocess
 import sys
 import time
 
-FELO_CMD = os.environ.get("FELO_CMD", "felo")
-FELO_SUBCMD = os.environ.get("FELO_SUBCMD", "superagent")
+FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 FELO_TIMEOUT = int(os.environ.get("FELO_TIMEOUT", "300"))
 
 PROMPT_TEMPLATE = """\
@@ -120,15 +114,14 @@ def ask_felo(code: str) -> str:
     prompt = PROMPT_TEMPLATE.format(code=code)
 
     cmd = [
-        FELO_CMD,
-        FELO_SUBCMD,
+        "node",
+        FELO_SUPERAGENT,
         "--query",
         prompt,
         "--accept-language",
         "en",
         "--timeout",
         "300",
-        "--json",
         "--verbose",
     ]
 
@@ -192,27 +185,66 @@ def annotate(path: str, dry_run: bool) -> None:
     print(f"[ok  ] {path}")
 
 
+def collect_files(inputs: list[str], pattern: str) -> list[str]:
+    """Expand files/dirs into a de-duplicated, sorted list of matching files.
+
+    - Regular files are taken as-is (no pattern filtering).
+    - Directories are walked recursively; only names matching ``pattern``
+      are included.
+    - The running script itself is excluded.
+    """
+    me = os.path.abspath(__file__)
+    seen: set[str] = set()
+    out: list[str] = []
+
+    def add(path: str) -> None:
+        ap = os.path.abspath(path)
+        if ap == me:
+            return
+        if ap in seen:
+            return
+        seen.add(ap)
+        out.append(path)
+
+    for inp in inputs:
+        if os.path.isfile(inp):
+            add(inp)
+        elif os.path.isdir(inp):
+            for root, _dirs, names in os.walk(inp):
+                for name in names:
+                    if fnmatch.fnmatch(name, pattern):
+                        add(os.path.join(root, name))
+        else:
+            print(f"[warn] skipping (not a file or directory): {inp}")
+
+    return sorted(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+    ap.add_argument(
+        "paths",
+        nargs="*",
+        help="One or more files or directories. If omitted, the current "
+        "directory is processed recursively.",
+    )
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--pattern", default="*.py")
-    ap.add_argument("--recursive", action="store_true")
+    ap.add_argument(
+        "--pattern",
+        default="*.py",
+        help="Glob pattern used when expanding directories (default: *.py).",
+    )
     ap.add_argument("--delay", type=float, default=0.0)
     args = ap.parse_args()
 
-    if args.recursive:
-        paths = glob.glob(os.path.join("**", args.pattern), recursive=True)
-    else:
-        paths = glob.glob(args.pattern)
-
-    me = os.path.basename(os.path.abspath(__file__))
-    paths = sorted(p for p in paths if os.path.isfile(p) and os.path.basename(p) != me)
+    inputs = args.paths if args.paths else ["."]
+    paths = collect_files(inputs, args.pattern)
 
     if not paths:
-        print("No matching .py files found.")
+        print(f"No matching files found (pattern={args.pattern!r}).")
         return
 
     print(f"Found {len(paths)} file(s). dry_run={args.dry_run}")

@@ -45,7 +45,7 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Optional, Sequence
 
 
 def read_text(path: Path) -> str:

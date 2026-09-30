@@ -14,10 +14,8 @@ import sys
 import sysconfig
 import token
 import tokenize
-from collections import defaultdict
 from io import StringIO
 from pathlib import Path
-from typing import Any
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")

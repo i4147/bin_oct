@@ -51,10 +51,8 @@ import urllib.error
 import urllib.request
 import zipfile
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, field
-from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 try:
     from rapidfuzz import fuzz as _rapidfuzz  # type: ignore

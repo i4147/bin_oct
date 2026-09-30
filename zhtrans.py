@@ -50,7 +50,7 @@ import sys
 import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence
 
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger

@@ -25,7 +25,6 @@ import time
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
-from typing import List, Set, Tuple
 
 from dh import STDLIB, get_installed_pkgs
 

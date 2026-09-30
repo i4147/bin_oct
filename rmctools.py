@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import concurrent.futures
 import io
 import multiprocessing as mp
 import re
@@ -50,7 +49,6 @@ import subprocess
 import sys
 import tokenize
 import traceback
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, NamedTuple, Sequence
 

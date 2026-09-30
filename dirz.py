@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
-from typing import Iterator, Optional, Tuple
+from typing import Iterator, Optional
 
 
 def format_size(num_bytes: int) -> str:

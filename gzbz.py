@@ -44,7 +44,6 @@ import bz2
 import gzip
 import mmap
 import shutil
-import sys
 import tarfile
 import time
 from concurrent.futures import ProcessPoolExecutor

@@ -41,15 +41,13 @@ import argparse
 import ast
 import io
 import logging
-import os
 import re
 import shutil
-import sys
 import tokenize
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Iterator, Sequence
 
 from deep_translator import GoogleTranslator
 

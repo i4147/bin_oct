@@ -5,7 +5,6 @@ File processing should run in parallel via `joblib.Parallel`/`delayed` (with a c
 
 import ast
 from collections.abc import Callable, Iterable
-from os import scandir as os_scandir
 from pathlib import Path
 from typing import Any
 from dh import cprint, get_pyfiles

@@ -40,12 +40,11 @@ import argparse
 import ast
 import io
 import logging
-import os
 import re
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Iterable, Optional, Sequence
+from typing import Optional, Sequence
 
 try:
     import libcst as cst

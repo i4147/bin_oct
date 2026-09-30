@@ -7,12 +7,11 @@ import json
 import os
 import signal
 import sys
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Optional
 import loguru
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound

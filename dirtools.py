@@ -39,7 +39,7 @@ import shutil
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence
 
 
 def human_size(n: int) -> str:

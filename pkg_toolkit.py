@@ -48,12 +48,11 @@ import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
-from multiprocessing import Pool, cpu_count, freeze_support
+from multiprocessing import Pool, freeze_support
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Iterable, List, Optional, Sequence
 
 DEFAULT_CHUNK_SIZE = 8192
 

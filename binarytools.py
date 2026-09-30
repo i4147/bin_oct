@@ -51,7 +51,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Iterable, Iterator, Optional, Sequence, Tuple
+from typing import Iterator, Optional, Sequence
 
 SKIP_DIR_NAMES = {
     ".git",

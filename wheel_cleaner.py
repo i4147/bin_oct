@@ -84,7 +84,7 @@ import sysconfig
 import textwrap
 import zipfile
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Iterable, Optional, Sequence
 
 __all__ = ["main"]
 

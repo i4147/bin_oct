@@ -35,7 +35,7 @@ import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable
 
 from loguru import logger
 

@@ -15,7 +15,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from difflib import SequenceMatcher
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Callable, Iterable, TypeAlias
+from typing import Callable, TypeAlias
 from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]

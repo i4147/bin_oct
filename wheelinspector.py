@@ -41,7 +41,7 @@ import sys
 import sysconfig
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional
 
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]

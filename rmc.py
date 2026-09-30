@@ -11,7 +11,6 @@ import functools
 import io
 import multiprocessing as mp
 import os
-import re
 import sys
 import tempfile
 import tokenize as _tokenize

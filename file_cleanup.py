@@ -41,7 +41,7 @@ import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Iterable, Optional, Sequence
 
 MMAP_THRESHOLD = 1_048_576
 DEFAULT_CHUNK_SIZE = 100_000

@@ -34,7 +34,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Optional, Sequence
 
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",

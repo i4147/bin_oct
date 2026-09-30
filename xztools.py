@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 try:
     import lzma_mt  # type: ignore

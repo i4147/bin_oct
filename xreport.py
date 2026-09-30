@@ -64,7 +64,7 @@ import sys
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Iterable, Optional
 
 try:
     import py7zr  # type: ignore

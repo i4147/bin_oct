@@ -21,7 +21,6 @@ import sys
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple
 
 # Configuration
 NUM_WORKERS = 8

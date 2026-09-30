@@ -46,7 +46,6 @@ import io
 import os
 import re
 import subprocess
-import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path

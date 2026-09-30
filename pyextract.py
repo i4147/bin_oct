@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import hashlib
 import io
 import json
 import logging
@@ -41,7 +40,6 @@ import os
 import re
 import shutil
 import sqlite3
-import sys
 import tarfile
 import zipfile
 from collections import defaultdict

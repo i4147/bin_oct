@@ -40,9 +40,8 @@ import sys
 import tarfile
 import tokenize
 import zipfile
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import Any, Callable

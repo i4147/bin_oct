@@ -40,7 +40,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Iterator, Sequence
 
 
 def iter_py_files(

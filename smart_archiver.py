@@ -19,7 +19,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any
 
 import brotli
 import lz4.frame

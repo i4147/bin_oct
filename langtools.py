@@ -36,7 +36,7 @@ import shutil
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Iterable, Iterator, Optional
+from typing import Iterator, Optional
 
 try:
     import pycld2  # type: ignore

@@ -1,10 +1,15 @@
 #!/data/data/com.termux/files/home/.local/bin/python
-"""Write a Python script that recursively collvia a helper `get_files` function from module `dh`) and computes ssdeep fuzzy hashes for each file, skipping files smaller than a configurable minimum size and gracefully handling missing/unreadable files.
+"""
+Write a Python script that recursively collvia a helper `get_files` function from module `dh`) and computes ssdeep fuzzy hashes for each file, skipping files smaller than a configurable minimum size and gracefully handling missing/unreadable files.
 It should then pairwise-compare all computed hashes using ssdeep.compare, collect pairs whose similarity score meets or exceeds a configurable threshold (default 70), and record these similar file pairs with their scores, using relative paths where possible.
-The script should output the results as JSON, sorted by similarity score in descending order using operator for sorting."""
+The script should output the results as JSON, sorted by similarity score in descending order using operator for sorting.
+Pass -g/--group-similar to move related files, into subdirs group001, group002, ... in the current directory.
+"""
 
+import argparse
 import json
 import operator
+from collections import defaultdict
 from pathlib import Path
 import ssdeep
 from dh import get_files
@@ -73,7 +78,82 @@ def save_to_json(data, filename: str = "simz.json") -> None:
         print(f"Error saving data to JSON file '{filename}': {e}")
 
 
-if __name__ == "__main__":
+def strip_one_suffix(name: str) -> str:
+    p = Path(name)
+    if p.stem.endswith("_1"):
+        return p.stem[:-2] + p.suffix
+    return name
+
+
+def are_related(a: str, b: str) -> bool:
+    return strip_one_suffix(a) == b or strip_one_suffix(b) == a
+
+
+def group_similar(json_file: str = "simz.json") -> None:
+    cwd = Path.cwd()
+    simz = cwd / json_file
+    if not simz.exists():
+        print(f"{simz} not found")
+        return
+    try:
+        records = json.loads(simz.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"Error reading {simz}: {e}")
+        return
+    files = set()
+    for rec in records:
+        files.add(rec["file1"])
+        files.add(rec["file2"])
+    parent = {f: f for f in files}
+
+    def find(x: str) -> str:
+        root = x
+        while parent[root] != root:
+            root = parent[root]
+        while parent[x] != root:
+            parent[x], x = root, parent[x]
+        return root
+
+    def union(a: str, b: str) -> None:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for rec in records:
+        a, b = rec["file1"], rec["file2"]
+        if are_related(a, b):
+            union(a, b)
+    clusters_by_root = defaultdict(list)
+    for f in files:
+        clusters_by_root[find(f)].append(f)
+    clusters = [sorted(g) for g in clusters_by_root.values() if len(g) > 1]
+    clusters.sort()
+    for idx, cluster in enumerate(clusters, start=1):
+        subdir = cwd / f"group{idx:03d}"
+        subdir.mkdir(exist_ok=True)
+        for name in cluster:
+            src = cwd / name
+            dst = subdir / name
+            if not src.exists():
+                print(f"[skip] {name}: not found in {cwd}")
+                continue
+            if dst.exists():
+                print(f"[skip] {name}: already exists at {dst}")
+                continue
+            src.rename(dst)
+            print(f"[move] {name} -> {subdir.name}/")
+    print(f"\nDone. Created {len(clusters)} group(s).")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-g",
+        "--group-similar",
+        action="store_true",
+        help="Move similar files into group001, group002, ... subdirs based on simz.json",
+    )
+    args = parser.parse_args()
     cwd = Path.cwd()
     MIN_SIMILARITY_THRESHOLD = 50
     OUTPUT_JSON_FILE = "simz.json"
@@ -86,3 +166,9 @@ if __name__ == "__main__":
             save_to_json(similar_file_pairs, OUTPUT_JSON_FILE)
         else:
             print(f"\nNo files found with similarity >= {MIN_SIMILARITY_THRESHOLD}%.")
+    if args.group_similar:
+        group_similar(OUTPUT_JSON_FILE)
+
+
+if __name__ == "__main__":
+    main()

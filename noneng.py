@@ -8,7 +8,7 @@ import codecs
 import multiprocessing
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any, Iterable, Iterator
 
 from loguru import logger
 

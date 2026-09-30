@@ -35,7 +35,6 @@ import stat
 import subprocess
 import sys
 import tempfile
-import xml.etree.ElementTree as ET  # noqa: F401  (kept symmetrical with svg script)
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path

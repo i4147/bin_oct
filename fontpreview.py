@@ -32,12 +32,11 @@ from __future__ import annotations
 import argparse
 import html
 import logging
-import sys
 from collections import namedtuple
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable, Optional, Sequence
+from typing import Optional, Sequence
 
 LOG = logging.getLogger("fontpreview")
 

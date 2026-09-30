@@ -8,7 +8,6 @@ import base64
 import hashlib
 import re
 import sys
-from collections.abc import Iterable
 from pathlib import Path
 from dh import MIME2EXT, get_nobinary
 

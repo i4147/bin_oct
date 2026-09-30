@@ -47,7 +47,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Optional, Sequence
 
 DEFAULT_GITHUB_USERNAME = "i4147"
 DEFAULT_GIT_EMAIL = "adnanonagh@gmail.com"

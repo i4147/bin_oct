@@ -44,10 +44,8 @@ from __future__ import annotations
 
 import argparse
 import base64
-import os
 import re
 import sys
-import tempfile
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence

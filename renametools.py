@@ -75,12 +75,11 @@ import ast
 import logging
 import os
 import re
-import shutil
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 log = logging.getLogger("renametools")
 

@@ -5,7 +5,7 @@ import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
-from typing import Iterable, Iterator, Set
+from typing import Iterable, Iterator
 
 from spellchecker import SpellChecker
 
@@ -129,8 +129,8 @@ def _is_binary(
     return (len(nontext) / len(chunk)) > threshold
 
 
-def _extract_words(file_path: Path) -> Set[str]:
-    words: Set[str] = set()
+def _extract_words(file_path: Path) -> set[str]:
+    words: set[str] = set()
     try:
         with file_path.open("r", encoding="utf-8", errors="ignore") as f:
             for line in f:
@@ -143,7 +143,7 @@ def _extract_words(file_path: Path) -> Set[str]:
     return words
 
 
-def _process_file(file_path_str: str) -> Set[str]:
+def _process_file(file_path_str: str) -> set[str]:
     path = Path(file_path_str)
     try:
         if path.is_symlink() or not path.is_file():
@@ -178,8 +178,8 @@ def _iter_candidate_files(root: Path, skip: Path) -> Iterator[Path]:
 
 def collect_words(
     root_dir: Path, output_path: Path, workers: int | None = None
-) -> Set[str]:
-    all_words: Set[str] = set()
+) -> set[str]:
+    all_words: set[str] = set()
     files = [str(p) for p in _iter_candidate_files(root_dir, output_path)]
     if not files:
         return all_words
@@ -199,12 +199,12 @@ def collect_words(
     return all_words
 
 
-def filter_unknown_words(words: Set[str]) -> Set[str]:
+def filter_unknown_words(words: set[str]) -> set[str]:
     spell = SpellChecker()
     try:
         return set(spell.unknown(words))
     except Exception:
-        unknown: Set[str] = set()
+        unknown: set[str] = set()
         for word in words:
             try:
                 if word not in spell:
@@ -214,7 +214,7 @@ def filter_unknown_words(words: Set[str]) -> Set[str]:
         return unknown
 
 
-def _load_existing(path: Path) -> Set[str]:
+def _load_existing(path: Path) -> set[str]:
     if not path.exists():
         return set()
     try:

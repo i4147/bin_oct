@@ -33,7 +33,6 @@ from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from types import FrameType
-from typing import Any
 
 from loguru import logger
 from tenacity import (

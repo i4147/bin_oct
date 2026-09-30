@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 import os
 import shutil
@@ -36,7 +35,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import DefaultDict, Iterable, Iterator, Mapping, Sequence
+from typing import Iterable, Iterator, Mapping, Sequence
 
 try:
     import ssdeep

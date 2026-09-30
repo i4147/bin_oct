@@ -54,7 +54,7 @@ import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Sequence
 
 
 def _extract_plumber(

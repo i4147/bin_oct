@@ -18,7 +18,7 @@ import concurrent.futures
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TextIO, Tuple
+from typing import Any, Optional
 
 try:
     import toml

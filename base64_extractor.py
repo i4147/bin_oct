@@ -47,11 +47,10 @@ import json
 import mimetypes
 import os
 import re
-import shutil
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, Optional
+from typing import Iterable, Iterator, Optional
 
 MIME2EXT: dict[str, str] = {
     "image/png": ".png",

@@ -7,7 +7,6 @@ Inspired by dupeGuru, rebuilt for Python 3.12+ with Textual 8.2.5
 from __future__ import annotations
 
 import hashlib
-import os
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -18,7 +17,7 @@ from typing import ClassVar
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical, VerticalScroll
+from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (

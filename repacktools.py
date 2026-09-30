@@ -64,9 +64,7 @@ import email
 import hashlib
 import json
 import logging
-import os
 import platform
-import re
 import shutil
 import site
 import subprocess
@@ -76,10 +74,9 @@ import tempfile
 import zipfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 try:
     from wheel.wheelfile import WheelFile  # type: ignore

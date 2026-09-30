@@ -43,7 +43,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Sequence
 
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"

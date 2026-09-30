@@ -21,7 +21,6 @@ IMPORTANT MANUAL STEPS (this script cannot do these for you):
 """
 
 import argparse
-import fnmatch
 import logging
 import os
 import shutil

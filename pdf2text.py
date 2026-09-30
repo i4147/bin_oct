@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 
 def _extract_pages_pypdf2(pdf_path: Path) -> Iterator[str]:

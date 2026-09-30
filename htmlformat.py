@@ -10,7 +10,6 @@ import sys
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
 
 try:
     import tree_sitter_html as ts_html

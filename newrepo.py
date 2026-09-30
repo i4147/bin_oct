@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Optional
 
 
 class GitBackend(ABC):

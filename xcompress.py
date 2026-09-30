@@ -38,10 +38,10 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 try:
     import zstandard as zstd

@@ -37,18 +37,15 @@ import contextlib
 import hashlib
 import json
 import multiprocessing as mp
-import os
 import re
 import signal
 import sys
-import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from io import BytesIO
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Optional
 
 import requests
 from tqdm import tqdm
