@@ -9,8 +9,8 @@ Mapping:
     gagc.py         -> python git_sync_tool.py commit --add-mode star --init-if-missing
     gitpush.py      -> python git_sync_tool.py push --format-black --gitignore-mode copy --gitignore-source ~/.gitignore_global
     gp.py           -> python git_sync_tool.py push --gitignore-mode copy --gitignore-source ~/.gitignore --message-prefix "Auto-commit at " --require-remote
-    gp2.py          -> python git_sync_tool.py push --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user iho147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote
-    gp3.py          -> python git_sync_tool.py push --create-repo --fork-origin --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user iho147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote
+    gp2.py          -> python git_sync_tool.py push --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user i4147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote
+    gp3.py          -> python git_sync_tool.py push --create-repo --fork-origin --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user i4147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote
     pullforkpush.py -> python git_sync_tool.py sync --push-to-fork --fork-token-auth persistent --token-url-format user --token-env-vars GITHUB_TOKEN
 """
 

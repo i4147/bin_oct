@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 LOG_DIR = Path.home() / "tmp" / "apps"
-FELO_SCRIPT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
+FSA = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 
 
 def create_log_file():
@@ -57,15 +57,14 @@ def main():
 
     cmd = [
         "node",
-        FELO_SCRIPT,
+        FSA,
         "--query",
         query,
         "--accept-language",
         "en",
         "--timeout",
         "300",
-        "--json",
-        "--verbose",
+        #        "--verbose",
     ]
 
     process = None
