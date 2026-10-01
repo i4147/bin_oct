@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that lists all currently installed packages (via importlib.metadata), normalizes their names, and concurrently queries the PyPI JSON API using pycurl and multiprocessing to fetch each package's latest published version.
 For each installed package, it should compare the local version against the latest available version on PyPI and report packages that are outdated, printing warnings when a lookup fails or a version cannot be determined.
 Input is the local Python environment's installed distributions; output is console messages summarizing version comparisons and any errors encountered during the HTTP requests."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads a source code file's text and heuristically distinguishes stray comment/prose lines from actual code lines before any function or class definitions begin, automatically prefixing non-code lines with "#" so the file becomes syntactically valid Python.
 It should use regex patterns to detect definitions ("def"/"class"), the "__main__" guard, and common block-starting keywords (if, elif, else, for, while, try, except, finally, with), plus a helper heuristic (is_code_line) checking for assignment operators, parentheses, colons, or known statement keywords to decide whether a line looks like code.
 Implement a clean_text function that iterates over the file line by line, tracks indentation and whether code has started, and rewrites non-code lines by commenting them out while leaving genuine code untouched.

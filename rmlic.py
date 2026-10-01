@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that removes license/copyright header blocks from a batch of text or source files.
 It should load a license file (e.g.
 "/sdcard/lic") and split its content into separate boilerplate patterns using runs of at least 3 blank lines as delimiters, then convert each pattern into a whitespace-tolerant, case-insensitive regex (escaping special characters while allowing flexible newline/whitespace matching) to strip matching blocks from each target file's content.

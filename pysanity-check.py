@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that performs a sanity check on installed Python packages in the current environment.
 It should list all installed packages with their versions using importlib_metadata, normalize package names for consistency, and attempt to import each one to verify it is actually usable, reporting any import errors encountered.
 It should also include a helper that queries pip via a dry-run install to determine the latest available version of a given package, extracting the version string from pip's output using a regular expression.

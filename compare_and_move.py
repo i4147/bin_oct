@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that takes two directory paths as arguments, expands environment variables and user home references in each, and resolves them to absolute paths.
 It should verify both directories exist, then create (or reuse) a "common" folder in the current working directory.
 The script must find filenames that exist in both source and target directories, report their count, and for each common file compare file sizes between the two locations (printing whether the sizes match), then move the common files from the source and/or target into the "common" folder.
@@ -21,14 +21,10 @@ def compare_and_move_common(source_dir: str, target_dir: str) -> None:
     print(f"Target directory (second): {target}")
     print("-" * 40)
     if not source.exists():
-        print(
-            f"Error: Source directory '{source_dir}' (expanded to '{source}') does not exist."
-        )
+        print(f"Error: Source directory '{source_dir}' (expanded to '{source}') does not exist.")
         return
     if not target.exists():
-        print(
-            f"Error: Target directory '{target_dir}' (expanded to '{target}') does not exist."
-        )
+        print(f"Error: Target directory '{target_dir}' (expanded to '{target}') does not exist.")
         return
     common_dir = Path.cwd() / "common"
     common_dir.mkdir(exist_ok=True)
@@ -44,13 +40,9 @@ def compare_and_move_common(source_dir: str, target_dir: str) -> None:
         source_size = (source / filename).stat().st_size
         target_size = (target / filename).stat().st_size
         size_match = "✓" if source_size == target_size else "⚠"
-        print(
-            f"  {size_match} {filename} (source: {source_size} bytes, target: {target_size} bytes)"
-        )
+        print(f"  {size_match} {filename} (source: {source_size} bytes, target: {target_size} bytes)")
     print("\n" + "=" * 40)
-    response = input(
-        f"Move these {len(common_files)} common file(s) from source to '{common_dir}'? (y/n): "
-    ).lower()
+    response = input(f"Move these {len(common_files)} common file(s) from source to '{common_dir}'? (y/n): ").lower()
     if response != "y":
         print("Operation cancelled.")
         return
@@ -71,9 +63,7 @@ def compare_and_move_common(source_dir: str, target_dir: str) -> None:
                 new_name = f"{base}_common{counter}{ext}"
                 dest_path = common_dir / new_name
                 counter += 1
-            print(
-                f"\n  Note: '{filename}' will be renamed to '{dest_path.name}' to avoid conflict"
-            )
+            print(f"\n  Note: '{filename}' will be renamed to '{dest_path.name}' to avoid conflict")
         try:
             shutil.move(source_path, dest_path)
             print(f"  ✓ Moved: {filename} -> {dest_path.name}")
@@ -82,13 +72,9 @@ def compare_and_move_common(source_dir: str, target_dir: str) -> None:
             print(f"  ✗ Error moving {filename}: {e}")
             failed_files.append(filename)
     print("\n" + "=" * 40)
-    print(
-        f"Summary: Successfully moved {moved_count} of {len(common_files)} common file(s)"
-    )
+    print(f"Summary: Successfully moved {moved_count} of {len(common_files)} common file(s)")
     if size_mismatches:
-        print(
-            f"\n⚠ Warning: {len(size_mismatches)} file(s) had different sizes in source vs target:"
-        )
+        print(f"\n⚠ Warning: {len(size_mismatches)} file(s) had different sizes in source vs target:")
         for filename in size_mismatches:
             print(f"  - {filename}")
         print("  (Files were still moved, but verify they are correct versions)")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that converts a plain .py source file into a Jupyter .ipynb notebook using nbformat.
 It should read the input file's text, split it into logical code cells by heuristically detecting boundaries such as function/class definitions, grouped import blocks, and blank lines followed by unindented code, then build a notebook object with those cells.
 The script should accept the input file path and an optional output file path via argparse, print an error and return False if the input file doesn't exist, and otherwise write the resulting notebook as JSON to the output path (defaulting to the input filename with a .ipynb extension) and report success."""
@@ -25,10 +25,7 @@ def py_to_ipynb(input_file, output_file=None) -> bool:
             i > 0
             and (
                 line.startswith(("def ", "class "))
-                or (
-                    line.startswith(("import ", "from "))
-                    and not current_cell[-1].startswith(("import ", "from "))
-                )
+                or (line.startswith(("import ", "from ")) and not current_cell[-1].startswith(("import ", "from ")))
                 or (
                     line.strip() == ""
                     and current_cell
@@ -60,13 +57,9 @@ def py_to_ipynb(input_file, output_file=None) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Convert a Python script to a Jupyter notebook"
-    )
+    parser = argparse.ArgumentParser(description="Convert a Python script to a Jupyter notebook")
     parser.add_argument("input", help="Input Python file (.py)")
-    parser.add_argument(
-        "output", nargs="?", help="Output notebook file (.ipynb) (optional)"
-    )
+    parser.add_argument("output", nargs="?", help="Output notebook file (.ipynb) (optional)")
     parser.add_argument(
         "--no-split",
         action="store_true",

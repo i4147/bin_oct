@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line directory-listing utility (similar to "ls") that accepts arguments via argparse to control which path to list and display options such as showing hidden files, human-readable sizes, icons, and colorized output.
 It should gather file metadata (permissions, owner/group via pwd/grp, size via a helper module "dh.fsz", modification time) using os/pathlib/stat, and augment entries with per-file Git status (staged/modified/untracked) by parsing "git status --porcelain=v2 -z" output for the given directory.
 It should format and print a listing to the terminal that includes colored text and emoji icons based on file type (directory, symlink, executable, image, script, archive, other), and it may fall back gracefully (returning an empty status map) if git is not installed.
@@ -71,9 +71,7 @@ def get_git_status_for_dir(path: str) -> dict[str, dict[str, str]]:
 
 
 class Entry:
-    def __init__(
-        self, path: str, name: str, stat_obj, link_target=None, git=None
-    ) -> None:
+    def __init__(self, path: str, name: str, stat_obj, link_target=None, git=None) -> None:
         self.path = path
         self.name = name
         self.stat = stat_obj
@@ -231,11 +229,7 @@ def print_entries(entries: list[Entry], args: Namespace) -> None:
                 "mode": mode_to_string(e.stat.st_mode),
                 "mtime": e.stat.st_mtime,
                 "git": e.git,
-                "type": "dir"
-                if stat.S_ISDIR(e.stat.st_mode)
-                else "link"
-                if stat.S_ISLNK(e.stat.st_mode)
-                else "file",
+                "type": "dir" if stat.S_ISDIR(e.stat.st_mode) else "link" if stat.S_ISLNK(e.stat.st_mode) else "file",
             }
             for e in entries
         ]

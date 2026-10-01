@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 nvim_plugin_toolbox.py
 ======================
@@ -432,9 +432,7 @@ def _unique_path(path: Path) -> Path:
         n += 1
 
 
-def find_plugin_refs(
-    path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERNS
-) -> set[str]:
+def find_plugin_refs(path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERNS) -> set[str]:
     found: set[str] = set()
     try:
         content = path.read_text(encoding="utf-8")
@@ -507,9 +505,7 @@ def cmd_folderize(args: argparse.Namespace) -> int:
             print(f"  → {p.relative_to(root)}")
 
     if args.dry_run:
-        print(
-            "\n[DRY RUN] No files were moved. Run without --dry-run to organize files."
-        )
+        print("\n[DRY RUN] No files were moved. Run without --dry-run to organize files.")
         return 0
 
     answer = input("\nProceed with moving files? (y/N): ").strip().lower()
@@ -831,8 +827,7 @@ def cmd_split(args: argparse.Namespace) -> int:
         url = _extract_plugin_url(spec)
         if not url:
             print(
-                f"Warning: Could not parse plugin name from block, skipping:\n"
-                f"{spec[:100]}...",
+                f"Warning: Could not parse plugin name from block, skipping:\n{spec[:100]}...",
                 file=sys.stderr,
             )
             continue
@@ -904,14 +899,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_lock.add_argument(
         "--lazy-dir",
         default=str(Path.home() / ".local" / "share" / "nvim" / "lazy"),
-        help="Directory containing installed plugin git repos "
-        "(default: ~/.local/share/nvim/lazy).",
+        help="Directory containing installed plugin git repos (default: ~/.local/share/nvim/lazy).",
     )
     p_lock.add_argument(
         "--output",
         default=str(Path.home() / ".config" / "nvim" / "lazy-lock.json"),
-        help="Path of the lazy-lock.json file to write "
-        "(default: ~/.config/nvim/lazy-lock.json).",
+        help="Path of the lazy-lock.json file to write (default: ~/.config/nvim/lazy-lock.json).",
     )
     p_lock.set_defaults(func=cmd_lock_main)
 
@@ -929,8 +922,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-o",
         "--output",
         default=None,
-        help="Output directory. Defaults: '.' for --engine strict, "
-        "'plugins' for --engine simple.",
+        help="Output directory. Defaults: '.' for --engine strict, 'plugins' for --engine simple.",
     )
     p_split.add_argument(
         "--engine",
@@ -984,8 +976,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-m",
         "--move",
         action="store_true",
-        help="Backup the input file and replace it with an empty table "
-        "(`return {\\n}`).",
+        help="Backup the input file and replace it with an empty table (`return {\\n}`).",
     )
     p_split.add_argument(
         "--keep-input",

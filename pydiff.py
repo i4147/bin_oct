@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 from __future__ import annotations
 
 import argparse
@@ -29,9 +29,7 @@ def read_file_task(path: Path, use_mmap: bool, strip: bool) -> tuple[Path, list[
     return path, lines
 
 
-def filter_diff_chunk(
-    chunk: list[str], exclude_set: frozenset[str], mode: str
-) -> list[str]:
+def filter_diff_chunk(chunk: list[str], exclude_set: frozenset[str], mode: str) -> list[str]:
     if mode == "only_in_first":
         return [p for p in chunk if p not in exclude_set]
     else:
@@ -82,12 +80,7 @@ def report_diff_lines(
         chunk_size = max(1000, len(lines1) // num_workers)
         chunks = [lines1[i : i + chunk_size] for i in range(0, len(lines1), chunk_size)]
         with ProcessPoolExecutor(max_workers=num_workers) as executor:
-            futures = [
-                executor.submit(
-                    filter_diff_chunk, chunk, frozenset(set2), "only_in_first"
-                )
-                for chunk in chunks
-            ]
+            futures = [executor.submit(filter_diff_chunk, chunk, frozenset(set2), "only_in_first") for chunk in chunks]
             only_in_first = []
             for future in as_completed(futures):
                 only_in_first.extend(future.result())
@@ -120,9 +113,7 @@ def report_diff_lines(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="pydiff", description="Diff two files line by line"
-    )
+    parser = argparse.ArgumentParser(prog="pydiff", description="Diff two files line by line")
     parser.add_argument("file1", type=Path)
     parser.add_argument("file2", type=Path)
     parser.add_argument(
@@ -137,9 +128,7 @@ def main() -> None:
         action="store_true",
         help="with -s, if files match, move both into a group_N subdir in the current folder",
     )
-    parser.add_argument(
-        "-w", "--workers", type=int, default=2, help="number of worker processes"
-    )
+    parser.add_argument("-w", "--workers", type=int, default=2, help="number of worker processes")
     args = parser.parse_args()
     report_diff_lines(
         args.file1,

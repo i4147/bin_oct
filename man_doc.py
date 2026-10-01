@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility script that recursively scans a given directory (skipping .git and __pycache__ folders and symlinks) to collect files matching specified extensions, with special handling for gzip-compressed man page files (e.g., .1.gz, .3.gz, .3am.gz, .3form.gz, .3menu.gz, etc.).
 It should decompress such .gz files to temporary files as needed, then run an external command (via runcmd) on each collected file—likely for linting, formatting, or processing man pages—printing colored status output (via cprint) and progress info (via mpf) for each processed file.
 The script is invoked from the command line with a target path and optional extension filters, and cleans up temporary files after processing."""

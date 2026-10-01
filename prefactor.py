@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """This script is a static dependency analyzer for Python projects that scans a directory tree to build a module dependency graph based on import statements, using AST parsing (with multiprocessing for performance) to resolve both absolute and relative imports into fully-qualified module names.
 It takes a root directory path (and optional exclusion path, package mode/name settings, and a maximum results limit defaulting to 10) as input via command-line arguments, then analyzes each Python file's imports and their transitive dependencies, likely using a BFS/queue-based traversal to compute dependency relationships.
 The output is a report identifying modules with the most dependencies or dependents, helping developers understand coupling and complexity within the codebase.
@@ -39,9 +39,7 @@ def find_py_files(root: Path, exclude: Path | None = None) -> list[Path]:
     return files
 
 
-def module_fullname_for_path(
-    root: Path, path: Path, package_mode: bool, package_name: str | None
-) -> str:
+def module_fullname_for_path(root: Path, path: Path, package_mode: bool, package_name: str | None) -> str:
     rel = path.relative_to(root)
     parts = list(rel.with_suffix("").parts)
     if parts and parts[-1] == "__init__":
@@ -57,9 +55,7 @@ def module_fullname_for_path(
         return ".".join(parts)
 
 
-def resolve_relative_import(
-    curr_fullname: str, module: str | None, level: int
-) -> str | None:
+def resolve_relative_import(curr_fullname: str, module: str | None, level: int) -> str | None:
     if level == 0:
         return module
     cur_parts = curr_fullname.split(".")
@@ -111,11 +107,7 @@ def analyze_file(args) -> ModuleInfo:
             normalized.add(d)
         else:
             for candidate in full_map:
-                if (
-                    candidate == d
-                    or candidate.startswith(d + ".")
-                    or d.startswith(candidate + ".")
-                ):
+                if candidate == d or candidate.startswith(d + ".") or d.startswith(candidate + "."):
                     normalized.add(candidate)
     return ModuleInfo(path=path, fullname=fullname, source=src, deps=normalized)
 
@@ -146,9 +138,7 @@ def topological_sort(
     return ordered, cycles
 
 
-def build_merged_source(
-    modules: dict[str, ModuleInfo], ordered: list[str], out_module_name: str
-) -> str:
+def build_merged_source(modules: dict[str, ModuleInfo], ordered: list[str], out_module_name: str) -> str:
     lines: list[str] = []
     lines.append("# Auto-generated single-file package by merge_to_single.py")
     lines.append(f"# Reconstructed modules: {', '.join(ordered)}")
@@ -161,9 +151,7 @@ def build_merged_source(
     lines.append("}")
     lines.append("")
     lines.append("def get_original_source(module_name):")
-    lines.append(
-        '    """Return the original source (as a string) for a merged module, or None."""'
-    )
+    lines.append('    """Return the original source (as a string) for a merged module, or None."""')
     lines.append("    return _orig_sources.get(module_name)")
     lines.append("")
     lines.append("# Pre-create module objects and insert into sys.modules")
@@ -181,17 +169,13 @@ def build_merged_source(
     lines.append("for _name in _order:")
     lines.append("    src = _orig_sources[_name]")
     lines.append("    mod = sys.modules[_name]")
-    lines.append(
-        "    # compile with a synthetic filename so tracebacks mention the original module name"
-    )
+    lines.append("    # compile with a synthetic filename so tracebacks mention the original module name")
     lines.append("    exec(compile(src, f\"<merged:{_name}>\", 'exec'), mod.__dict__)")
     lines.append("")
     if out_module_name in modules:
         lines.append("try:")
         lines.append(f"    import {out_module_name} as _top")
-        lines.append(
-            "    # re-export public names (non-underscore) into the merged-file global namespace"
-        )
+        lines.append("    # re-export public names (non-underscore) into the merged-file global namespace")
         lines.append("    for _k, _v in vars(_top).items():")
         lines.append("        if not _k.startswith('_'):")
         lines.append("            globals()[_k] = _v")
@@ -204,9 +188,7 @@ def build_merged_source(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Merge a small Python library into a single-file package."
-    )
+    parser = argparse.ArgumentParser(description="Merge a small Python library into a single-file package.")
     parser.add_argument(
         "input",
         nargs="?",
@@ -263,9 +245,7 @@ def main():
         print("No Python files found under input directory.", file=sys.stderr)
         sys.exit(2)
     package_mode = (root / "__init__.py").exists()
-    package_name = (
-        args.package_name if args.package_name else root.name if package_mode else None
-    )
+    package_name = args.package_name if args.package_name else root.name if package_mode else None
     if len(files) > args.max_files and not args.force:
         print(
             f"Found {len(files)} files which is > {args.max_files}. Use --force to override.",
@@ -276,9 +256,7 @@ def main():
     for p in files:
         name = module_fullname_for_path(root, p, package_mode, package_name)
         full_map_candidates[name] = p
-    pool_args = [
-        (p, root, package_mode, package_name, full_map_candidates) for p in files
-    ]
+    pool_args = [(p, root, package_mode, package_name, full_map_candidates) for p in files]
     if args.jobs and args.jobs > 0:
         workers = min(args.jobs, max(1, len(files)))
     else:
@@ -291,9 +269,7 @@ def main():
     modules: dict[str, ModuleInfo] = {}
     for mi in results:
         if not mi.fullname:
-            mi.fullname = module_fullname_for_path(
-                root, mi.path, package_mode, package_name
-            )
+            mi.fullname = module_fullname_for_path(root, mi.path, package_mode, package_name)
         modules[mi.fullname] = mi
     ordered, cycles = topological_sort(modules)
     if cycles:

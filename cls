@@ -1,1 +1,1 @@
-/data/data/com.termux/files/home/bin/cls.py
+cls.py

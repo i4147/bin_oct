@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Termux-focused Python CLI utility that reads script source code from the Android clipboard via termux-clipboard-get and saves it as a new executable script file.
 The script should take a target filename as an argument, infer the scripting language (python, bash, sh, or rust) from the file extension, and replace or insert the appropriate Termux-specific shebang line at the top of the clipboard content.
 It should place the resulting file into the correct script directory (such as ~/bin, ~/bashbin, or ~/.cargo/bin depending on language), make it executable, and also keep an archived copy under ~/isaac/may/scripts.
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 TERMUX_SHEBANGS = {
-    "python": "#!/data/data/com.termux/files/home/.local/bin/python",
+    "python": "#!/data/data/com.termux/files/usr/bin/python3.12",
     "bash": "#!/data/data/com.termux/files/usr/bin/bash",
     "sh": "#!/data/data/com.termux/files/usr/bin/sh",
     "rust": "#!/data/data/com.termux/files/home/.cargo/bin/rust-script",
@@ -32,9 +32,7 @@ ARCHIVE_DIR = Path.home() / "isaac" / "may" / "scripts"
 
 def get_clipboard_content() -> str:
     try:
-        result = subprocess.run(
-            ["termux-clipboard-get"], capture_output=True, text=True, check=True
-        )
+        result = subprocess.run(["termux-clipboard-get"], capture_output=True, text=True, check=True)
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Failed to read clipboard: {e}", file=sys.stderr)
@@ -109,11 +107,7 @@ def main() -> None:
         archive_existing_file(output_path)
     content = get_clipboard_content()
     if not content.strip():
-        content = (
-            (TERMUX_SHEBANGS[get_language_from_extension(filename)] + "\n\n")
-            if is_script_dir
-            else "\n"
-        )
+        content = (TERMUX_SHEBANGS[get_language_from_extension(filename)] + "\n\n") if is_script_dir else "\n"
     elif is_script_dir:
         lang = get_language_from_extension(filename)
         content = replace_shebang(content, lang)

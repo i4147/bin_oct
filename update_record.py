@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that regenerates the RECORD file inside a Python package's dist-info (or egg-info) directory to ensure installed package metadata accurately reflects file hashes and sizes.
 It should compute SHA-256 hashes (base64url-encoded, in the "sha256=..." format) and byte sizes for each installed file, parse and rewrite existing RECORD entries while skipping irrelevant files like .pyc, direct_url.json, INSTALLER, and RECORD itself, and log progress and errors via the logging module to stderr.
 The script should locate dist-info directories using site-packages paths, support multiprocessing for parallel hash computation across many files, and be runnable as a command-line tool that updates one or more installed distributions' RECORD metadata in place."""
@@ -52,11 +52,7 @@ def parse_record_line(line: str) -> tuple[str, str, str]:
 
 def should_include_file(path: Path) -> bool:
     name = path.name
-    return not (
-        path.suffix == ".pyc"
-        or name.endswith(".pyc")
-        or name in ("direct_url.json", "INSTALLER", "RECORD")
-    )
+    return not (path.suffix == ".pyc" or name.endswith(".pyc") or name in ("direct_url.json", "INSTALLER", "RECORD"))
 
 
 def process_dist_info(dist_info_dir: Path) -> bool:

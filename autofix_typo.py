@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """A Python script that detects and corrects likely keyboard-typo mistakes in Python identifier/keyword usage within source files, using a learned pattern database (typo_patterns.json) combining common character substitutions and QWERTY-adjacent-key mappings alongside a list of known Python keywords (imported from a dh module) to recognize probable misspellings.
 It should expose a PatternLearner class that loads, updates, and persists learned correction frequencies and context-based rules in JSON form, and likely provide a CLI (via argparse) allowing users to scan file(s) or directories, apply or suggest corrections, and optionally back up originals (using shutil) before rewriting them.
 Inputs are Python source file paths or directories plus CLI flags controlling learning/correction behavior, and outputs include corrected source files, console reports of detected typos, and an updated JSON pattern database with timestamps."""
@@ -112,11 +112,7 @@ class PatternLearner:
         multi_changes = 0
         for i, char in enumerate(word):
             if char in self.substitution_patterns:
-                multi_corrected = (
-                    multi_corrected[:i]
-                    + self.substitution_patterns[char]
-                    + multi_corrected[i + 1 :]
-                )
+                multi_corrected = multi_corrected[:i] + self.substitution_patterns[char] + multi_corrected[i + 1 :]
                 multi_changes += 1
         if multi_changes > 0 and multi_corrected != word:
             candidates.append((multi_corrected, 0.8 - multi_changes * 0.1))
@@ -155,9 +151,7 @@ class PatternLearner:
 
 
 class TypoFixerWithLearning:
-    def __init__(
-        self, preview: bool = True, learning_db: str = "typo_patterns.json"
-    ) -> None:
+    def __init__(self, preview: bool = True, learning_db: str = "typo_patterns.json") -> None:
         self.preview = preview
         self.learner = PatternLearner(learning_db)
         self.changes_made = 0
@@ -228,9 +222,7 @@ class TypoFixerWithLearning:
         try:
             from difflib import get_close_matches
 
-            matches = get_close_matches(
-                word.lower(), self.valid_words, n=1, cutoff=0.75
-            )
+            matches = get_close_matches(word.lower(), self.valid_words, n=1, cutoff=0.75)
             if matches:
                 if word[0].isupper():
                     return matches[0].capitalize()
@@ -341,20 +333,14 @@ def main() -> None:
         help="Interactive mode (learn from each fix)",
     )
     parser.add_argument("--dir", type=str, default=".", help="Directory to process")
-    parser.add_argument(
-        "--db", type=str, default="typo_patterns.json", help="Learning database file"
-    )
-    parser.add_argument(
-        "--show-patterns", action="store_true", help="Show learned patterns and exit"
-    )
+    parser.add_argument("--db", type=str, default="typo_patterns.json", help="Learning database file")
+    parser.add_argument("--show-patterns", action="store_true", help="Show learned patterns and exit")
     args = parser.parse_args()
     if args.show_patterns:
         learner = PatternLearner(args.db)
         print(f"\nLearned Corrections ({len(learner.learned_corrections)}):")
         for wrong, correct in sorted(learner.learned_corrections.items()):
-            print(
-                f"  {wrong} → {correct} (seen {learner.error_frequency[wrong]} times)"
-            )
+            print(f"  {wrong} → {correct} (seen {learner.error_frequency[wrong]} times)")
         print(f"\nActive Substitution Patterns ({len(learner.substitution_patterns)}):")
         for wrong, correct in sorted(learner.substitution_patterns.items()):
             if wrong in COMMON_SUBSTITUTIONS:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that batch-translates the text values in one or more JSON localization/sub Google Translate or De (selectable via CLI argument), while supporting a wide range of language codes mapped to each provider's expected format.
 It should load and validate the JSON structure, translate strings concurrently with a thread pool for speed, and write the translated results to output file(s), pre original JSON layout.
 Include logging via loguru for progress/errors, support for a dry-run or similarity check (using SequenceMatcher) to detect unchanged/near-duplicate translations, and safe file writing through temporary files.
@@ -110,9 +110,7 @@ def _map_language(
     normalized = language.strip().lower()
     if normalized not in mapping:
         supported = ", ".join(sorted(mapping))
-        raise ValueError(
-            f"Unsupported language code {language!r}. Supported codes include: {supported}"
-        )
+        raise ValueError(f"Unsupported language code {language!r}. Supported codes include: {supported}")
     return mapping[normalized]
 
 
@@ -236,11 +234,7 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
             )
         translated = getattr(result, "text", result)
         if isinstance(result, dict):
-            translated = (
-                result.get("translatedText")
-                or result.get("translation")
-                or result.get("text")
-            )
+            translated = result.get("translatedText") or result.get("translation") or result.get("text")
         if not isinstance(translated, str):
             raise TypeError("pygoogletranslation returned an unsupported result")
         return translated
@@ -332,9 +326,7 @@ def _make_baidu(source: str, target: str) -> Translator:
 
     def translate(text: str) -> str:
         salt = str(random.randint(10000, 99999))
-        sign = hashlib.md5(
-            f"{app_id}{text}{salt}{secret_key}".encode("utf-8")
-        ).hexdigest()
+        sign = hashlib.md5(f"{app_id}{text}{salt}{secret_key}".encode("utf-8")).hexdigest()
         payload = urllib.parse.urlencode(
             {
                 "q": text,
@@ -353,9 +345,7 @@ def _make_baidu(source: str, target: str) -> Translator:
         with urllib.request.urlopen(request, timeout=60) as response:
             result = json.loads(response.read().decode("utf-8"))
         if "error_code" in result:
-            raise RuntimeError(
-                f"Baidu error {result['error_code']}: {result.get('error_msg', 'unknown error')}"
-            )
+            raise RuntimeError(f"Baidu error {result['error_code']}: {result.get('error_msg', 'unknown error')}")
         translated = "\n".join(item["dst"] for item in result.get("trans_result", []))
         if not translated:
             raise TypeError("Baidu returned no translated text")
@@ -411,9 +401,7 @@ def _select_backend(
     if requested != "auto":
         if requested not in BACKEND_FACTORIES:
             choices = ", ".join(sorted(BACKEND_FACTORIES))
-            raise ValueError(
-                f"Unknown backend {requested!r}. Available backends: {choices}"
-            )
+            raise ValueError(f"Unknown backend {requested!r}. Available backends: {choices}")
         return requested, BACKEND_FACTORIES[requested](source, target)
     for backend in FALLBACK_ORDER:
         if (
@@ -444,10 +432,7 @@ def _select_backend(
             )
             continue
         return backend, translator
-    raise RuntimeError(
-        "No usable translation backend was found. Install one of: "
-        + ", ".join(FALLBACK_ORDER)
-    )
+    raise RuntimeError("No usable translation backend was found. Install one of: " + ", ".join(FALLBACK_ORDER))
 
 
 def _split_chunks(text: str, chunk_size: int) -> list[str]:
@@ -567,9 +552,7 @@ def _translate_with_retry(
                 time.sleep(2 ** (attempt - 1))
     if last_error is None:
         last_error = RuntimeError("Unknown translation failure")
-    raise RuntimeError(
-        f"Chunk {index} failed after 3 attempts: {last_error}"
-    ) from last_error
+    raise RuntimeError(f"Chunk {index} failed after 3 attempts: {last_error}") from last_error
 
 
 def _append_failed(path: Path, index: int) -> None:
@@ -660,9 +643,7 @@ def main() -> int:
     if not args.no_continue:
         translations = _load_output(args.output)
     pending: list[tuple[int, str]] = [
-        (index, chunk)
-        for index, chunk in enumerate(chunks)
-        if str(index) not in translations
+        (index, chunk) for index, chunk in enumerate(chunks) if str(index) not in translations
     ]
     if not pending:
         _atomic_save(args.output, translations)

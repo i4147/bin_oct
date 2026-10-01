@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility function that takes a file path to a Python source file and reformats/cleans it in place, while first creating a ".bak" backup copy of the original content.
 It should read the file line by line, stripping out lines containing "# type:" comments and shebang lines ("#!..."), while carefully detecting and preserving multi-line docstrings (using triple-quote markers imported as DOC_TH1 and DOC_TH2 from a "dh" module) so their internal content is not mistakenly altered.
 The function should use the ast module for parsing/validation support and handle file I/O errors gracefully, printing errors to stderr (e.g., when the file doesn't exist or the backup can't be created) rather than raising exceptions.
@@ -45,14 +45,10 @@ def format_python_file(path: Path) -> None:
                 current_multiline_string_lines = [line]
             else:
                 current_multiline_string_lines.append(line)
-                if line.strip().endswith(string_type) and len(line.strip()) > len(
-                    string_type
-                ):
+                if line.strip().endswith(string_type) and len(line.strip()) > len(string_type):
                     in_multiline_string = False
                     processed_string = "\n".join(current_multiline_string_lines)
-                    content_to_wrap = processed_string[
-                        len(string_type) : -len(string_type)
-                    ]
+                    content_to_wrap = processed_string[len(string_type) : -len(string_type)]
                     wrapped_content = textwrap.fill(
                         content_to_wrap,
                         width=35,
@@ -69,9 +65,7 @@ def format_python_file(path: Path) -> None:
             continue
         if in_multiline_string:
             current_multiline_string_lines.append(line)
-            if line.strip().endswith(string_type) and len(line.strip()) > len(
-                string_type
-            ):
+            if line.strip().endswith(string_type) and len(line.strip()) > len(string_type):
                 in_multiline_string = False
                 processed_string = "\n".join(current_multiline_string_lines)
                 content_to_wrap = processed_string[len(string_type) : -len(string_type)]
@@ -104,9 +98,7 @@ def format_python_file(path: Path) -> None:
                     break_long_words=False,
                     break_on_hyphens=False,
                 )
-                formatted_lines.append(
-                    code_part + wrapped_comment[len(comment_indent + "# ") :]
-                )
+                formatted_lines.append(code_part + wrapped_comment[len(comment_indent + "# ") :])
             else:
                 formatted_lines.append(line)
         else:

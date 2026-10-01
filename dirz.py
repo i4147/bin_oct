@@ -1,8 +1,5 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """dirz.py — List top-level directories of the CWD, optionally with total sizes.
-
-
-
 Usage:
     python dirz.py                # list top-level dirs
     python dirz.py -s            # list top-level dirs with total sizes
@@ -42,9 +39,7 @@ def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
                     if entry.is_file(follow_symlinks=False):
                         yield entry, top_level
                     elif entry.is_dir(follow_symlinks=False):
-                        child_top_level = (
-                            top_level if top_level is not None else entry.name
-                        )
+                        child_top_level = top_level if top_level is not None else entry.name
                         stack.append((entry.path, child_top_level))
         except OSError:
             continue
@@ -83,7 +78,9 @@ def print_directory_listing(
     total_line = f"total:{len(dirs)} dirs"
     if show_size:
         total_line += f"  {format_size(sum(sizes.values()))}"
-    print(total_line)
+
+
+#    print(total_line)
 
 
 def main(argv: Optional[list[str]] = None) -> None:

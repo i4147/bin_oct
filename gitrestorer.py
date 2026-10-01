@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively walks the current working directory and all its subdirectories to find every folder containing a .git directory, identifying it as a Git repository.
 For each repository found, it should print the repository path and run "git restore ." to discard local uncommitted changes, catching and printing a warning message if the command fails rather than stopping execution.
 The script takes no command-line inputs, operates directly on the filesystem starting from the current directory, and prints a "Done." message once all repositories have been processed."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 vidtools.py — merged video utilities.
 
@@ -45,9 +45,7 @@ def parse_time(
     try:
         h, m, s = map(int, time_str.split(":"))
     except ValueError as exc:
-        raise ValueError(
-            f"Invalid time format {time_str!r}; expected hh:mm:ss"
-        ) from exc
+        raise ValueError(f"Invalid time format {time_str!r}; expected hh:mm:ss") from exc
 
     return (h * hour_factor + m * minute_factor + s * second_factor) * time_scale
 
@@ -69,8 +67,7 @@ def cut_video(
         import cv2
     except ImportError:
         print(
-            "Error: OpenCV (cv2) is required for the cut subcommand. "
-            "Install with: pip install opencv-python",
+            "Error: OpenCV (cv2) is required for the cut subcommand. Install with: pip install opencv-python",
             file=sys.stderr,
         )
         raise SystemExit(1)
@@ -127,10 +124,7 @@ def cut_video(
 
         if end_frame > frame_count:
             end_frame = frame_count
-            print(
-                "Warning: Duration exceeds video length. "
-                "Cutting until the end of the video."
-            )
+            print("Warning: Duration exceeds video length. Cutting until the end of the video.")
 
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 
@@ -156,10 +150,7 @@ def cut_video(
         processed = 0
         frames_to_process = end_frame - start_frame
 
-        print(
-            f"start_frame:{start_frame}/end_frame: {end_frame} "
-            f"-> {frames_to_process} frames to process"
-        )
+        print(f"start_frame:{start_frame}/end_frame: {end_frame} -> {frames_to_process} frames to process")
 
         for _i in range(start_frame, end_frame):
             ret, frame = cap.read()
@@ -294,10 +285,7 @@ def build_parser() -> argparse.ArgumentParser:
     rev.add_argument(
         "--keep-audio",
         action="store_true",
-        help=(
-            "Reverse audio too (matches s() in reverse_video.py). "
-            "Default: false, drops audio."
-        ),
+        help=("Reverse audio too (matches s() in reverse_video.py). Default: false, drops audio."),
     )
     rev.add_argument(
         "--preset",

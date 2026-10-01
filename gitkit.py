@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 git_kit.py — unified git maintenance CLI with pluggable backends.
 
@@ -93,9 +93,7 @@ class GitBackend:
     def __init__(self, repo: Path) -> None:
         self.repo = Path(repo).resolve()
 
-    def _run(
-        self, *args: str, check: bool = True, input: Optional[str] = None
-    ) -> subprocess.CompletedProcess:
+    def _run(self, *args: str, check: bool = True, input: Optional[str] = None) -> subprocess.CompletedProcess:
         return subprocess.run(
             ["git", *args],
             cwd=str(self.repo),
@@ -131,9 +129,7 @@ class GitBackend:
     def status_porcelain(self) -> list[str]:
         return self._run("status", "--porcelain", check=False).stdout.splitlines()
 
-    def log(
-        self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False
-    ) -> list[CommitInfo]:
+    def log(self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False) -> list[CommitInfo]:
         args = ["log", "--format=%H%x00%s%x00%ct%x00%P"]
         if n:
             args.append(f"-n{n}")
@@ -272,9 +268,7 @@ class GitPythonBackend(GitBackend):
             return self._r.is_dirty(untracked_files=untracked)
         return super().is_dirty(untracked)
 
-    def log(
-        self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False
-    ) -> list[CommitInfo]:
+    def log(self, *, ref: str = "HEAD", n: Optional[int] = None, reverse: bool = False) -> list[CommitInfo]:
         if self._r is None:
             return super().log(ref=ref, n=n, reverse=reverse)
         try:
@@ -452,9 +446,7 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
         err(f"Not a directory: {root}")
         return 1
 
-    candidates = [root] + [
-        p for p in root.iterdir() if p.is_dir() and not p.is_symlink()
-    ]
+    candidates = [root] + [p for p in root.iterdir() if p.is_dir() and not p.is_symlink()]
 
     found = False
     for candidate in candidates:
@@ -471,10 +463,7 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
             continue
         head = head_list[0]
         if not head.subject.startswith(args.prefix):
-            print(
-                f"[skip] {candidate.name}: latest commit does not start "
-                f"with {args.prefix!r}"
-            )
+            print(f"[skip] {candidate.name}: latest commit does not start with {args.prefix!r}")
             continue
         if not head.parents:
             print(f"[skip] {candidate.name}: no parent commit")
@@ -486,11 +475,7 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
         print(f"        Latest message: {head.subject}")
         print(f"        Target commit: {target[:8]}")
         if not args.yes:
-            ans = (
-                input(f"Checkout {target[:8]} in {candidate.name}? [y/N]: ")
-                .strip()
-                .lower()
-            )
+            ans = input(f"Checkout {target[:8]} in {candidate.name}? [y/N]: ").strip().lower()
             if ans not in ("y", "yes"):
                 print(f"[skip] {candidate.name}: cancelled")
                 continue
@@ -547,11 +532,7 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
     print(f"\nNew HEAD will be: {new_head.short} - {new_head.subject}")
 
     if not args.yes:
-        ans = (
-            input("This will PERMANENTLY DELETE those commits. Continue? (yes/no): ")
-            .strip()
-            .lower()
-        )
+        ans = input("This will PERMANENTLY DELETE those commits. Continue? (yes/no): ").strip().lower()
         if ans != "yes":
             print("Cancelled.")
             return 0
@@ -618,9 +599,7 @@ def cmd_cut(args: argparse.Namespace) -> int:
     new_branch = f"cleaned_{branch}"
     print(f"\nCreating orphan branch {new_branch}...")
 
-    subprocess.run(
-        ["git", "checkout", "--orphan", new_branch], cwd=str(repo), check=True
-    )
+    subprocess.run(["git", "checkout", "--orphan", new_branch], cwd=str(repo), check=True)
 
     for c in reversed(keep):
         try:
@@ -674,9 +653,7 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
     print(f"              ({new_head.date:%Y-%m-%d %H:%M UTC})")
 
     if not args.yes:
-        ans = (
-            input("Proceed with local reset and force-push? (yes/no): ").strip().lower()
-        )
+        ans = input("Proceed with local reset and force-push? (yes/no): ").strip().lower()
         if ans != "yes":
             print("Cancelled.")
             return 0
@@ -746,9 +723,7 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
                 check=True,
                 capture_output=True,
             )
-            subprocess.run(
-                ["git", "add", "--", p], cwd=str(repo), check=True, capture_output=True
-            )
+            subprocess.run(["git", "add", "--", p], cwd=str(repo), check=True, capture_output=True)
             restored += 1
         except subprocess.CalledProcessError:
             try:
@@ -871,9 +846,7 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
             err("public key file is empty")
             return 1
         data = sys.stdin.buffer.read()
-        r = subprocess.run(
-            [age_bin, "-r", recipient, "-a"], input=data, capture_output=True
-        )
+        r = subprocess.run([age_bin, "-r", recipient, "-a"], input=data, capture_output=True)
         if r.returncode != 0:
             err(f"age encrypt failed: {r.stderr.decode(errors='replace')}")
             return 1
@@ -890,9 +863,7 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
         warn("no private key; leaving ciphertext")
         sys.stdout.buffer.write(data)
         return 0
-    r = subprocess.run(
-        [age_bin, "-d", "-i", str(priv)], input=data, capture_output=True
-    )
+    r = subprocess.run([age_bin, "-d", "-i", str(priv)], input=data, capture_output=True)
     if r.returncode != 0:
         err(f"age decrypt failed: {r.stderr.decode(errors='replace')}")
         return 1
@@ -906,8 +877,7 @@ def _add_backend_arg(p: argparse.ArgumentParser) -> None:
         "--backend",
         choices=BACKEND_CHOICES,
         default="subprocess",
-        help="Git backend (default: subprocess; other backends "
-        "fall back to subprocess for unsupported operations)",
+        help="Git backend (default: subprocess; other backends fall back to subprocess for unsupported operations)",
     )
 
 
@@ -946,9 +916,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="2026-08-29",
         help="Latest commit subject must start with this prefix (default: 2026-08-29)",
     )
-    p.add_argument(
-        "-y", "--yes", action="store_true", help="Skip the interactive confirmation"
-    )
+    p.add_argument("-y", "--yes", action="store_true", help="Skip the interactive confirmation")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_checkout_previous)
 
@@ -1001,24 +969,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=7,
         help="Delete commits older than N days (default: 7)",
     )
-    p.add_argument(
-        "--no-push", action="store_true", help="Do not force-push; only reset locally"
-    )
+    p.add_argument("--no-push", action="store_true", help="Do not force-push; only reset locally")
     p.add_argument("-y", "--yes", action="store_true")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_del_remote_commits)
 
     p = sub.add_parser("list-added", help="List files added in the last N commits")
     p.add_argument("-C", "--repo", default=".")
-    p.add_argument(
-        "-n", type=int, default=10, help="Number of commits to look back (default: 10)"
-    )
+    p.add_argument("-n", type=int, default=10, help="Number of commits to look back (default: 10)")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_list_added)
 
-    p = sub.add_parser(
-        "restore-deleted", help="Restore every file ever deleted in history"
-    )
+    p = sub.add_parser("restore-deleted", help="Restore every file ever deleted in history")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
         "-m",
@@ -1029,9 +991,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_restore_deleted)
 
-    p = sub.add_parser(
-        "stage-deleted", help="Stage pending deletions that match history, then commit"
-    )
+    p = sub.add_parser("stage-deleted", help="Stage pending deletions that match history, then commit")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
         "-m",
@@ -1042,9 +1002,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_backend_arg(p)
     p.set_defaults(func=cmd_stage_deleted)
 
-    p = sub.add_parser(
-        "squash-deletions", help="Amend last commit with pending historical deletions"
-    )
+    p = sub.add_parser("squash-deletions", help="Amend last commit with pending historical deletions")
     p.add_argument("-C", "--repo", default=".")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_squash_deletions)
@@ -1053,12 +1011,8 @@ def build_parser() -> argparse.ArgumentParser:
         "age-filter",
         help="age-based git clean/smudge filter (reads/writes stdin/stdout)",
     )
-    p.add_argument(
-        "mode", choices=("clean", "smudge"), help='"clean" encrypts; "smudge" decrypts'
-    )
-    p.add_argument(
-        "--age-bin", default=None, help="Path to the age binary (default: auto-detect)"
-    )
+    p.add_argument("mode", choices=("clean", "smudge"), help='"clean" encrypts; "smudge" decrypts')
+    p.add_argument("--age-bin", default=None, help="Path to the age binary (default: auto-detect)")
     p.add_argument(
         "--public-key",
         default=str(Path.home() / ".config" / "age" / "public.key"),

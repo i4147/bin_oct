@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that compares two directories recursively by computing SHA-256 hashes of all files to detect differences.
 It should take two directory paths as command-line arguments, recursively hash every file in each directory using relative paths as keys, then classify files into three categories: those present in both directories but with different content (changed), those identical in both (common), and those existing only in the first directory.
 The results should be written as newline-separated relative file paths into three output files named dir1.txt, common.txt, and only_in_dir1.txt respectively, and the script should print a completion message and usage instructions if arguments are missing."""

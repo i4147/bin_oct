@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Search PyPI packages by name (case-insensitive substring) using SQLite FTS5.
 
@@ -42,9 +42,7 @@ TRIGRAM_MIN = 3
 
 def get_table_info(con: sqlite3.Connection):
 
-    cur = con.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-    )
+    cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
     tables = [row[0] for row in cur.fetchall()]
     if not tables:
         sys.exit("No tables found in database.")
@@ -96,9 +94,7 @@ def search(
     def run_like():
 
         escaped = kw.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
-        sql = (
-            f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} LIKE ? ESCAPE '\\'"
-        )
+        sql = f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} LIKE ? ESCAPE '\\'"
         return con.execute(sql, (f"%{escaped}%",))
 
     cur = None
@@ -119,9 +115,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description="Search PyPI packages by substring (SQLite FTS5 trigram).",
     )
-    ap.add_argument(
-        "keyword", nargs="?", help="substring to search for (case-insensitive)"
-    )
+    ap.add_argument("keyword", nargs="?", help="substring to search for (case-insensitive)")
     ap.add_argument(
         "-n",
         "--limit",

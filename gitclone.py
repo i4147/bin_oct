@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Clone a repo as a bare, single-branch mirror of its default branch,
 including all submodules (recursively).

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 imgtool.py — Unified image / HTML conversion toolkit.
 
@@ -303,9 +303,7 @@ def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") ->
         im.save(dst, "JPEG", quality=quality, optimize=True)
 
 
-def save_png(
-    src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool = False
-) -> None:
+def save_png(src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool = False) -> None:
 
     if src.suffix.lower() == ".svg":
         if not _HAS_CAIROSVG:
@@ -392,9 +390,7 @@ def _worker_invert(task):
         return (str(src), False, f"failed {src}: {exc}")
 
 
-def _extract_gif_frames(
-    path: Path, dup_mean: float, dup_frac: float
-) -> list["np.ndarray"]:
+def _extract_gif_frames(path: Path, dup_mean: float, dup_frac: float) -> list["np.ndarray"]:
     if not (_HAS_PIL and _HAS_NUMPY):
         raise RuntimeError("Pillow + numpy are required for GIF extraction")
 
@@ -431,9 +427,7 @@ def _extract_gif_frames(
                 canvas.paste(rgba, mask=rgba.split()[3])
                 arr = np.asarray(canvas.convert("RGB"))
                 if frames and is_dup(frames[-1], arr):
-                    LOG.debug(
-                        "  skipping near-duplicate frame %d in %s", idx, path.name
-                    )
+                    LOG.debug("  skipping near-duplicate frame %d in %s", idx, path.name)
                     continue
                 frames.append(arr)
     except (UnidentifiedImageError, OSError) as exc:
@@ -550,9 +544,7 @@ def cmd_gif_to_jpg(args: argparse.Namespace) -> int:
         return 0
 
     LOG.info("Found %d GIF file(s). Converting…", len(files))
-    tasks = [
-        (f, args.quality, args.dup_mean, args.dup_frac, args.overwrite) for f in files
-    ]
+    tasks = [(f, args.quality, args.dup_mean, args.dup_frac, args.overwrite) for f in files]
     results = _run_parallel(_worker_gif, tasks, args.workers)
 
     ok = sum(1 for _, s, _ in results if s)
@@ -585,9 +577,7 @@ def cmd_invert(args: argparse.Namespace) -> int:
     return 0 if fail == 0 else 1
 
 
-def _html_to_png(
-    src: str, dst: Path, method: str, width: Optional[int], dpi: int, scale: float
-) -> None:
+def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: int, scale: float) -> None:
     if not _HAS_WEASYPRINT:
         raise RuntimeError("weasyprint is required for HTML rendering")
 
@@ -601,9 +591,7 @@ def _html_to_png(
     if method == "cairosvg":
         if not _HAS_CAIROSVG:
             raise RuntimeError("cairosvg is required for method='cairosvg'")
-        cairosvg.svg2png(
-            bytestring=pdf_bytes, write_to=str(dst), output_width=width, scale=scale
-        )
+        cairosvg.svg2png(bytestring=pdf_bytes, write_to=str(dst), output_width=width, scale=scale)
     elif method == "pdf2image":
         if not _HAS_PDF2IMAGE:
             raise RuntimeError("pdf2image is required for method='pdf2image'")
@@ -668,9 +656,7 @@ def cmd_html_to_png(args: argparse.Namespace) -> int:
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
-    p.add_argument(
-        "paths", nargs="*", help="Files or directories (default: current directory)."
-    )
+    p.add_argument("paths", nargs="*", help="Files or directories (default: current directory).")
     p.add_argument(
         "-r",
         "--recursive",
@@ -690,9 +676,7 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         default=None,
         help="Output directory (default: alongside the source).",
     )
-    p.add_argument(
-        "--overwrite", action="store_true", help="Overwrite existing output files."
-    )
+    p.add_argument("--overwrite", action="store_true", help="Overwrite existing output files.")
     p.add_argument(
         "-w",
         "--workers",
@@ -718,9 +702,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  imgtool html-to-png page.html --method pdf2image --dpi 200\n"
         ),
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable debug logging."
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
     sub = parser.add_subparsers(dest="command")
 
     p = sub.add_parser("to-jpg", aliases=["jpg"], help="Convert images to JPEG.")
@@ -731,9 +713,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Input extensions (default: common raster + avif/heif).",
     )
-    p.add_argument(
-        "--quality", type=int, default=95, help="JPEG quality 1-100 (default: 95)."
-    )
+    p.add_argument("--quality", type=int, default=95, help="JPEG quality 1-100 (default: 95).")
     p.add_argument(
         "--backend",
         choices=("auto", "cv2", "pil"),
@@ -773,13 +753,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_to_png)
 
-    p = sub.add_parser(
-        "gif-to-jpg", aliases=["gif"], help="Extract GIF frames as JPEGs."
-    )
+    p = sub.add_parser("gif-to-jpg", aliases=["gif"], help="Extract GIF frames as JPEGs.")
     _add_common(p)
-    p.add_argument(
-        "--quality", type=int, default=90, help="JPEG quality (default: 90)."
-    )
+    p.add_argument("--quality", type=int, default=90, help="JPEG quality (default: 90).")
     p.add_argument(
         "--dup-mean",
         type=float,
@@ -821,9 +797,7 @@ def build_parser() -> argparse.ArgumentParser:
         aliases=["html"],
         help="Render HTML (file, dir, or inline string) to PNG.",
     )
-    p.add_argument(
-        "paths", nargs="*", help="HTML files, directories, or inline HTML strings."
-    )
+    p.add_argument("paths", nargs="*", help="HTML files, directories, or inline HTML strings.")
     p.add_argument(
         "-o",
         "--output",
@@ -848,9 +822,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=150,
         help="Rendering DPI for pdf2image (default: 150).",
     )
-    p.add_argument(
-        "--scale", type=float, default=2.0, help="cairosvg scale factor (default: 2.0)."
-    )
+    p.add_argument("--scale", type=float, default=2.0, help="cairosvg scale factor (default: 2.0).")
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_html_to_png)
 

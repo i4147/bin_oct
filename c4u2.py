@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that checks installed packages (retrieved via a helper like get_installed_packages) against the latest versions available on PyPI, using pycurl to query each package's PyPI JSON API endpoint with a configurable timeout and worker limit.
 The script should compare installed versions with the latest release using packaging.version.Version, load and cache previous results from a JSON file at /sdcard/upgradable.json to avoid redundant work, and handle errors gracefully (e.g., failed HTTP requests or malformed JSON) by returning None or skipping the package.
 It should print progress for packages with available updates and persist the final upgradable-packages results back to the JSON results file, using cprint for formatted console output."""
@@ -74,10 +74,7 @@ if __name__ == "__main__":
     for pkg_name, installed_version in installed_packages.items():
         if pkg_name in previous_results:
             prev_data = previous_results[pkg_name]
-            if (
-                prev_data.get("latest_version")
-                and prev_data.get("latest_version") == "null"
-            ):
+            if prev_data.get("latest_version") and prev_data.get("latest_version") == "null":
                 packages_to_check.append((pkg_name, installed_version))
                 continue
             if prev_data.get("installed_version") == installed_version:
@@ -98,9 +95,7 @@ if __name__ == "__main__":
                 installed_ver = Version(installed_version)
                 latest_ver = Version(latest_version_str)
                 if installed_ver < latest_ver:
-                    updatable_pkgs_info.append(
-                        (pkg_name, installed_version, latest_version_str)
-                    )
+                    updatable_pkgs_info.append((pkg_name, installed_version, latest_version_str))
                     cprint(
                         f"[{i + 1}/{len(packages_to_check)}] {pkg_name}: {installed_version} -> {latest_version_str} (Updatable!)",
                         "green",
@@ -133,8 +128,6 @@ To update these packages, you can use: pip install --upgrade {" ".join([p[0] for
             "yellow",
         )
     else:
-        cprint(
-            "All installed packages are up to date or could not be checked.", "green"
-        )
+        cprint("All installed packages are up to date or could not be checked.", "green")
     end_time = time.time()
     cprint(f"\nFinished in {end_time - start_time:.2f} seconds.", "blue")

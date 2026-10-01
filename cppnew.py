@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Create a new C++ file with a starter template and open it in an editor.
 Usage: cppnew <filename.cpp>
@@ -35,10 +35,7 @@ def cppnew(*args):
     print(f"Created {file} with basic C++ template")
 
     editor = (
-        subprocess.run(
-            ["sh", "-c", 'printf %s "$EDITOR"'], capture_output=True, text=True
-        ).stdout.strip()
-        or "nano"
+        subprocess.run(["sh", "-c", 'printf %s "$EDITOR"'], capture_output=True, text=True).stdout.strip() or "nano"
     )
     try:
         return subprocess.run([editor, str(file)]).returncode

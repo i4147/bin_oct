@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Download a GitHub repository snapshot as a ZIP, similar to GitHub's Code -> Download ZIP.
 
@@ -115,9 +115,7 @@ def fetch_default_branch_subprocess(owner: str, repo: str, token: Optional[str])
     raise RuntimeError("Neither gh nor curl is available for branch lookup")
 
 
-def fetch_repo_size_subprocess(
-    owner: str, repo: str, token: Optional[str]
-) -> Optional[int]:
+def fetch_repo_size_subprocess(owner: str, repo: str, token: Optional[str]) -> Optional[int]:
     api = f"https://api.github.com/repos/{owner}/{repo}"
 
     try:
@@ -146,10 +144,7 @@ def maybe_confirm(size_bytes: Optional[int]) -> bool:
     if size_bytes < SIZE_THRESHOLD:
         return True
 
-    prompt = (
-        f"Repo looks larger than 5 MB ({size_bytes / (1024 * 1024):.2f} MB). "
-        "Download anyway? [y/N]: "
-    )
+    prompt = f"Repo looks larger than 5 MB ({size_bytes / (1024 * 1024):.2f} MB). Download anyway? [y/N]: "
     try:
         if sys.stdin is not None and sys.stdin.isatty():
             return input(prompt).strip().lower() in {"y", "yes"}
@@ -159,9 +154,7 @@ def maybe_confirm(size_bytes: Optional[int]) -> bool:
     return True
 
 
-def download_zip_subprocess(
-    owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]
-) -> None:
+def download_zip_subprocess(owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]) -> None:
     url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip"
 
     if shutil.which("gh"):
@@ -202,9 +195,7 @@ def download_zip_subprocess(
     raise RuntimeError("No supported subprocess downloader found (gh/curl/wget)")
 
 
-def download_zip_pygithub(
-    owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]
-) -> bool:
+def download_zip_pygithub(owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]) -> bool:
     try:
         from github import Github
     except Exception:
@@ -226,9 +217,7 @@ def download_zip_pygithub(
     return True
 
 
-def download_zip_gitpython(
-    owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]
-) -> bool:
+def download_zip_gitpython(owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]) -> bool:
     try:
         from git import Repo
     except Exception:
@@ -245,9 +234,7 @@ def download_zip_gitpython(
     return True
 
 
-def download_zip_dulwich(
-    owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]
-) -> bool:
+def download_zip_dulwich(owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]) -> bool:
     try:
         from dulwich import porcelain
     except Exception:
@@ -272,9 +259,7 @@ def resolve_backend(name: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="Download a GitHub repository as a ZIP archive"
-    )
+    p = argparse.ArgumentParser(description="Download a GitHub repository as a ZIP archive")
     p.add_argument("repo", help="Repository in owner/repo or full GitHub URL form")
     p.add_argument(
         "-b",

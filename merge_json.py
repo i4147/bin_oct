@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python script that merges the contents of multiple JSON files into a single JSON array.
 It should accept one or more input paths (files or directories) as positional arguments, defaulting to the current directory if none are given, recursively discovering all ".json" files within any directories, and load each file's contents in parallel using a multiprocessing pool of 8 workers, gracefully skipping files that fail to parse.
 Each loaded JSON document should be normalized into a list (wrapping non-list values) before being concatenated into one combined list.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
 
@@ -46,8 +46,7 @@ try:
     from tree_sitter import Language, Node, Parser, Query, QueryCursor
 except ImportError as _exc:  # pragma: no cover
     print(
-        f"error: missing dependency ({_exc}); "
-        "install with: pip install tree-sitter tree-sitter-python",
+        f"error: missing dependency ({_exc}); install with: pip install tree-sitter tree-sitter-python",
         file=sys.stderr,
     )
     raise SystemExit(2)
@@ -157,11 +156,7 @@ def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, 
             if is_module_doc and cfg.keep_module_docstring:
                 continue
 
-            if (
-                cfg.docstring_action == "pass"
-                and parent is not None
-                and parent.named_child_count == 1
-            ):
+            if cfg.docstring_action == "pass" and parent is not None and parent.named_child_count == 1:
                 edits.append(Edit(node.start_byte, node.end_byte, b"pass"))
             else:
                 edits.append(Edit(node.start_byte, node.end_byte, b""))
@@ -313,9 +308,7 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             new_source = _apply_edits(source, edits, cfg)
 
             if cfg.remove_blank_lines:
-                new_source = _remove_blank_lines(
-                    new_source.decode("utf-8", "replace")
-                ).encode("utf-8")
+                new_source = _remove_blank_lines(new_source.decode("utf-8", "replace")).encode("utf-8")
 
         elif cfg.engine == "ast":
             new_source = _strip_via_ast_line(source)
@@ -324,9 +317,7 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             raise ValueError(f"unknown engine: {cfg.engine!r}")
 
     except Exception as exc:  # noqa: BLE001 — per-file robustness
-        return FileResult(
-            path=path, success=False, error=str(exc), elapsed=time.perf_counter() - t0
-        )
+        return FileResult(path=path, success=False, error=str(exc), elapsed=time.perf_counter() - t0)
 
     if new_source == source:
         return FileResult(
@@ -386,9 +377,7 @@ def _discover_python_files(paths: Sequence[str]) -> list[Path]:
     return sorted(found)
 
 
-def _parallel_map(
-    files: list[Path], cfg: StripConfig, write: bool, workers: int
-) -> list[FileResult]:
+def _parallel_map(files: list[Path], cfg: StripConfig, write: bool, workers: int) -> list[FileResult]:
     if workers <= 1 or len(files) <= 1:
         return [_process_file(f, cfg, write) for f in files]
 
@@ -453,11 +442,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
         return 0
 
     if not args.quiet:
-        print(
-            f"Processing {len(files)} file(s) "
-            f"[engine={cfg.engine}, workers={args.workers}, "
-            f"dry_run={args.dry_run}]"
-        )
+        print(f"Processing {len(files)} file(s) [engine={cfg.engine}, workers={args.workers}, dry_run={args.dry_run}]")
 
     t0 = time.perf_counter()
     results = _parallel_map(files, cfg, write=not args.dry_run, workers=args.workers)
@@ -473,11 +458,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
                 if args.verbose:
                     print(f"[SKIP]  {r.path}")
             else:
-                print(
-                    f"[OK]    {r.path}  "
-                    f"comments={r.comments_removed} "
-                    f"docstrings={r.docstrings_removed}"
-                )
+                print(f"[OK]    {r.path}  comments={r.comments_removed} docstrings={r.docstrings_removed}")
         _print_summary(results, cfg.engine, elapsed)
 
     return 1 if failed else 0
@@ -489,9 +470,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
         print("No Python files found.", file=sys.stderr)
         return 0
 
-    print(
-        f"Comparing engines on {len(files)} file(s) (dry-run, no files will be written)"
-    )
+    print(f"Comparing engines on {len(files)} file(s) (dry-run, no files will be written)")
     print("=" * 52)
 
     timings: dict[str, float] = {}
@@ -530,9 +509,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sp = sub.add_parser(
-        "strip", help="Rewrite Python files to drop comments/docstrings."
-    )
+    sp = sub.add_parser("strip", help="Rewrite Python files to drop comments/docstrings.")
     sp.add_argument(
         "paths",
         nargs="*",
@@ -555,8 +532,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument(
         "--preserve-lines",
         action="store_true",
-        help="Blank out removed text instead of deleting it, "
-        "keeping line numbers intact.",
+        help="Blank out removed text instead of deleting it, keeping line numbers intact.",
     )
     sp.add_argument(
         "--eat-trailing-newline",
@@ -596,12 +572,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Parse and report, but do not write files.",
     )
-    sp.add_argument(
-        "--quiet", action="store_true", help="Suppress per-file and summary output."
-    )
-    sp.add_argument(
-        "-v", "--verbose", action="store_true", help="Also report unchanged files."
-    )
+    sp.add_argument("--quiet", action="store_true", help="Suppress per-file and summary output.")
+    sp.add_argument("-v", "--verbose", action="store_true", help="Also report unchanged files.")
     sp.set_defaults(func=cmd_strip)
 
     cp = sub.add_parser("compare", help="Dry-run: compare tree-sitter vs AST engines.")

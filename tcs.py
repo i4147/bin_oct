@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that reads a text file and copies a specified portion of its lines to the system clipboard using Termux's `termux-clipboard-set` command (for use on Android/Termux environments).
 It should accept a file path along with either a start/end line range or a list of specific line numbers (via a "-s" flag for selective mode) to extract, join the selected lines, and pipe them to the clipboard command through a subprocess.
 The script must handle and report errors gracefully, including missing files, out-of-range line numbers, the `termux-clipboard-set` binary not being found (e.g., Termux:API not installed), and any non-zero exit codes or exceptions from the clipboard subprocess, printing descriptive messages to stderr and exiting with a non-zero status on failure."""
@@ -18,9 +18,7 @@ def send_to_process(txt: str) -> None:
         )
         _stdout, stderr = process.communicate(input=txt)
         if process.returncode != 0:
-            print(
-                f"Error: Failed to copy to clipboard. STDERR: {stderr}", file=sys.stderr
-            )
+            print(f"Error: Failed to copy to clipboard. STDERR: {stderr}", file=sys.stderr)
             sys.exit(1)
     except FileNotFoundError:
         print(
@@ -48,9 +46,7 @@ def selective_copy(path: Path, lines: list[str]) -> None:
     send_to_process(content)
 
 
-def copy_lines_to_clipboard(
-    path: str | Path, start_line: int | None = None, end_line: int | None = None
-) -> None:
+def copy_lines_to_clipboard(path: str | Path, start_line: int | None = None, end_line: int | None = None) -> None:
     content = ""
     path = Path(path)
     if not path.is_file():

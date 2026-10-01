@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that lists files and directories in the current working directory filtered by their creation/modification time.
 It should accept an optional command-line argument specifying a time window in minutes (defaulting to 60 if not provided), skip Git-related paths and symlinks, and compute a cutoff timestamp based on that window.
 For each remaining entry meeting the age criteria, it should retrieve the creation timestamp, sort entries chronologically, and print each item's name alongside its formatted creation date and time using ANSI color codes for readability, aligning names in a fixed-width column."""
@@ -43,9 +43,7 @@ def main() -> None:
     for pth, ct in ctmsorted.items():
         ctime = datetime.fromtimestamp(ct).strftime("%Y/%m/%d-%H:%M:%S")
         newct[pth] = ctime
-        print(
-            f"\x1b[05;96m{Path(pth).name[:19]:<{max_path_string}} \x1b[05;93m{ctime}\x1b[0m"
-        )
+        print(f"\x1b[05;96m{Path(pth).name[:19]:<{max_path_string}} \x1b[05;93m{ctime}\x1b[0m")
 
 
 if __name__ == "__main__":

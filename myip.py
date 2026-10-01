@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """A rooted-Android network utility script that runs the device's `ip addr` command via subprocess, parses its output with regex to extract network interfaces and their IPv4 addresses along with up/down state, and selects the most relevant active interface based on a defined priority order (wlan, eth, rmnet, tun, ppp) while excluding loopback.
 It then takes that interface's public IP and queries the ip-api.com geolocation web service to retrieve and display location details (country, region, city, ISP, coordinates).
 The script uses dataclasses to structure interface and location data, supports command-line arguments via argparse, and logs status/errors through the logging module."""
@@ -78,11 +78,7 @@ class IPAddressManager:
 
     def get_primary_ip(self) -> str | None:
         interfaces = self.get_interfaces()
-        filtered = {
-            k: v
-            for k, v in interfaces.items()
-            if not k.startswith(BLACKLIST_IFACES_PREFIX)
-        }
+        filtered = {k: v for k, v in interfaces.items() if not k.startswith(BLACKLIST_IFACES_PREFIX)}
         for prefix in INTERFACE_PRIORITY:
             for iface in sorted(filtered.keys()):
                 if iface.startswith(prefix):
@@ -91,11 +87,7 @@ class IPAddressManager:
 
     def get_all_ips(self) -> list[str]:
         interfaces = self.get_interfaces()
-        filtered = {
-            k: v
-            for k, v in interfaces.items()
-            if not k.startswith(BLACKLIST_IFACES_PREFIX)
-        }
+        filtered = {k: v for k, v in interfaces.items() if not k.startswith(BLACKLIST_IFACES_PREFIX)}
         ips = []
         for prefix in INTERFACE_PRIORITY:
             for iface in sorted(filtered.keys()):
@@ -145,15 +137,9 @@ class MyIPApp:
             "  myip --location   Show location info\n",
         )
         parser.add_argument("--all", action="store_true", help="Show all IP addresses")
-        parser.add_argument(
-            "--location", "-l", action="store_true", help="Show geolocation information"
-        )
-        parser.add_argument(
-            "--verbose", "-v", action="store_true", help="Show verbose output"
-        )
-        parser.add_argument(
-            "interface", nargs="?", help="Show IP for specific interface"
-        )
+        parser.add_argument("--location", "-l", action="store_true", help="Show geolocation information")
+        parser.add_argument("--verbose", "-v", action="store_true", help="Show verbose output")
+        parser.add_argument("interface", nargs="?", help="Show IP for specific interface")
         return parser.parse_args(args)
 
     def display_ip_info(self, ip: str, show_location: bool, interface: str = ""):
@@ -172,9 +158,7 @@ class MyIPApp:
         if config.interface:
             interfaces = self.ip_manager.get_interfaces(config.interface)
             if config.interface in interfaces:
-                self.display_ip_info(
-                    interfaces[config.interface], config.location, config.interface
-                )
+                self.display_ip_info(interfaces[config.interface], config.location, config.interface)
             else:
                 print(f"Error: Interface '{config.interface}' not found or has no IP")
                 sys.exit(1)

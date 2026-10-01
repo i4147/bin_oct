@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that lists all files, directories, and symlinks in the current working directory, sorted by modification time (oldest to newest).
 For each entry, it should print the name (truncated to 24 characters) in blue, followed by its size in cyan (formatted and right-aligned using helper functions from a custom "dh" module, with symlinks shown as " symlink " instead of a size), and finally the last-modified time in "HH:MM" format in yellow.
 It relies on custom utilities cprint (colored print), fsz (format size), and gsz (get size) imported from a local module named dh."""

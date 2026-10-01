@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that scans a directory tree for hardcoded secrets using regex patterns,
 skipping binary/large file types, common vendor directories, and any file containing known
@@ -120,12 +120,8 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
                 {
                     "secret_type": secret_name,
                     "line_number": line_num,
-                    "matched_text": matched_text[:50] + "..."
-                    if len(matched_text) > 50
-                    else matched_text,
-                    "line_content": line_content[:80] + "..."
-                    if len(line_content) > 80
-                    else line_content,
+                    "matched_text": matched_text[:50] + "..." if len(matched_text) > 50 else matched_text,
+                    "line_content": line_content[:80] + "..." if len(line_content) > 80 else line_content,
                 }
             )
     return str(path), leaks
@@ -162,9 +158,7 @@ def check_secrets(root_dir: Path = Path(".")) -> tuple[int, int, int]:
                 files_with_leaks += 1
                 logger.warning(f"⚠️  Found {len(leaks)} secret(s) in: {path}")
                 for leak in leaks:
-                    logger.warning(
-                        f"   - {leak['secret_type']} at line {leak['line_number']}"
-                    )
+                    logger.warning(f"   - {leak['secret_type']} at line {leak['line_number']}")
                     logger.warning(f"     Matched: {leak['matched_text']}")
                     logger.warning(f"     Content: {leak['line_content']}\n")
                 total_leaks += len(leaks)

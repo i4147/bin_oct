@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 vidocr.py — Extract burned-in subtitles from a video using OCR.
 
@@ -131,9 +131,7 @@ def read_srt(path: Path) -> list[dict]:
         return []
     lines = path.read_text(encoding="utf-8").splitlines()
     entries: list[dict] = []
-    time_re = re.compile(
-        r"(\d{2}:\d{2}:\d{2}[.,]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[.,]\d{3})"
-    )
+    time_re = re.compile(r"(\d{2}:\d{2}:\d{2}[.,]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[.,]\d{3})")
     i = 0
     while i < len(lines):
         line = lines[i].strip()
@@ -161,9 +159,7 @@ def write_srt(path: Path, segments: list[dict]) -> None:
     with path.open("w", encoding="utf-8") as f:
         for i, seg in enumerate(segments, 1):
             f.write(f"{i}\n")
-            f.write(
-                f"{format_srt_time(seg['start'])} --> {format_srt_time(seg['end'])}\n"
-            )
+            f.write(f"{format_srt_time(seg['start'])} --> {format_srt_time(seg['end'])}\n")
             f.write(f"{seg['text']}\n\n")
 
 
@@ -217,9 +213,7 @@ def run(
         span = f" from start to {format_srt_time(end)}"
 
     print(f"[1/3] Extracting frames ({sample_fps} fps sample{span})…")
-    frames = extract_frames(
-        video, sample_fps, crop_bottom, start, end, diff_threshold, verbose
-    )
+    frames = extract_frames(video, sample_fps, crop_bottom, start, end, diff_threshold, verbose)
     print(f"      {len(frames)} unique frames queued for OCR")
 
     config = f"--oem 3 --psm 6 -l {lang}"
@@ -229,11 +223,7 @@ def run(
     with mp.Pool(processes=workers) as pool:
         results = pool.map(worker, frames)
 
-    fresh = [
-        {"start": t, "end": t + 1.0 / sample_fps, "text": text}
-        for t, text in results
-        if text
-    ]
+    fresh = [{"start": t, "end": t + 1.0 / sample_fps, "text": text} for t, text in results if text]
 
     if resume and output_path.is_file():
         existing = read_srt(output_path)
@@ -266,12 +256,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="extracted_subs.srt",
         help="Output SRT file (default: extracted_subs.srt)",
     )
-    p.add_argument(
-        "-s", "--start", dest="start_time", help="Start time for extraction (HH:MM:SS)"
-    )
-    p.add_argument(
-        "-e", "--end", dest="end_time", help="End time for extraction (HH:MM:SS)"
-    )
+    p.add_argument("-s", "--start", dest="start_time", help="Start time for extraction (HH:MM:SS)")
+    p.add_argument("-e", "--end", dest="end_time", help="End time for extraction (HH:MM:SS)")
     p.add_argument(
         "-r",
         "--resume",
@@ -290,9 +276,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=4,
         help="Number of OCR worker processes (default: 4)",
     )
-    p.add_argument(
-        "--lang", default="fas", help="Tesseract language code (default: fas)"
-    )
+    p.add_argument("--lang", default="fas", help="Tesseract language code (default: fas)")
     p.add_argument(
         "--crop-bottom",
         type=float,
@@ -324,12 +308,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if (
-        args.output
-        and re.match(r"\d{1,2}:\d{2}:\d{2}", args.output)
-        and not args.start_time
-        and not args.end_time
-    ):
+    if args.output and re.match(r"\d{1,2}:\d{2}:\d{2}", args.output) and not args.start_time and not args.end_time:
         args.end_time = args.output
         args.output = "extracted_subs.srt"
 

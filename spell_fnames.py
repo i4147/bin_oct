@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python script that checks the spelling of words embedded in a filename (its stem, excluding extension) using Hunspell.
 It should locate an available Hunspell dictionary from a predefined list of paths (falling back with an error message if none exist), split the filename stem into words by stripping non-letter characters and separating camelCase boundaries, then filter out short (length ≤2) or numeric tokens before checking each remaining word against the dictionary.
 For any misspelled words found, it should use Hunspell's suggestion feature to propose a corrected version of the filename stem, printing or returning the suggested fix.
@@ -99,9 +99,7 @@ def scan(root: Path, checker, autofix: bool):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Detect misspelled words in filenames recursively."
-    )
+    parser = argparse.ArgumentParser(description="Detect misspelled words in filenames recursively.")
     parser.add_argument(
         "path",
         nargs="?",

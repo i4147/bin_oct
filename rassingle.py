@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 refactor_single_file.py — consolidate a small multi-file Python package into
 a single annotated module.
@@ -48,8 +48,7 @@ def collect_python_files(root: Path) -> list[Path]:
     files = [
         p
         for p in root.rglob("*.py")
-        if "__pycache__" not in p.parts
-        and not any(part.startswith(".") for part in p.parts)
+        if "__pycache__" not in p.parts and not any(part.startswith(".") for part in p.parts)
     ]
     if not files:
         raise SystemExit(f"No .py files found under {root}")
@@ -238,17 +237,11 @@ class SixTransformer(ast.NodeTransformer):
     def visit_Call(self, node: ast.Call) -> ast.AST:
         self.generic_visit(node)
         func = node.func
-        if not (
-            isinstance(func, ast.Attribute)
-            and isinstance(func.value, ast.Name)
-            and func.value.id == "six"
-        ):
+        if not (isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name) and func.value.id == "six"):
             return node
         method = func.attr
         if method in ("iteritems", "iterkeys", "itervalues") and len(node.args) == 1:
-            mapped = {"iteritems": "items", "iterkeys": "keys", "itervalues": "values"}[
-                method
-            ]
+            mapped = {"iteritems": "items", "iterkeys": "keys", "itervalues": "values"}[method]
             return ast.Call(
                 func=ast.Attribute(value=node.args[0], attr=mapped, ctx=ast.Load()),
                 args=[],
@@ -339,18 +332,14 @@ class OsPathTransformer(ast.NodeTransformer):
 
         if method == OSPATH_MAKEDIRS and len(args) == 1:
             return ast.Call(
-                func=ast.Attribute(
-                    value=_wrap_path(args[0]), attr="mkdir", ctx=ast.Load()
-                ),
+                func=ast.Attribute(value=_wrap_path(args[0]), attr="mkdir", ctx=ast.Load()),
                 args=[],
                 keywords=[ast.keyword(arg="parents", value=ast.Constant(value=True))],
             )
 
         if method == OSPATH_GETSIZE and len(args) == 1:
             stat_call = ast.Call(
-                func=ast.Attribute(
-                    value=_wrap_path(args[0]), attr="stat", ctx=ast.Load()
-                ),
+                func=ast.Attribute(value=_wrap_path(args[0]), attr="stat", ctx=ast.Load()),
                 args=[],
                 keywords=[],
             )
@@ -367,9 +356,7 @@ class OsPathTransformer(ast.NodeTransformer):
         if not (isinstance(call, ast.Call) and len(call.args) == 1):
             return node
         if not (
-            isinstance(call.func, ast.Attribute)
-            and call.func.attr == "splitext"
-            and self._is_ospath(call.func.value)
+            isinstance(call.func, ast.Attribute) and call.func.attr == "splitext" and self._is_ospath(call.func.value)
         ):
             return node
         return ast.Attribute(
@@ -425,9 +412,7 @@ class ExecutorTransformer(ast.NodeTransformer):
         pool_assign = ast.Assign(
             targets=[ast.Name(id="_pool", ctx=ast.Store())],
             value=ast.Call(
-                func=ast.Attribute(
-                    value=ast.Name(id="mp", ctx=ast.Load()), attr="Pool", ctx=ast.Load()
-                ),
+                func=ast.Attribute(value=ast.Name(id="mp", ctx=ast.Load()), attr="Pool", ctx=ast.Load()),
                 args=[ast.Name(id="WORKERS", ctx=ast.Load())],
                 keywords=[],
             ),
@@ -639,8 +624,7 @@ def refactor(
         check_path = output.with_suffix(".check.py")
         check_path.write_text(src + "\n", encoding="utf-8")
         raise SystemExit(
-            f"Generated code failed to parse: {exc}\n"
-            f"Partial output written to {check_path} for manual fixing."
+            f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
         )
 
     output.write_text(src + "\n", encoding="utf-8")
@@ -653,9 +637,7 @@ def refactor(
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Consolidate a multi-file Python package into one module."
-    )
+    parser = argparse.ArgumentParser(description="Consolidate a multi-file Python package into one module.")
     parser.add_argument(
         "input",
         nargs="?",
@@ -668,8 +650,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--merged-file",
         type=Path,
         default=None,
-        help="read source from a single merged file containing "
-        "'# File: <path>' section headers",
+        help="read source from a single merged file containing '# File: <path>' section headers",
     )
     parser.add_argument(
         "-o",
@@ -681,9 +662,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     if args.merged_file is not None and args.input is not None:
-        raise SystemExit(
-            "Provide either a positional INPUT or -f/--merged-file, not both"
-        )
+        raise SystemExit("Provide either a positional INPUT or -f/--merged-file, not both")
 
     if args.merged_file is not None:
         merged_path: Path = args.merged_file

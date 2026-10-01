@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """(No content in stream)"""
 
 import argparse
@@ -14,9 +14,7 @@ AES_BLOCK_SIZE = 128
 
 
 def random_key(length: int = 32) -> str:
-    return "".join(
-        random.choice(string.ascii_letters + string.digits) for _ in range(length)
-    )
+    return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
 def encrypt_file(path: Path, key: str) -> None:

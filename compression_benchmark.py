@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Compression benchmark: tries stdlib and 3rd-party codecs at multiple levels and keeps the smallest archive."""
 
 from __future__ import annotations
@@ -279,9 +279,7 @@ def main() -> int:
         for name, ext, func, levels in jobs:
             for level in levels:
                 tag = "" if level is None else f" level={level}"
-                dst = (
-                    tmpdir / f"{name}_{level if level is not None else 'default'}{ext}"
-                )
+                dst = tmpdir / f"{name}_{level if level is not None else 'default'}{ext}"
                 try:
                     t0 = time.perf_counter()
                     func(src_file, dst, level)
@@ -289,14 +287,9 @@ def main() -> int:
                     size = dst.stat().st_size
                     ratio = size / original_size if original_size else 0.0
                     results.append((name, level, size, ratio, dt, dst))
-                    print(
-                        f"  {name:<14}{tag:<12} -> {human(size):>12}  "
-                        f"ratio={ratio:.4f}  time={dt:.2f}s"
-                    )
+                    print(f"  {name:<14}{tag:<12} -> {human(size):>12}  ratio={ratio:.4f}  time={dt:.2f}s")
                 except Exception as e:
-                    print(
-                        f"  {name:<14}{tag:<12} -> FAILED ({e.__class__.__name__}: {e})"
-                    )
+                    print(f"  {name:<14}{tag:<12} -> FAILED ({e.__class__.__name__}: {e})")
 
         if not results:
             print("\nNo compressor succeeded.")

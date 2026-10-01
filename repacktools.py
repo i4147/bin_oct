@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 repack_tool.py — unified Python package → wheel repacker.
 
@@ -292,9 +292,7 @@ def discover_packages(
         name = meta.get("Name", dist_name)
         version = meta.get("Version", version)
         top_level = _guess_top_level(site_packages, dist_info, name)
-        is_pure = not _has_binary(dist_info.parent) or not _package_has_binary(
-            site_packages, top_level
-        )
+        is_pure = not _has_binary(dist_info.parent) or not _package_has_binary(site_packages, top_level)
         has_bin = not is_pure
         out.append(
             PackageInfo(
@@ -359,12 +357,7 @@ def _write_wheel_metadata(
     (dist_info_dir / "WHEEL").write_text(wheel_txt, encoding="utf-8")
 
     if not (dist_info_dir / "METADATA").exists():
-        md = (
-            "Metadata-Version: 2.1\n"
-            f"Name: {pkg.name}\n"
-            f"Version: {pkg.version}\n"
-            f"Summary: Repacked wheel (repack_tool)\n"
-        )
+        md = f"Metadata-Version: 2.1\nName: {pkg.name}\nVersion: {pkg.version}\nSummary: Repacked wheel (repack_tool)\n"
         (dist_info_dir / "METADATA").write_text(md, encoding="utf-8")
 
 
@@ -388,9 +381,7 @@ def _zip_directory(src: Path, dest: Path) -> None:
                 zf.write(f, f.relative_to(src).as_posix())
 
 
-def build_wheel_simple(
-    pkg: PackageInfo, output_dir: Path, verbose: bool
-) -> tuple[bool, str, Optional[Path]]:
+def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
     wheel_path = output_dir / pkg.wheel_filename(tag)
 
@@ -418,13 +409,9 @@ def build_wheel_simple(
             _write_wheel_metadata(dst_di, pkg, tag)
 
             if not (dst_di / "top_level.txt").exists():
-                (dst_di / "top_level.txt").write_text(
-                    pkg.top_level + "\n", encoding="utf-8"
-                )
+                (dst_di / "top_level.txt").write_text(pkg.top_level + "\n", encoding="utf-8")
 
-            (dst_di / "RECORD").write_text(
-                _compute_record(tmp_p, pkg.dist_info.name), encoding="utf-8"
-            )
+            (dst_di / "RECORD").write_text(_compute_record(tmp_p, pkg.dist_info.name), encoding="utf-8")
 
             _zip_directory(tmp_p, wheel_path)
 
@@ -522,9 +509,7 @@ def build_wheel_from_record(
 
             _write_wheel_metadata(dst_di, pkg, tag)
 
-            (dst_di / "RECORD").write_text(
-                _compute_record(tmp_p, dist_info_name), encoding="utf-8"
-            )
+            (dst_di / "RECORD").write_text(_compute_record(tmp_p, dist_info_name), encoding="utf-8")
 
             _zip_directory(tmp_p, wheel_path)
 
@@ -552,9 +537,7 @@ def _venv_bin_dir(site_packages: Path) -> Optional[Path]:
     return None
 
 
-def build_wheel_via_subprocess(
-    src_unpacked: Path, output_dir: Path, verbose: bool
-) -> tuple[bool, str, Optional[Path]]:
+def build_wheel_via_subprocess(src_unpacked: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     output_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         sys.executable,
@@ -572,9 +555,7 @@ def build_wheel_via_subprocess(
     if res.returncode != 0:
         return False, f"wheel pack failed: {res.stderr.strip()[:200]}", None
 
-    wheels = sorted(
-        output_dir.glob("*.whl"), key=lambda p: p.stat().st_mtime, reverse=True
-    )
+    wheels = sorted(output_dir.glob("*.whl"), key=lambda p: p.stat().st_mtime, reverse=True)
     if verbose and wheels:
         log.info("  wheelpack: %s", wheels[0].name)
     return True, "ok", wheels[0] if wheels else None
@@ -641,9 +622,7 @@ class Repacker:
                 tmp_p = Path(tmp)
                 with zipfile.ZipFile(path) as zf:
                     zf.extractall(tmp_p)
-                ok2, msg2, _ = build_wheel_via_subprocess(
-                    tmp_p, self.output_dir, self.verbose
-                )
+                ok2, msg2, _ = build_wheel_via_subprocess(tmp_p, self.output_dir, self.verbose)
                 if not ok2:
                     return False, f"wheelpack: {msg2}", path
 
@@ -746,9 +725,7 @@ def _wheel_tag_from_dist_info(dist_info: Path) -> str:
     return "py3-none-any"
 
 
-def pack_unpacked_dir_library(
-    src: Path, output_dir: Path, verbose: bool
-) -> tuple[bool, str, Optional[Path]]:
+def pack_unpacked_dir_library(src: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     if not _HAS_WHEEL:
         return False, "wheel library not installed", None
     dist_info = _find_dist_info_dir(src)
@@ -772,22 +749,16 @@ def pack_unpacked_dir_library(
         return False, str(e), None
 
 
-def pack_unpacked_dir_subprocess(
-    src: Path, output_dir: Path, verbose: bool
-) -> tuple[bool, str, Optional[Path]]:
+def pack_unpacked_dir_subprocess(src: Path, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     ok, msg, path = build_wheel_via_subprocess(src, output_dir, verbose)
     if ok:
         return True, path.name if path else "ok", path
     return False, msg, None
 
 
-async def _pack_async(
-    src: Path, output_dir: Path, queue: "asyncio.Queue[tuple[str, bool]]", verbose: bool
-) -> None:
+async def _pack_async(src: Path, output_dir: Path, queue: "asyncio.Queue[tuple[str, bool]]", verbose: bool) -> None:
     loop = asyncio.get_running_loop()
-    ok, msg, path = await loop.run_in_executor(
-        None, pack_unpacked_dir_library, src, output_dir, verbose
-    )
+    ok, msg, path = await loop.run_in_executor(None, pack_unpacked_dir_library, src, output_dir, verbose)
     await queue.put((msg if ok else f"{src.name}: {msg}", ok))
 
 
@@ -813,11 +784,7 @@ def run_pack_dirs(
         return 1
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    dirs = [
-        d
-        for d in sorted(directory.iterdir())
-        if d.is_dir() and not d.name.endswith(".dist-info")
-    ]
+    dirs = [d for d in sorted(directory.iterdir()) if d.is_dir() and not d.name.endswith(".dist-info")]
     if not dirs:
         log.warning("no unpacked wheel directories found under %s", directory)
         return 0
@@ -944,9 +911,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="low-level wheel writer (default: zip)",
     )
     rp.add_argument("--parallel", action="store_true", help="multiprocessing mode")
-    rp.add_argument(
-        "--workers", type=int, default=None, help="worker count (parallel mode)"
-    )
+    rp.add_argument("--workers", type=int, default=None, help="worker count (parallel mode)")
     rp.add_argument("--dry-run", action="store_true", help="don't write any files")
     rp.add_argument(
         "--report",
@@ -985,9 +950,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="packing strategy (default: library)",
     )
     pd.add_argument("--parallel", action="store_true", help="multiprocessing mode")
-    pd.add_argument(
-        "--workers", type=int, default=None, help="worker count (parallel mode)"
-    )
+    pd.add_argument("--workers", type=int, default=None, help="worker count (parallel mode)")
     return p
 
 

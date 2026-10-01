@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that automatically finds and downloads the best-matching English subtitles for a given MKV video file using the subliminal and babelfish libraries.
 It should take the video file path (and an optional output directory) as input, validate the file's existence and extension, scan the video to log metadata such as name, size, duration, and hashes, then query multiple subtitle providers (e.g., opensubtitles, podnapisi, addic7ed, tvsubtitles) for the best English subtitle match.
 The script should save the downloaded subtitle file into the specified or default output directory, log progress and errors via both print statements and the logging module, and gracefully handle exceptions such as missing files or provider errors, returning a boolean success status."""
@@ -11,9 +11,7 @@ from subliminal import download_best_subtitles, save_subtitles
 from subliminal.providers import ProviderError
 from subliminal.video import scan_video
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -65,13 +63,9 @@ def get_english_subtitles(mkv_path, output_dir=None):
 
 def main():
     if len(sys.argv) < 2:
-        print(
-            "Usage: python subtitle_downloader.py <path_to_mkv_file> [output_directory]"
-        )
+        print("Usage: python subtitle_downloader.py <path_to_mkv_file> [output_directory]")
         print("Example: python subtitle_downloader.py movie.mkv")
-        print(
-            "Example: python subtitle_downloader.py /path/to/movie.mkv /path/to/subtitles/"
-        )
+        print("Example: python subtitle_downloader.py /path/to/movie.mkv /path/to/subtitles/")
         sys.exit(1)
     mkv_path = sys.argv[1]
     output_dir = sys.argv[2] if len(sys.argv) > 2 else None

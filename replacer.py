@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively searches text files under a given directory for an exact substring and either removes it or replaces it with a specified replacement string, writing changes back in place unless a dry-run mode is requested.
 In dry-run mode it should report how many matches were found per file and print a short surrounding-context snippet for up to three matches, plus a count of any remaining matches.
 It should skip binary files using an external is_binary helper, gracefully handle unicode decoding and permission errors by printing a skip message to stderr, and use argparse to accept the target path, search text, optional replacement text, a remove flag, and a dry-run flag."""
@@ -112,9 +112,7 @@ def main() -> None:
         action="store_true",
         help="Remove the search text instead of replacing it",
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show changes without applying them"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Show changes without applying them")
     parser.add_argument(
         "-f",
         "--file",
@@ -141,9 +139,7 @@ def main() -> None:
         target_file=args.file,
         dry_run=args.dry_run,
     )
-    print(
-        f"\n--- Complete: Processed {files_processed} files, modified {files_changed} files ---"
-    )
+    print(f"\n--- Complete: Processed {files_processed} files, modified {files_changed} files ---")
 
 
 if __name__ == "__main__":

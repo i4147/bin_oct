@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively walks a given directory (defaulting to the current directory) and compresses each file in place using LZ4 frame compression at maximum compression level, saving each output as the original filename with an added ".lz4" extension and then deleting the original file.
 It should skip directories, files already ending in ".lz4", and files with other common archive/compressed extensions (like .gz, .br, .xz, .zst, .bz2, .zip, .whl) to avoid recompressing already-compressed data.
 For large files above a defined size threshold, it should compress in streaming chunks to limit memory usage, while smaller files are read and compressed all at once.
@@ -14,9 +14,7 @@ COMPRESSED_EXT = ".lz4"
 EXT = {".gz", ".br", ".xz", ".zst", ".bz2", ".zip", ".whl", ".lz4"}
 
 
-def compress_file(
-    src_path: Path, compression_level=lz4.frame.COMPRESSIONLEVEL_MAX
-) -> None:
+def compress_file(src_path: Path, compression_level=lz4.frame.COMPRESSIONLEVEL_MAX) -> None:
     if src_path.is_dir():
         return
     if src_path.suffix == COMPRESSED_EXT:
@@ -25,9 +23,7 @@ def compress_file(
     try:
         file_size = src_path.stat().st_size
         with open(src_path, "rb") as f_in, open(dst_path, "wb") as f_out:
-            compressor = lz4.frame.LZ4FrameCompressor(
-                compression_level=compression_level
-            )
+            compressor = lz4.frame.LZ4FrameCompressor(compression_level=compression_level)
             if file_size > CHUNK_THRESHOLD:
                 while True:
                     chunk = f_in.read(CHUNK_SIZE)

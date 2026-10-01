@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that takes a file path and a target character as arguments (sys.argv[1] and sys.argv[2]).
 It should read the file's lines, and for each non-empty line, if the target character is found, truncate the line at that character's first occurrence; otherwise keep the stripped line as is.
 Empty lines should be discarded.

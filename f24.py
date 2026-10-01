@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that finds files modified within the last 24 hours under
 the current working directory, using multiprocessing.Pool.apply_async with a fixed
@@ -51,9 +51,7 @@ def main() -> None:
     recent: list[PathCTime] = []
     with mp.Pool(processes=POOL_WORKERS) as pool:
         async_results = [pool.apply_async(ctime_if_recent, (p,)) for p in files]
-        for async_result in tqdm(
-            async_results, total=len(async_results), desc="Scanning", unit="file"
-        ):
+        for async_result in tqdm(async_results, total=len(async_results), desc="Scanning", unit="file"):
             result: PathCTime | None = async_result.get()
             if result is not None:
                 recent.append(result)

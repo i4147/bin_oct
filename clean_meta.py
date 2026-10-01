@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans one or more text or reStructuredText/Markdown files (such as PyPI package README or metadata files) and strips out unwanted metadata and badge/image lines, replacing each matched line with a blank line while preserving overall line structure.
 It should detect and blank lines starting with classifier fields, markdown badge links or "project-url" entries, common packaging metadata keys (Metadata-Version, Home-page, Author, Maintainer, License, Platform, Requires-Python, Description-Content-Type, Provides-Extra), and reStructuredText image directives (..
 image::, :target:, :alt:) using a case-insensitive regex.
@@ -70,9 +70,7 @@ def main() -> None:
     cwd = Path.cwd()
     before = gsz(cwd)
     args = sys.argv[1:]
-    files = (
-        [Path(f) for f in args] if args else get_files(cwd, ext=[".metadata", ".md"])
-    )
+    files = [Path(f) for f in args] if args else get_files(cwd, ext=[".metadata", ".md"])
     metafiles = list(cwd.rglob("METADATA"))
     if metafiles:
         files.extend(metafiles)

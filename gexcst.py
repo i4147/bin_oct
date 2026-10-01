@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Python Entity Extractor
 
@@ -76,13 +76,12 @@ class EntityExtractor(cst.CSTVisitor):
 
             return "".join(code_lines)
         except Exception:
-            if hasattr(node, "body") and isinstance(
-                node.body, cst.SimpleStatementSuite
-            ):
+            if hasattr(node, "body") and isinstance(node.body, cst.SimpleStatementSuite):
                 return "".join(
                     self.source_lines[
-                        self.get_metadata(PositionProvider, node).start.line
-                        - 1 : self.get_metadata(PositionProvider, node).end.line
+                        self.get_metadata(PositionProvider, node).start.line - 1 : self.get_metadata(
+                            PositionProvider, node
+                        ).end.line
                     ]
                 )
             return ""
@@ -192,11 +191,7 @@ def is_python_file_no_extension(path: Path) -> bool:
             first_lines = "".join(f.readlines(1024))
             if re.match(r"#!\s*/.*python", first_lines):
                 return True
-            if (
-                "def " in first_lines
-                or "class " in first_lines
-                or "import " in first_lines
-            ):
+            if "def " in first_lines or "class " in first_lines or "import " in first_lines:
                 return True
     except Exception:
         pass
@@ -224,20 +219,13 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
                     member_path = Path(member)
                     if member_path.suffix == ".py":
                         with zf.open(member) as member_file:
-                            content = member_file.read().decode(
-                                "utf-8", errors="ignore"
-                            )
+                            content = member_file.read().decode("utf-8", errors="ignore")
                             virtual_path = Path(f"{path}/{member}")
-                            entities.extend(
-                                extract_entities_from_content(content, virtual_path)
-                            )
+                            entities.extend(extract_entities_from_content(content, virtual_path))
         except Exception as e:
             print(f"Error processing ZIP/WHL archive {path}: {e}")
 
-    elif any(
-        path.name.endswith(ext)
-        for ext in [".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz"]
-    ):
+    elif any(path.name.endswith(ext) for ext in [".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz"]):
         mode_map = {
             ".tar.gz": "r:gz",
             ".tgz": "r:gz",
@@ -253,13 +241,9 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
                     if member.isfile() and member_path.suffix == ".py":
                         member_file = tf.extractfile(member)
                         if member_file:
-                            content = member_file.read().decode(
-                                "utf-8", errors="ignore"
-                            )
+                            content = member_file.read().decode("utf-8", errors="ignore")
                             virtual_path = Path(f"{path}/{member.name}")
-                            entities.extend(
-                                extract_entities_from_content(content, virtual_path)
-                            )
+                            entities.extend(extract_entities_from_content(content, virtual_path))
         except tarfile.ReadError:
             pass
         except Exception as e:
@@ -292,13 +276,8 @@ def main() -> int:
             if path.is_relative_to(OUTPUT_DIR):
                 continue
 
-            is_archive = path.suffix in ARCHIVE_EXTENSIONS or any(
-                path.name.endswith(ext) for ext in ARCHIVE_EXTENSIONS
-            )
-            is_py = (
-                path.suffix in ALLOWED_PYTHON_EXTENSIONS
-                or is_python_file_no_extension(path)
-            )
+            is_archive = path.suffix in ARCHIVE_EXTENSIONS or any(path.name.endswith(ext) for ext in ARCHIVE_EXTENSIONS)
+            is_py = path.suffix in ALLOWED_PYTHON_EXTENSIONS or is_python_file_no_extension(path)
 
             if is_archive or is_py:
                 files_to_process.append(str(path))
@@ -307,10 +286,7 @@ def main() -> int:
         print("No Python files or archives found to process.")
         return 0
 
-    print(
-        f"Found {len(files_to_process)} relevant files/archives. "
-        "Starting multiprocessing pool..."
-    )
+    print(f"Found {len(files_to_process)} relevant files/archives. Starting multiprocessing pool...")
 
     num_cpus = cpu_count()
     all_entities: list[dict[str, Any]] = []
@@ -327,10 +303,7 @@ def main() -> int:
         save_entity(entity)
 
     print("\n\nAll tasks finished successfully!")
-    print(
-        f"Results are saved in the '{OUTPUT_DIR}' folder, "
-        "organized by entity type (class, function, constant)."
-    )
+    print(f"Results are saved in the '{OUTPUT_DIR}' folder, organized by entity type (class, function, constant).")
 
     return 0
 

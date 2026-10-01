@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a terminal-based calculator application using the Textual TUI framework.
 The script defines a Display widget for showing the current numeric value with right-aligned, bold styling, and a Calculator widget containing a grid of buttons (digits 0-9, decimal point, basic arithmetic operators, clear, and equals) styled with distinct colors for operator, equals, and clear buttons.
 It should handle button press events to build up numeric input, store the left operand and pending operator, perform the arithmetic calculation when equals is pressed, and reset state when clear is pressed, updating the display accordingly.
@@ -67,9 +67,7 @@ class Calculator(Static):
         if button_id == "equals":
             if self.left_operand is not None and self.operator is not None:
                 right_operand = float(self.display_widget.value)
-                result = self._calculate(
-                    self.left_operand, self.operator, right_operand
-                )
+                result = self._calculate(self.left_operand, self.operator, right_operand)
                 self.display_widget.update_display(result)
                 self.left_operand = None
                 self.operator = None
@@ -77,14 +75,8 @@ class Calculator(Static):
             return
         if button_id in ("plus", "minus", "multiply", "divide"):
             current_value = float(self.display_widget.value)
-            if (
-                self.left_operand is not None
-                and self.operator is not None
-                and (not self.new_input)
-            ):
-                result = self._calculate(
-                    self.left_operand, self.operator, current_value
-                )
+            if self.left_operand is not None and self.operator is not None and (not self.new_input):
+                result = self._calculate(self.left_operand, self.operator, current_value)
                 self.display_widget.update_display(result)
                 self.left_operand = float(result)
             else:
@@ -185,9 +177,7 @@ def evaluate_cli(args):
     operator_display = {"+": "+", "−": "-", "×": "*", "÷": "/"}
     num1_str = str(int(num1)) if num1 == int(num1) else str(num1)
     num2_str = str(int(num2)) if num2 == int(num2) else str(num2)
-    print(
-        f"{num1_str} {operator_display.get(mapped_operator, operator)} {num2_str} = {result}"
-    )
+    print(f"{num1_str} {operator_display.get(mapped_operator, operator)} {num2_str} = {result}")
     return True
 
 

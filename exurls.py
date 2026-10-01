@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that takes a target webpage URL as input, fetches its HTML using a requests Session configured with browser-like headers (User-Agent, Accept, Accept-Language, etc.) to avoid basic blocking, and parses it with BeautifulSoup to extract all absolute HTTP/HTTPS links found in anchor tags and other elements (such as scripts or media) with URL attributes, resolving relative URLs via urljoin and filtering out fragments and javascript: links.
 It should use argparse to accept the URL (and likely options like output file or timeout) from the command line, deduplicate discovered links into a set, and output the resulting list of links, handling request errors gracefully with appropriate exit behavior via sys."""
 
@@ -72,9 +72,7 @@ def save_links(name: str, links) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Extract and save all URLs from a webpage"
-    )
+    parser = argparse.ArgumentParser(description="Extract and save all URLs from a webpage")
     parser.add_argument("url", nargs="?", help="Target URL")
     args = parser.parse_args()
     url = args.url or input("Enter URL: ").strip()
@@ -102,9 +100,7 @@ def main() -> None:
         save_links("internal.txt", internal)
     if external:
         save_links("external.txt", external)
-    print(
-        f"Total links: {len(links)} (Internal: {len(internal)}, External: {len(external)})"
-    )
+    print(f"Total links: {len(links)} (Internal: {len(internal)}, External: {len(external)})")
 
 
 if __name__ == "__main__":

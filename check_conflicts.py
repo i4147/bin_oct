@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 check_conflicts.py
 
@@ -90,8 +90,7 @@ def unique_target(path: Path) -> Path:
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="Detect and optionally fix filename conflicts "
-        "with stdlib / PyPI packages.",
+        description="Detect and optionally fix filename conflicts with stdlib / PyPI packages.",
     )
     ap.add_argument(
         "-a",
@@ -117,8 +116,7 @@ def parse_args() -> argparse.Namespace:
         "-i",
         "--installed-only",
         action="store_true",
-        help="only report PyPI conflicts for packages installed in this "
-        "interpreter (stdlib check is unaffected)",
+        help="only report PyPI conflicts for packages installed in this interpreter (stdlib check is unaffected)",
     )
     return ap.parse_args()
 

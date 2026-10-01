@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans one or more Python source files (optionally recursively across a directory) to detect comments and docstrings, using the ast and tokenize modules to parse each file's syntax tree and token stream.
 For each file it should identify standalone comment lines (ignoring shebang lines) and string literals that serve as module/class/function docstrings, reporting the line number and a truncated preview of each finding.
 It should support multiprocessing to check multiple files in parallel for performance, take input paths via argparse, and print a per-file list of issues (comments/docstrings found) to help enforce a "no comments/docstrings" coding style policy."""
@@ -64,9 +64,7 @@ def collect_files(inputs: list[str]) -> list[Path]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Check Python files for unstripped comments/docstrings."
-    )
+    parser = argparse.ArgumentParser(description="Check Python files for unstripped comments/docstrings.")
     parser.add_argument(
         "inputs",
         nargs="*",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """merged.py — unified Python code-entity extractor.
 
 Merges the following scripts into one CLI:
@@ -394,9 +394,7 @@ class ASTExtractor(ast.NodeVisitor):
         )
 
 
-def extract_with_ast(
-    source: str, path: str, scope: str
-) -> tuple[list[Entity], list[str]]:
+def extract_with_ast(source: str, path: str, scope: str) -> tuple[list[Entity], list[str]]:
     try:
         tree = ast.parse(source, filename=path)
     except SyntaxError as exc:
@@ -556,9 +554,7 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
     return entities, imports
 
 
-def extract_entities(
-    source: str, path: str, backend: str, scope: str
-) -> tuple[list[Entity], list[str]]:
+def extract_entities(source: str, path: str, backend: str, scope: str) -> tuple[list[Entity], list[str]]:
     if backend == "ast":
         return extract_with_ast(source, path, scope)
     if backend == "libcst":
@@ -580,9 +576,7 @@ def find_python_files(
         if root.is_file():
             if root.suffix == ".py":
                 pys.append(root)
-            elif include_archives and any(
-                str(root).lower().endswith(s) for s in ARCHIVE_SUFFIXES
-            ):
+            elif include_archives and any(str(root).lower().endswith(s) for s in ARCHIVE_SUFFIXES):
                 archives.append(root)
             continue
         for dirpath, dirnames, filenames in os.walk(root):
@@ -591,9 +585,7 @@ def find_python_files(
                 p = Path(dirpath) / fn
                 if p.suffix == ".py":
                     pys.append(p)
-                elif include_archives and any(
-                    str(p).lower().endswith(s) for s in ARCHIVE_SUFFIXES
-                ):
+                elif include_archives and any(str(p).lower().endswith(s) for s in ARCHIVE_SUFFIXES):
                     archives.append(p)
     return pys, archives
 
@@ -819,9 +811,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
         write_txt_entities(all_entities, out_dir)
     if args.format == "json":
         (out_dir / "entities.json").write_text(
-            json.dumps(
-                [e.__dict__ for e in all_entities], indent=2, ensure_ascii=False
-            ),
+            json.dumps([e.__dict__ for e in all_entities], indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
     if args.format == "db":
@@ -1031,9 +1021,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = ap.add_subparsers(dest="command", required=True)
 
     ep = sub.add_parser("extract", help="Extract entities from files/dirs/archives")
-    ep.add_argument(
-        "paths", nargs="*", type=Path, help="Files or directories (default: cwd)"
-    )
+    ep.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
     ep.add_argument(
         "--backend",
         choices=["ast", "libcst", "tree-sitter"],

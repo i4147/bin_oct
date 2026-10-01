@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Strip outputs and execution counts from Jupyter notebook (.ipynb) files.
 Accepts files or directories as positional arguments (defaults to the current
@@ -103,11 +103,7 @@ def process_notebooks(paths: list[Path]) -> None:
             path, success, message = async_res.get()
             results.append((path, success, message))
             status: str = "✓" if success else "✗"
-            relative_path: Path = (
-                path.relative_to(Path.cwd())
-                if path.is_relative_to(Path.cwd())
-                else path
-            )
+            relative_path: Path = path.relative_to(Path.cwd()) if path.is_relative_to(Path.cwd()) else path
             print(f"{status} {relative_path}: {message}")
 
     successful: int = sum(1 for _, success, _ in results if success)

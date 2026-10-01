@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively performs find-and-replace across an entire directory tree, taking two arguments (old text and new text).
 It should walk all files under the current directory, read each as UTF-8 text (ignoring decode/permission errors) and replace every occurrence of the old string with the new one, writing changes back in place.
 After updating file contents, it should also rename any files or folders whose names contain the old text, processing deepest paths first to avoid path conflicts, and skip renaming (with a warning message) if a target name already exists.

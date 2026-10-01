@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 List the packages published by a PyPI user (or organisation) and, optionally,
 download the latest release of each of them.
@@ -116,18 +116,12 @@ def check_backend(backend: str) -> None:
         try:
             import requests  # noqa: F401
         except ImportError:
-            sys.exit(
-                "backend 'requests' selected but 'requests' is not installed "
-                "(pip install requests)"
-            )
+            sys.exit("backend 'requests' selected but 'requests' is not installed (pip install requests)")
     elif backend == "pycurl":
         try:
             import pycurl  # noqa: F401
         except ImportError:
-            sys.exit(
-                "backend 'pycurl' selected but 'pycurl' is not installed "
-                "(pip install pycurl)"
-            )
+            sys.exit("backend 'pycurl' selected but 'pycurl' is not installed (pip install pycurl)")
     elif backend == "aria2c":
         if shutil.which(ARIA2C_BIN) is None:
             sys.exit(
@@ -139,10 +133,7 @@ def check_backend(backend: str) -> None:
         try:
             import httpx  # noqa: F401
         except ImportError:
-            sys.exit(
-                "backend 'httpx' selected but 'httpx' is not installed "
-                "(pip install httpx)"
-            )
+            sys.exit("backend 'httpx' selected but 'httpx' is not installed (pip install httpx)")
 
 
 def fetch_bytes(url: str, backend: str = DEFAULT_BACKEND, timeout: float = 30.0):
@@ -261,9 +252,7 @@ def _download_requests(url: str, tmp: Path, max_bytes: int, timeout: float) -> i
     import requests
 
     written = 0
-    with requests.get(
-        url, headers={"User-Agent": USER_AGENT}, timeout=timeout, stream=True
-    ) as resp:
+    with requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=timeout, stream=True) as resp:
         resp.raise_for_status()
         declared = resp.headers.get("Content-Length")
         if declared and int(declared) > max_bytes:
@@ -353,9 +342,7 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         low = stderr_text.lower()
         if "max-filesize" in low or "too large" in low or "exceeds" in low:
             raise FileTooLarge(stderr_text or f"exceeded {max_bytes} bytes")
-        raise RuntimeError(
-            f"aria2c failed (exit {result.returncode}): {stderr_text or '<no stderr>'}"
-        )
+        raise RuntimeError(f"aria2c failed (exit {result.returncode}): {stderr_text or '<no stderr>'}")
 
     size = tmp.stat().st_size
     if size > max_bytes:
@@ -425,10 +412,7 @@ async def _download_all_async(
         follow_redirects=True,
         limits=limits,
     ) as client:
-        coros = [
-            _download_one_async(client, url, dest, max_bytes, sem)
-            for url, dest in tasks
-        ]
+        coros = [_download_one_async(client, url, dest, max_bytes, sem) for url, dest in tasks]
         for coro in asyncio.as_completed(coros):
             dest, written, exc = await coro
             on_event("done", dest, written, exc)
@@ -442,9 +426,7 @@ def download_all(
     on_event,
 ) -> None:
     if backend == "httpx" and tasks:
-        asyncio.run(
-            _download_all_async(tasks, max_bytes, timeout, DEFAULT_JOBS, on_event)
-        )
+        asyncio.run(_download_all_async(tasks, max_bytes, timeout, DEFAULT_JOBS, on_event))
         return
 
     for url, dest in tasks:
@@ -590,9 +572,7 @@ def main(argv=None) -> int:
         print(f"Fetching {profile_url} ...", file=sys.stderr)
 
     try:
-        names, final_url = collect_packages(
-            profile_url, args.backend, args.timeout, args.quiet
-        )
+        names, final_url = collect_packages(profile_url, args.backend, args.timeout, args.quiet)
     except Exception as exc:  # noqa: BLE001
         print(f"error: could not fetch the profile page: {exc}", file=sys.stderr)
         return 1
@@ -617,9 +597,7 @@ def main(argv=None) -> int:
     parallel = args.backend == "httpx"
     print(
         f"\nDownloading into {outdir.resolve()} "
-        f"(backend={args.backend}, limit={args.max_size:g} MiB"
-        + (f", jobs={DEFAULT_JOBS}" if parallel else "")
-        + ")"
+        f"(backend={args.backend}, limit={args.max_size:g} MiB" + (f", jobs={DEFAULT_JOBS}" if parallel else "") + ")"
     )
 
     tasks: list[tuple[str, Path]] = []

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script using GitPython that synchronizes the current local Git branch with its upstream remote (origin/master or origin/main).
 It should check whether the active branch is "master" and warn the user (prompting for confirmation) if not, fetch the latest changes from origin, determine which upstream branch exists, and then perform a rebase of the current branch onto the upstream commit using the --onto option with allow_unrelated_histories enabled.
 The function should print progress messages at each step, return a boolean indicating success or failure, and handle errors such as a missing upstream branch or a failed rebase gracefully by printing an error message."""
@@ -75,16 +75,12 @@ def sync_with_plumbing(repo_path: str = ".") -> bool:
         current_commit = repo.head.commit
         upstream_commit = upstream_ref.commit
         if current_commit != upstream_commit:
-            print(
-                f"Rebasing {current_commit.hexsha[:8]} onto {upstream_commit.hexsha[:8]}"
-            )
+            print(f"Rebasing {current_commit.hexsha[:8]} onto {upstream_commit.hexsha[:8]}")
             temp_branch = repo.create_head("temp_rebase", current_commit)
             temp_branch.checkout()
             try:
                 repo.head.reset(upstream_commit, index=True, working_tree=True)
-                repo.git.cherry_pick(
-                    f"{current_commit.hexsha}..{upstream_commit.hexsha}"
-                )
+                repo.git.cherry_pick(f"{current_commit.hexsha}..{upstream_commit.hexsha}")
                 repo.git.cherry_pick("--continue")
                 repo.head.reference = repo.head.commit
             except Exception as e:

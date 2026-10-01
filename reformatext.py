@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that takes a text file path, backs it up (creating a ".bak" copy), then restructures its content by splitting each paragraph into sentences using a regex-based sentence boundary detector (avoiding false splits on abbreviations like "Mr." or single-letter initials), and rewrapping each sentence's words onto lines within a maximum line-length constraint, preserving blank lines between paragraphs.
 It should handle missing files and read/write errors gracefully by printing descriptive error messages, and print a confirmation message showing the backup file's location before performing the restructuring."""
 
@@ -43,18 +43,14 @@ def restructure_text_file(path: Path) -> None:
             words = sentence.split()
             current_line_words = []
             for word in words:
-                potential_line_length = (
-                    current_line_length + len(word) + (1 if current_line_words else 0)
-                )
+                potential_line_length = current_line_length + len(word) + (1 if current_line_words else 0)
                 if potential_line_length > 120 and current_line_length > 0:
                     break_point = -1
                     for i, w in enumerate(current_line_words):
                         if w.endswith(","):
                             break_point = i
                     if break_point != -1:
-                        processed_sentence_parts.append(
-                            " ".join(current_line_words[: break_point + 1])
-                        )
+                        processed_sentence_parts.append(" ".join(current_line_words[: break_point + 1]))
                         current_line_words = current_line_words[break_point + 1 :]
                         current_line_length = len(" ".join(current_line_words))
                     else:

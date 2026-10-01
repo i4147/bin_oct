@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Download URLs from a file (one per line) using pycurl
 with a multiprocessing pool of fixed 8 workers.
@@ -31,9 +31,7 @@ def filename_from_url(url: str) -> str:
     name = Path(path).name or "index"
 
     if parsed.query:
-        safe_query = "".join(
-            c if c.isalnum() or c in "-_." else "_" for c in parsed.query
-        )
+        safe_query = "".join(c if c.isalnum() or c in "-_." else "_" for c in parsed.query)
         name = f"{name}_{safe_query}"
 
     name = "".join(c if c.isalnum() or c in "-_." else "_" for c in name)
@@ -137,10 +135,7 @@ def main():
         print("No URLs found in input file.")
         sys.exit(0)
 
-    print(
-        f"Downloading {len(urls)} URLs with {WORKERS} workers "
-        f"(timeout {TIMEOUT}s each)..."
-    )
+    print(f"Downloading {len(urls)} URLs with {WORKERS} workers (timeout {TIMEOUT}s each)...")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     original_order = {}
@@ -153,9 +148,7 @@ def main():
 
     try:
         with mp.Pool(processes=WORKERS, initializer=worker_init) as pool:
-            async_results = [
-                (url, pool.apply_async(download_one, (url,))) for url in urls
-            ]
+            async_results = [(url, pool.apply_async(download_one, (url,))) for url in urls]
 
             total = len(async_results)
             done = 0

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that checks whether brackets, braces, and parentheses are balanced in one or more source files.
 It should accept file paths as command-line arguments, or if none are given, discover all ".py" files in the current directory via a helper "get_files" function from a local "dh" module.
 For each file, read its text and use a stack-based algorithm to verify matching of "()", "[]", and "{}", printing the filename when the file's brackets are fully balanced.

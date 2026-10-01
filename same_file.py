@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python function that determines whether two given file paths refer to the same underlying file on disk, using pathlib's Path.samefile method for the comparison.
 The function should accept two string path arguments and return a boolean result.
 If either path does not exist, it should catch the FileNotFoundError and return False instead of raising an exception.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that takes a filename as its sole argument, reads all lines from that text file, and keeps only the lines containing a colon or an equals sign.
 For each retained line it derives a sort key from the substring after the first colon (or equals sign, if no colon is present) with surrounding whitespace stripped, printing that extracted value to the console as a side effect.
 The script then sorts the filtered lines by this extracted key value and overwrites the original file with the sorted lines using UTF-8 encoding.

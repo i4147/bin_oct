@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script for a Termux (Android) environment that scans the directories listed in the PATH environment variable to build an inventory of all executable commands, tracking each command's file path and source directory, and detecting name conflicts when the same command exists in multiple PATH directories.
 It should also parse a shell aliases file (handling line continuations) using a regular expression to extract defined alias names, distinguishing them from real commands.
 The script should skip inaccessible or non-existent directories gracefully and use pathlib/os utilities to safely check file executability.
@@ -37,17 +37,13 @@ def get_commands_from_path(path_dirs: list[str]):
                     continue
         except (PermissionError, OSError):
             continue
-    conflicts = {
-        cmd: paths for cmd, paths in duplicate_commands.items() if len(paths) > 1
-    }
+    conflicts = {cmd: paths for cmd, paths in duplicate_commands.items() if len(paths) > 1}
     return commands, conflicts
 
 
 def extract_aliases(aliases_file: Path):
     aliases = {}
-    alias_pattern = re.compile(
-        r"^\s*alias\s+([a-zA-Z_][a-zA-Z0-9_-]*)\s*=", re.MULTILINE
-    )
+    alias_pattern = re.compile(r"^\s*alias\s+([a-zA-Z_][a-zA-Z0-9_-]*)\s*=", re.MULTILINE)
     if not aliases_file.exists():
         return {}
     try:
@@ -89,9 +85,7 @@ def check_conflicts(names, path_commands, name_type: str):
     return {name: path_commands[name] for name in names if name in path_commands}
 
 
-def display_results(
-    alias_conflicts, func_conflicts, path_duplicates, path_dirs: list[str]
-) -> None:
+def display_results(alias_conflicts, func_conflicts, path_duplicates, path_dirs: list[str]) -> None:
     print("-" * 40)
     print("🔍 PATH CONFLICT ANALYSIS")
     print("-" * 40)
@@ -101,9 +95,7 @@ def display_results(
     if len(path_dirs) > 10:
         print(f"   ... and {len(path_dirs) - 10} more")
     if path_duplicates:
-        print(
-            f"\n⚠️  WARNING: Commands found in multiple PATH locations ({len(path_duplicates)}):"
-        )
+        print(f"\n⚠️  WARNING: Commands found in multiple PATH locations ({len(path_duplicates)}):")
         for cmd, paths in sorted(path_duplicates.items())[:10]:
             print(f"   • '\033[5;96m{cmd}\033[0m' found in:")
             for path in paths:
@@ -118,12 +110,8 @@ def display_results(
     if alias_conflicts:
         print(f"   ❌ Conflicts with PATH commands ({alias_total}):")
         for alias, (full_path, dir_path) in sorted(alias_conflicts.items()):
-            print(
-                f"      • '\033[5;96m{alias}\033[0m' -> conflicts with: {str(full_path).replace(prefix, '')}"
-            )
-        print(
-            "\n   💡 Suggestion: Rename these aliases or remove the conflicting binaries"
-        )
+            print(f"      • '\033[5;96m{alias}\033[0m' -> conflicts with: {str(full_path).replace(prefix, '')}")
+        print("\n   💡 Suggestion: Rename these aliases or remove the conflicting binaries")
     else:
         print("   ✓ No conflicts with PATH commands")
     print(f"\n🔧 FUNCTIONS ({func_total} total)")
@@ -168,9 +156,7 @@ def main():
     config_dir = Path.home() / ".config/bash.d"
     aliases_file = config_dir / "aliases.sh"
     functions_file = config_dir / "functions.sh"
-    print(
-        "🔍 Scanning for conflicts between bash aliases/functions and PATH binaries..."
-    )
+    print("🔍 Scanning for conflicts between bash aliases/functions and PATH binaries...")
     path_dirs = get_path_dirs()
     path_commands, path_duplicates = get_commands_from_path(path_dirs)
     print(f"✓ Found {len(path_commands)} unique commands in PATH")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility module that manages a persistent word-translation cache and a failed-words tracking file for a translation pipeline.
 It should provide a function to load existing translations from a JSON file into a dictionary, gracefully handling missing files, invalid JSON, or a non-dictionary top-level structure by logging warnings and returning an empty dictionary.
 It should also provide a function to load previously failed words from a plain text file (one word per line) into a set, stripping whitespace and skipping empty lines, while handling missing files or read errors via logging.
@@ -23,14 +23,10 @@ def load_existing_translations(json_path: str) -> dict[str, str]:
             with open(json_path, "r", encoding="utf-8") as f:
                 existing_data = json.load(f)
                 if isinstance(existing_data, dict):
-                    print(
-                        f"Loaded {len(existing_data)} existing translations from {json_path}"
-                    )
+                    print(f"Loaded {len(existing_data)} existing translations from {json_path}")
                     return existing_data
                 else:
-                    logger.warning(
-                        f"Existing {json_path} is not a valid dictionary format"
-                    )
+                    logger.warning(f"Existing {json_path} is not a valid dictionary format")
         except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"Could not load existing JSON file: {e}")
     return {}
@@ -48,9 +44,7 @@ def load_failed_words(failed_path: str) -> set[str]:
     return set()
 
 
-def process_file_pair(
-    fa_path: Path, en_path: Path
-) -> tuple[dict[str, str], set[str], list[str]]:
+def process_file_pair(fa_path: Path, en_path: Path) -> tuple[dict[str, str], set[str], list[str]]:
     translations = {}
     failed = set()
     warnings = []

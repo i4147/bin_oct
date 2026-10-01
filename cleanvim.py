@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively removes comments from Vim script (.vim) files using the tree-sitter-vim grammar for accurate parsing.
 It should define a VimCommentRemover class that parses each file's content into a syntax tree, locates all comment nodes, and strips them from the byte content while preserving the rest of the code.
 The script should process files in parallel using multiprocessing, track per-file results (success status, number of comments removed, processing time, and error messages) via a ProcessResult dataclass, and accept file or directory paths as input, writing the cleaned content back to disk.
@@ -135,9 +135,7 @@ def process_file(path: Path) -> ProcessResult:
         )
 
 
-def process_files_parallel(
-    files: list[Path], num_workers: int = 8
-) -> list[ProcessResult]:
+def process_files_parallel(files: list[Path], num_workers: int = 8) -> list[ProcessResult]:
     results = []
     with mp.Pool(processes=num_workers) as pool:
         async_results = []
@@ -158,9 +156,7 @@ def process_files_parallel(
                             f"({result.processing_time:.3f}s)"
                         )
                     else:
-                        print(
-                            f"• {result.path}: no comments found ({result.processing_time:.3f}s)"
-                        )
+                        print(f"• {result.path}: no comments found ({result.processing_time:.3f}s)")
                 else:
                     print(f"✗ {result.path}: ERROR - {result.error_message}")
                 if completed % 10 == 0:
@@ -182,9 +178,7 @@ def print_summary(results: list[ProcessResult], total_files: int, start_time: fl
     successful = sum(1 for r in results if r.success)
     failed = sum(1 for r in results if not r.success)
     total_comments_removed = sum(r.comments_removed for r in results if r.success)
-    files_with_comments = sum(
-        1 for r in results if r.success and r.comments_removed > 0
-    )
+    files_with_comments = sum(1 for r in results if r.success and r.comments_removed > 0)
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)

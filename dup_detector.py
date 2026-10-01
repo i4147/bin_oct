@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans a directory tree for .py files (excluding utils.py), parses each file's AST to extract top-level objects (functions, classes, and constants) along with their source code, and computes fuzzy hashes (using ssdeep) for each extracted object to detect near-duplicate or similar code across the codebase.
 The script should support multiprocessing to speed up file parsing and hashing, use rapidfuzz for similarity scoring between hashes, and group or report clusters of similar objects (.g., via a defaultdict keyed by hash or similarity threshold).
 It should accept command-line arguments (via argparse) for configuring the target directory and other options, gracefully handle missing dependencies by printing an install hint and exiting, and output results as structured data such as JSON."""
@@ -121,16 +121,10 @@ def save_exact_duplicates(
         "constant": "constant_duplicates.json",
     }
     for object_type, path in output_files.items():
-        type_duplicates = [
-            obj for obj in duplicate_objects if obj["object_type"] == object_type
-        ]
+        type_duplicates = [obj for obj in duplicate_objects if obj["object_type"] == object_type]
         write_json(path, type_duplicates)
-        print(
-            f"[+] Saved {len(type_duplicates)} {object_type} duplicate instances to {path}"
-        )
-    print(
-        f"[+] Saved {len(duplicate_objects)} exact duplicate instances to {output_file}"
-    )
+        print(f"[+] Saved {len(type_duplicates)} {object_type} duplicate instances to {path}")
+    print(f"[+] Saved {len(duplicate_objects)} exact duplicate instances to {output_file}")
     return hash_groups
 
 
@@ -154,11 +148,7 @@ def refactor_duplicates(hash_groups):
         with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
         objs_to_remove = [
-            obj
-            for group in hash_groups.values()
-            if len(group) > 5
-            for obj in group
-            if obj["reference_file"] == path
+            obj for group in hash_groups.values() if len(group) > 5 for obj in group if obj["reference_file"] == path
         ]
         objs_to_remove.sort(key=lambda x: x["start_line"], reverse=True)
         for obj in objs_to_remove:
@@ -182,9 +172,7 @@ def refactor_duplicates(hash_groups):
 def generate_fuzzy_report(all_objects, output_file="fuzzy_duplicates.json"):
     report = []
     n = len(all_objects)
-    print(
-        "[*] Calculating fuzzy similarities (this may take a while for large codebases)..."
-    )
+    print("[*] Calculating fuzzy similarities (this may take a while for large codebases)...")
     for i in range(n):
         for j in range(i + 1, n):
             obj1 = all_objects[i]
@@ -219,9 +207,7 @@ def generate_fuzzy_report(all_objects, output_file="fuzzy_duplicates.json"):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Detect and refactor duplicate Python objects."
-    )
+    parser = argparse.ArgumentParser(description="Detect and refactor duplicate Python objects.")
     parser.add_argument(
         "-r",
         "--refactor",

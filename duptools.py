@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 dupe_tool.py — find, delete, or symlink duplicate files.
 
@@ -144,9 +144,7 @@ class _PPDeepHasher:
         return self._h.hexdigest()
 
 
-def hash_file(
-    path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK_SIZE
-) -> Optional[str]:
+def hash_file(path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK_SIZE) -> Optional[str]:
     if algorithm == "ppdeep" and _HAS_PPDEEP:
         try:
             return ppdeep.hash_from_file(str(path))
@@ -346,9 +344,7 @@ def cmd_report(args: argparse.Namespace) -> int:
             except ValueError:
                 rel = p
             print(f"  • {rel}")
-    print(
-        f"\nTotal recoverable space: {wasted:,} bytes ({wasted / 1024 / 1024:.2f} MB)"
-    )
+    print(f"\nTotal recoverable space: {wasted:,} bytes ({wasted / 1024 / 1024:.2f} MB)")
 
     if args.json:
         out = {h: [str(p) for p in group] for h, group in groups.items()}
@@ -589,9 +585,7 @@ def cmd_restore(args: argparse.Namespace) -> int:
                 Path(stash_path).unlink()
             except OSError:
                 pass
-        backup = manifest_path.with_suffix(
-            manifest_path.suffix + f".restored.{int(time.time())}"
-        )
+        backup = manifest_path.with_suffix(manifest_path.suffix + f".restored.{int(time.time())}")
         try:
             manifest_path.rename(backup)
             info(f"manifest renamed to {backup}")
@@ -602,9 +596,7 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
 
 def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> None:
-    p.add_argument(
-        "-d", "--directory", default=".", help="Directory to scan (default: .)"
-    )
+    p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     p.add_argument(
         "-r",
         "--recursive",
@@ -642,9 +634,7 @@ def _add_scan_args(p: argparse.ArgumentParser, *, recursive_default: bool) -> No
         default=BIG_CHUNK_SIZE,
         help=f"Read size in bytes (default: {BIG_CHUNK_SIZE})",
     )
-    p.add_argument(
-        "--follow-symlinks", action="store_true", help="Follow symlinks when scanning"
-    )
+    p.add_argument("--follow-symlinks", action="store_true", help="Follow symlinks when scanning")
     p.add_argument(
         "--quick-hash",
         action="store_true",
@@ -679,9 +669,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("report", help="Show duplicate groups (no changes)")
     _add_scan_args(p, recursive_default=True)
-    p.add_argument(
-        "--json", metavar="PATH", help="Export the found groups to a JSON file"
-    )
+    p.add_argument("--json", metavar="PATH", help="Export the found groups to a JSON file")
     p.set_defaults(func=cmd_report)
 
     p = sub.add_parser("delete", help="Delete duplicates, keep one per group")
@@ -712,9 +700,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_delete)
 
-    p = sub.add_parser(
-        "symlink", help="Move master copies to a stash and symlink the rest"
-    )
+    p = sub.add_parser("symlink", help="Move master copies to a stash and symlink the rest")
     _add_scan_args(p, recursive_default=True)
     p.add_argument(
         "--dry-run",

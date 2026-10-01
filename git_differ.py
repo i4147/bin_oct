@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that uses subprocess to invoke git commands and compares the two most recent commits in a given repository path.
 It should retrieve each commit's metadata (hash, author name, email, date, and subject) via "git show", and compute per-file change statistics (status such as added/modified/deleted, plus lines added/removed) by parsing the output of "git diff --name-status" and "git diff --numstat" between the older and newer commit.
 The script should raise a clear error if the repository has fewer than two commits or if any git command fails, and it should assemble the collected commit metadata and file-level diff stats into a structured result (e.g., a dictionary) intended to be output as JSON."""
@@ -44,9 +44,7 @@ def get_commit_meta(repo: Path, commit_hash: str) -> dict:
 
 
 def get_file_stats(repo: Path, older: str, newer: str) -> list[dict]:
-    name_status = (
-        run_git("diff", "--name-status", older, newer, cwd=repo).strip().splitlines()
-    )
+    name_status = run_git("diff", "--name-status", older, newer, cwd=repo).strip().splitlines()
     numstat = run_git("diff", "--numstat", older, newer, cwd=repo).strip().splitlines()
     numstat_map = {}
     for line in numstat:

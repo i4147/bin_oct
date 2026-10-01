@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that normalizes each line of a given text file in place.
 It should accept exactly one argument, the path to the input file, and validate that the path exists and is a regular file.
 For every line, apply NFKC Unicode normalization, strip non-printable characters, remove all punctuation characters, lowercase/casefold the text, and collapse whitespace-separated words by joining them with underscores.
@@ -14,9 +14,7 @@ from pathlib import Path
 def normalize_line(line: str) -> str:
     text = unicodedata.normalize("NFKC", line)
     text = "".join(char for char in text if char.isprintable())
-    text = "".join(
-        char for char in text if not unicodedata.category(char).startswith("P")
-    )
+    text = "".join(char for char in text if not unicodedata.category(char).startswith("P"))
     text = text.casefold()
     text = "_".join(text.split())
     return text

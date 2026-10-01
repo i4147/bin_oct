@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merge a small multi-file Python package into a single annotated module.
 
@@ -112,9 +112,7 @@ def strip_six_and_py2(text: str) -> str:
         text,
         flags=re.MULTILINE,
     )
-    text = re.sub(
-        r"^\s*def _pickle_method\b.*(?:\n(?:    .*)?)*\n?", "", text, flags=re.MULTILINE
-    )
+    text = re.sub(r"^\s*def _pickle_method\b.*(?:\n(?:    .*)?)*\n?", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*@implements_to_string\s*\n", "", text, flags=re.MULTILINE)
     return text
 
@@ -123,10 +121,7 @@ def flag_ambiguous_paths(text: str) -> str:
     lines = text.splitlines()
     out = []
     for line in lines:
-        if (
-            any(p.search(line) for p in AMBIGUOUS_PATH_MARKERS)
-            and "TODO(manual-review)" not in line
-        ):
+        if any(p.search(line) for p in AMBIGUOUS_PATH_MARKERS) and "TODO(manual-review)" not in line:
             out.append(
                 line
                 + "  # TODO(manual-review): confirm this is a filesystem path, not a URL, before converting to pathlib"
@@ -165,12 +160,8 @@ def rewrite_parallelism(text: str) -> str:
 
 
 def rewrite_logging(text: str) -> str:
-    text = re.sub(
-        r"^import logging\n", "from loguru import logger\n", text, flags=re.MULTILINE
-    )
-    text = re.sub(
-        r"^\s*logger\s*=\s*logging\.getLogger\([^)]*\)\n", "", text, flags=re.MULTILINE
-    )
+    text = re.sub(r"^import logging\n", "from loguru import logger\n", text, flags=re.MULTILINE)
+    text = re.sub(r"^\s*logger\s*=\s*logging\.getLogger\([^)]*\)\n", "", text, flags=re.MULTILINE)
     text = re.sub(
         r"logging\.basicConfig\([^)]*\)",
         'logger.remove()\nlogger.add(sys.stderr, level="INFO", '
@@ -182,9 +173,7 @@ def rewrite_logging(text: str) -> str:
 
 def strip_comments_and_docstrings(tree: ast.Module) -> ast.Module:
     for node in ast.walk(tree):
-        if isinstance(
-            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-        ):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             body = node.body
             if (
                 body
@@ -230,9 +219,7 @@ def collect_and_dedup_imports(tree: ast.Module) -> tuple[list[str], list[ast.stm
     return stdlib_like, remaining_body
 
 
-def build_output(
-    tree: ast.Module, workers_needed: bool, needs_pathlib: bool, needs_loguru: bool
-) -> str:
+def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, needs_loguru: bool) -> str:
     import_lines, _ = collect_and_dedup_imports(tree)
     body_src = ast.unparse(tree)
 
@@ -256,16 +243,7 @@ def build_output(
 
     workers_const = "\nWORKERS: int = 6\n" if workers_needed else ""
 
-    return (
-        module_doc
-        + "\n"
-        + "\n".join(all_imports)
-        + "\n"
-        + workers_const
-        + "\n\n"
-        + body_src
-        + "\n"
-    )
+    return module_doc + "\n" + "\n".join(all_imports) + "\n" + workers_const + "\n\n" + body_src + "\n"
 
 
 def determine_output_path(requested: str | None) -> Path:
@@ -286,9 +264,7 @@ def determine_output_path(requested: str | None) -> Path:
 
 def main(argv: Iterable[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-f", "--file", help="merged input file with '# filename: relpath' sentinels"
-    )
+    parser.add_argument("-f", "--file", help="merged input file with '# filename: relpath' sentinels")
     parser.add_argument("-o", "--output", help="output .py filename (default: out.py)")
     args = parser.parse_args(list(argv) if argv is not None else None)
 
@@ -298,9 +274,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     try:
         tree = ast.parse(merged_text)
     except SyntaxError as exc:
-        sys.exit(
-            f"error: merged source failed to parse ({exc}); manual fixup needed before AST pass"
-        )
+        sys.exit(f"error: merged source failed to parse ({exc}); manual fixup needed before AST pass")
 
     tree = strip_comments_and_docstrings(tree)
 

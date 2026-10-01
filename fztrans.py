@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Persian-English dictionary tool in Python that loads word pairs from a JSON file (default ~/dic.json) into forward (Farsi-to-English) and reverse (English-to-Farsi) lookup dictionaries, exiting with an error via logging if the file is missing or invalid.
 It should provide interactive lookup with readline-based tab autocompletion over all known words, an exact translate function checking both dictionaries, and a fuzzy search fallback (using difflib.get_close_matches) to suggest close matches when no exact translation is found.
 The script uses argparse for CLI options, faprint for formatted output, and subprocess/shutil presumably for auxiliary terminal or file operations."""
@@ -51,9 +51,7 @@ def translate(word: str, fa_en: dict[str, str], en_fa: dict[str, str]) -> str | 
     return fa_en.get(word) or en_fa.get(word)
 
 
-def fuzzy_search(
-    word: str, all_words: set[str], limit: int = 5, cutoff: float = 0.6
-) -> list[str]:
+def fuzzy_search(word: str, all_words: set[str], limit: int = 5, cutoff: float = 0.6) -> list[str]:
     return get_close_matches(word, all_words, n=limit, cutoff=cutoff)
 
 
@@ -111,9 +109,7 @@ def main() -> None:
     parser.add_argument("word", nargs="*", help="Word to translate")
     parser.add_argument("--prefix", help="List words starting with prefix")
     parser.add_argument("--fuzzy", help="Fuzzy search (typo tolerant)")
-    parser.add_argument(
-        "--no-fzf", action="store_true", help="Disable interactive fzf selector"
-    )
+    parser.add_argument("--no-fzf", action="store_true", help="Disable interactive fzf selector")
     args = parser.parse_args()
     fa_en, en_fa = load_dictionary(Path(DICT_FILE))
     all_words = set(fa_en) | set(en_fa)
@@ -148,9 +144,7 @@ def main() -> None:
         else:
             matches = fuzzy_search(word, all_words)
             if matches:
-                faprint(
-                    f"Not found. Did you mean: {', '.join(matches)}?", file=sys.stderr
-                )
+                faprint(f"Not found. Did you mean: {', '.join(matches)}?", file=sys.stderr)
             else:
                 print("Not found", file=sys.stderr)
             sys.exit(1)

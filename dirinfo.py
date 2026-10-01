@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans a directory (defaulting to the current directory) to compute total file size, file and folder counts, the set of distinct file extensions encountered, and the total size consumed per extension, using a helper `fsz` from a local `dh` module to format byte sizes into human-readable strings.
 The script should output a text summary (optionally written to a given file via argparse) listing the total size, sorted list of extensions, file/folder counts, and a breakdown of size per extension sorted by size descending.
 It should also use matplotlib to generate a chart visualizing the size distribution across file extensions.
@@ -47,9 +47,7 @@ def write_summary(filename: Path | None = None) -> None:
     summary_lines.append(f"Number of files: {file_count}\n")
     summary_lines.append(f"Number of folders: {folder_count}\n")
     summary_lines.append("Size by extension:\n")
-    sorted_size_by_ext = sorted(
-        size_by_ext.items(), key=operator.itemgetter(1), reverse=True
-    )
+    sorted_size_by_ext = sorted(size_by_ext.items(), key=operator.itemgetter(1), reverse=True)
     for ext, size in sorted_size_by_ext:
         summary_lines.append(f"  {ext}: {fsz(size)}\n")
         if filename is None or filename == sys.stderr:
@@ -69,9 +67,7 @@ def write_summary(filename: Path | None = None) -> None:
         print(summary_string)
 
 
-def create_bar_chart(
-    chart_type: str, output_filename: str = "/sdcard/dirinfo.png"
-) -> None:
+def create_bar_chart(chart_type: str, output_filename: str = "/sdcard/dirinfo.png") -> None:
     _, _, _, _, size_by_ext = scan_directory()
     sorted_items = sorted(
         [(ext, size) for ext, size in size_by_ext.items() if size > 0],

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively walks the current working directory (using a helper `get_filez` that skips unwanted files/directories via `should_skip` and avoids revisiting resolved paths) and scans each non-binary text file for hexadecimal color codes (3 or 6 digit hex, e.g.
 #fff or #ffffff) using a regex.
 For every file containing matches, it should print the filename along with the count of unique colors found, highlighted in cyan via the `cprint` helper from the `dh` module, and collect all discovered colors into a set for further use (e.g., writing to a "colors" output file in the current directory).

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that uses OpenCV to detect faces in a video file via the Haar Cascade frontal face classifier and saves an annotated copy of the video with bounding boxes drawn around detected faces.
 The script should accept an input video path and an optional output path (defaulting to "out.mp4"), validating that the input file and cascade classifier exist before processing, and exiting with an error message if either is missing or the video cannot be opened.
 It should read the input video's frame width, height, and FPS to configure a VideoWriter using the MJPG codec, then loop through each frame performing face detection and writing the annotated frames to the output file, printing progress messages such as the input/output paths and a running frame count, until all frames are processed or reading fails."""
@@ -8,9 +8,7 @@ from pathlib import Path
 import cv2
 
 
-def detect_and_save_faces(
-    input_video_path: str, output_video_path: str = "out.mp4"
-) -> None:
+def detect_and_save_faces(input_video_path: str, output_video_path: str = "out.mp4") -> None:
     if not Path(input_video_path).exists():
         print(f"Error: Input video file not found at '{input_video_path}'")
         sys.exit(1)
@@ -42,9 +40,7 @@ def detect_and_save_faces(
             break
         frame_count += 1
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
-        )
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
         for x, y, w, h in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
         out.write(frame)

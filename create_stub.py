@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that generates type stub (.pyi) files for Python source files using mypy's stubgen tool.
 It should accept file paths as command-line arguments, or if none are provided, discover all ".py" files in the current working directory (via a helper get_files).
 For each file, it should skip generation if a corresponding .pyi stub already exists, otherwise run stubgen as a subprocess and report success or failure with the error output.

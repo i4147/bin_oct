@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Translate detectable non-English comments and string literals in Python files into English.
 
 The script recursively discovers Python files, extracts non-English text from comments and
@@ -113,9 +113,7 @@ class TranslationJob:
 
 
 def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Translate detectable non-English Python comments and strings."
-    )
+    parser = argparse.ArgumentParser(description="Translate detectable non-English Python comments and strings.")
     parser.add_argument(
         "paths",
         nargs="*",
@@ -178,11 +176,7 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
             if path.suffix == ".py":
                 discovered.add(path.resolve())
         elif path.is_dir():
-            discovered.update(
-                candidate.resolve()
-                for candidate in path.rglob("*.py")
-                if candidate.is_file()
-            )
+            discovered.update(candidate.resolve() for candidate in path.rglob("*.py") if candidate.is_file())
         else:
             raise OSError(f"Input path is neither a regular file nor directory: {path}")
 
@@ -266,16 +260,10 @@ def extract_jobs(
 
     for token in tokens:
         if token.type == tokenize.COMMENT:
-            absolute_start = position_to_offset(
-                line_offsets, token.start[0], token.start[1]
-            )
+            absolute_start = position_to_offset(line_offsets, token.start[0], token.start[1])
             marker_end = absolute_start + 1
             text_start = marker_end
-            text = source[
-                text_start : position_to_offset(
-                    line_offsets, token.end[0], token.end[1]
-                )
-            ]
+            text = source[text_start : position_to_offset(line_offsets, token.end[0], token.end[1])]
 
             if contains_probable_non_english(text):
                 for relative_start, relative_end, piece in split_text(text, chunk_size):
@@ -288,9 +276,7 @@ def extract_jobs(
                     )
 
         elif token.type == tokenize.STRING:
-            token_start = position_to_offset(
-                line_offsets, token.start[0], token.start[1]
-            )
+            token_start = position_to_offset(line_offsets, token.start[0], token.start[1])
             token_end = position_to_offset(line_offsets, token.end[0], token.end[1])
             token_text = source[token_start:token_end]
 
@@ -299,8 +285,7 @@ def extract_jobs(
 
             if "f" in prefix.casefold():
                 logger.warning(
-                    "Skipping f-string at line {} because translating it safely "
-                    "requires parsing embedded expressions.",
+                    "Skipping f-string at line {} because translating it safely requires parsing embedded expressions.",
                     token.start[0],
                 )
                 continue
@@ -320,9 +305,7 @@ def extract_jobs(
             payload = source[payload_start:payload_end]
 
             if contains_probable_non_english(payload):
-                for relative_start, relative_end, piece in split_text(
-                    payload, chunk_size
-                ):
+                for relative_start, relative_end, piece in split_text(payload, chunk_size):
                     jobs.append(
                         TranslationJob(
                             piece,
@@ -374,11 +357,7 @@ def translate_google(text: str, timeout: float) -> str:
     if not isinstance(payload, list) or not payload or not isinstance(payload[0], list):
         raise ValueError("Google returned an unexpected response")
 
-    translated = "".join(
-        item[0]
-        for item in payload[0]
-        if isinstance(item, list) and item and isinstance(item[0], str)
-    )
+    translated = "".join(item[0] for item in payload[0] if isinstance(item, list) and item and isinstance(item[0], str))
     if not translated:
         raise ValueError("Google returned empty translation")
 
@@ -386,9 +365,7 @@ def translate_google(text: str, timeout: float) -> str:
 
 
 def translate_libretranslate(text: str, url: str, timeout: float) -> str:
-    body = json.dumps(
-        {"q": text, "source": "auto", "target": "en", "format": "text"}
-    ).encode("utf-8")
+    body = json.dumps({"q": text, "source": "auto", "target": "en", "format": "text"}).encode("utf-8")
     request = Request(
         url,
         data=body,
@@ -401,9 +378,7 @@ def translate_libretranslate(text: str, url: str, timeout: float) -> str:
     )
     payload = http_json_request(request, timeout)
 
-    if not isinstance(payload, dict) or not isinstance(
-        payload.get("translatedText"), str
-    ):
+    if not isinstance(payload, dict) or not isinstance(payload.get("translatedText"), str):
         raise ValueError("LibreTranslate returned an unexpected response")
 
     translated = payload["translatedText"]
@@ -488,9 +463,7 @@ def validate_python(source: str, path: Path) -> None:
         ast.parse(source, filename=str(path))
         compile(source, str(path), "exec")
     except SyntaxError as error:
-        raise SyntaxError(
-            f"Translated source is invalid for {path}: {error}"
-        ) from error
+        raise SyntaxError(f"Translated source is invalid for {path}: {error}") from error
 
 
 def atomic_write(path: Path, content: str, encoding: str) -> None:

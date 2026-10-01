@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI tool that recursively finds and executes all .py files in a
 given directory, running each with a per-file timeout in parallel using a fixed
@@ -28,9 +28,7 @@ DEFAULT_TIMEOUT: int = 10
 MAX_ERROR_MSG_LEN: int = 200
 
 
-def run_python_file(
-    path: Path, timeout: int = DEFAULT_TIMEOUT
-) -> tuple[Path, bool, str | None, str | None]:
+def run_python_file(path: Path, timeout: int = DEFAULT_TIMEOUT) -> tuple[Path, bool, str | None, str | None]:
     try:
         result = runpy.run_path(
             str(path),
@@ -81,9 +79,7 @@ def _classify_exception(exc: BaseException) -> str:
     return f"RuntimeError ({name})"
 
 
-def _run_with_timeout(
-    path: Path, timeout: int
-) -> tuple[Path, bool, str | None, str | None]:
+def _run_with_timeout(path: Path, timeout: int) -> tuple[Path, bool, str | None, str | None]:
     try:
         proc = subprocess.run(
             [sys.executable, str(path)],
@@ -133,9 +129,7 @@ def _run_with_timeout(
     return (path, False, error_type, error_msg)
 
 
-def _worker_entry(
-    path: Path, timeout: int
-) -> tuple[Path, bool, str | None, str | None]:
+def _worker_entry(path: Path, timeout: int) -> tuple[Path, bool, str | None, str | None]:
     return _run_with_timeout(path, timeout)
 
 
@@ -156,9 +150,7 @@ def run_files_parallel(
 
     pool = multiprocessing.Pool(processes=NUM_WORKERS)
     try:
-        async_results = [
-            pool.apply_async(_worker_entry, args=(path, timeout)) for path in files
-        ]
+        async_results = [pool.apply_async(_worker_entry, args=(path, timeout)) for path in files]
         pool.close()
         for path, async_result in zip(files, async_results, strict=True):
             try:
@@ -186,11 +178,7 @@ def run_files_parallel(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Recursively run Python files with timeout and parallel processing"
-        )
-    )
+    parser = argparse.ArgumentParser(description=("Recursively run Python files with timeout and parallel processing"))
     parser.add_argument(
         "directory",
         type=str,

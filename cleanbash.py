@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Remove comments from bash/shell scripts in place, using tree-sitter for
 accurate parsing (so '#' inside strings, parameter expansions, etc. is never
 mistaken for a comment).
@@ -174,8 +174,7 @@ def main() -> int:
                 print(f"{rel}: {count} comment(s) removed")
 
     print(
-        f"\nDone: {files_touched}/{len(files)} file(s) modified, "
-        f"{total_removed} comment(s) removed, {errors} error(s)."
+        f"\nDone: {files_touched}/{len(files)} file(s) modified, {total_removed} comment(s) removed, {errors} error(s)."
     )
     return 0 if errors == 0 else 2
 

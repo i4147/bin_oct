@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python image-processing command-line tool that uses PIL/Pillow, OpenCV, and NumPy to load, transform, and export images.
 It should provide argparse-based utilities for parsing custom values like colors (via ImageColor), ImageMagick-style geometry strings (WxH with optional !%^<> flags for resizing behavior), and positional offsets, then apply operations such as resizing with configurable resampling filters (nearest, box, bilinear, hamming, bicubic, lanczos), color adjustments, filtering, and compositing.
 The script should accept input/output file paths and processing options as command-line arguments, validating and converting them through dedicated parser functions, and raise clear argparse errors for malformed inputs."""
@@ -110,9 +110,7 @@ def array_to_pil(array: np.ndarray) -> Image.Image:
     return Image.fromarray(array, "RGBA")
 
 
-def flatten_alpha(
-    image: Image.Image, background: tuple[int, int, int, int]
-) -> Image.Image:
+def flatten_alpha(image: Image.Image, background: tuple[int, int, int, int]) -> Image.Image:
     if image.mode != "RGBA":
         image = image.convert("RGBA")
     canvas = Image.new("RGBA", image.size, background)
@@ -205,9 +203,7 @@ def extent_image(
     return result
 
 
-def gravity_position(
-    container: tuple[int, int], item: tuple[int, int], gravity: str
-) -> tuple[int, int]:
+def gravity_position(container: tuple[int, int], item: tuple[int, int], gravity: str) -> tuple[int, int]:
     cw, ch = container
     iw, ih = item
     positions = {
@@ -235,12 +231,8 @@ def crop_image(
     return result
 
 
-def rotate_image(
-    image: Image.Image, angle: float, background: tuple[int, int, int, int]
-) -> Image.Image:
-    return image.rotate(
-        angle, expand=True, resample=Image.Resampling.BICUBIC, fillcolor=background
-    )
+def rotate_image(image: Image.Image, angle: float, background: tuple[int, int, int, int]) -> Image.Image:
+    return image.rotate(angle, expand=True, resample=Image.Resampling.BICUBIC, fillcolor=background)
 
 
 def opencv_blur(image: Image.Image, radius: float, sigma: float) -> Image.Image:
@@ -251,9 +243,7 @@ def opencv_blur(image: Image.Image, radius: float, sigma: float) -> Image.Image:
     return array_to_pil(blurred)
 
 
-def sharpen_image(
-    image: Image.Image, radius: float, sigma: float, amount: float, threshold: int
-) -> Image.Image:
+def sharpen_image(image: Image.Image, radius: float, sigma: float, amount: float, threshold: int) -> Image.Image:
     array = pil_to_array(image)
     kernel = max(3, round(radius * 2 + 1) | 1)
     sigma = sigma if sigma > 0 else radius
@@ -261,9 +251,7 @@ def sharpen_image(
     difference = array.astype(np.int16) - blur.astype(np.int16)
     if threshold > 0:
         difference[np.abs(difference) < threshold] = 0
-    result = np.clip(array.astype(np.float32) + difference * amount, 0, 255).astype(
-        np.uint8
-    )
+    result = np.clip(array.astype(np.float32) + difference * amount, 0, 255).astype(np.uint8)
     return array_to_pil(result)
 
 
@@ -318,16 +306,12 @@ def contrast_stretch(image: Image.Image, low: float, high: float) -> Image.Image
 
 def gamma_image(image: Image.Image, gamma: float) -> Image.Image:
     array = pil_to_array(image)
-    lut = np.clip(((np.arange(256) / 255.0) ** (1.0 / gamma)) * 255, 0, 255).astype(
-        np.uint8
-    )
+    lut = np.clip(((np.arange(256) / 255.0) ** (1.0 / gamma)) * 255, 0, 255).astype(np.uint8)
     array[:, :, :3] = cv2.LUT(array[:, :, :3], lut)
     return array_to_pil(array)
 
 
-def modulate_image(
-    image: Image.Image, brightness: float, saturation: float, hue: float
-) -> Image.Image:
+def modulate_image(image: Image.Image, brightness: float, saturation: float, hue: float) -> Image.Image:
     array = pil_to_array(image)
     rgb = array[:, :, :3]
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV).astype(np.float32)
@@ -338,9 +322,7 @@ def modulate_image(
     return array_to_pil(array)
 
 
-def tint_image(
-    image: Image.Image, color: tuple[int, int, int, int], amount: float
-) -> Image.Image:
+def tint_image(image: Image.Image, color: tuple[int, int, int, int], amount: float) -> Image.Image:
     overlay = Image.new("RGBA", image.size, color)
     return Image.blend(image, overlay, max(0, min(1, amount)))
 
@@ -351,9 +333,7 @@ def threshold_image(image: Image.Image, threshold: int) -> Image.Image:
     return Image.fromarray(result, "L").convert("RGBA")
 
 
-def adaptive_threshold_image(
-    image: Image.Image, block_size: int, constant: float
-) -> Image.Image:
+def adaptive_threshold_image(image: Image.Image, block_size: int, constant: float) -> Image.Image:
     gray = np.array(image.convert("L"))
     block_size = max(3, block_size | 1)
     result = cv2.adaptiveThreshold(
@@ -423,23 +403,14 @@ def composite_image(
     if blend == "multiply":
         mixed = a[:, :, :3].astype(np.float32) * b[:, :, :3].astype(np.float32) / 255.0
     elif blend == "screen":
-        mixed = (
-            255
-            - (255 - a[:, :, :3].astype(np.float32))
-            * (255 - b[:, :, :3].astype(np.float32))
-            / 255.0
-        )
+        mixed = 255 - (255 - a[:, :, :3].astype(np.float32)) * (255 - b[:, :, :3].astype(np.float32)) / 255.0
     elif blend == "difference":
         mixed = np.abs(a[:, :, :3].astype(np.float32) - b[:, :, :3].astype(np.float32))
     elif blend == "add":
-        mixed = np.clip(
-            a[:, :, :3].astype(np.float32) + b[:, :, :3].astype(np.float32), 0, 255
-        )
+        mixed = np.clip(a[:, :, :3].astype(np.float32) + b[:, :, :3].astype(np.float32), 0, 255)
     else:
         mixed = b[:, :, :3]
-    a[:, :, :3] = (a[:, :, :3].astype(np.float32) * (1 - alpha) + mixed * alpha).astype(
-        np.uint8
-    )
+    a[:, :, :3] = (a[:, :, :3].astype(np.float32) * (1 - alpha) + mixed * alpha).astype(np.uint8)
     a[:, :, 3] = np.maximum(a[:, :, 3], b[:, :, 3])
     return array_to_pil(a)
 
@@ -458,11 +429,7 @@ def draw_text(
     result = image.copy()
     draw = ImageDraw.Draw(result)
     try:
-        font = (
-            ImageFont.truetype(font_path, font_size)
-            if font_path
-            else ImageFont.load_default()
-        )
+        font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
     except OSError:
         font = ImageFont.load_default()
     box = draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
@@ -482,9 +449,7 @@ def draw_text(
     return result
 
 
-def append_images(
-    images: list[Image.Image], vertical: bool, background: tuple[int, int, int, int]
-) -> Image.Image:
+def append_images(images: list[Image.Image], vertical: bool, background: tuple[int, int, int, int]) -> Image.Image:
     if vertical:
         width = max(image.width for image in images)
         height = sum(image.height for image in images)
@@ -631,9 +596,7 @@ def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Imag
     if args.resize:
         image = resize_image(image, parse_geometry(args.resize), "resize", args.filter)
     if args.thumbnail:
-        image = resize_image(
-            image, parse_geometry(args.thumbnail), "thumbnail", args.filter
-        )
+        image = resize_image(image, parse_geometry(args.thumbnail), "thumbnail", args.filter)
     if args.sample:
         image = resize_image(image, parse_geometry(args.sample), "sample", args.filter)
     if args.scale:
@@ -641,9 +604,7 @@ def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Imag
     if args.crop:
         image = crop_image(image, parse_crop(args.crop), args.background)
     if args.extent:
-        image = extent_image(
-            image, parse_size(args.extent), args.background, args.gravity
-        )
+        image = extent_image(image, parse_size(args.extent), args.background, args.gravity)
     if args.rotate is not None:
         image = rotate_image(image, args.rotate, args.background)
     if args.flip:
@@ -703,9 +664,7 @@ def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Imag
         parts += [100.0] * (3 - len(parts))
         image = modulate_image(image, parts[0], parts[1], parts[2])
     if args.tint:
-        image = tint_image(
-            image, parse_color(args.tint[0]), parse_percent(args.tint[1])
-        )
+        image = tint_image(image, parse_color(args.tint[0]), parse_percent(args.tint[1]))
     if args.colorspace in {"gray", "grey"} or args.grayscale:
         alpha = image.getchannel("A")
         image = image.convert("L").convert("RGBA")
@@ -718,9 +677,7 @@ def apply_operations(image: Image.Image, args: argparse.Namespace) -> Image.Imag
     if args.threshold is not None:
         image = threshold_image(image, args.threshold)
     if args.adaptive_threshold:
-        image = adaptive_threshold_image(
-            image, int(args.adaptive_threshold[0]), args.adaptive_threshold[1]
-        )
+        image = adaptive_threshold_image(image, int(args.adaptive_threshold[0]), args.adaptive_threshold[1])
     if args.channel:
         image = channel_image(image, args.channel)
     if args.transparent or args.transparent_color:
@@ -811,9 +768,7 @@ def main() -> int:
     input_paths = [Path(value) for value in args.inputs]
     output = Path(args.output)
     if args.montage:
-        images = [
-            apply_operations(load_image(path, args.page), args) for path in input_paths
-        ]
+        images = [apply_operations(load_image(path, args.page), args) for path in input_paths]
         image = montage_images(
             images,
             args.tile,
@@ -821,17 +776,13 @@ def main() -> int:
             args.background,
         )
     elif args.append or args.append_horizontal:
-        images = [
-            apply_operations(load_image(path, args.page), args) for path in input_paths
-        ]
+        images = [apply_operations(load_image(path, args.page), args) for path in input_paths]
         image = append_images(images, vertical=args.append, background=args.background)
     else:
         image = apply_operations(load_image(input_paths[0], args.page), args)
         if args.composite:
             overlay = load_image(Path(args.composite), args.page)
-            image = composite_image(
-                image, overlay, args.geometry, args.gravity, args.compose, args.dissolve
-            )
+            image = composite_image(image, overlay, args.geometry, args.gravity, args.compose, args.dissolve)
     save_image(image, output, args.quality, args.background, args.compression)
     return 0
 

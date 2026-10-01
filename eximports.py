@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI script that scans a directory tree for Python files,
 extracts every top-level import statement using tree-sitter, filters out
@@ -34,9 +34,7 @@ from tree_sitter import Language, Parser
 
 POOL_SIZE: Final[int] = 8
 OUTPUT_FILE: Final[str] = "importz.txt"
-VALID_NODE_TYPES: Final[frozenset[str]] = frozenset(
-    {"import_statement", "import_from_statement"}
-)
+VALID_NODE_TYPES: Final[frozenset[str]] = frozenset({"import_statement", "import_from_statement"})
 STDLIB: Final[frozenset[str]] = frozenset(getattr(sys, "stdlib_module_names", ()))
 
 

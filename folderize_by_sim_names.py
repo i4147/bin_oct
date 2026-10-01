@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans a directory tree for .lua files and groups them into subfolders based on normalized base names (stripping ".lua" extensions, trailing "_<number>" suffixes, lowercasing, and replacing spaces/special characters with hyphens).
 It should accept a "--root" argument for the directory to scan and an "--apply" flag, where omitting the flag only previews the planned file moves while including it actually moves the files into their grouped folders, using a helper to avoid overwriting existing files by appending an incrementing counter to duplicate destination filenames.
 The script must exclude itself from the collected Lua files when scanning."""
@@ -26,9 +26,7 @@ def unique_destination(destination: Path) -> Path:
         return destination
     counter = 1
     while True:
-        candidate = destination.with_name(
-            f"{destination.stem}_{counter}{destination.suffix}"
-        )
+        candidate = destination.with_name(f"{destination.stem}_{counter}{destination.suffix}")
         if not candidate.exists():
             return candidate
         counter += 1
@@ -46,9 +44,7 @@ def find_lua_files(root: Path, script_path: Path) -> list[Path]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Group recursively collected Lua files into named folders."
-    )
+    parser = argparse.ArgumentParser(description="Group recursively collected Lua files into named folders.")
     parser.add_argument(
         "--apply",
         action="store_true",

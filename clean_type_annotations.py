@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Strip type annotations from Python source files.
 
 The script rewrites ``.py`` files in place using libcst, removing:
@@ -79,9 +79,7 @@ class TypeAnnotationRemover(cst.CSTTransformer):
     def leave_IndentedBlock(self, original_node, updated_node):
 
         if not updated_node.body:
-            return updated_node.with_changes(
-                body=[cst.SimpleStatementLine(body=[cst.Pass()])]
-            )
+            return updated_node.with_changes(body=[cst.SimpleStatementLine(body=[cst.Pass()])])
         return updated_node
 
 

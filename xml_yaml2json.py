@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 A unified CLI tool for converting TOML, XML, and YAML to JSON.
 
@@ -49,9 +49,7 @@ def write_json_file(
     sort_keys: bool = False,
 ) -> None:
     with output_path.open("w", encoding="utf-8") as f:
-        json.dump(
-            data, f, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys
-        )
+        json.dump(data, f, indent=indent, ensure_ascii=ensure_ascii, sort_keys=sort_keys)
 
 
 def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
@@ -63,9 +61,7 @@ def get_files_in_dir(directory: Path, extensions: list[str]) -> list[Path]:
 
 def process_toml(filepath: Path) -> None:
     if toml is None:
-        print(
-            "Error: 'toml' package is required. Run 'pip install toml'", file=sys.stderr
-        )
+        print("Error: 'toml' package is required. Run 'pip install toml'", file=sys.stderr)
         sys.exit(1)
 
     try:
@@ -135,9 +131,7 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
             root = tree.getroot()
             data = _element_to_dict_recursive(root)
             write_json_file(data, out_path)
-            print(
-                f"Successfully converted '{filepath}' to '{out_path}'", file=sys.stdout
-            )
+            print(f"Successfully converted '{filepath}' to '{out_path}'", file=sys.stdout)
 
     except OSError as e:
         print(f"error {e}", file=sys.stderr)
@@ -194,9 +188,7 @@ def main() -> int:
     toml_parser.add_argument("inputs", nargs="+", type=Path, help="Input TOML file(s)")
 
     xml_parser = subparsers.add_parser("xml", help="Convert XML files to JSON")
-    xml_parser.add_argument(
-        "inputs", nargs="*", type=Path, help="Input XML file(s) or directories"
-    )
+    xml_parser.add_argument("inputs", nargs="*", type=Path, help="Input XML file(s) or directories")
     xml_parser.add_argument(
         "--engine",
         choices=["xmltodict", "defusedxml"],
@@ -221,9 +213,7 @@ def main() -> int:
         help="Extensions to process if scanning a directory (default: .xml .svg)",
     )
 
-    yaml_parser = subparsers.add_parser(
-        "yaml", help="Convert YAML files/streams to JSON"
-    )
+    yaml_parser = subparsers.add_parser("yaml", help="Convert YAML files/streams to JSON")
     yaml_in_out = yaml_parser.add_argument_group("Input/Output")
     yaml_in_out.add_argument(
         "input",
@@ -308,13 +298,8 @@ def main() -> int:
             print("No XML files found to process.", file=sys.stderr)
             return 1
 
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=args.workers
-        ) as executor:
-            futures = [
-                executor.submit(process_xml_file, f, args.engine, args.delete_source)
-                for f in target_files
-            ]
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            futures = [executor.submit(process_xml_file, f, args.engine, args.delete_source) for f in target_files]
             concurrent.futures.wait(futures)
         return 0
 

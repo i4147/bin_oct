@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that merges multiple JSON dictionary files containing English-to-Persian (or Persian-to-English) translation key-value pairs into two unified output files, one per direction, while detecting each input file's language direction automatically by checking whether the majority of its keys match an English-word regex pattern.
 It should accept input file paths as command-line arguments or, if none are given, auto-discover all "*.json" files in the current directory, raising an error for empty files or files with an ambiguous mix of English and non-English keys (not clearly ≥90% or ≤10% English).
 Merged entries should be accumulated per direction using a dict-of-dicts structure (e.g., via defaultdict), later written out as JSON files with randomly generated filenames (using a "get_random_filename" helper) that avoid overwriting existing files via a uniquification helper.
@@ -38,8 +38,7 @@ def detect_direction(data: dict, path: Path) -> str:
     if ratio <= 0.1:
         return "fa"
     raise ValueError(
-        f"{path} has mixed key languages ({en_count}/{total} English-looking keys). "
-        "Refusing to merge ambiguous file."
+        f"{path} has mixed key languages ({en_count}/{total} English-looking keys). Refusing to merge ambiguous file."
     )
 
 
@@ -127,8 +126,7 @@ def main():
         json.dump(merged, f, ensure_ascii=False, indent=2)
     merged_files = len(input_paths) - len(skipped)
     logger.success(
-        f"Merged {merged_files} file(s) (direction: {direction}) "
-        f"→ {output_path} ({len(merged)} unique keys)"
+        f"Merged {merged_files} file(s) (direction: {direction}) → {output_path} ({len(merged)} unique keys)"
     )
     multi = sum(1 for v in merged.values() if len(v) > 1)
     if multi:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans the current working directory for source code files (based on file suffix mappings such as .ts, .tsx, .js, .cpp, etc.) and parses each one using the appropriate tree-sitter language grammar, skipping common build/dependency/VCS directories like .git, node_modules, __pycache__, dist, and build.
 It should use a multiprocessing Pool (with a configurable worker count) to parse files in parallel for performance, and load the correct tree-sitter language module dynamically per file extension via a dataclass-based language specification table.
 The script should handle file access safely (checking file type/permissions via os and stat), collect and report parsing results or errors for each processed file, and exit with an appropriate status code reflecting overall success or failure."""
@@ -83,9 +83,7 @@ def language_spec_for(path: Path) -> LanguageSpec | None:
 
 
 def is_source_file(path: Path) -> bool:
-    return (
-        not path.is_symlink() and path.is_file() and language_spec_for(path) is not None
-    )
+    return not path.is_symlink() and path.is_file() and language_spec_for(path) is not None
 
 
 def iter_source_files(root: Path) -> list[Path]:
@@ -95,9 +93,7 @@ def iter_source_files(root: Path) -> list[Path]:
             top_down=True,
             follow_symlinks=False,
         ):
-            directory_names[:] = sorted(
-                name for name in directory_names if name not in SKIP_DIRECTORY_NAMES
-            )
+            directory_names[:] = sorted(name for name in directory_names if name not in SKIP_DIRECTORY_NAMES)
             for file_name in file_names:
                 path = directory / file_name
                 try:
@@ -214,11 +210,7 @@ def main() -> int:
                 changed_files += 1
                 comments_removed += removed_count
                 print(f"{path}: removed {removed_count} comment(s)")
-    print(
-        f"\nFiles scanned: {len(files)}"
-        f"\nChanged files: {changed_files}"
-        f"\nComments removed: {comments_removed}"
-    )
+    print(f"\nFiles scanned: {len(files)}\nChanged files: {changed_files}\nComments removed: {comments_removed}")
     return 1 if failures else 0
 
 

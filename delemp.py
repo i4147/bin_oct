@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python utility that recursively scans a directory (or a given list of files) and strips unwanted blank lines from text files, while safely skipping binary files.
 It should use a custom is_binary/fsz helper module (dh) plus its own signature-based and heuristic binary-detection logic (checking common magic bytes and non-text byte ratios in the first 8KB, using mmap for large files above a 1MB threshold for efficiency).
 The script should support two cleanup modes: completely removing all blank lines, or collapsing consecutive blank lines down to a single blank line, and it should process multiple files concurrently using a ProcessPoolExecutor for speed.
@@ -54,9 +54,7 @@ BINARY_SIGNATURES = (
     b"\xd4\xc3\xb2\xa1",
     b"\xa1\xb2\xc3\xd4",
 )
-_TEXT_CHARS = bytearray(
-    {7, 8, 9, 10, 12, 13, 27} | set(range(32, 127)) | set(range(128, 256))
-)
+_TEXT_CHARS = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(32, 127)) | set(range(128, 256)))
 _BINARY_CHECK_SIZE = 8192
 
 
@@ -80,9 +78,7 @@ def preserve_single_blank_lines(text: str) -> str:
     return "".join(result_lines)
 
 
-def process_small_file(
-    file_path: Path, preserve_single: bool, remove_spaces: bool
-) -> tuple[str, int, int, str]:
+def process_small_file(file_path: Path, preserve_single: bool, remove_spaces: bool) -> tuple[str, int, int, str]:
     content = file_path.read_text(encoding="utf-8")
     total_lines = len(content.splitlines())
     if preserve_single:
@@ -96,9 +92,7 @@ def process_small_file(
     return (str(file_path), total_lines, removed_lines, "processed")
 
 
-def process_large_file_mmap(
-    file_path: Path, preserve_single: bool, remove_spaces: bool
-) -> tuple[str, int, int, str]:
+def process_large_file_mmap(file_path: Path, preserve_single: bool, remove_spaces: bool) -> tuple[str, int, int, str]:
     try:
         with open(file_path, "r+b") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
@@ -162,26 +156,16 @@ def collect_files(paths: list[Path]) -> list[tuple[Path, Path]]:
                 files.append((path.parent, path))
         elif path.is_dir():
             for file_path in path.rglob("*"):
-                if (
-                    file_path.is_file()
-                    and not file_path.is_symlink()
-                    and ".git" not in file_path.parts
-                ):
+                if file_path.is_file() and not file_path.is_symlink() and ".git" not in file_path.parts:
                     files.append((path, file_path))
         else:
-            print(
-                f"{YELLOW}⚠ Warning:{RESET} '{path}' is not a file or directory, skipping."
-            )
+            print(f"{YELLOW}⚠ Warning:{RESET} '{path}' is not a file or directory, skipping.")
     return files
 
 
-def print_header(
-    paths: list[Path], preserve_single: bool, remove_spaces: bool, mmap_threshold: int
-):
+def print_header(paths: list[Path], preserve_single: bool, remove_spaces: bool, mmap_threshold: int):
     print(f"\n{BOLD}{CYAN}╔{'═' * 40}╗{RESET}")
-    print(
-        f"{BOLD}{CYAN}║{RESET}         {BOLD}Blank Line Remover{RESET}                    {BOLD}{CYAN}║{RESET}"
-    )
+    print(f"{BOLD}{CYAN}║{RESET}         {BOLD}Blank Line Remover{RESET}                    {BOLD}{CYAN}║{RESET}")
     print(f"{BOLD}{CYAN}╚{'═' * 40}╝{RESET}")
     print(f"{BOLD}Processing paths:{RESET}")
     for path in paths:
@@ -210,9 +194,7 @@ def print_results(
     processed = [(p, t, r, s) for p, t, r, s in results if s.startswith("processed")]
     skipped_binary = [(p, t, r, s) for p, t, r, s in results if s == "binary"]
     errors = [
-        (p, t, r, s)
-        for p, t, r, s in results
-        if s not in ("processed", "binary") and not s.startswith("processed")
+        (p, t, r, s) for p, t, r, s in results if s not in ("processed", "binary") and not s.startswith("processed")
     ]
     large_files_count = sum(1 for _, _, _, s in processed if "[mmap]" in s)
     if processed:
@@ -221,23 +203,17 @@ def print_results(
             if removed > 0:
                 method_indicator = f" {DIM}[mmap]{RESET}" if "[mmap]" in status else ""
                 print(f"  {GREEN}●{RESET} {path}{method_indicator}")
-                print(
-                    f"    {DIM}Lines: {total_lines:,}  →  Removed: {GREEN}{removed:,}{RESET}"
-                )
+                print(f"    {DIM}Lines: {total_lines:,}  →  Removed: {GREEN}{removed:,}{RESET}")
             else:
                 print(f"  {DIM}○{RESET} {path} {DIM}(no blank lines found){RESET}")
         print()
     if skipped_binary:
         print(f"{BOLD}{YELLOW}⊘ Skipped binary files: {len(skipped_binary)}{RESET}")
-        display_count = (
-            len(skipped_binary) if show_all_binary else min(5, len(skipped_binary))
-        )
+        display_count = len(skipped_binary) if show_all_binary else min(5, len(skipped_binary))
         for path, _, _, _ in skipped_binary[:display_count]:
             print(f"  {YELLOW}⊘{RESET} {path}")
         if len(skipped_binary) > display_count:
-            print(
-                f"  {DIM}... and {len(skipped_binary) - display_count} more binary files{RESET}"
-            )
+            print(f"  {DIM}... and {len(skipped_binary) - display_count} more binary files{RESET}")
         print()
     if errors:
         print(f"{BOLD}{RED}✗ Errors:{RESET}\n")
@@ -252,9 +228,7 @@ def print_results(
     if large_files_count > 0:
         print(f"    Large files (mmap):  {BOLD}{large_files_count:,}{RESET}")
     print(f"  Binary files skipped:  {BOLD}{YELLOW}{len(skipped_binary):,}{RESET}")
-    print(
-        f"  Files modified:        {BOLD}{sum(1 for r in processed if r[2] > 0):,}{RESET}"
-    )
+    print(f"  Files modified:        {BOLD}{sum(1 for r in processed if r[2] > 0):,}{RESET}")
     print(f"  Lines removed:         {BOLD}{GREEN}{total_removed:,}{RESET}")
     if errors:
         print(f"  Errors:                {BOLD}{RED}{len(errors):,}{RESET}")
@@ -316,10 +290,7 @@ def main():
     if not file_list:
         print(f"{YELLOW}No files found to process.{RESET}")
         return
-    process_args = [
-        (base_dir, file_path, args.preserve_single, args.space)
-        for base_dir, file_path in file_list
-    ]
+    process_args = [(base_dir, file_path, args.preserve_single, args.space) for base_dir, file_path in file_list]
     max_workers = args.workers or min(32, (os.cpu_count() or 1) + 4)
     results = []
     total_removed = 0
@@ -328,13 +299,9 @@ def main():
     error_count = 0
     large_count = 0
     print(f"{BOLD}Processing files...{RESET}")
-    print(
-        f"{DIM}(Using {max_workers} worker processes, mmap for files > {fsz(MMAP_THRESHOLD)}){RESET}\n"
-    )
+    print(f"{DIM}(Using {max_workers} worker processes, mmap for files > {fsz(MMAP_THRESHOLD)}){RESET}\n")
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_file = {
-            executor.submit(process_file, arg): arg[1] for arg in process_args
-        }
+        future_to_file = {executor.submit(process_file, arg): arg[1] for arg in process_args}
         completed = 0
         for future in as_completed(future_to_file):
             completed += 1
@@ -354,15 +321,9 @@ def main():
             except Exception as e:
                 error_count += 1
                 results.append((str(future_to_file[future]), 0, 0, f"error: {e}"))
-            binary_info = (
-                f" {YELLOW}({skipped_count} binary){RESET}" if skipped_count > 0 else ""
-            )
-            large_info = (
-                f" {CYAN}({large_count} mmap){RESET}" if large_count > 0 else ""
-            )
-            error_info = (
-                f" {RED}({error_count} errors){RESET}" if error_count > 0 else ""
-            )
+            binary_info = f" {YELLOW}({skipped_count} binary){RESET}" if skipped_count > 0 else ""
+            large_info = f" {CYAN}({large_count} mmap){RESET}" if large_count > 0 else ""
+            error_info = f" {RED}({error_count} errors){RESET}" if error_count > 0 else ""
             print(
                 f"\r  Progress: {completed:,}/{total_files:,} files processed{binary_info}{large_info}{error_info}",
                 end="",

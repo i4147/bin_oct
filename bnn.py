@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that recursively finds files under one or more given input paths and performs search-and-replace of a specified string across them, skipping directories, symlinks, and (optionally) binary files by sniffing for null bytes.
 It should process files in parallel using joblib, write changes safely via a temporary file before replacing the original, and track per-file statistics (success/failure, number of replacements, size before/after) in a FileStats dataclass, logging a formatted summary line for each processed file.
 Include argparse-based CLI input handling and logging configuration for reporting progress and errors."""
@@ -30,9 +30,7 @@ class FileStats:
         if not self.success:
             return f"✗ {relpath}: {self.error_msg}"
         size_delta = self.new_size - self.original_size
-        size_change = (
-            f"({size_delta:+d} bytes)" if size_delta != 0 else "(no size change)"
-        )
+        size_change = f"({size_delta:+d} bytes)" if size_delta != 0 else "(no size change)"
         return f"✓ {relpath}: {self.replacements} replacements {size_change}"
 
 
@@ -166,9 +164,7 @@ Examples:
         action="store_true",
         help="Process binary files (not recommended)",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Show detailed logging"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed logging")
     args = parser.parse_args()
     if args.verbose:
         logger.setLevel(logging.DEBUG)
@@ -210,9 +206,7 @@ Examples:
             total_size_change += stats.new_size - stats.original_size
     failed = len(results) - successful
     print("=" * 40)
-    print(
-        f"Summary: {successful} succeeded, {failed} failed out of {len(results)} files"
-    )
+    print(f"Summary: {successful} succeeded, {failed} failed out of {len(results)} files")
     print(f"Total replacements: {total_replacements}")
     print(f"Total size change: {total_size_change:+d} bytes")
     print("=" * 40 + "\n")

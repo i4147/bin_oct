@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads a JSON file of quotes located at /sdcard/data/quotes/quotes.json, where each entry contains a "quote" and an "author" field, and selects one entry at random to display in the terminal.
 It should gracefully do nothing if the file is missing, contains invalid JSON, or is empty.
 The output should be formatted with horizontal divider lines sized to the current terminal width, with the quote and author printed in colored, blinking ANSI text.

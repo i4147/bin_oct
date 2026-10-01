@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that lists files and directories in the current working directory whose names start with a given prefix.
 The prefix should be supplied as a single command-line argument; if it is missing or empty, print a usage message to stderr and exit with status code 1.
 The script should iterate over entries in the current directory, skip any that are symbolic links, and print the names of the remaining entries whose names start with the specified prefix, one per line."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that lists the contents of the current working directory in a colorized, blinking terminal output, using helper functions `fsz` and `gsz` from a local `dh` module to compute human-readable and raw sizes.
 It should separate directories from files/symlinks, sort all entries by creation time (newest first), and print files/symlinks before directories, showing each entry's truncated name (max 24 chars), formatted size (right-padded based on digit count), and creation timestamp in "MM/DD/YY-HH:MM" format.
 Symlinks should be highlighted in magenta, regular files in green, directories in blue, sizes in cyan, and timestamps in yellow, all using ANSI escape codes with blink formatting."""

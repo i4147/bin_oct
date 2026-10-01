@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a terminal-based interactive disk usage analyzer. The script scans a
 target directory recursively, computes the total size of each entry, and
@@ -98,9 +98,7 @@ class DiskAnalyzer:
 
         results: list[FSItem] = []
         with Pool(processes=POOL_SIZE) as pool:
-            async_results = [
-                pool.apply_async(_scan_recursive, (str(p),)) for p in top_level
-            ]
+            async_results = [pool.apply_async(_scan_recursive, (str(p),)) for p in top_level]
             for ar in async_results:
                 try:
                     results.append(ar.get())

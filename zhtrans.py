@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_translate.py — unified Chinese→English translation utility.
 
@@ -262,10 +262,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
 
     chinese_lines = [ln for ln in lines if has_chinese(ln)]
     non_chinese = [ln for ln in lines if not has_chinese(ln)]
-    print(
-        f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, "
-        f"{len(non_chinese)} already English/skipped"
-    )
+    print(f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, {len(non_chinese)} already English/skipped")
 
     if not chinese_lines:
         print(f"No Chinese lines to translate in {input_path.name}")
@@ -273,14 +270,10 @@ def cmd_chunked(args: argparse.Namespace) -> int:
 
     chunks = chunk_lines(chinese_lines, args.chunk_size)
     print(
-        f"Created {len(chunks)} chunks from {len(chinese_lines)} Chinese lines "
-        f"(max {args.chunk_size} chars per chunk)"
+        f"Created {len(chunks)} chunks from {len(chinese_lines)} Chinese lines (max {args.chunk_size} chars per chunk)"
     )
 
-    tasks = [
-        (chunk, args.retries, args.retry_delay, args.source, args.target)
-        for chunk in chunks
-    ]
+    tasks = [(chunk, args.retries, args.retry_delay, args.source, args.target) for chunk in chunks]
     translations: dict = {}
 
     with Pool(processes=args.workers) as pool:
@@ -296,8 +289,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                             print(f"{original} -> {translated_lines[i]}")
                         else:
                             logger.error(
-                                "Line count mismatch in chunk, missing "
-                                "translation for: {}",
+                                "Line count mismatch in chunk, missing translation for: {}",
                                 original,
                             )
                 else:
@@ -315,8 +307,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     try:
         write_inplace(input_path, lines, translations)
         print(
-            f"Updated {input_path.name}: translated {len(translations)} lines, "
-            f"kept {len(non_chinese)} lines unchanged"
+            f"Updated {input_path.name}: translated {len(translations)} lines, kept {len(non_chinese)} lines unchanged"
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Error updating input file: {}", exc)
@@ -342,10 +333,7 @@ def cmd_line(args: argparse.Namespace) -> int:
 
     chinese_lines = [ln for ln in lines if has_chinese(ln)]
     non_chinese = [ln for ln in lines if not has_chinese(ln)]
-    print(
-        f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, "
-        f"{len(non_chinese)} already English/skipped"
-    )
+    print(f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, {len(non_chinese)} already English/skipped")
 
     if not chinese_lines:
         print(f"No Chinese lines to translate in {input_path.name}")
@@ -354,10 +342,7 @@ def cmd_line(args: argparse.Namespace) -> int:
     print(f"Starting translation with {args.workers} workers...")
     translations: dict = {}
 
-    tasks = [
-        (ln, args.retries, args.retry_delay, args.source, args.target)
-        for ln in chinese_lines
-    ]
+    tasks = [(ln, args.retries, args.retry_delay, args.source, args.target) for ln in chinese_lines]
     with Pool(processes=args.workers) as pool:
         results = [pool.apply_async(_worker_single_line, (t,)) for t in tasks]
         for original, async_res in zip(chinese_lines, results):
@@ -374,8 +359,7 @@ def cmd_line(args: argparse.Namespace) -> int:
     try:
         write_inplace(input_path, lines, translations)
         print(
-            f"Updated {input_path.name}: translated {len(translations)} lines, "
-            f"kept {len(non_chinese)} lines unchanged"
+            f"Updated {input_path.name}: translated {len(translations)} lines, kept {len(non_chinese)} lines unchanged"
         )
     except Exception as exc:  # noqa: BLE001
         logger.error("Error updating input file: {}", exc)
@@ -414,10 +398,7 @@ def cmd_walk(args: argparse.Namespace) -> int:
         print("No files to process.")
         return 0
 
-    print(
-        f"Found {len(files)} files. Using {args.workers} workers "
-        f"(Threshold: {args.threshold * 100:.0f}%)"
-    )
+    print(f"Found {len(files)} files. Using {args.workers} workers (Threshold: {args.threshold * 100:.0f}%)")
 
     tasks = [
         (
@@ -451,21 +432,14 @@ def cmd_walk(args: argparse.Namespace) -> int:
     return 0
 
 
-def _translate_long_text(
-    text: str, translator: GoogleTranslator, chunk_size: int
-) -> str:
+def _translate_long_text(text: str, translator: GoogleTranslator, chunk_size: int) -> str:
     if not text:
         return ""
-    parts = [
-        translator.translate(text[i : i + chunk_size]) or ""
-        for i in range(0, len(text), chunk_size)
-    ]
+    parts = [translator.translate(text[i : i + chunk_size]) or "" for i in range(0, len(text), chunk_size)]
     return "".join(parts)
 
 
-def _translate_python_source(
-    text: str, translator: GoogleTranslator, chunk_size: int
-) -> str:
+def _translate_python_source(text: str, translator: GoogleTranslator, chunk_size: int) -> str:
     lines = text.splitlines(keepends=True)
     out: list[str] = []
     in_doc = False
@@ -539,9 +513,7 @@ def cmd_whole(args: argparse.Namespace) -> int:
         translated = _translate_long_text(text, translator, args.chunk_size)
 
     output_path = (
-        Path(args.output)
-        if args.output
-        else input_path.with_name(f"{input_path.stem}_eng{input_path.suffix}")
+        Path(args.output) if args.output else input_path.with_name(f"{input_path.stem}_eng{input_path.suffix}")
     )
     output_path.write_text(translated, encoding="utf-8")
     print(f"Translated ({source_lang} -> {args.target}): {output_path}")
@@ -576,12 +548,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=5000,
         help="Max characters per chunk (default: 5000).",
     )
-    p.add_argument(
-        "--workers", "-w", type=int, default=8, help="Worker processes (default: 8)."
-    )
-    p.add_argument(
-        "--retries", type=int, default=3, help="Retry attempts per chunk (default: 3)."
-    )
+    p.add_argument("--workers", "-w", type=int, default=8, help="Worker processes (default: 8).")
+    p.add_argument("--retries", type=int, default=3, help="Retry attempts per chunk (default: 3).")
     p.add_argument(
         "--retry-delay",
         type=float,
@@ -597,12 +565,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="In-place translate one line per API call (was transchin.py).",
     )
     p.add_argument("input_file", help="File to translate in place.")
-    p.add_argument(
-        "--workers", "-w", type=int, default=8, help="Worker processes (default: 8)."
-    )
-    p.add_argument(
-        "--retries", type=int, default=3, help="Retry attempts per line (default: 3)."
-    )
+    p.add_argument("--workers", "-w", type=int, default=8, help="Worker processes (default: 8).")
+    p.add_argument("--retries", type=int, default=3, help="Retry attempts per line (default: 3).")
     p.add_argument(
         "--retry-delay",
         type=float,
@@ -615,8 +579,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser(
         "walk",
-        help="Walk files/directories and translate Chinese lines in place "
-        "(was dtransline_chinese.py).",
+        help="Walk files/directories and translate Chinese lines in place (was dtransline_chinese.py).",
     )
     p.add_argument("paths", nargs="+", help="Files or directories to process.")
     p.add_argument(
@@ -647,15 +610,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.3,
         help="Minimum CJK ratio for a line to be translated (default: 0.3).",
     )
-    p.add_argument(
-        "--retries", type=int, default=3, help="Retry attempts per line (default: 3)."
-    )
+    p.add_argument("--retries", type=int, default=3, help="Retry attempts per line (default: 3).")
     p.add_argument(
         "--retry-delay",
         type=float,
         default=1.5,
-        help="Base retry delay in seconds; multiplied by attempt "
-        "number (default: 1.5).",
+        help="Base retry delay in seconds; multiplied by attempt number (default: 1.5).",
     )
     p.add_argument(
         "--success-delay",
@@ -684,15 +644,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=4500,
         help="Characters per translation call (default: 4500).",
     )
-    p.add_argument(
-        "--output", default=None, help="Output path (default: <stem>_eng<suffix>)."
-    )
+    p.add_argument("--output", default=None, help="Output path (default: <stem>_eng<suffix>).")
     p.add_argument(
         "--code-mode",
         choices=("auto", "on", "off"),
         default="auto",
-        help=".py-aware docstring/comment handling: "
-        "'auto' enables it for *.py files (default).",
+        help=".py-aware docstring/comment handling: 'auto' enables it for *.py files (default).",
     )
     p.set_defaults(func=cmd_whole)
 

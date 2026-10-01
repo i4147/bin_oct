@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pydevkit.py - Unified Python/Rust project scaffolding & packaging toolkit.
 
@@ -283,11 +283,7 @@ def _readme_content(readme: Any, root: Path) -> tuple[str, str]:
         return readme.get("text", ""), content_type
     if isinstance(readme, str):
         suffix = Path(readme).suffix.lower()
-        ctype = (
-            "text/markdown"
-            if suffix in README_SUFFIXES
-            else ("text/x-rst" if suffix == ".rst" else "text/plain")
-        )
+        ctype = "text/markdown" if suffix in README_SUFFIXES else ("text/x-rst" if suffix == ".rst" else "text/plain")
         return _read_optional_file(root / readme), ctype
     return "", "text/plain"
 
@@ -365,9 +361,7 @@ def extract_pep621_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
         gui_scripts=dict(v1.get("gui-scripts", {}) or {}),
         entry_points=entry_points,
         dependencies=list(v1.get("dependencies", []) or []),
-        optional_dependencies={
-            k: list(v) for k, v in (v1.get("optional-dependencies") or {}).items()
-        },
+        optional_dependencies={k: list(v) for k, v in (v1.get("optional-dependencies") or {}).items()},
         build_backend=str(bs.get("build-backend", "")),
         build_requires=list(bs.get("requires", []) or []),
         tool=tool,
@@ -396,9 +390,7 @@ def extract_poetry_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
                 token += version
             deps.append(token)
     readme = poetry.get("readme", "")
-    readme_content, readme_ctype = (
-        _readme_content(readme, root) if readme else ("", "text/plain")
-    )
+    readme_content, readme_ctype = _readme_content(readme, root) if readme else ("", "text/plain")
     return ProjectMeta(
         name=str(poetry.get("name", "")),
         version=str(poetry.get("version", "0.0.0")),
@@ -466,9 +458,7 @@ def render_package_finder(package_name: str | None) -> str:
     )
 
 
-def _setup_kwargs_simple(
-    meta: ProjectMeta, package_name: str | None, *, use_src: bool
-) -> str:
+def _setup_kwargs_simple(meta: ProjectMeta, package_name: str | None, *, use_src: bool) -> str:
     lines: list[str] = []
     lines.append(f"    name={meta.name!r},")
     lines.append(f"    version={meta.version!r},")
@@ -502,13 +492,9 @@ def _setup_kwargs_simple(
         lines.append(f"    extras_require={meta.optional_dependencies!r},")
     entry_points: dict[str, list[str]] = {}
     if meta.scripts:
-        entry_points["console_scripts"] = [
-            f"{k} = {v}" for k, v in meta.scripts.items()
-        ]
+        entry_points["console_scripts"] = [f"{k} = {v}" for k, v in meta.scripts.items()]
     if meta.gui_scripts:
-        entry_points["gui_scripts"] = [
-            f"{k} = {v}" for k, v in meta.gui_scripts.items()
-        ]
+        entry_points["gui_scripts"] = [f"{k} = {v}" for k, v in meta.gui_scripts.items()]
     for sec, items in meta.entry_points.items():
         entry_points[sec] = [f"{k} = {v}" for k, v in items.items()]
     if entry_points:
@@ -568,13 +554,9 @@ def render_setup_py_detailed(
 
     entry_points: dict[str, list[str]] = {}
     if meta.scripts:
-        entry_points["console_scripts"] = [
-            f"{k} = {v}" for k, v in meta.scripts.items()
-        ]
+        entry_points["console_scripts"] = [f"{k} = {v}" for k, v in meta.scripts.items()]
     if meta.gui_scripts:
-        entry_points["gui_scripts"] = [
-            f"{k} = {v}" for k, v in meta.gui_scripts.items()
-        ]
+        entry_points["gui_scripts"] = [f"{k} = {v}" for k, v in meta.gui_scripts.items()]
     for sec, items in meta.entry_points.items():
         entry_points[sec] = [f"{k} = {v}" for k, v in items.items()]
 
@@ -640,9 +622,7 @@ def render_setup_py_detailed(
     if backend == "setuptools" and meta.tool.get("setuptools", {}).get("ext-modules"):
         exts = []
         for ext in meta.tool["setuptools"]["ext-modules"]:
-            exts.append(
-                f"Extension({ext['name']!r}, sources={ext.get('sources', [])!r})"
-            )
+            exts.append(f"Extension({ext['name']!r}, sources={ext.get('sources', [])!r})")
         ext_block = f"ext_modules = [\n    " + ",\n    ".join(exts) + "\n]\n\n"
     return header + ext_block + "setup(\n" + "\n".join(lines) + "\n)\n"
 
@@ -650,9 +630,7 @@ def render_setup_py_detailed(
 def _detect_ext_backend(meta: ProjectMeta) -> str:
     if meta.tool.get("setuptools", {}).get("ext-modules"):
         return "setuptools"
-    lowered = " ".join(
-        [meta.build_backend.lower(), *(str(r).lower() for r in meta.build_requires)]
-    )
+    lowered = " ".join([meta.build_backend.lower(), *(str(r).lower() for r in meta.build_requires)])
     if "scikit-build" in lowered:
         return "scikit-build"
     if "meson" in lowered:
@@ -765,15 +743,11 @@ def detect_entry_points(project_dir: Path, package_name: str) -> list[dict[str, 
             {
                 "module": f"{package_name}.cli",
                 "function": guess_func(pkg_cli),
-                "script_name": package_name
-                if not pkg_main.exists()
-                else f"{package_name}-cli",
+                "script_name": package_name if not pkg_main.exists() else f"{package_name}-cli",
             }
         )
     if not entry and root_main.exists():
-        entry.append(
-            {"module": "__main__", "function": "main", "script_name": package_name}
-        )
+        entry.append({"module": "__main__", "function": "main", "script_name": package_name})
     if not entry and root_cli.exists():
         entry.append(
             {
@@ -811,9 +785,7 @@ def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
     if entry_points:
         ep_block = "    entry_points={\n        'console_scripts': [\n"
         for ep in entry_points:
-            ep_block += (
-                f"            '{ep['script_name']}={ep['module']}:{ep['function']}',\n"
-            )
+            ep_block += f"            '{ep['script_name']}={ep['module']}:{ep['function']}',\n"
         ep_block += "        ],\n    },\n"
     req_block = "    install_requires=[],\n"
     if requirements:
@@ -824,8 +796,7 @@ def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
     readme_block = ""
     if (project_dir / "README.md").exists():
         readme_block = (
-            "    long_description=open('README.md').read(),\n"
-            "    long_description_content_type='text/markdown',\n"
+            "    long_description=open('README.md').read(),\n    long_description_content_type='text/markdown',\n"
         )
     return (
         "from setuptools import setup, find_packages\n\n"
@@ -891,15 +862,10 @@ def _find_extensions(root: Path) -> list[str]:
     return out
 
 
-def render_setup_py_from_wheel(
-    meta: dict[str, Any], ext_modules: list[str], entry_points: dict[str, list[str]]
-) -> str:
+def render_setup_py_from_wheel(meta: dict[str, Any], ext_modules: list[str], entry_points: dict[str, list[str]]) -> str:
     ext_block = ""
     if ext_modules:
-        lines = ",\n".join(
-            f"    Extension({m!r}, sources=[{m.replace('.', '/')!r} + '.*'])"
-            for m in ext_modules
-        )
+        lines = ",\n".join(f"    Extension({m!r}, sources=[{m.replace('.', '/')!r} + '.*'])" for m in ext_modules)
         ext_block = f"from setuptools import Extension\n\next_modules = [\n{lines}\n]\n"
     else:
         ext_block = "ext_modules = []\n"
@@ -1088,14 +1054,10 @@ def scaffold_setuptools_src(args: argparse.Namespace, target: Path) -> None:
     github = user.get("github_username", "")
     url = args.url or (f"https://github.com/{github}/{name}" if github else "")
 
-    description_line = (
-        f'description = "{args.description}"\n' if args.description else ""
-    )
+    description_line = f'description = "{args.description}"\n' if args.description else ""
     email_part = f', email = "{email}"' if email else ""
     urls_block = f'\n[project.urls]\nHomepage = "{url}"\n' if url else ""
-    scripts_block = (
-        f'\n[project.scripts]\n{name} = "{module}:main"\n' if args.simple_cli else ""
-    )
+    scripts_block = f'\n[project.scripts]\n{name} = "{module}:main"\n' if args.simple_cli else ""
 
     (target / "pyproject.toml").write_text(
         PYPROJECT_SETUPTOOLS_SRC.format(
@@ -1115,9 +1077,7 @@ def scaffold_setuptools_src(args: argparse.Namespace, target: Path) -> None:
     (target / "LICENSE").write_text("", encoding="utf-8")
     pkg_dir = target / "src" / module
     pkg_dir.mkdir(parents=True, exist_ok=True)
-    (pkg_dir / "__init__.py").write_text(
-        f'__version__ = "{version}"\n', encoding="utf-8"
-    )
+    (pkg_dir / "__init__.py").write_text(f'__version__ = "{version}"\n', encoding="utf-8")
     if args.simple_cli:
         (pkg_dir / "__main__.py").write_text(
             f'"""CLI entry point for {name}."""\n'
@@ -1134,9 +1094,7 @@ def scaffold_setuptools_src(args: argparse.Namespace, target: Path) -> None:
     tests.mkdir(exist_ok=True)
     (tests / "__init__.py").write_text("", encoding="utf-8")
     (tests / f"test_{module}.py").write_text(
-        f"def test_version():\n"
-        f"    from {module} import __version__\n"
-        f'    assert __version__ == "{version}"\n',
+        f'def test_version():\n    from {module} import __version__\n    assert __version__ == "{version}"\n',
         encoding="utf-8",
     )
 
@@ -1150,9 +1108,7 @@ def scaffold_hatchling_typer(args: argparse.Namespace, target: Path) -> None:
     email = args.email or user.get("email", "author@example.com")
 
     (target / "pyproject.toml").write_text(
-        PYPROJECT_HATCHLING_TYPER.format(
-            name=name, module=module, author=author, email=email
-        ),
+        PYPROJECT_HATCHLING_TYPER.format(name=name, module=module, author=author, email=email),
         encoding="utf-8",
     )
     (target / "README.md").write_text(
@@ -1167,9 +1123,7 @@ def scaffold_hatchling_typer(args: argparse.Namespace, target: Path) -> None:
     )
     pkg_dir = target / "src" / module
     pkg_dir.mkdir(parents=True, exist_ok=True)
-    (pkg_dir / "__init__.py").write_text(
-        f'__version__ = "{version}"\n', encoding="utf-8"
-    )
+    (pkg_dir / "__init__.py").write_text(f'__version__ = "{version}"\n', encoding="utf-8")
     (pkg_dir / "cli.py").write_text(
         "import typer\n"
         "from rich import print\n\n"
@@ -1229,13 +1183,9 @@ def scaffold_setuptools_cfg(args: argparse.Namespace, target: Path) -> None:
     if url:
         author_lines += f"url = {url}\n"
 
-    (target / "setup.py").write_text(
-        '__import__("setuptools").setup()\n', encoding="utf-8"
-    )
+    (target / "setup.py").write_text('__import__("setuptools").setup()\n', encoding="utf-8")
     (target / "setup.cfg").write_text(
-        SETUP_CFG_TEMPLATE.format(
-            name=name, version=args.version, author_lines=author_lines
-        ),
+        SETUP_CFG_TEMPLATE.format(name=name, version=args.version, author_lines=author_lines),
         encoding="utf-8",
     )
     (target / "pyproject.toml").write_text(
@@ -1293,9 +1243,7 @@ def cmd_make_setup(args: argparse.Namespace) -> int:
             content = render_setup_py_runtime(meta)
         elif args.style == "detailed":
             cfg = parse_setup_cfg(root / "setup.cfg") if args.with_cfg else None
-            content = render_setup_py_detailed(
-                meta, root, cfg=cfg, with_cfg=args.with_cfg
-            )
+            content = render_setup_py_detailed(meta, root, cfg=cfg, with_cfg=args.with_cfg)
         else:
             content = render_setup_py_simple(meta, root)
         out = root / "setup.py"
@@ -1330,9 +1278,7 @@ def cmd_make_setup(args: argparse.Namespace) -> int:
             die(str(exc))
         entry_points = _read_wheel_entry_points(tmp)
         extensions = _find_extensions(tmp)
-        out_dir = (
-            Path(args.output_dir) if args.output_dir else Path("output") / meta["name"]
-        )
+        out_dir = Path(args.output_dir) if args.output_dir else Path("output") / meta["name"]
         if out_dir.exists() and not args.force:
             die(f"{out_dir} exists (use --force)")
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -1342,8 +1288,7 @@ def cmd_make_setup(args: argparse.Namespace) -> int:
             encoding="utf-8",
         )
         (out_dir / "pyproject.toml").write_text(
-            '[build-system]\nrequires = ["setuptools>=61", "wheel"]\n'
-            'build-backend = "setuptools.build_meta"\n',
+            '[build-system]\nrequires = ["setuptools>=61", "wheel"]\nbuild-backend = "setuptools.build_meta"\n',
             encoding="utf-8",
         )
         info(f"Generated setup.py for {meta['name']} in {out_dir}")
@@ -1507,9 +1452,7 @@ def cmd_dev(args: argparse.Namespace) -> int:
     # Pre-commit
     if args.install_hooks:
         try:
-            (project / ".pre-commit-config.yaml").write_text(
-                PRE_COMMIT_CONFIG, encoding="utf-8"
-            )
+            (project / ".pre-commit-config.yaml").write_text(PRE_COMMIT_CONFIG, encoding="utf-8")
             subprocess.run(["pre-commit", "install"], cwd=project, check=True)
             info("  Pre-commit hooks installed")
         except Exception as exc:  # noqa: BLE001
@@ -1625,9 +1568,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["simple", "detailed", "runtime"],
         default="detailed",
     )
-    p_ms.add_argument(
-        "--with-cfg", action="store_true", help="Read setup.cfg (detailed style only)."
-    )
+    p_ms.add_argument("--with-cfg", action="store_true", help="Read setup.cfg (detailed style only).")
     p_ms.add_argument("--package", default=None, help="Package name for --from dir.")
     p_ms.add_argument("--output-dir", default=None, help="Output dir for --from wheel.")
     p_ms.add_argument("--force", action="store_true")

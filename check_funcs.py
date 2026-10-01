@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Check Python files in current directory and report definitions
 that are not exported in __init__.py
@@ -67,9 +67,7 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
                 if isinstance(target, ast.Name) and target.id == "__all__":
                     if isinstance(node.value, (ast.List, ast.Tuple)):
                         for elt in node.value.elts:
-                            if isinstance(elt, ast.Constant) and isinstance(
-                                elt.value, str
-                            ):
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                 exported.add(elt.value)
 
         elif isinstance(node, ast.ImportFrom):
@@ -104,11 +102,7 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
 
     missing = {}
 
-    python_files = [
-        f
-        for f in directory.glob("*.py")
-        if f.name != "__init__.py" and not f.name.startswith("_")
-    ]
+    python_files = [f for f in directory.glob("*.py") if f.name != "__init__.py" and not f.name.startswith("_")]
 
     if not python_files:
         logger.warning(f"No Python module files found in {directory}")

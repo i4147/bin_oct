@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that scans a directory tree (recursively, skipping symlinks, directories, and .git paths) to find duplicate files based on file size and xxhash64 content hashing, then replaces duplicate files with symlinks to a single canonical copy while recording the original file paths and their target mappings in a JSON backup file (.symlink_backup.json) for potential later restoration.
 The script should use argparse to accept a target directory (defaulting to the current directory), print informative progress and error messages (e.g., file counts, skipped files, read errors), and use datetime/UTC timestamps in the backup metadata.
 It should skip files smaller than a minimum size threshold and only hash files that share the same size to optimize performance."""
@@ -124,18 +124,14 @@ def reverse_symlinks(backup_file: str = BACKUP_FILE) -> bool:
             restored_count += 1
         except OSError as e:
             print(f"[ERROR] Restoring {symlink_path}: {e}")
-    backup_renamed = (
-        f"{backup_file}.restored.{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}"
-    )
+    backup_renamed = f"{backup_file}.restored.{datetime.now(tz=UTC).strftime('%Y%m%d_%H%M%S')}"
     Path(backup_file).rename(backup_renamed)
     print(f"[INFO] Backup file renamed to: {backup_renamed}")
     return True
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Find duplicate files and replace with symlinks (reversible)"
-    )
+    parser = argparse.ArgumentParser(description="Find duplicate files and replace with symlinks (reversible)")
     parser.add_argument(
         "directory",
         nargs="?",
@@ -147,9 +143,7 @@ def main() -> None:
         action="store_true",
         help="Show what would be done without making changes",
     )
-    parser.add_argument(
-        "--reverse", action="store_true", help="Reverse previous symlinking operation"
-    )
+    parser.add_argument("--reverse", action="store_true", help="Reverse previous symlinking operation")
     parser.add_argument(
         "--backup-file",
         default=BACKUP_FILE,
@@ -164,9 +158,7 @@ def main() -> None:
             print("\n[INFO] No duplicates found!")
             return
         print(f"\n[INFO] Found {len(duplicates)} groups of duplicates")
-        print(
-            f"[INFO] Total duplicate files: {sum(len(files) - 1 for files in duplicates.values())}"
-        )
+        print(f"[INFO] Total duplicate files: {sum(len(files) - 1 for files in duplicates.values())}")
         if args.dry_run:
             print("\n[INFO] [DRY RUN MODE - No changes will be made]")
         create_symlinks(duplicates, dry_run=args.dry_run)

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pyextract — unified Python code-entity extractor.
 
@@ -69,9 +69,7 @@ try:
 except Exception:  # pragma: no cover
     HAS_ZSTD = False
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("pyextract")
 
 ARCHIVE_EXTS = (
@@ -147,9 +145,7 @@ def discover(
     py_files: list[Path] = []
     archives: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [
-            d for d in dirnames if d not in skip and not Path(dirpath, d).is_symlink()
-        ]
+        dirnames[:] = [d for d in dirnames if d not in skip and not Path(dirpath, d).is_symlink()]
         for fn in filenames:
             p = Path(dirpath) / fn
             if p.is_symlink():
@@ -227,9 +223,7 @@ def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
 
 
 class _ASTExtractor(ast.NodeVisitor):
-    def __init__(
-        self, source: str, path: str, include_nested: bool, constants_only: bool
-    ) -> None:
+    def __init__(self, source: str, path: str, include_nested: bool, constants_only: bool) -> None:
         self.source_lines = source.splitlines(keepends=True)
         self.path = path
         self.include_nested = include_nested
@@ -512,11 +506,7 @@ def extract_treesitter(
 
             if t == "decorated_definition":
                 inner = next(
-                    (
-                        c
-                        for c in child.children
-                        if c.type in ("function_definition", "class_definition")
-                    ),
+                    (c for c in child.children if c.type in ("function_definition", "class_definition")),
                     None,
                 )
                 if inner is None:
@@ -567,9 +557,7 @@ def extract_treesitter(
                     imports.append(text(child))
                 continue
 
-            if t == "expression_statement" and (
-                not class_stack and not func_stack or include_nested
-            ):
+            if t == "expression_statement" and (not class_stack and not func_stack or include_nested):
                 for sub in child.children:
                     if sub.type == "assignment":
                         left = sub.child_by_field_name("left")
@@ -633,9 +621,7 @@ def _unique_path(directory: Path, stem: str, suffix: str) -> Path:
     return p
 
 
-def write_per_entity(
-    entities: list[Entity], out_dir: Path, write_metadata: bool = False
-) -> dict[str, int]:
+def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool = False) -> dict[str, int]:
     out_dir.mkdir(parents=True, exist_ok=True)
     counts: dict[str, int] = defaultdict(int)
     for e in entities:
@@ -669,9 +655,7 @@ def write_per_entity(
                 "imports": e.imports,
                 "decorators": e.decorators,
             }
-            (sub / (fp.stem + ".json")).write_text(
-                json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            (sub / (fp.stem + ".json")).write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     return counts
 
 
@@ -686,9 +670,7 @@ def write_by_type(entities: list[Entity], out_dir: Path) -> None:
 
     _dump("classes.py", [e for e in entities if e.type == "class" and not e.parent])
     _dump("nested_classes.py", [e for e in entities if e.type == "class" and e.parent])
-    _dump(
-        "functions.py", [e for e in entities if e.type == "function" and not e.parent]
-    )
+    _dump("functions.py", [e for e in entities if e.type == "function" and not e.parent])
     _dump(
         "nested_functions.py",
         [e for e in entities if e.type == "function" and e.parent],
@@ -719,12 +701,8 @@ def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -
             parts += ["#" + "=" * 76, "# TABLE OF CONTENTS", "#" + "=" * 76, ""]
             for src, es in sorted(by_file.items()):
                 parts.append(f"# File: {src}")
-                parts.append(
-                    f"#   Functions: {sum(1 for x in es if x.type == 'function')}"
-                )
-                parts.append(
-                    f"#   Classes:   {sum(1 for x in es if x.type == 'class')}"
-                )
+                parts.append(f"#   Functions: {sum(1 for x in es if x.type == 'function')}")
+                parts.append(f"#   Classes:   {sum(1 for x in es if x.type == 'class')}")
                 parts.append("")
 
         for e in ents:
@@ -756,9 +734,7 @@ def write_lists(entities: list[Entity], out_dir: Path) -> None:
                 encoding="utf-8",
             )
             unique.update(e.name for e in es)
-        (sub / "unique.txt").write_text(
-            "\n".join(sorted(unique)) + "\n", encoding="utf-8"
-        )
+        (sub / "unique.txt").write_text("\n".join(sorted(unique)) + "\n", encoding="utf-8")
 
 
 def write_sqlite(entities: list[Entity], db_path: Path) -> None:
@@ -794,11 +770,7 @@ def write_sqlite(entities: list[Entity], db_path: Path) -> None:
 
 def write_imports_file(imports: Iterable[str], out_dir: Path) -> None:
     unique = sorted(set(imports))
-    body = (
-        "# Global imports collected from all processed files\n\n"
-        + "\n".join(unique)
-        + "\n"
-    )
+    body = "# Global imports collected from all processed files\n\n" + "\n".join(unique) + "\n"
     (out_dir / "global_imports.py").write_text(body, encoding="utf-8")
 
 
@@ -812,16 +784,12 @@ def _worker(item: tuple) -> tuple:
         if is_archive:
             for member, source in iter_archive_python(p):
                 full = f"{p.name}::{member}"
-                es, im = _extract(
-                    source, full, parser_name, include_nested, constants_only
-                )
+                es, im = _extract(source, full, parser_name, include_nested, constants_only)
                 entities.extend(es)
                 imports.extend(im)
         else:
             source = p.read_text(encoding="utf-8", errors="replace")
-            es, im = _extract(
-                source, str(p), parser_name, include_nested, constants_only
-            )
+            es, im = _extract(source, str(p), parser_name, include_nested, constants_only)
             entities.extend(es)
             imports.extend(im)
     except Exception as e:  # noqa: BLE001
@@ -872,14 +840,8 @@ def cmd_extract(args: argparse.Namespace) -> int:
         log.warning("nothing to process")
         return 0
 
-    work: list[tuple] = [
-        (str(p), args.parser, args.include_nested, args.constants_only, False)
-        for p in py_files
-    ]
-    work += [
-        (str(p), args.parser, args.include_nested, args.constants_only, True)
-        for p in archives
-    ]
+    work: list[tuple] = [(str(p), args.parser, args.include_nested, args.constants_only, False) for p in py_files]
+    work += [(str(p), args.parser, args.include_nested, args.constants_only, True) for p in archives]
 
     all_entities: list[Entity] = []
     all_imports: list[str] = []
@@ -1030,9 +992,7 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
         print(f"Error: {e}")
         return 1
     names = [
-        n.name
-        for n in ast.walk(tree)
-        if isinstance(n, ast.FunctionDef) and not (args.skip_main and n.name == "main")
+        n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and not (args.skip_main and n.name == "main")
     ]
     if not names:
         print("No functions found.")
@@ -1045,8 +1005,7 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="pyextract",
-        description="Extract functions / classes / constants from Python files, "
-        "directories and archives.",
+        description="Extract functions / classes / constants from Python files, directories and archives.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -1142,15 +1101,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Delete the output directory before writing.",
     )
-    e.add_argument(
-        "--exclude", nargs="*", default=[], help="Extra directory names to skip."
-    )
+    e.add_argument("--exclude", nargs="*", default=[], help="Extra directory names to skip.")
     e.set_defaults(func=cmd_extract)
 
     n = sub.add_parser("nodes", help="Dump top-level tree-sitter nodes per folder.")
-    n.add_argument(
-        "paths", nargs="*", type=Path, help="Files/dirs (default: current directory)."
-    )
+    n.add_argument("paths", nargs="*", type=Path, help="Files/dirs (default: current directory).")
     n.add_argument(
         "--kind",
         choices=tuple(NODE_KINDS.keys()),
@@ -1171,9 +1126,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     f = sub.add_parser("funcnames", help="List function names in a Python file.")
     f.add_argument("file", type=Path)
-    f.add_argument(
-        "--skip-main", action="store_true", help="Skip the function named `main`."
-    )
+    f.add_argument("--skip-main", action="store_true", help="Skip the function named `main`.")
     f.set_defaults(func=cmd_funcnames)
 
     return p

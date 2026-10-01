@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads a delimited text file (skipping blank lines and comments starting with "#") and converts each line into a key-value pair, where the key is a stripped string and the value is parsed as an integer, then outputs the collected pairs as JSON.
 The script should accept a configurable delimiter, auto-fallback to a tab character if the delimiter is missing from a line (pausing for user input after printing the offending line), and warn to stderr when a line cannot be split into exactly two parts.
 It must track duplicate keys by printing a notice, and resolve duplicate integer values by generating a new random replacement value (using a cryptographically secure RNG within a bounded range) until a unique one is found."""

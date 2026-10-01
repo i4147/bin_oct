@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 fmt.py — unified HTML/CSS/JS/JSON formatting tool.
 
@@ -184,16 +184,13 @@ class HtmlTagFormatter:
             from tree_sitter import Language, Parser
         except ImportError as exc:
             raise RuntimeError(
-                "Required packages not installed. "
-                "Install with: pip install tree-sitter tree-sitter-html"
+                "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
             ) from exc
         try:
             self._language = Language(ts_html.language())
             self._parser = Parser(self._language)
         except Exception as exc:  # pragma: no cover - init errors are env-specific
-            raise RuntimeError(
-                f"Failed to initialize Tree-sitter parser: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to initialize Tree-sitter parser: {exc}") from exc
 
     def format(self, src: str) -> tuple[str, int]:
         if not src.strip():
@@ -271,9 +268,7 @@ def _get_formatter() -> HtmlTagFormatter:
     return _FORMATTER_CACHE
 
 
-def _beautify_treesitter(
-    path: Path, *, max_bytes: int = 50 * 1024 * 1024
-) -> FileResult:
+def _beautify_treesitter(path: Path, *, max_bytes: int = 50 * 1024 * 1024) -> FileResult:
     src = read_text(path, max_bytes=max_bytes)
     if src is None:
         return FileResult(path, success=False, error="Failed to read file")
@@ -345,9 +340,7 @@ def _beautify_prettier(
     if translate_path:
         target = target.replace("/storage/emulated/0", "/sdcard")
 
-    cmd = (["npx", "prettier", "--write"] if use_npx else ["prettier", "--write"]) + [
-        target
-    ]
+    cmd = (["npx", "prettier", "--write"] if use_npx else ["prettier", "--write"]) + [target]
 
     try:
         before = path.stat().st_mtime_ns
@@ -458,7 +451,7 @@ def run_batch(
                 futures = {pool.submit(worker, p): p for p in paths}
                 for fut in as_completed(futures):
                     handle(fut.result())
-        else:  # "process"
+        else:
             with ProcessPoolExecutor(max_workers=jobs) as pool:
                 futures = {pool.submit(worker, p): p for p in paths}
                 for fut in as_completed(futures):
@@ -591,9 +584,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  pypret.py      -> format --tool jsbeautifier --ext .js .html .css .json"
         ),
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable debug logging."
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
 
     sub = parser.add_subparsers(dest="command", required=True)
 

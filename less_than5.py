@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given directory (defaulting to the current directory) for files created within the last 320 seconds, based on file creation timestamps.
 It should move each qualifying file into a "5min" subfolder created at the root of the scanned directory, preserving the original relative subdirectory structure, while skipping files already located inside the "5min" folder to avoid reprocessing.
 When a destination file with the same name already exists, the script must generate a unique filename by appending an incrementing numeric suffix before the extension.
@@ -151,44 +151,26 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="\nExamples:\n  python move_recent_files.py                    # Move files from last 8 minutes\n  python move_recent_files.py --minutes 5        # Move files from last 5 minutes\n  python move_recent_files.py --ext .txt .log    # Only move .txt and .log files\n  python move_recent_files.py --min-size 1024    # Only move files > 1KB\n  python move_recent_files.py --non-recursive    # Don't search subdirectories\n  python move_recent_files.py --old              # Move old files instead\n  python move_recent_files.py --dest archive     # Use custom destination name\n        ",
     )
-    parser.add_argument(
-        "--dir", default=".", help="Directory to process (default: current directory)"
-    )
-    parser.add_argument(
-        "--minutes", type=int, default=8, help="Age threshold in minutes (default: 8)"
-    )
-    parser.add_argument(
-        "--ext", nargs="+", help="File extensions to include (e.g., .txt .log)"
-    )
+    parser.add_argument("--dir", default=".", help="Directory to process (default: current directory)")
+    parser.add_argument("--minutes", type=int, default=8, help="Age threshold in minutes (default: 8)")
+    parser.add_argument("--ext", nargs="+", help="File extensions to include (e.g., .txt .log)")
     parser.add_argument("--min-size", type=int, help="Minimum file size in bytes")
-    parser.add_argument(
-        "--non-recursive", action="store_true", help="Don't search subdirectories"
-    )
-    parser.add_argument(
-        "--old", action="store_true", help="Move old files instead of recent ones"
-    )
-    parser.add_argument(
-        "--dest", default="5min", help="Destination directory name (default: 5min)"
-    )
+    parser.add_argument("--non-recursive", action="store_true", help="Don't search subdirectories")
+    parser.add_argument("--old", action="store_true", help="Move old files instead of recent ones")
+    parser.add_argument("--dest", default="5min", help="Destination directory name (default: 5min)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     args = parser.parse_args()
     try:
         start_dir = Path(args.dir).resolve()
         print(f"Starting from directory: {start_dir}")
-        print(
-            f"Processing files {('older than' if args.old else 'created in the last')} {args.minutes} minutes"
-        )
+        print(f"Processing files {('older than' if args.old else 'created in the last')} {args.minutes} minutes")
         print("-" * 40)
         if args.old:
-            move_recent_files_by_age(
-                start_dir, age_threshold=args.minutes * 40, destination=args.dest
-            )
+            move_recent_files_by_age(start_dir, age_threshold=args.minutes * 40, destination=args.dest)
         elif args.ext or args.min_size:
             move_recent_files_with_filters(
                 start_dir,
-                extensions=[
-                    ext if ext.startswith(".") else f".{ext}" for ext in args.ext or []
-                ],
+                extensions=[ext if ext.startswith(".") else f".{ext}" for ext in args.ext or []],
                 min_size=args.min_size,
                 recursive=not args.non_recursive,
             )

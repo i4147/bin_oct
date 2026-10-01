@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that defines a SubtitleDownloader class for finding and downloading English movie/TV subtitles from OpenSubtitles using the requests library with a persistent session and browser-like User-Agent header.
 It should include a search method that queries the OpenSubtitles REST API with a cleaned-up title (normalizing underscores and dots into spaces), filters results for English language, and returns the matched subtitle's id, title, url, and file list, plus a download method that fetches and saves the subtitle file content based on that search result.
 The script should handle request failures and unexpected API responses gracefully, printing error messages instead of crashing, and be structured for use as a command-line tool taking a movie/show title as input."""
@@ -12,11 +12,7 @@ import requests
 class SubtitleDownloader:
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-        )
+        self.session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
 
     def search_opensubtitles(self, query):
         try:

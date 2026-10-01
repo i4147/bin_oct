@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """[Tool: think]
   Params: {"content":"The user wants a prompt describing the code, not code generation. This is a simple single-response task, no tools needed."}
 Write a Python script that recursively finds all TOML files under a given directory and strips comments from each using a tree-sitter TOML parser, trimming trailing spaces/tabs left before removed comments while preserving valid UTF-8 content. It should process files concurrently using a multiprocessing Pool with a fixed worker count (8), overwrite each file in place with the cleaned content, and track per-file timing along with original and resulting byte sizes (leveraging a helper like dh.fsz for size formatting). The script should print a progress report listing each processed file name (aligned/padded to a fixed width), its processing time, and size before/after, then output a final summary of total files processed, total time elapsed, and overall size reduction. It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
@@ -90,9 +90,7 @@ def main() -> int:
         return 0
     print(f"Found {len(toml_files)} TOML file(s) to process...")
     print("-" * 40)
-    print(
-        f"{'Filename':<50} {'Time (ms)':<10} {'Before':<12} {'After':<12} {'Ratio':<8}"
-    )
+    print(f"{'Filename':<50} {'Time (ms)':<10} {'Before':<12} {'After':<12} {'Ratio':<8}")
     print("-" * 40)
     results: list[tuple[str, float, int, int]] = []
     with Pool(processes=_WORKERS) as pool:
@@ -100,11 +98,7 @@ def main() -> int:
             results.append(result)
             filename, time_taken, before_size, after_size = result
             ratio: float = after_size / before_size * 100.0 if before_size > 0 else 0.0
-            display_name: str = (
-                filename
-                if len(filename) <= _NAME_WIDTH - 2
-                else "..." + filename[-(_NAME_WIDTH - 3) :]
-            )
+            display_name: str = filename if len(filename) <= _NAME_WIDTH - 2 else "..." + filename[-(_NAME_WIDTH - 3) :]
             print(
                 f"{display_name:<{_NAME_WIDTH}} {time_taken:>8.2f}  "
                 f"{fsz(before_size):<12} {fsz(after_size):<12} {ratio:>6.1f}%"
@@ -115,9 +109,7 @@ def main() -> int:
     total_ratio: float = total_after / total_before * 100.0 if total_before > 0 else 0.0
     total_time: float = sum(r[1] for r in results)
     print(f"Total: {len(results)} file(s) processed in {total_time:.2f} ms")
-    print(
-        f"Size reduction: {fsz(total_before)} -> {fsz(total_after)} ({total_ratio:.1f}% of original)"
-    )
+    print(f"Size reduction: {fsz(total_before)} -> {fsz(total_after)} ({total_ratio:.1f}% of original)")
     return 0
 
 

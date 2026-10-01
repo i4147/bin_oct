@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Optimize ``.jpeg`` / ``.jpg`` files in place by shelling out to ``jpegoptim``.
 
 The script discovers JPEG files (case-insensitively, across both ``.jpeg`` and
@@ -520,13 +520,9 @@ def _print_status(result: ProcessResult, tag: str) -> None:
             f"(would save {format_bytes(saved)}, {pct:.1f}%)"
         )
     elif tag == "NOCHG":
-        print(
-            f"[NOCHG]   {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (byte-identical)"
-        )
+        print(f"[NOCHG]   {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (byte-identical)")
     elif tag == "SAME":
-        print(
-            f"[SAME]    {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (same size, different bytes)"
-        )
+        print(f"[SAME]    {path.resolve().relative_to(cwd)}  {format_bytes(orig)}  (same size, different bytes)")
     elif tag == "SKIP":
         growth = new - orig
         print(
@@ -534,16 +530,14 @@ def _print_status(result: ProcessResult, tag: str) -> None:
             f"{format_bytes(orig)} -> {format_bytes(new)}  "
             f"(larger by {format_bytes(growth)})"
         )
-    else:  # ERROR
+    else:
         print(
             f"[ERROR]   {path.resolve().relative_to(cwd)}  {result.error}",
             file=sys.stderr,
         )
 
 
-def _print_summary(
-    counters: dict[str, int], total_before: int, total_after: int
-) -> None:
+def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
     total = sum(counters.values())
     skipped = counters["SAME"] + counters["SKIP"]
 

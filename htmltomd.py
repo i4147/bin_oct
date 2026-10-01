@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that converts HTML files into clean Markdown documents.
 It should accept one or more HTML file paths (or a directory to scan) as arguments, read each file, strip out unwanted elements such as scripts, styles, comments, navigation, footers, asides, iframes, noscript tags, and forms using BeautifulSoup, then convert the cleaned HTML to Markdown via the html_to_markdown library with options like GitHub-flavored formatting, header/link/image extraction enabled and structured data extraction disabled.
 The script should support parallel processing using multiprocessing based on available CPU cores, skip files that don't have .html/.htm extensions with a warning, write the resulting Markdown next to each source file (or to a specified output location), and report success/failure status for each processed file, exiting with an appropriate status code via argparse-based CLI handling."""
@@ -17,9 +17,7 @@ def clean_html(html_content: str) -> str:
         script.decompose()
     for style in soup.find_all("style"):
         style.decompose()
-    for comment in soup.find_all(
-        string=lambda text: isinstance(text, str) and text.strip().startswith("<!--")
-    ):
+    for comment in soup.find_all(string=lambda text: isinstance(text, str) and text.strip().startswith("<!--")):
         comment.extract()
     for tag in soup.find_all(["nav", "footer", "aside", "iframe", "noscript"]):
         tag.decompose()
@@ -28,9 +26,7 @@ def clean_html(html_content: str) -> str:
     return str(soup)
 
 
-def convert_html_to_md(
-    html_file: Path, options: Options | None = None
-) -> tuple[Path, bool]:
+def convert_html_to_md(html_file: Path, options: Options | None = None) -> tuple[Path, bool]:
     if html_file.suffix.lower() not in {".html", ".htm"}:
         print(f"Warning: {html_file} doesn't have .html/.htm extension, skipping.")
         return html_file, False
@@ -46,9 +42,7 @@ def convert_html_to_md(
                 github_flavored=True,
             )
         markdown_content = convert(cleaned_html, options=options)
-        markdown_content = "\n".join(
-            line for line in markdown_content.split("\n") if line.strip() or line == ""
-        )
+        markdown_content = "\n".join(line for line in markdown_content.split("\n") if line.strip() or line == "")
         import re
 
         markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
@@ -144,9 +138,7 @@ Examples:
             sys.exit(0)
         print(f"Found {len(html_files)} HTML file(s) to process")
     else:
-        print(
-            f"Error: '{input_path}' is neither a file nor a directory.", file=sys.stderr
-        )
+        print(f"Error: '{input_path}' is neither a file nor a directory.", file=sys.stderr)
         sys.exit(1)
     if len(html_files) == 1:
         convert_html_to_md(html_files[0], options)
@@ -157,9 +149,7 @@ Examples:
             results = pool.map(process_file_wrapper, process_args)
         successful = sum(1 for _, success in results if success)
         print(f"\n{'=' * 40}")
-        print(
-            f"Conversion complete: {successful}/{len(html_files)} files converted successfully"
-        )
+        print(f"Conversion complete: {successful}/{len(html_files)} files converted successfully")
 
 
 if __name__ == "__main__":

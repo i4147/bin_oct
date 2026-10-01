@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """->regenerates script"""
 
 from __future__ import annotations
@@ -67,8 +67,7 @@ def parse_arguments(argv: Sequence[str]) -> argparse.Namespace:
         default="pdfminer",
         choices=("pdfminer", "pypdf", "pymupdf", "system", "auto"),
         help=(
-            "Text extraction backend. The default is pdfminer. "
-            "'auto' tries Python libraries and then system OCR tools."
+            "Text extraction backend. The default is pdfminer. 'auto' tries Python libraries and then system OCR tools."
         ),
     )
     parser.add_argument(
@@ -152,11 +151,7 @@ def find_pdf_files(paths: Sequence[Path], recursive: bool) -> list[Path]:
 
             if path.is_dir():
                 for child in path.iterdir():
-                    if (
-                        not child.is_symlink()
-                        and child.is_file()
-                        and child.suffix.lower() in PDF_SUFFIXES
-                    ):
+                    if not child.is_symlink() and child.is_file() and child.suffix.lower() in PDF_SUFFIXES:
                         resolved = child.resolve()
                         if resolved not in seen:
                             seen.add(resolved)
@@ -227,9 +222,7 @@ def resolve_backend(requested: str) -> str:
         )
         return "system"
 
-    raise RuntimeError(
-        f"Backend '{requested}' is unavailable and no system OCR fallback exists."
-    )
+    raise RuntimeError(f"Backend '{requested}' is unavailable and no system OCR fallback exists.")
 
 
 def page_count_pdfminer(path: Path) -> int:
@@ -337,13 +330,9 @@ def extract_pymupdf_page(path: Path, page_number: int) -> str:
 
 def extract_system_page(path: Path, page_number: int) -> str:
     required_tools: tuple[str, ...] = ("gs", "tesseract")
-    missing: list[str] = [
-        tool for tool in required_tools if not executable_exists(tool)
-    ]
+    missing: list[str] = [tool for tool in required_tools if not executable_exists(tool)]
     if missing:
-        raise RuntimeError(
-            f"System OCR backend requires missing tools: {', '.join(missing)}"
-        )
+        raise RuntimeError(f"System OCR backend requires missing tools: {', '.join(missing)}")
 
     with tempfile.TemporaryDirectory(prefix="pdf-screen-") as temporary_directory:
         image_path: Path = Path(temporary_directory) / "page.png"
@@ -566,9 +555,7 @@ def extract_file(path: Path, backend: str, workers: int) -> list[str]:
         backend,
     )
 
-    tasks: list[tuple[str, int, str]] = [
-        (str(path), page_number, backend) for page_number in range(1, page_count + 1)
-    ]
+    tasks: list[tuple[str, int, str]] = [(str(path), page_number, backend) for page_number in range(1, page_count + 1)]
 
     with ProcessPoolExecutor(max_workers=workers) as executor:
         return list(executor.map(extract_page, tasks, chunksize=1))

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Create a .tar.gz archive of a directory and then delete the original contents.
 
@@ -46,9 +46,7 @@ def compress_and_cleanup(root: Path = Path()) -> None:
         tar.add(root, arcname=root.name)
 
     print("Archive created. Removing original files...")
-    items: list[Path] = [
-        item for item in root.iterdir() if item.resolve() != archive_path
-    ]
+    items: list[Path] = [item for item in root.iterdir() if item.resolve() != archive_path]
     remove_items_fast(items)
     print("Cleanup complete.")
 

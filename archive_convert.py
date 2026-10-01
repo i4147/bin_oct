@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively convert tar/zip archives under given paths to brotli-compressed .tar.br, or decompress .tar.br back to .tar with -d."""
 
 from __future__ import annotations
@@ -33,9 +33,7 @@ ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".txz",
     ".zip",
 )
-SUFFIXES_BY_LENGTH: tuple[str, ...] = tuple(
-    sorted(ARCHIVE_SUFFIXES, key=len, reverse=True)
-)
+SUFFIXES_BY_LENGTH: tuple[str, ...] = tuple(sorted(ARCHIVE_SUFFIXES, key=len, reverse=True))
 SKIP_DIR_NAMES: frozenset[str] = frozenset({".git"})
 CHUNK: int = 1 << 20
 BIG_TAR_THRESHOLD: int = 10 * 1024 * 1024
@@ -277,8 +275,7 @@ def run_decompress(paths: list[Path], cwd: Path) -> int:
             continue
         saved = src_size - dst_size
         logger.info(
-            f"ok {relpath(rp, cwd)} -> {relpath(dst, cwd)}: "
-            f"{human(src_size)} -> {human(dst_size)} ({human(-saved)})"
+            f"ok {relpath(rp, cwd)} -> {relpath(dst, cwd)}: {human(src_size)} -> {human(dst_size)} ({human(-saved)})"
         )
     return 0 if not failures else 1
 
@@ -301,9 +298,7 @@ def main(argv: list[str] | None = None) -> int:
     total_out = 0
 
     with mp.Pool(args.jobs) as pool:
-        for src, dst, ssize, dsize, err in pool.imap_unordered(
-            process, targets, chunksize=1
-        ):
+        for src, dst, ssize, dsize, err in pool.imap_unordered(process, targets, chunksize=1):
             rp = relpath(src, cwd)
             if err is None and dst is not None:
                 saved = ssize - dsize

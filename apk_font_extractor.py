@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Extract .ttf, .woff, and .woff2 fonts from APK files recursively.
 
 This script scans APK files (or directories of APK files) for embedded
@@ -189,16 +189,12 @@ class APKFontExtractor:
 
         return f"{family_name}-{style_str}{font_info.extension}"
 
-    def _handle_duplicate_filename(
-        self, filename: str, source_apk: Path, font_data: bytes
-    ) -> str:
+    def _handle_duplicate_filename(self, filename: str, source_apk: Path, font_data: bytes) -> str:
         base_name = Path(filename).stem
         extension = Path(filename).suffix
         counter = 1
         while True:
-            new_filename = (
-                filename if counter == 1 else f"{base_name}-{counter}{extension}"
-            )
+            new_filename = filename if counter == 1 else f"{base_name}-{counter}{extension}"
             output_path = self.output_dir / new_filename
             if not output_path.exists():
                 return new_filename
@@ -207,9 +203,7 @@ class APKFontExtractor:
                 return new_filename
             counter += 1
 
-    def _is_same_font(
-        self, existing_path: Path, source_apk: Path, font_data: bytes
-    ) -> bool:
+    def _is_same_font(self, existing_path: Path, source_apk: Path, font_data: bytes) -> bool:
         try:
             existing_size = existing_path.stat().st_size
         except OSError:
@@ -219,12 +213,8 @@ class APKFontExtractor:
         key = f"{source_apk.name}-{existing_size}"
         return key in self.processed_fonts
 
-    def _save_font(
-        self, font_data: bytes, filename: str, source_apk: Path
-    ) -> Path | None:
-        final_filename = self._handle_duplicate_filename(
-            filename, source_apk, font_data
-        )
+    def _save_font(self, font_data: bytes, filename: str, source_apk: Path) -> Path | None:
+        final_filename = self._handle_duplicate_filename(filename, source_apk, font_data)
         output_path = self.output_dir / final_filename
         try:
             output_path.write_bytes(font_data)
@@ -271,9 +261,7 @@ class APKFontExtractor:
         total_extracted = 0
         try:
             with multiprocessing.Pool(processes=WORKERS) as pool:
-                async_results: list[
-                    tuple[Path, multiprocessing.pool.AsyncResult[int]]
-                ] = []
+                async_results: list[tuple[Path, multiprocessing.pool.AsyncResult[int]]] = []
                 for apk_path in apk_files:
                     result = pool.apply_async(self._process_apk, (apk_path,))
                     async_results.append((apk_path, result))
@@ -295,10 +283,7 @@ class APKFontExtractor:
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Extract .ttf, .woff, and .woff2 fonts from APK files "
-            "using a fixed pool of 8 workers."
-        ),
+        description=("Extract .ttf, .woff, and .woff2 fonts from APK files using a fixed pool of 8 workers."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -352,9 +337,7 @@ def main() -> int:
     extractor = APKFontExtractor(output_dir=args.output)
 
     try:
-        total_fonts = extractor.process(
-            input_paths=list(args.inputs) if args.inputs else None
-        )
+        total_fonts = extractor.process(input_paths=list(args.inputs) if args.inputs else None)
         if total_fonts > 0:
             print("Successfully extracted {} font(s)", total_fonts)
         else:

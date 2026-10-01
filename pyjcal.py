@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python class named JalaliDate that represents dates in the Persian (Jalali) calendar and provides conversion to and from the Gregorian calendar.
 It should store year, month, and day as attributes, and include class-level lists of Jalali month names and weekday names in both English and Farsi.
 Implement static/class methods such as today(), today_with_time(), and from_gregorian(year, month, day) that use Python's datetime module to get the current Gregorian date and convert it into a corresponding JalaliDate instance (with today_with_time() also returning the original datetime object alongside the JalaliDate).
@@ -69,9 +69,7 @@ class JalaliDate:
     @staticmethod
     def today() -> JalaliDate:
         gregorian_date = datetime.now()
-        return JalaliDate.from_gregorian(
-            gregorian_date.year, gregorian_date.month, gregorian_date.day
-        )
+        return JalaliDate.from_gregorian(gregorian_date.year, gregorian_date.month, gregorian_date.day)
 
     @staticmethod
     def from_gregorian(g_year: int, g_month: int, g_day: int) -> JalaliDate:
@@ -81,20 +79,9 @@ class JalaliDate:
         g_day_of_year = (
             sum([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][:gm])
             + gd
-            + (
-                1
-                if gm > 1
-                and ((g_year % 4 == 0 and g_year % 100 != 0) or g_year % 400 == 0)
-                else 0
-            )
+            + (1 if gm > 1 and ((g_year % 4 == 0 and g_year % 100 != 0) or g_year % 400 == 0) else 0)
         )
-        g_day_no = (
-            gy * 365
-            + (gy + 3) // 4
-            - (gy + 99) // 100
-            + (gy + 399) // 400
-            + g_day_of_year
-        )
+        g_day_no = gy * 365 + (gy + 3) // 4 - (gy + 99) // 100 + (gy + 399) // 400 + g_day_of_year
         j_day_no = g_day_no - 79
         j_np = j_day_no // 146097
         j_day_no %= 146097
@@ -263,11 +250,7 @@ class JalaliCalendar:
             for day in week:
                 if day == 0:
                     week_str.append("   ")
-                elif (
-                    self.year == today.year
-                    and self.month == today.month
-                    and day == today.day
-                ):
+                elif self.year == today.year and self.month == today.month and day == today.day:
                     week_str.append(f"{day:>3}*")
                 else:
                     week_str.append(f"{day:>3}")
@@ -310,9 +293,7 @@ class JalaliDateFormatter:
         return output.replace("%S", f"{now.second:02d}")
 
 
-def jcal(
-    month: int | None = None, year: int | None = None, language: str = "en"
-) -> str:
+def jcal(month: int | None = None, year: int | None = None, language: str = "en") -> str:
     if year is None or month is None:
         today = JalaliDate.today()
         if year is None:

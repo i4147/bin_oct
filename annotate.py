@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 batch_annotate.py — Add OR remove type annotations on Python files.
 
@@ -41,10 +41,7 @@ from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 
 class TypeshedSanitizer(cst.CSTTransformer):
     def leave_ImportFrom(self, original_node, updated_node):
-        if (
-            original_node.module
-            and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed"
-        ):
+        if original_node.module and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed":
             return cst.ImportFrom(
                 module=cst.Name("typing"),
                 names=[cst.ImportAlias(name=cst.Name("Any"))],
@@ -121,8 +118,7 @@ def _ensure_tree_sitter() -> None:
         from tree_sitter import Parser  # noqa: WPS433 (runtime import)
     except Exception as exc:  # pragma: no cover
         raise RuntimeError(
-            "tree-sitter is required for --remove mode. "
-            "Install with: pip install tree_sitter tree_sitter_languages"
+            "tree-sitter is required for --remove mode. Install with: pip install tree_sitter tree_sitter_languages"
         ) from exc
 
     try:
@@ -187,9 +183,7 @@ def _remove_ranges_from_bytes(src: bytes, ranges: list[tuple[int, int]]) -> byte
     return bytes(out)
 
 
-def strip_annotations_from_bytes(
-    src_bytes: bytes, path: Path
-) -> tuple[bytes, list[str], Optional[str]]:
+def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, list[str], Optional[str]]:
     _ensure_tree_sitter()
     parser = _TS_PARSER_FACTORY()
     parser.set_language(_PY_LANGUAGE)
@@ -231,10 +225,7 @@ def strip_annotations_from_bytes(
             if line_end == -1:
                 line_end = len(src_bytes)
             snippet = src_bytes[line_start:line_end].decode(errors="replace").strip()
-            warnings.append(
-                f"skipped standalone annotation at {path}:"
-                f'{node.start_point[0] + 1}: "{snippet}"'
-            )
+            warnings.append(f'skipped standalone annotation at {path}:{node.start_point[0] + 1}: "{snippet}"')
             continue
 
         remove_ranges.append((removed_prefix_start, e))
@@ -267,9 +258,7 @@ def validate_python_code(code: str, filename: str) -> None:
     try:
         ast.parse(code, filename=filename)
     except SyntaxError as e:
-        raise SyntaxError(
-            f"Invalid Python syntax at line {e.lineno}, col {e.offset}: {e.msg}"
-        ) from e
+        raise SyntaxError(f"Invalid Python syntax at line {e.lineno}, col {e.offset}: {e.msg}") from e
 
 
 def compute_diff(original: str, modified: str, filename: str) -> str:
@@ -438,9 +427,7 @@ def process_file(path_str: str, options: Options) -> Result:
             mode=("remove" if options.remove else "annotate"),
         )
 
-    result = (
-        _strip_file(path, options) if options.remove else _annotate_file(path, options)
-    )
+    result = _strip_file(path, options) if options.remove else _annotate_file(path, options)
     if result.error or not result.changed or options.dry_run:
         return result
 
@@ -459,11 +446,7 @@ def process_file(path_str: str, options: Options) -> Result:
             tmp_path.write_text(result._new_text, encoding="utf-8")  # type: ignore[attr-defined]
         else:
             original = path.read_text(encoding="utf-8")
-            stub_path = (
-                Path(options.stub_file)
-                if options.stub_file
-                else path.with_suffix(".pyi")
-            )
+            stub_path = Path(options.stub_file) if options.stub_file else path.with_suffix(".pyi")
             stub_code = stub_path.read_text(encoding="utf-8")
             new_text = apply_type_annotations(
                 source_code=original,
@@ -620,9 +603,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         print("Error: --stub-file is not valid with --remove.", file=sys.stderr)
         return 2
     if args.future_annotations and args.remove:
-        print(
-            "Error: --future-annotations is not valid with --remove.", file=sys.stderr
-        )
+        print("Error: --future-annotations is not valid with --remove.", file=sys.stderr)
         return 2
     if args.no_overwrite and args.remove:
         print("Error: --no-overwrite is not valid with --remove.", file=sys.stderr)

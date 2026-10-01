@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that spell-checks a text file using the pyspellchecker library, processing the file line by line in parallel with a multiprocessing Pool for performance.
 For each line, it should scan words (including handling apostrophes and preserving original casing such as title-case or all-caps) and either report misspelled words with suggested corrections to the console, or, if an autofix flag is enabled, automatically replace misspelled words with the best correction while preserving the original word's capitalization style.
 It should accept input via argparse (e.g., file path and an autofix option), track counts of misspelled and fixed words, and output the corrected text (if autofixing) or a report of misspellings and suggestions."""
@@ -84,25 +84,19 @@ def process_file(path: str, autofix: bool = False, num_processes: int | None = N
                 print(f"\nAutofixed {total_fixed} misspelled word(s) in '{path}'.")
                 if total_misspelled > total_fixed:
                     skipped = total_misspelled - total_fixed
-                    print(
-                        f"({skipped} misspelled word(s) had no suggestions and were skipped.)"
-                    )
+                    print(f"({skipped} misspelled word(s) had no suggestions and were skipped.)")
             except Exception as e:
                 print(f"Error writing to file: {e}")
         else:
             if total_misspelled == 0:
                 print("No misspelled words found to autofix.")
             else:
-                print(
-                    "Found misspelled words, but no automatic corrections were available."
-                )
+                print("Found misspelled words, but no automatic corrections were available.")
     else:
         if total_misspelled == 0:
             print("No misspelled words found.")
         else:
-            print(
-                f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix."
-            )
+            print(f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix.")
 
 
 if __name__ == "__main__":

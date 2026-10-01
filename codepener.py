@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that converts a raw CodePen HTML snippet into a complete standalone HTML document.
 It should read an input file path from command-line arguments, wrap the snippet's body content inside a full HTML5 boilerplate (doctype, head with meta charset/viewport, title, and links to "style.css" and "script.js"), and write the result either back to the same file or to an optional output path also given via arguments.
 The document title should default to a title-cased version of the input filename (with hyphens replaced by spaces) unless explicitly overridden.
@@ -47,9 +47,7 @@ def process_file(input_file, output_file=None, title=None):
 
 def main():
     if len(sys.argv) < 2:
-        print(
-            "Usage: python codepen_converter.py <input_file> [output_file] [--title 'Page Title']"
-        )
+        print("Usage: python codepen_converter.py <input_file> [output_file] [--title 'Page Title']")
         print("\nExample:")
         print("  python codepen_converter.py index.html")
         print("  python codepen_converter.py codepen.html output.html")

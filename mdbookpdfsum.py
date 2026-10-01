@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that builds a combined PDF with a hierarchical bookmark/outline structure from multiple HTML files listed in a table-of-contents input.
 It should parse an HTML/TOC file to extract nested section titles and their source file references (building a tree of Section objects with parent/child relationships and computed numbered paths), verify each referenced HTML file exists and that its title matches expectations (optionally auto-fixing titles), then merge the corresponding PDFs (using pypdf) into one output PDF while adding nested outline/bookmark entries reflecting the section hierarchy.
 It should use argparse for CLI options such as input/output paths and an overwrite flag, and use lxml.html for parsing HTML titles/content."""
@@ -64,9 +64,9 @@ def check_title(prefix_path: str, node: Section, overwrite: bool) -> bool:
             if not title.startswith(node.title):
                 all_matched = False
                 print(
-                    f"[ERROR] Title not matched: source_file:{source_file}, line num:{
-                        idx
-                    }, title:{title}, title in `SUMMARY.md`:{node.title}"
+                    f"[ERROR] Title not matched: source_file:{source_file}, line num:{idx}, title:{
+                        title
+                    }, title in `SUMMARY.md`:{node.title}"
                 )
                 break
     if not all_matched and overwrite:
@@ -88,9 +88,7 @@ def get_dom_id(node: Section) -> str:
     return result.replace(" ", "-")
 
 
-def add_outline(
-    html_root, reader: pypdf.PdfReader, writer: pypdf.PdfWriter, node: Section
-) -> None:
+def add_outline(html_root, reader: pypdf.PdfReader, writer: pypdf.PdfWriter, node: Section) -> None:
     if not node.is_root():
         id = get_dom_id(node)
         try:
@@ -110,17 +108,13 @@ def add_outline(
                 dest.get("/Type"),
                 (dest.get("/Left"), dest.get("/Top"), dest.get("/Zoom")),
             )
-        node.outline_item = writer.add_outline_item(
-            str(node), page, node.parent.outline_item, fit=fit
-        )
+        node.outline_item = writer.add_outline_item(str(node), page, node.parent.outline_item, fit=fit)
     for child in node.children:
         add_outline(html_root, reader, writer, child)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="mdbook_pdf_summary", description="Add outline to the PDF file."
-    )
+    parser = argparse.ArgumentParser(prog="mdbook_pdf_summary", description="Add outline to the PDF file.")
     parser.add_argument(
         "--html_path",
         type=str,

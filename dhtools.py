@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 dh_tools.py — unified CLI for working with the ``dh`` package.
 
@@ -63,9 +63,7 @@ DEFAULT_WORKERS: int = 8
 DEFAULT_SKIP: frozenset[str] = frozenset({"dh_reverse.py"})
 
 
-def _iter_py_files(
-    paths: Iterable[Path], skip: frozenset[str] = frozenset()
-) -> list[Path]:
+def _iter_py_files(paths: Iterable[Path], skip: frozenset[str] = frozenset()) -> list[Path]:
     out: list[Path] = []
     for p in paths:
         if p.is_file() and p.suffix == ".py":
@@ -91,9 +89,7 @@ def _strip_docstring_and_unparse(node: ast.FunctionDef) -> str:
         stmt
         for stmt in node.body
         if not (
-            isinstance(stmt, ast.Expr)
-            and isinstance(stmt.value, ast.Constant)
-            and isinstance(stmt.value.value, str)
+            isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str)
         )
     ]
     clone = ast.FunctionDef(
@@ -166,11 +162,7 @@ def _insert_dh_imports(
         for node in tree.body:
             if not isinstance(node, (ast.Import, ast.ImportFrom)):
                 break
-            if (
-                isinstance(node, ast.ImportFrom)
-                and node.module == "dh"
-                and node.level == 0
-            ):
+            if isinstance(node, ast.ImportFrom) and node.module == "dh" and node.level == 0:
                 existing = {a.name for a in node.names}
                 merged = sorted(existing | set(matched))
                 new_line = f"from dh import {', '.join(merged)}\n"
@@ -354,9 +346,7 @@ def _collect_local_refs(node: ast.AST, names: set[str]) -> set[str]:
     return refs
 
 
-def _collect_inline_source(
-    module_file: Path, func_name: str
-) -> tuple[list[str], list[str]]:
+def _collect_inline_source(module_file: Path, func_name: str) -> tuple[list[str], list[str]]:
     if not module_file.exists():
         return ([], [])
     try:
@@ -415,9 +405,7 @@ def _collect_inline_source(
     return (sorted(needed), blocks)
 
 
-def _inline_file(
-    path: Path, dh_map: dict[str, Path], apply: bool
-) -> tuple[Path, bool, str]:
+def _inline_file(path: Path, dh_map: dict[str, Path], apply: bool) -> tuple[Path, bool, str]:
     if path.resolve() == Path(__file__).resolve():
         return (path, False, "")
 
@@ -595,9 +583,7 @@ def _format_usage_report(
 ) -> str:
     lines: list[str] = []
     lines.append("=" * 40)
-    lines.append(
-        f"  {dh_name} Usage Report — generated {datetime.now():%Y-%m-%d %H:%M}"
-    )
+    lines.append(f"  {dh_name} Usage Report — generated {datetime.now():%Y-%m-%d %H:%M}")
     lines.append("=" * 40)
     lines.append(f"  Scanned: {bin_dir}")
     lines.append(f"  Files with {dh_name} imports: {len(per_file)}")

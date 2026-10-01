@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a directory of `.py` source files, uses the `ast` module to statically extract module-level constant assignments (both plain `Assign` and annotated `AnnAssign` nodes whose target names are uppercase and whose values are literal constants), and records each constant's name, value, and inferred type.
 The script should compute a fast content hash (via `xxhash.xxh64`) for each file—likely to detect duplicates or track changes—and use `joblib.Parallel` to process multiple files concurrently for performance.
 Errors encountered during parsing or hashing should be logged to an `output/error.log` file rather than raised, and the collected constants should ultimately be written out to a generated `output/const.py` file.
@@ -51,9 +51,7 @@ def extract_constants(path):
                         const_name = node.target.id
                         const_value = ast.unparse(node.value)
                         const_type = (
-                            type(node.value.value).__name__
-                            if isinstance(node.value, ast.Constant)
-                            else "unknown"
+                            type(node.value.value).__name__ if isinstance(node.value, ast.Constant) else "unknown"
                         )
                         constants.append((const_name, const_value, const_type))
     except SyntaxError as e:
@@ -89,9 +87,7 @@ def main():
                 if file_hash not in all_constants_by_hash:
                     all_constants_by_hash[file_hash] = []
                 found = False
-                for idx, (existing_name, existing_value, _existing_type) in enumerate(
-                    all_constants_by_hash[file_hash]
-                ):
+                for idx, (existing_name, existing_value, _existing_type) in enumerate(all_constants_by_hash[file_hash]):
                     if existing_name == name and existing_value == value:
                         all_constants_by_hash[file_hash][idx] = name, value, ctype
                         found = True
@@ -112,9 +108,7 @@ def main():
                 f.write(f"# Type: {ctype}\n")
                 f.write(f"{constant_line}\n\n")
                 written_consts.add(constant_line)
-    print(
-        f"Successfully extracted {len(written_consts)} unique constants to {OUTPUT_FILE}"
-    )
+    print(f"Successfully extracted {len(written_consts)} unique constants to {OUTPUT_FILE}")
     if LOG_FILE.exists():
         print(f"Errors logged to {LOG_FILE}")
 

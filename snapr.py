@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI script that compresses or decompresses files in a directory using Snappy via cramjam, with optional tarring of subdirectories, multiprocessing.Pool.apply_async concurrency using a fixed pool of 8 workers, loguru logging, pathlib path handling, full type hints, and docstrings.
 """
@@ -30,13 +30,8 @@ def compress_file(path: Path, remove_original: bool = True) -> tuple[bool, str]:
             path.unlink()
         original_size: int = len(data)
         compressed_size: int = len(compressed_data)
-        ratio: float = (
-            (compressed_size / original_size * 100) if original_size > 0 else 0.0
-        )
-        print(
-            f"Compressed: {path} -> {compressed_path} "
-            f"({original_size} -> {compressed_size} bytes, {ratio:.1f}%)"
-        )
+        ratio: float = (compressed_size / original_size * 100) if original_size > 0 else 0.0
+        print(f"Compressed: {path} -> {compressed_path} ({original_size} -> {compressed_size} bytes, {ratio:.1f}%)")
         return True, f"Compressed {path.name}"
     except Exception as e:
         logger.error(f"Error compressing {path}: {e!s}")
@@ -55,10 +50,7 @@ def decompress_file(path: Path, remove_original: bool = True) -> tuple[bool, str
             f.write(decompressed_data)
         if remove_original:
             path.unlink()
-        print(
-            f"Decompressed: {path} -> {output_path} "
-            f"({len(compressed_data)} -> {len(decompressed_data)} bytes)"
-        )
+        print(f"Decompressed: {path} -> {output_path} ({len(compressed_data)} -> {len(decompressed_data)} bytes)")
         return True, f"Decompressed {path.name}"
     except Exception as e:
         logger.error(f"Error decompressing {path}: {e!s}")
@@ -128,15 +120,12 @@ def process_files(
     success_count: int = 0
     failure_count: int = 0
 
-    args_list: list[tuple[Path, str, bool]] = [
-        (fp, operation, remove_original) for fp in paths
-    ]
+    args_list: list[tuple[Path, str, bool]] = [(fp, operation, remove_original) for fp in paths]
 
     pool: multiprocessing.pool.Pool = multiprocessing.Pool(processes=POOL_SIZE)
     try:
         async_results: list[tuple[Path, Any]] = [
-            (args[0], pool.apply_async(process_file_worker, (args,)))
-            for args in args_list
+            (args[0], pool.apply_async(process_file_worker, (args,))) for args in args_list
         ]
         for path, async_result in async_results:
             try:
@@ -169,13 +158,9 @@ Examples:
         """,
     )
     parser.add_argument("directory", type=str, help="Directory to process")
-    group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(
-        required=True
-    )
+    group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-c", "--compress", action="store_true", help="Compress files")
-    group.add_argument(
-        "-d", "--decompress", action="store_true", help="Decompress files"
-    )
+    group.add_argument("-d", "--decompress", action="store_true", help="Decompress files")
     parser.add_argument(
         "-t",
         "--tar",
@@ -192,9 +177,7 @@ Examples:
         action="store_true",
         help="Do not process subdirectories recursively",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose logging"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
     return parser.parse_args()
 
 
@@ -235,9 +218,7 @@ def main() -> int:
 
     success_count: int
     failure_count: int
-    success_count, failure_count = process_files(
-        files_to_process, operation, remove_original
-    )
+    success_count, failure_count = process_files(files_to_process, operation, remove_original)
 
     print(f"Completed {operation} operation")
     print(f"Success: {success_count}, Failed: {failure_count}")

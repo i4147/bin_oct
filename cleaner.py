@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that cleans a raw terminal transcript file passed as a single argument, reading it as UTF-8 text with error replacement.
 It should strip ANSI escape sequences, normalize CRLF/CR line endings to LF, remove backspace-erased characters and other control characters, collapse three or more consecutive blank lines into a single blank line, and trim trailing whitespace from each line while ensuring the file ends with exactly one newline.
 The cleaned content should overwrite the original file, and the script should print a confirmation message showing the cleaned file path.
@@ -9,9 +9,7 @@ import sys
 
 
 def clean1(text: str) -> str:
-    ansi_escape = re.compile(
-        r"\x1b(\[[0-9;]*[mABCDEFGHJKSTfhilmnprsu]|\][^\x07]*\x07|[()][AB012])"
-    )
+    ansi_escape = re.compile(r"\x1b(\[[0-9;]*[mABCDEFGHJKSTfhilmnprsu]|\][^\x07]*\x07|[()][AB012])")
     content = ansi_escape.sub("", text)
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")

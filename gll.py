@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that extracts a range of lines from a text file and saves them into a new file.
 It should accept arguments for the input filename, a start line number, and an optional end line number (if omitted, it extracts to the end of the file), validating that the numbers are valid integers and that the range is logically correct.
 The output file should be automatically named using the start (and end) line numbers combined with the original file's extension, placed in the current directory.

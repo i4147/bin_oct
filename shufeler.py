@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python script that shuffles the lines of a large text file efficiently without loading the whole file into memory.
 It should use mmap to index the byte offsets of each line, then reorder those offsets using one of several selectable shuffling strategies (a cryptographically secure Fisher-Yates shuffle via secrets, a random.SystemRandom-based shuffle, or a weighted double-pass shuffle), and finally write the lines out to a new file in the shuffled order using the recorded offsets.
 The script should accept an input file path and an output file path via argparse, apply an mmap-size threshold constant to decide when to use the memory-mapped approach, and handle errors gracefully, returning a success/failure status."""
@@ -84,9 +84,7 @@ def enhanced_shuffle_large_file(input_path: Path, output_path: Path) -> bool:
             output_path.open("wb") as outfile,
         ):
             for i, offset in enumerate(line_offsets):
-                next_offset_idx = (
-                    line_offsets.index(offset) + 1 if offset in line_offsets else -1
-                )
+                next_offset_idx = line_offsets.index(offset) + 1 if offset in line_offsets else -1
                 if next_offset_idx < len(line_offsets):
                     end_of_line_offset = line_offsets[next_offset_idx] - 1
                     if end_of_line_offset < offset:
@@ -94,11 +92,7 @@ def enhanced_shuffle_large_file(input_path: Path, output_path: Path) -> bool:
                 else:
                     end_of_line_offset = file_size
                 actual_end_of_line = mm.find(b"\n", offset)
-                line_data = (
-                    mm[offset:file_size]
-                    if actual_end_of_line == -1
-                    else mm[offset : actual_end_of_line + 1]
-                )
+                line_data = mm[offset:file_size] if actual_end_of_line == -1 else mm[offset : actual_end_of_line + 1]
                 outfile.write(line_data)
                 if (i + 1) % 100000 == 0:
                     print(f"  {i + 1}/{original_line_count} lines written...", end="\r")
@@ -178,9 +172,7 @@ def weighted_shuffle(lst: list[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Randomize lines in a file, optimized for large files."
-    )
+    parser = argparse.ArgumentParser(description="Randomize lines in a file, optimized for large files.")
     parser.add_argument("input_file", help="Input file to shuffle")
     args = parser.parse_args()
     input_path = Path(args.input_file)
@@ -191,9 +183,7 @@ def main() -> None:
     output_path = input_path
     success = False
     if file_size > MMAP_THRESHOLD_BYTES:
-        print(
-            f"File size ({file_size / (1024 * 1024):.2f} MB) exceeds {1} MB. Using mmap strategy."
-        )
+        print(f"File size ({file_size / (1024 * 1024):.2f} MB) exceeds {1} MB. Using mmap strategy.")
         success = enhanced_shuffle_large_file(input_path, output_path)
     else:
         N = secrets.randbelow(10)

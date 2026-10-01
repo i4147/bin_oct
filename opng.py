@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Optimize ``.png`` files in place by shelling out to ``optipng``.
 
 The script discovers PNG files (case-insensitively) under the paths supplied
@@ -521,11 +521,7 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     if tag == "OK":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[OK]      {path}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(-{format_bytes(saved)}, -{pct:.1f}%)"
-        )
+        print(f"[OK]      {path}  {format_bytes(orig)} -> {format_bytes(new)}  (-{format_bytes(saved)}, -{pct:.1f}%)")
     elif tag == "DRY-RUN":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
@@ -540,18 +536,12 @@ def _print_status(result: ProcessResult, tag: str) -> None:
         print(f"[SAME]    {path}  {format_bytes(orig)}  (same size, different bytes)")
     elif tag == "SKIP":
         growth = new - orig
-        print(
-            f"[SKIP]    {path}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(larger by {format_bytes(growth)})"
-        )
+        print(f"[SKIP]    {path}  {format_bytes(orig)} -> {format_bytes(new)}  (larger by {format_bytes(growth)})")
     else:  # ERROR
         print(f"[ERROR]   {path}  {result.error}", file=sys.stderr)
 
 
-def _print_summary(
-    counters: dict[str, int], total_before: int, total_after: int
-) -> None:
+def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
     total = sum(counters.values())
     skipped = counters["SAME"] + counters["SKIP"]
 
@@ -588,8 +578,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="optipng-optimize",
         description=(
-            "Optimize PNG files in place using optipng. "
-            "With no paths, the current directory is walked recursively."
+            "Optimize PNG files in place using optipng. With no paths, the current directory is walked recursively."
         ),
     )
     parser.add_argument(
@@ -616,10 +605,7 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=OPT_LEVELS,
         default=DEFAULT_OPT_LEVEL,
         metavar="1-7",
-        help=(
-            "optipng optimization level (-o), 1 (fastest) to 7 (best). "
-            f"Default: {DEFAULT_OPT_LEVEL}."
-        ),
+        help=(f"optipng optimization level (-o), 1 (fastest) to 7 (best). Default: {DEFAULT_OPT_LEVEL}."),
     )
     parser.add_argument(
         "--strip",

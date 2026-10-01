@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 archive_report.py — Unified archive scanner and uncompressed-size reporter.
 
@@ -168,9 +168,7 @@ def _zstd_frame_size(path: Path) -> int:
                 if hasattr(zstd, "get_frame_parameters")
                 else zstd.ZstdDecompressor().frame_parameters(head)
             )
-            size = getattr(params, "content_size", 0) or getattr(
-                params, "uncompressed_size", 0
-            )
+            size = getattr(params, "content_size", 0) or getattr(params, "uncompressed_size", 0)
             if size and size > 0:
                 return int(size)
         except Exception:
@@ -194,9 +192,7 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                 count = len(infos)
                 integrity = zf.testzip() is None
 
-        elif ext and (
-            ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")
-        ):
+        elif ext and (ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")):
             mode = "r:*"
             if ext in (".tar.gz", ".tgz"):
                 mode = "r:gz"
@@ -282,9 +278,7 @@ def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
                 zf.extractall(dest)
             return True, str(dest)
 
-        if ext and (
-            ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")
-        ):
+        if ext and (ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")):
             with tarfile.open(path, "r:*") as tf:
                 try:
                     tf.extractall(dest, filter="data")
@@ -320,11 +314,7 @@ def cmd_scan(
     root = Path(directory).resolve()
 
     if as_json:
-        results = [
-            analyze_archive(p)
-            for p in root.rglob("*")
-            if p.is_file() and detect_archive(p)[0]
-        ]
+        results = [analyze_archive(p) for p in root.rglob("*") if p.is_file() and detect_archive(p)[0]]
         print(json.dumps(results, indent=2))
         return 0
 
@@ -343,11 +333,7 @@ def cmd_scan(
         results.append(info)
 
         if verbose:
-            status = (
-                "\x1b[32m[PASS]\x1b[0m"
-                if info["integrity"]
-                else "\x1b[31m[FAIL]\x1b[0m"
-            )
+            status = "\x1b[32m[PASS]\x1b[0m" if info["integrity"] else "\x1b[31m[FAIL]\x1b[0m"
             print(
                 f"->Found:{info['filename']}|Type:{info['archive_type']}"
                 f"|Comp:{fsz(info['compressed_size'])}"
@@ -356,8 +342,7 @@ def cmd_scan(
 
     print("-" * 40)
     print(
-        f"\x1b[1;37m{'FILENAME':<32} {'ARCHIVE TYPE':<26} "
-        f"{'COMPRESSED':<12} {'EXTRACTED':<12} {'INTEGRITY':<10}\x1b[0m"
+        f"\x1b[1;37m{'FILENAME':<32} {'ARCHIVE TYPE':<26} {'COMPRESSED':<12} {'EXTRACTED':<12} {'INTEGRITY':<10}\x1b[0m"
     )
     print("-" * 40)
 
@@ -382,32 +367,22 @@ def cmd_scan(
     print(f"Total Compressed Size : {fsz(total_comp)}")
     print(f"Total Extracted Size  : \x1b[1;32m{fsz(total_ext)}\x1b[0m")
     if total_comp > 0:
-        print(
-            f"Overall Expansion     : {total_ext / total_comp:.2f}x "
-            f"({fsz(total_ext - total_comp)} saved)"
-        )
+        print(f"Overall Expansion     : {total_ext / total_comp:.2f}x ({fsz(total_ext - total_comp)} saved)")
 
     if auto_extract and results:
         dest_root = root / "extracted_archives"
-        print(
-            f"\n\x1b[38;5;214m[-a] Auto-extracting {len(results)} archives "
-            f"into:\x1b[0m {dest_root}"
-        )
+        print(f"\n\x1b[38;5;214m[-a] Auto-extracting {len(results)} archives into:\x1b[0m {dest_root}")
         for info in results:
             ok, out = extract_archive(Path(info["path"]), dest_root)
             if ok:
-                print(
-                    f"  \x1b[32m[\u2713]\x1b[0m Extracted {info['filename']} -> {out}"
-                )
+                print(f"  \x1b[32m[\u2713]\x1b[0m Extracted {info['filename']} -> {out}")
             else:
                 print(f"  \x1b[31m[\u2717]\x1b[0m Failed {info['filename']}: {out}")
 
     return 0
 
 
-SKIP_DIRS = frozenset(
-    {"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
-)
+SKIP_DIRS = frozenset({"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
 
 
 def _count_stream(reader) -> int:
@@ -439,13 +414,9 @@ def _h_zstd(path: Path) -> tuple[Optional[int], Optional[str]]:
             head = f.read(32)
             dec = zstd.ZstdDecompressor()
             params = (
-                zstd.get_frame_parameters(head)
-                if hasattr(zstd, "get_frame_parameters")
-                else dec.frame_parameters(head)
+                zstd.get_frame_parameters(head) if hasattr(zstd, "get_frame_parameters") else dec.frame_parameters(head)
             )
-            size = getattr(params, "content_size", 0) or getattr(
-                params, "uncompressed_size", 0
-            )
+            size = getattr(params, "content_size", 0) or getattr(params, "uncompressed_size", 0)
             if size:
                 return int(size), None
             f.seek(0)
@@ -534,11 +505,7 @@ def cmd_sizes(directory: str) -> int:
             continue
 
         handler = next(
-            (
-                (name, fn)
-                for ext, (name, fn) in SIZE_HANDLERS.items()
-                if p.name.endswith(ext)
-            ),
+            ((name, fn) for ext, (name, fn) in SIZE_HANDLERS.items() if p.name.endswith(ext)),
             None,
         )
         if handler is None:
@@ -573,10 +540,7 @@ def cmd_sizes(directory: str) -> int:
         print(f"Free disk space: {fsz(free)}")
         if total_uncomp > free:
             shortfall = total_uncomp - free
-            print(
-                f"\n\u26a0\ufe0f  WARNING: Not enough space to extract all files! "
-                f"(Shortfall: {fsz(shortfall)})"
-            )
+            print(f"\n\u26a0\ufe0f  WARNING: Not enough space to extract all files! (Shortfall: {fsz(shortfall)})")
     except OSError:
         pass
 
@@ -587,8 +551,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="archive_report.py",
         description=(
-            "Unified archive scanner and uncompressed-size reporter "
-            "(merges xreport.py, xreport2.py, zreport.py)."
+            "Unified archive scanner and uncompressed-size reporter (merges xreport.py, xreport2.py, zreport.py)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
@@ -602,8 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp_scan = sub.add_parser(
         "scan",
-        help="Full archive scan with integrity check + auto-extract "
-        "(≈ xreport.py / xreport2.py).",
+        help="Full archive scan with integrity check + auto-extract (≈ xreport.py / xreport2.py).",
     )
     sp_scan.add_argument(
         "directory",
@@ -622,8 +584,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-t",
         "--test-integrity",
         action="store_true",
-        help="Print the ASCII banner at the start of the scan "
-        "(preserved from the original scripts).",
+        help="Print the ASCII banner at the start of the scan (preserved from the original scripts).",
     )
     sp_scan.add_argument(
         "-v",
@@ -637,16 +598,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Emit the scan result as JSON and exit.",
     )
-    sp_scan.set_defaults(
-        func=lambda a: cmd_scan(
-            a.directory, a.auto_extract_all, a.test_integrity, a.verbose, a.json
-        )
-    )
+    sp_scan.set_defaults(func=lambda a: cmd_scan(a.directory, a.auto_extract_all, a.test_integrity, a.verbose, a.json))
 
     sp_sizes = sub.add_parser(
         "sizes",
-        help="Report *accurately measured* uncompressed sizes and disk-space "
-        "headroom (≈ zreport.py).",
+        help="Report *accurately measured* uncompressed sizes and disk-space headroom (≈ zreport.py).",
     )
     sp_sizes.add_argument(
         "path",

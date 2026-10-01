@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 translate_words.py
 ==================
@@ -78,17 +78,12 @@ def _make_translate(source, target, script_path):
     mod_file = os.path.abspath(getattr(translate, "__file__", "") or "")
     if mod_file and mod_file == os.path.abspath(script_path):
         raise BackendError(
-            "'translate' resolves to this script itself "
-            "(rename the script to avoid shadowing the package)"
+            "'translate' resolves to this script itself (rename the script to avoid shadowing the package)"
         )
 
-    cls = getattr(translate, "Translator", None) or getattr(
-        translate, "GoogleTranslator", None
-    )
+    cls = getattr(translate, "Translator", None) or getattr(translate, "GoogleTranslator", None)
     if cls is None:
-        raise BackendError(
-            "'translate' module exposes neither 'Translator' nor 'GoogleTranslator'"
-        )
+        raise BackendError("'translate' module exposes neither 'Translator' nor 'GoogleTranslator'")
 
     if cls.__name__ == "Translator":
 
@@ -162,9 +157,7 @@ class TranslatorWrapper:
 
             self.backend_name = name
             if name != preferred:
-                print(
-                    f"⚠️  Backend '{preferred}' unavailable — falling back to '{name}'."
-                )
+                print(f"⚠️  Backend '{preferred}' unavailable — falling back to '{name}'.")
             logger.info("Using backend '{}'", name)
             return
 
@@ -210,9 +203,7 @@ def append_failed(failed_path, word, lock):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Translate a word list file line by line to JSON."
-    )
+    parser = argparse.ArgumentParser(description="Translate a word list file line by line to JSON.")
 
     parser.add_argument(
         "-i",
@@ -232,20 +223,15 @@ def parse_args():
         help="File collecting words that failed all retries (default: failed.txt)",
     )
 
-    parser.add_argument(
-        "-s", "--source", default="fr", help="Source language code (default: fr)"
-    )
-    parser.add_argument(
-        "-t", "--target", default="en", help="Target language code (default: en)"
-    )
+    parser.add_argument("-s", "--source", default="fr", help="Source language code (default: fr)")
+    parser.add_argument("-t", "--target", default="en", help="Target language code (default: en)")
 
     parser.add_argument(
         "-b",
         "--backend",
         default="translate",
         choices=FALLBACK_ORDER,
-        help="Preferred translation backend (default: translate); "
-        "falls back automatically if unusable",
+        help="Preferred translation backend (default: translate); falls back automatically if unusable",
     )
 
     parser.add_argument(
@@ -369,10 +355,7 @@ def main():
                 if translation is None:
                     append_failed(failed_path, word, failed_lock)
                     with print_lock:
-                        print(
-                            f"[{count}/{total_pending}] ✗ {word} "
-                            f"(failed -> {failed_path})"
-                        )
+                        print(f"[{count}/{total_pending}] ✗ {word} (failed -> {failed_path})")
                 else:
                     results[word] = translation
                     with print_lock:

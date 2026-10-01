@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """GitHub repository cloning utility with pluggable backends.
 
 Fetches repository information from GitHub, prompts for confirmation on large
@@ -120,9 +120,7 @@ class SubprocessBackend:
         depth: Optional[int],
     ) -> None:
         if target.exists() and any(target.iterdir()):
-            raise Exception(
-                f"Target directory already exists and is not empty: {target}"
-            )
+            raise Exception(f"Target directory already exists and is not empty: {target}")
 
         if self.prefer_gh:
             gh_cmd: list[str] = [
@@ -223,19 +221,13 @@ class Libgit2Backend:
         depth: Optional[int],
     ) -> None:
         if depth is not None:
-            raise NotImplementedError(
-                "pygit2/libgit2 does not support shallow clones; "
-                "falling back to subprocess git."
-            )
+            raise NotImplementedError("pygit2/libgit2 does not support shallow clones; falling back to subprocess git.")
         import pygit2
 
         pygit2.clone_repository(clone_url, str(target), checkout_branch=branch)
 
     def update_submodules(self, repo_root: Path) -> None:
-        raise NotImplementedError(
-            "pygit2 does not expose recursive submodule update; "
-            "falling back to subprocess git."
-        )
+        raise NotImplementedError("pygit2 does not expose recursive submodule update; falling back to subprocess git.")
 
 
 class TyperBackend:
@@ -346,10 +338,7 @@ def clone_repo(
     backend: CloneBackend,
 ) -> Path:
     depth_msg = f"depth={depth}" if depth is not None else "full history"
-    print(
-        f"Cloning repository from {clone_url} "
-        f"(branch: {branch}, {depth_msg}, backend: {backend.name})"
-    )
+    print(f"Cloning repository from {clone_url} (branch: {branch}, {depth_msg}, backend: {backend.name})")
     target_path = resolve_clone_target(clone_url)
 
     try:
@@ -362,9 +351,7 @@ def clone_repo(
         logger.warning(f"Backend '{backend.name}' clone failed: {e}")
 
     if not _git_available():
-        raise Exception(
-            f"Backend '{backend.name}' failed and 'git' is not available for fallback."
-        )
+        raise Exception(f"Backend '{backend.name}' failed and 'git' is not available for fallback.")
     logger.info("Falling back to subprocess git for clone.")
     fallback = SubprocessBackend(prefer_gh=False)
     try:
@@ -417,17 +404,11 @@ def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None
             backend.update_submodules(current_root)
             print(f"Submodules updated in {current_root} via {backend.name}.")
         except NotImplementedError as e:
-            logger.warning(
-                f"Backend '{backend.name}' cannot update submodules: {e}. "
-                "Using subprocess git."
-            )
+            logger.warning(f"Backend '{backend.name}' cannot update submodules: {e}. Using subprocess git.")
             _subprocess_update_submodules(current_root)
             print(f"Submodules updated in {current_root} via fallback git.")
         except Exception as e:
-            logger.warning(
-                f"Backend '{backend.name}' submodule update failed: {e}. "
-                "Trying subprocess git."
-            )
+            logger.warning(f"Backend '{backend.name}' submodule update failed: {e}. Trying subprocess git.")
             try:
                 _subprocess_update_submodules(current_root)
                 print(f"Submodules updated in {current_root} via fallback git.")
@@ -496,21 +477,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "-d",
         "--depth",
         action="store_true",
-        help=(
-            "Perform a shallow clone with depth 1. Without this flag the "
-            "full history is cloned."
-        ),
+        help=("Perform a shallow clone with depth 1. Without this flag the full history is cloned."),
     )
     parser.add_argument(
         "-b",
         "--backend",
         default=DEFAULT_BACKEND,
         choices=KNOWN_BACKENDS,
-        help=(
-            "Clone backend to use. "
-            f"Choices: {', '.join(KNOWN_BACKENDS)}. "
-            f"Default: {DEFAULT_BACKEND}."
-        ),
+        help=(f"Clone backend to use. Choices: {', '.join(KNOWN_BACKENDS)}. Default: {DEFAULT_BACKEND}."),
     )
     return parser
 
@@ -559,9 +533,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except Exception as e:
         if "not found" in str(e).lower() or "fatal:" in str(e):
             alt_branch = DEFAULT_BRANCH_FALLBACK if default_branch == "main" else "main"
-            logger.warning(
-                f"Branch '{default_branch}' failed, trying '{alt_branch}'..."
-            )
+            logger.warning(f"Branch '{default_branch}' failed, trying '{alt_branch}'...")
             try:
                 repo_path = clone_repo(clone_url, alt_branch, depth, backend)
             except Exception as e2:

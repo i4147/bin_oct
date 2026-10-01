@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 summarizer.py — Unified text summarization CLI.
 
@@ -70,9 +70,7 @@ class NLTKFrequencySummarizer:
 
     def __init__(self, language: str = "english", variant: str = "summa") -> None:
         if variant not in self.VARIANTS:
-            raise ValueError(
-                f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}"
-            )
+            raise ValueError(f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}")
 
         from nltk.corpus import stopwords  # type: ignore
 
@@ -159,9 +157,7 @@ class NLTKFrequencySummarizer:
                 score = sum(freqs.get(t, 0) for t in tokens)
                 n = len(tokens)
             else:
-                relevant = [
-                    t for t in tokens if t.isalnum() and t not in self.stop_words
-                ]
+                relevant = [t for t in tokens if t.isalnum() and t not in self.stop_words]
                 score = sum(freqs.get(t, 0) for t in relevant)
                 n = len(relevant)
             scores[i] = score / n if n else 0.0
@@ -225,7 +221,7 @@ def cmd_summarize(args: argparse.Namespace) -> int:
         )
         summary = summarizer.summarize_by_count(text, count=count)
 
-    else:  # "nltk"
+    else:
         summarizer = NLTKFrequencySummarizer(
             language=args.language,
             variant="summa",
@@ -301,16 +297,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--count",
         type=int,
         default=None,
-        help="Number of sentences to keep. Defaults: 3 for nltk, "
-        "5 for nltk-simple and sumy.",
+        help="Number of sentences to keep. Defaults: 3 for nltk, 5 for nltk-simple and sumy.",
     )
     p.add_argument(
         "-r",
         "--ratio",
         type=float,
         default=None,
-        help="Fraction of sentences to keep (nltk backend only). "
-        "Overrides --count. Default for nltk: 0.3.",
+        help="Fraction of sentences to keep (nltk backend only). Overrides --count. Default for nltk: 0.3.",
     )
     p.add_argument(
         "-l",
@@ -328,8 +322,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--no-save",
         action="store_true",
-        help="Do not write the summary to disk; only print it "
-        "(preserves summa.py's stdout-only behavior).",
+        help="Do not write the summary to disk; only print it (preserves summa.py's stdout-only behavior).",
     )
     p.add_argument(
         "-q",

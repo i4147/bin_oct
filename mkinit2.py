@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that automatically regenerates an `__init__.py` file for a package by scanning all top-level `.py` modules (excluding `__init__.py` and files starting with underscore) in a given directory, using the `ast` module to parse each file and extract public function and class names (those not starting with underscore).
 It should build a mapping of module names to their public symbols, opt merging with an existing `__init__.py`'s current imports and `__all__` list by parsing it with `ast` as well.
 The script should support parallel processing of modules via `multiprocessing` for speed, use `shutil` for any file backup/copy operations, and write out updated `from .module import Name` statements plus a sorted `__all__` list, printing warnings to stderr for files that fail to parse."""
@@ -57,9 +57,7 @@ def parse_existing_init(init_file: Path) -> tuple[set[str], set[str], list[str]]
                 if isinstance(target, ast.Name) and target.id == "__all__":
                     if isinstance(node.value, (ast.List, ast.Tuple)):
                         for elt in node.value.elts:
-                            if isinstance(elt, ast.Constant) and isinstance(
-                                elt.value, str
-                            ):
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                 existing_all.add(elt.value)
     return existing_imports, existing_all, original_lines
 
@@ -78,9 +76,7 @@ def main():
     for module_name, public_names in results:
         module_public[module_name] = public_names
         print(f"  - {module_name}.py: {len(public_names)} public name(s)")
-    modules_with_public = [
-        (name, names) for name, names in module_public.items() if names
-    ]
+    modules_with_public = [(name, names) for name, names in module_public.items() if names]
     init_file = cwd / "__init__.py"
     if init_file.exists():
         backup_file = init_file.with_suffix(".py.bak")

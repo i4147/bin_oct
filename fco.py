@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_font_converter.py
 
@@ -176,15 +176,12 @@ def convert_font(
                             return result
 
                         warning = (
-                            "font has TrueType outlines; .otf conventionally "
-                            "uses CFF — outlines were NOT converted"
+                            "font has TrueType outlines; .otf conventionally uses CFF — outlines were NOT converted"
                         )
                     else:
                         if not allow_outline_mismatch:
                             result.skipped = True
-                            result.skipped_reason = (
-                                "no recognizable CFF outlines for .otf"
-                            )
+                            result.skipped_reason = "no recognizable CFF outlines for .otf"
                             return result
 
                         warning = "no recognizable CFF outlines; .otf may be invalid"
@@ -206,20 +203,15 @@ def convert_font(
                             return result
 
                         warning = (
-                            "font has CFF outlines; .ttf conventionally uses "
-                            "TrueType — outlines were NOT converted"
+                            "font has CFF outlines; .ttf conventionally uses TrueType — outlines were NOT converted"
                         )
                     else:
                         if not allow_outline_mismatch:
                             result.skipped = True
-                            result.skipped_reason = (
-                                "no recognizable TrueType outlines for .ttf"
-                            )
+                            result.skipped_reason = "no recognizable TrueType outlines for .ttf"
                             return result
 
-                        warning = (
-                            "no recognizable TrueType outlines; .ttf may be invalid"
-                        )
+                        warning = "no recognizable TrueType outlines; .ttf may be invalid"
 
                     font.sfntVersion = SFNT_VERSIONS["ttf"]
 
@@ -243,9 +235,7 @@ def convert_font(
                     result.removed_original = True
                 except OSError as exc:
                     extra = f"conversion succeeded but could not remove original: {exc}"
-                    result.warning = (
-                        f"{result.warning}; {extra}" if result.warning else extra
-                    )
+                    result.warning = f"{result.warning}; {extra}" if result.warning else extra
 
         finally:
             with contextlib.suppress(Exception):
@@ -254,12 +244,7 @@ def convert_font(
     except Exception as exc:
         result.error = str(exc)
 
-        if (
-            result.output is not None
-            and not output_existed_before
-            and result.output.exists()
-            and not result.success
-        ):
+        if result.output is not None and not output_existed_before and result.output.exists() and not result.success:
             with contextlib.suppress(OSError):
                 result.output.unlink()
 
@@ -302,14 +287,8 @@ def print_file_stats(result: ConversionResult) -> None:
     name = result.input.name
 
     if result.success:
-        ratio = (
-            result.output_size / result.input_size * 100 if result.input_size else 0.0
-        )
-        saved = (
-            (1 - result.output_size / result.input_size) * 100
-            if result.input_size
-            else 0.0
-        )
+        ratio = result.output_size / result.input_size * 100 if result.input_size else 0.0
+        saved = (1 - result.output_size / result.input_size) * 100 if result.input_size else 0.0
 
         print(f"  ✓ {name}")
         print(
@@ -484,10 +463,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             to_convert.append(f)
 
     if already_target:
-        print(
-            f"Skipping {len(already_target)} file(s) already in "
-            f".{args.output_format} format"
-        )
+        print(f"Skipping {len(already_target)} file(s) already in .{args.output_format} format")
 
     if not to_convert:
         print("Nothing to convert.")
@@ -534,9 +510,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         pool = Pool(processes=workers)
 
         try:
-            async_results = [
-                pool.apply_async(convert_font, args=wa) for wa in worker_args
-            ]
+            async_results = [pool.apply_async(convert_font, args=wa) for wa in worker_args]
 
             try:
                 for ar in async_results:

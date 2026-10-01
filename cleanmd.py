@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that scans a directory tree for Markdown files, extracts image references (e.g., `![alt](path)` links), and checks whether the referenced image files actually exist on disk, reporting missing or broken image links per file.
 It should use colorized terminal output (via an Enum-based Color/Styling helper) to distinguish success, error, warning, and info messages, and leverage multiprocessing.Pool to process multiple files concurrently for speed.
 The script should accept a target directory as an argument, walk it recursively using pathlib, use regex to parse image syntax from Markdown content, collect statistics (e.g., total images checked, valid vs.
@@ -87,9 +87,7 @@ class MarkdownPatterns:
         r"^\s*\[([^\[\]]+)\]:\s*(.+?(?:\.(?:png|jpg|jpeg|gif|webp|svg|bmp))?)\s*(?:\"[^\"]*\")?\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
-    PICTURE_TAG = re.compile(
-        r"<picture\b[^>]*>.*?</picture>", re.DOTALL | re.IGNORECASE
-    )
+    PICTURE_TAG = re.compile(r"<picture\b[^>]*>.*?</picture>", re.DOTALL | re.IGNORECASE)
     FIGURE_TAG = re.compile(r"<figure\b[^>]*>.*?</figure>", re.DOTALL | re.IGNORECASE)
     EMPTY_LINK = re.compile(r"\[\]\(([^\)]+)\)", re.MULTILINE)
 
@@ -102,13 +100,9 @@ class MarkdownImageRemover:
     def remove_images(self, content: str) -> tuple[str, int]:
         original_len = len(content)
         count = 0
-        content, inline_count = self._remove_pattern(
-            content, self.patterns.INLINE_IMAGE
-        )
+        content, inline_count = self._remove_pattern(content, self.patterns.INLINE_IMAGE)
         count += inline_count
-        content, ref_count = self._remove_pattern(
-            content, self.patterns.REFERENCE_IMAGE
-        )
+        content, ref_count = self._remove_pattern(content, self.patterns.REFERENCE_IMAGE)
         count += ref_count
         content, def_count = self._remove_pattern(content, self.patterns.IMAGE_DEF)
         count += def_count
@@ -118,9 +112,7 @@ class MarkdownImageRemover:
         count += pic_count
         content, fig_count = self._remove_pattern(content, self.patterns.FIGURE_TAG)
         count += fig_count
-        content, empty_link_count = self._remove_pattern(
-            content, self.patterns.EMPTY_LINK
-        )
+        content, empty_link_count = self._remove_pattern(content, self.patterns.EMPTY_LINK)
         count += empty_link_count
         content = re.sub(r"\n{2,}", "\n\n", content)
         content = re.sub(r"^\n+", "", content)
@@ -142,11 +134,7 @@ def get_markdown_files(path: Path) -> list[Path]:
             return [path]
         return []
     if path.is_dir():
-        return (
-            list(path.rglob("*.md"))
-            + list(path.rglob("*.markdown"))
-            + list(path.rglob("*.txt"))
-        )
+        return list(path.rglob("*.md")) + list(path.rglob("*.markdown")) + list(path.rglob("*.txt"))
     return []
 
 
@@ -194,24 +182,17 @@ class Reporter:
     def print_header():
         print()
         print(Styling.style("=" * 40, Color.BRIGHT_CYAN, bold=True))
-        print(
-            Styling.style("  Markdown Image Remover v1.3", Color.BRIGHT_CYAN, bold=True)
-        )
+        print(Styling.style("  Markdown Image Remover v1.3", Color.BRIGHT_CYAN, bold=True))
         print(Styling.style("=" * 40, Color.BRIGHT_CYAN, bold=True))
         print()
 
     @staticmethod
     def print_file_result(stats: ImageStats):
         if stats.error:
-            print(
-                f"{Styling.error('✗')} {stats.rel_path}\n"
-                f"  {Styling.error('Error')}: {stats.error}"
-            )
+            print(f"{Styling.error('✗')} {stats.rel_path}\n  {Styling.error('Error')}: {stats.error}")
             return
         reduction = stats.original_size - stats.final_size
-        reduction_pct = (
-            (reduction / stats.original_size * 100) if stats.original_size > 0 else 0
-        )
+        reduction_pct = (reduction / stats.original_size * 100) if stats.original_size > 0 else 0
         status = Styling.success("✓") if stats.images_removed > 0 else Styling.dim("∘")
         print(
             f"{status} {Styling.info(stats.rel_path)}\n"
@@ -231,18 +212,12 @@ class Reporter:
         total_original = sum(r.original_size for r in successful)
         total_final = sum(r.final_size for r in successful)
         total_reduction = total_original - total_final
-        reduction_pct = (
-            (total_reduction / total_original * 100) if total_original > 0 else 0
-        )
+        reduction_pct = (total_reduction / total_original * 100) if total_original > 0 else 0
         print(f"\n{Styling.style('SUMMARY', Color.BRIGHT_CYAN, bold=True)}")
-        print(
-            f"  Files processed: {Styling.style(str(len(successful)), Color.BRIGHT_GREEN, bold=True)}"
-        )
+        print(f"  Files processed: {Styling.style(str(len(successful)), Color.BRIGHT_GREEN, bold=True)}")
         if failed:
             print(f"  Failed: {Styling.error(str(len(failed)))}")
-        print(
-            f"  Total images/links removed: {Styling.style(str(total_images), Color.YELLOW, bold=True)}"
-        )
+        print(f"  Total images/links removed: {Styling.style(str(total_images), Color.YELLOW, bold=True)}")
         print(
             f"  Total size reduction: {Styling.style(Reporter._format_size(total_reduction), Color.BRIGHT_GREEN)} "
             f"{Styling.dim(f'(-{reduction_pct:.1f}%)')}"
@@ -263,9 +238,7 @@ def main():
     args = sys.argv[1:]
     if not args:
         search_path = Path.cwd()
-        print(
-            f"No input provided. Processing {Styling.info(str(search_path))} recursively...\n"
-        )
+        print(f"No input provided. Processing {Styling.info(str(search_path))} recursively...\n")
         files = get_markdown_files(search_path)
     else:
         files = []
@@ -275,18 +248,13 @@ def main():
     if not files:
         print(Styling.warning("No markdown or text files found."))
         sys.exit(0)
-    print(
-        f"Found {Styling.style(str(len(files)), Color.BRIGHT_YELLOW, bold=True)} "
-        f"file(s) to process.\n"
-    )
+    print(f"Found {Styling.style(str(len(files)), Color.BRIGHT_YELLOW, bold=True)} file(s) to process.\n")
     config = ProcessingConfig(workers=4)
     results = []
     try:
         with Pool(processes=config.workers) as pool:
             file_args = [(f, config) for f in files]
-            async_results = [
-                pool.apply_async(worker_process_file, (args,)) for args in file_args
-            ]
+            async_results = [pool.apply_async(worker_process_file, (args,)) for args in file_args]
             for async_result in async_results:
                 try:
                     result = async_result.get(timeout=30)

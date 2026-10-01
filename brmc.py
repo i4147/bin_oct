@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that strips docstrings from Python source files using AST parsing, while preserving each file's module-level docstring if present.
 It should accept a directory (via a helper function get_pyfiles from a local dh module) to discover .py files, process them in parallel using multiprocessing, and report how many docstrings were removed per file.
 The core function should parse source into an AST, walk it to locate string-literal expression statements (docstrings) with their line/column spans, remove them from the source text while leaving the module docstring intact, and return the modified source along with a count of removals; syntax errors should be handled gracefully by returning the original source unchanged."""
@@ -37,9 +37,7 @@ def _remove_docstrings_from_source(source: str) -> tuple[str, int]:
         if preserve_module and tree.body and node is tree.body[0]:
             continue
         if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-            to_remove.append(
-                (node.lineno, node.col_offset, node.end_lineno, node.end_col_offset)
-            )
+            to_remove.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset))
     if not to_remove:
         return source, 0
     lines = source.splitlines(keepends=True)
@@ -104,9 +102,7 @@ def process_file(path: Path, cwd: Path) -> tuple[str, int] | None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Strip docstrings from Python files (preserves module docstrings)."
-    )
+    parser = argparse.ArgumentParser(description="Strip docstrings from Python files (preserves module docstrings).")
     parser.add_argument(
         "targets",
         nargs="*",

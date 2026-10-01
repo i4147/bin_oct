@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that scans all installed pip packages, checks PyPI for each package's latest available version, and reports which ones have updates available.
 The tool should be resumable and interruption-safe: it saves progress (already-processed packages and their results) to a JSON state file in a ".package_updates" folder under the user's home directory, reloading that state on startup so re-runs can skip already-checked packages, and it should gracefully handle Ctrl+C (SIGINT) by immediately persisting the current state before exiting.
 Results should also be written to a human-readable text file summarizing which packages have newer versions on PyPI compared to the locally installed version, using version comparison (via the "packaging" library) rather than simple string comparison.
@@ -39,9 +39,7 @@ class PackageUpdateChecker:
                 with open(self.json_file, "r") as f:
                     data = json.load(f)
                     self.processed_packages = data.get("processed_packages", {})
-                    print(
-                        f"📂 Loaded previous state: {len(self.processed_packages)} packages already processed"
-                    )
+                    print(f"📂 Loaded previous state: {len(self.processed_packages)} packages already processed")
             except (json.JSONDecodeError, KeyError):
                 print("⚠️  Could not load previous state, starting fresh")
                 self.processed_packages = {}
@@ -90,9 +88,7 @@ class PackageUpdateChecker:
                                 download_url = url_info.get("url")
                                 break
                     if not download_url:
-                        download_url = data["info"].get("home_page") or data[
-                            "info"
-                        ].get("project_url")
+                        download_url = data["info"].get("home_page") or data["info"].get("project_url")
                     return {
                         "latest_version": latest_version,
                         "download_url": download_url,
@@ -128,17 +124,13 @@ class PackageUpdateChecker:
         installed_packages = self.get_installed_packages()
         print(f"📦 Found {len(installed_packages)} installed packages")
         packages_to_check = {
-            name: ver
-            for name, ver in installed_packages.items()
-            if name not in self.processed_packages
+            name: ver for name, ver in installed_packages.items() if name not in self.processed_packages
         }
         if not packages_to_check:
             print("✅ All packages already processed")
         else:
             print(f"🔄 Checking {len(packages_to_check)} packages for updates...")
-            for i, (pkg_name, current_version) in enumerate(
-                sorted(packages_to_check.items()), 1
-            ):
+            for i, (pkg_name, current_version) in enumerate(sorted(packages_to_check.items()), 1):
                 if self.interrupted:
                     break
                 print(f"  [{i}/{len(packages_to_check)}] Checking {pkg_name}...")
@@ -147,9 +139,7 @@ class PackageUpdateChecker:
                     if latest_info:
                         latest_version = latest_info["latest_version"]
                         try:
-                            needs_update = version.parse(
-                                latest_version
-                            ) > version.parse(current_version)
+                            needs_update = version.parse(latest_version) > version.parse(current_version)
                         except version.InvalidVersion:
                             needs_update = latest_version != current_version
                         self.processed_packages[pkg_name] = {
@@ -160,9 +150,7 @@ class PackageUpdateChecker:
                             "checked_at": datetime.now().isoformat(),
                         }
                         if needs_update:
-                            print(
-                                f"    ⬆️  Update available: {current_version} → {latest_version}"
-                            )
+                            print(f"    ⬆️  Update available: {current_version} → {latest_version}")
                         else:
                             print(f"    ✓ Up to date ({current_version})")
                     else:
@@ -190,11 +178,7 @@ class PackageUpdateChecker:
                     print(f"    💾 Progress saved")
                 time.sleep(0.5)
         self.save_state()
-        updatable = {
-            name: info
-            for name, info in self.processed_packages.items()
-            if info.get("needs_update", False)
-        }
+        updatable = {name: info for name, info in self.processed_packages.items() if info.get("needs_update", False)}
         self.write_updates_to_file(updatable)
         print("\n" + "=" * 50)
         print("✅ Update check complete!")
@@ -205,9 +189,7 @@ class PackageUpdateChecker:
         if updatable:
             print("\n📋 Packages with updates:")
             for pkg, info in sorted(updatable.items()):
-                print(
-                    f"  • {pkg}: {info['current_version']} → {info['latest_version']}"
-                )
+                print(f"  • {pkg}: {info['current_version']} → {info['latest_version']}")
 
 
 def main():

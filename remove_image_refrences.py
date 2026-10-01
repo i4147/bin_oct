@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans README-style text files (Markdown, HTML, and reStructuredText) and strips out image references that point to remote URLs (http, https, or protocol-relative links), while leaving locally-referenced images untouched.
 It should use regular expressions to detect and remove remote HTML `<img>` tags, Markdown inline images, Markdown reference-style images along with their now-unused reference definitions, and reST image directives.
 Provide reusable functions for each format so the logic can be applied to file contents read via pathlib, ultimately producing cleaned text with all remote image markup removed but local image links preserved."""
@@ -7,9 +7,7 @@ import re
 from pathlib import Path
 
 REMOTE_PREFIXES = "http://", "https://", "//"
-IMG_TAG_RE = re.compile(
-    r"<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE
-)
+IMG_TAG_RE = re.compile(r"<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
 
 
 def remove_remote_html_images(text: str) -> str:

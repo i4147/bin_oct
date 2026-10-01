@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """->regenerates script"""
 
 from __future__ import annotations
@@ -91,9 +91,7 @@ def beautify(path: Path) -> Path:
             )
         if proc.returncode != 0:
             stderr = proc.stderr.decode("utf-8", "replace").strip()
-            raise RuntimeError(
-                f"{BEAUTIFIER[0]} exited with {proc.returncode}: {stderr}"
-            )
+            raise RuntimeError(f"{BEAUTIFIER[0]} exited with {proc.returncode}: {stderr}")
         os.replace(tmp, path)
     except BaseException:
         try:
@@ -160,10 +158,7 @@ def main() -> int:
         return 2
 
     suffixes: frozenset[str] = (
-        frozenset(
-            s.lower() if s.startswith(".") else f".{s.lower()}"
-            for s in (args.ext or DEFAULT_SUFFIXES)
-        )
+        frozenset(s.lower() if s.startswith(".") else f".{s.lower()}" for s in (args.ext or DEFAULT_SUFFIXES))
         if args.ext
         else frozenset(DEFAULT_SUFFIXES)
     )

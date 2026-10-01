@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans a given root directory for all .py files and runs a configurable set of static analysis/type-checking tools (such as ty, pyright, pylint, mypy, and pyrefly) against each file in parallel using multiprocessing.
 For each Python file, capture the stdout/stderr output of every tool invocation, then append the results to the end of that same file as commented-out sections labeled with the tool name, handling missing tools or execution errors gracefully.
 The script should accept command-line arguments (via argparse) to control which root directory to scan and likely which tools to run, and it should efficiently distribute the checking work across multiple processes using a Pool."""
@@ -64,13 +64,8 @@ def process_file(path: Path, tools: list[str]) -> str:
     for tool in tools:
         tool_name, output = run_tool(tool, path)
         outputs[tool_name] = output
-    if (
-        tools == ["ty"]
-        and outputs.get("ty")
-        and ("all checks passed" in outputs["ty"].lower())
-    ) or (
-        "error[unresolved-import]: Cannot resolve imported module `dh`"
-        in outputs["ty"].lower()
+    if (tools == ["ty"] and outputs.get("ty") and ("all checks passed" in outputs["ty"].lower())) or (
+        "error[unresolved-import]: Cannot resolve imported module `dh`" in outputs["ty"].lower()
     ):
         return f"✓ Skipped (ty: all checks passed): {path}"
     append_tool_outputs(path, outputs)
@@ -163,9 +158,7 @@ Examples:
         print("No .py files found.")
         return
     with Pool(processes=4) as pool:
-        async_results = [
-            pool.apply_async(process_file, args=(f, enabled_tools)) for f in files
-        ]
+        async_results = [pool.apply_async(process_file, args=(f, enabled_tools)) for f in files]
         for result in async_results:
             print(result.get())
 

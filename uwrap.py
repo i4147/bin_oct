@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Universal command wrapper with:
 - Glob expansion for arguments
@@ -116,13 +116,9 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
         description="Universal command wrapper with logging, colors, and clipboard",
         add_help=False,
     )
-    parser.add_argument(
-        "--no-color", action="store_true", help="Disable colored output"
-    )
+    parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     parser.add_argument("--no-log", action="store_true", help="Disable logging")
-    parser.add_argument(
-        "--timestamp", action="store_true", help="Prefix output with timestamps"
-    )
+    parser.add_argument("--timestamp", action="store_true", help="Prefix output with timestamps")
     parser.add_argument(
         "--no-clipboard",
         action="store_true",
@@ -138,9 +134,7 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
 
     if not rest:
         parser.print_usage(sys.stderr)
-        raise SystemExit(
-            "error: provide a command to wrap, e.g. wrapper.py ls -la *.py"
-        )
+        raise SystemExit("error: provide a command to wrap, e.g. wrapper.py ls -la *.py")
 
     return rest[0], rest[1:], known
 
@@ -163,11 +157,7 @@ def main() -> None:
     output_size = 0
 
     try:
-        with (
-            open(log_file, "a", encoding="utf-8")
-            if log_file
-            else nullcontext() as log_f
-        ):
+        with open(log_file, "a", encoding="utf-8") if log_file else nullcontext() as log_f:
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,

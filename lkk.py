@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that searches the current working directory for files or folders whose names contain a given substring, then prints the matches sorted alphabetically.
 It should accept the search pattern as a command-line argument and support an optional "-s" flag that, when present, includes symlinks in the results (by default symlinks are skipped).
 For each match printed, regular entries should be shown as "  - name" while symlinks should be shown as "  - name -> resolved_target_path".

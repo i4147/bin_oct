@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively or non-recursively renames files and directories in a given (or current) working directory by removing every occurrence of a specified substring from their names, skipping ".git" directories and refusing renames that would result in an empty name.
 It should accept arguments for the target string, a dry-run flag to preview changes without applying them, a recursive flag to descend into subdirectories, and an optional starting path, use a helper "unique_path" function (from a module named "dh") to avoid collisions when the new name already exists, print each rename (or would-be rename) and any warnings/errors, and return/print the total count of items renamed."""
 
@@ -28,9 +28,7 @@ def remove_string_from_names(
         if (item.is_file() or item.is_dir()) and string_to_remove in item.name:
             new_name = item.name.replace(string_to_remove, "")
             if not new_name.strip():
-                print(
-                    f"Warning: Removing '{string_to_remove}' would make name empty for '{item.name}'"
-                )
+                print(f"Warning: Removing '{string_to_remove}' would make name empty for '{item.name}'")
                 continue
             new_path = current_path / new_name
             if new_path.exists():
@@ -45,9 +43,7 @@ def remove_string_from_names(
                 except OSError as e:
                     print(f"Error renaming '{item.name}': {e}")
         if recursive and item.is_dir():
-            renamed_count += remove_string_from_names(
-                string_to_remove, dry_run, recursive, item
-            )
+            renamed_count += remove_string_from_names(string_to_remove, dry_run, recursive, item)
     return renamed_count
 
 
@@ -70,9 +66,7 @@ def replace_string_in_names(
         if (item.is_file() or item.is_dir()) and str1 in item.name:
             new_name = item.name.replace(str1, str2)
             if not new_name.strip():
-                print(
-                    f"Warning: Replacing '{str1}' with '{str2}' would make name empty for '{item.name}'"
-                )
+                print(f"Warning: Replacing '{str1}' with '{str2}' would make name empty for '{item.name}'")
                 continue
             new_path = current_path / new_name
             if new_path.exists():
@@ -87,9 +81,7 @@ def replace_string_in_names(
                 except OSError as e:
                     print(f"Error renaming '{item.name}': {e}")
         if recursive and item.is_dir():
-            renamed_count += replace_string_in_names(
-                str1, str2, dry_run, recursive, item
-            )
+            renamed_count += replace_string_in_names(str1, str2, dry_run, recursive, item)
     return renamed_count
 
 
@@ -108,9 +100,7 @@ def rename_by_template(
 ) -> int:
     renamed_count = 0
     try:
-        files = [
-            f for f in current_path.iterdir() if f.is_file() and (not should_skip(f))
-        ]
+        files = [f for f in current_path.iterdir() if f.is_file() and (not should_skip(f))]
         script_name = Path(__file__).name
         files = [f for f in files if f.name != script_name]
         if files:
@@ -148,9 +138,7 @@ def rename_by_template(
         try:
             for item in current_path.iterdir():
                 if item.is_dir() and (not should_skip(item)):
-                    renamed_count += rename_by_template(
-                        template, dry_run, recursive, item
-                    )
+                    renamed_count += rename_by_template(template, dry_run, recursive, item)
         except PermissionError:
             print(f"Permission denied accessing subdirectory in {current_path}")
     return renamed_count
@@ -187,9 +175,7 @@ def main() -> None:
         action="store_true",
         help="Show what would be renamed without actually doing it",
     )
-    parser.add_argument(
-        "--recursive", action="store_true", help="Process directories recursively"
-    )
+    parser.add_argument("--recursive", action="store_true", help="Process directories recursively")
     args = parser.parse_args()
     cwd = Path.cwd()
     print(f"Working in directory: {cwd}")

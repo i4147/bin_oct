@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that batch-converts reStructuredText (.rst) files into HTML using docutils, replacing each original file with an equivalent .html file.
 It should accept file paths as command-line arguments, or if none are given, discover all .rst files in the current working directory via a helper function get_files from a module named dh.
 For each file, it reads the RST content, converts it to HTML body content (suppressing warnings and using initial header level 2), writes the result to a new file with the same name but .html extension, and then deletes the original .rst file.

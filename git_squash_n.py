@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 git_squash_n.py
 
@@ -27,13 +27,9 @@ from datetime import datetime
 
 def run(cmd, cwd=None, capture=False, check=True):
     if capture:
-        res = subprocess.run(
-            cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        res = subprocess.run(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if check and res.returncode != 0:
-            raise subprocess.CalledProcessError(
-                res.returncode, cmd, output=res.stdout, stderr=res.stderr
-            )
+            raise subprocess.CalledProcessError(res.returncode, cmd, output=res.stdout, stderr=res.stderr)
         return res
     else:
         res = subprocess.run(cmd, cwd=cwd)
@@ -96,9 +92,7 @@ class SubprocessBackend(Backend):
         dirty = bool(st.stdout.strip())
         stash_made = False
         if dirty and not force:
-            raise RuntimeError(
-                "Working tree is dirty. Commit or use --force to stash changes before running."
-            )
+            raise RuntimeError("Working tree is dirty. Commit or use --force to stash changes before running.")
         if dirty and force:
             run(
                 [
@@ -214,15 +208,11 @@ class SubprocessBackend(Backend):
         if res.returncode == 0:
             return True
 
-        res2 = run(
-            ["git", "apply", patch_path], cwd=self.repo_path, capture=True, check=False
-        )
+        res2 = run(["git", "apply", patch_path], cwd=self.repo_path, capture=True, check=False)
         if res2.returncode == 0:
             return True
 
-        raise RuntimeError(
-            f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}"
-        )
+        raise RuntimeError(f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}")
 
     def add_all(self):
         run(["git", "add", "-A"], cwd=self.repo_path)
@@ -349,9 +339,7 @@ def create_backend(name, repo_path="."):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Squash last N commits into one via saved patch + reset + apply."
-    )
+    parser = argparse.ArgumentParser(description="Squash last N commits into one via saved patch + reset + apply.")
     parser.add_argument("N", type=int, help="Number of commits to squash (e.g., 3)")
     parser.add_argument(
         "-b",
@@ -360,20 +348,14 @@ def main():
         choices=["subprocess", "pygithub", "gitpython", "libgit2", "dulwich", "typer"],
         help="Backend to use (some backends will fall back to subprocess for missing features)",
     )
-    parser.add_argument(
-        "--patch-file", default="saved_patch.diff", help="Path to write combined patch"
-    )
+    parser.add_argument("--patch-file", default="saved_patch.diff", help="Path to write combined patch")
     parser.add_argument(
         "--meta-file",
         default="saved_patch.meta.json",
         help="Path to write metadata JSON",
     )
-    parser.add_argument(
-        "--force", action="store_true", help="Stash uncommitted changes and proceed"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show actions without making changes"
-    )
+    parser.add_argument("--force", action="store_true", help="Stash uncommitted changes and proceed")
+    parser.add_argument("--dry-run", action="store_true", help="Show actions without making changes")
     args = parser.parse_args()
 
     repo_path = "."
@@ -447,9 +429,7 @@ def main():
 
     if args.dry_run:
         print("[dry-run] Would reset hard to", base_rev)
-        print(
-            "[dry-run] Would apply patch and commit a single commit summarizing these commits"
-        )
+        print("[dry-run] Would apply patch and commit a single commit summarizing these commits")
         if stash_made:
             print("[dry-run] Would pop stash")
         return
@@ -470,10 +450,7 @@ def main():
         commit_msgs = []
         for c in meta.get("commits", []):
             commit_msgs.append(f"{c.get('sha')[:7]} - {c.get('subject')}")
-        summary_msg = (
-            f"Squash {meta.get('commit_count', args.N)} commits: "
-            + "; ".join(commit_msgs)
-        )
+        summary_msg = f"Squash {meta.get('commit_count', args.N)} commits: " + "; ".join(commit_msgs)
         backend.commit(summary_msg, allow_empty=(len(commit_msgs) == 0))
         new_head = backend.get_head()
         print("Created new single commit:", new_head)
@@ -481,16 +458,10 @@ def main():
         if stash_made:
             print("Restoring stashed uncommitted changes (pop stash)")
             run(["git", "stash", "pop"], cwd=repo_path)
-        print(
-            "Done. The last {} commits were replaced by a single commit {}.".format(
-                args.N, new_head
-            )
-        )
+        print("Done. The last {} commits were replaced by a single commit {}.".format(args.N, new_head))
     except Exception as e:
         print("Error during apply/reset/commit:", e, file=sys.stderr)
-        print(
-            "Attempting to restore original state (reset --hard {})".format(backup_head)
-        )
+        print("Attempting to restore original state (reset --hard {})".format(backup_head))
         try:
             run(["git", "reset", "--hard", backup_head], cwd=repo_path)
             if stash_made:

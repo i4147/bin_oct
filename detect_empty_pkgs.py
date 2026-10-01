@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Scan .tar.gz / .whl / .zip archives under the current directory (recursively)
 and report (or, with -a/--apply, move) "empty" / "useless" ones into ./empty/ .
@@ -192,12 +192,8 @@ def _check_only_metadata(members):
 def _check_only_pyc(members):
     if any(_is_py(m) for m in members):
         return None
-    has_compiled = any(
-        m.name.endswith((".pyc", ".pyo")) or "__pycache__" in m.name for m in members
-    )
-    if has_compiled and all(
-        m.name.endswith((".pyc", ".pyo")) or "__pycache__" in m.name for m in members
-    ):
+    has_compiled = any(m.name.endswith((".pyc", ".pyo")) or "__pycache__" in m.name for m in members)
+    if has_compiled and all(m.name.endswith((".pyc", ".pyo")) or "__pycache__" in m.name for m in members):
         return "only compiled Python files"
     return None
 
@@ -224,11 +220,7 @@ def _py_is_trivial(src: str) -> bool:
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom, ast.Pass)):
             continue
-        if (
-            isinstance(node, ast.Expr)
-            and isinstance(node.value, ast.Constant)
-            and isinstance(node.value.value, str)
-        ):
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             continue
         return False
     return True
@@ -311,8 +303,7 @@ def _unique_dest(directory: Path, name: str) -> Path:
 def parse_args():
     ap = argparse.ArgumentParser(
         description=(
-            "Find empty/useless .tar.gz / .whl / .zip Python packages and "
-            "(optionally) move them into ./empty/ ."
+            "Find empty/useless .tar.gz / .whl / .zip Python packages and (optionally) move them into ./empty/ ."
         ),
     )
     ap.add_argument(
@@ -334,12 +325,7 @@ def main():
         empty_dir.mkdir(exist_ok=True)
 
     targets = sorted(
-        {
-            p
-            for pattern in TARGET_GLOBS
-            for p in cwd.rglob(pattern)
-            if p.is_file() and empty_dir not in p.parents
-        }
+        {p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents}
     )
 
     mode = "APPLY" if args.apply else "DRY-RUN"
@@ -372,10 +358,7 @@ def main():
     if args.apply:
         print(f"Moved {moved} of {len(targets)} archives into {empty_dir}")
     else:
-        print(
-            f"Dry run: {matched} of {len(targets)} archives would be moved. "
-            f"Re-run with -a / --apply to do it."
-        )
+        print(f"Dry run: {matched} of {len(targets)} archives would be moved. Re-run with -a / --apply to do it.")
 
 
 if __name__ == "__main__":

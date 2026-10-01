@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reorganizes all files within a given directory into subfolders named after each file's extension (using "no_extension" for files without one), skipping .gitignore files and anything inside a .git directory.
 It should recursively scan the target path, group files by extension while tracking counts and total sizes, then move each file into its corresponding extension-named subfolder, appending a numeric suffix to the filename if a collision occurs at the destination, silently ignoring any move errors.
 After moving files, it should clean up by removing any now-empty directories left behind, processing them from deepest to shallowest so nested empty folders are properly removed."""
@@ -40,9 +40,7 @@ def folderize_by_extension(cwd: Path):
                 counter += 1
             with contextlib.suppress(BaseException):
                 shutil.move(str(path), str(target_path))
-    for dir_path in sorted(
-        root_path.glob("**/*"), key=lambda p: len(p.parts), reverse=True
-    ):
+    for dir_path in sorted(root_path.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
         if dir_path.is_dir() and dir_path != root_path:
             with contextlib.suppress(OSError):
                 dir_path.rmdir()
@@ -54,9 +52,7 @@ def folderize_by_extension(cwd: Path):
         total_size += stats["total_size"]
         ext_display = ext if ext else "no_extension"
         size_str = gsz(stats["total_size"])
-        print(
-            f"{ext_display:<15} : {stats['count']:4} file{'s' if stats['count'] != 1 else ' '}  {size_str:>8}"
-        )
+        print(f"{ext_display:<15} : {stats['count']:4} file{'s' if stats['count'] != 1 else ' '}  {size_str:>8}")
     print("-" * 40)
     print(f"{'TOTAL':<15} : {total_files:4} files  {gsz(total_size):>8}")
     print("=" * 40)

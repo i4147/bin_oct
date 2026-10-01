@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that searches PyPI for packages matching a given query string.
 It should query the PyPI JSON API, filter package names containing the query text (case-insensitive), and return a list of Package dataclass instances holding each package's name, version, summary, and PyPI URL, optionally limited to a maximum number of results.
 Use argparse to accept the search query and an optional result limit from the command line, and print each matching package's formatted details to stdout, while gracefully handling and reporting network/request errors to stderr."""

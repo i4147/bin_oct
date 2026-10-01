@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python cleanup script that recursively scans the current working directory for temporary or cache artifacts—files ending in .pyc, .log, or .bak, and directories named __pycache__, .ruff_cache, or .mypy_cache—and deletes them.
 It should skip cache directories found inside any site-packages folder, printing a "not allowed" message for those instead.
 The script should use a multiprocessing Pool sized to the number of CPU cores to delete the matched paths in parallel, printing a confirmation message for each removed file or directory (relative to the current directory when possible) and an error message if removal fails, with no required inputs and no return value beyond console output."""

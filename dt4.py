@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that translates a large text file by splitting it into chunks (configurable chunk size) and translating each chunk via deep_translator (supporting multiple backend engines and language code mappings like Google, DeepL, MyMemory), using a thread pool with configurable worker count, retry-with-backoff logic, and inter-request delay to avoid rate limits.
 It should accept arguments for input/output/failed-chunk file paths, source/target languages, number of workers, delay, chunk size, and periodic save interval, writing successfully translated chunks incrementally to a JSON output file and logging failed chunks to a separate text file, while gracefully handling interrupts (e.g., SIGINT) to save progress before exiting, using loguru for logging throughout."""
 
@@ -197,9 +197,7 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
             if not auth_key:
                 raise ValueError("DEEPL_API_KEY environment variable not set")
             translator = deepl.Translator(auth_key)
-            result = translator.translate_text(
-                text, target_lang=target_lang, source_lang=source_lang
-            )
+            result = translator.translate_text(text, target_lang=target_lang, source_lang=source_lang)
             return result.text
         except Exception as e:
             logger.error(f"Translation failed for deepl: {e}")
@@ -272,9 +270,7 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
     return translate
 
 
-def make_pygoogletranslation_translator(
-    source: str, target: str
-) -> Callable[[str], str]:
+def make_pygoogletranslation_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         from pygoogletranslation import Translator
     except ImportError:
@@ -287,9 +283,7 @@ def make_pygoogletranslation_translator(
         try:
             with lock:
                 translator = Translator()
-                return translator.translate(
-                    text, source=source_lang, target=target_lang
-                )
+                return translator.translate(text, source=source_lang, target=target_lang)
         except Exception as e:
             logger.error(f"Translation failed for pygoogletranslation: {e}")
             raise
@@ -297,9 +291,7 @@ def make_pygoogletranslation_translator(
     return translate
 
 
-def select_backend(
-    source: str, target: str, backend: Optional[str] = None
-) -> Callable[[str], str]:
+def select_backend(source: str, target: str, backend: Optional[str] = None) -> Callable[[str], str]:
     backends = [
         ("deepl", make_deepl_translator),
         ("deep_translator", make_deep_translator),
@@ -340,16 +332,12 @@ def translate_chunk(
         try:
             if attempt > 0:
                 backoff = backoff_base**attempt
-                logger.info(
-                    f"Retry {attempt + 1}/{max_retries} for chunk {index} after {backoff}s delay"
-                )
+                logger.info(f"Retry {attempt + 1}/{max_retries} for chunk {index} after {backoff}s delay")
                 time.sleep(backoff)
             translated = translator(chunk)
             time.sleep(delay)
             if is_identity_translation(chunk, translated):
-                logger.warning(
-                    f"Identity translation detected for chunk {index}, retrying"
-                )
+                logger.warning(f"Identity translation detected for chunk {index}, retrying")
                 raise ValueError("Identity translation detected")
             return index, translated
         except Exception as e:
@@ -372,10 +360,7 @@ def process_chunks(
     results = existing_output.copy()
     failed_indices = set()
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(translate_chunk, chunk, i, translator, delay): i
-            for i, chunk in enumerate(chunks)
-        }
+        futures = {executor.submit(translate_chunk, chunk, i, translator, delay): i for i, chunk in enumerate(chunks)}
         for future in as_completed(futures):
             if shutdown_flag:
                 break
@@ -400,30 +385,18 @@ def process_chunks(
         with failed_path.open("a", encoding="utf-8") as f:
             for index in sorted(failed_indices):
                 f.write(f"{index}\n")
-        logger.error(
-            f"Saved {len(failed_indices)} failed chunk indices to {failed_path}"
-        )
+        logger.error(f"Saved {len(failed_indices)} failed chunk indices to {failed_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Translate text file in chunks")
     parser.add_argument("-i", "--input", default=DEFAULT_INPUT, help="Input text file")
-    parser.add_argument(
-        "-o", "--output", default=DEFAULT_OUTPUT, help="Output JSON file"
-    )
-    parser.add_argument(
-        "--failed", default=DEFAULT_FAILED, help="Failed chunk indices file"
-    )
-    parser.add_argument(
-        "-s", "--source", default=DEFAULT_SOURCE, help="Source language code"
-    )
-    parser.add_argument(
-        "-t", "--target", default=DEFAULT_TARGET, help="Target language code"
-    )
+    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT, help="Output JSON file")
+    parser.add_argument("--failed", default=DEFAULT_FAILED, help="Failed chunk indices file")
+    parser.add_argument("-s", "--source", default=DEFAULT_SOURCE, help="Source language code")
+    parser.add_argument("-t", "--target", default=DEFAULT_TARGET, help="Target language code")
     parser.add_argument("-b", "--backend", help="Translator backend")
-    parser.add_argument(
-        "-w", "--workers", type=int, default=DEFAULT_WORKERS, help="Number of workers"
-    )
+    parser.add_argument("-w", "--workers", type=int, default=DEFAULT_WORKERS, help="Number of workers")
     parser.add_argument(
         "-d",
         "--delay",
@@ -443,9 +416,7 @@ def main() -> None:
         default=DEFAULT_SAVE_EVERY,
         help="Save JSON every N chunks",
     )
-    parser.add_argument(
-        "--no-continue", action="store_true", help="Start fresh, ignore existing output"
-    )
+    parser.add_argument("--no-continue", action="store_true", help="Start fresh, ignore existing output")
     args = parser.parse_args()
     if args.workers < 1 or args.workers > 2:
         parser.error("Workers must be between 1 and 2")
@@ -473,12 +444,8 @@ def main() -> None:
     chunks = split_into_chunks(text, args.chunk_size)
     logger.info(f"Split text into {len(chunks)} chunks")
     if existing_output:
-        chunks = [
-            chunk for i, chunk in enumerate(chunks) if str(i) not in existing_output
-        ]
-        logger.info(
-            f"Skipping {len(existing_output)} already translated chunks, processing {len(chunks)} remaining"
-        )
+        chunks = [chunk for i, chunk in enumerate(chunks) if str(i) not in existing_output]
+        logger.info(f"Skipping {len(existing_output)} already translated chunks, processing {len(chunks)} remaining")
     if not chunks:
         logger.info("No new chunks to process")
         return

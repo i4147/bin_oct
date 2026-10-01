@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans the current working directory for empty files (excluding symlinks, files inside .git directories, and files named __init__.py), then reports their count and relative paths using colored console output via a helper module (dh, providing cprint and get_files).
 Before deleting anything, it should give the user a configurable timeout window to press any key and abort the operation, using non-blocking stdin polling via select.
 If not aborted, it deletes each empty file, tracks how many were successfully deleted versus failed (printing errors for failures), and exits with an appropriate status code (0 if no empty files found or after successful cleanup, 1 if aborted by the user)."""
@@ -11,11 +11,7 @@ TIMEOUT = 0
 
 
 def get_files(folder: Path) -> list[Path]:
-    return [
-        p
-        for p in folder.rglob("*")
-        if p.is_file() and not p.is_symlink() and ".git" not in p.parts
-    ]
+    return [p for p in folder.rglob("*") if p.is_file() and not p.is_symlink() and ".git" not in p.parts]
 
 
 def wait_for_keypress(timeout: int) -> bool:
@@ -34,9 +30,7 @@ def wait_for_keypress(timeout: int) -> bool:
 def main() -> int:
     cwd = Path.cwd()
     files = get_files(cwd)
-    empty_files = [
-        p for p in files if p.stat().st_size == 0 and p.name != "__init__.py"
-    ]
+    empty_files = [p for p in files if p.stat().st_size == 0 and p.name != "__init__.py"]
     found = len(empty_files)
     if not found:
         cprint("no empty files found", "cyan")

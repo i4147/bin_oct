@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans a list of files and/or directories (skipping symlinks and binary files) and, for each text file's lines, runs multiple language-detection libraries—gcld3, pycld2, and langdetect—to identify the language(s) present, reading files with UTF-8 then falling back to Latin-1 encoding.
 The script should support multiprocessing for parallel processing of files, use thread locks to safely print progress and accumulate results across workers, and output the collected detection results (e.g., as JSON) via a command-line interface built with argparse.
 It is intended for comparing or aggregating language-identification outcomes across a codebase or text corpus."""
@@ -108,9 +108,7 @@ def combine_votes(g3: str | None, p2: str | None, ld: str | None) -> dict[str, A
     return {"votes": votes, "non_english": decision}
 
 
-def detect_line(
-    path: Path, lineno: int, line: str, max_len: int
-) -> dict[str, Any] | None:
+def detect_line(path: Path, lineno: int, line: str, max_len: int) -> dict[str, Any] | None:
     if not line.strip():
         return None
     text = line if len(line) <= max_len else line[:max_len] + "…"
@@ -142,9 +140,7 @@ def process_file_sequential(path: Path, max_len: int) -> list[dict[str, Any]]:
     return local
 
 
-def process_file_per_line_parallel(
-    path: Path, max_len: int, workers: int
-) -> list[dict[str, Any]]:
+def process_file_per_line_parallel(path: Path, max_len: int, workers: int) -> list[dict[str, Any]]:
     local: list[dict[str, Any]] = []
     lines = list(read_text_lines(path))
     if not lines:
@@ -219,23 +215,15 @@ def run_per_line(files: list[Path], workers: int, max_len: int):
                     with _results_lock:
                         _results.extend(res)
             except Exception as e:
-                print(
-                    f"Error in per-line mode for {futures[fut]}: {e}", file=sys.stderr
-                )
+                print(f"Error in per-line mode for {futures[fut]}: {e}", file=sys.stderr)
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Detect non-English lines in text files."
-    )
-    parser.add_argument(
-        "paths", default=".", nargs="*", help="Files or directories (default: .)"
-    )
+    parser = argparse.ArgumentParser(description="Detect non-English lines in text files.")
+    parser.add_argument("paths", default=".", nargs="*", help="Files or directories (default: .)")
     parser.add_argument("--workers", "-w", type=int, default=4, help="Worker threads.")
     parser.add_argument("--out", "-o", default="noneng.json", help="Output JSON file.")
-    parser.add_argument(
-        "--max-line-length", type=int, default=2000, help="Max chars per line."
-    )
+    parser.add_argument("--max-line-length", type=int, default=2000, help="Max chars per line.")
     parser.add_argument(
         "--parallel-mode",
         choices=["file", "line"],

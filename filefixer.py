@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 filefixer.py — merged extension-fixing / validation / Python-line extraction tool.
 
@@ -289,9 +289,7 @@ SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (lambda b: b.startswith(b"Rar!\x1a\x07\x00"), ".rar", "RAR archive"),
     (lambda b: len(b) > 262 and b[257:262] == b"ustar", ".tar", "TAR archive"),
     (
-        lambda b: (
-            b.startswith(b"ID3") or (len(b) >= 2 and b[0] == 255 and b[1] & 224 == 224)
-        ),
+        lambda b: b.startswith(b"ID3") or (len(b) >= 2 and b[0] == 255 and b[1] & 224 == 224),
         ".mp3",
         "MP3 audio",
     ),
@@ -307,10 +305,7 @@ SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (
         lambda b: (
             b.lstrip().startswith(b"<")
-            and (
-                b.lstrip()[:10].lower().startswith(b"<!doctype")
-                or b.lstrip()[:6].lower().startswith(b"<html")
-            )
+            and (b.lstrip()[:10].lower().startswith(b"<!doctype") or b.lstrip()[:6].lower().startswith(b"<html"))
         ),
         ".html",
         "HTML document",
@@ -738,9 +733,7 @@ def guess_text_extension(text: str) -> str | None:
         return None
     if text.startswith("#!") and "python" in text:
         return ".py"
-    if any(
-        token in text for token in ("def ", "class ", "import ", "from ", "__main__")
-    ):
+    if any(token in text for token in ("def ", "class ", "import ", "from ", "__main__")):
         return ".py"
     if text.startswith("#!") and ("sh" in text or "bash" in text):
         return ".sh"
@@ -752,10 +745,7 @@ def guess_text_extension(text: str) -> str | None:
         return ".toml"
     if text.startswith("[") and "]" in text:
         return ".ini"
-    if any(
-        text.lower().startswith(cmd)
-        for cmd in ("select ", "insert ", "update ", "delete ", "create ")
-    ):
+    if any(text.lower().startswith(cmd) for cmd in ("select ", "insert ", "update ", "delete ", "create ")):
         return ".sql"
     if "{" in text and "}" in text and ":" in text:
         return ".css"
@@ -795,9 +785,7 @@ DETECTORS: dict[str, Callable[[Path], Detection | None]] = {
 }
 
 
-def detect_extension(
-    path: Path, engines: Sequence[str], *, debug: bool = False
-) -> Detection | None:
+def detect_extension(path: Path, engines: Sequence[str], *, debug: bool = False) -> Detection | None:
     for engine in engines:
         detector = DETECTORS.get(engine)
         if not detector:
@@ -882,9 +870,7 @@ def process_fix_file(
     current = current_ext(path)
 
     if current in ignore_ext:
-        return FixResult(
-            path, "skipped", current_ext=current, reason=f"ignored extension {current}"
-        )
+        return FixResult(path, "skipped", current_ext=current, reason=f"ignored extension {current}")
 
     detection = detect_extension(path, engines, debug=debug)
     if not detection:
@@ -892,9 +878,7 @@ def process_fix_file(
 
     detected = norm_ext(detection.ext)
     if not detected:
-        return FixResult(
-            path, "skipped", current_ext=current, reason="empty detected extension"
-        )
+        return FixResult(path, "skipped", current_ext=current, reason="empty detected extension")
 
     if current == detected:
         return FixResult(
@@ -980,9 +964,7 @@ def process_fix_file(
     )
 
 
-def run_fix_pass(
-    files: Sequence[Path], args: argparse.Namespace, *, apply: bool
-) -> list[FixResult]:
+def run_fix_pass(files: Sequence[Path], args: argparse.Namespace, *, apply: bool) -> list[FixResult]:
     engines = parse_engine_list(args.engines)
     protect_ext = set() if args.no_protect else parse_ext_set(args.protect_ext)
     ignore_ext = parse_ext_set(args.ignore_ext)
@@ -1023,9 +1005,7 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
     if verbose:
         for result in results:
             if result.action in {"would-rename", "renamed"}:
-                print(
-                    f"{result.action}: {result.path} -> {result.target} ({result.detected_desc})"
-                )
+                print(f"{result.action}: {result.path} -> {result.target} ({result.detected_desc})")
             elif result.action == "ok":
                 print(f"ok: {result.path} (already matched)")
             else:
@@ -1110,24 +1090,18 @@ def cmd_validate(args: argparse.Namespace) -> int:
             skip_mount_points=args.skip_mount_points,
         )
     )
-    files = [
-        p for p in files if current_ext(p) in ext_set or p.suffix.lower() in ext_set
-    ]
+    files = [p for p in files if current_ext(p) in ext_set or p.suffix.lower() in ext_set]
 
     if not files:
         print("No files found with target extensions.")
         return 0
 
-    print(
-        f"Validating {len(files)} files as {args.kind} using {args.workers} workers..."
-    )
+    print(f"Validating {len(files)} files as {args.kind} using {args.workers} workers...")
 
     mismatches: list[tuple[Path, str]] = []
     errors = 0
 
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=max(1, args.workers)
-    ) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
         futures = [pool.submit(validate_one, path, args.kind) for path in files]
         for future in concurrent.futures.as_completed(futures):
             path, binary, desc = future.result()
@@ -1265,15 +1239,9 @@ def build_parser() -> argparse.ArgumentParser:
         default=max(1, (os.cpu_count() or 2) - 1),
         help="Worker threads.",
     )
-    fix.add_argument(
-        "--no-recursive", action="store_true", help="Do not recurse into directories."
-    )
-    fix.add_argument(
-        "--include-hidden", action="store_true", help="Do not skip hidden files/dirs."
-    )
-    fix.add_argument(
-        "--follow-symlinks", action="store_true", help="Follow symlinks while walking."
-    )
+    fix.add_argument("--no-recursive", action="store_true", help="Do not recurse into directories.")
+    fix.add_argument("--include-hidden", action="store_true", help="Do not skip hidden files/dirs.")
+    fix.add_argument("--follow-symlinks", action="store_true", help="Follow symlinks while walking.")
     fix.add_argument(
         "--skip-mount-points",
         action="store_true",
@@ -1290,9 +1258,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=",".join(sorted(DEFAULT_PROTECT_EXT)),
         help="Comma list of protected extensions.",
     )
-    fix.add_argument(
-        "--no-protect", action="store_true", help="Disable protected extensions."
-    )
+    fix.add_argument("--no-protect", action="store_true", help="Disable protected extensions.")
     fix.add_argument(
         "--force-protected",
         action="store_true",
@@ -1312,12 +1278,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # validate
     val = sub.add_parser("validate", help="Validate binary or text extensions.")
-    val.add_argument(
-        "kind", choices=("binary", "text"), help="Which extension set to validate."
-    )
-    val.add_argument(
-        "path", nargs="?", default="/data/data/com.termux", help="Root path to scan."
-    )
+    val.add_argument("kind", choices=("binary", "text"), help="Which extension set to validate.")
+    val.add_argument("path", nargs="?", default="/data/data/com.termux", help="Root path to scan.")
     val.add_argument(
         "--workers",
         "-j",
@@ -1334,13 +1296,9 @@ def build_parser() -> argparse.ArgumentParser:
     val.add_argument("--verbose", "-v", action="store_true", help="Verbose output.")
 
     # extract-python
-    ext = sub.add_parser(
-        "extract-python", help="Extract Python-like lines from a file."
-    )
+    ext = sub.add_parser("extract-python", help="Extract Python-like lines from a file.")
     ext.add_argument("file", help="Input file.")
-    ext.add_argument(
-        "-o", "--output", default="out.py", help="Output file. Default: out.py"
-    )
+    ext.add_argument("-o", "--output", default="out.py", help="Output file. Default: out.py")
 
     return parser
 

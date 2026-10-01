@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that takes a file path and a target character as arguments, reads the file line by line using a helper function `read_lines` from a local module `dh`, and processes each non-empty stripped line: if the target character is found in the line, it truncates the line to start from that character's first occurrence; otherwise it keeps the stripped line as-is.
 All processed lines are collected into a list, and if the list is non-empty, the original file is overwritten with the joined lines (newline-separated, UTF-8 encoding).
 The script also defines an unused constant THRESHOLD set to 1048576 (1MB)."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans one or more HTML (or other text) files for embedded base64-encoded data URLs (e.g., "data:image/png;base64,...") using a regex, decodes each match, and saves the decoded binary content as separate files into an "extracted_base64" output directory.
 Filenames should be derived from a short SHA-256 hash of the decoded content plus a file extension inferred from the MIME type (via a MIME2EXT mapping), skipping duplicates already saved.
 The script should accept file paths as command-line arguments, or if none are given, default to non-binary files discovered in the current working directory via a helper function get_nobinary.
@@ -12,9 +12,7 @@ from pathlib import Path
 from dh import MIME2EXT, get_nobinary
 
 OUTPUT_DIR = Path("extracted_base64")
-DATA_URL_RE = re.compile(
-    "data:(?P<mime>[-\\w.+/]+);base64,(?P<data>[A-Za-z0-9+/=\\s]+)", re.IGNORECASE
-)
+DATA_URL_RE = re.compile("data:(?P<mime>[-\\w.+/]+);base64,(?P<data>[A-Za-z0-9+/=\\s]+)", re.IGNORECASE)
 
 
 def infer_extension(mime):

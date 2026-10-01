@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that lists the most recently modified files in the current directory, showing each file's modification timestamp alongside its relative path.
 It should accept an optional command-line flag to switch between scanning only the top-level directory (default) and recursively scanning all subdirectories, skipping symlinks and any paths under ".git" or "__pycache__".
 It should also accept an optional numeric argument controlling how many of the newest files to display (default 10), sort the collected files by modification time, and rely on an external helper function to retrieve each file's age/timestamp before printing a formatted "Top N fresh files" report to stdout."""

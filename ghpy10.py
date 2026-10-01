@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that searches GitHub for Python repositories created within the last 10 days, sorted by star count in descending order, using the GitHub REST API.
 It should load a GITHUB_TOKEN from a .env file in the user's home directory for authentication, fetch up to 50 results via requests, and raise an error if the token is missing.
 The script should write each repository's full name and star count to a local file named "ghpy10.txt" and print a confirmation message showing how many repositories were saved."""
@@ -23,9 +23,7 @@ def search_github_repos() -> None:
         "Authorization": f"token {token}",
     }
     params = {"q": query, "sort": "stars", "order": "desc", "per_page": 50}
-    response = requests.get(
-        "https://api.github.com/search/repositories", headers=headers, params=params
-    )
+    response = requests.get("https://api.github.com/search/repositories", headers=headers, params=params)
     response.raise_for_status()
     data = response.json()
     output_file = Path("ghpy10.txt")

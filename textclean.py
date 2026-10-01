@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 
 """
 textclean.py — unified text-file cleaning toolkit.
@@ -53,9 +53,7 @@ from typing import Iterator, Sequence
 
 DEFAULT_PATTERN_FILE: Path = Path("/sdcard/lic")
 DEFAULT_JOBS: int = 8
-DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
-    {".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"}
-)
+DEFAULT_SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
 DEFAULT_HEADER_REGEX: str = r"^# Author\s*:.*\n# Email\s*:.*\n# Time\s*:.*\n\n?"
 
 HISTORICAL_LINE_PATTERNS: tuple[str, ...] = (
@@ -235,10 +233,7 @@ def cmd_pattern(args: argparse.Namespace) -> int:
         print("Error: pattern is empty", file=sys.stderr)
         return 1
 
-    print(
-        f"Pattern loaded from {src_desc} "
-        f"({len(pattern)} chars, {len(pattern.splitlines())} lines)"
-    )
+    print(f"Pattern loaded from {src_desc} ({len(pattern)} chars, {len(pattern.splitlines())} lines)")
 
     roots = args.paths or [Path.cwd()]
     files = list(iter_text_files(roots, recursive=not args.no_recursive))
@@ -391,10 +386,7 @@ def cmd_lines(args: argparse.Namespace) -> int:
             cprint(f"{f.name} | ", end="")
             cprint(str(removed), "blue")
 
-    print(
-        f"\n{'Would remove' if args.dry_run else 'Removed'} "
-        f"{total_removed} line(s) from {modified_files} file(s)."
-    )
+    print(f"\n{'Would remove' if args.dry_run else 'Removed'} {total_removed} line(s) from {modified_files} file(s).")
     return 0
 
 
@@ -496,9 +488,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_empty_lines)
 
-    p = sub.add_parser(
-        "invisible", help="Strip non-printable chars from a single file."
-    )
+    p = sub.add_parser("invisible", help="Strip non-printable chars from a single file.")
     p.add_argument("path", type=Path, help="File to clean.")
     p.add_argument(
         "--no-backup",
@@ -549,9 +539,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Substring (or regex with -r). Repeatable.",
     )
-    p.add_argument(
-        "-r", "--regex", action="store_true", help="Treat patterns as regexes."
-    )
+    p.add_argument("-r", "--regex", action="store_true", help="Treat patterns as regexes.")
     p.add_argument(
         "--multiline",
         action="store_true",

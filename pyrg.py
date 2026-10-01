@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """pyrg — ripgrep-like recursive search in Python.
 
 A single-file, dependency-light re-implementation of the parts of ripgrep
@@ -155,10 +155,7 @@ def resolve_type_presets(types: list[str] | None) -> set[str]:
             if not key:
                 continue
             if key not in TYPE_PRESETS:
-                raise ValueError(
-                    f"unknown type preset {key!r}; known presets: "
-                    f"{', '.join(sorted(TYPE_PRESETS))}"
-                )
+                raise ValueError(f"unknown type preset {key!r}; known presets: {', '.join(sorted(TYPE_PRESETS))}")
             out |= TYPE_PRESETS[key]
     return out
 
@@ -546,11 +543,7 @@ def _process_lines(
                 piece = line[s:e]
                 if replace is not None and regex is not None:
                     m = next(
-                        (
-                            mm
-                            for mm in regex.finditer(line)
-                            if mm.start() == s and mm.end() == e
-                        ),
+                        (mm for mm in regex.finditer(line) if mm.start() == s and mm.end() == e),
                         None,
                     )
                     if m is not None:
@@ -855,8 +848,7 @@ def build_argparser() -> argparse.ArgumentParser:
         dest="extensions",
         action="append",
         metavar="EXT",
-        help="Only search files with the given extension(s). "
-        "Accepts dotless, dotted and comma-separated values.",
+        help="Only search files with the given extension(s). Accepts dotless, dotted and comma-separated values.",
     )
     p.add_argument(
         "-t",
@@ -864,8 +856,7 @@ def build_argparser() -> argparse.ArgumentParser:
         dest="types",
         action="append",
         metavar="TYPE",
-        help=f"Only search files matching a curated type preset. "
-        f"Known: {', '.join(sorted(TYPE_PRESETS))}",
+        help=f"Only search files matching a curated type preset. Known: {', '.join(sorted(TYPE_PRESETS))}",
     )
 
     p.add_argument("-i", "--ignore-case", action="store_true")
@@ -886,8 +877,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument(
         "--replace",
         metavar="REPL",
-        help="Replace matches with REPL in output (\\1 backrefs). "
-        "Does NOT modify files.",
+        help="Replace matches with REPL in output (\\1 backrefs). Does NOT modify files.",
     )
 
     p.add_argument("-n", "--line-number", action="store_true", default=True)
@@ -964,12 +954,8 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="List files that would be searched, then exit",
     )
-    p.add_argument(
-        "--stats", action="store_true", help="Print a summary to stderr at the end"
-    )
-    p.add_argument(
-        "--no-messages", action="store_true", help="Suppress per-file error reporting"
-    )
+    p.add_argument("--stats", action="store_true", help="Print a summary to stderr at the end")
+    p.add_argument("--no-messages", action="store_true", help="Suppress per-file error reporting")
     p.add_argument(
         "-j",
         "--workers",

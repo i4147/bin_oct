@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Translate a text file in independent character-limited chunks.
 
@@ -302,11 +302,7 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
     if not isinstance(data, dict):
         raise RuntimeError(f"existing output {path} must contain a JSON object")
 
-    return {
-        str(index): str(value)
-        for index, value in data.items()
-        if isinstance(value, str)
-    }
+    return {str(index): str(value) for index, value in data.items() if isinstance(value, str)}
 
 
 def atomic_save(path: Path, translations: dict[str, str]) -> None:
@@ -363,14 +359,10 @@ def choose_backend(requested: str | None) -> str:
         else:
             if requested not in BACKEND_FACTORIES:
                 valid = ", ".join(sorted(BACKEND_FACTORIES))
-                raise RuntimeError(
-                    f"unsupported backend {requested!r}; choose one of: {valid}"
-                )
+                raise RuntimeError(f"unsupported backend {requested!r}; choose one of: {valid}")
 
             if requested == "deepl" and not os.environ.get("DEEPL_API_KEY"):
-                raise RuntimeError(
-                    "backend 'deepl' requires the DEEPL_API_KEY environment variable"
-                )
+                raise RuntimeError("backend 'deepl' requires the DEEPL_API_KEY environment variable")
 
             return requested
 
@@ -398,9 +390,7 @@ def choose_backend(requested: str | None) -> str:
         return backend
 
     packages = ", ".join(FALLBACK_BACKENDS)
-    raise RuntimeError(
-        f"no translation backend is installed; install one of: {packages}"
-    )
+    raise RuntimeError(f"no translation backend is installed; install one of: {packages}")
 
 
 def translate_one(
@@ -443,15 +433,11 @@ def translate_one(
             if attempt < attempts:
                 time.sleep(2 ** (attempt - 1))
 
-    raise TranslationError(
-        f"chunk {index} failed after {attempts} attempts: {last_error}"
-    )
+    raise TranslationError(f"chunk {index} failed after {attempts} attempts: {last_error}")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Translate a text file in resumable chunks."
-    )
+    parser = argparse.ArgumentParser(description="Translate a text file in resumable chunks.")
 
     parser.add_argument(
         "-i",
@@ -561,16 +547,10 @@ def run(args: argparse.Namespace) -> int:
     )
 
     translations = {
-        index: value
-        for index, value in translations.items()
-        if index.isdigit() and int(index) < len(chunks)
+        index: value for index, value in translations.items() if index.isdigit() and int(index) < len(chunks)
     }
 
-    pending = [
-        (index, chunk)
-        for index, chunk in enumerate(chunks)
-        if str(index) not in translations
-    ]
+    pending = [(index, chunk) for index, chunk in enumerate(chunks) if str(index) not in translations]
 
     logger.debug(
         "Input produced {} chunks; {} already translated; {} pending",

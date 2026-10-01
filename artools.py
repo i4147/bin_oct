@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_archive_tools.py
 =======================
@@ -90,9 +90,7 @@ TAR_FORMATS: frozenset[str] = frozenset(
 ZIP_FORMATS: frozenset[str] = frozenset({".zip", ".whl"})
 ARCHIVE_FORMATS: frozenset[str] = TAR_FORMATS | ZIP_FORMATS
 
-_ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(
-    sorted(ARCHIVE_FORMATS, key=len, reverse=True)
-)
+_ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(sorted(ARCHIVE_FORMATS, key=len, reverse=True))
 
 WHEEL_SCRIPT_SUFFIXES: tuple[str, ...] = (".sh", ".py", ".exe")
 TAR_DEFAULT_MODE: int = 0o644  # r4 = 420
@@ -125,11 +123,7 @@ def dir_total_size(root: Path) -> int:
 
 def get_files(root: Path, exts: Iterable[str]) -> list[Path]:
     exts = tuple(exts)
-    return sorted(
-        p
-        for p in root.iterdir()
-        if p.is_file() and any(p.name.endswith(e) for e in exts)
-    )
+    return sorted(p for p in root.iterdir() if p.is_file() and any(p.name.endswith(e) for e in exts))
 
 
 def unique_path(p: Path) -> Path:
@@ -144,9 +138,7 @@ def unique_path(p: Path) -> Path:
         i += 1
 
 
-def parallel_map(
-    func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS
-) -> list[Any]:
+def parallel_map(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
     if not items:
         return []
     if workers <= 1:
@@ -155,9 +147,7 @@ def parallel_map(
         return list(pool.map(func, items))
 
 
-def parallel_imap(
-    func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS
-) -> list[Any]:
+def parallel_imap(func: Callable, items: list[Any], workers: int = DEFAULT_WORKERS) -> list[Any]:
     if not items:
         return []
     if workers <= 1:
@@ -204,9 +194,7 @@ def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
 
 
 @contextlib.contextmanager
-def open_compressor(
-    dst: Path, codec: str, level: int = DEFAULT_LEVEL
-) -> Iterator[BinaryIO]:
+def open_compressor(dst: Path, codec: str, level: int = DEFAULT_LEVEL) -> Iterator[BinaryIO]:
     if codec == "gz":
         with gzip.open(dst, "wb", compresslevel=level) as f:
             yield f
@@ -321,15 +309,11 @@ def run_tar_codec(args: argparse.Namespace) -> int:
         return 0
 
     initial = dir_total_size(root)
-    results = parallel_imap(
-        _tar_codec_job, [(str(p), target, args.level) for p in files], args.workers
-    )
+    results = parallel_imap(_tar_codec_job, [(str(p), target, args.level) for p in files], args.workers)
     final = dir_total_size(root)
     delta = final - initial
     ok = sum(1 for _, o, _ in results if o)
-    print(
-        f"Converted inputs: {len(files)}; OK: {ok}; Failed/Skipped: {len(files) - ok}"
-    )
+    print(f"Converted inputs: {len(files)}; OK: {ok}; Failed/Skipped: {len(files) - ok}")
     for name, o, msg in sorted(results, key=lambda x: x[0]):
         print(f"[{'OK' if o else 'FAIL'}] {name}: {msg}")
     print(f"Disk usage initial: {fmt_size(initial)}")
@@ -515,9 +499,7 @@ def run_archive_convert(args: argparse.Namespace) -> int:
     results = parallel_imap(_archive_convert_job, jobs, args.workers)
     ok = sum(1 for _, _, o, _ in results if o)
     delta = sum(r for _, r, _, _ in results)
-    logger.info(
-        "Summary: total={} ok={} failed/skipped={}", len(files), ok, len(files) - ok
-    )
+    logger.info("Summary: total={} ok={} failed/skipped={}", len(files), ok, len(files) - ok)
     for src, _, o, msg in sorted(results, key=lambda x: x[0]):
         logger.info("[{}] {}: {}", "OK" if o else "FAIL", Path(src).name, msg)
     if delta < 0:
@@ -564,10 +546,7 @@ def run_br2zst(args: argparse.Namespace) -> int:
         label = str(rel)
         if len(label) > 58:
             label = "..." + label[-55:]
-        print(
-            f"{label:<60} {fmt_size(in_size):>12} {fmt_size(out_size):>12} "
-            f"{fmt_size(diff):>12}  {pct:>6.2f}%"
-        )
+        print(f"{label:<60} {fmt_size(in_size):>12} {fmt_size(out_size):>12} {fmt_size(diff):>12}  {pct:>6.2f}%")
     print("-" * 108)
     diff = total_out - total_in
     pct = diff / total_in * 100 if total_in else 0.0
@@ -601,11 +580,7 @@ def _single_transcode(
             src_size = src.stat().st_size
             dst_size = dst.stat().st_size
             src.unlink()
-            pct = (
-                (dst_size / src_size * (40 if legacy_percent else 100))
-                if src_size
-                else 0
-            )
+            pct = (dst_size / src_size * (40 if legacy_percent else 100)) if src_size else 0
             return (
                 str(src),
                 True,
@@ -680,9 +655,7 @@ def run_xz2gz(args: argparse.Namespace) -> int:
             print(f"symlink {p}: skipped")
             continue
         good_files.append(p)
-    jobs = [
-        (str(p), ".gz", "xz", "gz", args.level, args.legacy_percent) for p in good_files
-    ]
+    jobs = [(str(p), ".gz", "xz", "gz", args.level, args.legacy_percent) for p in good_files]
     results = (
         [_single_transcode(Path(j[0]), j[1], j[2], j[3], j[4], j[5]) for j in jobs]
         if args.workers <= 1
@@ -719,19 +692,13 @@ def _is_tar_xz(p: Path) -> bool:
     return n.endswith(".tar.xz") or n.endswith(".txz")
 
 
-def _copy_zipinfo_to_tarinfo(
-    zinfo: zipfile.ZipInfo, tinfo: tarfile.TarInfo
-) -> tarfile.TarInfo:
+def _copy_zipinfo_to_tarinfo(zinfo: zipfile.ZipInfo, tinfo: tarfile.TarInfo) -> tarfile.TarInfo:
     tinfo.size = zinfo.file_size
     if zinfo.date_time:
         tinfo.mtime = _zip_dt_to_ts(zinfo.date_time)
     if zinfo.external_attr:
         mode = (zinfo.external_attr >> 16) & TAR_MODE_MASK
-        tinfo.mode = mode or (
-            TAR_SCRIPT_MODE
-            if zinfo.filename.endswith(WHEEL_SCRIPT_SUFFIXES)
-            else TAR_DEFAULT_MODE
-        )
+        tinfo.mode = mode or (TAR_SCRIPT_MODE if zinfo.filename.endswith(WHEEL_SCRIPT_SUFFIXES) else TAR_DEFAULT_MODE)
     else:
         tinfo.mode = TAR_DEFAULT_MODE
     tinfo.type = tarfile.REGTYPE
@@ -742,9 +709,7 @@ def _copy_zipinfo_to_tarinfo(
     return tinfo
 
 
-def _copy_tarinfo_to_zipinfo(
-    tinfo: tarfile.TarInfo, zinfo: zipfile.ZipInfo
-) -> zipfile.ZipInfo:
+def _copy_tarinfo_to_zipinfo(tinfo: tarfile.TarInfo, zinfo: zipfile.ZipInfo) -> zipfile.ZipInfo:
     if getattr(tinfo, "mtime", None):
         dt = datetime.fromtimestamp(tinfo.mtime)
         zinfo.date_time = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
@@ -753,9 +718,7 @@ def _copy_tarinfo_to_zipinfo(
     return zinfo
 
 
-def _whl_to_tar_xz(
-    whl: Path, remove_original: bool
-) -> tuple[bool, str, Optional[Path]]:
+def _whl_to_tar_xz(whl: Path, remove_original: bool) -> tuple[bool, str, Optional[Path]]:
     if not whl.exists() or not whl.is_file():
         return False, f"Invalid file: {whl}", None
     if whl.suffix.lower() != ".whl":
@@ -793,9 +756,7 @@ def _whl_to_tar_xz(
     return True, f"Converted {count} files to tar.xz", dst
 
 
-def _tar_xz_to_whl(
-    src: Path, remove_original: bool
-) -> tuple[bool, str, Optional[Path]]:
+def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optional[Path]]:
     if not src.exists() or not src.is_file():
         return False, f"Invalid file: {src}", None
     if not _is_tar_xz(src):
@@ -875,8 +836,7 @@ def _setup_logger(verbose: bool, quiet: bool) -> None:
     logger.add(
         sys.stderr,
         level=level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> - "
-        "<level>{level}</level> - <level>{message}</level>",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> - <level>{level}</level> - <level>{message}</level>",
     )
 
 
@@ -922,11 +882,7 @@ def run_whl_txz(args: argparse.Namespace) -> int:
     if args.remove_original:
         print("Original files will be removed after successful conversion")
     jobs = [(str(p), args.remove_original) for p in files]
-    results = (
-        parallel_imap(_whl_txz_job, jobs, args.workers)
-        if args.workers > 1
-        else [_whl_txz_job(j) for j in jobs]
-    )
+    results = parallel_imap(_whl_txz_job, jobs, args.workers) if args.workers > 1 else [_whl_txz_job(j) for j in jobs]
 
     ok = fail = 0
     lines = ["", "=" * 40, "CONVERSION RESULTS", "-" * 40]
@@ -938,10 +894,7 @@ def run_whl_txz(args: argparse.Namespace) -> int:
             size = ""
             if out and out.exists():
                 size = f" ({out.stat().st_size / 1024:.1f} KB)"
-            lines.append(
-                f"✓ OK {src.name} [{src_kind}] → "
-                f"{out.name if out else 'unknown'} [{dst_kind}]{size}"
-            )
+            lines.append(f"✓ OK {src.name} [{src_kind}] → {out.name if out else 'unknown'} [{dst_kind}]{size}")
             if args.verbose:
                 lines.append(f"   {msg}")
         else:
@@ -958,17 +911,12 @@ def run_whl_txz(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="merged_archive_tools",
-        description="Unified archive/compression converter "
-        "(see module docstring for original→merged mapping).",
+        description="Unified archive/compression converter (see module docstring for original→merged mapping).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p = sub.add_parser(
-        "tar-codec", help="Change the codec of *.tar.<codec> files (recursive)."
-    )
-    p.add_argument(
-        "target", choices=sorted(TAR_CODECS), help="Target codec, e.g. xz, zst, br, 7z."
-    )
+    p = sub.add_parser("tar-codec", help="Change the codec of *.tar.<codec> files (recursive).")
+    p.add_argument("target", choices=sorted(TAR_CODECS), help="Target codec, e.g. xz, zst, br, 7z.")
     p.add_argument(
         "--root",
         type=Path,
@@ -979,9 +927,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_tar_codec)
 
-    p = sub.add_parser(
-        "archive-convert", help="Convert archives between tar/zip/whl formats."
-    )
+    p = sub.add_parser("archive-convert", help="Convert archives between tar/zip/whl formats.")
     p.add_argument(
         "inputs",
         nargs="*",
@@ -1005,9 +951,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=run_br2zst)
 
     for name, fn in (("gz2xz", run_gz2xz), ("xz2gz", run_xz2gz)):
-        p = sub.add_parser(
-            name, help=f"Convert *.{name[:2]} -> *.{name[3:]} in --root."
-        )
+        p = sub.add_parser(name, help=f"Convert *.{name[:2]} -> *.{name[3:]} in --root.")
         p.add_argument("--root", type=Path, default=Path.cwd())
         p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
         p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
@@ -1025,9 +969,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=["."],
         help="Files or directories (default: current directory).",
     )
-    p.add_argument(
-        "-r", "--recursive", action="store_true", help="Search directories recursively."
-    )
+    p.add_argument("-r", "--recursive", action="store_true", help="Search directories recursively.")
     p.add_argument(
         "--remove-original",
         action="store_true",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively finds and deletes empty directories under a given root path, processing subdirectories from deepest to shallowest so that nested empty directories cascade properly.
 It should accept the root directory as input via argparse, along with optional --dry-run (to only report what would be deleted without deleting) and --verbose flags, and output the count and list of removed directories.
 The script must skip certain protected directories by name (e.g., "tmp", "cache", "bin", ".git", "etc", "config", "var") or by path component, as well as any directory whose name starts with "mc" and whose parent is named "tmp", printing a skip message for each excluded directory when verbose mode is enabled."""
@@ -23,9 +23,7 @@ def is_excluded(path: Path, root_path: Path) -> bool:
     return bool(path.name.startswith("mc") and path.parent.name == "tmp")
 
 
-def delete_empty_dirs_iterative(
-    root: Path, dry_run: bool = False, verbose: bool = False
-) -> tuple[int, list[Path]]:
+def delete_empty_dirs_iterative(root: Path, dry_run: bool = False, verbose: bool = False) -> tuple[int, list[Path]]:
     removed_count: int = 0
     removed_dirs_list: list[Path] = []
     dirs_to_visit: list[Path] = [d for d in root.rglob("*") if d.is_dir()]
@@ -40,9 +38,7 @@ def delete_empty_dirs_iterative(
                 print(f"Skipping excluded directory: {path.relative_to(root)}")
             continue
         try:
-            if not any(
-                entry for entry in path.iterdir() if entry.is_dir() or entry.is_file()
-            ):
+            if not any(entry for entry in path.iterdir() if entry.is_dir() or entry.is_file()):
                 if verbose:
                     print(f"Empty directory found: {path.relative_to(root)}")
                 if not dry_run:
@@ -72,9 +68,7 @@ def delete_empty_dirs_iterative(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Find and remove empty directories, excluding specified ones."
-    )
+    parser = argparse.ArgumentParser(description="Find and remove empty directories, excluding specified ones.")
     parser.add_argument(
         "path",
         nargs="?",

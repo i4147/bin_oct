@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given root directory for image files (jpg, jpeg, png, gif, bmp, tiff, webp, ico), uses Pillow to read each image's pixel dimensions, and groups files by their (width, height) size.
 It should then organize the images into subfolders named after their resolution (e.g., "1920x1080"), placing any dimension that only has a single matching file into an "other" folder instead, while moving/copying files and avoiding filename collisions by appending an incrementing counter to duplicate names.
 The script should gracefully handle missing Pillow by printing an install instruction and exiting, and should print warnings for files that fail to open as images rather than crashing."""

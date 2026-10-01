@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a cross-platform (Linux-focused) command-line security auditing script in Python that recursively walks specified directory trees to detect filesystem and permission risks, such as world-writable files/directories, SUID/SGID binaries, files with unusual ownership, orphaned symlinks, or overly permissive configuration files.
 It should use argparse for options (e.g., target paths, checks to run, symlink-following behavior), leverage os.walk, stat, pwd/grp lookups, and hashlib for file inspection, and optionally shell out via subprocess for supplementary checks.
 Output should be organized into colorized (ANSI, TTY-aware), formatted console sections with helper functions for headers, findings, success, and warning/error messages, printing warnings to stderr.
@@ -62,9 +62,7 @@ def walk(
 ) -> Generator[Path, None, None]:
     for root in roots:
         root = root.resolve() if follow_symlinks else root
-        for dirpath, _dirnames, filenames in os.walk(
-            root, followlinks=follow_symlinks, onerror=_walk_err
-        ):
+        for dirpath, _dirnames, filenames in os.walk(root, followlinks=follow_symlinks, onerror=_walk_err):
             dp = Path(dirpath)
             if yield_dirs:
                 yield dp
@@ -112,9 +110,7 @@ def findup(roots: list[Path]) -> int:
         if len(paths) < 2:
             continue
         size = paths[0].stat().st_size
-        print(
-            f"\n  {_c(BOLD, 'Hash:')} {digest[:16]}…  {_c(GREY, f'({size:,} bytes × {len(paths)})')}"
-        )
+        print(f"\n  {_c(BOLD, 'Hash:')} {digest[:16]}…  {_c(GREY, f'({size:,} bytes × {len(paths)})')}")
         for p in paths:
             found(p)
         total += len(paths) - 1

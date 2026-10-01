@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that extracts a Python package's name and version from a `.tar.gz` source distribution without fully unpacking it.
 It should open the tarball, locate the top-level directory, and search for `PKG-INFO` or `METADATA` files first, parsing the `Name:` and `Version:` fields via regex.
 If those files are missing or lack the info, it should fall back to inspecting `setup.py`, `setup.cfg`, or `pyproject.toml` for `name = ...` and `version = ...` patterns.
@@ -18,9 +18,7 @@ def get_metadata_from_tar(tar_path):
         for meta_name in ["PKG-INFO", "METADATA"]:
             try:
                 member = tar.getmember(f"{top_dir}/{meta_name}")
-                content = (
-                    tar.extractfile(member).read().decode("utf-8", errors="ignore")
-                )
+                content = tar.extractfile(member).read().decode("utf-8", errors="ignore")
                 name = re.search(r"^Name:\s*(.+)$", content, re.MULTILINE)
                 version = re.search(r"^Version:\s*(.+)$", content, re.MULTILINE)
                 if name and version:
@@ -30,9 +28,7 @@ def get_metadata_from_tar(tar_path):
         for fallback in ["setup.py", "setup.cfg", "pyproject.toml"]:
             try:
                 member = tar.getmember(f"{top_dir}/{fallback}")
-                content = (
-                    tar.extractfile(member).read().decode("utf-8", errors="ignore")
-                )
+                content = tar.extractfile(member).read().decode("utf-8", errors="ignore")
                 name_match = re.search(r"name\s*=\s*['\"]([^'\"]+)['\"]", content)
                 version_match = re.search(r"version\s*=\s*['\"]([^'\"]+)['\"]", content)
                 if name_match:

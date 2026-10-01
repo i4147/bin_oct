@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Strip Python comments and docstrings in-place.
 
 Prompt: Write a Python CLI that recursively removes non-essential comments and
@@ -303,9 +303,7 @@ def main() -> int:
                 except StopIteration:
                     exhausted = True
                     break
-                result: AsyncResult[tuple[str, int, str]] = pool.apply_async(
-                    process_file, (path, base)
-                )
+                result: AsyncResult[tuple[str, int, str]] = pool.apply_async(process_file, (path, base))
                 pending[result] = path
             return exhausted
 

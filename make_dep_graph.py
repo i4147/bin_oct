@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans the current Python environment's site-packages directory to discover all installed packages and extract their declared dependencies from each package's dist-info METADATA file.
 For each package found, parse the "Requires-Dist" lines, strip version specifiers, environment markers, and extras to obtain clean dependency names, then build a dictionary mapping each package name to its list of dependencies.
 If no site-packages directory can be located, return an error message string instead.
@@ -30,9 +30,7 @@ def get_installed_packages_dependencies():
                 with Path(metadata_path).open(encoding="utf-8") as f:
                     for line in f:
                         if line.startswith("Requires-Dist:"):
-                            dep = re.sub(
-                                r";.*", "", line.split("Requires-Dist:")[1].strip()
-                            )
+                            dep = re.sub(r";.*", "", line.split("Requires-Dist:")[1].strip())
                             dep = re.sub(r"[<>=~]", "", dep).split("(")[0].strip()
                             package_dependencies.append(dep)
                 dependencies[package_name] = package_dependencies

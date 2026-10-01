@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that automates monthly git branch creation for a repository located at ~/bin.
 It should derive a branch name from the current month and year (e.g., "september_2026"), check both local and remote branches to see if it already exists, and skip creation if so.
 If the branch doesn't exist, it should fetch all remotes, checkout and pull the main branch, then create and push the new monthly branch, printing status messages throughout using subprocess calls to git commands."""
@@ -45,9 +45,7 @@ def create_monthly_branch() -> bool:
         print(f"✓ Branch '{branch_name}' already exists")
         return True
     try:
-        subprocess.run(
-            ["git", "fetch", "--all"], cwd=REPO_PATH, check=True, capture_output=True
-        )
+        subprocess.run(["git", "fetch", "--all"], cwd=REPO_PATH, check=True, capture_output=True)
         subprocess.run(
             ["git", "checkout", MAIN_BRANCH],
             cwd=REPO_PATH,

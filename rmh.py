@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility that recursively finds source files (e.g., JS/TS/Java-style files with // and /* */ comments) in a directory, strips out comments while safely preserving string literal contents via placeholder substitution, and writes the cleaned files back, optionally creating backups first.
 It should use a dataclass (ProcessResult) to track per-file statistics such as original/final line and byte counts, number of comments removed, space freed, and any errors encountered, and process files in parallel using multiprocessing.Pool with a progress bar (tqdm) and logging via loguru.
 The script should be runnable as a command-line tool that accepts a target path and options, then prints or logs a summary report of processed files, space savings, and failures at the end."""
@@ -158,9 +158,7 @@ def collect_source_files(targets: list[str]) -> list[Path]:
     return sorted(all_files)
 
 
-def process_files_parallel(
-    paths: list[Path], num_workers: int | None = None
-) -> list[ProcessResult]:
+def process_files_parallel(paths: list[Path], num_workers: int | None = None) -> list[ProcessResult]:
     num_workers = num_workers or cpu_count()
     remover = CommentRemover()
     with Pool(num_workers) as pool:
@@ -255,16 +253,12 @@ def main(
                 final_size = len(cleaned.encode("utf-8"))
                 freed = original_size - final_size
                 total_preview_freed += freed
-                print(
-                    f"  {path.name}: {comments} comments, would free {_format_bytes(freed)}"
-                )
+                print(f"  {path.name}: {comments} comments, would free {_format_bytes(freed)}")
             except Exception as e:
                 logger.error(f"  {path.name}: {e}")
         if len(source_files) > 5:
             print(f"  ... and {len(source_files) - 5} more files")
-            print(
-                f"Preview: Would free approximately {_format_bytes(total_preview_freed)} (for {5} processed files)"
-            )
+            print(f"Preview: Would free approximately {_format_bytes(total_preview_freed)} (for {5} processed files)")
         return 0
     print(f"Using {num_workers or cpu_count()} workers for parallel processing")
     results = process_files_parallel(source_files, num_workers)
@@ -307,9 +301,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Remove .bak backup files after processing",
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Preview changes without modifying files"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Preview changes without modifying files")
     args = parser.parse_args()
     targets = args.targets if args.targets else None
     exit_code = main(

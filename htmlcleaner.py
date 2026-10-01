@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 HTML Asset Extractor - Extract inline CSS and JavaScript to separate files.
 
@@ -121,9 +121,7 @@ def get_unique_filename(base_name: str, extension: str, assets_dir: Path) -> str
     return filename
 
 
-def extract_assets_from_html(
-    html_content: str, html_path: Path, assets_base_dir: Path
-) -> tuple[str, int, int]:
+def extract_assets_from_html(html_content: str, html_path: Path, assets_base_dir: Path) -> tuple[str, int, int]:
     parser = HTMLExtractor()
 
     try:
@@ -185,19 +183,13 @@ def extract_assets_from_html(
         href = str(rel_path).replace("\\", "/")
 
         if asset_type == "css":
-            other_attrs = " ".join(
-                f'{k}="{v}"' if v else k
-                for k, v in attrs.items()
-                if k not in ("href", "rel")
-            )
+            other_attrs = " ".join(f'{k}="{v}"' if v else k for k, v in attrs.items() if k not in ("href", "rel"))
             if other_attrs:
                 replacement = f'<link rel="stylesheet" href="{href}" {other_attrs}>'
             else:
                 replacement = f'<link rel="stylesheet" href="{href}">'
         else:
-            other_attrs = " ".join(
-                f'{k}="{v}"' if v else k for k, v in attrs.items() if k != "src"
-            )
+            other_attrs = " ".join(f'{k}="{v}"' if v else k for k, v in attrs.items() if k != "src")
             if other_attrs:
                 replacement = f'<script src="{href}" {other_attrs}></script>'
             else:
@@ -220,17 +212,9 @@ def extract_assets_from_html(
                 match = re.search(pattern, modified_html, re.DOTALL | re.IGNORECASE)
                 if match:
                     if "<style" in match.group(1).lower():
-                        modified_html = (
-                            modified_html[: match.start()]
-                            + replacement
-                            + modified_html[match.end() :]
-                        )
+                        modified_html = modified_html[: match.start()] + replacement + modified_html[match.end() :]
                     else:
-                        modified_html = (
-                            modified_html[: match.start()]
-                            + replacement
-                            + modified_html[match.end() :]
-                        )
+                        modified_html = modified_html[: match.start()] + replacement + modified_html[match.end() :]
                     break
             except re.error:
                 continue
@@ -260,9 +244,7 @@ def process_html_file(path: Path) -> ExtractionResult:
 
         assets_dir = path.parent / ASSETS_DIR_NAME
 
-        modified_html, css_count, js_count = extract_assets_from_html(
-            html_content, path, assets_dir
-        )
+        modified_html, css_count, js_count = extract_assets_from_html(html_content, path, assets_dir)
 
         if css_count > 0 or js_count > 0:
             temp_path = path.with_suffix(path.suffix + ".tmp")
@@ -274,20 +256,14 @@ def process_html_file(path: Path) -> ExtractionResult:
                     temp_path.unlink()
                 raise
 
-        return ExtractionResult(
-            path=path, success=True, css_count=css_count, js_count=js_count
-        )
+        return ExtractionResult(path=path, success=True, css_count=css_count, js_count=js_count)
 
     except UnicodeDecodeError as e:
         return ExtractionResult(path=path, success=False, error=f"Encoding error: {e}")
     except PermissionError as e:
-        return ExtractionResult(
-            path=path, success=False, error=f"Permission denied: {e}"
-        )
+        return ExtractionResult(path=path, success=False, error=f"Permission denied: {e}")
     except Exception as e:
-        return ExtractionResult(
-            path=path, success=False, error=f"{type(e).__name__}: {e}"
-        )
+        return ExtractionResult(path=path, success=False, error=f"{type(e).__name__}: {e}")
 
 
 def find_html_files(paths: list[Path]) -> Iterator[Path]:
@@ -345,9 +321,7 @@ Examples:
         help=f"Number of worker processes (default: {NUM_WORKERS})",
     )
 
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress progress output"
-    )
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress progress output")
 
     parser.add_argument(
         "--min-size",
@@ -392,9 +366,7 @@ def main() -> int:
 
     with mp.Pool(processes=num_workers) as pool:
         try:
-            for result in pool.imap_unordered(
-                process_html_file, html_files, chunksize=4
-            ):
+            for result in pool.imap_unordered(process_html_file, html_files, chunksize=4):
                 total_processed += 1
 
                 if result.success:
@@ -404,8 +376,7 @@ def main() -> int:
                     if not args.quiet:
                         if result.css_count > 0 or result.js_count > 0:
                             print(
-                                f"✓ {result.path}: "
-                                f"{result.css_count} CSS, {result.js_count} JS extracted",
+                                f"✓ {result.path}: {result.css_count} CSS, {result.js_count} JS extracted",
                                 file=sys.stderr,
                             )
                         elif result.error:

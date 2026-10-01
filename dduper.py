@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that deduplicates and extracts Python function/class definitions from a large collection of source files, including files nested inside archives (zip, tar variants, gzip, bz2, xz, zstd, brotli).
 It should use tree-sitter (with an ast-based fallback) to parse each file and pull out top-level functions and classes, normalize their text (e.g.
 line endings) and hash each extracted object with SHA-256 to detect and skip duplicates across files.
@@ -189,9 +189,7 @@ def extract_archive(path: Path) -> str:
         if lower.endswith(".zip"):
             with zipfile.ZipFile(path) as zf:
                 zf.extractall(temp_dir)
-        elif lower.endswith(
-            (".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz")
-        ):
+        elif lower.endswith((".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz")):
             with tarfile.open(path) as tf:
                 tf.extractall(temp_dir, filter="data")
         elif lower.endswith(".gz") and (not lower.endswith(".tar.gz")):

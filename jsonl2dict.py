@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads a JSONL (JSON Lines) file given as a command-line argument, parsing each line into a Python dictionary and collecting them into a list, while skipping and printing a warning for any line that fails JSON decoding.
 Also include a helper function that instead builds a dictionary keyed by a specified field name from each record, again skipping and warning on decode errors or missing keys.
 In the main execution block, load the file via the list-based parser, print the resulting data, then write it out as a formatted JSON array (UTF-8, indent=2) to a new file with the same name but a ".json" extension instead of ".jsonl"."""

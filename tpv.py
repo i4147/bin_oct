@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 tpv - a terminal PDF viewer that needs no Python PDF bindings.
 
@@ -129,15 +129,9 @@ class Renderer:
     def _detect_tool(cls, backend: str | None) -> str:
         if backend:
             if backend not in cls.BACKENDS:
-                sys.exit(
-                    f"tpv: unknown backend {backend!r} "
-                    f"(choose from {', '.join(cls.BACKENDS)})"
-                )
+                sys.exit(f"tpv: unknown backend {backend!r} (choose from {', '.join(cls.BACKENDS)})")
             if not shutil.which(backend):
-                sys.exit(
-                    f"tpv: backend {backend!r} not found on PATH.\n"
-                    f"    pkg install {cls.INSTALL_HINT[backend]}"
-                )
+                sys.exit(f"tpv: backend {backend!r} not found on PATH.\n    pkg install {cls.INSTALL_HINT[backend]}")
             return backend
 
         for name in cls.BACKENDS:
@@ -175,10 +169,7 @@ class Renderer:
                 pass
 
         if shutil.which("gs"):
-            script = (
-                f"{self._ps_string(self.path)} (r) file runpdfbegin "
-                f"pdfpagecount == quit"
-            )
+            script = f"{self._ps_string(self.path)} (r) file runpdfbegin pdfpagecount == quit"
             argv = [
                 "gs",
                 "-q",
@@ -190,9 +181,7 @@ class Renderer:
                 script,
             ]
             try:
-                res = subprocess.run(
-                    argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60
-                )
+                res = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
                 if res.returncode == 0:
                     self._count = int(res.stdout.strip() or b"0")
                     if self._count:
@@ -249,18 +238,14 @@ class Renderer:
             script,
         ]
         try:
-            res = subprocess.run(
-                argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60
-            )
+            res = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
         except (OSError, subprocess.SubprocessError) as exc:
             raise RenderError(f"gs page query failed: {exc}") from None
         if res.returncode != 0:
             msg = res.stderr.decode("utf-8", "replace").strip()
             raise RenderError(msg or "gs page query failed")
 
-        lines = [
-            ln.strip() for ln in res.stdout.decode("latin-1").splitlines() if ln.strip()
-        ]
+        lines = [ln.strip() for ln in res.stdout.decode("latin-1").splitlines() if ln.strip()]
 
         nums = [float(v) for v in NUMBER_RE.findall(" ".join(lines))]
         if len(nums) < 5:
@@ -308,9 +293,7 @@ class Renderer:
         ]
         res = subprocess.run(argv, stdout=DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if res.returncode != 0:
-            raise RenderError(
-                res.stderr.decode("utf-8", "replace").strip() or "gs failed"
-            )
+            raise RenderError(res.stderr.decode("utf-8", "replace").strip() or "gs failed")
         try:
             with open(out, "rb") as fh:
                 return fh.read()
@@ -336,15 +319,11 @@ class Renderer:
         ]
         res = subprocess.run(argv, stdout=DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if res.returncode != 0:
-            raise RenderError(
-                res.stderr.decode("utf-8", "replace").strip() or "pdftoppm failed"
-            )
+            raise RenderError(res.stderr.decode("utf-8", "replace").strip() or "pdftoppm failed")
 
         out = root + ".ppm"
         if not os.path.exists(out):
-            leftovers = [
-                os.path.join(self._tmp, f) for f in sorted(os.listdir(self._tmp))
-            ]
+            leftovers = [os.path.join(self._tmp, f) for f in sorted(os.listdir(self._tmp))]
             if not leftovers:
                 raise RenderError("pdftoppm produced no output")
             out = leftovers[0]
@@ -368,9 +347,7 @@ class Renderer:
         ]
         res = subprocess.run(argv, stdout=DEVNULL, stderr=subprocess.PIPE, timeout=300)
         if res.returncode != 0:
-            raise RenderError(
-                res.stderr.decode("utf-8", "replace").strip() or "mutool draw failed"
-            )
+            raise RenderError(res.stderr.decode("utf-8", "replace").strip() or "mutool draw failed")
         try:
             with open(out, "rb") as fh:
                 return fh.read()
@@ -429,9 +406,7 @@ class Viewer:
     ZOOM_STEP = 1.25
     MAX_RENDER_WIDTH = 4000
 
-    def __init__(
-        self, path: str, page: int = 1, zoom: float = 1.0, backend: str | None = None
-    ) -> None:
+    def __init__(self, path: str, page: int = 1, zoom: float = 1.0, backend: str | None = None) -> None:
         self.path = path
         self.renderer = Renderer(path, backend)
         self.page_count = self.renderer.page_count()
@@ -519,9 +494,7 @@ class Viewer:
             max_y = max(0, h - self.view_rows() * 2)
             pct = 100 if max_y == 0 else int(round(100 * self.y / max_y))
             line = (
-                f" {name}  {self.page_index + 1}/{self.page_count}"
-                f"  {pct:3d}%  {self.zoom:.2f}x "
-                f"[{self.renderer.tool}] "
+                f" {name}  {self.page_index + 1}/{self.page_count}  {pct:3d}%  {self.zoom:.2f}x [{self.renderer.tool}] "
             )
         hint = " q quit  n/p page  j/k scroll  +/- zoom "
         if len(line) + len(hint) <= cols:

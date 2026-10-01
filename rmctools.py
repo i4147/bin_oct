@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged.py — unified Python source cleaner.
 
@@ -126,9 +126,7 @@ def gather_python_files(
     for raw in paths:
         p = Path(raw).resolve()
         if p.is_file():
-            if p.suffix == ".py" or (
-                include_shebang_scripts and _looks_like_python_script(p)
-            ):
+            if p.suffix == ".py" or (include_shebang_scripts and _looks_like_python_script(p)):
                 if not any(part.lower() in excl for part in p.parts):
                     seen.add(p)
         elif p.is_dir():
@@ -152,9 +150,7 @@ def safe_read_text(path: Path) -> tuple[str | None, str | None]:
         return None, f"read-error: {exc}"
 
 
-def write_text_preserving_newlines(
-    path: Path, text: str, encoding: str = "utf-8"
-) -> None:
+def write_text_preserving_newlines(path: Path, text: str, encoding: str = "utf-8") -> None:
     path.write_text(text, encoding=encoding, newline="\n")
 
 
@@ -236,9 +232,7 @@ if _HAS_LIBCST:
             self.comments_removed = 0
             self.docstrings_removed = 0
 
-        def leave_Comment(
-            self, original: "cst.Comment", updated: "cst.Comment"
-        ) -> "cst.Comment | cst.RemovalSentinel":
+        def leave_Comment(self, original: "cst.Comment", updated: "cst.Comment") -> "cst.Comment | cst.RemovalSentinel":
             if not self.strip_comments:
                 return updated
             val = original.value
@@ -251,9 +245,7 @@ if _HAS_LIBCST:
             self.comments_removed += 1
             return cst.RemoveFromParent()
 
-        def _strip_body(
-            self, body: Sequence["cst.BaseStatement"]
-        ) -> tuple["cst.BaseStatement", ...]:
+        def _strip_body(self, body: Sequence["cst.BaseStatement"]) -> tuple["cst.BaseStatement", ...]:
             body = tuple(body)
             if not body:
                 return body
@@ -262,9 +254,7 @@ if _HAS_LIBCST:
                 return body[1:]
             return body
 
-        def leave_Module(
-            self, original: "cst.Module", updated: "cst.Module"
-        ) -> "cst.Module":
+        def leave_Module(self, original: "cst.Module", updated: "cst.Module") -> "cst.Module":
             if not self.strip_docstrings or self.preserve_module_docstring:
                 return updated
             new_body = self._strip_body(updated.body)
@@ -272,18 +262,14 @@ if _HAS_LIBCST:
                 new_body = (cst.SimpleStatementLine(body=[cst.Pass()]),)
             return updated.with_changes(body=new_body)
 
-        def leave_ClassDef(
-            self, original: "cst.ClassDef", updated: "cst.ClassDef"
-        ) -> "cst.ClassDef":
+        def leave_ClassDef(self, original: "cst.ClassDef", updated: "cst.ClassDef") -> "cst.ClassDef":
             if not self.strip_docstrings:
                 return updated
             if isinstance(updated.body, cst.IndentedBlock):
                 new_body = self._strip_body(updated.body.body)
                 if not new_body:
                     new_body = (cst.SimpleStatementLine(body=[cst.Pass()]),)
-                return updated.with_changes(
-                    body=updated.body.with_changes(body=new_body)
-                )
+                return updated.with_changes(body=updated.body.with_changes(body=new_body))
             if isinstance(updated.body, cst.SimpleStatementSuite):
                 body = tuple(updated.body.body)
                 if body and _is_plain_string(_wrap_suite(body[0]), self.binary_check):
@@ -294,18 +280,14 @@ if _HAS_LIBCST:
                 return updated.with_changes(body=updated.body.with_changes(body=body))
             return updated
 
-        def leave_FunctionDef(
-            self, original: "cst.FunctionDef", updated: "cst.FunctionDef"
-        ) -> "cst.FunctionDef":
+        def leave_FunctionDef(self, original: "cst.FunctionDef", updated: "cst.FunctionDef") -> "cst.FunctionDef":
             if not self.strip_docstrings:
                 return updated
             if isinstance(updated.body, cst.IndentedBlock):
                 new_body = self._strip_body(updated.body.body)
                 if not new_body:
                     new_body = (cst.SimpleStatementLine(body=[cst.Pass()]),)
-                return updated.with_changes(
-                    body=updated.body.with_changes(body=new_body)
-                )
+                return updated.with_changes(body=updated.body.with_changes(body=new_body))
             if isinstance(updated.body, cst.SimpleStatementSuite):
                 body = tuple(updated.body.body)
                 if body and _is_plain_string(_wrap_suite(body[0]), self.binary_check):
@@ -335,7 +317,7 @@ if _HAS_LIBCST:
             bool,
             bool,
             bool,
-            bool,  # options
+            bool,
         ],
     ) -> _LibCSTResult:
         (
@@ -380,9 +362,7 @@ if _HAS_LIBCST:
         try:
             ast.parse(out)
         except SyntaxError as exc:
-            return _LibCSTResult(
-                path, 0, 0, f"Result failed AST validation: {exc}", False
-            )
+            return _LibCSTResult(path, 0, 0, f"Result failed AST validation: {exc}", False)
 
         if not dry_run:
             try:
@@ -390,9 +370,7 @@ if _HAS_LIBCST:
             except Exception as exc:
                 return _LibCSTResult(path, 0, 0, f"write-error: {exc}", False)
 
-        return _LibCSTResult(
-            path, stripper.comments_removed, stripper.docstrings_removed, None, True
-        )
+        return _LibCSTResult(path, stripper.comments_removed, stripper.docstrings_removed, None, True)
 
     def cmd_libcst(args: argparse.Namespace) -> int:
         if not _HAS_LIBCST:
@@ -401,9 +379,7 @@ if _HAS_LIBCST:
                 file=sys.stderr,
             )
             return 2
-        files = gather_python_files(
-            args.paths, args.exclude, include_shebang_scripts=True
-        )
+        files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
         if not files:
             print("No Python files found.")
             return 0
@@ -444,9 +420,7 @@ if _HAS_LIBCST:
                 total_changed += int(res.changed)
                 total_err += int(bool(res.error))
 
-        _libcst_summary(
-            len(files), total_changed, total_c, total_d, total_err, args.dry_run
-        )
+        _libcst_summary(len(files), total_changed, total_c, total_d, total_err, args.dry_run)
         return 2 if total_err else 0
 
     def _libcst_report(res: _LibCSTResult) -> None:
@@ -454,14 +428,9 @@ if _HAS_LIBCST:
             print(f"[ERROR] {res.path}: {res.error}")
         elif res.changed:
             tag = "UPDATED"
-            print(
-                f"[{tag}] {res.path} -> {res.comments_removed} comment(s), "
-                f"{res.docstrings_removed} docstring(s)"
-            )
+            print(f"[{tag}] {res.path} -> {res.comments_removed} comment(s), {res.docstrings_removed} docstring(s)")
 
-    def _libcst_summary(
-        n: int, changed: int, c: int, d: int, errs: int, dry: bool
-    ) -> None:
+    def _libcst_summary(n: int, changed: int, c: int, d: int, errs: int, dry: bool) -> None:
         print("-" * 60)
         print(f"Files scanned       : {n}")
         print(f"Files {'would change' if dry else 'updated'}   : {changed}")
@@ -509,9 +478,7 @@ class _DocstringStripper(ast.NodeTransformer):
         return self._strip_first(node)
 
 
-def _extract_kept_comments(
-    src: str, keep_noqa: bool
-) -> tuple[dict[int, list[str]], int]:
+def _extract_kept_comments(src: str, keep_noqa: bool) -> tuple[dict[int, list[str]], int]:
     kept: dict[int, list[str]] = {}
     hash_only = 0
     try:
@@ -540,9 +507,7 @@ def _reapply_kept_comments(new_src: str, kept: dict[int, list[str]]) -> str:
         if 0 <= idx < len(lines):
             for comment in kept[lineno]:
                 if comment not in lines[idx]:
-                    lines[idx] = (
-                        (lines[idx] + "  " + comment) if lines[idx].strip() else comment
-                    )
+                    lines[idx] = (lines[idx] + "  " + comment) if lines[idx].strip() else comment
                 inserted.add((lineno, comment))
     for lineno in sorted(kept):
         for comment in kept[lineno]:
@@ -741,9 +706,7 @@ def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _Rege
 
 def cmd_regex(args: argparse.Namespace) -> int:
     if args.lang == "all":
-        files = gather_python_files(
-            args.paths, args.exclude, include_shebang_scripts=True
-        )
+        files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
 
         for p in args.paths:
             root = Path(p).resolve()
@@ -752,9 +715,7 @@ def cmd_regex(args: argparse.Namespace) -> int:
                     files.extend(f for f in root.rglob(suffix) if f.is_file())
         files = sorted(set(files))
     else:
-        files = gather_python_files(
-            args.paths, args.exclude, include_shebang_scripts=True
-        )
+        files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
         if args.lang != "py":
             for p in args.paths:
                 root = Path(p).resolve()
@@ -769,10 +730,7 @@ def cmd_regex(args: argparse.Namespace) -> int:
     lang_override = args.lang if args.lang not in {"all", "auto"} else ""
     print(f"Processing {len(files)} file(s) with regex ...")
 
-    jobs = [
-        (f, lang_override, args.keep_strings, args.hash_only, args.dry_run, True)
-        for f in files
-    ]
+    jobs = [(f, lang_override, args.keep_strings, args.hash_only, args.dry_run, True) for f in files]
     ctx = mp.get_context("spawn")
     changed = errs = 0
     with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
@@ -875,9 +833,7 @@ def _rewrite_without_unused(src: str, info: dict[str, object]) -> str:
             continue
         if isinstance(stmt, ast.ClassDef) and stmt.name in unused_classes:
             continue
-        if isinstance(stmt, ast.Assign) and isinstance(
-            getattr(stmt, "parent", None), ast.Module
-        ):
+        if isinstance(stmt, ast.Assign) and isinstance(getattr(stmt, "parent", None), ast.Module):
             names = [t.id for t in stmt.targets if isinstance(t, ast.Name)]
             if names and all(n in unused_vars for n in names):
                 continue
@@ -990,9 +946,7 @@ def _jtc_process_file(args: tuple[Path, str, bool]) -> _JTCResult:
         try:
             ast.parse(out)
         except SyntaxError as exc:
-            return _JTCResult(
-                path, False, f"just-the-code produced invalid Python: {exc}"
-            )
+            return _JTCResult(path, False, f"just-the-code produced invalid Python: {exc}")
     src, _err = safe_read_text(path)
     if src == out:
         return _JTCResult(path, False, None)
@@ -1006,9 +960,7 @@ def _jtc_process_file(args: tuple[Path, str, bool]) -> _JTCResult:
 
 def cmd_jtc(args: argparse.Namespace) -> int:
     if args.language == "python":
-        files = gather_python_files(
-            args.paths, args.exclude, include_shebang_scripts=True
-        )
+        files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
     else:
         files = []
         for p in args.paths:
@@ -1016,11 +968,7 @@ def cmd_jtc(args: argparse.Namespace) -> int:
             if root.is_file():
                 files.append(root)
             elif root.is_dir():
-                files.extend(
-                    f
-                    for f in root.rglob("*")
-                    if f.suffix in {".py", ".rs"} and f.is_file()
-                )
+                files.extend(f for f in root.rglob("*") if f.suffix in {".py", ".rs"} and f.is_file())
         files = sorted(set(files))
 
     if not files:
@@ -1049,9 +997,7 @@ def cmd_jtc(args: argparse.Namespace) -> int:
 
 
 def _add_common_options(p: argparse.ArgumentParser) -> None:
-    p.add_argument(
-        "paths", nargs="*", default=["."], help="Files or directories (default: cwd)."
-    )
+    p.add_argument("paths", nargs="*", default=["."], help="Files or directories (default: cwd).")
     p.add_argument(
         "--workers",
         type=int,
@@ -1064,9 +1010,7 @@ def _add_common_options(p: argparse.ArgumentParser) -> None:
         default=sorted(DEFAULT_EXCLUDES),
         help="Directory names to skip (default: VCS/build/cache dirs).",
     )
-    p.add_argument(
-        "--dry-run", action="store_true", help="Report changes without writing."
-    )
+    p.add_argument("--dry-run", action="store_true", help="Report changes without writing.")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1081,15 +1025,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Strip comments/docstrings using libcst (aremci/cleanpy2/grmc/rrmc).",
     )
     _add_common_options(p_libcst)
-    p_libcst.add_argument(
-        "--no-comments", action="store_true", help="Do not remove comments."
-    )
-    p_libcst.add_argument(
-        "--no-docstrings", action="store_true", help="Do not remove docstrings."
-    )
-    p_libcst.add_argument(
-        "--no-shebang", action="store_true", help="Also strip a leading #! line."
-    )
+    p_libcst.add_argument("--no-comments", action="store_true", help="Do not remove comments.")
+    p_libcst.add_argument("--no-docstrings", action="store_true", help="Do not remove docstrings.")
+    p_libcst.add_argument("--no-shebang", action="store_true", help="Also strip a leading #! line.")
     p_libcst.add_argument(
         "--no-file-comments",
         action="store_true",
@@ -1118,17 +1056,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="ast",
         help="Source unparser backend (default: ast).",
     )
-    p_ast.add_argument(
-        "--no-shebang", action="store_true", help="Do not preserve the shebang line."
-    )
+    p_ast.add_argument("--no-shebang", action="store_true", help="Do not preserve the shebang line.")
     p_ast.add_argument(
         "--no-file-comments",
         action="store_true",
         help="Do not preserve # fmt:/# type:/# coding:/# encoding: comments.",
     )
-    p_ast.add_argument(
-        "--keep-noqa", action="store_true", help="Attempt to preserve # noqa comments."
-    )
+    p_ast.add_argument("--keep-noqa", action="store_true", help="Attempt to preserve # noqa comments.")
     p_ast.set_defaults(func=cmd_ast)
 
     p_reg = sub.add_parser(
@@ -1154,9 +1088,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_reg.set_defaults(func=cmd_regex)
 
-    p_un = sub.add_parser(
-        "unused", help="Remove unused functions/classes/variables/imports (clean_py)."
-    )
+    p_un = sub.add_parser("unused", help="Remove unused functions/classes/variables/imports (clean_py).")
     _add_common_options(p_un)
     p_un.set_defaults(func=cmd_unused)
 

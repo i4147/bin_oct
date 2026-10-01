@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that lists the contents of a directory (defaulting to the current one) sorted by size in ascending order, using helper functions "fsz" and "gsz" from a local module named "dh" to format file sizes and compute directory sizes respectively.
 For each entry it should print a formatted table with aligned "size" and "name" columns, color-coding entries with ANSI escape codes: blue for directories, red for compressed archive files (zip, tar, gz, bz2, xz, rar, 7z), green for executable files, and cyan for other regular files.
 The script should gracefully handle errors when reading an entry's stats by defaulting its size to zero and color to cyan, and it should accept an optional directory path as a command-line argument."""

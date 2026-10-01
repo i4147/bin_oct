@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Compress each non-hidden subdirectory as `<name>.tar.br` and each regular file as `<name>.br` in the current directory: build tar archives in memory, Brotli-compress with quality 11 in chunks of 64 KiB, run both job types through `multiprocessing.pool.starmap` on a fixed pool of 8 workers, and log with loguru."""
 
 import io
@@ -58,13 +58,9 @@ def main() -> None:
     current_dir: Path = Path(".")
     script_name: str = Path(__file__).name
 
-    subdirs: list[Path] = [
-        d for d in current_dir.iterdir() if d.is_dir() and not d.name.startswith(".")
-    ]
+    subdirs: list[Path] = [d for d in current_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
     files: list[Path] = [
-        f
-        for f in current_dir.iterdir()
-        if f.is_file() and f.suffix != ".br" and f.name != script_name
+        f for f in current_dir.iterdir() if f.is_file() and f.suffix != ".br" and f.name != script_name
     ]
 
     if not subdirs and not files:

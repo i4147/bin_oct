@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI tool that halves the bitrate of MP3 files.
 
@@ -215,14 +215,8 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
 def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
     if stat.success:
         size_saved = stat.original_size - stat.new_size
-        size_percent = (
-            (size_saved / stat.original_size * BITRATE_PERCENT_DIVISOR)
-            if stat.original_size > 0
-            else 0.0
-        )
-        logger.opt(colors=True).info(
-            f"<green>✓</green> [{index}/{total}] <cyan>{stat.path}</cyan>"
-        )
+        size_percent = (size_saved / stat.original_size * BITRATE_PERCENT_DIVISOR) if stat.original_size > 0 else 0.0
+        logger.opt(colors=True).info(f"<green>✓</green> [{index}/{total}] <cyan>{stat.path}</cyan>")
         logger.opt(colors=True).info(
             f"  <dim>{fsz(stat.original_size)} → {fsz(stat.new_size)} "
             f"(<green>-{size_percent:.1f}%</green>) | "
@@ -230,9 +224,7 @@ def print_file_result(stat: ConversionStats, index: int, total: int) -> None:
             f"{format_duration(stat.duration)}</dim>"
         )
     else:
-        logger.opt(colors=True).error(
-            f"<red>✗</red> [{index}/{total}] <red>{stat.path}</red>"
-        )
+        logger.opt(colors=True).error(f"<red>✗</red> [{index}/{total}] <red>{stat.path}</red>")
         logger.opt(colors=True).error(f"  <red>Error: {stat.error_message}</red>")
 
 
@@ -297,8 +289,7 @@ def process_directory(directory: Path) -> None:
 
     with mp.Pool(processes=NUM_WORKERS) as pool:
         async_results = [
-            (i, pool.apply_async(convert_single_file, (mp3_file, directory)))
-            for i, mp3_file in enumerate(mp3_files, 1)
+            (i, pool.apply_async(convert_single_file, (mp3_file, directory))) for i, mp3_file in enumerate(mp3_files, 1)
         ]
         for i, async_result in async_results:
             stat = async_result.get()
@@ -311,9 +302,7 @@ def process_directory(directory: Path) -> None:
     if failed:
         logger.opt(colors=True).error("<red><bold>Failed conversions:</bold></red>")
         for stat in failed:
-            logger.opt(colors=True).error(
-                f"  <red>✗</red> {stat.path}: {stat.error_message}"
-            )
+            logger.opt(colors=True).error(f"  <red>✗</red> {stat.path}: {stat.error_message}")
     print_final_summary(stats, total_duration)
 
 
@@ -335,9 +324,7 @@ Examples:
         default=[Path.cwd()],
         help="Directories to process (default: current directory)",
     )
-    parser.add_argument(
-        "--no-color", action="store_true", help="Disable colored output"
-    )
+    parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     args = parser.parse_args()
 
     logger.remove()

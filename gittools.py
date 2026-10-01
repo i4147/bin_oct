@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """GitHub repository toolkit — one CLI for all the original scripts.
 
 Subcommands
@@ -219,18 +219,14 @@ def cmd_clone(args: argparse.Namespace) -> int:
     print("-" * 40)
 
     with Pool(processes=args.workers) as pool:
-        jobs = [
-            (slug, pool.apply_async(_git_clone_one, (slug, out_dir))) for slug in repos
-        ]
+        jobs = [(slug, pool.apply_async(_git_clone_one, (slug, out_dir))) for slug in repos]
         _pool_consume(pool, jobs, handle)
 
     _print_summary(counters["ok"], counters["existed"], counters["failed"], len(repos))
     return 0
 
 
-def _zip_download_one(
-    slug: str, output_dir: Path, timeout: int
-) -> tuple[str, bool, str]:
+def _zip_download_one(slug: str, output_dir: Path, timeout: int) -> tuple[str, bool, str]:
     if not _is_valid_slug(slug):
         return slug, False, f"Invalid format: {slug}"
 
@@ -303,10 +299,7 @@ def cmd_zip(args: argparse.Namespace) -> int:
     print("-" * 40)
 
     with Pool(processes=args.workers) as pool:
-        jobs = [
-            (slug, pool.apply_async(_zip_download_one, (slug, out_dir, args.timeout)))
-            for slug in repos
-        ]
+        jobs = [(slug, pool.apply_async(_zip_download_one, (slug, out_dir, args.timeout))) for slug in repos]
         _pool_consume(pool, jobs, handle)
         pool.close()
         pool.join()
@@ -335,9 +328,7 @@ def _dulwich_size_check(slug: str, max_bytes: int) -> tuple[bool, int]:
         return True, 0
 
 
-def _dulwich_clone_one(
-    slug: str, output_dir: Path, max_bytes: int
-) -> tuple[str, bool, str]:
+def _dulwich_clone_one(slug: str, output_dir: Path, max_bytes: int) -> tuple[str, bool, str]:
     from dulwich import porcelain
     from dulwich.errors import NotGitRepository
     from dulwich.repo import Repo as DulwichRepo
@@ -420,10 +411,7 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
     print("-" * 40)
 
     with Pool(processes=args.workers) as pool:
-        jobs = [
-            (slug, pool.apply_async(_dulwich_clone_one, (slug, out_dir, max_bytes)))
-            for slug in repos
-        ]
+        jobs = [(slug, pool.apply_async(_dulwich_clone_one, (slug, out_dir, max_bytes))) for slug in repos]
         _pool_consume(pool, jobs, handle)
 
     if not args.no_cleanup and success_slugs:
@@ -582,9 +570,7 @@ def _cli_git_clone(owner: str, repo: str, destination: Path) -> bool:
         print(f"   Cloned into: {destination}")
         return True
     except FileNotFoundError:
-        print(
-            "❌ Error: 'git' command not found. Please ensure Git is installed and in your PATH."
-        )
+        print("❌ Error: 'git' command not found. Please ensure Git is installed and in your PATH.")
         return False
     except Exception as exc:  # noqa: BLE001
         print(f"❌ An unexpected error occurred during cloning: {exc}")
@@ -626,9 +612,7 @@ def cmd_gclone(args: argparse.Namespace) -> int:
     return 0
 
 
-def _download_zip_with_progress(
-    owner: str, repo: str, branch: str, output: Optional[str]
-) -> str:
+def _download_zip_with_progress(owner: str, repo: str, branch: str, output: Optional[str]) -> str:
     from github import Github
     from tqdm import tqdm
 
@@ -679,9 +663,7 @@ def cmd_get_zip(args: argparse.Namespace) -> int:
     return 0
 
 
-def _sparse_clone_one(
-    url: str, output_dir: Path, extensions: list[str], timeout: int = 300
-) -> tuple[str, bool, str]:
+def _sparse_clone_one(url: str, output_dir: Path, extensions: list[str], timeout: int = 300) -> tuple[str, bool, str]:
     try:
         parsed = urlparse(url)
         name = Path(parsed.path).stem
@@ -698,9 +680,7 @@ def _sparse_clone_one(
             check=True,
             capture_output=True,
         )
-        patterns = [
-            f"**/*{(ext if ext.startswith('.') else '.' + ext)}" for ext in extensions
-        ]
+        patterns = [f"**/*{(ext if ext.startswith('.') else '.' + ext)}" for ext in extensions]
         subprocess.run(
             ["git", "-C", str(dest), "sparse-checkout", "set", *patterns],
             check=True,
@@ -732,10 +712,7 @@ def cmd_sparse(args: argparse.Namespace) -> int:
     print(f"Repositories: {len(urls)}\n")
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {
-            pool.submit(_sparse_clone_one, url, out_dir, extensions): url
-            for url in urls
-        }
+        futures = {pool.submit(_sparse_clone_one, url, out_dir, extensions): url for url in urls}
         for future in as_completed(futures):
             url, ok, msg = future.result()
             print(f"{'✓' if ok else '✗'} {url}: {msg}")
@@ -767,12 +744,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="repos.txt",
         help="File with user/repo entries (default: repos.txt)",
     )
-    p_clone.add_argument(
-        "-o", "--output", default="repos", help="Output directory (default: repos)"
-    )
-    p_clone.add_argument(
-        "-w", "--workers", type=int, default=8, help="Parallel workers (default: 8)"
-    )
+    p_clone.add_argument("-o", "--output", default="repos", help="Output directory (default: repos)")
+    p_clone.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers (default: 8)")
     p_clone.add_argument(
         "--dry-run",
         action="store_true",
@@ -784,21 +757,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_zip.add_argument("file", nargs="?", default="repos.txt")
     p_zip.add_argument("-o", "--output", default="repos")
     p_zip.add_argument("-w", "--workers", type=int, default=8)
-    p_zip.add_argument(
-        "--timeout", type=int, default=30, help="HTTP timeout in seconds (default: 30)"
-    )
+    p_zip.add_argument("--timeout", type=int, default=30, help="HTTP timeout in seconds (default: 30)")
     p_zip.add_argument("--dry-run", action="store_true")
     p_zip.set_defaults(func=cmd_zip)
 
-    p_dul = sub.add_parser(
-        "dulwich", help="Pure-Python clone via dulwich with size limit."
-    )
+    p_dul = sub.add_parser("dulwich", help="Pure-Python clone via dulwich with size limit.")
     p_dul.add_argument("file", nargs="?", default="repos.txt")
     p_dul.add_argument("-o", "--output", default="repos")
     p_dul.add_argument("-w", "--workers", type=int, default=8)
-    p_dul.add_argument(
-        "--max-size", type=int, default=5, help="Maximum repo size in MB (default: 5)"
-    )
+    p_dul.add_argument("--max-size", type=int, default=5, help="Maximum repo size in MB (default: 5)")
     p_dul.add_argument(
         "--no-cleanup",
         action="store_true",
@@ -811,9 +778,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_fork.add_argument("repo", help="user/repo or full GitHub URL")
     p_fork.set_defaults(func=cmd_fork)
 
-    p_gc = sub.add_parser(
-        "gclone", help="Size-filtered clone of every entry in repos.txt."
-    )
+    p_gc = sub.add_parser("gclone", help="Size-filtered clone of every entry in repos.txt.")
     p_gc.add_argument("file", nargs="?", default="repos.txt")
     p_gc.add_argument(
         "--max-size",
@@ -821,9 +786,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=100,
         help="Maximum repo size in MB (default: 100)",
     )
-    p_gc.add_argument(
-        "--token", default=None, help="GitHub token (defaults to GITHUB_TOKEN env var)"
-    )
+    p_gc.add_argument("--token", default=None, help="GitHub token (defaults to GITHUB_TOKEN env var)")
     p_gc.add_argument(
         "--remaining-file",
         default="remained",
@@ -833,9 +796,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_gz = sub.add_parser("get-zip", help="Download one repo as a ZIP archive.")
     p_gz.add_argument("repo", help="user/repo")
-    p_gz.add_argument(
-        "--branch", "-b", default="main", help="Branch name (default: main)"
-    )
+    p_gz.add_argument("--branch", "-b", default="main", help="Branch name (default: main)")
     p_gz.add_argument(
         "--output",
         "-o",
@@ -844,21 +805,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_gz.set_defaults(func=cmd_get_zip)
 
-    p_sp = sub.add_parser(
-        "sparse", help="Sparse checkout clone filtered by extensions."
-    )
-    p_sp.add_argument(
-        "items", nargs="+", help="Extensions (e.g. .py) and repository URLs, any order"
-    )
+    p_sp = sub.add_parser("sparse", help="Sparse checkout clone filtered by extensions.")
+    p_sp.add_argument("items", nargs="+", help="Extensions (e.g. .py) and repository URLs, any order")
     p_sp.add_argument(
         "-o",
         "--output",
         default="cloned_repos",
         help="Output directory (default: cloned_repos)",
     )
-    p_sp.add_argument(
-        "-w", "--workers", type=int, default=4, help="Parallel workers (default: 4)"
-    )
+    p_sp.add_argument("-w", "--workers", type=int, default=4, help="Parallel workers (default: 4)")
     p_sp.set_defaults(func=cmd_sparse)
 
     return parser

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that recursively scans a directory of source files (skipping folders like .git, __pycache__, lazy, etc.) to find and translate embedded Chinese text into English, using either the googletrans or deep-translator library as the backend (exiting with an error if neither is installed).
 It should detect non-English text via a Unicode regex matching CJK character ranges with a configurable density threshold, process files in parallel using multiprocessing for speed, and log progress and results via the logging module.
 The script should accept command-line arguments (via argparse) to specify the target path and translation options, then rewrite the matched Chinese strings in place with their translated English equivalents."""
@@ -104,9 +104,7 @@ def worker(args: tuple[Path, int]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Translate non-English (Chinese) lines in-place."
-    )
+    parser = argparse.ArgumentParser(description="Translate non-English (Chinese) lines in-place.")
     parser.add_argument("files", nargs="+", help="Files or directories to process")
     parser.add_argument(
         "--extensions",
@@ -120,9 +118,7 @@ def main() -> None:
         default=mp.cpu_count(),
         help=f"Number of parallel workers (default: {mp.cpu_count()})",
     )
-    parser.add_argument(
-        "--batch-size", type=int, default=10, help="Batch size for progress logging"
-    )
+    parser.add_argument("--batch-size", type=int, default=10, help="Batch size for progress logging")
     parser.add_argument("--exclude", nargs="+", default=[], help="Paths to exclude")
     args = parser.parse_args()
     exclude_paths = {Path(p).resolve() for p in args.exclude}

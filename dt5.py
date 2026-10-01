@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 translate_chunks.py — Robust multi-backend text-file translator for Termux.
 
@@ -135,9 +135,7 @@ def _make_deep_translator(source: str, target: str) -> Callable:
     try:
         from deep_translator import GoogleTranslator
     except ImportError:
-        raise ImportError(
-            "deep_translator not installed. Run: pip install deep_translator"
-        )
+        raise ImportError("deep_translator not installed. Run: pip install deep_translator")
 
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
@@ -198,9 +196,7 @@ def _make_translators_bing(source: str, target: str) -> Callable:
     target = map_language_code("translators_bing", target)
 
     def translate_chunk(text: str) -> str:
-        return translators.translate_text(
-            text, from_language=source, to_language=target, service="bing"
-        )
+        return translators.translate_text(text, from_language=source, to_language=target, service="bing")
 
     return translate_chunk
 
@@ -209,9 +205,7 @@ def _make_googletrans(source: str, target: str) -> Callable:
     try:
         from googletrans import Translator
     except ImportError:
-        raise ImportError(
-            'googletrans not installed. Run: pip install "googletrans==4.0.0rc1"'
-        )
+        raise ImportError('googletrans not installed. Run: pip install "googletrans==4.0.0rc1"')
 
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
@@ -221,9 +215,7 @@ def _make_googletrans(source: str, target: str) -> Callable:
 
     def translate_chunk(text: str) -> str:
         with lock:
-            result = translator.translate(
-                text, src_language=source, dest_language=target
-            )
+            result = translator.translate(text, src_language=source, dest_language=target)
             return result["text"]
 
     return translate_chunk
@@ -233,9 +225,7 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
     try:
         from pygoogletranslation import Translator
     except ImportError:
-        raise ImportError(
-            "pygoogletranslation not installed. Run: pip install pygoogletranslation"
-        )
+        raise ImportError("pygoogletranslation not installed. Run: pip install pygoogletranslation")
 
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
@@ -245,9 +235,7 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
 
     def translate_chunk(text: str) -> str:
         with lock:
-            result = translator.translate(
-                text, src_language=source, dest_language=target
-            )
+            result = translator.translate(text, src_language=source, dest_language=target)
             return result["text"]
 
     return translate_chunk
@@ -323,9 +311,7 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
     return chunks
 
 
-def is_identity_translation(
-    original: str, translated: str, threshold: float = 0.98
-) -> bool:
+def is_identity_translation(original: str, translated: str, threshold: float = 0.98) -> bool:
     if translated is None:
         return True
     a = original.strip()
@@ -403,9 +389,7 @@ def load_state(path: Path) -> Optional[TranslationState]:
         with path.open("r", encoding="utf-8") as f:
             data = json.load(f)
         state = TranslationState.from_json(data)
-        logger.info(
-            f"Resumed state from {path} ({len(state.translations)} chunks done)"
-        )
+        logger.info(f"Resumed state from {path} ({len(state.translations)} chunks done)")
         return state
     except (json.JSONDecodeError, OSError, ValueError) as e:
         logger.warning(f"Could not load state from {path}: {e}")
@@ -443,9 +427,7 @@ def retry_with_backoff(
             if attempt == attempts:
                 break
             delay = min(max_delay, base_delay * (2 ** (attempt - 1)))
-            logger.debug(
-                f"Attempt {attempt}/{attempts} failed: {e!r}; retrying in {delay:.1f}s"
-            )
+            logger.debug(f"Attempt {attempt}/{attempts} failed: {e!r}; retrying in {delay:.1f}s")
             time.sleep(delay)
     assert last_exc is not None
     raise last_exc
@@ -629,22 +611,14 @@ def run_translation(
                             state.translations[idx] = translated
                             state.backend_used[idx] = backend or "unknown"
                             state.failed.pop(idx, None)
-                            logger.debug(
-                                f"[{completed_count}/{len(pending)}] chunk {idx} ok via {backend}"
-                            )
+                            logger.debug(f"[{completed_count}/{len(pending)}] chunk {idx} ok via {backend}")
                         else:
                             state.failed[idx] = error or "unknown error"
-                            logger.error(
-                                f"[{completed_count}/{len(pending)}] chunk {idx} FAILED: {error}"
-                            )
-                            append_failed_chunk(
-                                failed_path, idx, state.chunks[idx], error or "unknown"
-                            )
+                            logger.error(f"[{completed_count}/{len(pending)}] chunk {idx} FAILED: {error}")
+                            append_failed_chunk(failed_path, idx, state.chunks[idx], error or "unknown")
 
                         done_since_save += 1
-                        need_save = (
-                            done_since_save >= save_every
-                        ) or shutdown.event.is_set()
+                        need_save = (done_since_save >= save_every) or shutdown.event.is_set()
                         if need_save:
                             save_state(output_path, state)
                             done_since_save = 0
@@ -682,40 +656,28 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         default=None,
         help="Output JSON file (default: <input>.translations.json)",
     )
-    parser.add_argument(
-        "-s", "--source", default="en", help="Source language code (ISO 639-1)"
-    )
-    parser.add_argument(
-        "-t", "--target", required=True, help="Target language code (ISO 639-1)"
-    )
+    parser.add_argument("-s", "--source", default="en", help="Source language code (ISO 639-1)")
+    parser.add_argument("-t", "--target", required=True, help="Target language code (ISO 639-1)")
     parser.add_argument(
         "--backends",
         default=None,
-        help="Comma-separated backend order (default: "
-        + ",".join(DEFAULT_BACKEND_ORDER)
-        + ")",
+        help="Comma-separated backend order (default: " + ",".join(DEFAULT_BACKEND_ORDER) + ")",
     )
-    parser.add_argument(
-        "--chunk-size", type=int, default=2500, help="Chunk size in characters"
-    )
+    parser.add_argument("--chunk-size", type=int, default=2500, help="Chunk size in characters")
     parser.add_argument(
         "--workers",
         type=int,
         default=2,
         help="Max concurrent workers (<=2 recommended)",
     )
-    parser.add_argument(
-        "--save-every", type=int, default=10, help="Save state every N chunks"
-    )
+    parser.add_argument("--save-every", type=int, default=10, help="Save state every N chunks")
     parser.add_argument(
         "--debug-log",
         type=Path,
         default=None,
         help="Path to debug log file (default: <output>.debug.log)",
     )
-    parser.add_argument(
-        "--quiet", action="store_true", help="Suppress error output to stderr"
-    )
+    parser.add_argument("--quiet", action="store_true", help="Suppress error output to stderr")
     parser.add_argument(
         "--list-backends",
         action="store_true",
@@ -737,9 +699,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print(f"  - {b}")
         return 0
 
-    output = args.output or args.input.with_suffix(
-        args.input.suffix + ".translations.json"
-    )
+    output = args.output or args.input.with_suffix(args.input.suffix + ".translations.json")
     debug_log = args.debug_log or output.with_suffix(output.suffix + ".debug.log")
 
     setup_logging(debug_log, error_stderr=not args.quiet)

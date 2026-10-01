@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python tool that recursively scans a directory tree, identifies source code files by extension across dozens of programming languages (JS, TS, Ruby, PHP, Java, C/C++, C#, Go, Rust, Swift, Kotlin, Scala, Lua, R, Julia, Dart, Elixir, Erlang, Haskell, Clojure, F#, Nim, etc.), and strips comments from each file using the appropriate tree-sitter grammar/parser for that language, dynamically importing the correct tree-sitter language module based on a file-extension-to-module mapping.
 It should process files in parallel using multiprocessing, track per-file results (success/failure, number of comments removed, processing time, file size, error messages) in a dataclass, and report overall statistics after the run.
 Include robust error handling so that unsupported file types or parsing failures for a single file don't crash the whole batch job."""
@@ -286,9 +286,7 @@ def process_file(path: Path) -> ProcessResult:
                 file_size=0,
                 file_type=path.suffix,
             )
-        processed_content, comments_removed = remover.remove_comments(
-            content, path.suffix.lower()
-        )
+        processed_content, comments_removed = remover.remove_comments(content, path.suffix.lower())
         if comments_removed > 0 and processed_content != content:
             temp_path = path.with_suffix(path.suffix + ".tmp")
             try:
@@ -323,9 +321,7 @@ def process_file(path: Path) -> ProcessResult:
         )
 
 
-def process_files_parallel(
-    files: list[Path], num_workers: int = 8
-) -> list[ProcessResult]:
+def process_files_parallel(files: list[Path], num_workers: int = 8) -> list[ProcessResult]:
     results = []
     total_files = len(files)
     completed = 0
@@ -348,13 +344,9 @@ def process_files_parallel(
                             f"({size_kb:.1f} KB, {result.processing_time:.3f}s)"
                         )
                     else:
-                        print(
-                            f"• [{result.file_type:6}] {result.path}: no comments ({result.processing_time:.3f}s)"
-                        )
+                        print(f"• [{result.file_type:6}] {result.path}: no comments ({result.processing_time:.3f}s)")
                 else:
-                    print(
-                        f"✗ [{result.file_type:6}] {result.path}: ERROR - {result.error_message}"
-                    )
+                    print(f"✗ [{result.file_type:6}] {result.path}: ERROR - {result.error_message}")
                 if completed % 25 == 0 and completed < total_files:
                     print(f"\nProgress: {completed}/{total_files} files processed\n")
             except mp.TimeoutError:
@@ -375,9 +367,7 @@ def print_summary(results: list[ProcessResult], total_files: int, start_time: fl
     successful = sum(1 for r in results if r.success)
     failed = sum(1 for r in results if not r.success)
     total_comments_removed = sum(r.comments_removed for r in results if r.success)
-    files_with_comments = sum(
-        1 for r in results if r.success and r.comments_removed > 0
-    )
+    files_with_comments = sum(1 for r in results if r.success and r.comments_removed > 0)
     total_size = sum(r.file_size for r in results if r.success and r.file_size)
     type_stats = {}
     for r in results:
@@ -406,9 +396,7 @@ def print_summary(results: list[ProcessResult], total_files: int, start_time: fl
     if type_stats:
         print(f"\nComments removed by file type:")
         for ext, stats in sorted(type_stats.items()):
-            print(
-                f"  {ext:12} {stats['files']:4} files, {stats['comments']:6} comments"
-            )
+            print(f"  {ext:12} {stats['files']:4} files, {stats['comments']:6} comments")
     if failed > 0:
         print(f"\nFailed files:")
         for r in results:

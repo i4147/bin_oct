@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 file_cleanup.py — unified text/JSON line-cleaning toolkit.
 
@@ -61,9 +61,7 @@ def err(msg: str) -> None:
     print(f"[ERROR] {msg}", file=sys.stderr)
 
 
-def read_lines(
-    path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = False
-) -> list[str]:
+def read_lines(path: Path, encoding: str = DEFAULT_ENCODING, skip_empty: bool = False) -> list[str]:
     if not path.exists():
         raise FileNotFoundError(path)
     lines: list[str] = []
@@ -96,9 +94,7 @@ def read_lines(
     return lines
 
 
-def write_lines(
-    path: Path, lines: Sequence[str], encoding: str = DEFAULT_ENCODING
-) -> None:
+def write_lines(path: Path, lines: Sequence[str], encoding: str = DEFAULT_ENCODING) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding=encoding) as f:
         for line in lines:
@@ -207,10 +203,7 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             return 1
         s, e = args.start_line - 1, args.end_line
         if s < 0 or e <= s or s >= len(all_lines):
-            err(
-                f"Invalid line range: {args.start_line}-{args.end_line} "
-                f"(file has {len(all_lines)} lines)"
-            )
+            err(f"Invalid line range: {args.start_line}-{args.end_line} (file has {len(all_lines)} lines)")
             return 1
         before, middle, after = all_lines[:s], all_lines[s:e], all_lines[e:]
     else:
@@ -247,9 +240,7 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         "unique": bool(args.unique),
         "dry_run": bool(args.dry_run),
     }
-    stats["size_reduction_bytes"] = (
-        stats["original_size_bytes"] - stats["after_size_bytes"]
-    )
+    stats["size_reduction_bytes"] = stats["original_size_bytes"] - stats["after_size_bytes"]
 
     if args.dry_run:
         info("DRY RUN — no files modified.")
@@ -351,11 +342,7 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
 
     apply = args.yes
     if not args.yes:
-        ans = (
-            input(f"\n  Remove duplicates from {path.name}? (y/n/a/q): ")
-            .strip()
-            .lower()
-        )
+        ans = input(f"\n  Remove duplicates from {path.name}? (y/n/a/q): ").strip().lower()
         if ans == "q":
             print("Quitting.")
             return 0
@@ -396,9 +383,7 @@ def cmd_drop_same_char(args: argparse.Namespace) -> int:
     removed = len(lines) - len(kept)
 
     if args.dry_run:
-        info(
-            f"[DRY RUN] Would remove {removed} same-character line(s) from {path.name}."
-        )
+        info(f"[DRY RUN] Would remove {removed} same-character line(s) from {path.name}.")
         return 0
 
     with path.open("w", encoding=args.encoding) as f:
@@ -450,20 +435,14 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
         unique.sort(key=sort_key)
 
     if args.dry_run:
-        info(
-            f"[DRY RUN] {len(data)} → {len(unique)} entries "
-            f"(would remove {len(data) - len(unique)})."
-        )
+        info(f"[DRY RUN] {len(data)} → {len(unique)} entries (would remove {len(data) - len(unique)}).")
         return 0
 
     path.write_text(
         json.dumps(unique, indent=args.indent, ensure_ascii=False),
         encoding=args.encoding,
     )
-    info(
-        f"{path.name}: {len(data)} → {len(unique)} entries "
-        f"({len(data) - len(unique)} removed)."
-    )
+    info(f"{path.name}: {len(data)} → {len(unique)} entries ({len(data) - len(unique)} removed).")
     return 0
 
 
@@ -495,13 +474,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_analyze)
 
-    p = sub.add_parser(
-        "sort-dedupe", help="Sort and/or remove duplicate lines in a text file"
-    )
+    p = sub.add_parser("sort-dedupe", help="Sort and/or remove duplicate lines in a text file")
     p.add_argument("file", help="Input file")
-    p.add_argument(
-        "-o", "--output", default=None, help="Output file (default: overwrite input)"
-    )
+    p.add_argument("-o", "--output", default=None, help="Output file (default: overwrite input)")
     p.add_argument(
         "--sort",
         dest="sort",
@@ -509,9 +484,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=True,
         help="Sort lines (default: on)",
     )
-    p.add_argument(
-        "--no-sort", dest="sort", action="store_false", help="Do not sort lines"
-    )
+    p.add_argument("--no-sort", dest="sort", action="store_false", help="Do not sort lines")
     p.add_argument(
         "--unique",
         dest="unique",
@@ -526,12 +499,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not remove duplicates",
     )
     p.add_argument("-r", "--reverse", action="store_true", help="Sort in reverse order")
-    p.add_argument(
-        "-i", "--case-insensitive", action="store_true", help="Case-insensitive sorting"
-    )
-    p.add_argument(
-        "--skip-empty", action="store_true", help="Skip empty lines when reading"
-    )
+    p.add_argument("-i", "--case-insensitive", action="store_true", help="Case-insensitive sorting")
+    p.add_argument("--skip-empty", action="store_true", help="Skip empty lines when reading")
     p.add_argument(
         "--start-line",
         type=int,
@@ -549,12 +518,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Create a .bak backup before overwriting input",
     )
-    p.add_argument(
-        "--dry-run", action="store_true", help="Preview only — do not modify any files"
-    )
-    p.add_argument(
-        "--report", metavar="PATH", help="Save a JSON report of statistics to PATH"
-    )
+    p.add_argument("--dry-run", action="store_true", help="Preview only — do not modify any files")
+    p.add_argument("--report", metavar="PATH", help="Save a JSON report of statistics to PATH")
     p.add_argument(
         "-q",
         "--quiet",
@@ -580,9 +545,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_sort_dedupe)
 
-    p = sub.add_parser(
-        "dedupe-seq", help="Remove sequential (adjacent) duplicate lines"
-    )
+    p = sub.add_parser("dedupe-seq", help="Remove sequential (adjacent) duplicate lines")
     p.add_argument("file", help="Input file")
     p.add_argument(
         "-n",
@@ -609,13 +572,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_dedupe_seq)
 
-    p = sub.add_parser(
-        "drop-same-char", help="Remove lines made of a single repeated character"
-    )
+    p = sub.add_parser("drop-same-char", help="Remove lines made of a single repeated character")
     p.add_argument("file", help="Input file")
-    p.add_argument(
-        "--dry-run", action="store_true", help="Preview only — do not modify the file"
-    )
+    p.add_argument("--dry-run", action="store_true", help="Preview only — do not modify the file")
     p.add_argument(
         "--encoding",
         default=DEFAULT_ENCODING,
@@ -628,26 +587,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--key",
         default=None,
-        help="Field to deduplicate by (default: full-dict identity, "
-        "as in juniq.py when no --key is given)",
+        help="Field to deduplicate by (default: full-dict identity, as in juniq.py when no --key is given)",
     )
     p.add_argument(
         "--lower",
         action="store_true",
         help="Case-insensitive + strip when comparing keys (sort_quotes.py behavior)",
     )
-    p.add_argument(
-        "--sort-by", default=None, help="Sort output entries by this field (lowercased)"
-    )
+    p.add_argument("--sort-by", default=None, help="Sort output entries by this field (lowercased)")
     p.add_argument(
         "--indent",
         type=int,
         default=2,
         help="JSON indent when writing output (default: 2)",
     )
-    p.add_argument(
-        "--dry-run", action="store_true", help="Report counts without writing the file"
-    )
+    p.add_argument("--dry-run", action="store_true", help="Report counts without writing the file")
     p.add_argument(
         "--encoding",
         default=DEFAULT_ENCODING,

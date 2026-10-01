@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Python equivalent of:
 
@@ -46,9 +46,7 @@ def process_wheels(directory: Path = Path(".")) -> None:
             logger.success("Extracted and removed {}", wheel_path.name)
 
         except BadZipFile:
-            logger.exception(
-                "{} is not a valid ZIP/wheel file; original kept", wheel_path
-            )
+            logger.exception("{} is not a valid ZIP/wheel file; original kept", wheel_path)
 
         except PermissionError:
             logger.exception("Permission error on {}; original kept", wheel_path)

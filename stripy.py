@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively strip comments and docstrings from Python files in-place.
 
 Uses :mod:`libcst` so that only comments / docstrings are removed without
@@ -51,17 +51,11 @@ def _pass_stmt() -> cst.SimpleStatementLine:
 
 
 def _is_docstring_small(stmt: cst.BaseSmallStatement) -> bool:
-    return isinstance(stmt, cst.Expr) and isinstance(
-        stmt.value, (cst.SimpleString, cst.ConcatenatedString)
-    )
+    return isinstance(stmt, cst.Expr) and isinstance(stmt.value, (cst.SimpleString, cst.ConcatenatedString))
 
 
 def _is_docstring_stmt(stmt: cst.BaseStatement) -> bool:
-    return (
-        isinstance(stmt, cst.SimpleStatementLine)
-        and len(stmt.body) == 1
-        and _is_docstring_small(stmt.body[0])
-    )
+    return isinstance(stmt, cst.SimpleStatementLine) and len(stmt.body) == 1 and _is_docstring_small(stmt.body[0])
 
 
 def _strip_first_docstring(
@@ -107,12 +101,8 @@ class StripTransformer(cst.CSTTransformer):
             "passes": 0,
         }
 
-    def leave_Module(
-        self, original_node: cst.Module, updated_node: cst.Module
-    ) -> cst.Module:
-        return updated_node.with_changes(
-            body=_strip_first_docstring(updated_node.body, self.counters)
-        )
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
+        return updated_node.with_changes(body=_strip_first_docstring(updated_node.body, self.counters))
 
     def _strip_callable(
         self,
@@ -123,9 +113,7 @@ class StripTransformer(cst.CSTTransformer):
             return updated_node
         return updated_node.with_changes(body=new_body)
 
-    def leave_FunctionDef(
-        self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef
-    ) -> cst.FunctionDef:
+    def leave_FunctionDef(self, original_node: cst.FunctionDef, updated_node: cst.FunctionDef) -> cst.FunctionDef:
         result = self._strip_callable(updated_node)
         assert isinstance(result, cst.FunctionDef)
         return result
@@ -139,9 +127,7 @@ class StripTransformer(cst.CSTTransformer):
         assert isinstance(result, cst.AsyncFunctionDef)
         return result
 
-    def leave_ClassDef(
-        self, original_node: cst.ClassDef, updated_node: cst.ClassDef
-    ) -> cst.ClassDef:
+    def leave_ClassDef(self, original_node: cst.ClassDef, updated_node: cst.ClassDef) -> cst.ClassDef:
         result = self._strip_callable(updated_node)
         assert isinstance(result, cst.ClassDef)
         return result
@@ -156,9 +142,7 @@ class StripTransformer(cst.CSTTransformer):
             return updated_node.with_changes(comment=None)
         return updated_node
 
-    def leave_EmptyLine(
-        self, original_node: cst.EmptyLine, updated_node: cst.EmptyLine
-    ) -> cst.EmptyLine:
+    def leave_EmptyLine(self, original_node: cst.EmptyLine, updated_node: cst.EmptyLine) -> cst.EmptyLine:
         if updated_node.comment is not None:
             self.counters["comments"] += 1
             return updated_node.with_changes(comment=None)
@@ -224,9 +208,7 @@ def process_file(path: Path) -> FileReport:
         return report
 
     report.written = True
-    print(
-        f"{path} | {report.docstrings_removed}| {report.comments_removed} | {report.pass_inserted}\n"
-    )
+    print(f"{path} | {report.docstrings_removed}| {report.comments_removed} | {report.pass_inserted}\n")
     return report
 
 
@@ -263,9 +245,7 @@ def _configure_logger() -> None:
         sys.stderr,
         level="INFO",
         format=(
-            "<green>{time:HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{process.name}</cyan> | {message}"
+            "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{process.name}</cyan> | {message}"
         ),
         enqueue=True,
     )

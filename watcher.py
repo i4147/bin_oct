@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Unified file & folder watcher.
 
 Merges the behaviour of your previous scripts:
@@ -138,13 +138,9 @@ class ChangeHandler(FileSystemEventHandler):
             return False
         if src_path.exists() and src_path.is_dir():
             return False
-        if self.allowed_exts is not None and not path_matches_ext(
-            src_path, self.allowed_exts
-        ):
+        if self.allowed_exts is not None and not path_matches_ext(src_path, self.allowed_exts):
             return False
-        if self.excluded_exts is not None and path_matches_ext(
-            src_path, self.excluded_exts
-        ):
+        if self.excluded_exts is not None and path_matches_ext(src_path, self.excluded_exts):
             return False
         return True
 
@@ -154,10 +150,7 @@ class ChangeHandler(FileSystemEventHandler):
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
         except OSError as e:
-            self._errors.append(
-                f"[copy-error] {src} -> {self.dest_dir / rel}\n"
-                f"{e}\n{traceback.format_exc()}"
-            )
+            self._errors.append(f"[copy-error] {src} -> {self.dest_dir / rel}\n{e}\n{traceback.format_exc()}")
 
     def _pattern_found(self, path: Path) -> bool:
         if not self.pattern:
@@ -355,11 +348,7 @@ def main(argv: list[str] | None = None) -> int:
 
     dest_dir: Path | None = None
     if args.copy:
-        dest_dir = (
-            Path(args.dest).expanduser().resolve()
-            if args.dest
-            else (Path.home() / "tmp" / "tgz")
-        )
+        dest_dir = Path(args.dest).expanduser().resolve() if args.dest else (Path.home() / "tmp" / "tgz")
         dest_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Watching ({'non-' if args.no_recursive else ''}recursive):")

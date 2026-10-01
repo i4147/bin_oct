@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that accepts a number of minutes as its single argument and recursively scans all files under the current working directory (excluding symlinks and anything inside .git folders) to find those modified within that time window.
 It should use a multiprocessing pool of 8 workers to check each file's modification time in parallel, gracefully skipping files that raise OSError or PermissionError.
 The script must validate that the argument is a non-negative integer, print the total number of files scanned, and finally output the matching files sorted by modification time in descending order (most recently modified first), showing each file's path and timestamp."""
@@ -37,17 +37,11 @@ def main():
         print("Error: minutes must be a non-negative number")
         sys.exit(1)
     cwd = Path.cwd()
-    all_files = [
-        p
-        for p in cwd.rglob("*")
-        if p.is_file() and not p.is_symlink() and ".git" not in p.parts
-    ]
+    all_files = [p for p in cwd.rglob("*") if p.is_file() and not p.is_symlink() and ".git" not in p.parts]
     if not all_files:
         print("No files found in current directory")
         return
-    print(
-        f"Checking {len(all_files)} files for modifications in last {n_minutes} minute(s)..."
-    )
+    print(f"Checking {len(all_files)} files for modifications in last {n_minutes} minute(s)...")
     print()
     pool = Pool(8)
     results = pool.map(check_file_age, all_files)
@@ -56,13 +50,9 @@ def main():
     recent_files = [r for r in results if r is not None]
     recent_files.sort(key=lambda x: x[1], reverse=True)
     if recent_files:
-        print(
-            f"Found {len(recent_files)} file(s) modified in the last {n_minutes} minute(s):\n"
-        )
+        print(f"Found {len(recent_files)} file(s) modified in the last {n_minutes} minute(s):\n")
         for path, mod_time in recent_files:
-            print(
-                f"{mod_time.strftime('%Y-%m-%d %H:%M:%S')} - {Path(path).relative_to(cwd)}"
-            )
+            print(f"{mod_time.strftime('%Y-%m-%d %H:%M:%S')} - {Path(path).relative_to(cwd)}")
     else:
         print(f"No files modified in the last {n_minutes} minute(s)")
 

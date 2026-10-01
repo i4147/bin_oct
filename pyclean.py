@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pyclean.py - unified Python source cleaner (docstrings + comments).
 
@@ -66,11 +66,7 @@ RESET = "\x1b[0m"
 
 
 def _is_docstring_node(node: ast.AST) -> bool:
-    return (
-        isinstance(node, ast.Expr)
-        and isinstance(node.value, ast.Constant)
-        and isinstance(node.value.value, str)
-    )
+    return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
 
 
 def _is_valid_python(source: str) -> bool:
@@ -120,19 +116,13 @@ def _default_paths(raw: Sequence[str]) -> list[Path]:
     return [Path(r).expanduser() for r in raw]
 
 
-def strip_ast_rewrite(
-    source: str, *, preserve_module_docstring: bool = True
-) -> tuple[str, int]:
+def strip_ast_rewrite(source: str, *, preserve_module_docstring: bool = True) -> tuple[str, int]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return source, 0
 
-    preserve_first = (
-        preserve_module_docstring
-        and bool(tree.body)
-        and _is_docstring_node(tree.body[0])
-    )
+    preserve_first = preserve_module_docstring and bool(tree.body) and _is_docstring_node(tree.body[0])
 
     spans: list[tuple[int, int, int, int]] = []
     for node in ast.walk(tree):
@@ -149,9 +139,7 @@ def strip_ast_rewrite(
             and hasattr(node, "col_offset")
             and hasattr(node, "end_col_offset")
         ):
-            spans.append(
-                (node.lineno, node.col_offset, node.end_lineno, node.end_col_offset)
-            )
+            spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset))
 
     if not spans:
         return source, 0
@@ -187,11 +175,7 @@ class _DocstringStripper(ast.NodeTransformer):
         return new
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
-        if (
-            self.preserve_module_docstring
-            and node.body
-            and _is_docstring_node(node.body[0])
-        ):
+        if self.preserve_module_docstring and node.body and _is_docstring_node(node.body[0]):
             head = node.body[0]
             rest = [self.visit(n) for n in node.body[1:]]
             node.body = [head] + rest
@@ -215,9 +199,7 @@ class _DocstringStripper(ast.NodeTransformer):
 def _count_docstrings(tree: ast.AST, preserve_module: bool) -> int:
     n = 0
     for node in ast.walk(tree):
-        if isinstance(
-            node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-        ):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if not node.body or not _is_docstring_node(node.body[0]):
                 continue
             if preserve_module and isinstance(node, ast.Module):
@@ -226,9 +208,7 @@ def _count_docstrings(tree: ast.AST, preserve_module: bool) -> int:
     return n
 
 
-def strip_ast_unparse(
-    source: str, *, preserve_module_docstring: bool = True
-) -> tuple[Optional[str], int]:
+def strip_ast_unparse(source: str, *, preserve_module_docstring: bool = True) -> tuple[Optional[str], int]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -292,9 +272,7 @@ def _regex_fallback(source: str) -> tuple[str, int]:
     return "\n".join(out), count
 
 
-def strip_text_fallback(
-    source: str, *, preserve_module_docstring: bool = True
-) -> tuple[str, int]:
+def strip_text_fallback(source: str, *, preserve_module_docstring: bool = True) -> tuple[str, int]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -302,9 +280,7 @@ def strip_text_fallback(
 
     spans: list[tuple[int, int]] = []
     for node in ast.walk(tree):
-        if not isinstance(
-            node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-        ):
+        if not isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             continue
         if not node.body or not _is_docstring_node(node.body[0]):
             continue
@@ -377,11 +353,7 @@ class _LibCSTStripper(cst.CSTTransformer):
         return body
 
     def leave_Module(self, orig, updated):  # noqa: ANN001
-        if (
-            not self.preserve_module_docstring
-            and updated.body
-            and _libcst_is_docstring_line(updated.body[0])
-        ):
+        if not self.preserve_module_docstring and updated.body and _libcst_is_docstring_line(updated.body[0]):
             self.docstrings_removed += 1
             return updated.with_changes(body=updated.body[1:])
         return updated
@@ -449,9 +421,7 @@ def strip_libcst(
     return out, stripper.comments_removed, stripper.docstrings_removed
 
 
-def _process_strip(
-    path_str: str, opts: dict
-) -> Optional[tuple[str, int, int, bool, Optional[str]]]:
+def _process_strip(path_str: str, opts: dict) -> Optional[tuple[str, int, int, bool, Optional[str]]]:
     path = Path(path_str)
     src = _read_source(path)
     if src is None:
@@ -461,19 +431,13 @@ def _process_strip(
     preserve_mod = opts["preserve_module_docstring"]
 
     if engine == "ast-rewrite":
-        new_src, docstrings = strip_ast_rewrite(
-            src, preserve_module_docstring=preserve_mod
-        )
+        new_src, docstrings = strip_ast_rewrite(src, preserve_module_docstring=preserve_mod)
         comments = 0
     elif engine == "ast-unparse":
-        new_src, docstrings = strip_ast_unparse(
-            src, preserve_module_docstring=preserve_mod
-        )
+        new_src, docstrings = strip_ast_unparse(src, preserve_module_docstring=preserve_mod)
         comments = 0
     elif engine == "text-fallback":
-        new_src, docstrings = strip_text_fallback(
-            src, preserve_module_docstring=preserve_mod
-        )
+        new_src, docstrings = strip_text_fallback(src, preserve_module_docstring=preserve_mod)
         comments = 0
         if new_src is not None and opts.get("tidy"):
             new_src = _tidy(new_src)
@@ -511,9 +475,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
         return 0
 
     if args.engine == "libcst" and not HAS_LIBCST:
-        LOG.error(
-            "The 'libcst' engine requires the libcst package (pip install libcst)."
-        )
+        LOG.error("The 'libcst' engine requires the libcst package (pip install libcst).")
         return 2
 
     opts = {
@@ -534,9 +496,7 @@ def cmd_strip(args: argparse.Namespace) -> int:
         jobs = [str(p) for p in files]
         if args.workers > 1 and len(jobs) > 1:
             with ProcessPoolExecutor(max_workers=args.workers) as pool:
-                yield from pool.map(
-                    _process_strip, jobs, [opts] * len(jobs), chunksize=8
-                )
+                yield from pool.map(_process_strip, jobs, [opts] * len(jobs), chunksize=8)
         else:
             for j in jobs:
                 yield _process_strip(j, opts)
@@ -581,9 +541,7 @@ def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bo
     try:
         tree = ast.parse(src)
         for node in ast.walk(tree):
-            if isinstance(
-                node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-            ):
+            if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 if node.body and _is_docstring_node(node.body[0]):
                     ds = node.body[0]
                     if hasattr(ds, "lineno"):
@@ -651,13 +609,9 @@ def cmd_check(args: argparse.Namespace) -> int:
     for path_str in sorted(findings_by_file):
         items = findings_by_file[path_str]
         lines = Path(path_str).read_text(encoding="utf-8", errors="ignore").splitlines()
-        for ln0, text, is_doc in sorted(
-            items, key=lambda x: x[0], reverse=args.auto_remove
-        ):
+        for ln0, text, is_doc in sorted(items, key=lambda x: x[0], reverse=args.auto_remove):
             label = "docstring" if is_doc else "comment  "
-            print(
-                f"{GREEN}{path_str}:{ln0 + 1}{RESET} {YELLOW}[{label}]{RESET} {text.rstrip()}"
-            )
+            print(f"{GREEN}{path_str}:{ln0 + 1}{RESET} {YELLOW}[{label}]{RESET} {text.rstrip()}")
 
         if args.auto_remove:
             keep = [ln for i, ln in enumerate(lines) if i not in {x[0] for x in items}]
@@ -728,9 +682,7 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
         LOG.warning("No Python files found.")
         return 0
 
-    print(
-        f"Scanning top {args.top} lines of {len(files)} files with {args.workers} workers..."
-    )
+    print(f"Scanning top {args.top} lines of {len(files)} files with {args.workers} workers...")
 
     jobs = [(str(f), args.top, args.pattern) for f in files]
 
@@ -751,9 +703,7 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
             cleaned += 1
             print(f"Cleaned docstring at line {line_no} of: {path_str}")
         else:
-            LOG.error(
-                "Refusing to write %s: modified source failed AST validation", path_str
-            )
+            LOG.error("Refusing to write %s: modified source failed AST validation", path_str)
 
     print(f"Fast cleanup complete! ({cleaned} file(s) modified)")
     return 0
@@ -826,9 +776,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Automatically remove the found lines",
     )
-    p.add_argument(
-        "-w", "--workers", type=int, default=4, help="Worker processes (default: 4)"
-    )
+    p.add_argument("-w", "--workers", type=int, default=4, help="Worker processes (default: 4)")
     p.set_defaults(func=cmd_check)
 
     p = sub.add_parser(

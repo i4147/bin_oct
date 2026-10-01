@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that takes a JSON dictionary file path as its single argument, containing either a dict of original-to-translated string pairs or a list of objects with "orig" and "translated" keys.
 The script should identify entries where the original and translated text are identical (indicating a failed translation), remove these from the data, and overwrite the original JSON file with only the successfully translated entries in the same structure format.
 It should print how many records were kept, and if any failed entries exist, append the untranslated original strings to a "failed.txt" file in the same directory (creating it if needed, or appending to existing content); if there are no failures, it should print a message indicating that failed.txt creation was skipped.

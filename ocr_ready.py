@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that in-place preprocesses all supported images under
 the current working directory using OpenCV (or Pillow fallback), runs OCR with
@@ -44,9 +44,7 @@ def deskew(image: np.ndarray) -> np.ndarray:
         h, w = image.shape[:2]
         center = (w // 2, h // 2)
         M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        return cv2.warpAffine(
-            image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
-        )
+        return cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     return image
 
 
@@ -59,9 +57,7 @@ def preprocess_image_cv2(img_path: Path) -> np.ndarray | None:
     gray = cv2.fastNlMeansDenoising(gray, None, 30, 7, 21)
     clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
-    thresh = cv2.adaptiveThreshold(
-        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2
-    )
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
     kernel = np.ones((1, 1), np.uint8)
     cleaned = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     return deskew(cleaned)
@@ -138,9 +134,7 @@ def get_image_files() -> list[Path]:
 
 def process() -> None:
     if not HAS_CV2:
-        logger.warning(
-            "OpenCV not found, using Pillow as fallback (limited functionality)"
-        )
+        logger.warning("OpenCV not found, using Pillow as fallback (limited functionality)")
 
     image_files = get_image_files()
     total_images = len(image_files)
@@ -159,10 +153,7 @@ def process() -> None:
 
     pool = multiprocessing.Pool(processes=POOL_SIZE)
     try:
-        async_results = [
-            (path, pool.apply_async(process_single_image, (path,)))
-            for path in image_files
-        ]
+        async_results = [(path, pool.apply_async(process_single_image, (path,))) for path in image_files]
         for path, async_result in async_results:
             try:
                 result = async_result.get()
@@ -175,16 +166,12 @@ def process() -> None:
                     error_count += 1
                     status = "❌"
                 relative = path.relative_to(BASE_DIR)
-                print(
-                    f"{status} [{processed_count + error_count}/{total_images}] {relative}"
-                )
+                print(f"{status} [{processed_count + error_count}/{total_images}] {relative}")
                 if result.get("error"):
                     logger.warning(f"   ⚠️ Error: {result['error']}")
             except Exception as e:
                 error_count += 1
-                logger.error(
-                    f"❌ [{processed_count + error_count}/{total_images}] {path.name}: {e}"
-                )
+                logger.error(f"❌ [{processed_count + error_count}/{total_images}] {path.name}: {e}")
     finally:
         pool.close()
         pool.join()
@@ -195,9 +182,7 @@ def process() -> None:
     print(f"   ❌ Errors: {error_count} images")
     print(f"   📁 Total images: {total_images}")
     if processed_count > 0:
-        size_reduction = (
-            (total_before - total_after) / total_before * 100 if total_before > 0 else 0
-        )
+        size_reduction = (total_before - total_after) / total_before * 100 if total_before > 0 else 0
         print(f"   📦 Total size before: {total_before / (1024 * 1024):.2f} MB")
         print(f"   📦 Total size after: {total_after / (1024 * 1024):.2f} MB")
         print(f"   📉 Size reduction: {size_reduction:.1f}%")

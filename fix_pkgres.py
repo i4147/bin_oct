@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans all .py files in the current directory for deprecated usages of the pkg_resources module, such as pkg_resources.get_distribution().version, pkg_resources.parse_version, pkg_resources.resource_filename, pkg_resources.Requirement.parse, and plain import statements.
 It should use regular expressions to detect these patterns, report the files where matches are found, and optionally support an autofix mode that rewrites the code to use modern equivalents (e.g., importlib.metadata.version and packaging.version.parse), inserting the necessary import statements while removing the old pkg_resources import.
 The script should accept a command-line flag to toggle autofix behavior and print a summary of how many occurrences or files were found/modified."""
@@ -9,9 +9,7 @@ import re
 from pathlib import Path
 
 PATTERNS = {
-    "import_stmt": re.compile(
-        r"^(import pkg_resources|from pkg_resources import .*)", re.MULTILINE
-    ),
+    "import_stmt": re.compile(r"^(import pkg_resources|from pkg_resources import .*)", re.MULTILINE),
     "get_dist": re.compile(r"pkg_resources\.get_distribution\((.*?)\)\.version"),
     "parse_version": re.compile(r"pkg_resources\.parse_version\("),
     "resource_filename": re.compile(r"pkg_resources\.resource_filename\("),
@@ -22,20 +20,14 @@ PATTERNS = {
 def fix_content(content):
     new_content = content
     if "pkg_resources.get_distribution" in new_content:
-        new_content = PATTERNS["get_dist"].sub(
-            r"importlib.metadata.version(\1)", new_content
-        )
+        new_content = PATTERNS["get_dist"].sub(r"importlib.metadata.version(\1)", new_content)
         if "import importlib.metadata" not in new_content:
             new_content = "import importlib.metadata\n" + new_content
     if "pkg_resources.parse_version" in new_content:
-        new_content = PATTERNS["parse_version"].sub(
-            "packaging.version.parse(", new_content
-        )
+        new_content = PATTERNS["parse_version"].sub("packaging.version.parse(", new_content)
         if "from packaging import version" not in new_content:
             new_content = "from packaging import version\n" + new_content
-    new_content = re.sub(
-        r"^import pkg_resources\n?", "", new_content, flags=re.MULTILINE
-    )
+    new_content = re.sub(r"^import pkg_resources\n?", "", new_content, flags=re.MULTILINE)
     return new_content
 
 

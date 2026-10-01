@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Scan recursively supplied files and directories for non-English text using a selectable language-detection backend, print matches immediately, and optionally save matching relative paths to noneng.txt."""
 
 from __future__ import annotations
@@ -51,9 +51,7 @@ class ScanResult:
 
 
 def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Detect non-English text in text-based files."
-    )
+    parser = argparse.ArgumentParser(description="Detect non-English text in text-based files.")
     parser.add_argument(
         "paths",
         nargs="*",
@@ -119,9 +117,7 @@ def create_detector(backend: str) -> Any:
 
         model_path = Path(model_path_text).expanduser()
         if not model_path.is_file():
-            raise RuntimeError(
-                f"FASTTEXT_MODEL does not point to a readable file: {model_path}"
-            )
+            raise RuntimeError(f"FASTTEXT_MODEL does not point to a readable file: {model_path}")
 
         return fasttext.load_model(str(model_path))
 
@@ -190,9 +186,7 @@ def is_usable_text(text: str) -> bool:
     if letters < MIN_LETTERS:
         return False
 
-    printable = sum(
-        character.isprintable() or character in "\n\r\t" for character in text
-    )
+    printable = sum(character.isprintable() or character in "\n\r\t" for character in text)
     return printable / len(text) >= 0.85
 
 

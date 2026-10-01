@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that takes a requirements.txt-style file path as a command-line argument and strips version constraints from each package entry, leaving only the bare package names.
 It should read the file line by line, skip empty lines and comments starting with "#", and parse each remaining line by splitting off version specifiers such as "==", ">=", "<=", "~=", the " @ " syntax for URL references, or trailing spaces.
 The cleaned package names should then be written back to the same file, one per line, overwriting the original content."""
@@ -13,14 +13,7 @@ def cleanver(path: Path) -> None:
     for line in lines:
         if not line or line.startswith("#"):
             continue
-        pkg = (
-            line.split("==")[0]
-            .split(">=")[0]
-            .split("<=")[0]
-            .split("~=")[0]
-            .split(" @ ")[0]
-            .split(" ")[0]
-        )
+        pkg = line.split("==")[0].split(">=")[0].split("<=")[0].split("~=")[0].split(" @ ")[0].split(" ")[0]
         package_names.append(pkg.strip())
         path.write_text("\n".join(package_names) + "\n", encoding="utf-8")
 

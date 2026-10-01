@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Check Python files in current directory and report definitions
 that are not exported in __init__.py.
@@ -73,9 +73,7 @@ def extract_exports_from_init(init_path: Path) -> set[str]:
                 if isinstance(target, ast.Name) and target.id == "__all__":
                     if isinstance(node.value, (ast.List, ast.Tuple)):
                         for elt in node.value.elts:
-                            if isinstance(elt, ast.Constant) and isinstance(
-                                elt.value, str
-                            ):
+                            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                 exported.add(elt.value)
 
         elif isinstance(node, ast.ImportFrom):
@@ -109,11 +107,7 @@ def check_directory(directory: Path | None = None) -> dict[str, dict[str, list[s
 
     missing = {}
 
-    python_files = [
-        f
-        for f in directory.glob("*.py")
-        if f.name != "__init__.py" and not f.name.startswith("_")
-    ]
+    python_files = [f for f in directory.glob("*.py") if f.name != "__init__.py" and not f.name.startswith("_")]
 
     if not python_files:
         logger.warning(f"No Python module files found in {directory}")
@@ -145,9 +139,7 @@ def build_import_block(missing: dict[str, dict[str, list[str]]]) -> str:
         module_name = Path(filename).stem
         categories = missing[filename]
 
-        names = sorted(
-            categories["classes"] + categories["constants"] + categories["functions"]
-        )
+        names = sorted(categories["classes"] + categories["constants"] + categories["functions"])
         if not names:
             continue
 
@@ -168,9 +160,7 @@ def build_import_block(missing: dict[str, dict[str, list[str]]]) -> str:
     return "\n".join(import_lines) + "\n" + "\n".join(all_block_lines) + "\n"
 
 
-def autofix_init(
-    init_path: Path, missing: dict[str, dict[str, list[str]]], dry_run: bool = False
-) -> bool:
+def autofix_init(init_path: Path, missing: dict[str, dict[str, list[str]]], dry_run: bool = False) -> bool:
     if not missing:
         return True
 
@@ -196,22 +186,13 @@ def autofix_init(
         if all_node:
             break
 
-    new_names = sorted(
-        {
-            name
-            for categories in missing.values()
-            for names in categories.values()
-            for name in names
-        }
-    )
+    new_names = sorted({name for categories in missing.values() for names in categories.values() for name in names})
 
     import_lines = []
     for filename in sorted(missing.keys()):
         module_name = Path(filename).stem
         categories = missing[filename]
-        names = sorted(
-            categories["classes"] + categories["constants"] + categories["functions"]
-        )
+        names = sorted(categories["classes"] + categories["constants"] + categories["functions"])
         if not names:
             continue
         if len(names) == 1:
@@ -277,9 +258,7 @@ def autofix_init(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Check and optionally autofix __init__.py exports."
-    )
+    parser = argparse.ArgumentParser(description="Check and optionally autofix __init__.py exports.")
     parser.add_argument(
         "-a",
         "--autofix",
@@ -298,9 +277,7 @@ def parse_args() -> argparse.Namespace:
         default=Path.cwd(),
         help="Directory to scan (default: current directory)",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable debug logging"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     return parser.parse_args()
 
 

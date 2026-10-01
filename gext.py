@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Recursive extractor of classes/functions + top-level constants.
 Methods (functions directly inside a class body) are skipped.
@@ -95,11 +95,7 @@ def extract_from_file(path: str):
             if not isinstance(parent, ast.Module):
                 continue
 
-            if (
-                isinstance(node, ast.Assign)
-                and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)
-            ):
+            if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                 name = node.targets[0].id
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 name = node.target.id
@@ -142,9 +138,7 @@ def main():
     all_consts: dict[str, str] = {}
 
     with mp.Pool(WORKERS) as pool:
-        for _path, classes, funcs, consts in pool.imap_unordered(
-            extract_from_file, files
-        ):
+        for _path, classes, funcs, consts in pool.imap_unordered(extract_from_file, files):
             all_classes.update(classes)
             all_funcs.update(funcs)
             all_consts.update(consts)

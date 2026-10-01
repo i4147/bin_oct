@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that fetches the PyPI newest-packages RSS feed (https://pypi.org/rss/packages.xml) using the requests library, with error handling for network failures and a request timeout.
 Parse the XML content with xml.etree.ElementTree to extract each item's title, link, description, publication date, and GUID, deriving the package name from the first token of the title, and handle malformed XML gracefully by catching parse errors and printing messages to stderr.
 Return the parsed entries as a list of dictionaries for further processing or display, such as printing a formatted summary of the most recently published packages on PyPI."""
@@ -55,9 +55,7 @@ def display_packages(packages: list[dict[str, str]], limit: int | None = None):
         return
     display_packages = packages[:limit] if limit else packages
     print(f"\n{'=' * 40}")
-    print(
-        f"PyPI Latest Packages (Total: {len(packages)}, Showing: {len(display_packages)})"
-    )
+    print(f"PyPI Latest Packages (Total: {len(packages)}, Showing: {len(display_packages)})")
     print(f"Fetched at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'=' * 40}\n")
     for i, pkg in enumerate(display_packages, 1):
@@ -78,9 +76,7 @@ def display_packages(packages: list[dict[str, str]], limit: int | None = None):
 def save_to_file(packages: list[dict[str, str]], filename: str = "pypi_packages.txt"):
     try:
         with open(filename, "w", encoding="utf-8") as f:
-            f.write(
-                f"PyPI Latest Packages - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            )
+            f.write(f"PyPI Latest Packages - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("=" * 40 + "\n\n")
             for i, pkg in enumerate(packages, 1):
                 f.write(f"Package #{i}:\n")

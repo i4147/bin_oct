@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that compares two text files and prints their differences in unified diff format.
 It should accept two file path arguments via argparse, read each file's lines with a helper function that first tries default encoding and falls back to UTF-16 on a UnicodeDecodeError, then use difflib.unified_diff to compute the differences between the two files.
 If any differences are found, the script should write them to stdout and exit with status code 1; otherwise it exits normally with status 0."""
@@ -24,9 +24,7 @@ def main():
     config = parser.parse_args()
     first = _read_lines(config.first)
     second = _read_lines(config.second)
-    diffs = list(
-        difflib.unified_diff(first, second, fromfile=config.first, tofile=config.second)
-    )
+    diffs = list(difflib.unified_diff(first, second, fromfile=config.first, tofile=config.second))
     if diffs:
         sys.stdout.writelines(diffs)
         sys.exit(1)

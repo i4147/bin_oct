@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively finds all files with a ".log" extension under the current working directory and cleans them in place by stripping ANSI escape sequences, terminal control codes, carriage returns, and other artifacts like "^[", "^M", "(B", "(0" using a series of regex substitutions, then collapses runs of multiple spaces into a single space.
 For each file it should read all lines with UTF-8 encoding (ignoring decode errors), apply the cleaning function line by line, and overwrite the original file with the cleaned content.
 It should print progress messages indicating how many log files were found, a checkmark confirmation for each successfully cleaned file, an error message with the exception for any file that fails to process, and a final summary of how many files were processed; if no log files are found it should print a message stating that and exit."""

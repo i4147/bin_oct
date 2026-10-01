@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 img_similarity.py — unified image similarity / deduplication toolkit.
 
@@ -93,10 +93,7 @@ def _require(modname: str, method: str) -> bool:
         __import__(modname)
         return True
     except ImportError:
-        err(
-            f"Package {modname!r} is required for method {method!r}. "
-            f"Install with: pip install {modname}"
-        )
+        err(f"Package {modname!r} is required for method {method!r}. Install with: pip install {modname}")
         return False
 
 
@@ -280,9 +277,7 @@ def max_hamming_distance(method: str, hash_size: int) -> Optional[int]:
     return None
 
 
-def collect_images(
-    root: Path, recursive: bool, exclude_parts: Iterable[str]
-) -> list[Path]:
+def collect_images(root: Path, recursive: bool, exclude_parts: Iterable[str]) -> list[Path]:
     ex_set = {p for p in exclude_parts if p}
     iterator = root.rglob("*") if recursive else root.glob("*")
     out: list[Path] = []
@@ -297,9 +292,7 @@ def collect_images(
     return sorted(out)
 
 
-def compute_features(
-    paths: Sequence[Path], method: str, hash_size: int, workers: int
-) -> list[tuple[Path, Any]]:
+def compute_features(paths: Sequence[Path], method: str, hash_size: int, workers: int) -> list[tuple[Path, Any]]:
     items: list[tuple[Path, Any]] = []
     if workers <= 1 or len(paths) <= 1:
         for p in paths:
@@ -327,10 +320,7 @@ def group_items(
     if similarity_mode:
         max_bits = max_hamming_distance(method, hash_size)
         if max_bits is None:
-            raise ValueError(
-                f"Similarity mode is not supported for method {method!r} "
-                f"(hashes are variable-length)."
-            )
+            raise ValueError(f"Similarity mode is not supported for method {method!r} (hashes are variable-length).")
         dist_threshold = (1.0 - float(threshold)) * max_bits
     else:
         dist_threshold = float(threshold)
@@ -394,10 +384,7 @@ def _pipeline(args: argparse.Namespace):
     if not paths:
         return None
 
-    info(
-        f"Computing features (method={args.method}, hash_size={hash_size}, "
-        f"workers={args.workers})..."
-    )
+    info(f"Computing features (method={args.method}, hash_size={hash_size}, workers={args.workers})...")
     t0 = time.time()
     items = compute_features(paths, args.method, hash_size, args.workers)
     info(f"Computed {len(items)} feature(s) in {time.time() - t0:.2f}s")
@@ -407,9 +394,7 @@ def _pipeline(args: argparse.Namespace):
 
     threshold = resolve_threshold(args)
     try:
-        groups = group_items(
-            items, args.method, threshold, args.mode == "similarity", hash_size
-        )
+        groups = group_items(items, args.method, threshold, args.mode == "similarity", hash_size)
     except ValueError as e:
         err(str(e))
         return None
@@ -429,10 +414,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
         return 0
 
     print(f"\n{'=' * 44}")
-    print(
-        f"Found {len(multi)} similar group(s)  "
-        f"(method={args.method}, threshold={threshold}, mode={args.mode})"
-    )
+    print(f"Found {len(multi)} similar group(s)  (method={args.method}, threshold={threshold}, mode={args.mode})")
     print(f"{'=' * 44}\n")
 
     for i, g in enumerate(sorted(multi, key=len, reverse=True), 1):
@@ -462,10 +444,7 @@ def cmd_organize(args: argparse.Namespace) -> int:
     dry = args.dry_run
     action = args.action
 
-    print(
-        f"\nOrganizing {len(multi)} group(s) into {out_prefix}_NNN/  "
-        f"(action={action}{', DRY RUN' if dry else ''})"
-    )
+    print(f"\nOrganizing {len(multi)} group(s) into {out_prefix}_NNN/  (action={action}{', DRY RUN' if dry else ''})")
 
     created = 0
     moved = 0
@@ -499,9 +478,7 @@ def cmd_organize(args: argparse.Namespace) -> int:
 
     print(f"\n{'=' * 44}")
     if dry:
-        print(
-            f"[DRY RUN] Would create {created} folder(s) and {action} {moved} file(s)."
-        )
+        print(f"[DRY RUN] Would create {created} folder(s) and {action} {moved} file(s).")
     else:
         print(f"✓ Created {created} folder(s) and {action}d {moved} file(s).")
     print(f"{'=' * 44}")
@@ -562,9 +539,7 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
         return 0
 
     if not args.yes:
-        print(
-            f"WARNING: This will delete images from {len(folders)} folders in {root}."
-        )
+        print(f"WARNING: This will delete images from {len(folders)} folders in {root}.")
         print("Only ONE image will be kept per folder. This action cannot be undone!")
         ans = input("Do you want to continue? (yes/no): ").strip().lower()
         if ans not in ("yes", "y"):
@@ -573,11 +548,7 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
 
     processed = 0
     for folder in folders:
-        images = sorted(
-            p
-            for p in folder.iterdir()
-            if p.is_file() and p.suffix.lower() in SUPPORTED_EXTS
-        )
+        images = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in SUPPORTED_EXTS)
         if len(images) <= 1:
             info(f"{folder.name}: nothing to do ({len(images)} image(s))")
             continue
@@ -605,9 +576,7 @@ def cmd_cluster(args: argparse.Namespace) -> int:
 
     import numpy as np  # type: ignore
 
-    paths = collect_images(
-        root, recursive=True, exclude_parts={"organized_by_similarity"}
-    )
+    paths = collect_images(root, recursive=True, exclude_parts={"organized_by_similarity"})
     print(f"Scanning directory: {root}")
     print(f"Found {len(paths)} images")
     if not paths:
@@ -697,9 +666,7 @@ def cmd_cluster(args: argparse.Namespace) -> int:
 
 
 def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
-    sp.add_argument(
-        "-d", "--directory", default=".", help="Directory to scan (default: .)"
-    )
+    sp.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     sp.add_argument(
         "--method",
         choices=METHODS,
@@ -724,12 +691,8 @@ def _add_pipeline_args(sp: argparse.ArgumentParser) -> None:
         default="hamming",
         help="Threshold interpretation (default: hamming distance)",
     )
-    sp.add_argument(
-        "-r", "--recursive", action="store_true", help="Scan subdirectories recursively"
-    )
-    sp.add_argument(
-        "--workers", type=int, default=4, help="Parallel worker threads (default: 4)"
-    )
+    sp.add_argument("-r", "--recursive", action="store_true", help="Scan subdirectories recursively")
+    sp.add_argument("--workers", type=int, default=4, help="Parallel worker threads (default: 4)")
     sp.add_argument(
         "--exclude",
         action="append",
@@ -758,9 +721,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sp = sub.add_parser(
-        "scan", help="Find & report similar/duplicate groups (no file changes)"
-    )
+    sp = sub.add_parser("scan", help="Find & report similar/duplicate groups (no file changes)")
     _add_pipeline_args(sp)
     sp.set_defaults(func=cmd_scan)
 
@@ -778,9 +739,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="How to place images in group folders (default: move)",
     )
     grp = sp.add_mutually_exclusive_group()
-    grp.add_argument(
-        "--dry-run", dest="dry_run", action="store_true", help="Preview only (default)"
-    )
+    grp.add_argument("--dry-run", dest="dry_run", action="store_true", help="Preview only (default)")
     grp.add_argument(
         "--no-dry-run",
         dest="dry_run",
@@ -793,9 +752,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("dedup", help="Delete duplicates, keeping first per group")
     _add_pipeline_args(sp)
     grp = sp.add_mutually_exclusive_group()
-    grp.add_argument(
-        "--dry-run", dest="dry_run", action="store_true", help="Preview only (default)"
-    )
+    grp.add_argument("--dry-run", dest="dry_run", action="store_true", help="Preview only (default)")
     grp.add_argument(
         "--no-dry-run",
         dest="dry_run",
@@ -805,9 +762,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(dry_run=True)
     sp.set_defaults(func=cmd_dedup)
 
-    sp = sub.add_parser(
-        "keep-one", help="Keep one image per group_*/similar_*/duplicates_* folder"
-    )
+    sp = sub.add_parser("keep-one", help="Keep one image per group_*/similar_*/duplicates_* folder")
     sp.add_argument(
         "-d",
         "--directory",
@@ -828,15 +783,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_keep_one)
 
-    sp = sub.add_parser(
-        "cluster", help="HSV-histogram agglomerative clustering into N groups"
-    )
-    sp.add_argument(
-        "-d", "--directory", default=".", help="Directory to scan (default: .)"
-    )
-    sp.add_argument(
-        "-k", "--clusters", type=int, default=10, help="Number of groups (default: 10)"
-    )
+    sp = sub.add_parser("cluster", help="HSV-histogram agglomerative clustering into N groups")
+    sp.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
+    sp.add_argument("-k", "--clusters", type=int, default=10, help="Number of groups (default: 10)")
     sp.add_argument(
         "--threshold",
         type=float,

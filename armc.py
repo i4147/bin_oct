@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that recursively scans a directory (or processes a single file) for .py source files and strips comments from them using tree-sitter's Python grammar for accurate parsing, while preserving shebang lines on the first line.
 It should build a byte-level parse tree, locate all comment nodes (excluding shebangs), and remove them from the source bytes in reverse order to avoid offset shifts, then verify the resulting code still parses as valid Python via the ast module before overwriting the file.
 The script should process files in parallel using multiprocessing, log progress and errors with loguru (colored, timestamped output), and report per-file statistics such as removed/unremoved comment counts, whether the file was modified, and any errors encountered.
@@ -158,9 +158,7 @@ def main() -> None:
             total_removed += res.removed_count
             print(f"Modified: {res.path} | Removed comments: {res.removed_count}")
             if res.unremoved_count > 0:
-                logger.warning(
-                    f"Lingering comments detected in {res.path}: {res.unremoved_count} remain."
-                )
+                logger.warning(f"Lingering comments detected in {res.path}: {res.unremoved_count} remain.")
     print("--- Execution Summary ---")
     print(f"Total files scanned:  {len(targets)}")
     print(f"Files modified:        {total_modified}")

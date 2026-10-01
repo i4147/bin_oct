@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a directory tree and normalizes shebang lines in Python scripts for Termux compatibility.
 It should skip empty files and __init__.py files, and detect Python files either by the ".py" extension or by inspecting the first non-comment line for typical Python syntax (import, from, class, def) or an existing python shebang.
 For each detected file, it should either replace an existing shebang line with "#!/data/data/com.termux/files/usr/bin/env python" (inserting a blank line after it if needed) or prepend this shebang if the file contains Python code but lacks one, leaving other files untouched."""
@@ -42,10 +42,7 @@ def process_file(path) -> None:
             if len(lines) > 1 and lines[1].strip():
                 lines.insert(1, "\n")
         else:
-            has_python_code = any(
-                line.strip().startswith(("import ", "from ", "def ", "class "))
-                for line in lines
-            )
+            has_python_code = any(line.strip().startswith(("import ", "from ", "def ", "class ")) for line in lines)
             if has_python_code:
                 lines.insert(0, TARGET_SHEBANG + "\n")
                 lines.insert(1, "\n")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that recursively scans a directory (or a list of specified files) for Python source files, tokenizes each one using the tokenize module, and detects occurrences of the "is not" comparison operator pattern.
 For each file it should report the file path, the count and line numbers of matches, and optionally support an auto-fix mode that rewrites "is not" token pairs into "!=" and writes the modified source back to disk.
 The script should use argparse to accept input paths and an auto-fix flag, process files concurrently with concurrent.futures for performance, and gracefully capture and report any read/tokenize/write errors per file without crashing the whole run."""
@@ -79,9 +79,7 @@ def main():
     print(f"🔍 Found {len(py_files)} Python files.")
     print(f"⚡ Processing concurrently across {cpu_cores} parallel workers...")
     if args.auto_fix:
-        print(
-            "🛠️  Auto-fix mode active (-a). 'is not' operators will be converted to '!='."
-        )
+        print("🛠️  Auto-fix mode active (-a). 'is not' operators will be converted to '!='.")
     print("-" * 40)
     total_files_with_issues = 0
     total_replacements = 0
@@ -97,9 +95,7 @@ def main():
                 total_replacements += res["found_count"]
                 status = "[🔧 FIXED]" if res["fixed"] else "[⚠️  FOUND]"
                 lines_str = ", ".join(map(str, res["lines"]))
-                print(
-                    f"{status} {res['path']} -> Found {res['found_count']} time(s) on line(s): {lines_str}"
-                )
+                print(f"{status} {res['path']} -> Found {res['found_count']} time(s) on line(s): {lines_str}")
     print("-" * 40)
     print("📊 Summary:")
     print(f"   Files containing 'is not': {total_files_with_issues}")

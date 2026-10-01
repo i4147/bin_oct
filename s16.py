@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that spl or more large text files into smaller chunk files of at most 15,850 characters each, using a `dh.mpf_map` helper to apply the processing to multiple file paths (e.g., given via command-line arguments).
 For each input file, read its UTF-8 text and repeatedly split it near the size limit, preferring to break at the last newline within the limit, falling back to the last whitespace, or otherwise cutting at the exact character count.
 Write each resulting chunk to a new file in the same directory, reusing the original stem with a zero-padded numeric suffix (width based on the total chunk count, minimum 3 digits) appended before the extension, preserving UTF-8 encoding.
@@ -56,8 +56,7 @@ def get_files(path: Path) -> list[Path]:
     return [
         file
         for file in path.rglob("*")
-        if file.is_file()
-        and not file.stem.endswith(tuple(f"_{number:03d}" for number in range(1000)))
+        if file.is_file() and not file.stem.endswith(tuple(f"_{number:03d}" for number in range(1000)))
     ]
 
 

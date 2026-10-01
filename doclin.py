@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Remove embedded image and badge references from reStructuredText and Markdown
 documentation files.
@@ -34,12 +34,8 @@ RST_IMAGE_PATTERNS: Final[list[re.Pattern[str]]] = [
         r"^\s*\.\.\s+\|.*\|\s+image::\s+https?://[^\s]+",
         re.IGNORECASE | re.MULTILINE,
     ),
-    re.compile(
-        r"^\s*\.\.\s+image::\s+(?!https?://)[^\s]+", re.IGNORECASE | re.MULTILINE
-    ),
-    re.compile(
-        r"^\s*\.\.\s+figure::\s+(?!https?://)[^\s]+", re.IGNORECASE | re.MULTILINE
-    ),
+    re.compile(r"^\s*\.\.\s+image::\s+(?!https?://)[^\s]+", re.IGNORECASE | re.MULTILINE),
+    re.compile(r"^\s*\.\.\s+figure::\s+(?!https?://)[^\s]+", re.IGNORECASE | re.MULTILINE),
     re.compile(
         r"^\s*\.\.\s+\|.*\|\s+replace::\s+https?://[^\s]+\.(?:png|jpg|jpeg|gif|svg|ico)(?:\?[^\s]*)?",
         re.IGNORECASE | re.MULTILINE,
@@ -84,9 +80,7 @@ BADGE_DOMAINS: Final[list[str]] = [
     "patreon.com",
 ]
 
-_LINKED_BADGE_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^\[!\[.*?\]\(https?://[^\)]+\)\]\(https?://[^\)]+\)"
-)
+_LINKED_BADGE_PATTERN: Final[re.Pattern[str]] = re.compile(r"^\[!\[.*?\]\(https?://[^\)]+\)\]\(https?://[^\)]+\)")
 _MD_LINK_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[([^\]]*)\]\(([^\)]+)\)")
 
 
@@ -263,13 +257,9 @@ def print_stats(all_stats: Sequence[FileStats], base_path: Path) -> None:
 
         print(f"📄 {rel_path}")
         print(f"   ├─ Image references removed: {stats.removed_refs}")
+        print(f"   ├─ Lines: {stats.lines_before} → {stats.lines_after} ({stats.removed_lines:+d})")
         print(
-            f"   ├─ Lines: {stats.lines_before} → {stats.lines_after} "
-            f"({stats.removed_lines:+d})"
-        )
-        print(
-            f"   ├─ Size: {fsz(stats.size_before)} → {fsz(stats.size_after)} "
-            f"({change_symbol} {fsz(abs(size_change))})"
+            f"   ├─ Size: {fsz(stats.size_before)} → {fsz(stats.size_after)} ({change_symbol} {fsz(abs(size_change))})"
         )
         if stats.size_before > 0:
             print(f"   └─ Reduction: {(size_change / stats.size_before * 100):.1f}%")
@@ -285,19 +275,13 @@ def print_stats(all_stats: Sequence[FileStats], base_path: Path) -> None:
     print("-" * 40)
     print(f"Files modified: {len(all_stats)}")
     print(f"Total image references removed: {total_removed_refs}")
-    print(
-        f"Total lines: {total_lines_before} → {total_lines_after} "
-        f"({total_lines_before - total_lines_after:+d})"
-    )
+    print(f"Total lines: {total_lines_before} → {total_lines_after} ({total_lines_before - total_lines_after:+d})")
     print(
         f"Total size: {fsz(total_size_before)} → {fsz(total_size_after)} "
         f"({fsz(total_size_before - total_size_after)} saved)"
     )
     if total_size_before > 0:
-        print(
-            f"Overall reduction: "
-            f"{((total_size_before - total_size_after) / total_size_before * 100):.1f}%"
-        )
+        print(f"Overall reduction: {((total_size_before - total_size_after) / total_size_before * 100):.1f}%")
     print("-" * 40)
 
 

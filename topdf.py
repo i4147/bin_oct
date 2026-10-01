@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pdfkit.py — Unified document-to-PDF converter.
 
@@ -390,13 +390,7 @@ def _strip_html_to_text(raw_html: str) -> str:
     s = s.replace("</li>", "\n").replace("<li>", "• ")
     s = s.replace("</div>", "\n").replace("<div>", "")
     s = s.replace("</span>", "").replace("<span>", "")
-    s = (
-        s.replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-    )
+    s = s.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"')
     s = re.sub(r"<[^>]+>", "", s)
     s = re.sub(r"\n\s*\n", "\n\n", s)
     return s.strip()
@@ -434,9 +428,7 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
             warn(f"get_toc failed: {exc}")
     if not topics and hasattr(chm_obj, "list"):
         try:
-            topics = [
-                f for f in chm_obj.list() if str(f).lower().endswith((".html", ".htm"))
-            ]
+            topics = [f for f in chm_obj.list() if str(f).lower().endswith((".html", ".htm"))]
         except Exception as exc:  # noqa: BLE001
             warn(f"list failed: {exc}")
     if not topics:
@@ -675,11 +667,7 @@ def cmd_markdown(args: argparse.Namespace) -> int:
             toc=bool(args.toc),
         )
         css_files = list(args.css)
-        css_strings = (
-            [inline_css(args.inline_css)]
-            if args.inline_css and args.inline_css != "none"
-            else []
-        )
+        css_strings = [inline_css(args.inline_css)] if args.inline_css and args.inline_css != "none" else []
 
     if not body_html.strip():
         die("converted markdown produced empty HTML")
@@ -772,9 +760,7 @@ _PRECISE_FONTS = [
 ]
 
 
-def _font_face(
-    font_dir: Path, family: str, style: str, weight: int, filename: str
-) -> str:
+def _font_face(font_dir: Path, family: str, style: str, weight: int, filename: str) -> str:
     p = font_dir / filename
     if not p.exists():
         warn(f"'{filename}' not found in {font_dir} — skipping")
@@ -858,8 +844,7 @@ td { padding: 8pt 10pt; border-bottom: 1px solid #eee;
 def cmd_compile_css(args: argparse.Namespace) -> int:
     font_dir = Path(args.font_dir)
     faces = [
-        _font_face(font_dir, family, style, weight, filename)
-        for family, style, weight, filename in _PRECISE_FONTS
+        _font_face(font_dir, family, style, weight, filename) for family, style, weight, filename in _PRECISE_FONTS
     ]
     faces_block = "\n\n".join(f for f in faces if f)
     css = (
@@ -903,9 +888,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     c = sub.add_parser("html", help="HTML -> PDF (WeasyPrint).")
     c.add_argument("input", help="Input .html file.")
-    c.add_argument(
-        "--css", action="append", default=[], help="Extra CSS file (repeatable)."
-    )
+    c.add_argument("--css", action="append", default=[], help="Extra CSS file (repeatable).")
     c.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     c.set_defaults(func=cmd_html)
 
@@ -917,9 +900,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="markdown2",
         help="Markdown library (default: markdown2, matches md2pdf.py).",
     )
-    d.add_argument(
-        "--css", action="append", default=[], help="Extra CSS file (repeatable)."
-    )
+    d.add_argument("--css", action="append", default=[], help="Extra CSS file (repeatable).")
     d.add_argument(
         "--pygments",
         action="store_true",
@@ -946,24 +927,18 @@ def build_parser() -> argparse.ArgumentParser:
         default="dictionary.txt",
         help="Input tab-separated dictionary file.",
     )
-    e.add_argument(
-        "--font", default="custom.ttf", help="Font file to embed (default: custom.ttf)."
-    )
+    e.add_argument("--font", default="custom.ttf", help="Font file to embed (default: custom.ttf).")
     e.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     e.set_defaults(func=cmd_dict)
 
-    f = sub.add_parser(
-        "compile-css", help="Write a print-style CSS with embedded fonts."
-    )
+    f = sub.add_parser("compile-css", help="Write a print-style CSS with embedded fonts.")
     f.add_argument(
         "output",
         nargs="?",
         default="print-style.css",
         help="Output CSS path (default: print-style.css).",
     )
-    f.add_argument(
-        "--font-dir", default=".", help="Directory holding the TTF files (default: .)."
-    )
+    f.add_argument("--font-dir", default=".", help="Directory holding the TTF files (default: .).")
     f.set_defaults(func=cmd_compile_css)
 
     return p

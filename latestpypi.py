@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Fetch the latest packages added to PyPI and save their names to a file."""
 
 import urllib.request

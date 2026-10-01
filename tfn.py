@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that scans font files (e.g., TTF/OTF, using the extensions defined in a shared FONTEXT constant) and renames them based on metadata extracted from each font's internal "name" table via fontTools.
 It should read the family name and subfamily/style strings from the font, normalize the style using a STYLE_MAPPING dictionary (mapping variants like "bold italic", "semibold", "condensed", etc.
 to canonical suffixes), and construct a new filename combining the family name and mapped style.
@@ -71,9 +71,7 @@ def sanitize_filename(name) -> str:
     return sanitized
 
 
-def rename_font_file(
-    font_path: Path, apply: bool = False
-) -> tuple[str | None, str | None]:
+def rename_font_file(font_path: Path, apply: bool = False) -> tuple[str | None, str | None]:
     family_name, style = get_font_name_and_style(font_path)
     if not family_name:
         print(f"  Skipping {font_path.name}: Could not extract font family name")
@@ -100,9 +98,7 @@ def rename_font_file(
         return (font_path.name, new_name)
 
 
-def process_directory(
-    directory: Path, recursive: bool = True, apply: bool = False
-) -> int:
+def process_directory(directory: Path, recursive: bool = True, apply: bool = False) -> int:
     directory = Path(directory)
     renamed_count = 0
     for item in directory.iterdir():
@@ -136,18 +132,14 @@ Examples:
         action="store_true",
         help="Apply the renames (default is dry-run)",
     )
-    parser.add_argument(
-        "--no-recursive", action="store_true", help="Don't process subdirectories"
-    )
+    parser.add_argument("--no-recursive", action="store_true", help="Don't process subdirectories")
     args = parser.parse_args()
     cwd = Path.cwd()
     if args.apply:
         print("Applying renames...")
     else:
         print("Dry-run mode (no changes will be made). Use -a to apply.\n")
-    renamed_count = process_directory(
-        cwd, recursive=not args.no_recursive, apply=args.apply
-    )
+    renamed_count = process_directory(cwd, recursive=not args.no_recursive, apply=args.apply)
     if args.apply:
         print(f"\n{renamed_count} font file(s) renamed.")
     else:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that recursively scans a directory (or archive files like zip, tar, whl, and various compressed formats such as gz, bz2, xz, zst, br) for Python source files, and extracts top-level definitions—functions, classes, and constants/type aliases—using the ast module.
 It should deduplicate these definitions across the entire codebase by computing content hashes (e.g., via hashlib), using multiprocessing for parallel file/archive processing to speed up scanning.
 The script should output the deduplicated, unique definitions into organized files grouped by kind (e.g., funcs.py, classes.py, const.py), while logging progress and issues using loguru if available, falling back to the standard logging module otherwise, and should be configurable via argparse command-line arguments (such as input path, output directory, and worker count)."""
@@ -75,7 +75,7 @@ class Source:
 
 @dataclass
 class Definition:
-    kind: str  # 'func' | 'class' | 'const'
+    kind: str
     name: str
     source: str
     content_hash: str
@@ -182,9 +182,7 @@ def _iter_tar(path: Path) -> Iterator[Source]:
     try:
         with tarfile.open(path, "r:*") as tf:
             for member in tf.getmembers():
-                if not member.isfile() or not member.name.lower().endswith(
-                    PYTHON_SUFFIX
-                ):
+                if not member.isfile() or not member.name.lower().endswith(PYTHON_SUFFIX):
                     continue
                 fh = tf.extractfile(member)
                 if fh is None:
@@ -242,9 +240,7 @@ def iter_sources(root: Path, include_archives: bool = True) -> Iterator[Source]:
         full_suffixes = "".join(path.suffixes).lower()
         if full_suffixes.endswith((".zip", ".whl")):
             yield from _iter_zip(path)
-        elif full_suffixes.endswith(
-            (".tar", ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".tbz2", ".txz")
-        ):
+        elif full_suffixes.endswith((".tar", ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".tbz2", ".txz")):
             yield from _iter_tar(path)
         elif full_suffixes.endswith(COMPRESSED_SUFFIXES):
             yield from _iter_compressed(path)
@@ -289,10 +285,7 @@ def _is_literal_value(node: ast.AST) -> bool:
     if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
         return all(_is_literal_value(e) for e in node.elts)
     if isinstance(node, ast.Dict):
-        return all(
-            _is_literal_value(k) and _is_literal_value(v)
-            for k, v in zip(node.keys, node.values)
-        )
+        return all(_is_literal_value(k) and _is_literal_value(v) for k, v in zip(node.keys, node.values))
     return False
 
 
@@ -459,9 +452,7 @@ def write_utils(
         seen_names: set[str] = set()
         for r in new_reps:
             if r.name in seen_names:
-                logger.warning(
-                    f"name collision in {target.name}: '{r.name}' — skipping"
-                )
+                logger.warning(f"name collision in {target.name}: '{r.name}' — skipping")
                 continue
             seen_names.add(r.name)
             deduped.append(r)
@@ -561,9 +552,7 @@ def _patch_file(
         logger.error(f"patched {path} has syntax errors — original preserved: {exc}")
         return
     if dry_run:
-        logger.info(
-            f"[dry-run] would patch {path}: -{len(defs)} definition(s), +imports"
-        )
+        logger.info(f"[dry-run] would patch {path}: -{len(defs)} definition(s), +imports")
     else:
         path.write_text(new_text, encoding="utf-8")
         _success(f"patched {path}: -{len(defs)} definition(s)")
@@ -699,10 +688,7 @@ def _extract_and_group(
     defs = _collect_all(sources, args.workers, args.const_mode)
     logger.info(f"extracted {len(defs)} top-level definition(s)")
     groups = group_duplicates(defs, args.min_occurs, args.match_mode)
-    logger.info(
-        f"found {len(groups)} duplicate group(s) "
-        f"(min-occurs={args.min_occurs}, match-mode={args.match_mode})"
-    )
+    logger.info(f"found {len(groups)} duplicate group(s) (min-occurs={args.min_occurs}, match-mode={args.match_mode})")
     return defs, groups
 
 
@@ -713,9 +699,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         return 0
     total = sum(len(g) for g in groups.values())
     _success(f"{len(groups)} duplicate group(s) covering {total} definition(s)")
-    for key, group in sorted(
-        groups.items(), key=lambda kv: (-len(kv[1]), kv[1][0].kind, kv[1][0].name)
-    ):
+    for key, group in sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[1][0].kind, kv[1][0].name)):
         rep = group[0]
         header = f"{rep.kind} '{rep.name}' — {len(group)} occurrence(s)"
         print()
@@ -766,9 +750,7 @@ def cmd_move(args: argparse.Namespace) -> int:
         args.const_file,
         dry_run=args.dry_run,
     )
-    patchable: dict[str, list[Definition]] = {
-        key: group for key, group in groups.items() if group[0].kind in written
-    }
+    patchable: dict[str, list[Definition]] = {key: group for key, group in groups.items() if group[0].kind in written}
     if not patchable:
         logger.warning("nothing was written; skipping originals patching")
         return 0

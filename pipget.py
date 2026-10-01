@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Download Python packages from a PyPI mirror.
 
 Backend
@@ -140,10 +140,7 @@ ARCH_TAGS = [
     "64",
 ]
 
-USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-)
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 _PRINT_LOCK = asyncio.Lock()
 
@@ -169,12 +166,7 @@ def parse_package_spec(spec: str) -> tuple:
 
 def is_windows_url(url: str) -> bool:
     lower = url.lower()
-    return (
-        "win32" in lower
-        or "win_amd64" in lower
-        or "win_arm64" in lower
-        or "-win-" in lower
-    )
+    return "win32" in lower or "win_amd64" in lower or "win_arm64" in lower or "-win-" in lower
 
 
 def has_arch_tag(url: str) -> bool:
@@ -359,9 +351,7 @@ async def download_file(
         headers["Referer"] = referer
 
     try:
-        async with client.stream(
-            "GET", url, headers=headers, timeout=DOWNLOAD_TIMEOUT
-        ) as r:
+        async with client.stream("GET", url, headers=headers, timeout=DOWNLOAD_TIMEOUT) as r:
             if r.status_code != 200:
                 if r.status_code == 402:
                     print(f"[{pkg_name}]  HTTP 402: Payment Required")
@@ -399,10 +389,7 @@ async def download_file(
                         pct = downloaded * 100 // total
                         if pct >= next_milestone:
                             async with _PRINT_LOCK:
-                                cprint(
-                                    f"[{pkg_name}]  Progress: {pct}% "
-                                    f"({downloaded:,}/{total:,} bytes)"
-                                )
+                                cprint(f"[{pkg_name}]  Progress: {pct}% ({downloaded:,}/{total:,} bytes)")
                             next_milestone = (pct // 25 + 1) * 25
 
         ok, msg = await asyncio.to_thread(validate_archive, output_path, filename)
@@ -467,9 +454,7 @@ async def process_package(
                 print(f"[{label}]  Already exists, skipping")
                 return (spec, "exists")
 
-            html = await fetch_package_page(
-                client, pkg_name, mirror_base, is_simple_index
-            )
+            html = await fetch_package_page(client, pkg_name, mirror_base, is_simple_index)
             if not html:
                 return (spec, "failed")
 
@@ -499,18 +484,13 @@ async def process_package(
             print(f"[{label}]  URL: {url}")
 
             try:
-                ok = await download_file_with_retry(
-                    client, url, filename, pkg_name=label
-                )
+                ok = await download_file_with_retry(client, url, filename, pkg_name=label)
                 return (spec, "ok" if ok else "failed")
 
             except FileTooLarge as e:
                 size_mib = e.size / (1024 * 1024)
                 cap_mib = MAX_FILE_SIZE / (1024 * 1024)
-                print(
-                    f"[{label}]  Skipped (size {size_mib:.2f} MiB "
-                    f"> {cap_mib:.2f} MiB limit)"
-                )
+                print(f"[{label}]  Skipped (size {size_mib:.2f} MiB > {cap_mib:.2f} MiB limit)")
                 return (spec, "too_large")
 
         except Exception as e:
@@ -621,10 +601,7 @@ async def run(args) -> int:
         },
         limits=limits,
     ) as client:
-        tasks = [
-            process_package(client, pkg, mirror_base, is_simple_index, semaphore)
-            for pkg in packages
-        ]
+        tasks = [process_package(client, pkg, mirror_base, is_simple_index, semaphore) for pkg in packages]
         results = await asyncio.gather(*tasks, return_exceptions=False)
 
     elapsed = time.time() - start_time
@@ -717,10 +694,7 @@ def main():
         type=float,
         default=None,
         metavar="MiB",
-        help=(
-            f"Skip files larger than this (in MiB). "
-            f"Default: {MAX_FILE_SIZE // (1024 * 1024)}."
-        ),
+        help=(f"Skip files larger than this (in MiB). Default: {MAX_FILE_SIZE // (1024 * 1024)}."),
     )
 
     mirror_group = parser.add_mutually_exclusive_group()

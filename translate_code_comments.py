@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Translate comments, docstrings, print strings, and optionally arbitrary files.
 
@@ -159,8 +159,7 @@ class Translator:
                 return translated
 
             LOGGER.warning(
-                "Batch translation count mismatch: got %d, expected %d; "
-                "falling back to individual translation",
+                "Batch translation count mismatch: got %d, expected %d; falling back to individual translation",
                 len(translated),
                 len(texts),
             )
@@ -348,9 +347,7 @@ def ast_string_locations(
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name) and node.func.id == "print":
                 for argument in node.args:
-                    if isinstance(argument, ast.Constant) and isinstance(
-                        argument.value, str
-                    ):
+                    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
                         print_locations.add((argument.lineno, argument.col_offset))
 
         if isinstance(
@@ -428,9 +425,7 @@ def translate_python_tokens(
             is_print = location in print_locations
             is_docstring = location in docstring_locations
 
-            if (is_print and include_print_strings) or (
-                is_docstring and include_docstrings
-            ):
+            if (is_print and include_print_strings) or (is_docstring and include_docstrings):
                 try:
                     value = ast.literal_eval(token.string)
                 except (SyntaxError, ValueError):
@@ -444,11 +439,7 @@ def translate_python_tokens(
         return source, 0
 
     texts = [candidate[2] for candidate in candidates]
-    translated = (
-        translator.translate_many(texts)
-        if batch
-        else [translator.translate(text) for text in texts]
-    )
+    translated = translator.translate_many(texts) if batch else [translator.translate(text) for text in texts]
 
     replacements: list[tuple[int, int, str]] = []
     changed = 0
@@ -648,10 +639,7 @@ def run_python_mode(
         process,
         workers=args.workers,
     )
-    print(
-        f"Done. Modified {stats.changed_files} files; "
-        f"translated {stats.translated_items} items."
-    )
+    print(f"Done. Modified {stats.changed_files} files; translated {stats.translated_items} items.")
     return 0
 
 
@@ -674,11 +662,7 @@ def translate_plain_text(
         return source, 0
 
     texts = [item[1] for item in candidates]
-    translated = (
-        translator.translate_many(texts)
-        if batch
-        else [translator.translate(text) for text in texts]
-    )
+    translated = translator.translate_many(texts) if batch else [translator.translate(text) for text in texts]
 
     changed = 0
     for (index, original, newline), replacement in zip(
@@ -762,10 +746,7 @@ def run_batch_mode(args: argparse.Namespace) -> int:
         process,
         workers=args.workers,
     )
-    print(
-        f"Done. Modified {stats.changed_files} files; "
-        f"translated {stats.translated_items} items."
-    )
+    print(f"Done. Modified {stats.changed_files} files; translated {stats.translated_items} items.")
     return 0
 
 

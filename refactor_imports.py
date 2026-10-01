@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a ``repeated.json`` manifest of duplicated top-level functions, classes,
 and constant assignments across every ``.py`` file under the current directory,
@@ -106,9 +106,7 @@ def analyze_files() -> list[dict[str, Any]]:
 
 def write_repeated_json(repeated: list[dict[str, Any]]) -> None:
     repeated.sort(key=lambda item: item["count"], reverse=True)
-    REPEATED_JSON_PATH.write_text(
-        json.dumps(repeated, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    REPEATED_JSON_PATH.write_text(json.dumps(repeated, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Wrote {len(repeated)} entries to {REPEATED_JSON_PATH}")
 
 
@@ -116,9 +114,7 @@ def load_refactoring_maps() -> FileMap:
     with REPEATED_JSON_PATH.open("r", encoding="utf-8") as f:
         data: list[dict[str, Any]] = json.load(f)
 
-    file_to_objects: collections.defaultdict[str, list[str]] = collections.defaultdict(
-        list
-    )
+    file_to_objects: collections.defaultdict[str, list[str]] = collections.defaultdict(list)
     for item in data:
         obj_name: str = item["name"]
         for file_path_str in item["files"]:
@@ -198,8 +194,7 @@ def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
     if lines and lines[0].startswith("#!"):
         insert_idx = 1
     if len(lines) > insert_idx and (
-        lines[insert_idx].strip().startswith('"""')
-        or lines[insert_idx].strip().startswith("'''")
+        lines[insert_idx].strip().startswith('"""') or lines[insert_idx].strip().startswith("'''")
     ):
         insert_idx += 1
 
@@ -207,10 +202,7 @@ def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
 
     try:
         file_path.write_text("".join(lines), encoding="utf-8")
-        print(
-            f"✅ Refactored {file_path.name}: Stripped {objects_to_remove} "
-            f"-> added 'dh' import"
-        )
+        print(f"✅ Refactored {file_path.name}: Stripped {objects_to_remove} -> added 'dh' import")
         return True
     except Exception as exc:
         logger.error(f"❌ Error writing updates back to {file_path.name}: {exc}")
@@ -222,10 +214,7 @@ def main() -> None:
     repeated: list[dict[str, Any]] = analyze_files()
 
     if not repeated:
-        logger.warning(
-            "No definitions duplicated in more than "
-            f"{DUPLICATE_THRESHOLD} files. Nothing to refactor."
-        )
+        logger.warning(f"No definitions duplicated in more than {DUPLICATE_THRESHOLD} files. Nothing to refactor.")
         return
 
     write_repeated_json(repeated)
@@ -235,24 +224,18 @@ def main() -> None:
     local_files: dict[str, Path] = {f.name: f for f in current_dir.glob("*.py")}
 
     tasks: list[Task] = [
-        (local_files[filename], objects)
-        for filename, objects in refactor_map.items()
-        if filename in local_files
+        (local_files[filename], objects) for filename, objects in refactor_map.items() if filename in local_files
     ]
 
     if not tasks:
         print("No matching files found in the current directory to refactor.")
         return
 
-    print(
-        f"🚀 Found {len(tasks)} files to clean structural code from. "
-        f"Starting parallel processing..."
-    )
+    print(f"🚀 Found {len(tasks)} files to clean structural code from. Starting parallel processing...")
 
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[bool]] = [
-            pool.apply_async(refactor_single_file, (file_path, objects))
-            for file_path, objects in tasks
+            pool.apply_async(refactor_single_file, (file_path, objects)) for file_path, objects in tasks
         ]
         for async_res in async_results:
             try:

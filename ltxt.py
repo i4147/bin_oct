@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Deduplicate lines across files grouped by extension in the current directory.
 
 Regenerate this script: use pathlib to walk CWD, skip hidden files and BIN_EXT extensions, group files by suffix,
@@ -66,17 +66,13 @@ def process_paths(paths: Sequence[Path], method: str) -> list[LineCounter]:
             return list(pool.imap_unordered(process_file, paths))
 
         if method == "apply_async":
-            async_results: list[AsyncResult[LineCounter]] = [
-                pool.apply_async(process_file, (path,)) for path in paths
-            ]
+            async_results: list[AsyncResult[LineCounter]] = [pool.apply_async(process_file, (path,)) for path in paths]
             return [result.get() for result in async_results]
 
     raise ValueError(f"Unsupported pool method: {method}")
 
 
-def collect_lines_for_extension(
-    ext: str, files: Sequence[Path], pool_method: str
-) -> None:
+def collect_lines_for_extension(ext: str, files: Sequence[Path], pool_method: str) -> None:
     if not files:
         return
 

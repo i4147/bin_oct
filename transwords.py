@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Translate Persian text in ``words.txt`` into English, chunk by chunk, and write
 the results to ``fa_en.json``. Text is split into ``CHUNK_SIZE``-character
@@ -60,9 +60,7 @@ def chunk_file(file_path: Path, chunk_size: int = CHUNK_SIZE) -> list[Chunk]:
     return chunks
 
 
-def translate_chunk(
-    chunk_data: Chunk, chunk_index: int, total_chunks: int
-) -> TranslationResult | None:
+def translate_chunk(chunk_data: Chunk, chunk_index: int, total_chunks: int) -> TranslationResult | None:
     start_line, end_line, text = chunk_data
 
     if chunk_index > 0:
@@ -104,8 +102,7 @@ def main() -> None:
 
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[TranslationResult | None]] = [
-            pool.apply_async(translate_chunk, (chunk, idx, total_chunks))
-            for idx, chunk in enumerate(chunks)
+            pool.apply_async(translate_chunk, (chunk, idx, total_chunks)) for idx, chunk in enumerate(chunks)
         ]
 
         for i, async_res in enumerate(async_results, 1):
@@ -123,9 +120,7 @@ def main() -> None:
         final_data: dict[str, list[TranslationResult]] = {
             "translations": sorted(translations, key=lambda item: item["start_line"])
         }
-        OUTPUT_FILE.write_text(
-            json.dumps(final_data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        OUTPUT_FILE.write_text(json.dumps(final_data, ensure_ascii=False, indent=2), encoding="utf-8")
         print("Done!")
     except Exception as exc:
         logger.error(f"Error writing output file: {exc}")

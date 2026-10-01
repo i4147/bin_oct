@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively scans the current working directory for files typically associated with Windows or macOS systems (such as .exe, .dll, .bat, .com, .msi, .vbs, .ps1, .dmg, .app, .plist, .pkg, and .DS_Store), using os.walk to traverse subdirectories and matching filenames by extension or exact name.
 The script should print the directory being scanned, list all matched files with paths relative to the current directory, and report the total count found, printing a clear message if none are found.
 It should accept an optional "-a/--auto-remove" command-line flag (via argparse) that, when set, triggers logic to remove the found files after confirmation, tracking a deleted file count."""

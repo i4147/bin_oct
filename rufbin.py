@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility script that scans the current working directory for files likely to be Python source, using a helper function that checks a shebang line for "python" or looks for common Python syntax indicators (like "def ", "import ", "class ", "print(") in the first 1KB of the file, falling back to checking the ".py" extension.
 For each identified Python file, it should invoke the external "ruff format" command via subprocess to auto-format the file, handling errors such as timeouts (30s limit), missing ruff installation, or other exceptions gracefully by returning a success flag and error message.
 The script's main function should iterate through the detected files, apply the formatting, and report the results."""
@@ -57,9 +57,7 @@ def format_with_ruff(path: Path):
 
 def main() -> None:
     cwd = Path()
-    python_files = [
-        item for item in cwd.iterdir() if item.is_file() and is_python_file(item)
-    ]
+    python_files = [item for item in cwd.iterdir() if item.is_file() and is_python_file(item)]
     if not python_files:
         return
     for _f in python_files:

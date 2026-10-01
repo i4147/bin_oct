@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that applies type stub (.pyi) annotations from a typeshed-style file onto a target Python source file using libcst's ApplyTypeAnnotationsVisitor, then outputs or writes back the annotated source.
 It should include a CSTTransformer (TypeshedSanitizer) that sanitizes references to the internal "_typeshed" module by rewriting imports and attribute accesses to use "typing" (e.g., "Any") instead, so the stub types remain valid outside typeshed.
 The script should accept file paths via argparse, parse both source and stub files with libcst/ast, apply the annotation visitor with a CodemodContext, and likely support showing a diff (via difflib) of the changes, optionally invoking subprocess/tempfile for formatting or validation steps before finalizing output."""
@@ -17,22 +17,15 @@ from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
 
 
 class TypeshedSanitizer(cst.CSTTransformer):
-    def leave_ImportFrom(
-        self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
-    ) -> cst.CSTNode:
-        if (
-            original_node.module
-            and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed"
-        ):
+    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.CSTNode:
+        if original_node.module and cst.helpers.get_full_name_for_node(original_node.module) == "_typeshed":
             return cst.ImportFrom(
                 module=cst.Name("typing"),
                 names=[cst.ImportAlias(name=cst.Name("Any"))],
             )
         return updated_node
 
-    def leave_Import(
-        self, original_node: cst.Import, updated_node: cst.Import
-    ) -> cst.CSTNode:
+    def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> cst.CSTNode:
         names = []
         for alias in original_node.names:
             if cst.helpers.get_full_name_for_node(alias.name) == "_typeshed":
@@ -41,19 +34,14 @@ class TypeshedSanitizer(cst.CSTTransformer):
                 names.append(alias)
         return updated_node.with_changes(names=names)
 
-    def leave_Attribute(
-        self, original_node: cst.Attribute, updated_node: cst.Attribute
-    ) -> cst.CSTNode:
+    def leave_Attribute(self, original_node: cst.Attribute, updated_node: cst.Attribute) -> cst.CSTNode:
         if (
-            isinstance(original_node.value, cst.Name)
-            and original_node.value.value == "_typeshed"
+            isinstance(original_node.value, cst.Name) and original_node.value.value == "_typeshed"
         ) and original_node.attr.value == "Incomplete":
             return cst.Attribute(value=cst.Name("typing"), attr=cst.Name("Any"))
         return updated_node
 
-    def leave_Name(
-        self, original_node: cst.Name, updated_node: cst.Name
-    ) -> cst.CSTNode:
+    def leave_Name(self, original_node: cst.Name, updated_node: cst.Name) -> cst.CSTNode:
         if original_node.value == "Incomplete":
             return cst.Name("Any")
         return updated_node
@@ -88,9 +76,7 @@ def generate_stub(py_path: Path, output_stub_path: Path, verbose: bool = False) 
             raise RuntimeError(f"Failed to execute stubgen: {e}") from e
         if result.returncode != 0:
             error_msg = result.stderr.strip() or result.stdout.strip()
-            raise RuntimeError(
-                f"stubgen failed with exit code {result.returncode}:\n{error_msg}"
-            )
+            raise RuntimeError(f"stubgen failed with exit code {result.returncode}:\n{error_msg}")
         generated_stubs = list(Path(tmp_out_dir).rglob("*.pyi"))
         if not generated_stubs:
             raise RuntimeError(
@@ -207,9 +193,7 @@ def annotate_file(
                     temp_file.unlink()
                 raise OSError(f"Failed to write updated file: {e}") from e
             if verbose:
-                print(
-                    f"[+] Successfully updated '{py_path}' in-place with type annotations."
-                )
+                print(f"[+] Successfully updated '{py_path}' in-place with type annotations.")
         else:
             if verbose:
                 print(f"[*] [Dry Run] '{py_path}' would be updated in-place.")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Similarity check script for Python files in the current directory.
 Detects shared functions, classes, and constants across files using content hashing.
@@ -43,11 +43,7 @@ def extract_definitions(path: Path) -> dict[str, Any] | None:
                 if isinstance(target, ast.Name) and target.id.isupper():
                     constants[target.id] = hash_node(node)
 
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.target.id.isupper()
-        ):
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
             constants[node.target.id] = hash_node(node)
 
     return {
@@ -66,25 +62,15 @@ def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
             return []
         a_map = a[key]
         b_map = b[key]
-        return sorted(
-            name for name in a_map.keys() & b_map.keys() if a_map[name] == b_map[name]
-        )
+        return sorted(name for name in a_map.keys() & b_map.keys() if a_map[name] == b_map[name])
 
     shared_funcs = intersect_hashes("functions")
     shared_classes = intersect_hashes("classes")
     shared_consts = intersect_hashes("constants")
 
     total_shared = len(shared_funcs) + len(shared_classes) + len(shared_consts)
-    total_a = (
-        len(a.get("functions", {}))
-        + len(a.get("classes", {}))
-        + len(a.get("constants", {}))
-    )
-    total_b = (
-        len(b.get("functions", {}))
-        + len(b.get("classes", {}))
-        + len(b.get("constants", {}))
-    )
+    total_a = len(a.get("functions", {})) + len(a.get("classes", {})) + len(a.get("constants", {}))
+    total_b = len(b.get("functions", {})) + len(b.get("classes", {})) + len(b.get("constants", {}))
 
     union_total = total_a + total_b - total_shared
     similarity = (total_shared / union_total) if union_total > 0 else 0.0
@@ -123,11 +109,7 @@ def main() -> None:
         valid = [p for p in parsed if p and "error" not in p]
         errors = [p for p in parsed if p and "error" in p]
 
-        pairs = [
-            (valid[i], valid[j])
-            for i in range(len(valid))
-            for j in range(i + 1, len(valid))
-        ]
+        pairs = [(valid[i], valid[j]) for i in range(len(valid)) for j in range(i + 1, len(valid))]
 
         compare_results = [pool.apply_async(compare_pair, (p,)) for p in pairs]
         comparisons = [r.get() for r in compare_results]

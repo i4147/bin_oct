@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 snippetforge.py — Unified code-snippet extractor.
 
@@ -152,9 +152,7 @@ def normalize_exts(exts: Iterable[str]) -> frozenset[str]:
     return frozenset(e if e.startswith(".") else "." + e for e in exts)
 
 
-def _head_collect(
-    root: Path, exts: frozenset[str], n_lines: int, skip: Path
-) -> list[str]:
+def _head_collect(root: Path, exts: frozenset[str], n_lines: int, skip: Path) -> list[str]:
     out: list[str] = []
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix not in exts:
@@ -271,10 +269,7 @@ def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
             if not p.is_file():
                 continue
             if wide:
-                if (
-                    p.suffix.lower() in {".md", ".markdown", ".metadata"}
-                    or p.name in PKG_FILENAMES
-                ):
+                if p.suffix.lower() in {".md", ".markdown", ".metadata"} or p.name in PKG_FILENAMES:
                     targets.append(p)
             else:
                 if p.suffix.lower() == ".md":
@@ -389,12 +384,7 @@ def _collect_snips_targets(roots: Sequence[Path], exts: frozenset[str]) -> list[
         if not root.is_dir():
             continue
         for p in root.rglob("*"):
-            if (
-                p.is_file()
-                and ".git" not in p.parts
-                and not p.is_symlink()
-                and p.suffix in exts
-            ):
+            if p.is_file() and ".git" not in p.parts and not p.is_symlink() and p.suffix in exts:
                 targets.append(p)
     return targets
 
@@ -419,9 +409,7 @@ def cmd_snips(args: argparse.Namespace) -> int:
 
     if args.workers > 1:
         with Pool(args.workers) as pool:
-            futures = [
-                pool.apply_async(_snips_worker, ((t, out_dir),)) for t in targets
-            ]
+            futures = [pool.apply_async(_snips_worker, ((t, out_dir),)) for t in targets]
             for fut in futures:
                 try:
                     res = fut.get(timeout=30)
@@ -553,9 +541,7 @@ def cmd_pytext(args: argparse.Namespace) -> int:
 
     if workers > 1:
         with Pool(processes=workers) as pool:
-            futures = [
-                pool.apply_async(_pytext_worker, ((t, out_dir),)) for t in targets
-            ]
+            futures = [pool.apply_async(_pytext_worker, ((t, out_dir),)) for t in targets]
             for fut in futures:
                 path_str, count = fut.get()
                 total += count
@@ -837,9 +823,7 @@ def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int
     total = 0
     pool = Pool(processes=workers)
     try:
-        futures = [
-            pool.apply_async(_html_file_worker, ((f, str(output_dir)),)) for f in files
-        ]
+        futures = [pool.apply_async(_html_file_worker, ((f, str(output_dir)),)) for f in files]
         pool.close()
         for fut in futures:
             try:
@@ -917,9 +901,7 @@ def build_parser() -> argparse.ArgumentParser:
         "head",
         help="Extract first N lines of source files, dedupe (was 23line.py)",
     )
-    p_head.add_argument(
-        "--root", default=".", help="Root directory to scan (default: cwd)"
-    )
+    p_head.add_argument("--root", default=".", help="Root directory to scan (default: cwd)")
     p_head.add_argument(
         "-n",
         "--lines",
@@ -927,9 +909,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=23,
         help="Number of lines per file (default: 23)",
     )
-    p_head.add_argument(
-        "-o", "--output", default="all.txt", help="Output file (default: all.txt)"
-    )
+    p_head.add_argument("-o", "--output", default="all.txt", help="Output file (default: all.txt)")
     p_head.add_argument(
         "--ext",
         nargs="+",
@@ -943,16 +923,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extract fenced code blocks from Markdown (excode / exmd / extcode_md)",
     )
     p_md.add_argument("paths", nargs="*", help="Files or dirs to scan (default: cwd)")
-    p_md.add_argument(
-        "-o", "--output", default="output", help="Output directory (default: output)"
-    )
+    p_md.add_argument("-o", "--output", default="output", help="Output directory (default: output)")
     p_md.add_argument(
         "--naming",
         choices=("block", "lines"),
         default="block",
-        help="File naming: 'block' → {stem}_block_N.ext "
-        "(excode / extcode_md); "
-        "'lines' → {stem}_lines_S-E.ext (exmd)",
+        help="File naming: 'block' → {stem}_block_N.ext (excode / extcode_md); 'lines' → {stem}_lines_S-E.ext (exmd)",
     )
     p_md.add_argument(
         "--target",
@@ -970,15 +946,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_snips = sub.add_parser(
         "snips",
-        help="Extract fenced + doctest snippets with line numbers "
-        "(code_snip_extractor.py)",
+        help="Extract fenced + doctest snippets with line numbers (code_snip_extractor.py)",
     )
-    p_snips.add_argument(
-        "paths", nargs="*", help="Files or dirs to scan (default: cwd)"
-    )
-    p_snips.add_argument(
-        "-o", "--output", default="output", help="Output directory (default: output)"
-    )
+    p_snips.add_argument("paths", nargs="*", help="Files or dirs to scan (default: cwd)")
+    p_snips.add_argument("-o", "--output", default="output", help="Output directory (default: output)")
     p_snips.add_argument(
         "-w",
         "--workers",
@@ -1016,8 +987,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_html = sub.add_parser(
         "html",
-        help="Extract Python blocks from HTML files or URLs (pycodex.py). "
-        "Requires: requests, beautifulsoup4, loguru.",
+        help="Extract Python blocks from HTML files or URLs (pycodex.py). Requires: requests, beautifulsoup4, loguru.",
     )
     grp = p_html.add_mutually_exclusive_group()
     grp.add_argument("-f", "--file", help="A single HTML file")

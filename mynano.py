@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that implements a simple terminal-based text editor using the Textual TUI framework, wrapped in a BasicEditor App class.
 It should accept an optional filename argument to load an existing file's contents into a TextEditor widget on startup (reporting a "file not found" message if it doesn't exist), display a Header, Footer, and a status TextLog panel, and support keybindings for opening, saving, and quitting.
 It should also configure Python's readline/rlcompleter to enable tab-completion, presumably for use within the editor or an integrated console."""
@@ -101,9 +101,7 @@ class BasicEditor(App):
         editor = self.query_one(TextEditor)
         if editor.text and self.is_dirty:
             try:
-                confirm = input(
-                    "You have unsaved changes. Are you sure you want to quit? (y/n): "
-                )
+                confirm = input("You have unsaved changes. Are you sure you want to quit? (y/n): ")
                 if confirm.lower() == "y":
                     self.exit()
                 else:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans a directory tree (including inside common archive formats like zip, tar variants, gz, bz2, xz, zst, and br) to discover Python source files, extracts functions, classes, and other code entities from them, and deduplicates or filters them—likely by computing SHA256 hashes of normalized file contents and using AST (and optionally tree-sitter) parsing to analyze code structure such as function/class/assignment definitions.
 It should support multiprocessing for parallel processing of many files/archives, skip common non-source directories (.git, __pycache__, venv, site-packages, etc.), and use loguru for logging progress and errors.
 The script should accept command-line arguments (via argparse) to configure input paths and output behavior, safely read/write text files with UTF-8 encoding and newline normalization, and handle malformed or unreadable files gracefully without crashing the whole run."""
@@ -108,9 +108,7 @@ def extract_archive(path: Path) -> str:
         if low.endswith(".zip"):
             with zipfile.ZipFile(path) as zf:
                 zf.extractall(tmpdir, filter="data")
-        elif low.endswith(
-            (".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz")
-        ):
+        elif low.endswith((".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz")):
             with tarfile.open(path) as tf:
                 tf.extractall(tmpdir, filter="data")
         elif low.endswith(".gz") and not low.endswith(".tar.gz"):
@@ -176,18 +174,12 @@ def get_module_docstring_line_span(tree: ast.Module) -> tuple[int, int | None] |
     if not tree.body:
         return None
     first = tree.body[0]
-    if (
-        isinstance(first, ast.Expr)
-        and isinstance(first.value, ast.Constant)
-        and isinstance(first.value.value, str)
-    ):
+    if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
         return first.lineno, first.end_lineno
     return None
 
 
-def source_segment(
-    code: str, node: Assign | AsyncFunctionDef | ClassDef | FunctionDef
-) -> str | None:
+def source_segment(code: str, node: Assign | AsyncFunctionDef | ClassDef | FunctionDef) -> str | None:
     seg = ast.get_source_segment(code, node)
     if seg is not None:
         return seg
@@ -456,9 +448,7 @@ def main() -> None:
         default=max(1, mp.cpu_count() - 1),
         help="Worker process count",
     )
-    parser.add_argument(
-        "--log-level", default="INFO", help="DEBUG, INFO, WARNING, ERROR"
-    )
+    parser.add_argument("--log-level", default="INFO", help="DEBUG, INFO, WARNING, ERROR")
     args = parser.parse_args()
     if args.move and args.copy:
         logger.error("Choose only one of --move or --copy.")
@@ -488,9 +478,7 @@ def main() -> None:
         for h, group in duplicate_groups.items():
             print(f"Duplicate {h[:12]}:")
             for g in group:
-                print(
-                    f"  {g['file']} :: {g['name']} ({g['kind']}) lines {g['lineno']}-{g['end_lineno']}"
-                )
+                print(f"  {g['file']} :: {g['name']} ({g['kind']}) lines {g['lineno']}-{g['end_lineno']}")
         return
     utils_path = get_utils_path(base)
     utils_module_name = utils_path.stem

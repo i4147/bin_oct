@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_tools.py — unified CLI for a collection of scraper / package utilities.
 
@@ -98,9 +98,7 @@ def get_installed_packages() -> dict[str, str]:
     return out
 
 
-def http_get(
-    url: str, *, timeout: float = 15, headers: dict | None = None, stream: bool = False
-) -> requests.Response:
+def http_get(url: str, *, timeout: float = 15, headers: dict | None = None, stream: bool = False) -> requests.Response:
     h = {"User-Agent": DEFAULT_UA}
     if headers:
         h.update(headers)
@@ -235,13 +233,9 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
                         "white",
                     )
             except Exception as e:
-                cprint(
-                    f"[{i}/{len(to_check)}] {name}: version parse error: {e}", "yellow"
-                )
+                cprint(f"[{i}/{len(to_check)}] {name}: version parse error: {e}", "yellow")
         else:
-            cprint(
-                f"[{i}/{len(to_check)}] {name}: Could not get latest version.", "yellow"
-            )
+            cprint(f"[{i}/{len(to_check)}] {name}: Could not get latest version.", "yellow")
         if i % 10 == 0 or i == len(to_check):
             state_path.write_text(json.dumps(results, indent=4), encoding="utf-8")
             cprint("Results saved periodically.", "blue")
@@ -251,14 +245,11 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
         for name, old, new in updatable:
             cprint(f"{name}: {old} -> {new}", "magenta")
         cprint(
-            f"\nTo update these packages, you can use: "
-            f"pip install --upgrade {' '.join(p[0] for p in updatable)}",
+            f"\nTo update these packages, you can use: pip install --upgrade {' '.join(p[0] for p in updatable)}",
             "yellow",
         )
     else:
-        cprint(
-            "All installed packages are up to date or could not be checked.", "green"
-        )
+        cprint("All installed packages are up to date or could not be checked.", "green")
     cprint(f"\nFinished in {time.time() - start:.2f} seconds.", "blue")
     return 0
 
@@ -385,9 +376,7 @@ def _scrape_th18_from_site(url: str, timeout: float, keywords: list[str]) -> lis
         r = http_get(
             url,
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
         soup = BeautifulSoup(r.content, "html.parser")
         for a in soup.find_all("a", href=True):
@@ -396,9 +385,7 @@ def _scrape_th18_from_site(url: str, timeout: float, keywords: list[str]) -> lis
             if any(k in text or k in href.lower() for k in keywords):
                 full = urljoin(url, href)
                 if full not in [f["url"] for f in found]:
-                    found.append(
-                        {"url": full, "title": text or "TH18 Base", "source": url}
-                    )
+                    found.append({"url": full, "title": text or "TH18 Base", "source": url})
         print(f"✓ Found {len(found)} TH18 bases from {url}")
     except requests.RequestException as e:
         print(f"✗ Error fetching {url}: {e}")
@@ -451,10 +438,7 @@ def cmd_coc_links(args: argparse.Namespace) -> int:
     print("-" * 40)
     sites = read_lines(args.links)
     if not sites:
-        print(
-            f"Error: {args.links} not found or empty. "
-            f"Please create a file with website URLs."
-        )
+        print(f"Error: {args.links} not found or empty. Please create a file with website URLs.")
         return 1
     print(f"\nFound {len(sites)} websites to scrape...\n")
     all_bases: list[dict] = []
@@ -478,9 +462,7 @@ _DEFAULT_CHANNELS = {
 _LINK_RE = re.compile(r"(https?://link\.clashofclans\.com/[^\s]+)")
 
 
-def _yt_recent_videos(
-    yt, channel_id: str, days: int = 30, max_videos: int = 100
-) -> list[dict]:
+def _yt_recent_videos(yt, channel_id: str, days: int = 30, max_videos: int = 100) -> list[dict]:
     cutoff = (datetime.now(UTC) - timedelta(days=days)).isoformat()
     out: list[dict] = []
     req = yt.search().list(
@@ -515,9 +497,7 @@ def _extract_th18_links(text: str) -> list[str]:
     return [l for l in links if "TH18" in l.upper() or "TH18" in text.upper()]
 
 
-def _write_coc_youtube_report(
-    channel_name: str, videos: list[dict], out_dir: Path
-) -> Path:
+def _write_coc_youtube_report(channel_name: str, videos: list[dict], out_dir: Path) -> Path:
     stamp = datetime.now().strftime("%d-%m-%Y")
     d = out_dir / f"{stamp}_{channel_name}"
     d.mkdir(parents=True, exist_ok=True)
@@ -562,9 +542,7 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
 
     api_key = args.api_key or os.getenv("YOUTUBE_API_KEY")
     if not api_key:
-        print(
-            "Error: YouTube API key not provided (use --api-key or YOUTUBE_API_KEY env)."
-        )
+        print("Error: YouTube API key not provided (use --api-key or YOUTUBE_API_KEY env).")
         return 1
 
     channels = dict(_DEFAULT_CHANNELS)
@@ -763,17 +741,13 @@ def _movie_simple(args: argparse.Namespace) -> int:
             for line in text.splitlines():
                 line = line.strip()
                 size_mb = None
-                if line.lower().endswith(extensions) and any(
-                    q in line.lower() for q in qualities
-                ):
+                if line.lower().endswith(extensions) and any(q in line.lower() for q in qualities):
                     print(f"  ✓ Found in textarea: {line}")
                     results.append(line)
         for p in soup.find_all("p", style=lambda v: v and "text-align: center" in v):
             for a in p.find_all("a", href=True):
                 href = a["href"]
-                if href.lower().endswith(extensions) and any(
-                    q in href.lower() for q in qualities
-                ):
+                if href.lower().endswith(extensions) and any(q in href.lower() for q in qualities):
                     print(f"  ✓ Found in p tag: {href}")
                     results.append(href)
 
@@ -883,9 +857,7 @@ def _movie_parallel(args: argparse.Namespace) -> int:
         queue = [base]
 
     def save_state(q, v):
-        state_file.write_text(
-            json.dumps({"queue": list(q), "visited": list(v)}), encoding="utf-8"
-        )
+        state_file.write_text(json.dumps({"queue": list(q), "visited": list(v)}), encoding="utf-8")
 
     def append(matches):
         with movies_file.open("a", encoding="utf-8") as f:
@@ -976,9 +948,7 @@ def _check_image_size(url: str, min_w: int, min_h: int):
     from PIL import Image
 
     try:
-        r = requests.get(
-            url, timeout=20, headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"}
-        )
+        r = requests.get(url, timeout=20, headers={"User-Agent": "Mozilla/5.0", "Accept": "image/*"})
         r.raise_for_status()
         if not r.headers.get("Content-Type", "").startswith("image/"):
             return None
@@ -1065,8 +1035,7 @@ def _hunt_images(
             print(f"Downloaded {count} image(s) to images/")
 
     print(
-        f"Scanned {len(seen_pages)} page(s), checked {len(seen_imgs)} image(s), "
-        f"found {len(matches)} matching image(s)."
+        f"Scanned {len(seen_pages)} page(s), checked {len(seen_imgs)} image(s), found {len(matches)} matching image(s)."
     )
 
 
@@ -1239,9 +1208,7 @@ def _inspect_video_page(url: str, timeout: float) -> dict:
         r = http_get(
             url,
             timeout=timeout,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            },
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
         )
     except requests.RequestException as e:
         return {"error": f"Failed to fetch URL: {e}"}
@@ -1273,9 +1240,7 @@ def _inspect_video_page(url: str, timeout: float) -> dict:
         "title": title,
         "playable_url": f"https://zzztube.com/{video_id}" if video_id else None,
         "iframe_src": iframe_src,
-        "direct_url": f"https://player.zzztube.com/video/{video_id}"
-        if video_id
-        else None,
+        "direct_url": f"https://player.zzztube.com/video/{video_id}" if video_id else None,
     }
 
 
@@ -1380,11 +1345,7 @@ def cmd_web_size(args: argparse.Namespace) -> int:
                     val = tag.get(attr)
                     if not val:
                         continue
-                    urls = (
-                        _expand_srcset(page, val)
-                        if attr == "srcset"
-                        else [urljoin(page, val)]
-                    )
+                    urls = _expand_srcset(page, val) if attr == "srcset" else [urljoin(page, val)]
                     for u in urls:
                         if u in seen_resources:
                             continue
@@ -1426,25 +1387,19 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     # pkg-updates
-    sp = sub.add_parser(
-        "pkg-updates", help="Check installed packages against a mirror."
-    )
+    sp = sub.add_parser("pkg-updates", help="Check installed packages against a mirror.")
     sp.add_argument("--mirror", default="https://mirror-pypi.runflare.com/")
     sp.add_argument("--timeout", type=int, default=15)
     sp.add_argument("--state", default="/sdcard/c4u.json")
     sp.set_defaults(func=cmd_pkg_updates)
 
-    sp = sub.add_parser(
-        "import-check", help="Try importing every .py in site-packages."
-    )
+    sp = sub.add_parser("import-check", help="Try importing every .py in site-packages.")
     sp.add_argument("paths", nargs="*", help="Optional explicit .py files to test.")
     sp.add_argument("--log", default="check_modules.log")
     sp.set_defaults(func=cmd_import_check)
 
     # coc-links
-    sp = sub.add_parser(
-        "coc-links", help="Scrape CoC TH18 base links from a list of sites."
-    )
+    sp = sub.add_parser("coc-links", help="Scrape CoC TH18 base links from a list of sites.")
     sp.add_argument("-l", "--links", default="links.txt")
     sp.add_argument("-o", "--output", default="th18_bases.html")
     sp.add_argument("--timeout", type=float, default=10)
@@ -1452,39 +1407,27 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=cmd_coc_links)
 
     # coc-youtube
-    sp = sub.add_parser(
-        "coc-youtube", help="Extract CoC TH18 links from YouTube channels."
-    )
+    sp = sub.add_parser("coc-youtube", help="Extract CoC TH18 links from YouTube channels.")
     sp.add_argument("--api-key", default=None)
-    sp.add_argument(
-        "--channels", default=None, help="Override channels as 'name=id,name=id'."
-    )
+    sp.add_argument("--channels", default=None, help="Override channels as 'name=id,name=id'.")
     sp.add_argument("--days", type=int, default=30)
     sp.add_argument("--output-dir", default="output")
     sp.set_defaults(func=cmd_coc_youtube)
 
     # movie-crawl
     sp = sub.add_parser("movie-crawl", help="Movie index crawler with three engines.")
-    sp.add_argument(
-        "--engine", choices=("basic", "simple", "parallel"), default="basic"
-    )
+    sp.add_argument("--engine", choices=("basic", "simple", "parallel"), default="basic")
     sp.add_argument(
         "-u",
         "--url",
         default=None,
         help="Base index URL. Engine defaults apply if omitted.",
     )
-    sp.add_argument(
-        "-s", "--size", type=float, default=300, help="Max size in MB (default 300)."
-    )
+    sp.add_argument("-s", "--size", type=float, default=300, help="Max size in MB (default 300).")
     sp.add_argument("--movies-file", default="movies.txt")
     sp.add_argument("--state-file", default="crawler_state.json")
-    sp.add_argument(
-        "--json-out", default="movies.json", help="JSON output for --engine parallel."
-    )
-    sp.add_argument(
-        "--processes", type=int, default=8, help="Processes for --engine parallel."
-    )
+    sp.add_argument("--json-out", default="movies.json", help="JSON output for --engine parallel.")
+    sp.add_argument("--processes", type=int, default=8, help="Processes for --engine parallel.")
     sp.add_argument("--timeout", type=float, default=15)
     sp.add_argument("--extensions", nargs="+", default=[".mkv", ".mp4"])
     sp.add_argument("--qualities", nargs="+", default=["480p", "720p"])

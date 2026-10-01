@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line refactoring tool that scans a project directory for `.py` source files and reorganizes top-level definitions—constants, classes, and functions—into separate target files (default `consts.py`, `classes.py`, `funcs.py`) using AST parsing to detect and relocate declarations.
 It should support single-file or batch/multiprocessing modes (using a worker pool), optional automatic backup creation (with a `.bak` suffix) and an undo mode to restore from backups, optional code formatting after refactoring, and a verbose flag for logging progress.
 The script should be driven by command-line arguments (parsed via argparse) mapped onto an immutable `Options` dataclass with sensible defaults, and it should locate `.py` files recursively or non-recursively while excluding existing backup files."""
@@ -44,17 +44,11 @@ class Options:
 def list_py_files(root: str, recursive: bool = True) -> list[Path]:
     root_path = Path(root)
     if recursive:
-        return sorted(
-            p
-            for p in root_path.rglob("*.py")
-            if not p.name.endswith(f"{BACKUP_SUFFIX}.py")
-        )
+        return sorted(p for p in root_path.rglob("*.py") if not p.name.endswith(f"{BACKUP_SUFFIX}.py"))
     return sorted(
         p
         for p in root_path.iterdir()
-        if p.is_file()
-        and p.suffix == ".py"
-        and not p.name.endswith(f"{BACKUP_SUFFIX}.py")
+        if p.is_file() and p.suffix == ".py" and not p.name.endswith(f"{BACKUP_SUFFIX}.py")
     )
 
 
@@ -155,11 +149,7 @@ def _optimize_imports(import_lines: list[str]) -> str:
             parts = line.split()
             module = parts[1]
             names_part = line.split("import", 1)[1].strip()
-            names = [
-                n.strip()
-                for n in names_part.replace("(", "").replace(")", "").split(",")
-                if n.strip()
-            ]
+            names = [n.strip() for n in names_part.replace("(", "").replace(")", "").split(",") if n.strip()]
             if from_imports[module] is None:
                 from_imports[module] = []
             from_imports[module].extend(names)
@@ -285,9 +275,7 @@ def build_merged_module(file_map: dict[Path, dict]) -> str:
             if not name:
                 continue
             if name in seen_names:
-                print(
-                    f'WARNING: Constant "{name}" defined in both {seen_names[name]} and {path}'
-                )
+                print(f'WARNING: Constant "{name}" defined in both {seen_names[name]} and {path}')
                 continue
             seen_names[name] = path
             const_blocks.append(block)
@@ -297,9 +285,7 @@ def build_merged_module(file_map: dict[Path, dict]) -> str:
             if not name:
                 continue
             if name in seen_names:
-                print(
-                    f'WARNING: Function "{name}" defined in both {seen_names[name]} and {path}'
-                )
+                print(f'WARNING: Function "{name}" defined in both {seen_names[name]} and {path}')
                 continue
             seen_names[name] = path
             func_blocks.append(block)
@@ -309,18 +295,12 @@ def build_merged_module(file_map: dict[Path, dict]) -> str:
             if not name:
                 continue
             if name in seen_names:
-                print(
-                    f'WARNING: Class "{name}" defined in both {seen_names[name]} and {path}'
-                )
+                print(f'WARNING: Class "{name}" defined in both {seen_names[name]} and {path}')
                 continue
             seen_names[name] = path
             class_blocks.append(block)
             class_names.append(name)
-    filtered_imports = [
-        line
-        for line in all_imports
-        if not line.strip().startswith(("from .", "import ."))
-    ]
+    filtered_imports = [line for line in all_imports if not line.strip().startswith(("from .", "import ."))]
     optimized_imports = _optimize_imports(filtered_imports)
     known_names = set(const_names + func_names + class_names)
     if func_blocks:
@@ -358,9 +338,7 @@ def build_top_level_modules(file_map: dict[Path, dict]) -> tuple[str, str, str]:
     )
 
 
-def build_subpkg_modules(
-    root: str, file_map: dict[Path, dict]
-) -> dict[str, tuple[str, str, str, dict]]:
+def build_subpkg_modules(root: str, file_map: dict[Path, dict]) -> dict[str, tuple[str, str, str, dict]]:
     root_path = Path(root)
     grouped: dict[str, dict[str, list[str]]] = {}
     for path, entry in file_map.items():
@@ -400,9 +378,7 @@ def get_category_paths(opts: Options) -> dict[str, Path]:
     }
 
 
-def write_init_with_reexport(
-    imports: list[str], root: str, dry_run: bool, opts: Options
-) -> None:
+def write_init_with_reexport(imports: list[str], root: str, dry_run: bool, opts: Options) -> None:
     root_path = Path(root)
     package_name = root_path.name
     optimized = _optimize_imports(imports)
@@ -481,9 +457,7 @@ def run_small_package_mode(opts: Options) -> None:
     other_files = [p for p in all_files if p != init_path]
     funcs, consts, classes, _, file_map = collect_from_files(other_files)
     if opts.verbose:
-        print(
-            f"Collected {len(funcs)} funcs, {len(classes)} classes, {len(consts)} consts"
-        )
+        print(f"Collected {len(funcs)} funcs, {len(classes)} classes, {len(consts)} consts")
     merged_source = build_merged_module(file_map)
     merged_path = get_merged_module_path(opts)
     package_name = merged_path.stem
@@ -507,15 +481,9 @@ def run_merge_mode(opts: Options) -> None:
     category_resolved = {p.resolve() for p in category_paths.values()}
     init_path = root_path / "__init__.py"
     init_resolved = init_path.resolve()
-    other_files = [
-        p
-        for p in all_files
-        if p.resolve() not in category_resolved and p.resolve() != init_resolved
-    ]
+    other_files = [p for p in all_files if p.resolve() not in category_resolved and p.resolve() != init_resolved]
     funcs, consts, classes, imports, file_map = collect_from_files(other_files)
-    init_funcs, init_consts, init_classes, init_imports = parse_top_level_items(
-        init_path
-    )
+    init_funcs, init_consts, init_classes, init_imports = parse_top_level_items(init_path)
     if opts.verbose:
         print(f"Found {len(imports) + len(init_imports)} imports")
         print(f"Found {len(funcs) + len(init_funcs)} functions")
@@ -588,50 +556,26 @@ def run_subpkg_mode(opts: Options) -> None:
                 grouped_names["funcs"].extend(entry["funcs"])
                 grouped_names["consts"].extend(entry["consts"])
                 grouped_names["classes"].extend(entry["classes"])
-        if (
-            grouped_names["funcs"]
-            or grouped_names["consts"]
-            or grouped_names["classes"]
-        ):
+        if grouped_names["funcs"] or grouped_names["consts"] or grouped_names["classes"]:
             import_lines = []
             all_names = []
             if grouped_names["funcs"]:
-                func_names = [
-                    n
-                    for n in (parse_name_from_block(b) for b in grouped_names["funcs"])
-                    if n
-                ]
+                func_names = [n for n in (parse_name_from_block(b) for b in grouped_names["funcs"]) if n]
                 if func_names:
                     module_name = Path(opts.target_funcs).stem
-                    import_lines.append(
-                        f"from .{module_name} import {','.join(func_names)}"
-                    )
+                    import_lines.append(f"from .{module_name} import {','.join(func_names)}")
                     all_names.extend(func_names)
             if grouped_names["consts"]:
-                const_names = [
-                    n
-                    for n in (parse_name_from_block(b) for b in grouped_names["consts"])
-                    if n
-                ]
+                const_names = [n for n in (parse_name_from_block(b) for b in grouped_names["consts"]) if n]
                 if const_names:
                     module_name = Path(opts.target_consts).stem
-                    import_lines.append(
-                        f"from .{module_name} import {','.join(const_names)}"
-                    )
+                    import_lines.append(f"from .{module_name} import {','.join(const_names)}")
                     all_names.extend(const_names)
             if grouped_names["classes"]:
-                class_names = [
-                    n
-                    for n in (
-                        parse_name_from_block(b) for b in grouped_names["classes"]
-                    )
-                    if n
-                ]
+                class_names = [n for n in (parse_name_from_block(b) for b in grouped_names["classes"]) if n]
                 if class_names:
                     module_name = Path(opts.target_classes).stem
-                    import_lines.append(
-                        f"from .{module_name} import {','.join(class_names)}"
-                    )
+                    import_lines.append(f"from .{module_name} import {','.join(class_names)}")
                     all_names.extend(class_names)
             init_content = "\n".join(import_lines) + f"\n\n{make_all_list(all_names)}"
             overwrite_file(subpkg_dir / "__init__.py", init_content, dry_run)
@@ -669,9 +613,7 @@ def run(opts: Options) -> None:
 
 
 def parse_cli_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="pyrefactor", description="Refactor small python packages"
-    )
+    parser = argparse.ArgumentParser(prog="pyrefactor", description="Refactor small python packages")
     parser.add_argument("run", nargs="?", default="run")
     parser.add_argument(
         "--mode",

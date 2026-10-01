@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Auto syntax-checker for C/C++/header files in Termux (or any Unix with clang).
 
@@ -100,9 +100,7 @@ def main():
         print("No C/C++/header files found.", file=sys.stderr)
         return 0
 
-    print(
-        f"Checking {len(files)} file(s) with {NUM_WORKERS} workers...", file=sys.stderr
-    )
+    print(f"Checking {len(files)} file(s) with {NUM_WORKERS} workers...", file=sys.stderr)
 
     failures = 0
     with mp.Pool(processes=NUM_WORKERS) as pool:

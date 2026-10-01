@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a directory for files, computes fuzzy hashes using ssdeep, and groups files together based on a similarity threshold using pairwise ssdeep comparison scores.
 The script should support optional pretty-printed table output via tabulate and colorized console output via colorama when those libraries are available, gracefully degrading if not installed.
 It should also provide a function to copy each group of similar files into separate subfolders under an output directory, and be able to export results (such as grouped file paths and similarity data) to CSV and/or JSON formats.
@@ -133,9 +133,7 @@ def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> N
         if USE_TABULATE:
             colored_table = []
             for row in table[1:]:
-                colored_row = [row[0]] + [
-                    colorize_score(cell, threshold) for cell in row[1:]
-                ]
+                colored_row = [row[0]] + [colorize_score(cell, threshold) for cell in row[1:]]
                 colored_table.append(colored_row)
             print(tabulate(colored_table, headers=table[0], tablefmt="grid"))
         else:
@@ -143,9 +141,7 @@ def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> N
             print(header)
             print("-" * len(header))
             for row in table[1:]:
-                formatted = [row[0]] + [
-                    colorize_score(cell, threshold) for cell in row[1:]
-                ]
+                formatted = [row[0]] + [colorize_score(cell, threshold) for cell in row[1:]]
                 print(" | ".join(str(x) if x else "." for x in formatted))
 
 

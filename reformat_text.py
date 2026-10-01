@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reformats a plain text file by splitting it into paragraphs, breaking each paragraph into sentences (delimited by periods or exclamation marks), and then wrapping any sentence longer than 120 characters at the nearest preceding punctuation mark (comma, semicolon, colon, or question mark) within that limit, falling back to a hard cut if none is found.
 It should take a file path as input, first save a backup copy with a ".bak" suffix, then overwrite the original file with the restructured text where each sentence or sentence-fragment appears on its own line and paragraphs remain separated by blank lines.
 The script reads the file using UTF-8 encoding with error tolerance and is intended to be run on a given file path, likely via command-line arguments using sys and pathlib."""

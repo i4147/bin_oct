@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pycleaner.py — unified Python cleanup toolkit.
 
@@ -107,11 +107,7 @@ def _display_path(p: str) -> str:
 
 
 def _iter_py_files(root: Path, skip_dirs: set[str]) -> list[Path]:
-    return [
-        p
-        for p in root.rglob("*.py")
-        if p.is_file() and not any(part in skip_dirs for part in p.parts)
-    ]
+    return [p for p in root.rglob("*.py") if p.is_file() and not any(part in skip_dirs for part in p.parts)]
 
 
 _SKIP_DIRS: set[str] = {
@@ -273,11 +269,7 @@ def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
     m = re.match(r"^(\s*import\s+)(.+)$", stmt)
     if m:
         head, body = m.group(1), m.group(2)
-        kept = [
-            seg.strip()
-            for seg in body.split(",")
-            if _bound_name(seg.strip()) not in unused
-        ]
+        kept = [seg.strip() for seg in body.split(",") if _bound_name(seg.strip()) not in unused]
         if not kept:
             return None
         return head + ", ".join(kept)
@@ -286,11 +278,7 @@ def _rewrite_simple_import(stmt: str, unused: set[str]) -> str | None:
     if m:
         head, body = m.group(1), m.group(2)
         body = re.sub(r"\s*#.*$", "", body).rstrip(" \\")
-        kept = [
-            seg.strip()
-            for seg in body.split(",")
-            if seg.strip() and _bound_name(seg.strip()) not in unused
-        ]
+        kept = [seg.strip() for seg in body.split(",") if seg.strip() and _bound_name(seg.strip()) not in unused]
         if not kept:
             return None
         return head + ", ".join(kept)
@@ -501,9 +489,7 @@ def _collect_import_targets(
                 if not _is_excluded(p):
                     archive_members.extend(_scan_tar(p))
             else:
-                print(
-                    yellow(f"warning: skipping unrecognised file: {p}"), file=sys.stderr
-                )
+                print(yellow(f"warning: skipping unrecognised file: {p}"), file=sys.stderr)
         elif p.is_dir():
             for f in sorted(p.rglob("*")):
                 if _is_excluded(f) or not f.is_file():
@@ -544,17 +530,13 @@ def _cmd_imports(args: argparse.Namespace) -> int:
         try:
             excludes.append(re.compile(pat))
         except re.error as exc:
-            print(
-                red(f"error: invalid --exclude pattern {pat!r}: {exc}"), file=sys.stderr
-            )
+            print(red(f"error: invalid --exclude pattern {pat!r}: {exc}"), file=sys.stderr)
             return 2
 
     print(bold(f"\nScanning {len(paths)} path(s) with {args.workers} worker(s) …\n"))
     py_files, archive_members = _collect_import_targets(paths, excludes)
     n_py, n_arc = len(py_files), len(archive_members)
-    print(
-        f"  {cyan(str(n_py))} .py file(s), {cyan(str(n_arc))} archive member(s) queued.\n"
-    )
+    print(f"  {cyan(str(n_py))} .py file(s), {cyan(str(n_arc))} archive member(s) queued.\n")
     if n_py + n_arc == 0:
         print(yellow("No files to analyse."))
         return 0
@@ -568,9 +550,7 @@ def _cmd_imports(args: argparse.Namespace) -> int:
         for i, rep in enumerate(pool.imap_unordered(_worker_file, py_files), 1):
             reports.append(rep)
             if args.verbose:
-                print(
-                    dim(f"  [{i}/{n_py}] analysed {_display_path(rep.path)}"), end="\r"
-                )
+                print(dim(f"  [{i}/{n_py}] analysed {_display_path(rep.path)}"), end="\r")
         if args.verbose and n_py:
             print()
         for rep in pool.imap_unordered(_worker_archive, archive_members):
@@ -601,9 +581,7 @@ def _cmd_imports(args: argparse.Namespace) -> int:
             try:
                 ast.parse(new_src, filename=rep.path)
             except SyntaxError as exc:
-                print(
-                    f"  {red('SKIP autofix')} {bold(rep.path)} — result failed to parse: {exc}"
-                )
+                print(f"  {red('SKIP autofix')} {bold(rep.path)} — result failed to parse: {exc}")
                 continue
             if args.dry_run:
                 print(f"  {cyan('would fix')} {bold(rep.path)}")
@@ -618,12 +596,7 @@ def _cmd_imports(args: argparse.Namespace) -> int:
     if total_unused == 0:
         print(green("✓ No unused imports found."))
     else:
-        print(
-            bold(
-                f"Found {red(str(total_unused))} unused import(s) "
-                f"across {red(str(len(touched)))} file(s)."
-            )
-        )
+        print(bold(f"Found {red(str(total_unused))} unused import(s) across {red(str(len(touched)))} file(s)."))
         if args.autofix and not args.dry_run:
             print(green(f"Fixed {fixed_files} file(s)."))
     return 0 if total_unused == 0 else 1
@@ -730,14 +703,10 @@ def _scan_one_defs(path: Path) -> _DefScanResult:
     collector.visit(tree)
     user = _UsedNameCollector()
     user.visit(tree)
-    return _DefScanResult(
-        file=path, defs=collector.defs, used_names=user.used, source=src
-    )
+    return _DefScanResult(file=path, defs=collector.defs, used_names=user.used, source=src)
 
 
-def _filter_unused_global(
-    scans: list[_DefScanResult], kind_filter: str
-) -> list[DefItem]:
+def _filter_unused_global(scans: list[_DefScanResult], kind_filter: str) -> list[DefItem]:
     all_defs: list[DefItem] = []
     all_used: set[str] = set()
     for s in scans:
@@ -780,14 +749,9 @@ def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool)
     if only_top_level:
         new_body = []
         for node in tree.body:
-            if (
-                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-                and node.name in names
-            ):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name in names:
                 continue
-            if isinstance(node, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id in names for t in node.targets
-            ):
+            if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id in names for t in node.targets):
                 continue
             new_body.append(node)
         tree.body = new_body
@@ -797,10 +761,7 @@ def _remove_defs_from_source(source: str, names: set[str], only_top_level: bool)
         def _maybe_drop(self, body: list[ast.stmt]) -> list[ast.stmt]:
             out: list[ast.stmt] = []
             for n in body:
-                if (
-                    isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-                    and n.name in names
-                ):
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and n.name in names:
                     continue
                 out.append(self.visit(n))
             return out
@@ -827,9 +788,7 @@ def _extract_one(item: DefItem, base: Path) -> str:
     stem = item.file.stem.replace(".", "_")
     out = target / f"{stem}__{item.name}.py"
     header = (
-        f"# Extracted: {item.kind} '{item.name}'\n"
-        f"# Source: {item.file}\n"
-        f"# Lines: {item.lineno}-{item.end_lineno}\n\n"
+        f"# Extracted: {item.kind} '{item.name}'\n# Source: {item.file}\n# Lines: {item.lineno}-{item.end_lineno}\n\n"
     )
     out.write_text(header + snippet + "\n", encoding="utf-8")
     return str(out)
@@ -872,14 +831,10 @@ def _cmd_defs(args: argparse.Namespace) -> int:
         print(f"  [{d.kind:5}] {d.name:30} {rel}:{d.lineno}")
 
     if args.extract:
-        out_base = (
-            Path(args.extract_dir).resolve() if args.extract_dir else root / "output"
-        )
+        out_base = Path(args.extract_dir).resolve() if args.extract_dir else root / "output"
         print(bold(f"\nExtracting {len(unused_items)} object(s) into {out_base} ..."))
         with Pool(processes=args.workers) as pool:
-            written = list(
-                pool.starmap(_extract_one, [(d, out_base) for d in unused_items])
-            )
+            written = list(pool.starmap(_extract_one, [(d, out_base) for d in unused_items]))
         for p in written:
             print(f"  wrote {p}")
         print(green("\nExtraction complete."))
@@ -903,10 +858,7 @@ def _cmd_defs(args: argparse.Namespace) -> int:
                 if args.backup:
                     shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
                 path.write_text(new_src, encoding="utf-8")
-                print(
-                    green(f"Removed {sorted(names)} from {path}")
-                    + (" (backup created)" if args.backup else "")
-                )
+                print(green(f"Removed {sorted(names)} from {path}") + (" (backup created)" if args.backup else ""))
                 removed_count += 1
         if not args.dry_run:
             print(green(f"\nRemoved unused objects from {removed_count} file(s)."))
@@ -931,27 +883,21 @@ _VULTURE_RE = re.compile(
 )
 
 
-def _parse_vulture_lines(
-    lines: list[str], mode: str
-) -> dict[str, list[tuple[int, str, str]]]:
+def _parse_vulture_lines(lines: list[str], mode: str) -> dict[str, list[tuple[int, str, str]]]:
     issues: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
 
     if mode == "skip-dirs":
         for raw in lines:
             m = _SKIPDIRS_RE.match(raw.strip())
             if m:
-                issues[m.group(1)].append(
-                    (int(m.group(2)), "unused_variable", "SKIP_DIRS")
-                )
+                issues[m.group(1)].append((int(m.group(2)), "unused_variable", "SKIP_DIRS"))
         return dict(issues)
 
     if mode == "comment-vars":
         for raw in lines:
             m = _UNUSED_VAR_RE.match(raw.rstrip("\n"))
             if m:
-                issues[m.group("path")].append(
-                    (int(m.group("lineno")), "unused_variable", m.group("var"))
-                )
+                issues[m.group("path")].append((int(m.group("lineno")), "unused_variable", m.group("var")))
         return dict(issues)
 
     for raw in lines:
@@ -990,9 +936,7 @@ def _comment_out(line: str, *, marker: bool = False) -> str:
     return indent + prefix + stripped
 
 
-def _apply_vulture_fixes(
-    path: str, fixes: list[tuple[int, str, str]], mode: str
-) -> tuple[list[str], list[str]]:
+def _apply_vulture_fixes(path: str, fixes: list[tuple[int, str, str]], mode: str) -> tuple[list[str], list[str]]:
     p = Path(path)
     with p.open("r", encoding="utf-8") as f:
         original = f.readlines()
@@ -1178,11 +1122,7 @@ def _replace_func_in_file(path: Path, inspect_only: bool) -> tuple[Path, bool, s
 
 def _cmd_replace_func(args: argparse.Namespace) -> int:
     root = Path(args.dir)
-    files = [
-        p
-        for p in root.rglob("*.py")
-        if p.is_file() and p.resolve() != Path(__file__).resolve()
-    ]
+    files = [p for p in root.rglob("*.py") if p.is_file() and p.resolve() != Path(__file__).resolve()]
     if not files:
         print(yellow("No Python files found."))
         return 0
@@ -1192,9 +1132,7 @@ def _cmd_replace_func(args: argparse.Namespace) -> int:
     print("Changes will be applied automatically.\n")
 
     with Pool(args.workers) as pool:
-        for path, ok, msg in pool.starmap(
-            _replace_func_in_file, [(f, args.inspect) for f in files]
-        ):
+        for path, ok, msg in pool.starmap(_replace_func_in_file, [(f, args.inspect) for f in files]):
             if ok:
                 print(green(f"[UPDATED] {path}: {msg}"))
             elif msg != "Target function not found":
@@ -1279,9 +1217,7 @@ def _replace_block_in_file(path: Path, block: list[str], import_line: str) -> No
     body = new_src.splitlines(keepends=True)
     top = _top_import_end(tree)
     insert_at = top if top > 0 else (1 if body and body[0].startswith("#!") else 0)
-    body.insert(
-        insert_at, import_line if import_line.endswith("\n") else import_line + "\n"
-    )
+    body.insert(insert_at, import_line if import_line.endswith("\n") else import_line + "\n")
     path.write_text("".join(body), encoding="utf-8")
     print(green(f"Removed block and added import: {path}"))
 
@@ -1309,14 +1245,10 @@ def _build_parser() -> argparse.ArgumentParser:
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "--no-color", action="store_true", help="Disable ANSI colour output."
-    )
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI colour output.")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_imp = sub.add_parser(
-        "imports", help="Detect (and optionally remove) unused imports."
-    )
+    p_imp = sub.add_parser("imports", help="Detect (and optionally remove) unused imports.")
     p_imp.add_argument(
         "paths",
         nargs="*",
@@ -1329,12 +1261,8 @@ def _build_parser() -> argparse.ArgumentParser:
         default="ast",
         help="Detection engine (default: ast).",
     )
-    p_imp.add_argument(
-        "-a", "--autofix", action="store_true", help="Remove unused imports in-place."
-    )
-    p_imp.add_argument(
-        "--dry-run", action="store_true", help="Preview changes without writing."
-    )
+    p_imp.add_argument("-a", "--autofix", action="store_true", help="Remove unused imports in-place.")
+    p_imp.add_argument("--dry-run", action="store_true", help="Preview changes without writing.")
     p_imp.add_argument("-v", "--verbose", action="store_true")
     p_imp.add_argument("--workers", type=int, default=8, metavar="N")
     p_imp.add_argument(
@@ -1356,18 +1284,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p_imp.set_defaults(func=_cmd_imports)
 
-    p_def = sub.add_parser(
-        "defs", help="Detect/remove/extract unused functions, classes, constants."
-    )
-    p_def.add_argument(
-        "--dir", default=".", help="Root directory to scan (default: current dir)."
-    )
+    p_def = sub.add_parser("defs", help="Detect/remove/extract unused functions, classes, constants.")
+    p_def.add_argument("--dir", default=".", help="Root directory to scan (default: current dir).")
     p_def.add_argument(
         "--scope",
         choices=["global", "file"],
         default="global",
-        help="'global' (cross-file, detect_unused.py) or "
-        "'file' (per-file, rmunused*). Default: global.",
+        help="'global' (cross-file, detect_unused.py) or 'file' (per-file, rmunused*). Default: global.",
     )
     p_def.add_argument(
         "--kind",
@@ -1380,9 +1303,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Remove unused top-level functions/classes in-place.",
     )
-    p_def.add_argument(
-        "--backup", action="store_true", help="Create .bak copies when removing."
-    )
+    p_def.add_argument("--backup", action="store_true", help="Create .bak copies when removing.")
     p_def.add_argument(
         "--dry-run",
         action="store_true",
@@ -1401,9 +1322,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_def.add_argument("--workers", type=int, default=8)
     p_def.set_defaults(func=_cmd_defs)
 
-    p_vul = sub.add_parser(
-        "vulture", help="Process vulture output file and fix/annotate findings."
-    )
+    p_vul = sub.add_parser("vulture", help="Process vulture output file and fix/annotate findings.")
     p_vul.add_argument("file", nargs="?", help="Vulture output file (default: stdin).")
     p_vul.add_argument(
         "--mode",
@@ -1416,25 +1335,15 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Actually write changes (default: show diff only).",
     )
-    p_vul.add_argument(
-        "--backup", action="store_true", help="Save .bak copies before writing."
-    )
-    p_vul.add_argument(
-        "--yes", action="store_true", help="Do not prompt for confirmation."
-    )
-    p_vul.add_argument(
-        "--summary", action="store_true", help="Print summary at the end."
-    )
+    p_vul.add_argument("--backup", action="store_true", help="Save .bak copies before writing.")
+    p_vul.add_argument("--yes", action="store_true", help="Do not prompt for confirmation.")
+    p_vul.add_argument("--summary", action="store_true", help="Print summary at the end.")
     p_vul.set_defaults(func=_cmd_vulture)
 
-    p_rep = sub.add_parser(
-        "replace", help="Replace/patch functions or code blocks across files."
-    )
+    p_rep = sub.add_parser("replace", help="Replace/patch functions or code blocks across files.")
     rep_sub = p_rep.add_subparsers(dest="replace_mode", required=True)
 
-    p_rf = rep_sub.add_parser(
-        "func", help="Replace `format_size` function with an import."
-    )
+    p_rf = rep_sub.add_parser("func", help="Replace `format_size` function with an import.")
     p_rf.add_argument("--dir", default=".")
     p_rf.add_argument(
         "-i",
@@ -1445,9 +1354,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_rf.add_argument("--workers", type=int, default=8)
     p_rf.set_defaults(func=_cmd_replace_func)
 
-    p_rb = rep_sub.add_parser(
-        "block", help="Remove a fixed block of code from many files."
-    )
+    p_rb = rep_sub.add_parser("block", help="Remove a fixed block of code from many files.")
     p_rb.add_argument("files", nargs="*", help="Target .py files (default: cwd rglob).")
     p_rb.add_argument(
         "--block-file",
@@ -1457,8 +1364,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p_rb.add_argument(
         "--import-line",
         default="from dh import cprint",
-        help="Import line to ensure exists after removal "
-        "(default: 'from dh import cprint').",
+        help="Import line to ensure exists after removal (default: 'from dh import cprint').",
     )
     p_rb.set_defaults(func=_cmd_replace_block)
 

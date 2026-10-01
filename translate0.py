@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that scans a directory tree for text-based files (e.g., subtitles or localization files) containing Cyrillic text and translates them in place, replacing the original content with an English translation using deep_translator's GoogleTranslator.
 The script should read files line by line, split lines into size-limited chunks (max ~2000 characters) to respect translation API limits, and translate chunks concurrently using a ThreadPoolExecutor (up to 16 workers), with retry logic (several attempts with delay) for handling transient translation failures.
 It should log progress and errors via the logging module, accept command-line arguments (via argparse) such as the target directory and file patterns to process, optionally track processed/skipped files using an SQLite database to avoid reprocessing, and use threading utilities to safely coordinate shared state across worker threads."""
@@ -29,11 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def contains_cyrillic(text: str) -> bool:
-    return bool(
-        re.search(
-            r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]", text
-        )
-    )
+    return bool(re.search(r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]", text))
 
 
 def create_chunks(lines: list[str], max_chunk_size: int) -> list[list[str]]:
@@ -80,9 +76,7 @@ class TranslationCache:
         self.conn.commit()
         self.lock = threading.Lock()
 
-    def get_many(
-        self, texts: list[str], source_lang: str, target_lang: str
-    ) -> dict[str, str]:
+    def get_many(self, texts: list[str], source_lang: str, target_lang: str) -> dict[str, str]:
         if not texts:
             return {}
         with self.lock:
@@ -96,16 +90,11 @@ class TranslationCache:
             rows = cur.fetchall()
             return {row[0]: row[1] for row in rows}
 
-    def set_many(
-        self, translations: dict[str, str], source_lang: str, target_lang: str
-    ) -> None:
+    def set_many(self, translations: dict[str, str], source_lang: str, target_lang: str) -> None:
         if not translations:
             return
         with self.lock:
-            data = [
-                (src, source_lang, target_lang, tgt)
-                for src, tgt in translations.items()
-            ]
+            data = [(src, source_lang, target_lang, tgt) for src, tgt in translations.items()]
             self.conn.executemany(
                 """
                 INSERT INTO translations (source_text, source_lang, target_lang, translated_text, updated_at)
@@ -132,9 +121,7 @@ class TranslationCache:
                 LIMIT 100
                 """)
             pairs = cur.fetchall()
-            pairs_list = [
-                {"source": r[0], "target": r[1], "count": r[2]} for r in pairs
-            ]
+            pairs_list = [{"source": r[0], "target": r[1], "count": r[2]} for r in pairs]
             return {"total_entries": total, "last_updated": last, "pairs": pairs_list}
 
     def close(self) -> None:
@@ -172,16 +159,10 @@ def translate_chunk_factory(source_lang: str, target_lang: str):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Translate lines in a text file with persistent caching."
-    )
+    parser = argparse.ArgumentParser(description="Translate lines in a text file with persistent caching.")
     parser.add_argument("-i", "--input", help="Input text file (one phrase per line)")
-    parser.add_argument(
-        "-s", "--source", default="ru", help="Source language code (default: ru)"
-    )
-    parser.add_argument(
-        "-t", "--target", default="en", help="Target language code (default: en)"
-    )
+    parser.add_argument("-s", "--source", default="ru", help="Source language code (default: ru)")
+    parser.add_argument("-t", "--target", default="en", help="Target language code (default: en)")
     parser.add_argument(
         "--db",
         default="~/.translate/translate.db",
@@ -199,9 +180,7 @@ def main() -> None:
         default=MAX_CHUNK_SIZE,
         help=f"Max characters per chunk (default: {MAX_CHUNK_SIZE})",
     )
-    parser.add_argument(
-        "--cache-stats", action="store_true", help="Show cache statistics and exit"
-    )
+    parser.add_argument("--cache-stats", action="store_true", help="Show cache statistics and exit")
     args = parser.parse_args()
     db_path = Path(os.path.expanduser(args.db))
     cache = TranslationCache(db_path)
@@ -221,9 +200,7 @@ def main() -> None:
         cache.close()
         return
     if not args.input:
-        parser.error(
-            "the following arguments are required: -i/--input (unless --cache-stats is used)"
-        )
+        parser.error("the following arguments are required: -i/--input (unless --cache-stats is used)")
     input_path = Path(args.input)
     if not input_path.exists():
         logger.error("Input file not found: %s", input_path)
@@ -285,9 +262,7 @@ def main() -> None:
         )
         translate_chunk = translate_chunk_factory(source_lang, target_lang)
         with ThreadPoolExecutor(max_workers=num_workers) as executor:
-            future_to_chunk = {
-                executor.submit(translate_chunk, chunk): chunk for chunk in chunks
-            }
+            future_to_chunk = {executor.submit(translate_chunk, chunk): chunk for chunk in chunks}
             completed = 0
             total = len(future_to_chunk)
             to_cache: dict[str, str] = {}
@@ -311,9 +286,7 @@ def main() -> None:
                             )
                             for line in original_lines:
                                 try:
-                                    per_line_translator = GoogleTranslator(
-                                        source=source_lang, target=target_lang
-                                    )
+                                    per_line_translator = GoogleTranslator(source=source_lang, target=target_lang)
                                     t = per_line_translator.translate(line)
                                     if t is None:
                                         t = line
@@ -331,8 +304,7 @@ def main() -> None:
                             "Translated chunk %d/%d (sample: '%s' → '%s')",
                             completed,
                             total,
-                            original_lines[0][:40]
-                            + ("..." if len(original_lines[0]) > 40 else ""),
+                            original_lines[0][:40] + ("..." if len(original_lines[0]) > 40 else ""),
                             results.get(original_lines[0], "")[:60],
                         )
                     else:
@@ -342,17 +314,13 @@ def main() -> None:
                         )
                         for line in chunk:
                             try:
-                                t = GoogleTranslator(
-                                    source=source_lang, target=target_lang
-                                ).translate(line)
+                                t = GoogleTranslator(source=source_lang, target=target_lang).translate(line)
                                 if t is None:
                                     t = line
                                 results[line] = t
                                 to_cache[line] = t
                             except Exception as e:
-                                logger.error(
-                                    "Per-line retry failed for '%s': %s", line[:50], e
-                                )
+                                logger.error("Per-line retry failed for '%s': %s", line[:50], e)
                                 results[line] = line
                                 to_cache[line] = line
                 except Exception as e:
@@ -366,9 +334,7 @@ def main() -> None:
                 print("Saved %d new translations to cache", len(to_cache))
     else:
         print("Nothing left to translate after cache lookup.")
-    output_path = input_path.with_name(
-        f"{input_path.stem}_{target_lang}{input_path.suffix}"
-    )
+    output_path = input_path.with_name(f"{input_path.stem}_{target_lang}{input_path.suffix}")
     try:
         with output_path.open("w", encoding="utf-8") as f:
             translated_count = 0

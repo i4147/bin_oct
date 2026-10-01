@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python utility that merges the text contents of multiple files found under a working directory into one or more consolidated output files.
 It should read files safely (ignoring undecodable/binary content via helper functions like get_nobinary, get_random_filename, and should_skip from a "dh" module), optionally filter files by a list of extensions, and skip empty or unreadable files, printing a message if nothing qualifies.
 It must support two modes: merging everything into a single randomly-named output file (reusing the shared extension when all filtered files share one), or grouping files by extension into separate output files inside a "mer..." subdirectory.
@@ -60,18 +60,14 @@ def merge_files_by_type(
         output_files = []
         for ext, group_files in ext_groups.items():
             output_file = (
-                output_dir / f"{get_random_filename()}.{ext}"
-                if ext
-                else output_dir / f"{get_random_filename()}.txt"
+                output_dir / f"{get_random_filename()}.{ext}" if ext else output_dir / f"{get_random_filename()}.txt"
             )
             write_merged_file(output_file, group_files, cwd)
             output_files.append(output_file)
         return output_files
 
 
-def write_merged_file(
-    output_file: Path, files_content: list[tuple[Path, str]], cwd: Path
-) -> None:
+def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], cwd: Path) -> None:
     try:
         total_size = 0
         file_count = 0
@@ -84,9 +80,7 @@ def write_merged_file(
                     fo.write("\n")
                 total_size += len(content)
                 file_count += 1
-        print(
-            f"✅ Merged {file_count} files ({total_size:,} bytes) into: {output_file}"
-        )
+        print(f"✅ Merged {file_count} files ({total_size:,} bytes) into: {output_file}")
     except OSError as e:
         print(f"❌ Error writing output file {output_file}: {e}")
         if output_file.exists():
@@ -100,9 +94,7 @@ def merge_files(args: argparse.Namespace) -> None:
         pass
     if args.extensions:
         print(f"🔍 Filtering for extensions: {', '.join(args.extensions)}")
-    output_files = merge_files_by_type(
-        files, cwd, ext_filter=args.extensions, group_by_ext=args.group
-    )
+    output_files = merge_files_by_type(files, cwd, ext_filter=args.extensions, group_by_ext=args.group)
     if not output_files:
         print("ℹ️  No content to merge (all files were empty or skipped).")
     if args.group and output_files:

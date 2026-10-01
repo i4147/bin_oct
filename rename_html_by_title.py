@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 HTML File Renamer by Title Tag
 
@@ -386,9 +386,7 @@ class LanguageTransliterator:
 
 class HtmlTitleExtractor:
     def __init__(self) -> None:
-        self.parser: TreeSitterParser | None = (
-            TreeSitterParser() if TREE_SITTER_AVAILABLE else None
-        )
+        self.parser: TreeSitterParser | None = TreeSitterParser() if TREE_SITTER_AVAILABLE else None
 
     def extract_title(self, path: Path) -> str | None:
         try:
@@ -424,9 +422,7 @@ class HtmlTitleExtractor:
                     if hasattr(node, "text") and b"title" in node.text:
                         parent = node.parent if hasattr(node, "parent") else None
                         if parent:
-                            children = (
-                                parent.children if hasattr(parent, "children") else []
-                            )
+                            children = parent.children if hasattr(parent, "children") else []
                             for child in children:
                                 if hasattr(child, "type") and child.type == "text":
                                     if hasattr(child, "text"):
@@ -723,9 +719,7 @@ class FileDiscovery:
                     if path.suffix.lower() in SUPPORTED_EXTENSIONS:
                         discovered.append(path)
                 else:
-                    futures.append(
-                        executor.submit(FileDiscovery._discover_in_directory, path)
-                    )
+                    futures.append(executor.submit(FileDiscovery._discover_in_directory, path))
 
             for future in futures:
                 try:
@@ -806,9 +800,7 @@ class HtmlRenamerApp:
 
         successful: int = sum(1 for r in self.results if r.success)
         failed: int = len(self.results) - successful
-        renamed: int = sum(
-            1 for r in self.results if r.new_name and r.new_name != r.original_name
-        )
+        renamed: int = sum(1 for r in self.results if r.new_name and r.new_name != r.original_name)
         skipped: int = successful - renamed
         total_duration: float = sum(r.duration for r in self.results)
 
@@ -824,9 +816,7 @@ class HtmlRenamerApp:
 
         if renamed > 0:
             print(f"\n✓ Successfully renamed files ({renamed}):")
-            for result in sorted(self.results, key=lambda r: r.duration, reverse=True)[
-                :10
-            ]:
+            for result in sorted(self.results, key=lambda r: r.duration, reverse=True)[:10]:
                 if result.new_name and result.new_name != result.original_name:
                     print(f"  '{result.original_name:40}' -> '{result.new_name}'")
                     print(f"    Title: {result.title}")

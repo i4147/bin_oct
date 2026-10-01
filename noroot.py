@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans all non-binary files in the current working directory (using a helper `get_nobinary` from module `dh`) to find and strip out shell-script conditional blocks matching the pattern `if [ $(cmd) -ne 0 ]; then ...
 exit 1 ...
 fi`, using a regex to locate and remove these blocks repeatedly until none remain in each file's content.
@@ -23,9 +23,7 @@ def remove_conditional_exit_blocks(path: Path) -> None:
             match = IF_BLOCK_REGEX.search(modified_content)
             if not match:
                 break
-            modified_content = (
-                modified_content[: match.start()] + modified_content[match.end() :]
-            )
+            modified_content = modified_content[: match.start()] + modified_content[match.end() :]
         if original_content != modified_content:
             path.write_text(modified_content, encoding="utf-8")
             print(f"Cleaned: {path}")
@@ -41,9 +39,9 @@ def main() -> None:
             try:
                 content = item_path.read_text(encoding="utf-8", errors="ignore")
                 is_likely_bash = False
-                if content.startswith(("#!/bin/bash", "#!/usr/bin/env bash")) or oct(
-                    item_path.stat().st_mode
-                )[-3:] not in (
+                if content.startswith(("#!/bin/bash", "#!/usr/bin/env bash")) or oct(item_path.stat().st_mode)[
+                    -3:
+                ] not in (
                     "000",
                     "001",
                     "010",

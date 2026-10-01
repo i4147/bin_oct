@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Translate one-word-per-line files on Termux Android 7 ARMv8l.
 
 This script targets Python 3.12 on 32-bit ARM Termux with limited memory. It uses
@@ -43,9 +43,7 @@ from typing import Callable
 try:
     from loguru import logger
 except ImportError as exc:
-    raise SystemExit(
-        "Missing dependency: install it with 'pip install loguru'"
-    ) from exc
+    raise SystemExit("Missing dependency: install it with 'pip install loguru'") from exc
 
 
 class BackendError(Exception):
@@ -172,14 +170,10 @@ def _language(backend: str, code: str) -> str:
 
 def _require_python_and_platform() -> None:
     if sys.version_info[:2] != (3, 12):
-        raise SystemExit(
-            f"Python 3.12 is required; detected {platform.python_version()}"
-        )
+        raise SystemExit(f"Python 3.12 is required; detected {platform.python_version()}")
     machine = platform.machine().casefold()
     if machine not in {"armv8l", "armv7l", "armv7"}:
-        raise SystemExit(
-            f"This script targets 32-bit ARM Termux; detected architecture '{machine}'"
-        )
+        raise SystemExit(f"This script targets 32-bit ARM Termux; detected architecture '{machine}'")
     if sys.maxsize > 2**32:
         raise SystemExit("This script requires a 32-bit Python process")
 
@@ -216,9 +210,7 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallabl
     return translate
 
 
-def _make_deep_translator(
-    source: str, target: str, script_path: str
-) -> TranslatorCallable:
+def _make_deep_translator(source: str, target: str, script_path: str) -> TranslatorCallable:
     _import("deep_translator")
     source_code = _language("deep_translator", source)
     target_code = _language("deep_translator", target)
@@ -237,9 +229,7 @@ def _make_deep_translator(
     return translate
 
 
-def _make_libretranslate_remote(
-    source: str, target: str, script_path: str
-) -> TranslatorCallable:
+def _make_libretranslate_remote(source: str, target: str, script_path: str) -> TranslatorCallable:
     url = os.getenv("LIBRETRANSLATE_URL")
     if not url:
         raise BackendError("LIBRETRANSLATE_URL is not set")
@@ -264,9 +254,7 @@ def _make_libretranslate_remote(
 
 def _make_translate(source: str, target: str, script_path: str) -> TranslatorCallable:
     if Path(script_path).stem.casefold() == "translate":
-        raise BackendError(
-            "the local script name resolves to the translate package; rename it"
-        )
+        raise BackendError("the local script name resolves to the translate package; rename it")
     _import("translate")
 
     def translate(text: str) -> str:
@@ -280,14 +268,10 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslatorCal
     return translate
 
 
-def _make_translators_bing(
-    source: str, target: str, script_path: str
-) -> TranslatorCallable:
+def _make_translators_bing(source: str, target: str, script_path: str) -> TranslatorCallable:
     _import("translators")
     lock = _SERIAL_LOCKS["translators_bing"]
-    logger.warning(
-        "translators_bing is serialized because each request may start a JS runtime"
-    )
+    logger.warning("translators_bing is serialized because each request may start a JS runtime")
 
     def translate(text: str) -> str:
         try:
@@ -323,9 +307,7 @@ def _make_googletrans(source: str, target: str, script_path: str) -> TranslatorC
     return translate
 
 
-def _make_pygoogletranslation(
-    source: str, target: str, script_path: str
-) -> TranslatorCallable:
+def _make_pygoogletranslation(source: str, target: str, script_path: str) -> TranslatorCallable:
     module = _import("pygoogletranslation")
     client_class = getattr(module, "Translator", None)
     if client_class is None:
@@ -370,9 +352,7 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
     api_key = os.getenv("BAIDU_API_KEY")
     secret_key = os.getenv("BAIDU_SECRET_KEY")
     if not all((app_id, api_key, secret_key)):
-        raise BackendError(
-            "BAIDU_APP_ID, BAIDU_API_KEY, and BAIDU_SECRET_KEY are required"
-        )
+        raise BackendError("BAIDU_APP_ID, BAIDU_API_KEY, and BAIDU_SECRET_KEY are required")
     _import("aip")
     source_code = _language("baidu", source)
     target_code = _language("baidu", target)
@@ -396,9 +376,7 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
     secret = os.getenv("ALIBABA_ACCESS_KEY_SECRET")
     region = os.getenv("ALIBABA_REGION", "cn-hangzhou")
     if not access_key or not secret:
-        raise BackendError(
-            "ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required"
-        )
+        raise BackendError("ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required")
     _import("aliyunsdkcore")
     _import("aliyunsdkalimt")
     source_code = _language("alibaba", source)
@@ -432,9 +410,7 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
     def translate(text: str) -> str:
         try:
             module = importlib.import_module("ibm_watson")
-            authenticator_module = importlib.import_module(
-                "ibm_cloud_sdk_core.authenticators"
-            )
+            authenticator_module = importlib.import_module("ibm_cloud_sdk_core.authenticators")
             authenticator = authenticator_module.IamAuthenticator(api_key)
             client = module.LanguageTranslatorV3(
                 version="2018-05-01",
@@ -461,9 +437,7 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallabl
         "https://api.cognitive.microsofttranslator.com",
     )
     if not key or not region:
-        raise BackendError(
-            "AZURE_TRANSLATOR_KEY and AZURE_TRANSLATOR_REGION are required"
-        )
+        raise BackendError("AZURE_TRANSLATOR_KEY and AZURE_TRANSLATOR_REGION are required")
     _import("requests")
     source_code = _language("azure", source)
     target_code = _language("azure", target)
@@ -535,17 +509,11 @@ def _select_backend(
 
     for name in candidates:
         if name not in _BACKEND_FACTORIES:
-            raise SystemExit(
-                f"Unknown backend '{name}'. Choose from: "
-                + ", ".join(sorted(_BACKEND_FACTORIES))
-            )
+            raise SystemExit(f"Unknown backend '{name}'. Choose from: " + ", ".join(sorted(_BACKEND_FACTORIES)))
         try:
             translator = _BACKEND_FACTORIES[name](source, target, script_path)
             if failures:
-                _print(
-                    f"⚠️  Backend '{failures[-1]}' unavailable — "
-                    f"falling back to '{name}'."
-                )
+                _print(f"⚠️  Backend '{failures[-1]}' unavailable — falling back to '{name}'.")
             logger.debug("Selected backend '{}'", name)
             return name, translator
         except Exception as exc:
@@ -557,10 +525,7 @@ def _select_backend(
                     "Install its package and configure its environment variables."
                 ) from exc
 
-    raise SystemExit(
-        "No usable backend was found. Install deep_translator or configure "
-        "one of the supported backends."
-    )
+    raise SystemExit("No usable backend was found. Install deep_translator or configure one of the supported backends.")
 
 
 def _read_words(path: Path) -> list[str]:
@@ -646,9 +611,7 @@ def _translate_one(
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Translate a one-word-per-line file into a JSON mapping."
-    )
+    parser = argparse.ArgumentParser(description="Translate a one-word-per-line file into a JSON mapping.")
     parser.add_argument("-i", "--input", default="words.txt")
     parser.add_argument("-o", "--output", default="words.json")
     parser.add_argument("--failed", default="failed.txt")

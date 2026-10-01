@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 A lightweight Python implementation of termimage.
 Displays images directly in the terminal using ANSI escape codes.
@@ -53,9 +53,7 @@ def load_ppm(path: Path):
     return width, height, pixels
 
 
-def render_half_blocks(
-    width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int
-):
+def render_half_blocks(width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int):
 
     scale = max(1, width // max_width)
     scaled_w = width // scale
@@ -109,10 +107,7 @@ def render_file(path: Path, max_width: int):
             print(f"Error reading PPM file {path}: {e}")
             return
 
-    print(
-        f"Unable to render '{path.name}'. "
-        "Install 'Pillow' (`pip install pillow`) to view PNG/JPG/WebP/GIF formats."
-    )
+    print(f"Unable to render '{path.name}'. Install 'Pillow' (`pip install pillow`) to view PNG/JPG/WebP/GIF formats.")
 
 
 def traverse_directory(root_dir: Path) -> list[Path]:
@@ -125,9 +120,7 @@ def traverse_directory(root_dir: Path) -> list[Path]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Termimage in Python: Render images in your terminal."
-    )
+    parser = argparse.ArgumentParser(description="Termimage in Python: Render images in your terminal.")
     parser.add_argument(
         "paths",
         nargs="*",

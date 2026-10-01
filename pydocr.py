@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a codebase for Python modules, extracts documentation (module, function, and class docstrings) either via static AST parsing or by dynamically importing modules with inspect, and writes the results as formatted Markdown files into a "<cwd_name>_doc" output directory, mirroring the source file paths with unique filenames to avoid collisions.
 It should use helper functions get_files and unique_path from a local "dh" module to discover source files and generate non-conflicting output paths, and use multiprocessing (via get_context) to process files concurrently, presumably to safely import modules in isolated worker processes and handle import errors gracefully by falling back to AST-based extraction.
 The output Markdown for each module should include headings for the module name, its docstring, and sections listing documented functions and classes with their respective docstrings."""
@@ -139,11 +139,7 @@ def main() -> None:
         BASE_DIR.mkdir(exist_ok=True)
     cwd = Path.cwd()
     args = sys.argv[1:]
-    files = (
-        [Path(arg) for arg in args]
-        if args
-        else get_files(cwd, ext=[".py", ".pyi", ".pyx", ".pxd"])
-    )
+    files = [Path(arg) for arg in args] if args else get_files(cwd, ext=[".py", ".pyi", ".pyx", ".pxd"])
     print(f"processing {len(files)} files")
     with get_context("spawn").Pool(8) as pool:
         pending = deque()

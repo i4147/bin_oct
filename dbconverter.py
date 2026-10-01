@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Convert data container file formats to each other.
 
@@ -127,8 +127,7 @@ def read_sqlite(path: Path) -> dict[str, pd.DataFrame]:
     con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         names = pd.read_sql_query(
-            "SELECT name FROM sqlite_master "
-            "WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
             con,
         )["name"].tolist()
         return {n: pd.read_sql_query(f'SELECT * FROM "{n}"', con) for n in names}
@@ -149,10 +148,7 @@ def read_excel(path: Path) -> dict[str, pd.DataFrame]:
 
 def _single(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     if len(tables) != 1:
-        raise ValueError(
-            f"this output format supports a single table, got {len(tables)}: "
-            f"{list(tables)}"
-        )
+        raise ValueError(f"this output format supports a single table, got {len(tables)}: {list(tables)}")
     return next(iter(tables.values()))
 
 
@@ -275,18 +271,13 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as e:
         parser.error(str(e))
 
-    output_path = (
-        Path(args.output) if args.output else input_path.with_suffix(EXT_FOR[dst_fmt])
-    )
+    output_path = Path(args.output) if args.output else input_path.with_suffix(EXT_FOR[dst_fmt])
 
     tables = READERS[src_fmt](input_path)
     WRITERS[dst_fmt](tables, output_path)
 
     n = len(tables)
-    print(
-        f"{input_path}  [{src_fmt}]  ->  {output_path}  [{dst_fmt}]"
-        f"   ({n} table{'s' if n != 1 else ''})"
-    )
+    print(f"{input_path}  [{src_fmt}]  ->  {output_path}  [{dst_fmt}]   ({n} table{'s' if n != 1 else ''})")
     return 0
 
 

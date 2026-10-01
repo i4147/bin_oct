@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that compares two directory trees given as arguments and reports differences between them, using SHA-256 hashing (via a chunked read helper) to detect files that differ in content despite matching names.
 It should identify entries (files/directories) present only in the first directory, only in the second, or in both but with differing content, printing results via a "cprint" helper (likely with color-coded output).
 Additionally, it should generate an executable shell script that replicates the missing directories and files from the source tree into the destination tree, using "mkdir -p" and "cp -a" commands with properly shell-quoted paths, and set the script's executable permission bits after writing it."""
@@ -22,9 +22,7 @@ def get_sha256(path: str | Path) -> str:
     return h.hexdigest()
 
 
-def write_shell_copy(
-    script_path: Path, src_root: Path, dst_root: Path, only_dirs, only_files
-) -> None:
+def write_shell_copy(script_path: Path, src_root: Path, dst_root: Path, only_dirs, only_files) -> None:
     with script_path.open("w", encoding="utf-8") as sh:
         sh.write("#!/bin/sh\n")
         for d in sorted(only_dirs):
@@ -53,11 +51,7 @@ def main() -> None:
     s_files = [p.name for p in second.glob("*") if p.exists() and p.is_file()]
     [p.name for p in second.glob("*") if p.is_dir()]
     common1 = [(Path(dir1).resolve() / p) for p in f_files if p in s_files]
-    common2 = {
-        str(Path(dir1).resolve() / p): str(Path(dir2).resolve() / p)
-        for p in f_files
-        if p in s_files
-    }
+    common2 = {str(Path(dir1).resolve() / p): str(Path(dir2).resolve() / p) for p in f_files if p in s_files}
     if common1:
         for k in common1:
             print(f"  - {k}")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans all .py files under the current directory (skipping hidden directories, site-packages, and the output folder itself) and uses tree_sitter_python to parse each file, extracting top-level nodes typed as function_docstrings or class_docstrings.
 For each folder containing such matches, concatenate the extracted snippets from all files in that folder and write them into a corresponding imports.py file under an output directory, preserving the relative folder structure.
 After processing, print a summary message showing how many folders were processed.
@@ -18,11 +18,7 @@ VALID = {"function_docstrings", "class_docstrings"}
 
 def extract_file(src: bytes, tree: Tree) -> list[str]:
     root = tree.root_node
-    return [
-        src[node.start_byte : node.end_byte].decode()
-        for node in root.children
-        if node.type in VALID
-    ]
+    return [src[node.start_byte : node.end_byte].decode() for node in root.children if node.type in VALID]
 
 
 folder_imports = defaultdict(list)

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given directory tree to find and report OS-specific junk files, such as macOS metadata files (e.g.
 .DS_Store, ._* AppleDouble files, .Spotlight-V100) and Windows system/executable files (e.g.
 Thumbs.db, desktop.ini, *.exe, *.dll).
@@ -117,9 +117,7 @@ def find_and_remove_files(root_dir: Path | None = None) -> dict:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Remove Darwin and Windows related files recursively"
-    )
+    parser = argparse.ArgumentParser(description="Remove Darwin and Windows related files recursively")
     parser.add_argument(
         "directory",
         nargs="?",

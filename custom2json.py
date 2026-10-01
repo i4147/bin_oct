@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that parses a custom "magic" definitions file (in the style of freedesktop.org's shared-mime-info magic rules) to extract MIME type signatures.
 The script reads the file byte-by-byte with latin-1 decoding, identifies MIME type section headers written as "[mimetype]", skips blank lines and comment lines starting with "#" or "!", and parses signature lines matching a pattern like "optional_rule_index>offset=value" using a regex, converting the extracted value into both raw bytes and an uppercase hexadecimal string representation.
 It should warn on stderr if a signature rule appears outside any section, and organize the parsed results into a dictionary keyed by MIME type, where each entry holds a list of rule dictionaries containing rule_index, offset, value_bytes, and hex.
@@ -69,9 +69,7 @@ def parse_magic_file(path: str, encoding="latin-1"):
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print(
-            "Usage: python magic_to_json.py <magic_file> [output.json]", file=sys.stderr
-        )
+        print("Usage: python magic_to_json.py <magic_file> [output.json]", file=sys.stderr)
         sys.exit(1)
     input_file = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) > 2 else None

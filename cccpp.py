@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Remove comments from C/C++ source files in place using tree-sitter.
 
 This script walks the given files/directories (default: current directory),
@@ -99,9 +99,7 @@ def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
             next_newline: int = content.find(b"\n", context_end)
             if next_newline != -1:
                 context_end = next_newline + 1
-        context: str = content[context_start:context_end].decode(
-            "utf-8", errors="replace"
-        )
+        context: str = content[context_start:context_end].decode("utf-8", errors="replace")
         comment_info.append(
             {
                 "start": start,
@@ -177,9 +175,7 @@ def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
                 if response in ("q", "quit"):
                     print("\nQuitting interactive mode for this file...")
                     if selected_ranges:
-                        new_content, count = strip_comments(
-                            content, ext, selected_ranges
-                        )
+                        new_content, count = strip_comments(content, ext, selected_ranges)
                         if new_content != content:
                             path.write_bytes(new_content)
                         return rel, count, ""

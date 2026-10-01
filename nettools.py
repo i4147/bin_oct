@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_net_tools.py — unified network toolkit.
 
@@ -117,9 +117,7 @@ def read_dns_servers(path: Path) -> list[str]:
     return uniq
 
 
-def _probe_one(
-    idx: int, total: int, proxy: str, timeout: float, delay: float
-) -> tuple[str, Optional[str]]:
+def _probe_one(idx: int, total: int, proxy: str, timeout: float, delay: float) -> tuple[str, Optional[str]]:
     proxy = proxy.strip()
     proxies = {"http": f"http://{proxy}", "https": f"https://{proxy}"}
     ok = False
@@ -138,9 +136,7 @@ def _probe_one(
 
 def cmd_proxy_test(args: argparse.Namespace) -> int:
     if requests is None:
-        print(
-            "Error: 'requests' package is required for proxy-test. `pip install requests`"
-        )
+        print("Error: 'requests' package is required for proxy-test. `pip install requests`")
         return 2
 
     src = Path(args.file)
@@ -158,9 +154,7 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
     valid: list[str] = []
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        for line, good in pool.map(
-            lambda t: _probe_one(*t, timeout=args.timeout, delay=args.delay), jobs
-        ):
+        for line, good in pool.map(lambda t: _probe_one(*t, timeout=args.timeout, delay=args.delay), jobs):
             print(line)
             if good:
                 valid.append(good)
@@ -171,17 +165,11 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
 
     out_path: Optional[str] = args.output
     if out_path is None:
-        answer = (
-            input("Do you want to save the valid proxies to a file? (y/n): ")
-            .strip()
-            .lower()
-        )
+        answer = input("Do you want to save the valid proxies to a file? (y/n): ").strip().lower()
         if answer != "y":
             return 0
         out_path = (
-            input(
-                "Enter the filename to save valid proxies (default:valid_proxies.txt): "
-            ).strip()
+            input("Enter the filename to save valid proxies (default:valid_proxies.txt): ").strip()
             or "valid_proxies.txt"
         )
 
@@ -201,12 +189,8 @@ def _speed_download(url: str, timeout: float) -> Optional[float]:
         return None
 
 
-def _speed_upload(
-    url: str, size: int = 1024 * 1024, timeout: float = 20.0
-) -> Optional[float]:
-    payload = "".join(
-        random.choices(string.ascii_letters + string.digits, k=size)
-    ).encode()
+def _speed_upload(url: str, size: int = 1024 * 1024, timeout: float = 20.0) -> Optional[float]:
+    payload = "".join(random.choices(string.ascii_letters + string.digits, k=size)).encode()
     boundary = "----------ThIs_Is_tHe_bouNdaRY_$"
     body = (
         (
@@ -257,27 +241,19 @@ def cmd_net_info(args: argparse.Namespace) -> int:
         print("\n[*] Speed test")
         print("    Testing download speed...")
         dl = _speed_download(args.download_url, timeout=20.0)
-        print(
-            f"    Download: {dl:.2f} Mbps" if dl is not None else "    Download: failed"
-        )
+        print(f"    Download: {dl:.2f} Mbps" if dl is not None else "    Download: failed")
 
         print("    Testing upload speed...")
         ul = _speed_upload(args.upload_url)
-        print(
-            f"    Upload:   {ul:.2f} Mbps" if ul is not None else "    Upload: failed"
-        )
+        print(f"    Upload:   {ul:.2f} Mbps" if ul is not None else "    Upload: failed")
 
     return 0
 
 
 _PING_HOST_RE = re.compile(r"PING\s+(\S+)\s+\(([^)]+)\)")
 _PING_RESP_RE = re.compile(r"bytes from.*icmp_seq=(\d+).*time=([0-9.]+)\s*ms")
-_PING_SUM_RE = re.compile(
-    r"(\d+)\s+packets transmitted,\s+(\d+)(?:\s+packets)?\s+received,\s+([0-9.]+)%\s+packet loss"
-)
-_PING_RTT_RE = re.compile(
-    r"min/avg/max(?:/stddev)?\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)(?:/([0-9.]+))?"
-)
+_PING_SUM_RE = re.compile(r"(\d+)\s+packets transmitted,\s+(\d+)(?:\s+packets)?\s+received,\s+([0-9.]+)%\s+packet loss")
+_PING_RTT_RE = re.compile(r"min/avg/max(?:/stddev)?\s*=\s*([0-9.]+)/([0-9.]+)/([0-9.]+)(?:/([0-9.]+))?")
 
 
 class PingStats:
@@ -302,10 +278,7 @@ class PingStats:
             f"{self.packet_loss_percent:.1f}% packet loss\n"
         )
         if self.packets_received > 0:
-            out += (
-                f"round-trip min/avg/max/stddev="
-                f"{self.min_time:.3f}/{self.avg_time:.3f}/{self.max_time:.3f}"
-            )
+            out += f"round-trip min/avg/max/stddev={self.min_time:.3f}/{self.avg_time:.3f}/{self.max_time:.3f}"
             if self.stddev_time is not None:
                 out += f"/{self.stddev_time:.3f}"
             out += " ms\n"
@@ -360,9 +333,7 @@ def run_ping(
             str(size),
             host,
         ]
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1
-        )
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
         collected = ""
         if live:
             for line in proc.stdout:  # type: ignore[union-attr]
@@ -414,9 +385,7 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
 
     if args.name:
         if args.name not in DNS_PROVIDERS:
-            print(
-                f"Error: unknown DNS provider '{args.name}'. Use --list to see options."
-            )
+            print(f"Error: unknown DNS provider '{args.name}'. Use --list to see options.")
             return 1
         name, servers = args.name, DNS_PROVIDERS[args.name]
     else:
@@ -482,9 +451,7 @@ class SignalMeter:
 
     def read_wifi(self) -> Optional[int]:
         try:
-            r = subprocess.run(
-                ["dumpsys", "wifi"], capture_output=True, text=True, timeout=2
-            )
+            r = subprocess.run(["dumpsys", "wifi"], capture_output=True, text=True, timeout=2)
             m = re.search(r"mRssi[=:]?\s*(-?\d+)", r.stdout)
             s = re.search(r"ssid[=:]?\s*([\"']?)([^\"']*?)\1", r.stdout)
             if m:
@@ -535,9 +502,7 @@ class SignalMeter:
         return self.is_airplane_mode
 
     @staticmethod
-    def strength_to_bars(
-        strength: Optional[int], top: int = -30, bottom: int = -120
-    ) -> tuple[str, int]:
+    def strength_to_bars(strength: Optional[int], top: int = -30, bottom: int = -120) -> tuple[str, int]:
         if strength is None:
             return ("N/A", 0)
         clamped = max(bottom, min(top, strength))
@@ -586,9 +551,7 @@ def cmd_signal(args: argparse.Namespace) -> int:
 
         console.print("[bold green]📱 Cellular Signal[/bold green]")
         if meter.cellular_strength is not None:
-            bars, pct = meter.strength_to_bars(
-                meter.cellular_strength, top=-25, bottom=-120
-            )
+            bars, pct = meter.strength_to_bars(meter.cellular_strength, top=-25, bottom=-120)
             console.print(f"  Status: {meter.cellular_status}")
             console.print(f"  Signal: {bars} {pct}%")
             console.print(f"  Strength: {meter.cellular_strength} dBm\n")
@@ -662,9 +625,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_proxy.set_defaults(func=cmd_proxy_test)
 
-    p_net = sub.add_parser(
-        "net-info", help="Show public IP, local IP, DNS; run speed test"
-    )
+    p_net = sub.add_parser("net-info", help="Show public IP, local IP, DNS; run speed test")
     p_net.add_argument(
         "--no-speedtest",
         action="store_true",
@@ -719,12 +680,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_ping.set_defaults(func=cmd_ping)
 
     p_dns = sub.add_parser("set-dns", help="Switch DNS to a public provider")
-    p_dns.add_argument(
-        "-n", "--name", help="Provider name (see --list). Omit for random choice."
-    )
-    p_dns.add_argument(
-        "--list", action="store_true", help="List available DNS providers and exit"
-    )
+    p_dns.add_argument("-n", "--name", help="Provider name (see --list). Omit for random choice.")
+    p_dns.add_argument("--list", action="store_true", help="List available DNS providers and exit")
     p_dns.add_argument(
         "--target",
         default="~/.resolv.conf",
@@ -748,9 +705,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.5,
         help="Refresh interval in seconds (default: 1.5)",
     )
-    p_sig.add_argument(
-        "--once", action="store_true", help="Print a single snapshot and exit"
-    )
+    p_sig.add_argument("--once", action="store_true", help="Print a single snapshot and exit")
     p_sig.set_defaults(func=cmd_signal)
 
     return parser

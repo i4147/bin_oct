@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Remove comments from non-binary text files by scanning a directory tree.
 
 This module scans a directory for non-binary files, removes Python-style
@@ -225,9 +225,7 @@ def find_target_files(
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Remove comments from non-binary files using # comment syntax"
-    )
+    parser = argparse.ArgumentParser(description="Remove comments from non-binary files using # comment syntax")
     parser.add_argument(
         "directory",
         nargs="?",
@@ -352,9 +350,7 @@ def main() -> int:
     results: list[ProcessResult] = []
     try:
         with Pool(processes=POOL_SIZE) as pool:
-            async_results = [
-                pool.apply_async(process_file, (path,)) for path in target_files
-            ]
+            async_results = [pool.apply_async(process_file, (path,)) for path in target_files]
             for async_result in async_results:
                 try:
                     results.append(async_result.get())

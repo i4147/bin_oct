@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that automates scaffolding and publishing a new GitHub repository/package for a given package name, using a GitHub token loaded from a .env file in the home directory via python-dotenv and calls to the GitHub REST API (urllib).
 It should generate standard project files (pyproject.toml, setup.py, .gitignore, __init__.py, and package source templates for both pure-Python and Cython variants) stamped with a fixed version number, initialize a local git repository, create the corresponding GitHub repo through the API, and push the initial commit to the default branch using subprocess calls to git.
 The script should accept command-line arguments (via argparse) to specify the package name and any relevant options, and should handle errors such as missing tokens, failed API requests, or git command failures by printing informative messages and exiting appropriately."""
@@ -238,18 +238,13 @@ def github_request(
             return json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
         detail: str = e.read().decode(errors="replace")
-        raise SystemExit(
-            f"GitHub API error {e.code} on {method} {url}:\n{detail}"
-        ) from e
+        raise SystemExit(f"GitHub API error {e.code} on {method} {url}:\n{detail}") from e
 
 
 def get_github_token() -> str:
     token: str | None = os.environ.get("GITHUB_TOKEN")
     if not token:
-        raise SystemExit(
-            f"GITHUB_TOKEN not found. Add it to {ENV_PATH}, e.g.\n"
-            f"    GITHUB_TOKEN=ghp_xxx"
-        )
+        raise SystemExit(f"GITHUB_TOKEN not found. Add it to {ENV_PATH}, e.g.\n    GITHUB_TOKEN=ghp_xxx")
     return token
 
 
@@ -299,9 +294,7 @@ def render_package_files(pkgname: str) -> dict[Path, str]:
     return {
         Path(".gitignore"): GITIGNORE,
         Path("README.md"): f"# {pkgname}\n",
-        Path("pyproject.toml"): PYPROJECT_PKG_TMPL.format(
-            pkgname=pkgname, version=VERSION
-        ),
+        Path("pyproject.toml"): PYPROJECT_PKG_TMPL.format(pkgname=pkgname, version=VERSION),
         Path("setup.py"): SETUP_PY,
         Path("setup.cfg"): SETUP_CFG_PKG_TMPL,
         src_pkg / "__init__.py": INIT_PY_TMPL.format(version=VERSION),
@@ -313,14 +306,10 @@ def render_single_file_files(pkgname: str) -> dict[Path, str]:
     return {
         Path(".gitignore"): GITIGNORE,
         Path("README.md"): f"# {pkgname}\n",
-        Path("pyproject.toml"): PYPROJECT_SINGLE_TMPL.format(
-            pkgname=pkgname, version=VERSION
-        ),
+        Path("pyproject.toml"): PYPROJECT_SINGLE_TMPL.format(pkgname=pkgname, version=VERSION),
         Path("setup.py"): SETUP_PY,
         Path("setup.cfg"): SETUP_CFG_SINGLE_TMPL.format(pkgname=pkgname),
-        Path(f"{pkgname}.py"): SINGLE_FILE_PY_TMPL.format(
-            pkgname=pkgname, version=VERSION
-        ),
+        Path(f"{pkgname}.py"): SINGLE_FILE_PY_TMPL.format(pkgname=pkgname, version=VERSION),
     }
 
 
@@ -328,14 +317,10 @@ def render_cython_files(pkgname: str) -> dict[Path, str]:
     return {
         Path(".gitignore"): GITIGNORE,
         Path("README.md"): f"# {pkgname}\n",
-        Path("pyproject.toml"): PYPROJECT_CYTHON_TMPL.format(
-            pkgname=pkgname, version=VERSION
-        ),
+        Path("pyproject.toml"): PYPROJECT_CYTHON_TMPL.format(pkgname=pkgname, version=VERSION),
         Path("setup.py"): SETUP_PY_CYTHON_TMPL.format(pkgname=pkgname),
         Path("setup.cfg"): SETUP_CFG_CYTHON_TMPL,
-        Path(f"{pkgname}.pyx"): CYTHON_PYX_TMPL.format(
-            pkgname=pkgname, version=VERSION
-        ),
+        Path(f"{pkgname}.pyx"): CYTHON_PYX_TMPL.format(pkgname=pkgname, version=VERSION),
     }
 
 
@@ -414,10 +399,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--single-file",
         action="store_true",
         dest="single_file",
-        help=(
-            "Create a single-file module (<pkgname>.py) instead of the "
-            "default src-layout package"
-        ),
+        help=("Create a single-file module (<pkgname>.py) instead of the default src-layout package"),
     )
     layout_group.add_argument(
         "-c",

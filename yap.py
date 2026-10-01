@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python CLI script that recursively finds Python (.py) files in a given directory (via a helper get_pyfiles from a local "dh" module) and reformats/cleans each file's source code in place using a selectable code-formatting backend controlled by a MODE constant or CLI argument, supporting "autoflake" (remove unused imports), "isort" (sort imports), "black" (format with target Python versions 3.10/3.13 and 120 line length), "autopep8" (aggressive PEP8 fixes), and "yapf" as interchangeable modes.
 It should use argparse to accept options such as target directory/files and formatting mode, read each file's original text, apply the chosen formatter's transformation function to produce new code, and write the result back to disk, while tracking each file's before/after size in bytes and processing time using perf_counter.
 It should leverage utility functions from the "dh" module (cprint for colored console output, format_time and fsz for human-readable time/size formatting, and mpf, presumably for multiprocessing/parallel file handling) to report progress and results, such as filenames, size changes, and elapsed time, for each processed file and likely a final summary across all files."""
@@ -62,9 +62,7 @@ def process_file(path: str | Path, mode: str = MODE):
         if dsz:
             path.write_text(code, encoding="utf-8")
             ratio = dsz / before * 40
-            cprint(
-                f"({format_time(etime - stime)}) | {fsz(dsz)} | {ratio:.1f}%", "cyan"
-            )
+            cprint(f"({format_time(etime - stime)}) | {fsz(dsz)} | {ratio:.1f}%", "cyan")
             return True
         print(f"{path.name} ", end=" ")
         cprint(f"({format_time(etime - stime)}) | (no change)", "grey")
@@ -77,9 +75,7 @@ def process_file(path: str | Path, mode: str = MODE):
 
 def main() -> None:
     global MODE
-    p = argparse.ArgumentParser(
-        description="Fast Python API-based formatter (Lazy Loading)"
-    )
+    p = argparse.ArgumentParser(description="Fast Python API-based formatter (Lazy Loading)")
     p.add_argument("-b", "--black", action="store_true", help="Use black style")
     p.add_argument("-a", "--autopep", action="store_true", help="Use autopep8 style")
     p.add_argument("-i", "--isort", action="store_true", help="Sort imports")

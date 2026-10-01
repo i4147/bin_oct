@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given directory for compressed tar archives (supporting .tar.gz, .tgz, .tar.xz, .tar.zst, and .tar.br extensions) and verifies the integrity of each one.
 For each archive, it should first validate the underlying compression stream (using Python's gzip/lzma modules for gz/xz, or invoking external zstd/brotli command-line tools for zst/br), then confirm the tar structure itself can be opened and read correctly.
 It should process multiple archives concurrently using a multiprocessing pool with a configurable worker limit (default 8) to speed up checking large sets of files, and report which archives passed or failed the integrity check.
@@ -41,15 +41,11 @@ def check_integrity(archive_path):
                 while f.read(1024 * 1024):
                     pass
         elif compression == "zst":
-            result = subprocess.run(
-                ["zstd", "-t", str(archive_path)], capture_output=True, text=True
-            )
+            result = subprocess.run(["zstd", "-t", str(archive_path)], capture_output=True, text=True)
             if result.returncode != 0:
                 return False
         elif compression == "br":
-            result = subprocess.run(
-                ["brotli", "-t", str(archive_path)], capture_output=True, text=True
-            )
+            result = subprocess.run(["brotli", "-t", str(archive_path)], capture_output=True, text=True)
             if result.returncode != 0:
                 return False
         with tarfile.open(archive_path, f"r:{compression}") as tar:

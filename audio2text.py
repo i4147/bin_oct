@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """A Python script that transcribes a WAV audio file into text using speech recognition, processing the audio in fixed-length chunks (default 30 seconds) via pydub segmentation and Google's speech recognition API through SpeechRecognition.
 It takes an input WAV file path and writes recognized text incrementally to an output text file (default "out.txt"), printing progress information such as chunk count and durations as it works.
 The script gracefully handles Ctrl+C interruption via a SIGINT signal handler, saving already-transcribed progress before exiting, and it validates that the input file exists and warns if it lacks a .wav extension."""
@@ -54,14 +54,10 @@ def wav_to_text_chunked(input_file, output_file="out.txt", chunk_duration_ms=300
             end_ms = min((i + 1) * chunk_duration_ms, total_duration_ms)
             chunk_start_sec = start_ms / 1000
             chunk_end_sec = end_ms / 1000
-            print(
-                f"Processing chunk {i + 1}/{num_chunks} ({chunk_start_sec:.1f}s - {chunk_end_sec:.1f}s)..."
-            )
+            print(f"Processing chunk {i + 1}/{num_chunks} ({chunk_start_sec:.1f}s - {chunk_end_sec:.1f}s)...")
             try:
                 chunk = audio[start_ms:end_ms]
-                with tempfile.NamedTemporaryFile(
-                    suffix=".wav", delete=False
-                ) as temp_wav:
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_wav:
                     temp_wav_path = temp_wav.name
                 chunk.export(temp_wav_path, format="wav")
                 with sr.AudioFile(temp_wav_path) as source:
@@ -99,11 +95,7 @@ def wav_to_text_chunked(input_file, output_file="out.txt", chunk_duration_ms=300
             print(f"Completed: {num_chunks}/{num_chunks} chunks")
         if full_text:
             combined_text = " ".join(full_text)
-            preview = (
-                combined_text[:300] + "..."
-                if len(combined_text) > 300
-                else combined_text
-            )
+            preview = combined_text[:300] + "..." if len(combined_text) > 300 else combined_text
             print(f"\nTranscription preview:\n{preview}")
     except Exception as e:
         print(f"\nError: {e}")
@@ -112,9 +104,7 @@ def wav_to_text_chunked(input_file, output_file="out.txt", chunk_duration_ms=300
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print(
-            "Usage: python wav_to_text.py <input_file.wav> [output_file.txt] [chunk_duration_seconds]"
-        )
+        print("Usage: python wav_to_text.py <input_file.wav> [output_file.txt] [chunk_duration_seconds]")
         print("Example: python wav_to_text.py recording.wav")
         print("Example: python wav_to_text.py recording.wav output.txt 30")
         sys.exit(1)

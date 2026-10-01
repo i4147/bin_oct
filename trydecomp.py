@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Universal archive / compression detector, decompressor, and extractor.
 
@@ -101,7 +101,7 @@ class Detection:
     name: str
     kind: str
     mime: str = "application/octet-stream"
-    confidence: str = "medium"  # "high" | "medium" | "low"
+    confidence: str = "medium"
 
 
 _MAGIC_TABLE: list[tuple[bytes, int, Detection]] = [
@@ -228,10 +228,7 @@ def try_libarchive(filename: str) -> bool:
             return False
         first = entries[0].pathname
         fmt = getattr(entries[0], "archive_format", None) or "?"
-        print(
-            f"  SUCCESS: libarchive opened {len(entries)} entries "
-            f"[format={fmt}]. First: {first}\n"
-        )
+        print(f"  SUCCESS: libarchive opened {len(entries)} entries [format={fmt}]. First: {first}\n")
         _register("libarchive", extract_libarchive)
         return True
     except Exception as exc:
@@ -353,10 +350,7 @@ def try_stream_decompressors(data: bytes, hint: Detection) -> bool:
                 )
                 success = True
             else:
-                print(
-                    f"  FAILED: {name} produced {len(out or b'')} bytes "
-                    f"(suspicious ratio).\n"
-                )
+                print(f"  FAILED: {name} produced {len(out or b'')} bytes (suspicious ratio).\n")
         except Exception as exc:
             print(f"  FAILED: {name}: {type(exc).__name__}: {exc}\n")
     return success
@@ -513,10 +507,7 @@ def try_pycdlib(filename: str) -> bool:
 
 def try_pickle(data: bytes) -> bool:
     if not (
-        data.startswith(b"\x80\x04")
-        or data.startswith(b"\x80\x05")
-        or data.startswith(b"c")
-        or data.startswith(b"(")
+        data.startswith(b"\x80\x04") or data.startswith(b"\x80\x05") or data.startswith(b"c") or data.startswith(b"(")
     ):
         return False
     try:
@@ -555,10 +546,7 @@ def extract_7z(src: Path) -> None:
     with py7zr.SevenZipFile(src, mode="r") as z:
         unsafe = [n for n in z.getnames() if _safe_member_path(Path.cwd(), n) is None]
         if unsafe:
-            print(
-                f"    SKIP unsafe members: {unsafe[:3]}"
-                f"{' …' if len(unsafe) > 3 else ''}"
-            )
+            print(f"    SKIP unsafe members: {unsafe[:3]}{' …' if len(unsafe) > 3 else ''}")
         z.extractall(path=Path.cwd())
 
 
@@ -722,11 +710,7 @@ def process(filename: str) -> bool:
     print(f"File size: {len(data)} bytes\n")
 
     hint = sniff_magic(data)
-    print(
-        f"[STAGE 1] Magic sniff → {hint.name} "
-        f"(kind={hint.kind}, mime={hint.mime}, "
-        f"confidence={hint.confidence})\n"
-    )
+    print(f"[STAGE 1] Magic sniff → {hint.name} (kind={hint.kind}, mime={hint.mime}, confidence={hint.confidence})\n")
 
     success = False
 

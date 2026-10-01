@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that fetches a GitHub user's public repositories using PyGithub, optionally authenticating with a personal access token loaded from a .env file via python-dotenv.
 The script should accept a username and optional timeout, display a live countdown timer in the console (running in a background thread) while waiting for the API response, and return the list of repository objects.
 It must gracefully handle GithubException errors such as user-not-found (404), invalid/expired token (401), and rate-limit-exceeded (403), printing clear, user-friendly error messages for each case, and should notify the user if no public repositories are found."""
@@ -44,15 +44,11 @@ def get_repos(username: str, token: str | None = None, timeout: int = 60) -> lis
             print("\nError: Invalid or expired token. Check your .env file.")
         elif e.status == 403:
             if "rate limit" in str(e).lower():
-                print(
-                    "\nError: API rate limit exceeded. Use a token for higher limits."
-                )
+                print("\nError: API rate limit exceeded. Use a token for higher limits.")
             else:
                 print(f"\nError: Access forbidden. {e.data.get('message', '')}")
         else:
-            print(
-                f"\nGitHub API Error: {e.status} - {e.data.get('message', 'Unknown error')}"
-            )
+            print(f"\nGitHub API Error: {e.status} - {e.data.get('message', 'Unknown error')}")
         sys.exit(1)
     except Exception as e:
         print(f"\nError: {e}")
@@ -70,9 +66,7 @@ def main() -> None:
     if token:
         print("Using authenticated access (rate limit: 5000 requests/hour)")
     else:
-        print(
-            "No token found in .env, using unauthenticated access (rate limit: 60 requests/hour)"
-        )
+        print("No token found in .env, using unauthenticated access (rate limit: 60 requests/hour)")
     repos = get_repos(username, token=token, timeout=60)
     repos.sort(key=lambda r: r.stargazers_count, reverse=True)
     print(f"\nRepositories of '{username}' (sorted by stars):")

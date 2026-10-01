@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script using the subliminal and babelfish libraries that automatically finds and downloads the best-matching English subtitles for a given MKV video file.
 The function should accept a video file path and an optional output directory, scan the video to identify it, then query multiple subtitle providers (opensubtitles, podnapisi, addic7ed, tvsubtitles) to fetch the best English subtitle match.
 It should save the resulting subtitle as an .srt file named after the video (with an ".en.srt" suffix) into the specified or default output directory, log progress and errors via the logging module, and return a boolean indicating success or failure, handling cases like missing files, scan errors, or no subtitles found."""
@@ -10,9 +10,7 @@ import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.video import scan_video
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +51,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python subtitle_downloader.py <movie.mkv> [output_dir]")
         sys.exit(1)
-    success = download_subtitles_advanced(
-        sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None
-    )
+    success = download_subtitles_advanced(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
     sys.exit(0 if success else 1)

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans files for multiple shebang lines.
 It should import a helper function get_files from a local module named dh to gather file paths: if command-line arguments are provided, treat each as a file to add directly or a directory to recursively search, otherwise default to scanning all ".py" files in the current working directory.
 For each collected file, skip it if it's a symlink, otherwise read its content, count lines starting with "#!", and print the file's name if more than one such line is found."""

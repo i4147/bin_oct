@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that reads a text file specified as the first argument and reads it aloud on a Termux/Android device using the "termux-tts-speak" command-line tool.
 Since text-to-speech engines typically have input length limits, the script should split the file's content into chunks of at most 3000 characters each, breaking along line boundaries where possible and only splitting mid-line if a single line exceeds the limit.
 It should validate that the file path exists, print the total number of chunks detected, then sequentially speak each chunk via subprocess calls while printing progress messages showing the chunk index and character count.

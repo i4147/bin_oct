@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 find_elf64.py - Recursively detect 64-bit ELF binaries.
 
@@ -69,9 +69,7 @@ def analyze_file(path: Path) -> dict | None:
                 "path": str(path),
                 "size": path.stat().st_size,
                 "type": ELF_TYPES.get(elf.header["e_type"], elf.header["e_type"]),
-                "machine": ELF_MACHINES.get(
-                    elf.header["e_machine"], elf.header["e_machine"]
-                ),
+                "machine": ELF_MACHINES.get(elf.header["e_machine"], elf.header["e_machine"]),
                 "endianness": "little" if elf.little_endian else "big",
                 "entry": f"0x{elf.header['e_entry']:x}",
             }

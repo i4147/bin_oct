@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that accepts a single argument representing a GitHub repository, either in "user/repo" shorthand or as a full "https://github.com/user/repo" URL, parsing the URL with a regular expression when needed to extract the username and repository name.
 The script should query the GitHub REST API for that repository's metadata, then compute and print the repository size in megabytes (converted from the "size" field returned in kilobytes) along with the repository identifier.
 It must gracefully handle invalid input formats, a 404 not-found response, and general request exceptions by printing descriptive error messages, and it should validate that exactly one command-line argument is provided, printing usage instructions and exiting with status code 1 otherwise."""
@@ -39,8 +39,6 @@ def get_repo_size(input_str: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print(
-            "Usage: python get-repo-size <user/repo> or <https://github.com/user/repo>"
-        )
+        print("Usage: python get-repo-size <user/repo> or <https://github.com/user/repo>")
         sys.exit(1)
     get_repo_size(sys.argv[1])

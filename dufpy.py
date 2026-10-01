@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively finds all `.py` files under given directories (using a `get_pyfiles` helper) and strips type annotations from each file's source code.
 It should use the `ast` module with a custom `NodeTransformer` subclass to remove function argument/return annotations and convert annotated assignments into plain assignments (or `pass` if no value), then regenerate source code from the modified AST.
 File processing should run in parallel via `joblib.Parallel`/`delayed` (with a configurable worker count), use `xxhash` to detect whether content actually changed before rewriting files, and print progress/status messages using a `cprint` helper, skipping files that fail to read or parse."""
@@ -18,9 +18,7 @@ class TypeAnnotationStripper(ast.NodeTransformer):
         self.generic_visit(node)
         return node
 
-    def visit_AsyncFunctionDef(
-        self, node: ast.AsyncFunctionDef
-    ) -> ast.AsyncFunctionDef:
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
         node.returns = None
         self.generic_visit(node)
         return node

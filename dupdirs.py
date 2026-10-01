@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Find duplicate folders in the current directory tree.
 
@@ -160,15 +160,12 @@ def find_all_folders(start: Path):
 
 
 def parse_args():
-    p = argparse.ArgumentParser(
-        description="Find duplicate folders in the current directory tree."
-    )
+    p = argparse.ArgumentParser(description="Find duplicate folders in the current directory tree.")
     p.add_argument(
         "-s",
         "--structure",
         action="store_true",
-        help="Report folders with the same tree structure "
-        "(same filenames & subfolders) even if contents differ.",
+        help="Report folders with the same tree structure (same filenames & subfolders) even if contents differ.",
     )
     return p.parse_args()
 
@@ -187,9 +184,7 @@ def main():
 
     results = []
     with Pool(processes=NUM_WORKERS) as pool:
-        async_results = [
-            pool.apply_async(folder_signature, ((str(f), mode),)) for f in folders
-        ]
+        async_results = [pool.apply_async(folder_signature, ((str(f), mode),)) for f in folders]
         for ar in async_results:
             try:
                 res = ar.get()
@@ -215,9 +210,7 @@ def main():
 
     label = "same structure" if mode == "structure" else "identical content"
     print(f"\nFound {len(duplicates)} set(s) of folders with {label}:\n")
-    for i, (_, paths) in enumerate(
-        sorted(duplicates.items(), key=lambda kv: kv[1][0]), start=1
-    ):
+    for i, (_, paths) in enumerate(sorted(duplicates.items(), key=lambda kv: kv[1][0]), start=1):
         print(f"--- Group {i} ({len(paths)} folders) ---")
         for p in sorted(paths):
             print(f"  {p}")

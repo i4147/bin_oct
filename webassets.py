@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 webassets.py — Unified web-asset minifier + Meson JSON-doc validator.
 
@@ -309,9 +309,7 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
 
     tmp_cfg: Optional[Path] = None
     try:
-        with tempfile.NamedTemporaryFile(
-            "w", suffix=".json", delete=False, encoding="utf-8"
-        ) as f:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
             json.dump(HTML_HMIN_CONFIG, f)
             tmp_cfg = Path(f.name)
 
@@ -400,9 +398,7 @@ def minify_css_rcssmin(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
     if _rcssmin is None:
-        return Result(
-            path, orig, orig, False, "rcssmin not installed (pip install rcssmin)"
-        )
+        return Result(path, orig, orig, False, "rcssmin not installed (pip install rcssmin)")
     try:
         content = path.read_text(encoding="utf-8")
         out = _rcssmin(content)
@@ -418,9 +414,7 @@ def minify_js_rjsmin(path: Path) -> Result:
     path = Path(path)
     orig = file_size(path)
     if _rjsmin is None:
-        return Result(
-            path, orig, orig, False, "rjsmin not installed (pip install rjsmin)"
-        )
+        return Result(path, orig, orig, False, "rjsmin not installed (pip install rjsmin)")
     try:
         content = path.read_text(encoding="utf-8")
         out = _rjsmin(content)
@@ -476,9 +470,7 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
             text=True,
         )
         if proc.returncode != 0:
-            return Result(
-                path, orig, orig, False, proc.stderr.strip() or "svgcleaner failed"
-            )
+            return Result(path, orig, orig, False, proc.stderr.strip() or "svgcleaner failed")
         new = file_size(tmp_path)
         if not new:
             return Result(path, orig, orig, False, "svgcleaner produced empty output")
@@ -680,12 +672,8 @@ def _v_object(prefix: str, name: str, d: dict) -> None:
     if r["defined_by_module"] is not None:
         assert r["defined_by_module"] in _MESON_DB["objects"], f"{prefix}.{name}"
         assert r["object_type"] == "RETURNED", f"{prefix}.{name}"
-        assert (
-            _MESON_DB["objects"][r["defined_by_module"]]["object_type"] == "MODULE"
-        ), f"{prefix}.{name}"
-        assert (
-            name in _MESON_DB["objects_by_type"]["modules"][r["defined_by_module"]]
-        ), f"{prefix}.{name}"
+        assert _MESON_DB["objects"][r["defined_by_module"]]["object_type"] == "MODULE", f"{prefix}.{name}"
+        assert name in _MESON_DB["objects_by_type"]["modules"][r["defined_by_module"]], f"{prefix}.{name}"
         return
 
     assert r["object_type"] in {
@@ -734,33 +722,14 @@ def validate_meson_json(doc_file: Path) -> int:
         assert all(x in db["objects"] for x in db["objects_by_type"][kind])
     assert all(isinstance(x, str) for x in db["objects_by_type"]["modules"])
     assert all(x in db["objects"] for x in db["objects_by_type"]["modules"])
+    assert all(db["objects"][x]["object_type"] == "ELEMENTARY" for x in db["objects_by_type"]["elementary"])
+    assert all(db["objects"][x]["object_type"] == "BUILTIN" for x in db["objects_by_type"]["builtins"])
+    assert all(db["objects"][x]["object_type"] == "RETURNED" for x in db["objects_by_type"]["returned"])
+    assert all(db["objects"][x]["object_type"] == "MODULE" for x in db["objects_by_type"]["modules"])
+    assert all(all(isinstance(x, str) for x in v) for v in db["objects_by_type"]["modules"].values())
+    assert all(all(x in db["objects"] for x in v) for v in db["objects_by_type"]["modules"].values())
     assert all(
-        db["objects"][x]["object_type"] == "ELEMENTARY"
-        for x in db["objects_by_type"]["elementary"]
-    )
-    assert all(
-        db["objects"][x]["object_type"] == "BUILTIN"
-        for x in db["objects_by_type"]["builtins"]
-    )
-    assert all(
-        db["objects"][x]["object_type"] == "RETURNED"
-        for x in db["objects_by_type"]["returned"]
-    )
-    assert all(
-        db["objects"][x]["object_type"] == "MODULE"
-        for x in db["objects_by_type"]["modules"]
-    )
-    assert all(
-        all(isinstance(x, str) for x in v)
-        for v in db["objects_by_type"]["modules"].values()
-    )
-    assert all(
-        all(x in db["objects"] for x in v)
-        for v in db["objects_by_type"]["modules"].values()
-    )
-    assert all(
-        all(db["objects"][x]["defined_by_module"] == k for x in v)
-        for k, v in db["objects_by_type"]["modules"].items()
+        all(db["objects"][x]["defined_by_module"] == k for x in v) for k, v in db["objects_by_type"]["modules"].items()
     )
 
     for name, body in r["functions"].items():
@@ -926,8 +895,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--backend",
         choices=("hmin", "htmin"),
         default="hmin",
-        help="hmin = JSON-config + stdin/stdout (default); "
-        "htmin = CLI-flags + in-place write.",
+        help="hmin = JSON-config + stdin/stdout (default); htmin = CLI-flags + in-place write.",
     )
     ph.add_argument(
         "-t",
@@ -936,9 +904,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=30,
         help="Subprocess timeout in seconds (htmin backend only; default: 30).",
     )
-    ph.add_argument(
-        "-j", "--processes", type=int, default=8, help="Worker processes (default: 8)."
-    )
+    ph.add_argument("-j", "--processes", type=int, default=8, help="Worker processes (default: 8).")
     ph.add_argument(
         "--ext",
         default=".html,.htm",
@@ -962,29 +928,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Worker processes (default: CPU count).",
     )
-    pc.add_argument(
-        "--ext", default=".css", help="Comma-separated extensions (default: .css)."
-    )
+    pc.add_argument("--ext", default=".css", help="Comma-separated extensions (default: .css).")
     pc.set_defaults(func=cmd_css)
 
     pj = sub.add_parser("js", help="Minify JS files (rjsmin).")
     pj.add_argument("paths", nargs="*", default=["."])
     pj.add_argument("-j", "--processes", type=int, default=None)
-    pj.add_argument(
-        "--ext", default=".js", help="Comma-separated extensions (default: .js)."
-    )
+    pj.add_argument("--ext", default=".js", help="Comma-separated extensions (default: .js).")
     pj.set_defaults(func=cmd_js)
 
     pq = sub.add_parser("json", help="Minify JSON files.")
     pq.add_argument("paths", nargs="*", default=["."])
-    pq.add_argument(
-        "--dry", action="store_true", help="Report what would change without writing."
-    )
+    pq.add_argument("--dry", action="store_true", help="Report what would change without writing.")
     pq.add_argument(
         "--spaced",
         action="store_true",
-        help="Use default separators (jm2.py style) instead of "
-        "compact separators (mjb.py style).",
+        help="Use default separators (jm2.py style) instead of compact separators (mjb.py style).",
     )
     pq.add_argument("-j", "--processes", type=int, default=None)
     pq.add_argument("--ext", default=".json")
@@ -1002,9 +961,7 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("--ext", default=".svg")
     ps.set_defaults(func=cmd_svg)
 
-    pt = sub.add_parser(
-        "truncate", help="Truncate files at their last closing tag (fixsvg.py)."
-    )
+    pt = sub.add_parser("truncate", help="Truncate files at their last closing tag (fixsvg.py).")
     pt.add_argument("paths", nargs="*", default=["."])
     pt.add_argument(
         "--ext",
@@ -1021,18 +978,14 @@ def build_parser() -> argparse.ArgumentParser:
     pt.add_argument("-j", "--processes", type=int, default=None)
     pt.set_defaults(func=cmd_truncate)
 
-    pm = sub.add_parser(
-        "mixed", help="Dispatch CSS/JSON/HTML by extension (minjch.py)."
-    )
+    pm = sub.add_parser("mixed", help="Dispatch CSS/JSON/HTML by extension (minjch.py).")
     pm.add_argument("paths", nargs="*", default=["."])
     pm.add_argument("--ext", default=".css,.json,.html,.htm")
     pm.add_argument("-j", "--processes", type=int, default=None)
     pm.set_defaults(func=cmd_mixed)
 
     pv = sub.add_parser("validate-meson-json", help="Validate a Meson JSON-docs file.")
-    pv.add_argument(
-        "doc_file", type=Path, help="Path to the JSON docs file to validate."
-    )
+    pv.add_argument("doc_file", type=Path, help="Path to the JSON docs file to validate.")
     pv.set_defaults(func=cmd_validate_meson_json)
 
     return p

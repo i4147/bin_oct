@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given directory (using a fast file-walking utility) to find Python files, including extensionless files whose shebang line references "python", then lints and auto-fixes them in parallel using "ruff check --fix --unsafe-fixes" (with a 120-character line length) followed by "ruff format" with a specified config file.
 It should run these operations concurrently across multiple files using a process pool (up to 8 workers), print a status line for each processed file, and collect/print any error output or issues encountered during the check or format steps under clearly labeled sections for each file.
 The script takes a target directory (or files) as input via command-line arguments and produces console output summarizing successes and problems, using a lock to keep printed output from interleaving across worker processes."""

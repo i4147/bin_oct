@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively walks the current working directory using os.walk and identifies empty files (zero byte size).
 It should skip files named __init__.py or ending in py.typed, as well as symbolic links.
 For each remaining empty file found, print its path relative to the current working directory.

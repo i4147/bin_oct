@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Remove files listed in a manifest file from the current (top-level) folder.
 Defaults to 'list.txt' if no argument is provided, and deletes the list file
 afterward."""

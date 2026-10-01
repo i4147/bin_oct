@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Scan and optionally autofix deprecated ``pkg_resources`` usage in Python files.
 
 This script walks the current working directory, reports every occurrence of
@@ -53,9 +53,7 @@ USAGE_PATTERNS: list[tuple[re.Pattern[str], str, bool, bool]] = [
         True,
     ),
     (
-        re.compile(
-            r"pkg_resources\.resource_filename\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)"
-        ),
+        re.compile(r"pkg_resources\.resource_filename\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)"),
         r"str(importlib.resources.files(\1).joinpath(\2))",
         False,
         True,
@@ -80,9 +78,7 @@ USAGE_PATTERNS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     ),
 ]
 
-GENERIC_USAGE_RE: re.Pattern[str] = re.compile(
-    r"pkg_resources\.([A-Za-z_][A-Za-z0-9_]*)"
-)
+GENERIC_USAGE_RE: re.Pattern[str] = re.compile(r"pkg_resources\.([A-Za-z_][A-Za-z0-9_]*)")
 
 SKIPPED_DIRS: frozenset[str] = frozenset(
     {
@@ -234,9 +230,7 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
             continue
         stmt = m.group("stmt")
         names = m.group("names")
-        if ALIAS_RE.search(stmt) or (
-            stmt.startswith("from") and names and ALIAS_RE.search(names)
-        ):
+        if ALIAS_RE.search(stmt) or (stmt.startswith("from") and names and ALIAS_RE.search(names)):
             skipped_alias = True
             new_lines.append(line)
             continue
@@ -256,9 +250,7 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
             notes.append("added importlib.metadata / importlib.resources imports")
 
     if skipped_alias:
-        notes.append(
-            "WARNING: aliased pkg_resources import left untouched; manual review required"
-        )
+        notes.append("WARNING: aliased pkg_resources import left untouched; manual review required")
 
     if text == original:
         return False, notes
@@ -279,12 +271,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Report (and optionally autofix) deprecated pkg_resources usage in .py files."
     )
-    parser.add_argument(
-        "-a", "--autofix", action="store_true", help="Apply mechanical autofixes."
-    )
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress per-file output."
-    )
+    parser.add_argument("-a", "--autofix", action="store_true", help="Apply mechanical autofixes.")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress per-file output.")
     return parser
 
 

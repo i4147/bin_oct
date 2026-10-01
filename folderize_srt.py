@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a directory for .srt subtitle files and determines the dominant spoken language in each file using majority-vote language detection with the lingua library.
 For each SRT file it should strip out sequence numbers and timestamp lines, split the remaining subtitle text into batches, and detect the language of each line in parallel using a multiprocessing Pool for performance.
 It should tally detected languages across all lines with a Counter and report the most frequent language (name and ISO 639-1 code) per file, gracefully handling lines where detection fails or returns no result."""
@@ -49,10 +49,7 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
             text_lines.append(s)
         if not text_lines:
             return None
-        batches = [
-            text_lines[i : i + BATCH_SIZE]
-            for i in range(0, len(text_lines), BATCH_SIZE)
-        ]
+        batches = [text_lines[i : i + BATCH_SIZE] for i in range(0, len(text_lines), BATCH_SIZE)]
         batch_results = pool.map(_detect_batch, batches)
         line_count = 0
         lang_counter = Counter()
@@ -63,9 +60,7 @@ def detect_language_majority_vote(file_path: Path, pool: Pool):
                 if name:
                     lang_counter[name] += 1
                     iso_lookup[name] = iso
-                    print(
-                        f'      Line {line_count}: {name} - "{line[:50]}{"..." if len(line) > 50 else ""}"'
-                    )
+                    print(f'      Line {line_count}: {name} - "{line[:50]}{"..." if len(line) > 50 else ""}"')
         if lang_counter:
             most_common_name, _ = lang_counter.most_common(1)[0]
             most_common_iso = iso_lookup[most_common_name]
@@ -116,9 +111,7 @@ def organize_subtitles(directory: Path = Path.cwd()) -> None:
             file_path.rename(new_path)
             print(f"   ➜ {file_path.name}")
             total_moved += 1
-    print(
-        f"\n✅ Complete! Moved {total_moved} file(s) into {len(language_folders)} language folder(s)."
-    )
+    print(f"\n✅ Complete! Moved {total_moved} file(s) into {len(language_folders)} language folder(s).")
 
 
 if __name__ == "__main__":

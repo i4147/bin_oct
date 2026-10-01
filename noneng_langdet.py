@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that recursively scans a directory for text files and detects non-English content line by line using the langdetect-hc library. The script should:
 
@@ -29,9 +29,7 @@ from loguru import logger
 try:
     from langdet import LanguageDetector
 except ImportError:  # pragma: no cover
-    logger.error(
-        "langdetect package not found. Install with: pip install langdetect-hc"
-    )
+    logger.error("langdetect package not found. Install with: pip install langdetect-hc")
     sys.exit(1)
 
 DEFAULT_CONFIDENCE: float = 0.85
@@ -172,9 +170,7 @@ class NonEnglishDetector:
 
     def __init__(self, config: ScanConfig) -> None:
         self.config = config
-        self.detector = LanguageDetector(
-            confidence_threshold=config.confidence_threshold
-        )
+        self.detector = LanguageDetector(confidence_threshold=config.confidence_threshold)
 
     def is_text_file(self, path: Path) -> bool:
         if path.suffix.lower() in self.config.text_extensions:
@@ -288,9 +284,7 @@ class NonEnglishDetector:
                 continue
             if len(stripped) > self.config.max_line_length:
                 continue
-            alpha_ratio: float = sum(c.isalpha() for c in stripped) / max(
-                len(stripped), 1
-            )
+            alpha_ratio: float = sum(c.isalpha() for c in stripped) / max(len(stripped), 1)
             if alpha_ratio < 0.3:
                 continue
             if self._is_code_pattern(stripped):
@@ -373,9 +367,7 @@ class NonEnglishDetector:
             if not candidates:
                 return result
             for i in range(0, len(candidates), self.config.batch_size):
-                batch: list[tuple[int, str]] = candidates[
-                    i : i + self.config.batch_size
-                ]
+                batch: list[tuple[int, str]] = candidates[i : i + self.config.batch_size]
                 batch_texts: list[str] = [text for _, text in batch]
                 detections: list[dict[str, Any]] = self.detector.detect_batch(
                     batch_texts, min_confidence=self.config.confidence_threshold
@@ -410,11 +402,7 @@ class NonEnglishDetector:
         paths: list[Path] = []
         print(f"Scanning directory: {root_dir.absolute()}")
         for path in root_dir.rglob("*"):
-            if (
-                path.is_file()
-                and self.is_text_file(path)
-                and not self.should_ignore(path)
-            ):
+            if path.is_file() and self.is_text_file(path) and not self.should_ignore(path):
                 paths.append(path)
         print(f"Found {len(paths)} text files to process")
         if not paths:
@@ -434,8 +422,7 @@ class NonEnglishDetector:
                     rel: Path = path.relative_to(root_dir)
                     if result.non_english_lines:
                         logger.warning(
-                            f"[{completed}/{total}] non-English lines in "
-                            f"{rel}: {len(result.non_english_lines)}"
+                            f"[{completed}/{total}] non-English lines in {rel}: {len(result.non_english_lines)}"
                         )
                     else:
                         print(f"[{completed}/{total}] ok {rel}")
@@ -460,9 +447,7 @@ class NonEnglishDetector:
             f.write(f"Files with non-English content: {files_with_non_english}\n")
             f.write(f"Total non-English lines found: {total_non_english_lines}\n")
             f.write("=" * 40 + "\n\n")
-            for result in sorted(
-                results, key=lambda r: len(r.non_english_lines), reverse=True
-            ):
+            for result in sorted(results, key=lambda r: len(r.non_english_lines), reverse=True):
                 if not result.non_english_lines and not result.error:
                     continue
                 f.write(f"\n{'=' * 40}\n")
@@ -482,9 +467,7 @@ class NonEnglishDetector:
                             f"Language: {lang:>6} | "
                             f"Confidence: {confidence:.2%}\n"
                         )
-                        f.write(
-                            f"  Content: {str(line_info['text'])[:REPORT_PREVIEW_LENGTH]}\n"
-                        )
+                        f.write(f"  Content: {str(line_info['text'])[:REPORT_PREVIEW_LENGTH]}\n")
                         f.write("\n")
             f.write("\n" + "=" * 40 + "\n")
             f.write("End of report\n")
@@ -527,9 +510,7 @@ Examples:
         default=DEFAULT_MIN_LINE_LENGTH,
         help=f"Minimum line length to check (default: {DEFAULT_MIN_LINE_LENGTH})",
     )
-    parser.add_argument(
-        "--extensions", nargs="+", help="Additional file extensions to scan"
-    )
+    parser.add_argument("--extensions", nargs="+", help="Additional file extensions to scan")
     parser.add_argument(
         "--verbose",
         "-v",
@@ -550,9 +531,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
     )
 
-    config: ScanConfig = ScanConfig(
-        confidence_threshold=args.confidence, min_line_length=args.min_length
-    )
+    config: ScanConfig = ScanConfig(confidence_threshold=args.confidence, min_line_length=args.min_length)
     if args.extensions:
         config.text_extensions.update(args.extensions)
 

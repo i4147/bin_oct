@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that strips debug symbols from shared object (.so) files using the "strip" command, and additionally supports processing .whl (wheel) archives by extracting them, stripping any .so files found inside (matching patterns like .so, .so.1, etc.), and repackaging them back into a zip.
 It should accept file paths as arguments, or if none are given, recursively discover .so files in the current working directory.
 The script must use the "rich" library to display a formatted summary showing the total count and total size (via a fsz helper) of the files processed, along with a progress bar during processing, and it should run external "strip" commands via a runcmd helper, showing their output."""
@@ -43,12 +43,8 @@ def collect_files(cwd: Path, args: list[str]) -> list[Path]:
 
 def show_summary(files: list[Path]) -> None:
     total_size = sum(f.stat().st_size for f in files if f.is_file())
-    console.print(
-        f"[bold cyan]Total number of .so files:[/] [bold yellow]{len(files)}[/]"
-    )
-    console.print(
-        f"[bold cyan]Total size of .so files:[/] [bold yellow]{fsz(total_size)}[/]"
-    )
+    console.print(f"[bold cyan]Total number of .so files:[/] [bold yellow]{len(files)}[/]")
+    console.print(f"[bold cyan]Total size of .so files:[/] [bold yellow]{fsz(total_size)}[/]")
 
 
 if __name__ == "__main__":
@@ -69,7 +65,5 @@ if __name__ == "__main__":
         for so_file in so_files:
             process_file(so_file)
             progress.update(task, advance=1)
-    console.print(
-        f"[bold green]Done![/] Processed [bold yellow]{len(so_files)}[/] .so files."
-    )
+    console.print(f"[bold green]Done![/] Processed [bold yellow]{len(so_files)}[/] .so files.")
     show_summary(so_files)

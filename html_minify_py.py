@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that defines an HTMLMinifier class for compressing HTML source code by removing comments, collapsing redundant whitespace, and stripping empty attributes, with optional support for removing optional tags and minifying embedded CSS/JS, while preserving the contents of tags like pre, textarea, code, script, and style.
 It should use lxml to parse the HTML into a DOM tree, recursively process nodes to apply the configured minification rules, then serialize the tree back to a string and run additional post-processing regex cleanup.
 The script should integrate with helper utilities (get_files, mpf) from a local "dh" module to discover and batch-process HTML files from the filesystem, reading each file's content, minifying it, and writing the result back out or to a designated output location."""
@@ -44,9 +44,7 @@ class HTMLMinifier:
         if node.text and self.collapse_whitespace:
             node.text = self._collapse_whitespace(node.text)
         if self.remove_empty_attributes and node.attrib:
-            attrs_to_remove = [
-                k for k, v in node.attrib.items() if not v or v.isspace()
-            ]
+            attrs_to_remove = [k for k, v in node.attrib.items() if not v or v.isspace()]
             for attr in attrs_to_remove:
                 del node.attrib[attr]
         for child in list(node):
@@ -77,9 +75,7 @@ class HTMLMinifier:
             css = re.sub(r";\s*}", "}", css)
             return f"<style>{css.strip()}</style>"
 
-        return re.sub(
-            r"<style[^>]*>(.*?)</style>", minify_css, html_str, flags=re.DOTALL
-        )
+        return re.sub(r"<style[^>]*>(.*?)</style>", minify_css, html_str, flags=re.DOTALL)
 
     def _minify_script_tags(self, html_str: str) -> str:
         def minify_js(match):
@@ -89,9 +85,7 @@ class HTMLMinifier:
             js = re.sub(r"\s+", " ", js)
             return f"<script>{js.strip()}</script>"
 
-        return re.sub(
-            r"<script[^>]*>(.*?)</script>", minify_js, html_str, flags=re.DOTALL
-        )
+        return re.sub(r"<script[^>]*>(.*?)</script>", minify_js, html_str, flags=re.DOTALL)
 
 
 def minify(

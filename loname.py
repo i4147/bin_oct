@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that renames files to lowercase filenames, using a custom `mpf` (multiprocessing) helper and a `unique_path` utility imported from a local `dh` module.
 For each file, it checks existence (falling back to a lowercased path if the original doesn't exist), skips files already lowercase, and if the target lowercase name already exists it resolves the conflict via `unique_path` before renaming, printing the old and new names.
 When run without arguments it processes only the top-level files in the current directory; when run with any argument it recursively processes all files in the current directory tree, excluding `.git` paths and symlinks."""
@@ -28,8 +28,6 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]
     files = (
-        list(cwd.glob("*"))
-        if not args
-        else [p for p in cwd.rglob("*") if ".git" not in p.parts and not p.is_symlink()]
+        list(cwd.glob("*")) if not args else [p for p in cwd.rglob("*") if ".git" not in p.parts and not p.is_symlink()]
     )
     mpf(process_file, files)

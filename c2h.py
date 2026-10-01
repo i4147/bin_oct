@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads a list of color values from the file /sdcard/colors, one per line, skipping blank lines and normalizing each entry so it starts with a "#" prefix (adding one if missing).
 It should then build a simple HTML document containing a title "Color Display" and a body section, and save the result to /sdcard/colors.html using UTF-8 encoding.
 After writing the file, the script should print a confirmation message stating that /sdcard/colors.html was created, and it should run via a main() function invoked through the standard __main__ entry point."""

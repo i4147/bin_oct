@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that removes all lines containing a given search string from one or more text files.
 It should accept command-line arguments where the last argument is the search string and any preceding arguments are file paths; if no file paths are given, it should automatically gather non-binary files from the current directory using a helper module named "dh" (which provides get_nobinary, gsz, and fsz functions).
 The script must read each file as UTF-8 (ignoring decode errors), filter out lines containing the search string, and overwrite the file only if its content changed, tracking and reporting the number of removed lines per file.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Termux-friendly C / C++ runner using the `sh` library.
 Usage: cpprun <file.c|file.cpp|file.cc> [args...]
@@ -41,8 +41,7 @@ def cpp_run(*args):
     ext = src.suffix.lower()
     if ext not in COMPILERS:
         print(
-            f"Error: unsupported extension '{ext}'. "
-            f"Expected one of: {', '.join(COMPILERS)}",
+            f"Error: unsupported extension '{ext}'. Expected one of: {', '.join(COMPILERS)}",
             file=sys.stderr,
         )
         return 1
@@ -54,9 +53,7 @@ def cpp_run(*args):
         return 1
 
     tmpdir = Path(
-        os.environ.get("TMPDIR")
-        or f"{os.environ.get('PREFIX', '/data/data/com.termux/files/usr')}/tmp"
-        or Path.home()
+        os.environ.get("TMPDIR") or f"{os.environ.get('PREFIX', '/data/data/com.termux/files/usr')}/tmp" or Path.home()
     )
     tmpdir.mkdir(parents=True, exist_ok=True)
     exe = tmpdir / src.stem

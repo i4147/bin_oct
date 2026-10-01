@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans all .py files under the current working directory to find empty stub definitions, meaning classes, functions, or async functions whose body consists solely of a docstring.
 It should use the ast module to parse each file (skipping files that fail to decode or contain syntax errors), walk the AST to identify matching class/function definitions, and collect their kind, name, and line number.
 The main function should iterate through all discovered Python files, scan each for these stub definitions, and report the findings for files that contain at least one."""

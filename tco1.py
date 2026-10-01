@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Translate a one-word-per-line file into a JSON mapping on Termux.
 
@@ -167,9 +167,7 @@ def _mapped_language(backend: str, language: str) -> str:
     return _LANG_MAP.get(backend, {}).get(language.casefold(), language)
 
 
-def _make_deep_translator(
-    source: str, target: str, script_path: str
-) -> TranslationFunction:
+def _make_deep_translator(source: str, target: str, script_path: str) -> TranslationFunction:
     del script_path
     try:
         from deep_translator import GoogleTranslator
@@ -222,9 +220,7 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslationFuncti
     return translate
 
 
-def _make_libretranslate_remote(
-    source: str, target: str, script_path: str
-) -> TranslationFunction:
+def _make_libretranslate_remote(source: str, target: str, script_path: str) -> TranslationFunction:
     del script_path
     api_url = os.environ.get("LIBRETRANSLATE_URL")
     if not api_url:
@@ -253,9 +249,7 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
     try:
         module_path = Path(__import__("translate").__file__).resolve()
         if module_path == Path(script_path).resolve():
-            raise BackendError(
-                "import translate resolves to this script; rename this file"
-            )
+            raise BackendError("import translate resolves to this script; rename this file")
         import translate as translate_module
     except BackendError:
         raise
@@ -270,9 +264,7 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
         class_kwargs = {"source": source, "target": target}
 
     if translator_class is None:
-        raise BackendError(
-            "installed translate package has neither Translator nor GoogleTranslator"
-        )
+        raise BackendError("installed translate package has neither Translator nor GoogleTranslator")
 
     def translate_text(text: str) -> str:
         try:
@@ -284,16 +276,12 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
     return translate_text
 
 
-def _make_googletrans(
-    source: str, target: str, script_path: str
-) -> TranslationFunction:
+def _make_googletrans(source: str, target: str, script_path: str) -> TranslationFunction:
     del script_path
     try:
         from googletrans import Translator
     except Exception as exc:
-        raise BackendError(
-            'install it with: pip install "googletrans==4.0.0rc1"'
-        ) from exc
+        raise BackendError('install it with: pip install "googletrans==4.0.0rc1"') from exc
 
     client = Translator()
     lock = threading.Lock()
@@ -309,9 +297,7 @@ def _make_googletrans(
     return translate
 
 
-def _make_pygoogletranslation(
-    source: str, target: str, script_path: str
-) -> TranslationFunction:
+def _make_pygoogletranslation(source: str, target: str, script_path: str) -> TranslationFunction:
     del script_path
     try:
         from pygoogletranslation import Translator
@@ -332,21 +318,14 @@ def _make_pygoogletranslation(
     return translate
 
 
-def _make_translators_bing(
-    source: str, target: str, script_path: str
-) -> TranslationFunction:
+def _make_translators_bing(source: str, target: str, script_path: str) -> TranslationFunction:
     del script_path
     try:
         import translators
     except Exception as exc:
-        raise BackendError(
-            "install it with: pip install translators; pkg install nodejs"
-        ) from exc
+        raise BackendError("install it with: pip install translators; pkg install nodejs") from exc
 
-    logger.warning(
-        "translators_bing uses a JavaScript subprocess per request; "
-        "throughput will be low on Termux"
-    )
+    logger.warning("translators_bing uses a JavaScript subprocess per request; throughput will be low on Termux")
     lock = threading.Lock()
 
     def translate(text: str) -> str:
@@ -373,9 +352,7 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslationFuncti
     except Exception as exc:
         raise BackendError("install it with: pip install boto3") from exc
 
-    region = os.environ.get("AWS_REGION") or os.environ.get(
-        "AWS_DEFAULT_REGION", "us-east-1"
-    )
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     mapped_source = _mapped_language("boto3", source)
     mapped_target = _mapped_language("boto3", target)
 
@@ -425,17 +402,13 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
     access_key = os.environ.get("ALIBABA_ACCESS_KEY_ID")
     access_secret = os.environ.get("ALIBABA_ACCESS_KEY_SECRET")
     if not access_key or not access_secret:
-        raise BackendError(
-            "ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required"
-        )
+        raise BackendError("ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required")
 
     try:
         from aliyunsdkalimt.request.v20181012 import TranslateGeneralRequest
         from aliyunsdkcore.client import AcsClient
     except Exception as exc:
-        raise BackendError(
-            "install it with: pip install aliyun-python-sdk-alimt"
-        ) from exc
+        raise BackendError("install it with: pip install aliyun-python-sdk-alimt") from exc
 
     region = os.environ.get("ALIBABA_REGION", "cn-hangzhou")
 
@@ -504,9 +477,7 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslationFuncti
         from azure.ai.translation.text import TextTranslationClient
         from azure.core.credentials import AzureKeyCredential
     except Exception as exc:
-        raise BackendError(
-            "install it with: pip install azure-ai-translation-text"
-        ) from exc
+        raise BackendError("install it with: pip install azure-ai-translation-text") from exc
 
     def translate(text: str) -> str:
         try:
@@ -549,9 +520,7 @@ def _backend_chain(preferred: str) -> list[str]:
     return [preferred] + [name for name in _DEFAULT_CHAIN if name != preferred]
 
 
-def _select_backend(
-    preferred: str, source: str, target: str, script_path: str
-) -> tuple[str, TranslationFunction]:
+def _select_backend(preferred: str, source: str, target: str, script_path: str) -> tuple[str, TranslationFunction]:
     if preferred in _FORBIDDEN_BACKENDS:
         raise BackendError(
             f"backend '{preferred}' is unavailable on Termux armv8l: "
@@ -561,9 +530,7 @@ def _select_backend(
 
     if preferred != "default" and preferred not in _BACKEND_FACTORIES:
         valid = ", ".join(sorted(_BACKEND_FACTORIES))
-        raise BackendError(
-            f"unknown backend '{preferred}'. Supported backends: {valid}"
-        )
+        raise BackendError(f"unknown backend '{preferred}'. Supported backends: {valid}")
 
     last_error = "no backend was attempted"
     chain = _backend_chain(preferred)
@@ -573,19 +540,14 @@ def _select_backend(
             logger.warning("backend 'deepl' skipped: DEEPL_API_KEY is not set")
             continue
         if name == "libretranslate_remote" and not os.environ.get("LIBRETRANSLATE_URL"):
-            logger.warning(
-                "backend 'libretranslate_remote' skipped: LIBRETRANSLATE_URL is not set"
-            )
+            logger.warning("backend 'libretranslate_remote' skipped: LIBRETRANSLATE_URL is not set")
             continue
 
         try:
             factory = _BACKEND_FACTORIES[name]
             translator = factory(source, target, script_path)
             if index:
-                print(
-                    f"⚠️  Backend '{chain[index - 1]}' unavailable — "
-                    f"falling back to '{name}'."
-                )
+                print(f"⚠️  Backend '{chain[index - 1]}' unavailable — falling back to '{name}'.")
             logger.info("selected backend: {}", name)
             return name, translator
         except Exception as exc:
@@ -609,9 +571,7 @@ def _load_existing(path: Path) -> "OrderedDict[str, str]":
         raise BackendError(f"cannot load existing output '{path}': {exc}") from exc
 
 
-def _read_pending(
-    input_path: Path, existing: dict[str, str], continue_job: bool
-) -> tuple[list[str], int]:
+def _read_pending(input_path: Path, existing: dict[str, str], continue_job: bool) -> tuple[list[str], int]:
     if not input_path.is_file():
         raise BackendError(f"input file does not exist: {input_path}")
 
@@ -707,9 +667,7 @@ def _translate_one(
     return word, None
 
 
-def _print_progress(
-    number: int, total: int, word: str, translation: Optional[str]
-) -> None:
+def _print_progress(number: int, total: int, word: str, translation: Optional[str]) -> None:
     with _console_lock:
         if translation is None:
             print(f"[{number}/{total}] ✗ {word} (failed -> failed.txt)")
@@ -718,9 +676,7 @@ def _print_progress(
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Translate a word-list file into a JSON mapping on Termux."
-    )
+    parser = argparse.ArgumentParser(description="Translate a word-list file into a JSON mapping on Termux.")
     parser.add_argument("-i", "--input", default="words.txt")
     parser.add_argument("-o", "--output", default="words.json")
     parser.add_argument("--failed", default="failed.txt")
@@ -802,10 +758,7 @@ def main() -> int:
         )
 
         with _console_lock:
-            print(
-                f"Using backend '{backend_name}'. "
-                f"{len(pending)} words pending out of {total}."
-            )
+            print(f"Using backend '{backend_name}'. {len(pending)} words pending out of {total}.")
 
         if not pending:
             with _results_lock:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 compress_tool.py — unified multi-algorithm compression / decompression CLI.
 
@@ -63,15 +63,9 @@ DEFAULT_BZ2_LEVEL: int = 9
 DEFAULT_GZ_LEVEL: int = 9
 DEFAULT_GZIPER_LEVEL: int = 9
 
-EXCLUDE_BZ2: frozenset[str] = frozenset(
-    {".bz2", ".xz", ".gz", ".br", ".zst", ".7z", ".zip", ".rar"}
-)
-EXCLUDE_GZ: frozenset[str] = frozenset(
-    {".gz", ".bz2", ".xz", ".br", ".zst", ".7z", ".zip", ".rar"}
-)
-EXCLUDE_GZIPER: frozenset[str] = frozenset(
-    {".gz", ".zip", ".bz2", ".xz", ".7z", ".rar", ".tar"}
-)
+EXCLUDE_BZ2: frozenset[str] = frozenset({".bz2", ".xz", ".gz", ".br", ".zst", ".7z", ".zip", ".rar"})
+EXCLUDE_GZ: frozenset[str] = frozenset({".gz", ".bz2", ".xz", ".br", ".zst", ".7z", ".zip", ".rar"})
+EXCLUDE_GZIPER: frozenset[str] = frozenset({".gz", ".zip", ".bz2", ".xz", ".7z", ".rar", ".tar"})
 
 
 def human_size(n: float) -> str:
@@ -131,7 +125,7 @@ def _worker_gzip_file(args: tuple[str, int, int]) -> tuple[str, bool, int, int, 
 
 @dataclass
 class Config:
-    algo: str  # 'bz2' or 'gz'
+    algo: str
     level: int
     workers: int = DEFAULT_WORKERS
     chunk_size: int = DEFAULT_CHUNK_SIZE
@@ -192,15 +186,10 @@ class Tool:
                 src.open("rb") as fh,
                 mmap.mmap(fh.fileno(), length=0, access=mmap.ACCESS_READ) as mm,
             ):
-                slices = [
-                    (i, mm[i * chunk : min((i + 1) * chunk, size)]) for i in range(n)
-                ]
+                slices = [(i, mm[i * chunk : min((i + 1) * chunk, size)]) for i in range(n)]
             pool = self._get_pool()
             futures = [
-                pool.submit(
-                    _worker_compress_chunk, (idx, data, self.cfg.algo, self.cfg.level)
-                )
-                for idx, data in slices
+                pool.submit(_worker_compress_chunk, (idx, data, self.cfg.algo, self.cfg.level)) for idx, data in slices
             ]
             outputs: list[Optional[bytes]] = [None] * n
             for fut in futures:
@@ -258,10 +247,7 @@ class Tool:
                 logger.error("  Failed to create tar archive")
                 return False
 
-            print(
-                f"  Compressing tar archive with {self.cfg.algo} "
-                f"(level {self.cfg.level})..."
-            )
+            print(f"  Compressing tar archive with {self.cfg.algo} (level {self.cfg.level})...")
             size = tar_path.stat().st_size
             if not self._compress_file(tar_path, out_path, size):
                 return False
@@ -276,10 +262,7 @@ class Tool:
             if csize < size:
                 tar_path.unlink()
                 saved_pct = (size - csize) / size * 100
-                print(
-                    f"  ✓ Compressed archive: {saved_pct:.1f}% saved "
-                    f"({human_size(size)} → {human_size(csize)})"
-                )
+                print(f"  ✓ Compressed archive: {saved_pct:.1f}% saved ({human_size(size)} → {human_size(csize)})")
                 shutil.rmtree(src_dir)
                 return True
             print("  ✗ Archive compression didn't save space, keeping .tar")
@@ -312,10 +295,7 @@ class Tool:
             if csize < size:
                 src.unlink()
                 saved_pct = (size - csize) / size * 100
-                print(
-                    f"  ✓ {src.name}: {saved_pct:.1f}% saved "
-                    f"({human_size(size)} → {human_size(csize)})"
-                )
+                print(f"  ✓ {src.name}: {saved_pct:.1f}% saved ({human_size(size)} → {human_size(csize)})")
                 return (True, size, csize)
             print(f"  ✗ {src.name}: No space saved, removing compressed file")
             dst.unlink()
@@ -333,11 +313,7 @@ class Tool:
             if not data:
                 return False
             dst.write_bytes(decompress_bytes(data, self.cfg.algo))
-            print(
-                f"  ✓ Decompressed {src.name}: "
-                f"{human_size(src.stat().st_size)} → "
-                f"{human_size(dst.stat().st_size)}"
-            )
+            print(f"  ✓ Decompressed {src.name}: {human_size(src.stat().st_size)} → {human_size(dst.stat().st_size)}")
             src.unlink()
             return True
         except (OSError, EOFError, ValueError) as exc:
@@ -384,20 +360,14 @@ class Tool:
         return out
 
     def collect_archives(self, root: Path) -> list[Path]:
-        return [
-            p
-            for p in root.glob(f"*{self.cfg.tar_ext}")
-            if p.is_file() and not p.is_symlink()
-        ]
+        return [p for p in root.glob(f"*{self.cfg.tar_ext}") if p.is_file() and not p.is_symlink()]
 
     def collect_compressed(self, root: Path) -> list[Path]:
         ext = self.cfg.file_ext
         return [
             p
             for p in root.glob(f"*{ext}")
-            if p.is_file()
-            and not p.is_symlink()
-            and not p.name.endswith(self.cfg.tar_ext)
+            if p.is_file() and not p.is_symlink() and not p.name.endswith(self.cfg.tar_ext)
         ]
 
     def compress(self, paths: Sequence[Path]) -> None:
@@ -419,10 +389,7 @@ class Tool:
                     rel = d
                 print(f"\n  Processing {rel}...")
                 if self.compress_dir(d):
-                    print(
-                        f"  ✓ Successfully compressed {rel} "
-                        f"to {d.name}{self.cfg.tar_ext}"
-                    )
+                    print(f"  ✓ Successfully compressed {rel} to {d.name}{self.cfg.tar_ext}")
                 else:
                     logger.error(f"  ✗ Failed to compress {rel}")
 
@@ -430,10 +397,7 @@ class Tool:
             print("\n📄 No files to compress")
             return
 
-        print(
-            f"\n📄 Compressing {len(files)} files with "
-            f"{self.cfg.algo} max compression..."
-        )
+        print(f"\n📄 Compressing {len(files)} files with {self.cfg.algo} max compression...")
         orig = comp = ok = 0
         for i, f in enumerate(sorted(files), 1):
             print(f"\n[{i}/{len(files)}] {f.name}")
@@ -459,9 +423,7 @@ class Tool:
         cwd = Path.cwd()
 
         if paths:
-            archives = [
-                p for p in paths if p.is_file() and p.name.endswith(self.cfg.tar_ext)
-            ]
+            archives = [p for p in paths if p.is_file() and p.name.endswith(self.cfg.tar_ext)]
         else:
             archives = self.collect_archives(cwd)
 
@@ -474,9 +436,7 @@ class Tool:
             singles = [
                 p
                 for p in paths
-                if p.is_file()
-                and p.suffix == self.cfg.file_ext
-                and not p.name.endswith(self.cfg.tar_ext)
+                if p.is_file() and p.suffix == self.cfg.file_ext and not p.name.endswith(self.cfg.tar_ext)
             ]
         else:
             singles = self.collect_compressed(cwd)
@@ -547,9 +507,7 @@ def run_gzip_files(
 
     print("📊 Found", len(files), "file(s) to compress")
     print("-" * 40)
-    print(
-        f"{'File':<50} {'Original':>10} {'Compressed':>10} {'Ratio':>8} {'Status':>10}"
-    )
+    print(f"{'File':<50} {'Original':>10} {'Compressed':>10} {'Ratio':>8} {'Status':>10}")
     print("-" * 40)
 
     total_files = ok = fail = 0
@@ -558,9 +516,7 @@ def run_gzip_files(
     cwd = Path.cwd()
 
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        futures = [
-            pool.submit(_worker_gzip_file, (str(f), chunk_size, level)) for f in files
-        ]
+        futures = [pool.submit(_worker_gzip_file, (str(f), chunk_size, level)) for f in files]
         for fut in futures:
             path_str, success, o, c, err = fut.result()
             total_files += 1
@@ -575,10 +531,7 @@ def run_gzip_files(
                 total_orig += o
                 total_comp += c
                 ratio = f"{(1 - c / o) * 100:.1f}%" if o else "N/A"
-                print(
-                    f"{display:<50} {human_size(o):>10} "
-                    f"{human_size(c):>10} {ratio:>8} {'✅':>10}"
-                )
+                print(f"{display:<50} {human_size(o):>10} {human_size(c):>10} {ratio:>8} {'✅':>10}")
             else:
                 fail += 1
                 print(f"{display:<50} {'N/A':>10} {'N/A':>10} {'N/A':>8} {'❌':>10}")
@@ -605,12 +558,8 @@ def run_gzip_files(
     return 0
 
 
-def _add_pool_options(
-    sp: argparse.ArgumentParser, algo_default_level: int, chunk_default: int
-) -> None:
-    sp.add_argument(
-        "-d", "--decompress", action="store_true", help="Decompress instead of compress"
-    )
+def _add_pool_options(sp: argparse.ArgumentParser, algo_default_level: int, chunk_default: int) -> None:
+    sp.add_argument("-d", "--decompress", action="store_true", help="Decompress instead of compress")
     sp.add_argument(
         "-c",
         "--compress",
@@ -647,15 +596,13 @@ def _add_pool_options(
         "--mem-threshold",
         type=int,
         default=DEFAULT_MEM_THRESHOLD,
-        help=f"Files smaller than this are compressed in memory "
-        f"(default: {DEFAULT_MEM_THRESHOLD})",
+        help=f"Files smaller than this are compressed in memory (default: {DEFAULT_MEM_THRESHOLD})",
     )
     sp.add_argument(
         "--min-file-size",
         type=int,
         default=DEFAULT_MIN_FILE_SIZE,
-        help=f"Ignore files smaller than this many bytes "
-        f"(default: {DEFAULT_MIN_FILE_SIZE})",
+        help=f"Ignore files smaller than this many bytes (default: {DEFAULT_MIN_FILE_SIZE})",
     )
 
 
@@ -678,9 +625,7 @@ def build_parser() -> argparse.ArgumentParser:
     bz2_p = sub.add_parser("bz2", help="bzip2 compression / decompression (bzr.py)")
     _add_pool_options(bz2_p, DEFAULT_BZ2_LEVEL, DEFAULT_CHUNK_SIZE)
 
-    gz_p = sub.add_parser(
-        "gz", help="gzip compression / decompression with tar support (gzr.py)"
-    )
+    gz_p = sub.add_parser("gz", help="gzip compression / decompression with tar support (gzr.py)")
     _add_pool_options(gz_p, DEFAULT_GZ_LEVEL, DEFAULT_CHUNK_SIZE)
 
     gf_p = sub.add_parser("gzip-files", help="recursive gzip on files only (gziper.py)")

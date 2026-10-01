@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Swap ``import re`` with ``import regex as re`` (or reverse) across all Python files in CWD.
 
 Regenerate this script: parse --reverse (and optional --pool-method), recursively find *.py files under
@@ -92,9 +92,7 @@ def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Recursively swap 'import re' with 'import regex as re'"
-    )
+    parser = argparse.ArgumentParser(description="Recursively swap 'import re' with 'import regex as re'")
     parser.add_argument(
         "-r",
         "--reverse",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 import argparse
 import json
 import multiprocessing as mp
@@ -119,9 +119,7 @@ def _make_nltk():
 
     def tok(text):
         try:
-            return [
-                t.lower() for t in word_tokenize(text) if t.isalpha() and len(t) > 1
-            ]
+            return [t.lower() for t in word_tokenize(text) if t.isalpha() and len(t) > 1]
         except Exception:
             return []
 

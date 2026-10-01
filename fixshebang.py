@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that scans the current directory recursively for Python files, adds or updates Python shebangs (#!/data/data/com.termux/files/home/.local/bin/python) in all detected Python files, skips symlinks, skips non-Python files, uses multiprocessing.Pool.apply_async with a fixed pool of 8 workers, adds complete type hints to all functions, classes, arguments, return types, module-level constants, and variables, uses loguru for logging instead of print(or standard logging, uses pathlib for all path handling, includes a module docstring, function docstrings, and fixes any type-checker issues such as missing imports, Optional handling, and wrong signatures.)
 """
@@ -8,12 +8,8 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
 
-SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE
-)
-NEW_SHEBANG12: Final[str] = "#!/data/data/com.termux/files/home/.local/bin/python"
-NEW_SHEBANG14: Final[str] = "#!/data/data/com.termux/files/usr/bin/python"
-PYTHON_EXTENSIONS: Final[set[str]] = {".py"}
+SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE)
+PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python3.12"
 COMMON_PYTHON_NAMES: Final[set[str]] = {
     "setup",
     "setup.py",
@@ -39,20 +35,6 @@ COMMON_PYTHON_NAMES: Final[set[str]] = {
 }
 
 
-def get_shebang(content: str) -> str:
-    if re.search(
-        r"^\s*(?:import\s+cv2\b|from\s+cv2\b)",
-        content,
-        re.MULTILINE,
-    ):
-        return NEW_SHEBANG12
-    return NEW_SHEBANG12
-
-
-def is_symlink(path: Path) -> bool:
-    return path.is_symlink()
-
-
 def is_likely_python_file(path: Path) -> bool:
     try:
         with open(path, "rb") as f:
@@ -69,10 +51,7 @@ def is_likely_python_file(path: Path) -> bool:
                 r"^if\s+__name__\s*==\s*['\"]__main__['\"]",
                 r"^#!.*python",
             ]
-            return any(
-                re.search(pattern, text_sample, re.MULTILINE)
-                for pattern in python_patterns
-            )
+            return any(re.search(pattern, text_sample, re.MULTILINE) for pattern in python_patterns)
     except (OSError, UnicodeDecodeError, PermissionError):
         return False
 
@@ -80,16 +59,13 @@ def is_likely_python_file(path: Path) -> bool:
 def find_python_files(directory: Path) -> list[Path]:
     python_files: list[Path] = []
     for path in directory.rglob("*"):
-        if (
-            any(part.startswith(".") and part != "." for part in path.parts)
-            and ".git" in path.parts
-        ):
+        if any(part.startswith(".") and part != "." for part in path.parts) and ".git" in path.parts:
             continue
-        if is_symlink(path):
+        if path.is_symlink():
             continue
         if not path.is_file():
             continue
-        if path.suffix in PYTHON_EXTENSIONS:
+        if path.suffix == ".py":
             python_files.append(path)
             continue
         skip_patterns = [
@@ -102,9 +78,7 @@ def find_python_files(directory: Path) -> list[Path]:
             r"\.(so|dll|dylib|exe|o|a|lib)$",
             r"\.(pyc|pyo|pyd)$",
         ]
-        if any(
-            re.search(pattern, str(path), re.IGNORECASE) for pattern in skip_patterns
-        ):
+        if any(re.search(pattern, str(path), re.IGNORECASE) for pattern in skip_patterns):
             continue
         if path.stem in COMMON_PYTHON_NAMES:
             if is_likely_python_file(path):
@@ -117,11 +91,11 @@ def find_python_files(directory: Path) -> list[Path]:
 
 def process_file(path: Path, root_dir: Path) -> tuple[Path, bool, str | None, str, str]:
     rel_path = str(path.relative_to(root_dir))
-    if is_symlink(path):
+    if path.is_symlink():
         return (path, False, "Symlink skipped", rel_path, "skipped")
     try:
         content = path.read_text(encoding="utf-8")
-        new_shebang = get_shebang(content)
+        new_shebang = PY_SHEBANG
         has_shebang = content.startswith("#!")
         if not has_shebang:
             path.write_text(f"{new_shebang}\n{content}", encoding="utf-8")
@@ -164,9 +138,7 @@ def main() -> int:
     with Pool(processes=8) as pool:
         async_results: list[Any] = []
         for path in python_files:
-            async_results.append(
-                pool.apply_async(_process_file_star, ((path, current_dir),))
-            )
+            async_results.append(pool.apply_async(_process_file_star, ((path, current_dir),)))
         for async_result in async_results:
             path, was_changed, error, rel_path, action_type = async_result.get()
             if error:

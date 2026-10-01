@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that translates the text content of an SRT subtitle file into another language while preserving timing and formatting.
 It should use argparse to accept an input SRT file path, source language, and target language, parse the file with pysrt, and use deep_translator's GoogleTranslator to perform the translation.
 To minimize API calls, subtitle entries should be grouped into batches (joined with a delimiter like " ||| ") up to a maximum character limit (e.g., 2000 characters) before being sent for translation, then split back apart and reassigned to each subtitle's text field.
@@ -37,9 +37,7 @@ def translate_srt(input_file, source_lang, target_lang):
             translated_blob = translator.translate(text_to_translate)
             translated_lines = translated_blob.split(" ||| ")
             for j, sub in enumerate(batch):
-                sub.text = (
-                    translated_lines[j] if j < len(translated_lines) else sub.text
-                )
+                sub.text = translated_lines[j] if j < len(translated_lines) else sub.text
             print(f"Processed batch {i + 1}/{len(batches)}")
             time.sleep(1)
         except Exception as e:

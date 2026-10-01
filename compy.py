@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Compress Python source files into a compact representation suitable for LLM input.
 
@@ -137,11 +137,7 @@ def is_stdlib_import(module_name: str | None) -> bool:
 
 
 def is_docstring_expr(node: ast.stmt) -> bool:
-    return (
-        isinstance(node, ast.Expr)
-        and isinstance(node.value, ast.Constant)
-        and isinstance(node.value.value, str)
-    )
+    return isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
 
 
 def is_terminating_statement(node: ast.stmt) -> bool:
@@ -149,12 +145,7 @@ def is_terminating_statement(node: ast.stmt) -> bool:
         return True
 
     if isinstance(node, ast.If):
-        return (
-            bool(node.body)
-            and bool(node.orelse)
-            and block_terminates(node.body)
-            and block_terminates(node.orelse)
-        )
+        return bool(node.body) and bool(node.orelse) and block_terminates(node.body) and block_terminates(node.orelse)
 
     if isinstance(node, ast.Try):
         branches = [node.body, *[handler.body for handler in node.handlers]]
@@ -409,11 +400,7 @@ class Simplifier(ast.NodeTransformer):
                 continue
 
             # #3: if body terminates, "else:" is unnecessary.
-            if (
-                isinstance(statement, ast.If)
-                and statement.orelse
-                and block_terminates(statement.body)
-            ):
+            if isinstance(statement, ast.If) and statement.orelse and block_terminates(statement.body):
                 else_body = statement.orelse
                 statement.orelse = []
                 output.append(statement)
@@ -859,11 +846,7 @@ def process_file(path_string: str) -> tuple[str, str, str | None]:
 
 
 def format_output(results: list[tuple[str, str, str | None]]) -> str:
-    successful = [
-        (name, content)
-        for name, content, error in results
-        if error is None and content.strip()
-    ]
+    successful = [(name, content) for name, content, error in results if error is None and content.strip()]
 
     if not successful:
         return ""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Generate a Python script that recursively removes comments and docstrings from Python files.
 
 The script should:
@@ -95,9 +95,7 @@ class _Transformer(cst.CSTTransformer):
         self.comments_removed: int = 0
         self.docstrings_removed: int = 0
 
-    def leave_Comment(
-        self, original_node: cst.Comment, updated_node: cst.Comment
-    ) -> cst.Comment | RemovalSentinel:
+    def leave_Comment(self, original_node: cst.Comment, updated_node: cst.Comment) -> cst.Comment | RemovalSentinel:
         pos = self.get_metadata(PositionProvider, original_node, None)
         is_first_line: bool = pos is not None and pos.start.line == 1
         if _comment_should_be_preserved(original_node.value, is_first_line):
@@ -151,9 +149,7 @@ class _Transformer(cst.CSTTransformer):
             new_body = self._handle_docstring(new_body, True)
         return updated_node.with_changes(body=new_body)
 
-    def leave_Module(
-        self, original_node: cst.Module, updated_node: cst.Module
-    ) -> cst.Module:
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         new_body: cst.BaseSuite = updated_node.body
         if isinstance(new_body, cst.IndentedBlock):
             new_body = self._handle_docstring(new_body, self.remove_module_docstring)

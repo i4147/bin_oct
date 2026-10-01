@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans all .py files in the current working directory (using a helper get_files function) and, for each file, parses its AST to extract the top-level names of imported modules from both "import" and "from ...
 import" statements, skipping files that fail to parse due to syntax or encoding errors.
 It should process the files in parallel using a helper mpf function, aggregate all unique module names across the codebase, and write them one per line into a requirements.txt file, using a helper unique_path function to avoid overwriting an existing file with that name.

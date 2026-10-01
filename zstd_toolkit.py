@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 zstd_toolkit.py — unified zstandard compression / decompression CLI.
 
@@ -466,15 +466,11 @@ def decompress_file(
         )
 
 
-def _compress_file_task(
-    path: Path, *, level: int, threads: int, keep: bool, only_if_smaller: bool
-) -> TaskResult:
+def _compress_file_task(path: Path, *, level: int, threads: int, keep: bool, only_if_smaller: bool) -> TaskResult:
     return compress_file(path, level, threads, keep, only_if_smaller)
 
 
-def _tar_compress_dir_task(
-    path: Path, *, level: int, threads: int, keep: bool
-) -> TaskResult:
+def _tar_compress_dir_task(path: Path, *, level: int, threads: int, keep: bool) -> TaskResult:
     return tar_compress_dir(path, level, threads, keep)
 
 
@@ -486,9 +482,7 @@ def _should_skip_path(p: Path) -> bool:
     return any(part in SKIP_DIRS for part in p.parts)
 
 
-def discover_targets(
-    root: Path, args: argparse.Namespace
-) -> tuple[list[Path], list[Path]]:
+def discover_targets(root: Path, args: argparse.Namespace) -> tuple[list[Path], list[Path]]:
     files: list[Path] = []
     dirs: list[Path] = []
 
@@ -545,10 +539,7 @@ def print_summary(results: Sequence[TaskResult], operation: str) -> None:
     print(f"Original size : {human_size(orig)}")
     print(f"Processed size: {human_size(proc)}")
     if operation == "compress" and orig:
-        print(
-            f"Space saved   : {(1 - proc / orig) * 100:.1f}%  "
-            f"({human_size(orig - proc)})"
-        )
+        print(f"Space saved   : {(1 - proc / orig) * 100:.1f}%  ({human_size(orig - proc)})")
     if duration:
         print(f"CPU time      : {duration:.2f}s")
 
@@ -582,9 +573,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             threads=args.threads,
             keep=args.keep,
         )
-        results += run_parallel(
-            dirs, worker, args.workers, "compress", dry_run=args.dry_run
-        )
+        results += run_parallel(dirs, worker, args.workers, "compress", dry_run=args.dry_run)
 
     if files:
         worker = partial(
@@ -594,9 +583,7 @@ def cmd_compress(args: argparse.Namespace) -> int:
             keep=args.keep,
             only_if_smaller=args.only_if_smaller,
         )
-        results += run_parallel(
-            files, worker, args.workers, "compress", dry_run=args.dry_run
-        )
+        results += run_parallel(files, worker, args.workers, "compress", dry_run=args.dry_run)
 
     print_summary(results, "compress")
     return 0 if all(r.success or not r.original_size for r in results) else 1
@@ -615,15 +602,10 @@ def cmd_decompress(args: argparse.Namespace) -> int:
         print("No .zst files found.")
         return 0
 
-    print(
-        f"Decompressing {len(targets)} file(s) "
-        f"(workers {args.workers}, keep={args.keep})"
-    )
+    print(f"Decompressing {len(targets)} file(s) (workers {args.workers}, keep={args.keep})")
 
     worker = partial(_decompress_task, keep=args.keep, untar=not args.no_untar)
-    results = run_parallel(
-        targets, worker, args.workers, "decompress", dry_run=args.dry_run
-    )
+    results = run_parallel(targets, worker, args.workers, "decompress", dry_run=args.dry_run)
     print_summary(results, "decompress")
     return 0 if all(r.success for r in results) else 1
 
@@ -790,9 +772,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_c = sub.add_parser("compress", help="Compress files and/or directories")
-    p_c.add_argument(
-        "directory", nargs="?", default=".", help="Root directory (default: current)"
-    )
+    p_c.add_argument("directory", nargs="?", default=".", help="Root directory (default: current)")
     p_c.add_argument(
         "-t",
         "--targets",
@@ -841,9 +821,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Whitelist of file extensions (e.g. .txt .log)",
     )
-    p_c.add_argument(
-        "--exclude", nargs="+", default=[], help="Substrings of paths to exclude"
-    )
+    p_c.add_argument("--exclude", nargs="+", default=[], help="Substrings of paths to exclude")
     p_c.add_argument(
         "-r",
         "--recursive",
@@ -864,9 +842,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_c.set_defaults(func=cmd_compress)
 
     p_d = sub.add_parser("decompress", help="Decompress .zst / .tar.zst files")
-    p_d.add_argument(
-        "directory", nargs="?", default=".", help="Root directory (default: current)"
-    )
+    p_d.add_argument("directory", nargs="?", default=".", help="Root directory (default: current)")
     p_d.add_argument(
         "-w",
         "--workers",
@@ -874,9 +850,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_WORKERS,
         help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
     )
-    p_d.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into subdirectories"
-    )
+    p_d.add_argument("-r", "--recursive", action="store_true", help="Recurse into subdirectories")
     p_d.add_argument(
         "-k",
         "--keep",
@@ -896,9 +870,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_d.set_defaults(func=cmd_decompress)
 
-    p_a = sub.add_parser(
-        "archive-cwd", help="Archive the current directory into its parent"
-    )
+    p_a = sub.add_parser("archive-cwd", help="Archive the current directory into its parent")
     p_a.add_argument(
         "-l",
         "--level",
@@ -913,9 +885,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="zstd threads (0 = single-threaded, default)",
     )
-    p_a.add_argument(
-        "--verify", action="store_true", help="List the archive after creation"
-    )
+    p_a.add_argument("--verify", action="store_true", help="List the archive after creation")
     p_a.add_argument(
         "--no-remove",
         action="store_true",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans all `.py` files under the current directory (skipping hidden directories, `site-packages`, and the script's own `output` folder), uses `tree-sitter` with the `tree_sitter_python` grammar to parse each file and extract only its top-level `import` and `from...import` statements.
 Group the extracted import statements by the relative folder path of the file they came from, prefixing each file's imports with a `# === filename ===` header, and accumulate them into a dictionary keyed by folder.
 Handle per-file parsing errors gracefully without stopping the overall scan, and keep counters for the number of processed files and the set of folders containing imports for later reporting or output generation."""
@@ -17,11 +17,7 @@ VALID = {"import_statement", "import_from_statement"}
 
 def extract_file(src: bytes, tree: Tree) -> list[str]:
     root = tree.root_node
-    return [
-        src[node.start_byte : node.end_byte].decode()
-        for node in root.children
-        if node.type in VALID
-    ]
+    return [src[node.start_byte : node.end_byte].decode() for node in root.children if node.type in VALID]
 
 
 def get_relative_path(path: Path, base_path: Path) -> Path:

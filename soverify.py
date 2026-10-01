@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a directory for shared object (.so) files and verifies whether each one can be successfully loaded using ctypes, reporting the result and any error messages for each file.
 It should include a CtypesVerifier class that attempts to load each library via , capturing OSError or other exceptions and checking errno for warnings, with optional verbose logging through loguru written to a log file.
 It should also support inspecting exported symbols of a shared object (e.g., via a tool like nm or objdump/subprocess call), and rely on helper functions from a "dh" module (cprint for colored output, get_files for file discovery) to locate and display results for the batch of files."""
@@ -54,9 +54,7 @@ class CtypesVerifier:
         if not can_load:
             return (False, symbol_info)
         try:
-            result = subprocess.run(
-                ["nm", str(path)], capture_output=True, timeout=10, text=True
-            )
+            result = subprocess.run(["nm", str(path)], capture_output=True, timeout=10, text=True)
             if result.returncode == 0:
                 lines = [line for line in result.stdout.split("\n") if line.strip()]
                 symbol_info["symbol_count"] = len(lines)
@@ -134,9 +132,7 @@ def main() -> None:
         print(f"{'=' * 40}")
         for path in error_files:
             print(f"  ✗ {path}")
-    print(
-        f"Verification complete: {valid_count} valid, {error_count} errors out of {len(files)} files"
-    )
+    print(f"Verification complete: {valid_count} valid, {error_count} errors out of {len(files)} files")
     if error_count > 0:
         sys.exit(1)
 

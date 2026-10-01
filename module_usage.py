@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 module_usage.py — analyze import usage in a directory of Python scripts.
 
@@ -437,8 +437,7 @@ def _load_matplotlib():
         return plt
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
-            "matplotlib is required for the 'charts' subcommand. "
-            "Install it with: pip install matplotlib"
+            "matplotlib is required for the 'charts' subcommand. Install it with: pip install matplotlib"
         ) from exc
 
 

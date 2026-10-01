@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that parses a Markdown "digest" file containing multiple code sections, each introduced by a header line in the form "## `relative/path`" followed by a fenced code block, and reconstructs the original files on disk under a given root directory.
 It should use a regex to locate headers and code fences, extract each file's relative path and body content between the opening and closing triple-backtick fences (gracefully handling missing closing fences by saving partial content and logging a warning via loguru), then write each extracted section to its corresponding file path under the root, creating parent directories as needed.
 The script should be runnable from the command line, taking the digest file path and target root directory as inputs, and should report progress/errors through logging while producing the restored file tree as output."""

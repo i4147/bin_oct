@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 strip_inline_comments.py
 
@@ -94,9 +94,7 @@ def _atomic_write(path: Path, data: bytes) -> None:
     except OSError:
         mode = None
 
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
-    )
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     tmp_path = Path(tmp_name)
     try:
         with os.fdopen(fd, "wb") as fh:
@@ -138,7 +136,7 @@ def process_file(path: Path) -> tuple[Path, int, str | None]:
     transformer = InlineCommentRemover()
     try:
         new_module = module.visit(transformer)
-    except Exception as exc:  # defensive
+    except Exception as exc:
         return path, 0, f"transform error: {type(exc).__name__}: {exc}"
 
     if transformer.comments_removed == 0:
@@ -206,10 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         type=Path,
         metavar="PATH",
-        help=(
-            "Files or directories to process. Defaults to the current "
-            "directory, walked recursively."
-        ),
+        help=("Files or directories to process. Defaults to the current directory, walked recursively."),
     )
     return parser
 

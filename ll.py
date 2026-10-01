@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that lists the contents of a directory (defaulting to the current directory, or a path given as an argument) similar to `ls -l`, showing for each entry its permissions, size (human-readable, e.g.
 "4.2 KB"), and last-modified timestamp.
 For directories it should recursively compute total size across all files (handling symlinks and avoiding double-counting hardlinks via device/inode tracking), while regular files and symlinks use their own size directly.
@@ -118,9 +118,7 @@ def load_ls_colors():
         if not m:
             return {}
         val = m.group(1).strip()
-        if (val.startswith('"') and val.endswith('"')) or (
-            val.startswith("'") and val.endswith("'")
-        ):
+        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
             val = val[1:-1]
     else:
         val = m.group(1)
@@ -206,12 +204,7 @@ def main():
                 name_field = f"{color_code}{name_disp}\x1b[0m"
             else:
                 name_field = name_disp
-            print(
-                f"{name_field}"
-                f"{' ' * pad}"
-                f" \x1b[96m{size_col}\x1b[0m"
-                f" {TIME_COLOR}{t}\x1b[0m"
-            )
+            print(f"{name_field}{' ' * pad} \x1b[96m{size_col}\x1b[0m {TIME_COLOR}{t}\x1b[0m")
         else:
             if is_dir:
                 name_color = "94"

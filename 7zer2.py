@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans all top-level files and directories in the current working directory (skipping the script itself, its log file, and files with archive/compressed extensions such as .tar, .7z, .br, .gz, .xz, .zip, .whl), and compresses each entry individually into a .7z archive using py7zr, first tarring directories into a temporary .tar file before compression.
 It should auto-select the best available py7zr compression method by checking for LZMA2, LZMA, or PPMd in that order of preference, and use Python's multiprocessing to process multiple entries in parallel, leveraging all but one CPU core.
 The script must log its progress, warnings, and errors both to the console and to a "compress.log" file with timestamps, process names, and log levels."""
@@ -35,9 +35,7 @@ def choose_best_py7zr_method():
     for name in PREFERRED_METHODS:
         if hasattr(comp, name):
             return getattr(comp, name)
-    msg = (
-        f"No supported compression methods found. Tried: {', '.join(PREFERRED_METHODS)}"
-    )
+    msg = f"No supported compression methods found. Tried: {', '.join(PREFERRED_METHODS)}"
     raise RuntimeError(msg)
 
 
@@ -81,9 +79,7 @@ def create_tar_from_dir(src_dir: Path, tar_path: Path) -> None:
 
 def compress_file_to_7z(src_file: Path, out_path: Path) -> None:
     logging.info("Compress file: %s -> %s", src_file, out_path)
-    with py7zr.SevenZipFile(
-        out_path, mode="w", filters=[{"id": BEST_METHOD, "preset": 9}]
-    ) as archive:
+    with py7zr.SevenZipFile(out_path, mode="w", filters=[{"id": BEST_METHOD, "preset": 9}]) as archive:
         archive.write(src_file, arcname=src_file.name)
 
 

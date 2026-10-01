@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Find duplicate files under the current directory using size + xxhash64.
 
 Regenerate this script: recursively scan files with pathlib, skip symlinks, empty files, and cache directories,
@@ -67,9 +67,7 @@ def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
             return list(pool.imap_unordered(get_hash_file, paths))
 
         if method == "apply_async":
-            async_results: list[AsyncResult[HashResult]] = [
-                pool.apply_async(get_hash_file, (path,)) for path in paths
-            ]
+            async_results: list[AsyncResult[HashResult]] = [pool.apply_async(get_hash_file, (path,)) for path in paths]
             return [result.get() for result in async_results]
 
     raise ValueError(f"Unsupported pool method: {method}")
@@ -79,9 +77,7 @@ def find_duplicates(pool_method: str = "map") -> None:
     cwd = Path.cwd()
     files_by_hash: defaultdict[str, list[Path]] = defaultdict(list)
 
-    paths: list[Path] = [
-        path for path in cwd.rglob("*") if path.is_file() and not should_skip(path)
-    ]
+    paths: list[Path] = [path for path in cwd.rglob("*") if path.is_file() and not should_skip(path)]
 
     files_by_size: dict[int, list[Path]] = {}
     for path in paths:

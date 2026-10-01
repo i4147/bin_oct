@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that batch-converts TTF/OTF font files into WOFF2 format using fontTools' woff2 module.
 It should accept file paths as command-line arguments, or if none are given, automatically discover all .ttf and .otf files in the current working directory via a helper function.
 For each font file, it compresses it to a .woff2 file (generating a unique filename if one already exists and is non-empty), deletes the original file on success, and prints a confirmation message, while printing a colored error message on failure without crashing.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that checks Python files for syntax errors and moves
 invalid ones into per-directory ``error`` folders.
@@ -122,10 +122,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             results = pool.starmap(check_and_quarantine, args_list)
             invalid_count = sum(results)
         else:
-            async_results = [
-                pool.apply_async(check_and_quarantine, (path, args.dry_run))
-                for path in py_files
-            ]
+            async_results = [pool.apply_async(check_and_quarantine, (path, args.dry_run)) for path in py_files]
             for result in async_results:
                 if result.get():
                     invalid_count += 1

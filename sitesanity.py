@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line Python script that sanity-checks all installed Termux Python packages by verifying their recorded distribution files actually exist on disk and by validating their declared dependencies against the set of currently installed packages.
 It should use importlib.metadata to enumerate installed distributions, log results via the logging module to stdout with INFO-level formatting, and accept a repeatable "-i/--ignore" command-line argument for specifying glob patterns or filenames (e.g., "*.md") to skip during the missing-file check, always excluding ".pyc" files automatically.
 The script should report which package files are missing and which dependencies are broken or unsatisfied, helping identify corrupted or incomplete package installations."""
@@ -18,9 +18,7 @@ logging.basicConfig(
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Sanity check installed Termux Python packages."
-    )
+    parser = argparse.ArgumentParser(description="Sanity check installed Termux Python packages.")
     parser.add_argument(
         "-i",
         "--ignore",
@@ -51,9 +49,7 @@ def check_package_files(dist, ignore_patterns: list[str]) -> list[str]:
     return missing_files
 
 
-def check_package_dependencies(
-    dist, installed_map: dict[str, str]
-) -> tuple[list[str], list[str]]:
+def check_package_dependencies(dist, installed_map: dict[str, str]) -> tuple[list[str], list[str]]:
     broken_deps = []
     clean_reqs_for_file = []
     if dist.requires is None:
@@ -98,9 +94,7 @@ def main():
                 for f in missing_files[:5]:
                     print(f"      - {f}")
                 if len(missing_files) > 5:
-                    print(
-                        f"      - ... and {len(missing_files) - 5} more files missing."
-                    )
+                    print(f"      - ... and {len(missing_files) - 5} more files missing.")
             if missing_deps:
                 broken_deps_count += 1
                 print("   ⚠️  Unresolved Core Dependencies:")
@@ -114,9 +108,7 @@ def main():
         with open(req_file, "w", encoding="utf-8") as f:
             for dep in sorted(unique_missing_deps):
                 f.write(f"{dep}\n")
-        logging.info(
-            f"📝 Saved {len(unique_missing_deps)} unique main dependencies to: {req_file.resolve()}"
-        )
+        logging.info(f"📝 Saved {len(unique_missing_deps)} unique main dependencies to: {req_file.resolve()}")
     logging.info("=== SCAN SUMMARY ===")
     logging.info(f"Total packages evaluated: {len(distributions)}")
     logging.info(f"Packages with missing files: {corrupted_packages_count}")

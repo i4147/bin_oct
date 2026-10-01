@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Convert non-UTF8 text files to UTF-8 in place. Detects each file's encoding with
 chardet, skips binary/unsupported files via ``dh.is_binary``, and rewrites
@@ -111,9 +111,7 @@ def main() -> int:
     errors: int = 0
 
     with Pool(processes=MAX_WORKERS) as pool:
-        async_results: list[AsyncResult[ConvertResult]] = [
-            pool.apply_async(convert_file, (f,)) for f in files
-        ]
+        async_results: list[AsyncResult[ConvertResult]] = [pool.apply_async(convert_file, (f,)) for f in files]
         for async_res in async_results:
             file_path, success, message = async_res.get()
             if args.verbose:

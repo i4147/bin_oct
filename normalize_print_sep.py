@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans one or more given paths (defaulting to the current directory) for .py files, using a regex to find calls like print or cprint that output a repeated single-character separator line (e.g.
 print('-'*42)) and normalizes them all to a consistent format.
 It should support recursive directory scanning, process files in parallel via multiprocessing.Pool, and take an autofix flag to decide whether to actually rewrite matching files or just report how many replacements would be made.
@@ -59,9 +59,7 @@ def report_stats(results: list[ProcessResult], autofix: bool) -> None:
     cwd = Path.cwd()
     rel_results = [
         (
-            r.file.relative_to(cwd)
-            if cwd in r.file.parents or r.file == cwd
-            else r.file,
+            r.file.relative_to(cwd) if cwd in r.file.parents or r.file == cwd else r.file,
             r,
         )
         for r in results
@@ -81,9 +79,7 @@ def report_stats(results: list[ProcessResult], autofix: bool) -> None:
     print(f"Successful:         {success_count}")
     print(f"Errors:             {total_files - success_count}")
     if not autofix and modified_count > 0:
-        print(
-            f"\n💡 Run with --autofix (or -a) to apply {total_replacements} change(s)"
-        )
+        print(f"\n💡 Run with --autofix (or -a) to apply {total_replacements} change(s)")
 
 
 def main() -> None:

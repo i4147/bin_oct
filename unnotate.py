@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that uses tree-sitter with the tree_sitter_languages Python grammar to parse Python source files and strip out static type annotations and "# type:" comments, effectively converting typed Python back into plain untyped Python.
 The tool should accept file or directory paths via command-line arguments, walk the filesystem to locate .py files, and process them safely (e.g., writing changes via temporary files while preserving file permissions).
 It should support multiprocessing for parallel processing of multiple files, report per-file results including whether content changed, any warnings, or errors encountered, and provide a Result dataclass summarizing each file's outcome.
@@ -28,9 +28,7 @@ try:
             "Install 'tree_sitter_languages' (pip install tree_sitter_languages)."
         ) from exc
 except Exception as exc:
-    raise RuntimeError(
-        "tree-sitter is required. Install with: pip install tree_sitter tree_sitter_languages"
-    ) from exc
+    raise RuntimeError("tree-sitter is required. Install with: pip install tree_sitter tree_sitter_languages") from exc
 TYPE_COMMENT_RE = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
 
 
@@ -130,9 +128,7 @@ def process_file(path_str: str) -> Result:
             if line_end == -1:
                 line_end = len(src_bytes)
             snippet = src_bytes[line_start:line_end].decode(errors="replace").strip()
-            warnings.append(
-                f'skipped standalone annotation at {p}:{node.start_point[0] + 1}: "{snippet}"'
-            )
+            warnings.append(f'skipped standalone annotation at {p}:{node.start_point[0] + 1}: "{snippet}"')
             continue
         remove_ranges.append((removed_prefix_start, e))
     type_comment_ranges: list[tuple[int, int]] = []
@@ -200,12 +196,8 @@ def gather_py_files(paths: Iterable[str]) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Remove Python type annotations from .py files (in-place)."
-    )
-    parser.add_argument(
-        "paths", nargs="*", help="Files or directories to process (default: .)"
-    )
+    parser = argparse.ArgumentParser(description="Remove Python type annotations from .py files (in-place).")
+    parser.add_argument("paths", nargs="*", help="Files or directories to process (default: .)")
     parser.add_argument(
         "--jobs",
         action="store_true",

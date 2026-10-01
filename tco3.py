@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that translates chunked text files (e.g., JSON or text chunks produced by a text-splitting pipeline) into a target language using a selectable translation backend such as googletrans or pygoogletranslation, with language code normalization and alias handling to reconcile different backend naming conventions (e.g., zh vs zh-CN, pt vs pt-BR).
 The script should support concurrent translation via a thread pool with rate-limiting locks to avoid overwhelming translation APIs, read input chunk files from a directory, write translated output to corresponding files, and log progress/errors via loguru to both a rotating log file and stderr.
 It should be driven by command-line arguments (e.g., input/output paths, source/target languages, backend choice, concurrency level) parsed with argparse, and handle retries or failures gracefully for individual chunks without stopping the entire batch job."""
@@ -279,9 +279,7 @@ def _make_azure(source: str, target: str) -> Translator:
         key = os.environ.get("AZURE_TRANSLATOR_KEY", "").strip()
         region = os.environ.get("AZURE_TRANSLATOR_REGION", "").strip()
         if not endpoint or not key:
-            raise RuntimeError(
-                "AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required"
-            )
+            raise RuntimeError("AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required")
         import requests
 
         response = requests.post(
@@ -398,11 +396,7 @@ def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
             payload = json.load(handle)
         if not isinstance(payload, dict):
             raise ValueError("output JSON must contain an object")
-        return {
-            str(key): str(value)
-            for key, value in payload.items()
-            if isinstance(value, str)
-        }
+        return {str(key): str(value) for key, value in payload.items() if isinstance(value, str)}
     except Exception as exc:
         logger.error("Could not load existing output {}: {}", path, exc)
         return {}
@@ -477,9 +471,7 @@ def translate_with_retry(
                 time.sleep(2 ** (attempt - 1))
     if last_error is None:
         raise RuntimeError("translation failed without an exception")
-    raise RuntimeError(
-        f"chunk {index} failed after {attempts} attempts: {last_error}"
-    ) from last_error
+    raise RuntimeError(f"chunk {index} failed after {attempts} attempts: {last_error}") from last_error
 
 
 def parse_args() -> argparse.Namespace:
@@ -582,11 +574,7 @@ def run(args: argparse.Namespace) -> int:
         args.source,
         args.target,
     )
-    pending: list[tuple[int, str]] = [
-        (index, chunk)
-        for index, chunk in enumerate(chunks)
-        if str(index) not in results
-    ]
+    pending: list[tuple[int, str]] = [(index, chunk) for index, chunk in enumerate(chunks) if str(index) not in results]
     logger.info(
         "Backend={}, chunks={}, already translated={}, pending={}",
         backend_name,

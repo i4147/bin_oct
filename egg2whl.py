@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that converts a Python .egg package into a standard wheel (.whl) file.
 It should locate the EGG-INFO directory within the extracted egg, parse PKG-INFO to extract metadata such as package name and version, and read entry_points.txt if present to preserve console scripts or plugin entry points.
 Using this information, it should dynamically generate a setup.py file in a temporary directory, then invoke it via subprocess (using setuptools/wheel commands) to build the wheel, copying the resulting artifact to an output location while cleaning up temporary files afterward."""

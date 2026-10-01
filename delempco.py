@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Refactored blank line remover script. This is a parallel file processing tool that recursively
 removes blank lines (and optionally whitespace-only lines) from text files. It uses
@@ -157,9 +157,7 @@ def discover_files(directories: list[str]) -> tuple[list[Path], int]:
 
 def print_header() -> None:
     print(f"{ANSI.CYAN}╔════════════════════════════════════════════╗{ANSI.RESET}")
-    print(
-        f"{ANSI.CYAN}║{ANSI.RESET}         Blank Line Remover              {ANSI.CYAN}║{ANSI.RESET}"
-    )
+    print(f"{ANSI.CYAN}║{ANSI.RESET}         Blank Line Remover              {ANSI.CYAN}║{ANSI.RESET}")
     print(f"{ANSI.CYAN}╚════════════════════════════════════════════╝{ANSI.RESET}")
 
 
@@ -171,9 +169,7 @@ def print_directory_list(directories: list[str]) -> None:
 
 def print_mode(remove_spaces: bool) -> None:
     if remove_spaces:
-        print(
-            f"Mode: {ANSI.BOLD}Remove blank lines and whitespace-only lines{ANSI.RESET}"
-        )
+        print(f"Mode: {ANSI.BOLD}Remove blank lines and whitespace-only lines{ANSI.RESET}")
     else:
         print(f"Mode: {ANSI.BOLD}Remove blank lines only{ANSI.RESET}")
 
@@ -185,9 +181,7 @@ def print_separator() -> None:
 def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
     processed: list[FileResult] = [r for r in stats.results if r.status == "processed"]
     unchanged: list[FileResult] = [r for r in stats.results if r.status == "unchanged"]
-    skipped_binary: list[FileResult] = [
-        r for r in stats.results if r.status == "skipped_binary"
-    ]
+    skipped_binary: list[FileResult] = [r for r in stats.results if r.status == "skipped_binary"]
     errors: list[FileResult] = [r for r in stats.results if r.status == "error"]
 
     if processed:
@@ -198,9 +192,7 @@ def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
             except ValueError:
                 rel_path = result.path
             print(f"  {ANSI.GREEN}●{ANSI.RESET} {rel_path}")
-            print(
-                f"    {ANSI.DIM}Lines: {result.total_lines}  →  Removed: {result.removed_lines}{ANSI.RESET}"
-            )
+            print(f"    {ANSI.DIM}Lines: {result.total_lines}  →  Removed: {result.removed_lines}{ANSI.RESET}")
 
     if unchanged:
         print(f"{ANSI.DIM}○ Unchanged files (no blank lines):{ANSI.RESET}")
@@ -211,16 +203,12 @@ def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
                 rel_path = result.path
             print(f"  {ANSI.DIM}○ {rel_path}{ANSI.RESET}")
         if len(unchanged) > MAX_PREVIEW_FILES:
-            print(
-                f"  {ANSI.DIM}... and {len(unchanged) - MAX_PREVIEW_FILES} more{ANSI.RESET}"
-            )
+            print(f"  {ANSI.DIM}... and {len(unchanged) - MAX_PREVIEW_FILES} more{ANSI.RESET}")
 
     if skipped_binary:
         print(f"{ANSI.YELLOW}⊘ Skipped binary files: {len(skipped_binary)}{ANSI.RESET}")
         preview: list[FileResult] = (
-            skipped_binary
-            if show_binary
-            else sorted(skipped_binary, key=lambda r: r.path)[:MAX_PREVIEW_FILES]
+            skipped_binary if show_binary else sorted(skipped_binary, key=lambda r: r.path)[:MAX_PREVIEW_FILES]
         )
         for result in sorted(preview, key=lambda r: r.path):
             try:
@@ -229,9 +217,7 @@ def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
                 rel_path = result.path
             print(f"  {ANSI.YELLOW}⊘ {rel_path}{ANSI.RESET}")
         if not show_binary and len(skipped_binary) > MAX_PREVIEW_FILES:
-            print(
-                f"  {ANSI.YELLOW}... and {len(skipped_binary) - MAX_PREVIEW_FILES} more binary files{ANSI.RESET}"
-            )
+            print(f"  {ANSI.YELLOW}... and {len(skipped_binary) - MAX_PREVIEW_FILES} more binary files{ANSI.RESET}")
 
     if errors:
         print(f"{ANSI.RED}✗ Errors:{ANSI.RESET}")
@@ -250,16 +236,10 @@ def print_summary(stats: ProcessingStats) -> None:
     print(f"  Total files found:     {ANSI.BOLD}{stats.total_files:,}{ANSI.RESET}")
     print(f"  Text files processed:  {ANSI.BOLD}{stats.text_files:,}{ANSI.RESET}")
     print(f"  Binary files skipped:  {ANSI.BOLD}{stats.binary_files:,}{ANSI.RESET}")
-    print(
-        f"  Files modified:        {ANSI.BOLD}{ANSI.GREEN}{stats.files_modified:,}{ANSI.RESET}"
-    )
-    print(
-        f"  Lines removed:         {ANSI.BOLD}{ANSI.GREEN}{stats.lines_removed:,}{ANSI.RESET}"
-    )
+    print(f"  Files modified:        {ANSI.BOLD}{ANSI.GREEN}{stats.files_modified:,}{ANSI.RESET}")
+    print(f"  Lines removed:         {ANSI.BOLD}{ANSI.GREEN}{stats.lines_removed:,}{ANSI.RESET}")
     if stats.errors_count > 0:
-        print(
-            f"  Errors:                {ANSI.BOLD}{ANSI.RED}{stats.errors_count:,}{ANSI.RESET}"
-        )
+        print(f"  Errors:                {ANSI.BOLD}{ANSI.RED}{stats.errors_count:,}{ANSI.RESET}")
     print_separator()
 
 
@@ -286,9 +266,7 @@ def main() -> int:
         action="store_true",
         help="Show all skipped binary files instead of just first 5",
     )
-    parser.add_argument(
-        "--no-color", action="store_true", help="Disable ANSI color codes"
-    )
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI color codes")
     args = parser.parse_args()
 
     if args.no_color or not sys.stdout.isatty():
@@ -306,9 +284,7 @@ def main() -> int:
         logger.warning(f"{ANSI.YELLOW}No files found to process.{ANSI.RESET}")
         return 0
 
-    print(
-        f"Processing files...\n(Using {ANSI.BOLD}{NUM_WORKERS}{ANSI.RESET} worker processes)"
-    )
+    print(f"Processing files...\n(Using {ANSI.BOLD}{NUM_WORKERS}{ANSI.RESET} worker processes)")
 
     stats: ProcessingStats = ProcessingStats(total_files=len(files))
     start_time: float = time.time()
@@ -317,9 +293,7 @@ def main() -> int:
     with Pool(processes=NUM_WORKERS) as pool:
         async_results: list[AsyncResult[FileResult]] = []
         for path in files:
-            async_result: AsyncResult[FileResult] = pool.apply_async(
-                process_file_worker, (path, args.space)
-            )
+            async_result: AsyncResult[FileResult] = pool.apply_async(process_file_worker, (path, args.space))
             async_results.append(async_result)
 
         for async_result in async_results:

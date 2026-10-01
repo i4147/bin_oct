@@ -1,12 +1,7 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
-annotate_felo.py
-
 Prepend an AI-generated "how to reproduce this" prompt as a module
 docstring to one or more self-contained .py files.
-
-Uses the felo CLI:
-    felo superagent --query "..." --accept-language en --timeout 300 --json --verbose
 """
 
 from __future__ import annotations
@@ -18,24 +13,21 @@ import re
 import subprocess
 import sys
 import time
+from dh import DOC_TH1, DOC_TH2
 
 FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 FELO_TIMEOUT = int(os.environ.get("FELO_TIMEOUT", "300"))
 
 PROMPT_TEMPLATE = """\
-Answer in ENGLISH ONLY. Never reply in Japanese.
-
-Provide a brief prompt that can produce the following Python code.
-The prompt must be plain prose (2-5 sentences). It must describe the
-script's purpose, its main inputs/outputs, and any notable behavior.
+Provide a prompt for ai agent that can produce the following Python code.
+The prompt must describe the script's purpose, its main inputs/outputs, and any notable behavior.
 
 Strict output rules:
 - Output ONLY the prompt text.
-- No markdown, no code fences, no bullet lists, no headings.
-- No shell transcript, no "$" prompts, no commentary.
 - Do not include the code itself.
 - Do not repeat these instructions.
 - Do not add a preamble like "Sure" or "Here is".
+Answer in ENGLISH ONLY.
 
 Code:
 {code}
@@ -89,8 +81,14 @@ def clean_response(text: str) -> str:
 
 
 def make_docstring(text: str) -> str:
-    safe = text.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')
-    return '"""' + safe + '"""\n\n'
+
+    safe = re.sub(r"\\", r"\\\\", text)
+
+    safe = re.sub(r'"""', r'\\"\\"\\"', safe)
+
+    #    safe = text.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')
+
+    return DOC_TH1 + safe + DOC_TH1 + "\n\n"
 
 
 def split_header(body: str) -> tuple[str, str]:
@@ -107,7 +105,7 @@ def split_header(body: str) -> tuple[str, str]:
 
 def has_module_docstring(body: str) -> bool:
     s = body.lstrip()
-    return s.startswith('"""') or s.startswith("'''")
+    return s.startswith(DOC_TH1) or s.startswith(DOC_TH2)
 
 
 def ask_felo(code: str) -> str:
@@ -133,13 +131,13 @@ def ask_felo(code: str) -> str:
         timeout=FELO_TIMEOUT,
     )
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"felo exited {proc.returncode}: {proc.stderr.strip()[:300]}"
-        )
+        raise RuntimeError(f"felo exited {proc.returncode}: {proc.stderr.strip()[:300]}")
     return proc.stdout
 
 
 def annotate(path: str, dry_run: bool) -> None:
+    if path.endswith(("__init__.py", "__main__.py", "setup.py", "main.py", "test.py", "conf.py", "tests.py")):
+        return
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -228,8 +226,7 @@ def main() -> None:
     ap.add_argument(
         "paths",
         nargs="*",
-        help="One or more files or directories. If omitted, the current "
-        "directory is processed recursively.",
+        help="One or more files or directories. If omitted, the current directory is processed recursively.",
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(

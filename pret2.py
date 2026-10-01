@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Format JS/TS/CSS/HTML/JSON files with Prettier: discover matching files under the current directory, run `prettier --write` on each in a multiprocessing pool of 8 workers, move failures into a sibling `error/` folder, and log progress via loguru."""
 
 import shutil
@@ -130,9 +130,7 @@ def main() -> None:
                 logger.info("✅ Formatted: {}", result.path.name)
                 success_count += 1
             else:
-                logger.error(
-                    "❌ Error: {} | Reason: {}", result.path.name, result.error_msg
-                )
+                logger.error("❌ Error: {} | Reason: {}", result.path.name, result.error_msg)
                 error_count += 1
 
     logger.info("Summary: {} success, {} errors.", success_count, error_count)

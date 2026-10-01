@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that batch-converts PDF files into JPG images using pdf2image, saving each PDF's pages as separate high-resolution (300 DPI) JPG files inside a dedicated subfolder named after the PDF (created under a given output directory).
 The script should take a PDF file path and output folder as inputs, generate images per page via convert_from_path with multithreading, rename the resulting JPEG files with a consistent naming pattern (e.g., filename_page_N.jpg), and handle errors gracefully by printing warnings for missing expected files and catching exceptions during conversion, returning a boolean indicating success or failure."""
 
@@ -31,12 +31,8 @@ def convert_pdf_to_jpg(pdf_path: Path, output_folder: Path) -> bool:
                 shutil.move(source_jpg_path, final_jpg_path)
                 converted_files.append(final_jpg_path)
             else:
-                print(
-                    f"Warning: Expected file {source_jpg_path} not found after conversion."
-                )
-        print(
-            f"Successfully converted '{pdf_path.name}' to {len(converted_files)} JPG files in '{pdf_output_dir}'."
-        )
+                print(f"Warning: Expected file {source_jpg_path} not found after conversion.")
+        print(f"Successfully converted '{pdf_path.name}' to {len(converted_files)} JPG files in '{pdf_output_dir}'.")
         return True
     except Exception as e:
         print(f"Error converting '{pdf_path.name}': {e}")
@@ -56,9 +52,7 @@ def process_directory(start_dir: Path, output_base_dir: Path) -> None:
     for item in start_dir.rglob("*"):
         if item.is_file() and item.suffix.lower() == ".pdf":
             if output_base_dir in item.parents:
-                print(
-                    f"Skipping PDF '{item.name}' as it's within the output directory."
-                )
+                print(f"Skipping PDF '{item.name}' as it's within the output directory.")
                 continue
             if convert_pdf_to_jpg(item, output_base_dir):
                 try:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility that extracts an embedded Python script from a shell heredoc block (matching patterns like "python - <<'PY' ...
 PY" or "python3 -u <<TAG") using a regex to locate the start marker and delimiter tag, then finds the matching closing tag (handling both normal newline-delimited and flattened/inline cases) to isolate and return the stripped Python source code along with the tag name.
 It should raise a ValueError with a descriptive message if the heredoc start pattern or closing delimiter cannot be found.
@@ -31,20 +31,14 @@ HEREDOC_START = re.compile(
 def extract_heredoc(source: str) -> tuple[str, str]:
     match = HEREDOC_START.search(source)
     if match is None:
-        raise ValueError(
-            "No Python heredoc was found. Expected syntax like: python - <<'PY' ... PY"
-        )
+        raise ValueError("No Python heredoc was found. Expected syntax like: python - <<'PY' ... PY")
     tag = match.group("tag")
     content_start = match.end()
-    normal_end = re.compile(rf"(?:^|\n)[ \t]*{re.escape(tag)}[ \t]*(?=\n|$)").search(
-        source, content_start
-    )
+    normal_end = re.compile(rf"(?:^|\n)[ \t]*{re.escape(tag)}[ \t]*(?=\n|$)").search(source, content_start)
     if normal_end is not None:
         python_code = source[content_start : normal_end.start()]
         return python_code.strip(), tag
-    flattened_end = list(
-        re.finditer(rf"(?:^|\s){re.escape(tag)}(?:\s|$)", source[content_start:])
-    )
+    flattened_end = list(re.finditer(rf"(?:^|\s){re.escape(tag)}(?:\s|$)", source[content_start:]))
     if not flattened_end:
         raise ValueError(f"Closing heredoc delimiter {tag!r} was not found.")
     end_match = flattened_end[-1]

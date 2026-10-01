@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script for Termux/Android that repackages installed apt/dpkg packages into .deb files.
 It should use apt and apt_pkg to enumerate installed packages, retrieve each package's installed file list from dpkg's info directory, and gather metadata (version, architecture, description, dependencies, etc.), falling back to parsing the dpkg status file if the apt cache lacks certain fields.
 Using this data, it should build a valid Debian package archive (control.tar + data.tar wrapped in an ar archive via unix_ar and tarfile) for each installed package, saving the resulting .deb files into a "debs" directory under the user's home folder, creating that directory if it doesn't exist.

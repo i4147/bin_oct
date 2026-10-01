@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 xb_extract.py — unified extractor for shell functions.
 
@@ -74,9 +74,7 @@ SHELL_SHEBANG_TOKENS: Final[tuple[str, ...]] = (
     "shell",
 )
 
-FUNCTION_RE: Final[re.Pattern[str]] = re.compile(
-    r"^\s*(?:function\s+)?(\w[\w\-]*)\s*(?:\(\))?\s*\{"
-)
+FUNCTION_RE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:function\s+)?(\w[\w\-]*)\s*(?:\(\))?\s*\{")
 
 UNSAFE_NAME_RE: Final[re.Pattern[str]] = re.compile(r"[^\w\-]")
 
@@ -84,9 +82,7 @@ DEFAULT_MAX_FILE_SIZE: Final[int] = 1_000_000
 DEFAULT_WORKERS: Final[int] = 8
 DEFAULT_OUTPUT_DIR: Final[Path] = Path("extracted_functions")
 
-IS_TERMUX: Final[bool] = (
-    "TERMUX_VERSION" in os.environ or "com.termux" in os.environ.get("PREFIX", "")
-)
+IS_TERMUX: Final[bool] = "TERMUX_VERSION" in os.environ or "com.termux" in os.environ.get("PREFIX", "")
 
 
 class _LoggerProtocol(Protocol):
@@ -219,9 +215,7 @@ def collect_scripts_scandir(
             log.warning("{} does not exist, skipping...", p)
             continue
         if p.is_file():
-            if is_shell_script(
-                p, include_extensionless=include_extensionless, max_size=max_size
-            ):
+            if is_shell_script(p, include_extensionless=include_extensionless, max_size=max_size):
                 yield p.resolve()
         elif p.is_dir():
             yield from _iter_directory_scandir(
@@ -261,9 +255,7 @@ def collect_scripts_fastwalk(
             log.warning("{} does not exist, skipping...", p)
             continue
         if p.is_file():
-            if is_shell_script(
-                p, include_extensionless=include_extensionless, max_size=max_size
-            ):
+            if is_shell_script(p, include_extensionless=include_extensionless, max_size=max_size):
                 yield p.resolve()
         elif p.is_dir():
             for s in walk_files(p):
@@ -277,9 +269,7 @@ def collect_scripts_fastwalk(
                         continue
                 if t.suffix in EXCLUDED_SUFFIXES:
                     continue
-                if is_shell_script(
-                    t, include_extensionless=include_extensionless, max_size=max_size
-                ):
+                if is_shell_script(t, include_extensionless=include_extensionless, max_size=max_size):
                     yield t.resolve()
         else:
             log.warning("{} is not a file or directory, skipping...", p)
@@ -421,9 +411,7 @@ def _process_one(
     return path, written
 
 
-def _process_scripts(
-    scripts: list[Path], args: argparse.Namespace, log: _LoggerProtocol
-) -> int:
+def _process_scripts(scripts: list[Path], args: argparse.Namespace, log: _LoggerProtocol) -> int:
     use_extension = not args.no_extension
     add_header = not args.no_header
     chmod_files = not args.no_chmod
@@ -431,10 +419,7 @@ def _process_scripts(
 
     if args.parallel and len(scripts) > 1:
         print(f"Processing files in parallel with {args.workers} workers...")
-        tasks = [
-            (p, args.output, use_extension, add_header, chmod_files, args.verbose)
-            for p in scripts
-        ]
+        tasks = [(p, args.output, use_extension, add_header, chmod_files, args.verbose) for p in scripts]
         with Pool(processes=args.workers) as pool:
             for path, written in pool.imap_unordered(_process_one, tasks):
                 total += len(written)
@@ -443,9 +428,7 @@ def _process_scripts(
     else:
         print("Processing files sequentially...")
         for p in sorted(scripts):
-            _, written = _process_one(
-                (p, args.output, use_extension, add_header, chmod_files, args.verbose)
-            )
+            _, written = _process_one((p, args.output, use_extension, add_header, chmod_files, args.verbose))
             total += len(written)
             if args.verbose or written:
                 print(f"  {p}: extracted {len(written)} function(s)")
@@ -491,9 +474,7 @@ def run(args: argparse.Namespace) -> int:
     try:
         args.output.mkdir(parents=True, exist_ok=True)
     except PermissionError:
-        log.error(
-            "Cannot create output directory '{}'. Check permissions.", args.output
-        )
+        log.error("Cannot create output directory '{}'. Check permissions.", args.output)
         return 1
 
     total = _process_scripts(scripts, args, log)
@@ -535,16 +516,14 @@ def build_parser() -> argparse.ArgumentParser:
         "inputs",
         nargs="*",
         type=Path,
-        help="Files and/or directories to process. If none provided, the "
-        "current directory is used recursively.",
+        help="Files and/or directories to process. If none provided, the current directory is used recursively.",
     )
     p.add_argument(
         "-o",
         "--output",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory for extracted functions "
-        f"(default: {DEFAULT_OUTPUT_DIR}).",
+        help=f"Output directory for extracted functions (default: {DEFAULT_OUTPUT_DIR}).",
     )
     p.add_argument(
         "--sh-only",
@@ -559,14 +538,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--no-header",
         action="store_true",
-        help="Do NOT prepend the '#!/bin/bash' + metadata header "
-        "(xbash_functions.py behavior).",
+        help="Do NOT prepend the '#!/bin/bash' + metadata header (xbash_functions.py behavior).",
     )
     p.add_argument(
         "--no-chmod",
         action="store_true",
-        help="Do NOT make output files executable "
-        "(xbash_functions.py does not chmod files).",
+        help="Do NOT make output files executable (xbash_functions.py does not chmod files).",
     )
     p.add_argument(
         "--skip-hidden",
@@ -588,8 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--parallel",
         action="store_true",
-        help="Use multiprocessing.Pool for file processing (xbash_functions.py "
-        "behavior). Default is sequential.",
+        help="Use multiprocessing.Pool for file processing (xbash_functions.py behavior). Default is sequential.",
     )
     p.add_argument(
         "--workers",
@@ -601,8 +577,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-size",
         type=int,
         default=DEFAULT_MAX_FILE_SIZE,
-        help=f"Maximum size (bytes) for extensionless-script detection "
-        f"(default: {DEFAULT_MAX_FILE_SIZE}).",
+        help=f"Maximum size (bytes) for extensionless-script detection (default: {DEFAULT_MAX_FILE_SIZE}).",
     )
     p.add_argument(
         "--use-loguru",

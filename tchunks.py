@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Split a text file into fixed-size, word-boundary-respecting chunks,
 translate each chunk through a pluggable backend, and write results to a
@@ -146,9 +146,7 @@ def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
     tgt = _lang_for_translators_bing(target, is_target=True)
 
     def translate(text: str) -> str:
-        result = ts.translate_text(
-            text, translator="bing", from_language=src, to_language=tgt
-        )
+        result = ts.translate_text(text, translator="bing", from_language=src, to_language=tgt)
         if not result:
             raise TranslationFailedError("translators (bing) returned empty result")
         return str(result)
@@ -215,15 +213,11 @@ FALLBACK_ORDER: tuple[str, ...] = (
 )
 
 
-def select_backend(
-    requested: str | None, source: str, target: str
-) -> tuple[str, Callable[[str], str]]:
+def select_backend(requested: str | None, source: str, target: str) -> tuple[str, Callable[[str], str]]:
     if requested:
         if requested not in BACKEND_FACTORIES:
             valid = ", ".join(sorted(BACKEND_FACTORIES))
-            raise UnknownBackendError(
-                f"unknown backend '{requested}'. Valid options: {valid}"
-            )
+            raise UnknownBackendError(f"unknown backend '{requested}'. Valid options: {valid}")
         factory = BACKEND_FACTORIES[requested]
         translate_fn = factory(source, target)
         return requested, translate_fn
@@ -244,8 +238,7 @@ def select_backend(
             continue
 
     raise NoBackendAvailableError(
-        f"no backend could be constructed from fallback order {FALLBACK_ORDER}. "
-        f"Last error: {last_error}"
+        f"no backend could be constructed from fallback order {FALLBACK_ORDER}. Last error: {last_error}"
     )
 
 
@@ -284,14 +277,10 @@ def _normalize_for_comparison(s: str) -> str:
     return " ".join(s.lower().split())
 
 
-def looks_untranslated(
-    source_text: str, translated_text: str, source_lang: str, target_lang: str
-) -> bool:
+def looks_untranslated(source_text: str, translated_text: str, source_lang: str, target_lang: str) -> bool:
     if source_lang.strip().lower() == target_lang.strip().lower():
         return False
-    return _normalize_for_comparison(source_text) == _normalize_for_comparison(
-        translated_text
-    )
+    return _normalize_for_comparison(source_text) == _normalize_for_comparison(translated_text)
 
 
 def translate_with_retry(
@@ -321,9 +310,7 @@ def translate_with_retry(
             raise TranslationFailedError("backend returned empty translation")
 
         if looks_untranslated(text, result, source_lang, target_lang):
-            raise TranslationFailedError(
-                "translation looks identical to source (likely untranslated)"
-            )
+            raise TranslationFailedError("translation looks identical to source (likely untranslated)")
 
         return result
 
@@ -391,9 +378,7 @@ def run_translation(
         logger.info("All chunks already translated; nothing to do.")
         return results
 
-    logger.info(
-        f"Translating {len(pending_indices)} of {len(chunks)} chunk(s) with {workers} worker(s)"
-    )
+    logger.info(f"Translating {len(pending_indices)} of {len(chunks)} chunk(s) with {workers} worker(s)")
 
     completed_since_save = 0
 
@@ -413,9 +398,7 @@ def run_translation(
         remaining = set(future_to_index)
         while remaining:
             if _shutdown_requested.is_set():
-                logger.info(
-                    f"Shutdown requested: cancelling {len(remaining)} pending chunk(s)"
-                )
+                logger.info(f"Shutdown requested: cancelling {len(remaining)} pending chunk(s)")
                 for fut in remaining:
                     fut.cancel()
                 break
@@ -445,9 +428,7 @@ def run_translation(
                 if completed_since_save >= save_every:
                     save_results_atomic(output_path, results)
                     completed_since_save = 0
-                    logger.debug(
-                        f"Progress saved ({len(results)}/{len(chunks)} chunks)"
-                    )
+                    logger.debug(f"Progress saved ({len(results)}/{len(chunks)} chunks)")
 
     save_results_atomic(output_path, results)
     logger.info(f"Saved {len(results)}/{len(chunks)} chunk(s) to {output_path}")
@@ -472,9 +453,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Split a text file into chunks, translate each chunk, and save results to JSON.",
     )
-    ap.add_argument(
-        "-i", "--input", type=Path, default=Path("input.txt"), help="Input text file."
-    )
+    ap.add_argument("-i", "--input", type=Path, default=Path("input.txt"), help="Input text file.")
     ap.add_argument(
         "-o",
         "--output",
@@ -488,12 +467,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=Path("failed.txt"),
         help="Failed chunk indices log.",
     )
-    ap.add_argument(
-        "-s", "--source", default="en", help="Source language code (ISO 639-1)."
-    )
-    ap.add_argument(
-        "-t", "--target", default="fr", help="Target language code (ISO 639-1)."
-    )
+    ap.add_argument("-s", "--source", default="en", help="Source language code (ISO 639-1).")
+    ap.add_argument("-t", "--target", default="fr", help="Target language code (ISO 639-1).")
     ap.add_argument(
         "-b",
         "--backend",
@@ -508,15 +483,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=2,
         help="Concurrent threads (keep <= 4 per memory constraints; default 2).",
     )
-    ap.add_argument(
-        "-d", "--delay", type=float, default=0.5, help="Seconds between requests."
-    )
-    ap.add_argument(
-        "--chunk-size", type=int, default=2500, help="Characters per chunk."
-    )
-    ap.add_argument(
-        "--save-every", type=int, default=10, help="Save JSON every N completed chunks."
-    )
+    ap.add_argument("-d", "--delay", type=float, default=0.5, help="Seconds between requests.")
+    ap.add_argument("--chunk-size", type=int, default=2500, help="Characters per chunk.")
+    ap.add_argument("--save-every", type=int, default=10, help="Save JSON every N completed chunks.")
     ap.add_argument(
         "--no-continue",
         action="store_true",
@@ -549,22 +518,14 @@ def main(argv: list[str] | None = None) -> int:
     if not chunks:
         logger.error("Input file produced zero chunks after splitting (empty file?)")
         return 1
-    logger.info(
-        f"Split input into {len(chunks)} chunk(s) of up to {args.chunk_size} chars"
-    )
+    logger.info(f"Split input into {len(chunks)} chunk(s) of up to {args.chunk_size} chars")
 
-    existing: dict[str, str] = (
-        {} if args.no_continue else load_existing_results(args.output)
-    )
+    existing: dict[str, str] = {} if args.no_continue else load_existing_results(args.output)
     if existing:
-        logger.info(
-            f"Resuming: {len(existing)} chunk(s) already translated in {args.output}"
-        )
+        logger.info(f"Resuming: {len(existing)} chunk(s) already translated in {args.output}")
 
     try:
-        backend_name, translate_fn = select_backend(
-            args.backend, args.source, args.target
-        )
+        backend_name, translate_fn = select_backend(args.backend, args.source, args.target)
     except (UnknownBackendError, NoBackendAvailableError) as e:
         logger.error(str(e))
         return 1

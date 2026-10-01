@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a directory (defaulting to the current working directory) for all ".html" files (excluding "template.html") and ".htm" files, returning a sorted list of their paths.
 It should then parse each found file with BeautifulSoup to extract common structural elements from the document head and body—collecting unique meta tags, link tags, and script tags (only those with a src attribute) from the head, plus deduplicated body CSS classes joined into a single string—while gracefully catching and printing any per-file parsing errors, and finally return this aggregated structural data as a dictionary."""
 
@@ -8,9 +8,7 @@ from bs4 import BeautifulSoup
 
 def find_html_files(cwd: str = ".") -> list[Path]:
     root_path = Path(cwd).resolve()
-    html_files = [
-        path for path in root_path.rglob("*.html") if path.name != "template.html"
-    ]
+    html_files = [path for path in root_path.rglob("*.html") if path.name != "template.html"]
     for path in root_path.rglob("*.htm"):
         html_files.append(path)
     return sorted(html_files)
@@ -28,11 +26,7 @@ def extract_common_structure(html_files: list[Path]) -> dict:
                 if soup.head:
                     meta_tags.extend(str(meta) for meta in soup.head.find_all("meta"))
                     link_tags.extend(str(link) for link in soup.head.find_all("link"))
-                    script_tags.extend(
-                        str(script)
-                        for script in soup.head.find_all("script")
-                        if script.get("src")
-                    )
+                    script_tags.extend(str(script) for script in soup.head.find_all("script") if script.get("src"))
                 if soup.body and soup.body.get("class"):
                     body_classes.extend(soup.body.get("class"))
         except Exception as e:
@@ -154,9 +148,7 @@ def create_template_html(
             <ul>
         {
         chr(10).join(
-            f'                <li><a href="#{Path(f).stem}">{
-                Path(f).relative_to(Path.cwd())
-            }</a></li>'
+            f'                <li><a href="#{Path(f).stem}">{Path(f).relative_to(Path.cwd())}</a></li>'
             for f in html_files
         )
     }
@@ -195,9 +187,7 @@ def create_template_html(
 
 def main() -> None:
     html_files = find_html_files()
-    success = create_template_html(
-        html_files, output_file="template.html", title="Merged HTML Template"
-    )
+    success = create_template_html(html_files, output_file="template.html", title="Merged HTML Template")
     if success:
         print("Output file: template.html")
 

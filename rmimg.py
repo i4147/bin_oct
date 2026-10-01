@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that batch-cleans HTML files by stripping out all img tags and any inline "background-image" declarations from style attributes, using BeautifulSoup for parsing.
 It should accept file paths as command-line arguments, or if none are given, recursively scan the current directory for files with .html, .htm, .md, .rst, and .txt extensions via a helper get_files function.
 Processing must run in parallel using a multiprocessing Pool (8 workers, spawn context) for speed, with each worker reporting per-file size changes (increase, decrease, or no change) using colored console output, and the overall before/after directory size should also be tracked.
@@ -22,9 +22,7 @@ def process_file(path: Path) -> None:
             img.decompose()
         for tag in soup.find_all(style=True):
             style = tag["style"]
-            new_style = "; ".join(
-                s for s in style.split(";") if "background-image" not in s
-            ).strip()
+            new_style = "; ".join(s for s in style.split(";") if "background-image" not in s).strip()
             if new_style:
                 tag["style"] = new_style
             else:

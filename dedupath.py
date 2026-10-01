@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reads the current PATH environment variable, splits it into individual entries, and removes duplicate entries while preserving their original order, printing each unique entry as it processes them.
 It should report the count of original entries, unique entries, and how many duplicates were removed.
 If duplicates existed, the script should locate the user's ~/.bashrc file, read its contents, and update or append an "export PATH=" line with the deduplicated PATH string, replacing an existing export line if found or appending a new one otherwise."""
@@ -33,9 +33,7 @@ def update_bashrc_with_path(bashrc_content, new_path_entries):
     new_path_str = ":".join(new_path_entries)
     path_export = f'export PATH="{new_path_str}"\n'
     lines = bashrc_content.split("\n")
-    path_line_indices = [
-        i for i, line in enumerate(lines) if line.strip().startswith("export PATH=")
-    ]
+    path_line_indices = [i for i, line in enumerate(lines) if line.strip().startswith("export PATH=")]
     if path_line_indices:
         lines[path_line_indices[0]] = path_export.rstrip()
         updated_content = "\n".join(lines)

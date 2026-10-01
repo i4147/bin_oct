@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that repackages installed packages from a Python virtual environment's site-packages directory into standard .whl (wheel) files.
 The script should locate the venv root and its bin/Scripts directory from a given site-packages path, discover installed distributions (using dist-info/egg-info metadata), and rebuild each into a properly structured wheel archive (including RECORD, WHEEL, and METADATA files with correct hashes via hashlib and base64 encoding), optionally bundling associated executables/scripts from the bin directory and data from a shared "share" folder.
 It should accept command-line arguments (via argparse) for the site-packages path, output directory, a force-rebuild-all flag, and options to control parallel processing (using multiprocessing across multiple workers, with a configurable worker count capped by CPU count).

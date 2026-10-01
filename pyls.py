@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """A prompt-engineering script for a custom "ls"-style directory listing utility, built with argparse and Path, that reads a target directory and prints its entries to stdout formatted like a Unix ls command.
 It supports options for long format details (permissions, owner via pwd/grp, size via a custom "dh.fsz" module, and timestamp with full or abbreviated display), classifying entries with trailing indicators (/, @, *) for directories, symlinks, and executables, and optional ANSI color coding controlled by an always/never/auto mode that checks if stdout is a TTY.
 It also handles symlink resolution behavior and gracefully skips entries that raise FileNotFoundError during stat calls."""
@@ -84,11 +84,7 @@ def scan_dir(path: Path, args: Namespace):
         return []
     if not args.a:
         if args.A:
-            entries = [
-                e
-                for e in entries
-                if e.name not in {".", ".."} and not e.name.startswith(".")
-            ]
+            entries = [e for e in entries if e.name not in {".", ".."} and not e.name.startswith(".")]
         else:
             entries = [e for e in entries if not e.name.startswith(".")]
 

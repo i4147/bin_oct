@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans one or more Python source files (optionally recursively) to detect string literals containing invalid escape sequences, which trigger SyntaxWarning or SyntaxError, using tokenize and compile checks.
 It should use multiprocessing to process files in parallel, print colored (red/cyan ANSI) diagnostic messages showing the file, line, and offending string, and optionally auto-fix the issues in place by converting problematic strings to raw strings or properly escaping backslashes when a "fix" flag is passed via argparse."""
 
@@ -141,9 +141,7 @@ def main():
         sys.exit(0)
     tasks = [(str(f), args.apply) for f in files]
     with mp.Pool(8) as pool:
-        for filepath_str, has_issues, output_lines, new_content in pool.imap_unordered(
-            check_and_fix_file, tasks
-        ):
+        for filepath_str, has_issues, output_lines, new_content in pool.imap_unordered(check_and_fix_file, tasks):
             if has_issues:
                 for line in output_lines:
                     print(line)

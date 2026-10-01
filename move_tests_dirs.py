@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Move every `tests` directory out of `~/.local/lib/python3.12/site-packages` into `~/tmp/tests_dirs` while preserving relative structure: discover candidates, process them via `multiprocessing.pool.starmap` on a fixed pool of 8 workers, skip excluded packages, support a `-d` dry-run flag, and log with loguru."""
 
 import shutil
@@ -41,9 +41,7 @@ def move_tests_folder(
         dst_path: Path = base_dst / relative_path.parent / tests_path.name
 
         if dry_run:
-            return MoveResult(
-                tests_path, True, f"will move: {tests_path} -> {dst_path}"
-            )
+            return MoveResult(tests_path, True, f"will move: {tests_path} -> {dst_path}")
 
         dst_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(tests_path), str(dst_path))
@@ -60,9 +58,7 @@ def move_tests_recursive(
     source: Path = source_dir.resolve()
     destination: Path = destination_dir
 
-    tests_folders: list[Path] = [
-        p for p in source.rglob("tests") if p.is_dir() and not _is_excluded(p)
-    ]
+    tests_folders: list[Path] = [p for p in source.rglob("tests") if p.is_dir() and not _is_excluded(p)]
 
     if not tests_folders:
         logger.info("No 'tests' folders found.")

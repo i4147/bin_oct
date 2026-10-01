@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans a directory (optionally recursively) for image files—including PNG, JPG, JPEG, WEBP, BMP, GIF, TIFF, and SVG (rendered via cairosvg if available)—and displays them directly in the terminal using Pillow for loading/conversion and a custom renderer that scales images to fit within given terminal width/height constraints (accounting for character cell aspect ratio by doubling the height in pixels).
 It should accept command-line arguments via argparse for the target directory, recursion toggle, and max display dimensions, then iterate through discovered image paths and print each one to the console.
 Include error handling for missing dependencies (like cairosvg for SVG support) and invalid or corrupted image files, using pathlib for filesystem operations and typing hints for clarity."""
@@ -31,9 +31,7 @@ def load_image(file_path: Path) -> Image.Image:
             png_bytes = cairosvg.svg2png(url=str(file_path))
             return Image.open(io.BytesIO(png_bytes)).convert("RGBA")
         except ImportError:
-            raise RuntimeError(
-                "cairosvg is required to render SVG files. Run: pip install cairosvg"
-            )
+            raise RuntimeError("cairosvg is required to render SVG files. Run: pip install cairosvg")
         except Exception as err:
             raise ValueError(f"Failed to render SVG file: {err}")
     img = Image.open(file_path)
@@ -97,12 +95,8 @@ def main() -> None:
         type=Path,
         help="Files or directories to display (defaults to current dir recursively)",
     )
-    parser.add_argument(
-        "-W", "--width", type=int, default=None, help="Max terminal columns"
-    )
-    parser.add_argument(
-        "-H", "--height", type=int, default=None, help="Max terminal rows"
-    )
+    parser.add_argument("-W", "--width", type=int, default=None, help="Max terminal columns")
+    parser.add_argument("-H", "--height", type=int, default=None, help="Max terminal rows")
     args = parser.parse_args()
     term_columns, term_rows = shutil.get_terminal_size((80, 24))
     max_w = args.width or term_columns

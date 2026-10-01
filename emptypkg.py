@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a Python site-packages directory (defaulting to the current interpreter's site-packages via sysconfig) to detect "empty" installed packages—those whose only files live inside their .dist-info metadata directory with no actual package content outside it.
 It should provide is_empty_package to check installed dist-info folders by parsing their RECORD file and verifying every listed path resolves within the dist-info directory, and is_empty_whl to perform an analogous check on .whl zip archives by inspecting their internal file listing, printing a warning and returning False if the zip is invalid.
 A find_empty_packages function should iterate over the site-packages directory, apply is_empty_package to each dist-info folder found, and collect/report the names of packages considered empty."""
@@ -50,11 +50,7 @@ def find_empty_packages(site_packages: str):
     if not site_packages_path.is_dir():
         return empty
     for entry in site_packages_path.iterdir():
-        if (
-            entry.name.endswith(".dist-info")
-            and entry.is_dir()
-            and is_empty_package(entry)
-        ):
+        if entry.name.endswith(".dist-info") and entry.is_dir() and is_empty_package(entry):
             empty.append(str(entry))
     return empty
 

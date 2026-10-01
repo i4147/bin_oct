@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given root directory (excluding ".git" folders) to find all files whose filename contains "license" (case-insensitive), then concatenates their contents into a single output file at /sdcard/all2.txt, separating each file's content with three blank lines.
 It should skip the output file itself if encountered during scanning, silently ignore directories it lacks permission to read, and gracefully skip files that fail to decode as UTF-8 text.
 The script should print progress messages showing the number of files found, each file added, any skipped unreadable files, and a final completion message, and it should run as a standalone script starting the scan from the current directory (".") when executed."""

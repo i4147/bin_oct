@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pdf_text_extractor.py
 
@@ -189,9 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument(
         "--engine",
         choices=("pypdf2", "pdfplumber"),
-        help=(
-            "PDF extraction engine. Defaults: pypdf2 for concat, pdfplumber for split."
-        ),
+        help=("PDF extraction engine. Defaults: pypdf2 for concat, pdfplumber for split."),
     )
 
     concat = subparsers.add_parser(
@@ -218,10 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-dir",
         type=Path,
         default=None,
-        help=(
-            "Directory for per-page text files. Default: directory named "
-            "after the PDF stem."
-        ),
+        help=("Directory for per-page text files. Default: directory named after the PDF stem."),
     )
     split.add_argument(
         "--pad-width",

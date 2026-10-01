@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 deobfuscate.py — Convert variable-stuffed / eval-based bash scripts
 into readable, deobfuscated bash.

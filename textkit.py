@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 textkit.py — Unified text-analysis CLI.
 
@@ -235,9 +235,7 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
 
     if mode == "nltk":
         if not _HAS_NLTK:
-            raise RuntimeError(
-                "nltk is not installed; use --tokenize regex|alnum instead"
-            )
+            raise RuntimeError("nltk is not installed; use --tokenize regex|alnum instead")
         try:
             nltk.data.find("tokenizers/punkt")
         except LookupError:
@@ -369,7 +367,7 @@ def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
         print(" ".join(w for w, _ in items))
     elif args.format == "json":
         print(json.dumps(dict(items), indent=2, ensure_ascii=False))
-    else:  # "plain"
+    else:
         for word, count in items:
             print(f"{word:<15} {count}")
 
@@ -467,10 +465,7 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
                 unique_chars.update(chars)
                 processed += 1
                 if processed % 100 == 0:
-                    print(
-                        f"  Processed: {processed:,} files | "
-                        f"Unique chars so far: {len(unique_chars):,}"
-                    )
+                    print(f"  Processed: {processed:,} files | Unique chars so far: {len(unique_chars):,}")
     else:
         for f in files:
             unique_chars.update(_worker_collect_chars(str(f)))
@@ -531,8 +526,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="textkit",
         description=(
-            "Unified text-analysis toolkit: word frequency, character "
-            "counting, and unique-character collection."
+            "Unified text-analysis toolkit: word frequency, character counting, and unique-character collection."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
@@ -550,8 +544,7 @@ def build_parser() -> argparse.ArgumentParser:
         "words",
         help="Word-frequency analysis (aggregate or per-file).",
         description=(
-            "Count word frequencies. With no positional arguments the "
-            "current directory is scanned for text files."
+            "Count word frequencies. With no positional arguments the current directory is scanned for text files."
         ),
     )
     p_words.add_argument(

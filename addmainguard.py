@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI tool that scans a directory tree for Python files missing
 an `if __name__ == "__main__":` guard, and optionally injects a `main()`
@@ -37,9 +37,7 @@ DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
 
 POOL_SIZE: Final[int] = 8
 
-MAIN_GUARD_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"if\s+__name__\s*==\s*[\"\']__main__[\"\']\s*:"
-)
+MAIN_GUARD_PATTERN: Final[re.Pattern[str]] = re.compile(r"if\s+__name__\s*==\s*[\"\']__main__[\"\']\s*:")
 
 MAIN_FUNC_TEMPLATE: Final[str] = (
     "\n\ndef main() -> None:\n"
@@ -48,9 +46,7 @@ MAIN_FUNC_TEMPLATE: Final[str] = (
     '    print("Hello from main!")\n'
 )
 
-MAIN_GUARD_TEMPLATE: Final[str] = (
-    '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
-)
+MAIN_GUARD_TEMPLATE: Final[str] = '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
 
 Status = Literal["skipped", "missing", "would_add", "added", "error"]
 
@@ -201,8 +197,7 @@ def main() -> int:
     pool = Pool(processes=POOL_SIZE)
     try:
         async_results: list[AsyncResult[ProcessResult]] = [
-            pool.apply_async(process_file, (path, args.add, args.dry_run))
-            for path in py_files
+            pool.apply_async(process_file, (path, args.add, args.dry_run)) for path in py_files
         ]
 
         completed = 0
@@ -257,18 +252,12 @@ def main() -> int:
         for path in sorted(results["missing"]):  # type: ignore[arg-type]
             path_obj = Path(path)
             try:
-                rel_path = (
-                    path_obj.relative_to(directory)
-                    if directory != Path(".")
-                    else path_obj
-                )
+                rel_path = path_obj.relative_to(directory) if directory != Path(".") else path_obj
             except ValueError:
                 rel_path = path_obj
             print(f"  {rel_path}")
         if missing > 0:
-            print(
-                f"💡 Run with -a to add the guard: python {sys.argv[0]} {args.directory} -a"
-            )
+            print(f"💡 Run with -a to add the guard: python {sys.argv[0]} {args.directory} -a")
         else:
             print("✅ All Python files have the main guard!")
 

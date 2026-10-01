@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recking for all ".md" and ".html" files,racts href-style links using a regular expression.
 For every extracted link that does not exist as a valid relative path, the script checks whether a matching file exists under a fixed static assets directory ("/sdcard/_static"), and if so, replaces the broken link in the file content with the resolved absolute path to that static file.
 Before writing changes, it renames the original file to a ".bak" backup, then writes the updated content back to the original filename.

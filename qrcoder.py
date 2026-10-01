@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that extracts and decodes QR codes from an image file provided as a single command-line argument.
 It should open the image with Pillow, convert it to RGB if needed, and use pyzbar to detect and decode any QR codes present, filtering results to only the "QRCODE" type.
 The script must validate that exactly one argument is given and that the file exists, printing usage or error messages otherwise, and gracefully handle exceptions during decoding by printing an error to stderr and returning an empty list.

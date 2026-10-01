@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Replace symlinks under the current directory with copies of their targets: scan for symlinks, resolve each in a multiprocessing pool of 8 workers, skip `bin/` siblings and `.so` targets, and log replaced and errored symlinks to `replaced.txt` and `errors.txt` via loguru."""
 
 import shutil
@@ -21,16 +21,9 @@ class ProcessResult(NamedTuple):
 def process_symlink(symlink_path: Path) -> ProcessResult | None:
     try:
         raw_target: Path = symlink_path.readlink()
-        target_path: Path = (
-            raw_target
-            if raw_target.is_absolute()
-            else (symlink_path.parent / raw_target).resolve()
-        )
+        target_path: Path = raw_target if raw_target.is_absolute() else (symlink_path.parent / raw_target).resolve()
 
-        if (
-            symlink_path.parent.name == "bin"
-            and target_path.parent == symlink_path.parent
-        ):
+        if symlink_path.parent.name == "bin" and target_path.parent == symlink_path.parent:
             return None
 
         if target_path.suffix == ".so":

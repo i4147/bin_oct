@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Strip comments from JS/TS/JSX/TSX files using tree-sitter: gather target files, parse them in parallel with a multiprocessing pool of 8 workers, remove comment nodes, validate the cleaned output by re-parsing, and log via loguru."""
 
 import sys
@@ -109,9 +109,7 @@ def main() -> None:
         return
 
     with Pool(processes=MAX_WORKERS) as pool:
-        results: list[str | None] = list(
-            pool.imap_unordered(process_file, files_to_process)
-        )
+        results: list[str | None] = list(pool.imap_unordered(process_file, files_to_process))
 
     errors: list[str] = [r for r in results if r is not None]
     if errors:

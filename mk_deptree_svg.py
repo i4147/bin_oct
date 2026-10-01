@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that scans the currently installed Python packages via importlib.metadata, normalizes their names, and builds a dependency graph by parsing each package's "requires" metadata in parallel using joblib threads (8 workers), printing progress as each package is processed.
 The script should only keep dependency edges pointing to packages that are actually installed, and use the resulting graph (e.g., via BFS/DFS with collections.deque and defaultdict) to explore relationships such as reverse dependencies or dependency chains between packages.
 It should expose a command-line interface (via argparse) for specifying options like a target package, and produce output (e.g., an HTML report using the html module, or console text) summarizing the dependency structure.
@@ -51,9 +51,7 @@ def build_dependency_graph(
     installed_names = set(packages)
     graph = {}
     for package_name, dependencies in results:
-        graph[package_name] = [
-            dependency for dependency in dependencies if dependency in installed_names
-        ]
+        graph[package_name] = [dependency for dependency in dependencies if dependency in installed_names]
     return graph
 
 
@@ -64,9 +62,7 @@ def reachable_graph(
     if not roots:
         selected_roots = sorted(graph)
     else:
-        selected_roots = [
-            normalize_name(root) for root in roots if normalize_name(root) in graph
-        ]
+        selected_roots = [normalize_name(root) for root in roots if normalize_name(root) in graph]
     if not selected_roots:
         raise ValueError("None of the requested root packages are installed.")
     included = set()
@@ -80,11 +76,7 @@ def reachable_graph(
             if dependency not in included:
                 queue.append(dependency)
     limited_graph = {
-        package: [
-            dependency
-            for dependency in graph.get(package, [])
-            if dependency in included
-        ]
+        package: [dependency for dependency in graph.get(package, []) if dependency in included]
         for package in sorted(included)
     }
     return limited_graph, selected_roots
@@ -147,20 +139,12 @@ def create_svg(
     max_nodes_on_level = max(len(nodes) for nodes in by_level.values())
     width = max(
         900,
-        margin * 2
-        + max_nodes_on_level * node_width
-        + max(0, max_nodes_on_level - 1) * horizontal_gap,
+        margin * 2 + max_nodes_on_level * node_width + max(0, max_nodes_on_level - 1) * horizontal_gap,
     )
-    height = (
-        margin * 2
-        + (max(by_level) + 1) * node_height
-        + max(0, max(by_level)) * vertical_gap
-    )
+    height = margin * 2 + (max(by_level) + 1) * node_height + max(0, max(by_level)) * vertical_gap
     positions: dict[str, tuple[int, int]] = {}
     for level, packages in by_level.items():
-        total_width = (
-            len(packages) * node_width + max(0, len(packages) - 1) * horizontal_gap
-        )
+        total_width = len(packages) * node_width + max(0, len(packages) - 1) * horizontal_gap
         start_x = max(margin, (width - total_width) // 2)
         y = margin + level * (node_height + vertical_gap)
         for index, package in enumerate(packages):
@@ -168,9 +152,7 @@ def create_svg(
             positions[package] = (x, y)
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        (
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
-        ),
+        (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'),
         "<defs>",
         """
         <marker id="arrow" markerWidth="10" markerHeight="10"
@@ -238,9 +220,7 @@ def create_svg(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Create an SVG dependency graph for installed Python packages."
-    )
+    parser = argparse.ArgumentParser(description="Create an SVG dependency graph for installed Python packages.")
     parser.add_argument(
         "-o",
         "--output",

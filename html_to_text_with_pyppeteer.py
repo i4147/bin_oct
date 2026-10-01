@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write an async Python script using pyppeteer that takes a URL as a command-line argument, launches a headless browser, navigates to that URL, and saves a full-page screenshot to "example.png".
 It should also extract the page's body text content and write it to a text file whose name is derived from the input URL (with a .txt suffix), then evaluate and print the viewport's width, height, and device pixel ratio as a dictionary.
 The script should run the entire flow within an asyncio event loop and close the browser when finished."""

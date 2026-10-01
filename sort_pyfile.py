@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reformats a given Python source file by reorganizing its top-level statements: it should read the file, preserve a leading shebang line and the module docstring if present, separate out any `if __name__ == "__main__":` block from other top-level nodes, and then sort or reorder the remaining code elements according to some defined criteria (e.g., grouping imports, functions, classes) while reconstructing the file with the shebang, docstring, sorted code, and the main block appropriately placed.
 The script takes a file path as input, parses it using the `ast` module, handles read/parse errors gracefully by printing an error message and returning early, and writes or outputs the reorganized source code.
 It should be usable as a command-line tool via `sys.argv` and `pathlib.Path`."""
@@ -28,9 +28,7 @@ def sort_python_script(path: Path) -> None:
         print(f"Error parsing Python code in {path}: {e}")
         return
     if (
-        tree.body
-        and isinstance(tree.body[0], ast.Expr)
-        and isinstance(tree.body[0].value, ast.Constant)
+        tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant)
     ) and isinstance(tree.body[0].value.value, str):
         docstring_node = tree.body[0]
         module_docstring = ast.get_source_segment(remaining_code, docstring_node) or ""
@@ -63,10 +61,7 @@ def sort_python_script(path: Path) -> None:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             imports.append(node)
         elif isinstance(node, ast.Assign):
-            is_constant = all(
-                isinstance(target, ast.Name) and target.id.isupper()
-                for target in node.targets
-            )
+            is_constant = all(isinstance(target, ast.Name) and target.id.isupper() for target in node.targets)
             if is_constant:
                 constants.append(node)
             else:
@@ -98,10 +93,10 @@ def sort_python_script(path: Path) -> None:
             sorted_lines.append(segment)
     sorted_code = "\n".join(sorted_lines)
     try:
-        tmp_path = path.with_name(path.stem + "_sorted" + path.suffix)
-        with tmp_path.open("w", encoding="utf-8") as f:
+        #        tmp_path = path.with_name(path.stem + "_sorted" + path.suffix)
+        with path.open("w", encoding="utf-8") as f:
             f.write(sorted_code)
-        print(f"Successfully sorted and saved: {tmp_path}")
+        print(f"Successfully sorted and saved: {path}")
     except Exception as e:
         print(f"Error writing to {path}: {e}")
 

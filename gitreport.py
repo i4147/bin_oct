@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Report files added in every commit of a git repo as JSON.
 Uses dulwich (pure Python git implementation) - no subprocess.
@@ -29,11 +29,7 @@ def get_added_files_per_commit(repo_path: str) -> dict:
             while stack:
                 prefix, t = stack.pop()
                 for item in t.iteritems():
-                    name = (
-                        item.path.decode()
-                        if isinstance(item.path, bytes)
-                        else item.path
-                    )
+                    name = item.path.decode() if isinstance(item.path, bytes) else item.path
                     full = f"{prefix}{name}"
                     if item.mode & 0o170000 == 0o040000:  # directory
                         stack.append((full + "/", repo[item.sha]))

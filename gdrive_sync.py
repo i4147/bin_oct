@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 gdrive_sync.py — Unified Google Drive downloader / syncer.
 
@@ -118,9 +118,7 @@ class DriveClient:
 
     def _installed_oauth_flow(self):
         if os.path.exists(self.credentials_file):
-            flow = InstalledAppFlow.from_client_secrets_file(
-                self.credentials_file, SCOPES
-            )
+            flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
         else:
             if not self.client_id or not self.client_secret:
                 raise ValueError(
@@ -145,8 +143,7 @@ class DriveClient:
     def _manual_oauth_flow(self):
         if not self.client_id or not self.client_secret:
             raise ValueError(
-                "Manual auth mode requires GOOGLE_CLIENT_ID and "
-                "GOOGLE_CLIENT_SECRET (env file or CLI flags)."
+                "Manual auth mode requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (env file or CLI flags)."
             )
 
         params = {
@@ -203,10 +200,7 @@ class DriveClient:
                     .list(
                         q=f"'{folder_id}' in parents and trashed=false",
                         pageSize=1000,
-                        fields=(
-                            "nextPageToken, files(id, name, mimeType, "
-                            "size, modifiedTime)"
-                        ),
+                        fields=("nextPageToken, files(id, name, mimeType, size, modifiedTime)"),
                         pageToken=page_token,
                     )
                     .execute()
@@ -221,10 +215,7 @@ class DriveClient:
         return results
 
     def find_folder(self, name: str, parent: str = "root") -> Optional[dict]:
-        query = (
-            f"name='{name}' and mimeType='{FOLDER_MIME}' "
-            f"and '{parent}' in parents and trashed=false"
-        )
+        query = f"name='{name}' and mimeType='{FOLDER_MIME}' and '{parent}' in parents and trashed=false"
         resp = self.service.files().list(q=query, fields="files(id, name)").execute()
         files = resp.get("files", [])
         return files[0] if files else None
@@ -395,8 +386,7 @@ def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
     grp.add_argument(
         "--credentials-file",
         default=DEFAULT_CREDENTIALS_FILE,
-        help=f"OAuth client secrets for installed mode (default: "
-        f"{DEFAULT_CREDENTIALS_FILE}).",
+        help=f"OAuth client secrets for installed mode (default: {DEFAULT_CREDENTIALS_FILE}).",
     )
     grp.add_argument(
         "--token-file",
@@ -409,9 +399,7 @@ def _add_auth_arguments(parser: argparse.ArgumentParser) -> None:
         help=f"dotenv file with GOOGLE_CLIENT_ID/SECRET (default: {DEFAULT_ENV_FILE}).",
     )
     grp.add_argument("--client-id", default=None, help="Override GOOGLE_CLIENT_ID.")
-    grp.add_argument(
-        "--client-secret", default=None, help="Override GOOGLE_CLIENT_SECRET."
-    )
+    grp.add_argument("--client-secret", default=None, help="Override GOOGLE_CLIENT_SECRET.")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -434,12 +422,8 @@ def build_parser() -> argparse.ArgumentParser:
         "download",
         help="Download a single named folder from Drive root (gdrive_downloader.py).",
     )
-    p_down.add_argument(
-        "--folder", required=True, help="Folder name directly under Drive root."
-    )
-    p_down.add_argument(
-        "--dest", default=None, help="Destination directory (default: ./<folder>)."
-    )
+    p_down.add_argument("--folder", required=True, help="Folder name directly under Drive root.")
+    p_down.add_argument("--dest", default=None, help="Destination directory (default: ./<folder>).")
     p_down.add_argument(
         "--sanitize",
         action="store_true",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_translator.py — unified Persian ↔ English translation toolkit.
 
@@ -114,9 +114,7 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-PERSIAN_RE = re.compile(
-    r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]"
-)
+PERSIAN_RE = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]")
 
 
 def is_persian(text: str) -> bool:
@@ -147,9 +145,7 @@ def translate_google(
     delay: float = 0.5,
 ) -> Optional[str]:
     if GoogleTranslator is None:
-        raise RuntimeError(
-            "deep-translator is not installed (pip install deep-translator)"
-        )
+        raise RuntimeError("deep-translator is not installed (pip install deep-translator)")
     translator = GoogleTranslator(source=source, target=target)
     for attempt in range(retries):
         try:
@@ -232,9 +228,7 @@ def get_backend(name: str):
     try:
         return _BACKENDS[name]
     except KeyError:
-        raise ValueError(
-            f"unknown backend: {name!r} (choose from {sorted(_BACKENDS)})"
-        ) from None
+        raise ValueError(f"unknown backend: {name!r} (choose from {sorted(_BACKENDS)})") from None
 
 
 def _translate_item(
@@ -243,9 +237,7 @@ def _translate_item(
     text, backend_name, source, target, retries, delay = item
     try:
         backend = get_backend(backend_name)
-        result = backend(
-            text, source=source, target=target, retries=retries, delay=delay
-        )
+        result = backend(text, source=source, target=target, retries=retries, delay=delay)
     except Exception as exc:  # noqa: BLE001 - don't kill the whole pool
         log.warning("worker error for %r: %s", text[:40], exc)
         result = None
@@ -312,19 +304,12 @@ def cmd_file(args: argparse.Namespace) -> int:
     if args.mode == "line":
         work_units = list(pending)
     else:
-        work_units = [
-            text for _s, _e, text in split_into_chunks(pending, args.chunk_size)
-        ]
+        work_units = [text for _s, _e, text in split_into_chunks(pending, args.chunk_size)]
 
-    print(
-        f"Translating {len(work_units)} unit(s) with {args.workers} workers "
-        f"via {backend_name} ({args.executor})..."
-    )
+    print(f"Translating {len(work_units)} unit(s) with {args.workers} workers via {backend_name} ({args.executor})...")
 
     PoolClass = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
-    packed = [
-        (text, backend_name, source, target, retries, delay) for text in work_units
-    ]
+    packed = [(text, backend_name, source, target, retries, delay) for text in work_units]
 
     results: list[tuple[str, Optional[str]]] = []
     try:
@@ -389,7 +374,7 @@ def cmd_file(args: argparse.Namespace) -> int:
             }
             for i, src in enumerate(pending)
         ]
-    else:  # "dict"
+    else:
         payload = translations
 
     try:
@@ -444,10 +429,7 @@ def cmd_words(args: argparse.Namespace) -> int:
             log.warning("Could not load existing %s: %s", output_path, exc)
 
     pending = [w for w in words if w not in existing]
-    print(
-        f"{len(pending)} to translate "
-        f"(skipping {len(words) - len(pending)} already translated)"
-    )
+    print(f"{len(pending)} to translate (skipping {len(words) - len(pending)} already translated)")
     if not pending:
         print("Nothing to do.")
         return 0
@@ -456,10 +438,7 @@ def cmd_words(args: argparse.Namespace) -> int:
     progress = tqdm(total=len(pending), desc="Translating", unit="word")
 
     PoolClass = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
-    packed = [
-        (w, args.backend, args.source, args.target, args.retries, args.delay)
-        for w in pending
-    ]
+    packed = [(w, args.backend, args.source, args.target, args.retries, args.delay) for w in pending]
 
     saved_count = 0
     try:
@@ -483,11 +462,7 @@ def cmd_words(args: argparse.Namespace) -> int:
 
                 progress.update(1)
 
-                if (
-                    args.save_every
-                    and saved_count
-                    and (saved_count % args.save_every == 0)
-                ):
+                if args.save_every and saved_count and (saved_count % args.save_every == 0):
                     try:
                         save_json(results, output_path)
                         log.info("Checkpoint: saved %d entries", len(results))
@@ -546,9 +521,7 @@ def _fuzzy(
     return get_close_matches(word, list(candidates), n=n, cutoff=cutoff)
 
 
-def _fzf_select(
-    candidates: Iterable[str], prompt: str = "Select word: "
-) -> Optional[str]:
+def _fzf_select(candidates: Iterable[str], prompt: str = "Select word: ") -> Optional[str]:
     if not shutil.which("fzf"):
         return None
     try:
@@ -661,9 +634,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  merged_translator.py lookup\n"
         ),
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable debug logging"
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_file = sub.add_parser(
@@ -691,9 +662,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_file.add_argument("--source", default="fa", help="Source language")
     p_file.add_argument("--target", default="en", help="Target language")
-    p_file.add_argument(
-        "--workers", type=int, default=8, help="Parallel workers (default: 8)"
-    )
+    p_file.add_argument("--workers", type=int, default=8, help="Parallel workers (default: 8)")
     p_file.add_argument(
         "--executor",
         choices=["process", "thread"],
@@ -733,14 +702,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.5,
         help="Seconds between retries (default: 0.5)",
     )
-    p_file.add_argument(
-        "--progress", action="store_true", help="Print periodic progress lines"
-    )
+    p_file.add_argument("--progress", action="store_true", help="Print periodic progress lines")
     p_file.set_defaults(func=cmd_file)
 
-    p_words = sub.add_parser(
-        "words", help="Translate a word list into a JSON dictionary."
-    )
+    p_words = sub.add_parser("words", help="Translate a word list into a JSON dictionary.")
     p_words.add_argument("input", help="Path to the words file")
     p_words.add_argument(
         "--output",
@@ -753,13 +718,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="deep-translator",
         help="Translation backend (default: deep-translator)",
     )
-    p_words.add_argument(
-        "--source", default="auto", help="Source language (default: auto)"
-    )
+    p_words.add_argument("--source", default="auto", help="Source language (default: auto)")
     p_words.add_argument("--target", default="en", help="Target language (default: en)")
-    p_words.add_argument(
-        "--workers", type=int, default=8, help="Parallel workers (default: 8)"
-    )
+    p_words.add_argument("--workers", type=int, default=8, help="Parallel workers (default: 8)")
     p_words.add_argument(
         "--executor",
         choices=["process", "thread"],
@@ -798,18 +759,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_words.set_defaults(func=cmd_words)
 
-    p_lookup = sub.add_parser(
-        "lookup", help="Offline dictionary lookup (with optional fzf)."
-    )
+    p_lookup = sub.add_parser("lookup", help="Offline dictionary lookup (with optional fzf).")
     p_lookup.add_argument("word", nargs="*", help="Word(s) to translate")
     p_lookup.add_argument(
         "--dict",
         default="~/dic.json",
         help="Path to the JSON dictionary (default: ~/dic.json)",
     )
-    p_lookup.add_argument(
-        "--prefix", default=None, help="List words starting with this prefix"
-    )
+    p_lookup.add_argument("--prefix", default=None, help="List words starting with this prefix")
     p_lookup.add_argument("--fuzzy", default=None, help="Fuzzy-search this string")
     p_lookup.add_argument(
         "--no-fzf",

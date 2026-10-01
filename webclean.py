@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 
 """
 webclean.py — Unified comment stripper for web files (HTML, CSS, JS, TS).
@@ -148,9 +148,7 @@ def detect_script_lang(tag_bytes: bytes) -> Optional[str]:
     low = tag_bytes.lower()
     if b"type=" not in low and b"language=" not in low:
         return "js"
-    if any(
-        t in low for t in (b"text/typescript", b"application/typescript", b"typescript")
-    ):
+    if any(t in low for t in (b"text/typescript", b"application/typescript", b"typescript")):
         return "ts"
     if any(t in low for t in (b"text/tsx", b"application/tsx")):
         return "tsx"
@@ -190,11 +188,7 @@ def find_embedded_blocks(text: bytes, html_parser) -> list[tuple[int, int, str]]
                     start_tag = child
                 elif child.type == "raw_text":
                     raw_text = child
-            if (
-                start_tag is not None
-                and raw_text is not None
-                and raw_text.end_byte > raw_text.start_byte
-            ):
+            if start_tag is not None and raw_text is not None and raw_text.end_byte > raw_text.start_byte:
                 tag = text[start_tag.start_byte : start_tag.end_byte].lower()
                 if tag.startswith(b"<script"):
                     lang = detect_script_lang(tag)
@@ -268,9 +262,7 @@ def regex_js_ranges(text: bytes) -> list[tuple[int, int]]:
     return ranges
 
 
-def remove_ranges(
-    text: bytes, ranges: list[tuple[int, int]], preserve_newlines: bool
-) -> bytes:
+def remove_ranges(text: bytes, ranges: list[tuple[int, int]], preserve_newlines: bool) -> bytes:
     if not ranges:
         return text
     ranges = sorted(ranges)
@@ -287,9 +279,7 @@ def remove_ranges(
     return bytes(out)
 
 
-def css_remove_whole_line_comments(
-    text: bytes, ranges: list[tuple[int, int]]
-) -> tuple[bytes, int]:
+def css_remove_whole_line_comments(text: bytes, ranges: list[tuple[int, int]]) -> tuple[bytes, int]:
     if not ranges:
         return text, 0
     ranges = sorted(ranges)
@@ -461,9 +451,7 @@ def process_job(job: Job) -> Result:
     return Result(job.path, True, n)
 
 
-def discover_files(
-    paths: list[str], extensions: set[str], follow_symlinks: bool
-) -> list[Path]:
+def discover_files(paths: list[str], extensions: set[str], follow_symlinks: bool) -> list[Path]:
     seen: set[Path] = set()
     out: list[Path] = []
     for raw in paths:
@@ -542,17 +530,11 @@ def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
     return 1 if errors else 0
 
 
-_RE_LINK_STYLESHEET = re.compile(
-    r'<link\b[^>]*rel=["\']stylesheet["\'][^>]*>', re.IGNORECASE
-)
+_RE_LINK_STYLESHEET = re.compile(r'<link\b[^>]*rel=["\']stylesheet["\'][^>]*>', re.IGNORECASE)
 _RE_HREF = re.compile(r'href=["\']([^"\']+)["\']', re.IGNORECASE)
-_RE_SCRIPT_SRC = re.compile(
-    r'<script\b([^>]*)\bsrc=["\']([^"\']+)["\']([^>]*)>\s*</script>', re.IGNORECASE
-)
+_RE_SCRIPT_SRC = re.compile(r'<script\b([^>]*)\bsrc=["\']([^"\']+)["\']([^>]*)>\s*</script>', re.IGNORECASE)
 _RE_STYLE_BLOCK = re.compile(r"<style\b[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
-_RE_SCRIPT_INLINE = re.compile(
-    r"<script\b(?![^>]*\bsrc=)([^>]*)>(.*?)</script>", re.IGNORECASE | re.DOTALL
-)
+_RE_SCRIPT_INLINE = re.compile(r"<script\b(?![^>]*\bsrc=)([^>]*)>(.*?)</script>", re.IGNORECASE | re.DOTALL)
 _RE_HTML_COMMENT_SAFE_STR = re.compile(r"<!--(?!\[if).*?-->", re.DOTALL)
 _RE_CSS_COMMENT_STR = re.compile(r"/\*.*?\*/", re.DOTALL)
 
@@ -655,11 +637,7 @@ def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
 
     src = _RE_SCRIPT_INLINE.sub(repl_script_inline, src)
 
-    rx = (
-        _RE_HTML_COMMENT_SAFE_STR
-        if keep_conditional
-        else re.compile(r"<!--.*?-->", re.DOTALL)
-    )
+    rx = _RE_HTML_COMMENT_SAFE_STR if keep_conditional else re.compile(r"<!--.*?-->", re.DOTALL)
     src = rx.sub("", src)
 
     return re.sub(r"\n\s*\n+", "\n\n", src)
@@ -796,9 +774,7 @@ def build_parser() -> argparse.ArgumentParser:
             help="Override the set of file extensions to scan.",
         )
 
-    sp = sub.add_parser(
-        "regex", help="Regex/state-machine stripping across extensions."
-    )
+    sp = sub.add_parser("regex", help="Regex/state-machine stripping across extensions.")
     _add_common_flags(sp)
     sp.add_argument(
         "--extensions",
@@ -809,8 +785,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser(
         "inline",
-        help="Inline external CSS/JS in an HTML file and strip "
-        "comments (cleanhtmlre.py).",
+        help="Inline external CSS/JS in an HTML file and strip comments (cleanhtmlre.py).",
     )
     sp.add_argument("paths", nargs="*")
     sp.add_argument(
@@ -851,8 +826,7 @@ def cmd_language(args: argparse.Namespace, lang: str) -> int:
             import tree_sitter  # noqa: F401
         except ImportError as exc:
             print(
-                f"error: tree-sitter not installed ({exc}). "
-                f"Use --approach regex or install it.",
+                f"error: tree-sitter not installed ({exc}). Use --approach regex or install it.",
                 file=sys.stderr,
             )
             return 2
@@ -884,9 +858,7 @@ def cmd_all(args: argparse.Namespace) -> int:
 
 
 def cmd_regex(args: argparse.Namespace) -> int:
-    exts = {
-        e.lower() if e.startswith(".") else "." + e.lower() for e in args.extensions
-    }
+    exts = {e.lower() if e.startswith(".") else "." + e.lower() for e in args.extensions}
     files = discover_files(args.paths or ["."], exts, args.follow_symlinks)
     jobs = []
     for f in files:

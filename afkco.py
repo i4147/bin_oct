@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that scans Python source files (including inside zip/tar archives, with optional zstandard support) to detect unused imports using the ast module, tracking special cases like TYPE_CHECKING blocks, __future__ imports, __all__ exports, and star imports.
 It should support recursive directory scanning, multiprocessing for parallel file analysis, and colored terminal output that can be disabled, producing a report of unused imports per file along with file size and any errors encountered.
 The script should accept command-line arguments (via argparse) to configure input paths, output format, and processing options, and output results in a human-readable format for developers to clean up unused imports in their codebase."""
@@ -64,9 +64,7 @@ class ImportVisitor(ast.NodeVisitor):
             return
         under_type_checking = False
         for parent in ast.walk(ast.Module()):
-            if isinstance(parent, ast.If) and (
-                isinstance(parent.test, ast.Name) and parent.test.id == "TYPE_CHECKING"
-            ):
+            if isinstance(parent, ast.If) and (isinstance(parent.test, ast.Name) and parent.test.id == "TYPE_CHECKING"):
                 for child in parent.body:
                     if child == node:
                         under_type_checking = True
@@ -93,11 +91,7 @@ class ImportVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         for target in node.targets:
-            if (
-                isinstance(target, ast.Name)
-                and target.id == "__all__"
-                and isinstance(node.value, ast.List)
-            ):
+            if isinstance(target, ast.Name) and target.id == "__all__" and isinstance(node.value, ast.List):
                 for elt in node.value.elts:
                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                         self.all_export.add(elt.value)
@@ -190,9 +184,7 @@ def process_py_file(path):
     except Exception as e:
         return FileReport(str(path_obj), error=f"Read error: {e}")
     unused, error = analyze_imports(source, str(path_obj))
-    return FileReport(
-        path=str(path_obj), unused_imports=unused, error=error, file_size=file_size
-    )
+    return FileReport(path=str(path_obj), unused_imports=unused, error=error, file_size=file_size)
 
 
 def extract_py_files_from_wheel(wheel_path):
@@ -227,12 +219,8 @@ def extract_py_files_from_tar_zst(archive_path):
                             try:
                                 f_obj = tar.extractfile(member)
                                 if f_obj:
-                                    content = f_obj.read().decode(
-                                        "utf-8", errors="replace"
-                                    )
-                                    virtual_path = (
-                                        f"{Path(archive_path).name}::{member.name}"
-                                    )
+                                    content = f_obj.read().decode("utf-8", errors="replace")
+                                    virtual_path = f"{Path(archive_path).name}::{member.name}"
                                     result[virtual_path] = content
                             except Exception:
                                 pass
@@ -244,12 +232,8 @@ def extract_py_files_from_tar_zst(archive_path):
                             try:
                                 f_obj = tar.extractfile(member)
                                 if f_obj:
-                                    content = f_obj.read().decode(
-                                        "utf-8", errors="replace"
-                                    )
-                                    virtual_path = (
-                                        f"{Path(archive_path).name}::{member.name}"
-                                    )
+                                    content = f_obj.read().decode("utf-8", errors="replace")
+                                    virtual_path = f"{Path(archive_path).name}::{member.name}"
                                     result[virtual_path] = content
                             except Exception:
                                 pass
@@ -435,10 +419,9 @@ def print_report(
         for unused in report.unused_imports:
             total_unused += 1
             print(
-                f"{Colors.BOLD}{report.path}{Colors.RESET}  -->  line {Colors.CYAN}{
-                    unused.lineno:>5}{Colors.RESET}  {Colors.YELLOW}{unused.statement}{
-                    Colors.RESET
-                }"
+                f"{Colors.BOLD}{report.path}{Colors.RESET}  -->  line {Colors.CYAN}{unused.lineno:>5}{Colors.RESET}  {
+                    Colors.YELLOW
+                }{unused.statement}{Colors.RESET}"
             )
             if verbose and len(unused.unused_names) > 1:
                 print(f"{'':30}[unused: {', '.join(unused.unused_names)}]")
@@ -450,9 +433,7 @@ def print_report(
                     print(f"  {Colors.GREEN}fixed{Colors.RESET} {report.path}")
                     fixed_count += 1
                 else:
-                    print(
-                        f"  {Colors.RED}SKIP{Colors.RESET} autofix on {report.path} — {error}"
-                    )
+                    print(f"  {Colors.RED}SKIP{Colors.RESET} autofix on {report.path} — {error}")
                     skipped_count += 1
             elif autofix and dry_run:
                 print(f"  [dry-run] would fix {report.path}")
@@ -476,9 +457,7 @@ def main():
         default=["."],
         help="File or directory paths to analyze (default: current directory)",
     )
-    parser.add_argument(
-        "-a", "--autofix", action="store_true", help="Remove unused imports in-place"
-    )
+    parser.add_argument("-a", "--autofix", action="store_true", help="Remove unused imports in-place")
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -490,18 +469,14 @@ def main():
         action="store_true",
         help="Detailed output with per-name breakdown",
     )
-    parser.add_argument(
-        "--workers", type=int, default=8, help="Number of parallel workers (default: 8)"
-    )
+    parser.add_argument("--workers", type=int, default=8, help="Number of parallel workers (default: 8)")
     parser.add_argument(
         "--exclude",
         action="append",
         default=[],
         help="Regex pattern to exclude files (repeatable)",
     )
-    parser.add_argument(
-        "--no-color", action="store_true", help="Disable ANSI color codes"
-    )
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI color codes")
     args = parser.parse_args()
     if args.dry_run:
         args.autofix = True
@@ -511,9 +486,7 @@ def main():
         return 1
     if args.verbose:
         print(f"Scanning {len(args.paths)} path(s) with {args.workers} worker(s) …\n")
-        print(
-            f"  {len(py_files)} .py file(s), {len(archive_members)} archive member(s) queued.\n"
-        )
+        print(f"  {len(py_files)} .py file(s), {len(archive_members)} archive member(s) queued.\n")
     reports = []
     with Pool(processes=args.workers) as pool:
         if py_files:

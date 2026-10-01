@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pkgtool.py - merged package copying/repacking utility.
 
@@ -303,9 +303,7 @@ def find_package_dir(pkg: str, site_paths: Sequence[Path]) -> Path | None:
             return candidate
 
         for child in sp.iterdir():
-            if child.is_dir() and child.name.lower().replace(
-                "-", "_"
-            ) == pkg.lower().replace("-", "_"):
+            if child.is_dir() and child.name.lower().replace("-", "_") == pkg.lower().replace("-", "_"):
                 return child
 
     return None
@@ -384,9 +382,7 @@ def repack_package(
     purelib = not any(path.endswith(".so") for path in paths)
     interp, abi, plat = generate_wheel_tags(purelib)
 
-    wheel_dir = (
-        output_base / f"{name.replace('-', '_')}-{version}-{interp}-{abi}-{plat}"
-    )
+    wheel_dir = output_base / f"{name.replace('-', '_')}-{version}-{interp}-{abi}-{plat}"
     dist_info_dest = wheel_dir / f"{name}-{version}.dist-info"
     dist_info_dest.mkdir(parents=True, exist_ok=True)
 
@@ -462,13 +458,9 @@ def cmd_record(args: argparse.Namespace) -> int:
     if args.dest:
         dest_root = Path(args.dest).expanduser().resolve()
     else:
-        dest_root = (
-            Path.home() / "tmp" / "1" if args.move else Path.home() / "tmp" / "packages"
-        )
+        dest_root = Path.home() / "tmp" / "1" if args.move else Path.home() / "tmp" / "packages"
 
-    per_pkg = (
-        args.per_package_subdir if args.per_package_subdir is not None else args.move
-    )
+    per_pkg = args.per_package_subdir if args.per_package_subdir is not None else args.move
 
     def process(pkg: str, dist_info: Path) -> int:
         copied, missing, errors = copy_record_files(
@@ -490,9 +482,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         return copied
 
     if args.workers > 1:
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=args.workers
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
             list(executor.map(lambda item: process(*item), packages))
     else:
         for pkg, dist_info in packages:
@@ -604,17 +594,11 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
             continue
 
         location = dist.locate_file("").resolve()
-        if not any(
-            location == sp.resolve() or location.is_relative_to(sp.resolve())
-            for sp in site_paths
-        ):
+        if not any(location == sp.resolve() or location.is_relative_to(sp.resolve()) for sp in site_paths):
             continue
 
         if args.patterns:
-            if not any(
-                fnmatch.fnmatch(name.lower(), pattern.lower())
-                for pattern in args.patterns
-            ):
+            if not any(fnmatch.fnmatch(name.lower(), pattern.lower()) for pattern in args.patterns):
                 continue
         elif not args.all:
             continue
@@ -646,11 +630,7 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
     if args.dest:
         dest_root = Path(args.dest).expanduser().resolve()
     else:
-        dest_root = (
-            Path.home() / "tmp" / "pkgs"
-            if user_site_only
-            else Path.home() / "tmp" / "packages"
-        )
+        dest_root = Path.home() / "tmp" / "pkgs" if user_site_only else Path.home() / "tmp" / "packages"
     dest_root.mkdir(parents=True, exist_ok=True)
 
     def extract(
@@ -674,14 +654,11 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
         return (
             name,
             True,
-            f"Copied {copied} files to {dest_root / name} "
-            f"(missing={missing}, errors={errors})",
+            f"Copied {copied} files to {dest_root / name} (missing={missing}, errors={errors})",
         )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
-        futures = {
-            executor.submit(extract, name, dist): name for name, dist in selected
-        }
+        futures = {executor.submit(extract, name, dist): name for name, dist in selected}
 
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
@@ -883,10 +860,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ep.add_argument(
         "--dest",
         default=None,
-        help=(
-            "Destination root "
-            "(default: ~/tmp/pkgs for --user-site-only, else ~/tmp/packages)."
-        ),
+        help=("Destination root (default: ~/tmp/pkgs for --user-site-only, else ~/tmp/packages)."),
     )
     p_ep.add_argument(
         "--workers",

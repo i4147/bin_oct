@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that validates HTML tag balance in or more files by subclassing html.parser.HTMLParser (as TagBalanceChecker)ened tags, recognize void/self-closing elements (br, img, input, hr, meta, link, etc.) that need no closing tag, and detect mismatched, unexpected, or unclosed closing/opening tags, recording each issue with its line/column position.
 The script should accept file paths via argparse, read and parse each file's contents, report any tag-balance errors found (including an optional auto-fix mode indicated by a fix_needed flag), and exit with a non-zero status code if problems are detected, while gracefully handling parsing exceptions."""
 
@@ -77,14 +77,8 @@ def check_html_file(path: Path) -> tuple[bool, list[str]]:
         parser.feed(source)
     except Exception as e:
         return False, [f"⚠️  Parsing error: {e}"]
-    missing_closings = [
-        f"Missing </{tag}> (opened at line {pos[0]}, col {pos[1]})"
-        for tag, pos in parser.stack
-    ]
-    unexpected_closings = [
-        f"Unexpected </{tag}> at line {pos[0]}, col {pos[1]}"
-        for _, tag, pos in parser.errors
-    ]
+    missing_closings = [f"Missing </{tag}> (opened at line {pos[0]}, col {pos[1]})" for tag, pos in parser.stack]
+    unexpected_closings = [f"Unexpected </{tag}> at line {pos[0]}, col {pos[1]}" for _, tag, pos in parser.errors]
     issues = missing_closings + unexpected_closings
     is_balanced = len(issues) == 0
     return is_balanced, issues

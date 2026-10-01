@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 dl — a small pip-style download manager for the command line.
 
@@ -156,10 +156,7 @@ class Bar:
         if self.finished:
             el = self.elapsed
             rate = self.done / el if el > 0 else 0.0
-            return (
-                f"{self.label}  {fmt_size(self.done)} in {fmt_time(el)} "
-                f"({fmt_size(rate)}/s)"
-            )
+            return f"{self.label}  {fmt_size(self.done)} in {fmt_time(el)} ({fmt_size(rate)}/s)"
 
         self._tick()
 
@@ -289,9 +286,7 @@ class PurePythonBackend(Backend):
     name = "python"
 
     @contextmanager
-    def open(
-        self, url: str, offset: int, timeout: float
-    ) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
+    def open(self, url: str, offset: int, timeout: float) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
         headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
         if offset:
             headers["Range"] = f"bytes={offset}-"
@@ -337,9 +332,7 @@ class RequestsBackend(Backend):
         self._requests = requests
 
     @contextmanager
-    def open(
-        self, url: str, offset: int, timeout: float
-    ) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
+    def open(self, url: str, offset: int, timeout: float) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
         headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
         if offset:
             headers["Range"] = f"bytes={offset}-"
@@ -378,14 +371,12 @@ class PycurlBackend(Backend):
     name = "pycurl"
 
     def __init__(self) -> None:
-        import pycurl  # lazy
+        import pycurl
 
         self._pc = pycurl
 
     @contextmanager
-    def open(
-        self, url: str, offset: int, timeout: float
-    ) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
+    def open(self, url: str, offset: int, timeout: float) -> Iterator[tuple[StreamInfo, Iterator[bytes]]]:
         pc = self._pc
         q: "queue.Queue[bytes | None]" = queue.Queue()
         headers_ready = threading.Event()
@@ -487,16 +478,12 @@ def get_backend(name: str) -> Backend:
         try:
             return RequestsBackend()
         except ImportError as exc:
-            raise SystemExit(
-                "backend 'requests' requires the requests package: pip install requests"
-            ) from exc
+            raise SystemExit("backend 'requests' requires the requests package: pip install requests") from exc
     if name == "pycurl":
         try:
             return PycurlBackend()
         except ImportError as exc:
-            raise SystemExit(
-                "backend 'pycurl' requires the pycurl package: pip install pycurl"
-            ) from exc
+            raise SystemExit("backend 'pycurl' requires the pycurl package: pip install pycurl") from exc
     raise SystemExit(f"unknown backend: {name}")
 
 
@@ -650,8 +637,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="FILE",
-        help="read URLs from FILE (one per line, '#' comments allowed); "
-        "may be given multiple times",
+        help="read URLs from FILE (one per line, '#' comments allowed); may be given multiple times",
     )
     p.add_argument(
         "-b",
@@ -701,9 +687,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def collect_urls(
-    args: argparse.Namespace, parser: argparse.ArgumentParser
-) -> list[str]:
+def collect_urls(args: argparse.Namespace, parser: argparse.ArgumentParser) -> list[str]:
     urls: list[str] = list(args.urls)
     for path_str in args.file:
         fpath = Path(path_str)
@@ -818,10 +802,7 @@ def main(argv: list[str] | None = None) -> int:
         if failed:
             parts.append(f"failed {failed}")
         if parts:
-            print(
-                f"{', '.join(parts)} ({fmt_size(total_bytes)} new) "
-                f"in {fmt_time(elapsed)}"
-            )
+            print(f"{', '.join(parts)} ({fmt_size(total_bytes)} new) in {fmt_time(elapsed)}")
 
     if interrupted:
         return 130

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged_search.py - unified file-search toolkit.
 
@@ -153,13 +153,9 @@ def walk_files(
         if blocked and p.suffix in blocked:
             return False
         s = str(p)
-        if include_globs and not any(
-            fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in include_globs
-        ):
+        if include_globs and not any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in include_globs):
             return False
-        if exclude_globs and any(
-            fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in exclude_globs
-        ):
+        if exclude_globs and any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in exclude_globs):
             return False
         return True
 
@@ -529,9 +525,7 @@ def cmd_grep(args: argparse.Namespace) -> int:
         )
     )
     use_color = (not args.no_color) and sys.stdout.isatty()
-    jobs = [
-        (str(p), pattern, args.ignore_case, args.fixed_strings, True) for p in files
-    ]
+    jobs = [(str(p), pattern, args.ignore_case, args.fixed_strings, True) for p in files]
 
     def iter_results():
         if args.workers > 1 and len(jobs) > 1:
@@ -753,9 +747,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Search file contents instead of names",
     )
     p.add_argument("-d", "--directory", default=".")
-    p.add_argument(
-        "-o", "--output", default="output", help="(kept for compatibility; unused)"
-    )
+    p.add_argument("-o", "--output", default="output", help="(kept for compatibility; unused)")
     p.add_argument(
         "--exclude",
         action="append",
@@ -763,9 +755,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exclude a dir name or glob (repeatable)",
     )
     p.add_argument("-w", "--workers", type=int, default=8)
-    p.add_argument(
-        "--no-pause", action="store_true", help="Disable SPACE/p pause hotkey"
-    )
+    p.add_argument("--no-pause", action="store_true", help="Disable SPACE/p pause hotkey")
     p.set_defaults(func=cmd_fast)
 
     p = sub.add_parser("find", help="Search filenames incl. archives (pfind.py)")
@@ -777,14 +767,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("grep", help="ripgrep-like content search")
     p.add_argument("pattern", nargs="?")
     p.add_argument("paths", nargs="*", default=["."])
-    p.add_argument(
-        "-e", "--regexp", dest="pattern_e", help="Pattern (alternative to positional)"
-    )
+    p.add_argument("-e", "--regexp", dest="pattern_e", help="Pattern (alternative to positional)")
     p.add_argument("-i", "--ignore-case", action="store_true")
     p.add_argument("-F", "--fixed-strings", action="store_true")
-    p.add_argument(
-        "-n", "--line-number", dest="line_number", action="store_true", default=True
-    )
+    p.add_argument("-n", "--line-number", dest="line_number", action="store_true", default=True)
     p.add_argument("--no-line-number", dest="line_number", action="store_false")
     p.add_argument("-l", "--files-with-matches", action="store_true")
     p.add_argument("-c", "--count", action="store_true")
@@ -793,9 +779,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-g", "--glob", action="append", help="Include glob (repeatable)")
     p.add_argument("-x", "--exclude", action="append", help="Exclude glob (repeatable)")
     p.add_argument("-m", "--max-filesize", type=int, default=10_000_000)
-    p.add_argument(
-        "--extensions", nargs="*", help="Only scan these extensions (e.g. .txt .md)"
-    )
+    p.add_argument("--extensions", nargs="*", help="Only scan these extensions (e.g. .txt .md)")
     p.add_argument("--no-color", action="store_true")
     p.set_defaults(func=cmd_grep)
 

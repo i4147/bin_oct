@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool named "mdview" that reads a Markdown file (given as an optional positional argument, defaulting to README.md) and renders it in the terminal using the rich library's Markdown and Console classes.
 The script should build its argument parser with argparse, handle errors gracefully by printing readable messages to stderr for cases like missing files, permission errors, or invalid UTF-8 encoding, and return appropriate non-zero exit codes on failure.
 It should optionally use the readchar library, if available, to support paginated or key-driven navigation of the rendered content, falling back gracefully when readchar is not installed."""
@@ -54,9 +54,7 @@ def main() -> int:
         err_console.print(f"[red]Error:[/red] Permission denied: {args.file}")
         return 1
     except UnicodeDecodeError:
-        err_console.print(
-            f"[red]Error:[/red] {args.file} is not a valid UTF-8 text file."
-        )
+        err_console.print(f"[red]Error:[/red] {args.file} is not a valid UTF-8 text file.")
         return 1
     except OSError as error:
         err_console.print(f"[red]Error:[/red] {error}")

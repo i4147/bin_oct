@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that recursively finds and compiles .py files into bytecode (.pyc) using the compileall module, relying on a helper module "dh" (with get_pyfiles and mpf) to enumerate target Python files.
 It should accept command-line arguments to control optimization level (0, 1, or 2 via -o/--optimize), whether to use legacy pyc placement (removing/replacing any old-style .pyc next to the source), and whether to delete the original .py source file after successful compilation.
 The script should skip symlinks, nonexistent paths, and anything under a .git directory, recurse into directories to process all contained .py files, and set the PYTHONPYCACHEPREFIX environment variable to "__pycache__" before processing, printing an error and returning a nonzero status if an invalid optimize level is supplied."""
@@ -47,9 +47,7 @@ def main():
                 try:
                     OPTIMIZE_LEVEL = int(args[i + 1])
                     if OPTIMIZE_LEVEL not in (0, 1, 2):
-                        print(
-                            f"Error: Optimize level must be 0, 1, or 2 (got {OPTIMIZE_LEVEL})"
-                        )
+                        print(f"Error: Optimize level must be 0, 1, or 2 (got {OPTIMIZE_LEVEL})")
                         return 1
                     i += 2
                     continue
@@ -65,14 +63,10 @@ def main():
         elif arg in ("-h", "--help"):
             print("Usage: python script.py [options] [files/directories]")
             print("Options:")
-            print(
-                "  -o, --optimize LEVEL  Set optimization level (0, 1, or 2, default: 0)"
-            )
+            print("  -o, --optimize LEVEL  Set optimization level (0, 1, or 2, default: 0)")
             print("  -l, --legacy        Create legacy .pyc file beside original file")
             print("  -h, --help          Show this help message")
-            print(
-                "  files/directories   Files or directories to process (default: current directory)"
-            )
+            print("  files/directories   Files or directories to process (default: current directory)")
             return 0
         else:
             break

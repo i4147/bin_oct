@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that compresses each top-level directory and eligible top-level file (excluding archives, wheels, and logs) in the current working directory into individual 7z archives, first packing directories into tar files before 7z compression using py7zr with preset level 9, while file-level compression is delegated to helper functions from the dh module (fsz, gsz).
 It should run compression tasks in parallel using multiprocessing, log progress and errors with timestamps and process names to both a file (compress.log) and the console, and safely remove the original directories/files after successful compression, handling deletion errors gracefully.
 The script must only process items located directly at the root level (not nested), verified via path resolution."""
@@ -48,8 +48,7 @@ def iter_top_level_files(root: Path) -> Iterable[Path]:
         if (
             p.is_file()
             and not p.is_symlink()
-            and p.suffix
-            not in {".7z", ".xz", ".br", ".zst", ".gz", ".zip", ".whl", ".log"}
+            and p.suffix not in {".7z", ".xz", ".br", ".zst", ".gz", ".zip", ".whl", ".log"}
         ):
             yield p
 
@@ -96,11 +95,7 @@ def compress_dir_to_tar_then_7z(dir_path: str) -> tuple[str, bool, str]:
 
 def compress_file_to_7z(path: str) -> tuple[str, bool, str]:
     src = Path(path)
-    out_path = (
-        src.with_suffix(src.suffix + ".7z")
-        if src.suffix
-        else src.with_name(src.name + ".7z")
-    )
+    out_path = src.with_suffix(src.suffix + ".7z") if src.suffix else src.with_name(src.name + ".7z")
     try:
         if out_path.exists():
             out_path.unlink()
@@ -129,9 +124,7 @@ def main() -> None:
     if dirs:
         logging.info("Found %d top-level directories", len(dirs))
         with mp.Pool(processes=4) as pool:
-            for src, ok, msg in pool.imap_unordered(
-                compress_dir_to_tar_then_7z, map(str, dirs)
-            ):
+            for src, ok, msg in pool.imap_unordered(compress_dir_to_tar_then_7z, map(str, dirs)):
                 if ok:
                     logging.info("%s: %s", src, msg)
                 else:
@@ -142,9 +135,7 @@ def main() -> None:
     if files:
         logging.info("Found %d top-level files", len(files))
         with mp.Pool(processes=max(1, mp.cpu_count() - 1)) as pool:
-            for src, ok, msg in pool.imap_unordered(
-                compress_file_to_7z, map(str, files)
-            ):
+            for src, ok, msg in pool.imap_unordered(compress_file_to_7z, map(str, files)):
                 if ok:
                     logging.info("%s: %s", src, msg)
                 else:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that renders an image directly in the terminal using ANSI 256-color background escape codes.
 The script should accept an image file path as a command-line argument, load it with PIL, resize it to a fixed height of 100 pixels while preserving aspect ratio (doubling width to compensate for character cell proportions), and print a grid of colored space characters approximating each pixel's RGB value.
 It should include a helper function that maps RGB values to the nearest ANSI 256-color palette index, handling grayscale pixels as a special case, and exit gracefully with an error message if the specified image file cannot be found."""

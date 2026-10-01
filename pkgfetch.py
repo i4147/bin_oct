@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pkgfetch.py - Resolve and download Python packages from PEP 503/691 indexes.
 
@@ -232,11 +232,7 @@ class TargetPython:
         implementation = self.implementation or interpreter_name()
         python_version = self.py_version[:2] if self.py_version else None
 
-        version_digits = (
-            "".join(map(str, python_version))
-            if python_version
-            else interpreter_version()
-        )
+        version_digits = "".join(map(str, python_version)) if python_version else interpreter_version()
 
         interpreter = f"{implementation}{version_digits}"
         tags: list[Tag] = []
@@ -303,9 +299,7 @@ def parse_json_simple_page(response: httpx.Response) -> Iterator[Link]:
             url=urljoin(base_url, artifact_url),
             comes_from=base_url,
             requires_python=file_data.get("requires-python"),
-            yanked=(
-                yanked if isinstance(yanked, str) else "yanked" if yanked else None
-            ),
+            yanked=(yanked if isinstance(yanked, str) else "yanked" if yanked else None),
             hashes=file_data.get("hashes") or {},
         )
 
@@ -323,9 +317,7 @@ def fetch_simple_page(client: httpx.Client, url: str) -> list[Link]:
     if content_type in HTML_SIMPLE_CONTENT_TYPES:
         return list(parse_html_simple_page(response))
 
-    raise ValueError(
-        f"unsupported simple-index content type {content_type!r} from {url}"
-    )
+    raise ValueError(f"unsupported simple-index content type {content_type!r} from {url}")
 
 
 def source_filename_without_extension(filename: str) -> str:
@@ -345,9 +337,7 @@ def requires_python_matches(
     try:
         specifier = SpecifierSet(requires_python)
     except InvalidSpecifier:
-        logger.warning(
-            "Ignoring invalid Requires-Python specifier: {}", requires_python
-        )
+        logger.warning("Ignoring invalid Requires-Python specifier: {}", requires_python)
         return True
 
     return specifier.contains(
@@ -455,10 +445,7 @@ class PackageFinder:
         self.target_python = target_python or TargetPython()
         self._client = client
 
-        self._tag_priorities = {
-            tag: priority
-            for priority, tag in enumerate(self.target_python.supported_tags())
-        }
+        self._tag_priorities = {tag: priority for priority, tag in enumerate(self.target_python.supported_tags())}
 
     @property
     def client(self) -> httpx.Client:
@@ -560,11 +547,7 @@ class PackageFinder:
         if not path.is_dir():
             raise FileNotFoundError(path)
 
-        return [
-            Link(url=item.resolve().as_uri())
-            for item in path.iterdir()
-            if item.is_file()
-        ]
+        return [Link(url=item.resolve().as_uri()) for item in path.iterdir() if item.is_file()]
 
     def _sort_key(self, package: Package) -> tuple[int, Version, int, int, str]:
         link = package.link
@@ -774,19 +757,13 @@ def download_httpx_parallel(
         actual_size = part_path.stat().st_size
 
         if actual_size != expected_size:
-            raise OSError(
-                f"incomplete range {start}-{end}: "
-                f"expected {expected_size}, received {actual_size}"
-            )
+            raise OSError(f"incomplete range {start}-{end}: expected {expected_size}, received {actual_size}")
 
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         with ThreadPoolExecutor(max_workers=len(ranges)) as executor:
-            futures = [
-                executor.submit(download_range, start, end, part_path)
-                for start, end, part_path in ranges
-            ]
+            futures = [executor.submit(download_range, start, end, part_path) for start, end, part_path in ranges]
 
             for future in as_completed(futures):
                 future.result()
@@ -797,10 +774,7 @@ def download_httpx_parallel(
                     shutil.copyfileobj(part, output, length=CHUNK_SIZE)
 
         if destination.stat().st_size != size:
-            raise OSError(
-                f"download size mismatch: expected {size}, "
-                f"got {destination.stat().st_size}"
-            )
+            raise OSError(f"download size mismatch: expected {size}, got {destination.stat().st_size}")
 
     finally:
         shutil.rmtree(part_dir, ignore_errors=True)
@@ -810,9 +784,7 @@ def download_requests(url: str, destination: Path) -> None:
     try:
         import requests
     except ImportError as exc:
-        raise RuntimeError(
-            "The requests backend requires: pip install requests"
-        ) from exc
+        raise RuntimeError("The requests backend requires: pip install requests") from exc
 
     with requests.get(url, stream=True, timeout=(15, 90)) as response:
         response.raise_for_status()
@@ -851,9 +823,7 @@ def download_aria2c(url: str, destination: Path) -> None:
     aria2c = shutil.which("aria2c")
 
     if aria2c is None:
-        raise RuntimeError(
-            "aria2c backend selected, but aria2c is not installed or not in PATH"
-        )
+        raise RuntimeError("aria2c backend selected, but aria2c is not installed or not in PATH")
 
     command = [
         aria2c,
@@ -902,9 +872,7 @@ def download(
     destination = destination_dir / filename
 
     if destination.exists():
-        if verify_hashes(destination, link.hashes) and verify_archive_integrity(
-            destination
-        ):
+        if verify_hashes(destination, link.hashes) and verify_archive_integrity(destination):
             logger.info("Using cached artifact: {}", destination)
             return destination
 
@@ -931,11 +899,7 @@ def download(
                     link.url_without_fragment,
                 )
 
-                if (
-                    file_size is not None
-                    and file_size > PARALLEL_DOWNLOAD_THRESHOLD
-                    and range_supported
-                ):
+                if file_size is not None and file_size > PARALLEL_DOWNLOAD_THRESHOLD and range_supported:
                     logger.info(
                         "Using parallel ranged download ({} MiB)",
                         round(file_size / 1024 / 1024, 2),
@@ -989,9 +953,7 @@ def parse_python_version(value: str) -> tuple[int, ...]:
     parts = value.split(".")
 
     if not parts or any(not part.isdigit() for part in parts):
-        raise argparse.ArgumentTypeError(
-            f"invalid Python version: {value!r}; expected X.Y"
-        )
+        raise argparse.ArgumentTypeError(f"invalid Python version: {value!r}; expected X.Y")
 
     return tuple(int(part) for part in parts)
 
@@ -999,9 +961,7 @@ def parse_python_version(value: str) -> tuple[int, ...]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pkgfetch",
-        description=(
-            "Find and download Python distributions from PEP 503/691 indexes."
-        ),
+        description=("Find and download Python distributions from PEP 503/691 indexes."),
     )
 
     parser.add_argument(
@@ -1016,10 +976,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="URL",
-        help=(
-            "Simple index URL, repeatable. "
-            "If omitted: PyPI, Tsinghua, and Yandex are tried in order."
-        ),
+        help=("Simple index URL, repeatable. If omitted: PyPI, Tsinghua, and Yandex are tried in order."),
     )
 
     parser.add_argument(

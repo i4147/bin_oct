@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Convert JSON Lines (*.jsonl) files to JSON arrays.
 
@@ -238,9 +238,7 @@ def convert_one(job: Job) -> Result:
                         invalid_lines += 1
                         continue
 
-                    raise ValueError(
-                        f"{source}:{line_number}: invalid JSON: {exc.msg}"
-                    ) from exc
+                    raise ValueError(f"{source}:{line_number}: invalid JSON: {exc.msg}") from exc
 
                 if records_written:
                     output.write(",")
@@ -353,20 +351,12 @@ def main() -> int:
             if result.error:
                 failed += 1
                 print(
-                    f"FAILED  {result.source} -> {result.destination}\n"
-                    f"        {result.error}",
+                    f"FAILED  {result.source} -> {result.destination}\n        {result.error}",
                     file=sys.stderr,
                 )
             else:
-                suffix = (
-                    f", skipped invalid lines: {result.invalid_lines}"
-                    if result.invalid_lines
-                    else ""
-                )
-                print(
-                    f"OK      {result.source} -> {result.destination} "
-                    f"({result.records_written} records{suffix})"
-                )
+                suffix = f", skipped invalid lines: {result.invalid_lines}" if result.invalid_lines else ""
+                print(f"OK      {result.source} -> {result.destination} ({result.records_written} records{suffix})")
 
     print(
         f"\nFinished: {completed} file(s), {records} record(s), "

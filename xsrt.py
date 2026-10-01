@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """extract_subs.py - extract embedded subtitle tracks from a video file.
 
 Merged from: ex_srt.py, ex_srt2.py, exsrt.py, exsrt2.py, exsrt3.py,
@@ -60,9 +60,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 SRT_CODEC_NAMES: frozenset[str] = frozenset({"subrip", "srt"})
-PROBE_ENTRIES: str = (
-    "stream=index,codec_name:stream_tags=language,title:stream_disposition=forced"
-)
+PROBE_ENTRIES: str = "stream=index,codec_name:stream_tags=language,title:stream_disposition=forced"
 
 
 class ToolError(RuntimeError):
@@ -104,13 +102,9 @@ def probe_subtitles(video: Path) -> list[dict]:
         str(video),
     ]
     try:
-        proc: subprocess.CompletedProcess[str] = subprocess.run(
-            cmd, capture_output=True, text=True
-        )
+        proc: subprocess.CompletedProcess[str] = subprocess.run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
-        raise MissingToolError(
-            "ffmpeg/ffprobe is required but not installed."
-        ) from None
+        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or f"ffprobe failed on {video}")
     return json.loads(proc.stdout).get("streams", [])
@@ -131,13 +125,9 @@ def parse_stream(raw: dict, relative_index: int) -> SubtitleStream:
 
 def run_ffmpeg(args: list[str]) -> None:
     try:
-        proc: subprocess.CompletedProcess[str] = subprocess.run(
-            ["ffmpeg", *args], capture_output=True, text=True
-        )
+        proc: subprocess.CompletedProcess[str] = subprocess.run(["ffmpeg", *args], capture_output=True, text=True)
     except FileNotFoundError:
-        raise MissingToolError(
-            "ffmpeg/ffprobe is required but not installed."
-        ) from None
+        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or "ffmpeg failed")
 
@@ -154,9 +144,7 @@ def sanitize_rich_title(title: str) -> str:
     return "".join(ch if ch.isalnum() else "_" for ch in title)
 
 
-def build_output_path(
-    info: SubtitleStream, naming: str, video: Path, out_dir: Path
-) -> Path:
+def build_output_path(info: SubtitleStream, naming: str, video: Path, out_dir: Path) -> Path:
     stem: str = video.stem
     if naming == "indexed":
         name: str = f"{stem}.sub{info.relative_index}.{info.language}.srt"
@@ -224,9 +212,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
         else:
             print(f"Extracting subtitle stream {info.stream_index}->{dest}")
         try:
-            extract_one(
-                video, info.relative_index, dest, overwrite=not args.no_overwrite
-            )
+            extract_one(video, info.relative_index, dest, overwrite=not args.no_overwrite)
         except MissingToolError as exc:
             print(exc)
             return 1
@@ -307,9 +293,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_extract = sub.add_parser(
-        "extract", parents=[common], help="extract all subtitle streams"
-    )
+    p_extract = sub.add_parser("extract", parents=[common], help="extract all subtitle streams")
     p_extract.add_argument("video", help="video file containing subtitle streams")
     p_extract.add_argument(
         "-o",
@@ -337,13 +321,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="also print raw and parsed stream details (exsrt3.py behaviour)",
     )
 
-    p_first = sub.add_parser(
-        "first", parents=[common], help="extract one subtitle stream to <video>.srt"
-    )
+    p_first = sub.add_parser("first", parents=[common], help="extract one subtitle stream to <video>.srt")
     p_first.add_argument("video", help="video file containing subtitle streams")
-    p_first.add_argument(
-        "-o", "--output", default=None, help="output .srt path (default: <video>.srt)"
-    )
+    p_first.add_argument("-o", "--output", default=None, help="output .srt path (default: <video>.srt)")
     p_first.add_argument(
         "-n",
         "--stream-index",
@@ -354,9 +334,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_list = sub.add_parser("list", help="list subtitle streams without extracting")
     p_list.add_argument("video", help="video file containing subtitle streams")
-    p_list.add_argument(
-        "--verbose", action="store_true", help="also print raw ffprobe stream records"
-    )
+    p_list.add_argument("--verbose", action="store_true", help="also print raw ffprobe stream records")
     return parser
 
 

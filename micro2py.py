@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Refactor MicroPython .py sources to standard Python.
 
@@ -107,8 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         nargs="*",
         type=Path,
         default=[Path(".")],
-        help="Files or directories to refactor (recursively). "
-        "Defaults to '.' if omitted.",
+        help="Files or directories to refactor (recursively). Defaults to '.' if omitted.",
     )
     ap.add_argument(
         "-n",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merge a small multi-file Python package into a single, migrated module.
 
@@ -96,14 +96,10 @@ POOL_BLOCK_RE = re.compile(
 )
 
 LOGGING_IMPORT_RE = re.compile(r"^import logging\n", re.MULTILINE)
-LOGGER_GETLOGGER_RE = re.compile(
-    r"^\s*\w+\s*=\s*logging\.getLogger\([^)]*\)\n", re.MULTILINE
-)
+LOGGER_GETLOGGER_RE = re.compile(r"^\s*\w+\s*=\s*logging\.getLogger\([^)]*\)\n", re.MULTILINE)
 BASICCONFIG_RE = re.compile(r"logging\.basicConfig\([^)]*\)")
 WORKERS_ARG_RE = re.compile(r"(?:workers\s*=\s*[\w.]+\s*,?\s*)")
-WORKERS_CLI_LINE_RE = re.compile(
-    r"^.*add_argument\(\s*['\"](-w|--workers)['\"].*\n", re.MULTILINE
-)
+WORKERS_CLI_LINE_RE = re.compile(r"^.*add_argument\(\s*['\"](-w|--workers)['\"].*\n", re.MULTILINE)
 
 PICKLE_METHOD_BLOCK_RE = re.compile(
     r"^\s*copyreg\.pickle\(types\.MethodType,.*?\)\s*\n"
@@ -160,10 +156,7 @@ def flag_ambiguous_paths(text: str) -> str:
     lines = text.splitlines()
     out = []
     for line in lines:
-        if (
-            any(p.search(line) for p in AMBIGUOUS_MARKERS)
-            and "TODO(manual-review)" not in line
-        ):
+        if any(p.search(line) for p in AMBIGUOUS_MARKERS) and "TODO(manual-review)" not in line:
             out.append(
                 line
                 + "  # TODO(manual-review): verify this is a filesystem path, not a URL, before trusting the pathlib rewrite"
@@ -180,9 +173,7 @@ def rewrite_os_path(text: str) -> str:
 
 
 def rewrite_parallelism(text: str) -> str:
-    text = re.sub(
-        r"^from concurrent\.futures import[^\n]*\n", "", text, flags=re.MULTILINE
-    )
+    text = re.sub(r"^from concurrent\.futures import[^\n]*\n", "", text, flags=re.MULTILINE)
 
     def _replace_pool_block(match: re.Match) -> str:
         loop_var, body, item_var, fn_name, iterable = match.groups()
@@ -232,9 +223,7 @@ def block_hash(node_source: str) -> str:
 class CollectedItem:
     __slots__ = ("name", "kind", "source", "hash", "origin", "node")
 
-    def __init__(
-        self, name: str, kind: str, source: str, origin: str, node: ast.AST
-    ) -> None:
+    def __init__(self, name: str, kind: str, source: str, origin: str, node: ast.AST) -> None:
         self.name = name
         self.kind = kind
         self.source = source
@@ -243,9 +232,7 @@ class CollectedItem:
         self.node = node
 
 
-def collect_top_level_items(
-    filename: str, text: str
-) -> tuple[list[str], list[CollectedItem]]:
+def collect_top_level_items(filename: str, text: str) -> tuple[list[str], list[CollectedItem]]:
     try:
         tree = ast.parse(text, filename=filename)
     except SyntaxError as exc:
@@ -280,17 +267,9 @@ def collect_top_level_items(
             and isinstance(node.targets[0], ast.Name)
             and node.targets[0].id.isupper()
         ):
-            items.append(
-                CollectedItem(node.targets[0].id, "constant", source, filename, node)
-            )
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.target.id.isupper()
-        ):
-            items.append(
-                CollectedItem(node.target.id, "constant", source, filename, node)
-            )
+            items.append(CollectedItem(node.targets[0].id, "constant", source, filename, node))
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
+            items.append(CollectedItem(node.target.id, "constant", source, filename, node))
 
     return imports, items
 
@@ -327,9 +306,7 @@ def resolve_name_collisions(items: list[CollectedItem]) -> list[CollectedItem]:
                 resolved.append(item)
                 continue
             new_name = f"{name}_{idx}"
-            item.source = re.sub(
-                rf"\b{re.escape(name)}\b", new_name, item.source, count=1
-            )
+            item.source = re.sub(rf"\b{re.escape(name)}\b", new_name, item.source, count=1)
             item.name = new_name
             resolved.append(item)
     return resolved
@@ -376,9 +353,7 @@ def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
 
 def optimize_imports(raw_imports: list[str]) -> str:
     unique = sorted(set(line for line in raw_imports if line.strip()))
-    stdlib_modules = (
-        set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
-    )
+    stdlib_modules = set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
 
     stdlib_lines: list[str] = []
     thirdparty_lines: list[str] = []
@@ -425,19 +400,11 @@ def build_module_docstring(
     if used_pathlib:
         features.append("pathlib.Path for all filesystem operations")
     if used_pool:
-        features.append(
-            f"multiprocessing.Pool with WORKERS = {WORKERS} for any parallel work"
-        )
+        features.append(f"multiprocessing.Pool with WORKERS = {WORKERS} for any parallel work")
     if used_loguru:
-        features.append(
-            "loguru for logging, configured via logger.remove()/logger.add()"
-        )
+        features.append("loguru for logging, configured via logger.remove()/logger.add()")
 
-    feature_text = (
-        "; ".join(features)
-        if features
-        else "no additional infrastructure beyond the merged API"
-    )
+    feature_text = "; ".join(features) if features else "no additional infrastructure beyond the merged API"
 
     lines = [
         "TODO(manual-review): this docstring is a generated summary, not a verified",
@@ -459,9 +426,7 @@ def strip_docstrings_and_comments(source: str) -> str:
         return source
 
     for node in ast.walk(tree):
-        if isinstance(
-            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
-        ):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             body = node.body
             if (
                 body
@@ -510,9 +475,7 @@ def build_output(sources: dict[str, str]) -> str:
     all_items = dedup_by_hash(all_items)
     all_items = resolve_name_collisions(all_items)
 
-    constants = sorted(
-        (i for i in all_items if i.kind == "constant"), key=lambda i: i.name
-    )
+    constants = sorted((i for i in all_items if i.kind == "constant"), key=lambda i: i.name)
     classes = topo_sort_items([i for i in all_items if i.kind == "class"])
     functions = topo_sort_items([i for i in all_items if i.kind == "function"])
 
@@ -553,25 +516,12 @@ def build_output(sources: dict[str, str]) -> str:
         used_loguru=used_loguru,
     )
 
-    return (
-        docstring
-        + "\n"
-        + imports_block.strip()
-        + "\n\n\n"
-        + all_decl
-        + "\n\n"
-        + stripped_body
-        + "\n"
-    )
+    return docstring + "\n" + imports_block.strip() + "\n\n\n" + all_decl + "\n\n" + stripped_body + "\n"
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument(
-        "-f", "--file", help="merged input file with '# File: relpath' sentinels"
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-f", "--file", help="merged input file with '# File: relpath' sentinels")
     parser.add_argument("-o", "--output", help="output .py filename (default: out.py)")
     args = parser.parse_args()
 

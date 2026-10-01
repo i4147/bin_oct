@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that removes a specified file entry from a .tar.zst archive without modifying the original file.
 It should accept the archive path and the target file path inside the archive, decompress the archive with zstandard into a temporary tar file, then rebuild a new tar archive excluding the specified member while preserving all others, recompress it with zstandard, and save the result to a new output file (e.g., appending "_modified" to the original name).
 The script should print progress messages, handle the case where the target file isn't found in the archive by warning and copying the original archive unchanged, and exit with an error if the input archive doesn't exist."""
@@ -38,9 +38,7 @@ def delete_from_tar_zst(archive_path, file_to_delete):
                     found = True
                     break
             if not found:
-                print(
-                    f"Warning: '{file_to_delete}' not found in archive", file=sys.stderr
-                )
+                print(f"Warning: '{file_to_delete}' not found in archive", file=sys.stderr)
                 shutil.copy2(archive_path, output_path)
                 print(f"Original archive copied to: {output_path}")
                 return

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans the current working directory for all subdirectories and removes any that are empty.
 It should collect all directories using pathlib's rglob, sort them by depth (deepest first) so that nested empty directories are removed before their parents, and attempt to remove each one, silently skipping those that fail (e.g., because they are not empty).
 For each successfully removed directory, print a message showing its path, and after processing finish by printing the total count of empty directories removed.

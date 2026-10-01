@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a directory of HTML/CSS files, extracts and validates CSS property names by comparing them against a known reference list of valid CSS properties (parsed from an embedded text block), and reports any unrecognized or misspelled properties found.
 It should use BeautifulSoup for HTML parsing, support multiprocessing for scanning multiple files in parallel, and accept command-line arguments (via argparse) to specify the target path and other options.
 The script should print a summary of findings, including timing information from start to finish, and gracefully handle the case where BeautifulSoup4 is not installed by printing an installation hint."""
@@ -48,10 +48,7 @@ def _prioritify(line_of_css: str, css_props_text_as_list: tuple) -> tuple:
     sorted_css_properties, groups_by_alphabetic_order = css_props_text_as_list
     priority_integer, group_integer = (9999, 0)
     for css_property in sorted_css_properties:
-        if (
-            css_property.lower()
-            == line_of_css.split(":", maxsplit=1)[0].lower().strip()
-        ):
+        if css_property.lower() == line_of_css.split(":", maxsplit=1)[0].lower().strip():
             priority_integer = sorted_css_properties.index(css_property)
             group_integer = groups_by_alphabetic_order[priority_integer]
             break
@@ -63,13 +60,8 @@ def _props_grouper(props, pgs):
         return props
     props_pg = zip((_prioritify(prop, pgs) for prop in props), props, strict=False)
     props_pg = sorted(props_pg, key=lambda item: item[0][1])
-    props_by_groups = (
-        list(item[1])
-        for item in itertools.groupby(props_pg, key=lambda item: item[0][1])
-    )
-    props_by_groups = (
-        sorted(item, key=lambda item: item[0][0]) for item in props_by_groups
-    )
+    props_by_groups = (list(item[1]) for item in itertools.groupby(props_pg, key=lambda item: item[0][1]))
+    props_by_groups = (sorted(item, key=lambda item: item[0][0]) for item in props_by_groups)
     props = []
     for group in props_by_groups:
         group = (item[1] for item in group)
@@ -184,11 +176,7 @@ def split_long_selectors(css: str) -> str:
 
 
 def simple_replace(css: str) -> str:
-    return (
-        css.replace("}\n#", "}\n\n#")
-        .replace("}\n.", "}\n\n.")
-        .replace("}\n*", "}\n\n*")
-    )
+    return css.replace("}\n#", "}\n\n#").replace("}\n.", "}\n\n.").replace("}\n*", "}\n\n*")
 
 
 def css_prettify(css: str, justify: bool = False, extraline: bool = False) -> str:
@@ -210,9 +198,7 @@ if BeautifulSoup:
     orig_prettify = BeautifulSoup.prettify
     regez = re.compile(r"^(\s*)", re.MULTILINE)
 
-    def prettify(
-        self, encoding=None, formatter: str = "minimal", indent_width: int = 4
-    ) -> str:
+    def prettify(self, encoding=None, formatter: str = "minimal", indent_width: int = 4) -> str:
         print("Monkey Patching BeautifulSoup on-the-fly to process HTML...")
         return regez.sub("\\1" * indent_width, orig_prettify(self, encoding, formatter))
 
@@ -314,23 +300,15 @@ def make_arguments_parser() -> Namespace:
         type=str,
         help="Full path to local file or folder.",
     )
-    parser.add_argument(
-        "--prefix", type=str, help="Prefix string to prepend on output filenames."
-    )
+    parser.add_argument("--prefix", type=str, help="Prefix string to prepend on output filenames.")
     parser.add_argument(
         "--timestamp",
         action="store_true",
         help="Add a Time Stamp on all CSS/SCSS output files.",
     )
-    parser.add_argument(
-        "--quiet", action="store_true", help="Quiet, Silent, force disable all Logging."
-    )
-    parser.add_argument(
-        "--after", type=str, help="Command to execute after run (Experimental)."
-    )
-    parser.add_argument(
-        "--before", type=str, help="Command to execute before run (Experimental)."
-    )
+    parser.add_argument("--quiet", action="store_true", help="Quiet, Silent, force disable all Logging.")
+    parser.add_argument("--after", type=str, help="Command to execute after run (Experimental).")
+    parser.add_argument("--before", type=str, help="Command to execute before run (Experimental).")
     parser.add_argument(
         "--watch",
         action="store_true",
@@ -372,9 +350,7 @@ def main() -> None:
     elif Path(args.fullpath).is_dir():
         print("Target is a Folder with CSS / SCSS, HTML, JS.")
         print("Processing a whole Folder may take some time...")
-        list_of_files = walk2list(
-            args.fullpath, (".css", ".scss", ".html", ".htm"), ".min.css"
-        )
+        list_of_files = walk2list(args.fullpath, (".css", ".scss", ".html", ".htm"), ".min.css")
         pool = get_context("spawn").Pool(4)
         pool.map(process_multiple_files, list_of_files)
         pool.close()
@@ -385,9 +361,7 @@ def main() -> None:
     if args.after and getoutput:
         print(getoutput(str(args.after)))
     print(f"\n {'-' * 40} \n Files Processed: {list_of_files}.")
-    print(
-        f"Number of Files Processed:\n          {(len(list_of_files) if isinstance(list_of_files, tuple) else 1)}"
-    )
+    print(f"Number of Files Processed:\n          {(len(list_of_files) if isinstance(list_of_files, tuple) else 1)}")
 
 
 if __name__ in "__main__":

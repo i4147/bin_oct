@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that formats source files using Prettier.
 It should accept file paths as command-line arguments, or if none are given, recursively discover files in the current directory matching extensions like .html, .js, .jsx, .ts, .tsx, .md, .scss, and .coffee via a helper `get_files`.
 For each file, skip it if it doesn't exist, is empty, or has only one line; otherwise run `prettier -w` on it, adjusting the path prefix from "/storage/emulated/0" to "/sdcard" for Android compatibility, and return a success/failure flag with the file path.

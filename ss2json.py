@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that accepts a CSV file path as a command-line argument, reads it into a pandas DataFrame, and sorts the rows in descending order based on the "score" column.
 The script should then export the sorted DataFrame to a JSON file, using the same base filename as the input but with a ".json" extension, saved in the same location.
 Use pathlib for handling the file path and suffix replacement."""

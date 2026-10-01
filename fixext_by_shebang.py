@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a given directory (recursively or not) for script files and renames them based on the shebang line found at the top of each file.
 It should read the first line of each file, detect known interpreters such as python, python3, python2, bash, sh, zsh, ksh, or dash (handling both direct paths and "/usr/bin/env" style shebangs), and map them to the appropriate extension (.py or .sh).
 If a file's current extension doesn't match the detected interpreter's expected extension, the script should rename the file accordingly, avoiding overwrites by appending a numeric suffix when a filename collision occurs.

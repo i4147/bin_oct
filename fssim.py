@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a directory tree (defaulting to the current directory) to find files with similar content using fuzzy/context-triggered piecewise hashing via the ppdeep (ssdeep-compatible) library.
 It should walk all files recursively, compute a fuzzy hash for each file, then pairwise-compare the hashes against a given similarity threshold to cluster files into groups of near-duplicates, saving the pairwise match scores and file pairs to a "similars.json" file.
 Optionally use tabulate for formatted table output and colorama for colored console output if those libraries are available, falling back gracefully to plain output otherwise."""
@@ -134,9 +134,7 @@ def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> N
         if USE_TABULATE:
             colored_table = []
             for row in table[1:]:
-                colored_row = [row[0]] + [
-                    colorize_score(cell, threshold) for cell in row[1:]
-                ]
+                colored_row = [row[0]] + [colorize_score(cell, threshold) for cell in row[1:]]
                 colored_table.append(colored_row)
             print(tabulate(colored_table, headers=table[0], tablefmt="grid"))
         else:
@@ -144,9 +142,7 @@ def write_matrix(hashes, threshold: int, output_dir="output", pretty=False) -> N
             print(header)
             print("-" * len(header))
             for row in table[1:]:
-                formatted = [row[0]] + [
-                    colorize_score(cell, threshold) for cell in row[1:]
-                ]
+                formatted = [row[0]] + [colorize_score(cell, threshold) for cell in row[1:]]
                 print(" | ".join(str(x) if x != "" else "." for x in formatted))
 
 

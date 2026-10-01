@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that converts an M4A audio file into text via speech recognition.
 It should accept an input .m4a file path and an optional output text file path (default "out.txt"), validate that the input file exists and warn if it lacks the .m4a extension, then use pydub to convert the audio into a temporary WAV file.
 Using the speech_recognition library, it should load the WAV file, adjust for ambient noise, transcribe the audio with Google's speech recognition API, and write the resulting text to the output file, printing progress messages at each step (conversion, loading, noise adjustment, transcription) along with a preview of the transcribed text (truncated to 200 characters if longer).
@@ -36,18 +36,12 @@ def m4a_to_text(input_file, output_file="out.txt"):
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(text)
             print(f"✓ Transcription saved to: {output_file}")
-            print(
-                f"Transcribed text:\n{text[:200]}..."
-                if len(text) > 200
-                else f"Transcribed text:\n{text}"
-            )
+            print(f"Transcribed text:\n{text[:200]}..." if len(text) > 200 else f"Transcribed text:\n{text}")
         except sr.UnknownValueError:
             print("Error: Speech recognition could not understand the audio")
             sys.exit(1)
         except sr.RequestError as e:
-            print(
-                f"Error: Could not request results from speech recognition service; {e}"
-            )
+            print(f"Error: Could not request results from speech recognition service; {e}")
             sys.exit(1)
     finally:
         if os.path.exists(temp_wav_path):

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python utility that scans files in a given directory (or the current directory by default) that lack a file extension, reads each file's first line to detect a shebang (e.g., "#!/usr/bin/env python", "#!/bin/bash", "#!/usr/bin/node", etc.), and uses a predefined mapping from shebang patterns to appropriate extensions (.py, .sh, .js, .rb, .pl, .lua, .php, etc.) to rename the file accordingly.
 It should use regular expressions to match shebang lines flexibly, handle file reading/renaming safely with try/except blocks, and use shutil/os/pathlib for filesystem operations.
 The script should print or log which files were renamed and to what, and skip files where no matching shebang is found or where the file already has an extension."""
@@ -92,9 +92,7 @@ def check_termux() -> bool:
     if is_termux:
         print("📱 Termux environment detected")
         print(f"   Prefix: {termux_prefix}")
-        print(
-            f"   Python: {os.path.realpath('/data/data/com.termux/files/usr/bin/python3')}"
-        )
+        print(f"   Python: {os.path.realpath('/data/data/com.termux/files/usr/bin/python3')}")
     else:
         print("💻 Standard Linux/Unix environment detected")
     return is_termux
@@ -141,9 +139,7 @@ def main() -> None:
         print(f"   ❓ Unknown shebangs: {unknown_count} file(s)")
     print(f"{'=' * 40}")
     if unknown_count > 0:
-        print(
-            "\n💡 Tip: You can add new shebang patterns to the SHEBANG_MAPPING dictionary"
-        )
+        print("\n💡 Tip: You can add new shebang patterns to the SHEBANG_MAPPING dictionary")
 
 
 def dry_run() -> None:
@@ -175,9 +171,7 @@ if __name__ == "__main__":
         print("  --dry-run    Preview changes without renaming")
         print("  --help       Show this help message")
     else:
-        response = input(
-            "⚠️  This will rename files in the current directory. Continue? (y/N): "
-        )
+        response = input("⚠️  This will rename files in the current directory. Continue? (y/N): ")
         if response.lower() == "y":
             raise SystemExit(main())
         else:

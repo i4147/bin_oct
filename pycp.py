@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that copies a single file to the Termux usr directory on Android (/data/data/com.termux/files/usr).
 The script should accept the source file path as a command-line argument, strip any surrounding whitespace from it, and use shutil.copy2 to copy the file while preserving its metadata to the fixed destination directory.
 After the copy completesfully, it should print "done" to indicate the operation finished."""

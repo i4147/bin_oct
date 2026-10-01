@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 doc_convert.py — unified document conversion CLI.
 
@@ -75,9 +75,7 @@ def unique_path(p: Path) -> Path:
         i += 1
 
 
-def _collect_by_ext(
-    root: Path, exts: Iterable[str], recursive: bool = True
-) -> list[Path]:
+def _collect_by_ext(root: Path, exts: Iterable[str], recursive: bool = True) -> list[Path]:
     exts = {e.lower() for e in exts}
     iterator = root.rglob("*") if recursive else root.glob("*")
     return [p for p in iterator if p.is_file() and p.suffix.lower() in exts]
@@ -134,10 +132,7 @@ def _convert_one_info(src: Path) -> Optional[Path]:
         src.unlink()
         print(f"Converted {src.name} -> {dest.name}")
         return dest
-    warn(
-        f"Failed to convert {src.name} (exit {result.returncode}): "
-        f"{result.stderr.strip()}"
-    )
+    warn(f"Failed to convert {src.name} (exit {result.returncode}): {result.stderr.strip()}")
     return None
 
 
@@ -680,13 +675,7 @@ def cmd_rst_to_md(args: argparse.Namespace) -> int:
                 print(f"No .rst files found in {target}")
                 continue
             print(f"Found {len(files)} .rst files")
-            count = sum(
-                1
-                for f in files
-                if _rst_to_md_one(
-                    f, backup=backup, remove_original=args.remove_original
-                )
-            )
+            count = sum(1 for f in files if _rst_to_md_one(f, backup=backup, remove_original=args.remove_original))
             print(f"\nConverted {count}/{len(files)} files")
             any_processed = True
         elif target.is_file():
@@ -716,9 +705,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p = sub.add_parser(
-        "chat-export", help="JSON conversations -> per-chat Markdown files"
-    )
+    p = sub.add_parser("chat-export", help="JSON conversations -> per-chat Markdown files")
     p.add_argument("input", help="Input JSON file (list of conversations)")
     p.add_argument(
         "-o",
@@ -729,12 +716,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_chat_export)
 
     p = sub.add_parser("info-to-md", help="Convert .info files to .md via `info` CLI")
-    p.add_argument(
-        "-d", "--directory", default=".", help="Directory to scan (default: .)"
-    )
-    p.add_argument(
-        "-w", "--workers", type=int, default=8, help="Worker processes (default: 8)"
-    )
+    p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
+    p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
     p.set_defaults(func=cmd_info_to_md)
 
     p = sub.add_parser("man-to-md", help="Convert a man page (roff) to Markdown")
@@ -756,15 +739,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_md_to_html)
 
     p = sub.add_parser("rst-to-html", help=".rst / .txt / .md -> HTML via docutils")
-    p.add_argument(
-        "-d", "--directory", default=".", help="Root directory to process (default: .)"
-    )
-    p.add_argument(
-        "-w", "--workers", type=int, default=8, help="Worker processes (default: 8)"
-    )
-    p.add_argument(
-        "--force", action="store_true", help="Force re-conversion even if HTML is newer"
-    )
+    p.add_argument("-d", "--directory", default=".", help="Root directory to process (default: .)")
+    p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
+    p.add_argument("--force", action="store_true", help="Force re-conversion even if HTML is newer")
     p.set_defaults(func=cmd_rst_to_html)
 
     p = sub.add_parser("mobi-to-html", help="Extract a .mobi to HTML")
@@ -777,12 +754,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("rst-to-md", help="Convert .rst files to .md via pandoc")
     p.add_argument("paths", nargs="+", help="Files or directories to convert")
-    p.add_argument(
-        "-r", "--recursive", action="store_true", help="Recurse into directories"
-    )
-    p.add_argument(
-        "--no-backup", action="store_true", help="Do not create .rst.bak backups"
-    )
+    p.add_argument("-r", "--recursive", action="store_true", help="Recurse into directories")
+    p.add_argument("--no-backup", action="store_true", help="Do not create .rst.bak backups")
     p.add_argument(
         "--remove-original",
         action="store_true",

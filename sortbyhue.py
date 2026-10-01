@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that reads a text file (given as a single command-line argument) containing one hex color code per line, validates and keeps only lines matching the 6-digit hex pattern (e.g., #a1b2c3), and sorts them by converting each to HSV (hue, saturation, value) using the colorsys module.
 The script should then overwrite the same file with the sorted color codes, one per line, normalized to lowercase.
 If the script is run without exactly one argument, it should print a usage message and exit with status code 1."""

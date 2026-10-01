@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 fontpreview.py - unified font preview generator.
 
@@ -151,9 +151,7 @@ def _parse_paths(raw: Sequence[str]) -> list[Path]:
     return out or [Path.cwd()]
 
 
-def _generate_simple_html(
-    fonts: Sequence[Path], text: str, sizes: Sequence[int]
-) -> str:
+def _generate_simple_html(fonts: Sequence[Path], text: str, sizes: Sequence[int]) -> str:
     esc_text = html.escape(text)
     parts: list[str] = [
         "<!DOCTYPE html>",
@@ -172,14 +170,8 @@ def _generate_simple_html(
         parts.append(f"@font-face {{ font-family:'{name}'; src:url('{p}'); }}")
         parts.append("</style>")
         for size in sizes:
-            parts.append(
-                f"<div style='font-family:\"{name}\"; font-size:{size}px;'>"
-                f"{esc_text}</div>"
-            )
-        parts.append(
-            f"<div style='font-family:\"{name}\"; font-size:14px;'>{name}</div>"
-            "<hr><br/>"
-        )
+            parts.append(f"<div style='font-family:\"{name}\"; font-size:{size}px;'>{esc_text}</div>")
+        parts.append(f"<div style='font-family:\"{name}\"; font-size:14px;'>{name}</div><hr><br/>")
         parts.append("</div>")
     parts.append("</body></html>")
     return "\n".join(parts)
@@ -431,9 +423,7 @@ def cmd_rich(args: argparse.Namespace) -> int:
     infos = _collect_font_infos(paths, max_fonts=args.max_fonts)
 
     if not infos:
-        LOG.warning(
-            "No font files found. Supported formats: %s", ", ".join(sorted(FONT_EXTS))
-        )
+        LOG.warning("No font files found. Supported formats: %s", ", ".join(sorted(FONT_EXTS)))
         return 1
 
     LOG.info("Found %d font(s)", len(infos))
@@ -472,9 +462,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="fa",
         help="Preset text/sizes/output (default: fa)",
     )
-    p.add_argument(
-        "--text", default=None, help="Override the sample text (defaults to preset's)"
-    )
+    p.add_argument("--text", default=None, help="Override the sample text (defaults to preset's)")
     p.add_argument(
         "--sizes",
         nargs="+",
@@ -482,9 +470,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override font sizes in px (defaults to preset's)",
     )
-    p.add_argument(
-        "-o", "--output", default=None, help="Output HTML file (defaults to preset's)"
-    )
+    p.add_argument("-o", "--output", default=None, help="Output HTML file (defaults to preset's)")
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_simple)
 

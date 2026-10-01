@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that scans a directory tree of .py files to find usages of the deprecated pkg_resources module and reports which calls could be migrated to modern equivalents (such as importlib.resources, importlib.metadata, and packaging).
 For each file, it should check for pkg_resources imports, then use regex patterns to locate specific deprecated calls (e.g., resource_filename, resource_string, require, get_distribution, iter_entry_points, parse_version), recording the matched pattern and line number for each occurrence, while gracefully handling file read/encoding errors.
 The script should use argparse to accept command-line options (like target directory/files) and multiprocessing.Pool to scan multiple files in parallel for performance, ultimately outputting a report of files containing pkg_resources usage along with the detected patterns and their line numbers."""
@@ -42,9 +42,7 @@ def detect_pkg_resources(path: Path) -> dict:
             content = f.read()
     except (OSError, UnicodeDecodeError) as e:
         return {"file": path, "error": str(e), "found": False}
-    has_import = re.search(
-        r"^import\s+pkg_resources|^from\s+pkg_resources", content, re.MULTILINE
-    )
+    has_import = re.search(r"^import\s+pkg_resources|^from\s+pkg_resources", content, re.MULTILINE)
     if not has_import:
         return {"file": path, "found": False}
     usages = []
@@ -103,9 +101,7 @@ def autofix_pkg_resources(path: Path) -> dict:
                 imports_needed.add("packaging.version")
     if imports_needed:
         import_lines = "\n".join(f"import {imp}" for imp in sorted(imports_needed))
-        match = re.search(
-            r"^(#!.*\n)?(\"\"\".*?\"\"\"\n)?", content, re.MULTILINE | re.DOTALL
-        )
+        match = re.search(r"^(#!.*\n)?(\"\"\".*?\"\"\"\n)?", content, re.MULTILINE | re.DOTALL)
         if match:
             insert_pos = match.end()
             content = content[:insert_pos] + import_lines + "\n" + content[insert_pos:]
@@ -173,9 +169,7 @@ Examples:
     if not py_files:
         print("No .py files found.")
         return
-    print(
-        f"Found {len(py_files)} file(s) | Mode: {'AUTOFIX' if args.autofix else 'REPORT'}"
-    )
+    print(f"Found {len(py_files)} file(s) | Mode: {'AUTOFIX' if args.autofix else 'REPORT'}")
     print()
     try:
         if args.autofix:

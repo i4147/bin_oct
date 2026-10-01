@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python CLI script that converts Jupyter notebooks (.ipynb) into
 standalone Python scripts. The generated script should:
@@ -144,9 +144,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         logger.info("No .ipynb files found")
         return 0
 
-    logger.info(
-        "Found {} notebook(s) to convert using {} workers", len(files), POOL_SIZE
-    )
+    logger.info("Found {} notebook(s) to convert using {} workers", len(files), POOL_SIZE)
 
     with Pool(processes=POOL_SIZE) as pool:
         results = [pool.apply_async(process_file, (f,)) for f in files]

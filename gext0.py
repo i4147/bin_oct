@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans archive files (wheels, zip, tar, tar.gz/tgz/xz/zst) for Python source files and extracts top-level entities such as functions and classes using the ast module, outputting each extracted entity's code and metadata (name, type, original file path) into an "output" directory.
 It should recursively walk through nested archives if needed, filter files by allowed Python extensions, and use multiprocessing (via Pool and cpu_count) to process multiple archives or files in parallel for performance.
 The script should handle file I/O robustly with shutil for temporary extraction and cleanup, and use regex where needed for auxiliary text parsing."""
@@ -82,11 +82,7 @@ class EntityExtractor(ast.NodeVisitor):
         self.scope_depth -= 1
 
     def visit_Assign(self, node: ast.Assign):
-        if (
-            self.scope_depth == 0
-            and len(node.targets) == 1
-            and isinstance(node.targets[0], ast.Name)
-        ):
+        if self.scope_depth == 0 and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             target_name = node.targets[0].id
             if re.match("^[A-Z_][A-Z0-9_]*$", target_name):
                 self._extract_and_save(node, "constant", target_name)
@@ -143,11 +139,7 @@ def is_python_file_no_extension(path: Path) -> bool:
             first_lines = "".join(f.readlines(1024))
             if re.match(r"#!\s*/.*python", first_lines):
                 return True
-            if (
-                "def " in first_lines
-                or "class " in first_lines
-                or "import " in first_lines
-            ):
+            if "def " in first_lines or "class " in first_lines or "import " in first_lines:
                 return True
     except:
         pass
@@ -174,19 +166,12 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
                     member_path = Path(member)
                     if member_path.suffix == ".py":
                         with zf.open(member) as member_file:
-                            content = member_file.read().decode(
-                                "utf-8", errors="ignore"
-                            )
+                            content = member_file.read().decode("utf-8", errors="ignore")
                             virtual_path = Path(f"{path}/{member}")
-                            entities.extend(
-                                extract_entities_from_content(content, virtual_path)
-                            )
+                            entities.extend(extract_entities_from_content(content, virtual_path))
         except Exception as e:
             print(f"Error processing ZIP/WHL archive {path}: {e}")
-    elif any(
-        path.name.endswith(ext)
-        for ext in [".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz"]
-    ):
+    elif any(path.name.endswith(ext) for ext in [".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz"]):
         mode_map = {
             ".tar.gz": "r:gz",
             ".tgz": "r:gz",
@@ -202,13 +187,9 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
                     if member.isfile() and member_path.suffix == ".py":
                         member_file = tf.extractfile(member)
                         if member_file:
-                            content = member_file.read().decode(
-                                "utf-8", errors="ignore"
-                            )
+                            content = member_file.read().decode("utf-8", errors="ignore")
                             virtual_path = Path(f"{path}/{member.name}")
-                            entities.extend(
-                                extract_entities_from_content(content, virtual_path)
-                            )
+                            entities.extend(extract_entities_from_content(content, virtual_path))
         except tarfile.ReadError:
             pass
         except Exception as e:
@@ -236,21 +217,14 @@ def main():
             path = Path(root) / name
             if path.is_relative_to(OUTPUT_DIR):
                 continue
-            is_archive = path.suffix in ARCHIVE_EXTENSIONS or any(
-                path.name.endswith(ext) for ext in ARCHIVE_EXTENSIONS
-            )
-            is_py = (
-                path.suffix in ALLOWED_PYTHON_EXTENSIONS
-                or is_python_file_no_extension(path)
-            )
+            is_archive = path.suffix in ARCHIVE_EXTENSIONS or any(path.name.endswith(ext) for ext in ARCHIVE_EXTENSIONS)
+            is_py = path.suffix in ALLOWED_PYTHON_EXTENSIONS or is_python_file_no_extension(path)
             if is_archive or is_py:
                 files_to_process.append(str(path))
     if not files_to_process:
         print("No Python files or archives found to process.")
         return
-    print(
-        f"Found {len(files_to_process)} relevant files/archives. Starting multiprocessing pool..."
-    )
+    print(f"Found {len(files_to_process)} relevant files/archives. Starting multiprocessing pool...")
     num_cpus = cpu_count()
     all_entities = []
     with Pool(processes=num_cpus) as pool:
@@ -262,9 +236,7 @@ def main():
     for entity in all_entities:
         save_entity(entity)
     print("\n\nAll tasks finished successfully!")
-    print(
-        f"Results are saved in the '{OUTPUT_DIR}' folder, organized by entity type (class, function, constant)."
-    )
+    print(f"Results are saved in the '{OUTPUT_DIR}' folder, organized by entity type (class, function, constant).")
 
 
 if __name__ == "__main__":

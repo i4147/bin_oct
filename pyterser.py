@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Minify ``.js`` / ``.mjs`` / ``.cjs`` files in place using ``terser``.
 
 The script discovers JavaScript files (case-insensitively, across ``.js``,
@@ -239,9 +239,7 @@ def _files_identical(a: Path, b: Path, a_size: int, b_size: int) -> bool:
                 return True
 
 
-def _run_terser(
-    cmd: Sequence[str], timeout: float
-) -> tuple[subprocess.CompletedProcess[bytes] | None, str | None]:
+def _run_terser(cmd: Sequence[str], timeout: float) -> tuple[subprocess.CompletedProcess[bytes] | None, str | None]:
     try:
         completed = subprocess.run(
             list(cmd),
@@ -351,9 +349,7 @@ def process_file(
         )
         completed, run_error = _run_terser(cmd, timeout)
         if completed is None:
-            return ProcessResult(
-                path, original_size, 0, "", "", False, False, run_error
-            )
+            return ProcessResult(path, original_size, 0, "", "", False, False, run_error)
 
         stdout = completed.stdout.decode("utf-8", errors="replace")
         stderr = completed.stderr.decode("utf-8", errors="replace")
@@ -526,11 +522,7 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     if tag == "OK":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
-        print(
-            f"[OK]      {shown}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(-{format_bytes(saved)}, -{pct:.1f}%)"
-        )
+        print(f"[OK]      {shown}  {format_bytes(orig)} -> {format_bytes(new)}  (-{format_bytes(saved)}, -{pct:.1f}%)")
     elif tag == "DRY-RUN":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
@@ -543,18 +535,12 @@ def _print_status(result: ProcessResult, tag: str) -> None:
         print(f"[NOCHG]   {shown}  {format_bytes(orig)}  (no meaningful change)")
     elif tag == "SKIP":
         growth = new - orig
-        print(
-            f"[SKIP]    {shown}  "
-            f"{format_bytes(orig)} -> {format_bytes(new)}  "
-            f"(larger by {format_bytes(growth)})"
-        )
+        print(f"[SKIP]    {shown}  {format_bytes(orig)} -> {format_bytes(new)}  (larger by {format_bytes(growth)})")
     else:  # ERROR
         print(f"[ERROR]   {shown}  {result.error}", file=sys.stderr)
 
 
-def _print_summary(
-    counters: dict[str, int], total_before: int, total_after: int
-) -> None:
+def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
     total = sum(counters.values())
 
     print()

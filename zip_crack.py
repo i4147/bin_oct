@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that attempts to crack a password-protected ZIP file by trying candidate passwords from a wordlist file, using multiprocessing to test batches of passwords in parallel worker processes for speed.
 It should accept the ZIP file path and wordlist path (plus options like batch size and progress update interval) via argparse, verify each candidate by attempting to open and read the first file inside the archive with that password, and stop as soon as a correct password is found.
 While running, it should periodically print live progress statistics (passwords tested, elapsed time formatted as h/m/s, and passwords-per-second rate), and finally report whether the password was found, printing the result along with total attempts and elapsed time."""
@@ -46,9 +46,7 @@ def format_duration(seconds: float) -> str:
     return f"{secs}s"
 
 
-def check_password_batch(
-    zip_path: Path, passwords: list[str]
-) -> tuple[str | None, int]:
+def check_password_batch(zip_path: Path, passwords: list[str]) -> tuple[str | None, int]:
     tested = 0
     try:
         with zipfile.ZipFile(zip_path) as zf:
@@ -66,9 +64,7 @@ def check_password_batch(
     return (None, tested)
 
 
-def get_wordlist_batches(
-    path: Path, batch_size: int
-) -> Generator[list[str], None, None]:
+def get_wordlist_batches(path: Path, batch_size: int) -> Generator[list[str], None, None]:
     with path.open("r", encoding="utf-8", errors="ignore") as f:
         while True:
             batch = [line.strip() for line in islice(f, batch_size) if line.strip()]
@@ -117,9 +113,7 @@ def brute_force_zip(
         with multiprocessing.Pool(processes=num_processes) as pool:
             batches = get_wordlist_batches(wordlist_path, batch_size)
             worker_args = ((zip_path, batch) for batch in batches)
-            for found_pwd, tested_in_batch in pool.starmap(
-                check_password_batch, worker_args
-            ):
+            for found_pwd, tested_in_batch in pool.starmap(check_password_batch, worker_args):
                 result.tested_count += tested_in_batch
                 current_time = time.time()
                 if found_pwd:
@@ -129,16 +123,11 @@ def brute_force_zip(
                     pool.terminate()
                     break
                 if current_time - last_update >= update_interval:
-                    progress = (
-                        result.tested_count / total_passwords * 40
-                        if total_passwords > 0
-                        else 0
-                    )
+                    progress = result.tested_count / total_passwords * 40 if total_passwords > 0 else 0
                     elapsed = current_time - result.start_time
                     pps = result.tested_count / elapsed if elapsed > 0 else 0
                     print(
-                        f"Progress: {progress:6.2f}% | Tested: {
-                            result.tested_count:10,} | Speed: {
+                        f"Progress: {progress:6.2f}% | Tested: {result.tested_count:10,} | Speed: {
                             pps:8.1f} p/s | Elapsed: {format_duration(elapsed)}",
                         end="\r",
                     )

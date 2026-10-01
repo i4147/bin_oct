@@ -1,1 +1,1 @@
-/data/data/com.termux/files/home/bin/yap.py
+yap.py

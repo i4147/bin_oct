@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that converts an M4A audio file to MP3 using ffmpeg via a helper "runcmd" function from a local "dh" module.
 It should take an input file path and an optional bitrate (default "64k"), validate that the file exists and warn if it lacks the .m4a extension, then build and run the appropriate ffmpeg command to produce an output file with the same name but .mp3 extension.
 After conversion it should print the input and output file sizes in MB along with the compression ratio, and it must handle missing ffmpeg or subprocess errors gracefully by printing an error message and exiting with a non-zero status."""

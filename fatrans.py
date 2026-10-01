@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Unified translation toolkit.
 
@@ -249,9 +249,7 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
                     mapping[line] = res or ""
                 except Exception as exc:  # noqa: BLE001
                     mapping[line] = f"TRANSLATION_ERROR: {exc}"
-                    logger.warning(
-                        f"  ⚠️  Error translating line {i + 1} in {path.name}: {exc}"
-                    )
+                    logger.warning(f"  ⚠️  Error translating line {i + 1} in {path.name}: {exc}")
         else:
             mapping = dict(zip(src_lines, out_lines))
 
@@ -316,9 +314,7 @@ def _translate_file_to_target(
     if len(content) <= chunk_size:
         print(f"[INFO] Content fits in single request ({len(content)} chars)")
         print("[INFO] Translating...")
-        return translate_with_retry(
-            content, source=source, target=target, retries=retries
-        )
+        return translate_with_retry(content, source=source, target=target, retries=retries)
 
     chunks = chunk_by_markers(content, chunk_size)
     total = len(chunks)
@@ -331,11 +327,7 @@ def _translate_file_to_target(
         for i, chunk in enumerate(chunks):
             print(f"\n[INFO] Translating chunk {i + 1}/{total} ({len(chunk)} chars)...")
             try:
-                results.append(
-                    translate_with_retry(
-                        chunk, source=source, target=target, retries=retries
-                    )
-                )
+                results.append(translate_with_retry(chunk, source=source, target=target, retries=retries))
             except Exception as exc:  # noqa: BLE001
                 print(f"[ERROR] Failed to translate chunk {i + 1}: {exc}")
                 results.append(chunk)
@@ -428,9 +420,7 @@ def _inplace_translate_one(
 
     translated_chunks: list[str] = []
     with Pool(processes=workers) as pool:
-        async_results = [
-            pool.apply_async(_worker_chunk_to_en, ((c, sleep),)) for c in chunks
-        ]
+        async_results = [pool.apply_async(_worker_chunk_to_en, ((c, sleep),)) for c in chunks]
         for ar in async_results:
             translated_chunks.append(ar.get())
 
@@ -567,9 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=4,
         help="ProcessPoolExecutor workers (default: 4).",
     )
-    p.add_argument(
-        "--encoding", default="utf-8", help="Input encoding (default: utf-8)."
-    )
+    p.add_argument("--encoding", default="utf-8", help="Input encoding (default: utf-8).")
     p.set_defaults(func=cmd_lines_to_en)
 
     p = sub.add_parser(
@@ -582,9 +570,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=".",
         help="Root directory to walk (default: current dir).",
     )
-    p.add_argument(
-        "--workers", type=int, default=8, help="Pool workers per file (default: 8)."
-    )
+    p.add_argument("--workers", type=int, default=8, help="Pool workers per file (default: 8).")
     p.add_argument(
         "--chunk-size",
         type=int,
@@ -628,9 +614,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory containing the .txt files (default: current dir).",
     )
     p.add_argument("--workers", type=int, default=8, help="Pool workers (default: 8).")
-    p.add_argument(
-        "--glob", default="*.txt", help="Glob pattern for input files (default: *.txt)."
-    )
+    p.add_argument("--glob", default="*.txt", help="Glob pattern for input files (default: *.txt).")
     p.add_argument(
         "--out-dir",
         default="./translations",

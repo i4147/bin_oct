@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans the current working directory and its subdirectories to find Python scripts lacking a file extension.
 It should use helper functions from a module named "dh" (get_filez, is_binary, is_python_file, should_skip) to enumerate files, skip irrelevant or binary entries, and identify files that start with a shebang line ("#!") and are recognized as Python files.
 The script defines a helper to check for a shebang by reading the first two bytes of a file, and a main function that collects matching extensionless Python scripts into a list.
@@ -37,6 +37,4 @@ if __name__ == "__main__":
         for script_path in found_scripts:
             print(script_path.relative_to(cwd))
     else:
-        print(
-            "No Python scripts without extension found in the current directory or its subdirectories."
-        )
+        print("No Python scripts without extension found in the current directory or its subdirectories.")

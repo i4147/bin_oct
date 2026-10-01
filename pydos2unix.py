@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that recursively converts DOS/Windows line endings (CRLF) to Unix line endings (LF) across a given list of files and/or directories.
 It should use argparse to accept target paths, skip binary files (via an is_binary check) and common non-source directories like .git, __pycache__, and .idea, and perform the actual line-ending conversion using a dos2unix helper function.
 To speed up processing of large file trees, it should parallelize the conversion work across multiple files using a multiprocessing Pool with a configurable worker count, and use loguru to log per-file results (converted, already Unix format, skipped, or errored) as well as an overall summary."""
@@ -87,9 +87,7 @@ def main():
         nargs="*",
         help="Files or folders to process (default: current directory)",
     )
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress output messages"
-    )
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress output messages")
     parser.add_argument(
         "-v",
         "--verbose",

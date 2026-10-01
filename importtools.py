@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 import_tools.py — unified Python import hygiene toolkit.
 
@@ -488,9 +488,7 @@ def _make_logger():
 LOG = _make_logger()
 
 
-def iter_py_files(
-    root: Path, *, skip_dirs: Iterable[str] = SKIP_DIRS
-) -> Iterator[Path]:
+def iter_py_files(root: Path, *, skip_dirs: Iterable[str] = SKIP_DIRS) -> Iterator[Path]:
     root = Path(root)
     skip = set(skip_dirs)
     if root.is_file():
@@ -680,10 +678,7 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.")
         return 0
-    print(
-        f"Scanning {len(files)} Python file(s) with {ns.jobs} worker(s) "
-        f"(strategy={ns.strategy})..."
-    )
+    print(f"Scanning {len(files)} Python file(s) with {ns.jobs} worker(s) (strategy={ns.strategy})...")
 
     with Pool(processes=ns.jobs) as pool:
         results = pool.map(_worker_check_missing, [(f, ns.strategy) for f in files])
@@ -721,11 +716,7 @@ def _position_basic(path: Path) -> list[str]:
     seen_non_import = False
     offenders: list[str] = []
     for node in tree.body:
-        if (
-            isinstance(node, ast.Expr)
-            and isinstance(node.value, ast.Constant)
-            and isinstance(node.value.value, str)
-        ):
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             continue
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             if seen_non_import:
@@ -827,9 +818,7 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
     for path in files:
         if ns.deep:
             offenders = _position_deep(path)
-            details = [
-                f"  Line {s}: {t.strip().splitlines()[0]}" for s, _, t in offenders
-            ]
+            details = [f"  Line {s}: {t.strip().splitlines()[0]}" for s, _, t in offenders]
         else:
             offenders = _position_basic(path)  # type: ignore[assignment]
             details = [f"  {d}" for d in offenders]  # type: ignore[union-attr]
@@ -1024,11 +1013,7 @@ class _ImportTransformer(ast.NodeTransformer):
         if not bare_modules:
             return
         for node in ast.walk(self.tree):
-            if (
-                isinstance(node, ast.Attribute)
-                and isinstance(node.value, ast.Name)
-                and node.value.id in bare_modules
-            ):
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id in bare_modules:
                 self.module_to_names.setdefault(node.value.id, set()).add(node.attr)
 
     def visit_Import(self, node: ast.Import) -> Any:  # type: ignore[override]
@@ -1103,17 +1088,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="cmd", required=True)
 
     # check-missing
-    cm = sub.add_parser(
-        "check-missing", help="Find missing imports (spec/stdlib/mapped)."
-    )
+    cm = sub.add_parser("check-missing", help="Find missing imports (spec/stdlib/mapped).")
     cm.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     cm.add_argument("-j", "--jobs", type=int, default=cpu_count())
     cm.add_argument(
         "--strategy",
         choices=("spec", "stdlib", "mapped"),
         default="spec",
-        help="spec=find_spec (default), stdlib=fixed set, "
-        "mapped=stdlib + from-import suggestions",
+        help="spec=find_spec (default), stdlib=fixed set, mapped=stdlib + from-import suggestions",
     )
     cm.add_argument("-a", "--autofix", action="store_true")
     cm.add_argument(
@@ -1126,9 +1108,7 @@ def build_parser() -> argparse.ArgumentParser:
     cm.set_defaults(func=cmd_check_missing)
 
     # check-position
-    cp = sub.add_parser(
-        "check-position", help="Find imports that appear after code / inside scopes."
-    )
+    cp = sub.add_parser("check-position", help="Find imports that appear after code / inside scopes.")
     cp.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     cp.add_argument(
         "--deep",
@@ -1155,25 +1135,19 @@ def build_parser() -> argparse.ArgumentParser:
     ai.set_defaults(func=cmd_add_import)
 
     # check-load
-    cl = sub.add_parser(
-        "check-load", help="Import each given file to detect runtime errors."
-    )
+    cl = sub.add_parser("check-load", help="Import each given file to detect runtime errors.")
     cl.add_argument("files", nargs="+")
     cl.set_defaults(func=cmd_check_load)
 
     # find-py2
-    fp = sub.add_parser(
-        "find-py2", help="Detect Python-2-style imports via tree-sitter."
-    )
+    fp = sub.add_parser("find-py2", help="Detect Python-2-style imports via tree-sitter.")
     fp.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     fp.add_argument("--threshold", type=int, default=DEFAULT_PY2_THRESHOLD)
     fp.add_argument("--no-color", action="store_true")
     fp.set_defaults(func=cmd_find_py2)
 
     # transform
-    tr = sub.add_parser(
-        "transform", help="Rewrite 'import m; m.x' -> 'from m import x'."
-    )
+    tr = sub.add_parser("transform", help="Rewrite 'import m; m.x' -> 'from m import x'.")
     tr.add_argument("file")
     tr.set_defaults(func=cmd_transform)
 

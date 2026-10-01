@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that moves Python test files (files whose stem contains "_test" or "test_")
 from a base directory into ~/tmp/tests while preserving their relative directory structure, logging
@@ -140,10 +140,7 @@ def cleanup_empty_dirs(root: Path) -> None:
 
 def main() -> int:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description=(
-            "Move Python test files to ~/tmp/tests with directory structure "
-            "preservation."
-        )
+        description=("Move Python test files to ~/tmp/tests with directory structure preservation.")
     )
     parser.add_argument(
         "--reverse",

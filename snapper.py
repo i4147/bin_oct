@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that implements a custom LZ77-style byte compressor for one or more input files (using helper utilities such as file listing and size reporting imported from a local "dh" module).
 It should use a fixed-size hash table over 4-byte sequences to find matches within bounded offset ranges, encode literal runs and copy runs into compact variable-length tagged binary formats (including a varint encoder), and write out compressed representations while printing progress or size statistics to the console.
 The script should be runnable from the command line, accepting file or directory paths via sys.argv and using pathlib.Path for filesystem handling."""
@@ -103,10 +103,7 @@ def compress(data: bytes) -> bytes:
             offset = pos - candidate
             match_len = 4
             max_match = min(data_len - pos, 64)
-            while (
-                match_len < max_match
-                and data[candidate + match_len] == data[pos + match_len]
-            ):
+            while match_len < max_match and data[candidate + match_len] == data[pos + match_len]:
                 match_len += 1
             _emit_copy(output, offset, match_len)
             pos += match_len
@@ -225,12 +222,7 @@ def decompress(data: bytes) -> bytes:
             if pos + 4 > len(data):
                 msg = "error length"
                 raise CompressionError(msg, algorithm="snappy")
-            offset = (
-                data[pos]
-                | data[pos + 1] << 8
-                | data[pos + 2] << 16
-                | data[pos + 3] << 24
-            )
+            offset = data[pos] | data[pos + 1] << 8 | data[pos + 2] << 16 | data[pos + 3] << 24
             pos += 4
             if offset == 0:
                 msg = "error length"

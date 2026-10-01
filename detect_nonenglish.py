@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 detect_nonenglish.py — unified multi-backend non-English text detector.
 
@@ -452,11 +452,7 @@ def _write_text_report(output_path: Path, report: dict) -> None:
                 if findings:
                     fh.write(f"  Non-English lines: {len(findings)}\n")
                     for line in findings:
-                        fh.write(
-                            f"    L{line['line_num']} "
-                            f"[{line['lang']}] "
-                            f"({line['confidence']:.3f})\n"
-                        )
+                        fh.write(f"    L{line['line_num']} [{line['lang']}] ({line['confidence']:.3f})\n")
                         fh.write(f"      {line['text']}\n")
                 fh.write("\n")
 
@@ -533,8 +529,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--min-confidence",
         type=float,
         default=DEFAULT_MIN_CONFIDENCE,
-        help=f"Minimum confidence (0.0-1.0) for a detection to be reported "
-        f"(default: {DEFAULT_MIN_CONFIDENCE}).",
+        help=f"Minimum confidence (0.0-1.0) for a detection to be reported (default: {DEFAULT_MIN_CONFIDENCE}).",
     )
     parser.add_argument(
         "-j",
@@ -592,10 +587,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Found {len(files)} candidate files.", file=sys.stderr)
 
     max_bytes = args.max_size_mb * 1024 * 1024
-    tasks = [
-        (str(f), args.backend, args.detailed, args.min_confidence, max_bytes)
-        for f in files
-    ]
+    tasks = [(str(f), args.backend, args.detailed, args.min_confidence, max_bytes) for f in files]
 
     results: list[FileResult] = []
     errors: list[FileResult] = []

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Standalone HTML/CSS bundler: inline local and remote CSS/JS/images into HTML files by base64-encoding assets and replacing <link>/<script>/<img>/url() references, processing files in parallel with a fixed 8-process pool via multiprocessing.Pool.apply_async, using pathlib for all paths and loguru for logging."""
 
 import argparse
@@ -17,9 +17,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 logger.remove()
-logger.add(
-    sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>"
-)
+logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")
 
 IMAGE_EXTENSIONS: set[str] = {
     ".png",
@@ -83,9 +81,7 @@ def read_local(path: Path) -> bytes | None:
         return None
 
 
-def process_css_content(
-    css_content: str, base_path: Path, base_url: str | None = None
-) -> tuple[str, int, int]:
+def process_css_content(css_content: str, base_path: Path, base_url: str | None = None) -> tuple[str, int, int]:
     loc: int = 0
     rem: int = 0
 
@@ -170,17 +166,13 @@ def process_html_file(path: Path) -> dict[str, Any]:
                 clean_href: str = href.split("?")[0].split("#")[0]
                 local_css_path: Path = (path.parent / clean_href).resolve()
                 if local_css_path.exists():
-                    css_text = local_css_path.read_text(
-                        encoding="utf-8", errors="ignore"
-                    )
+                    css_text = local_css_path.read_text(encoding="utf-8", errors="ignore")
                     css_base_path = local_css_path
                     stats["local"] += 1
                 else:
                     logger.warning(f"Missing local CSS: {local_css_path} in {path}")
             if css_text:
-                processed_css, c_loc, c_rem = process_css_content(
-                    css_text, css_base_path, base_url
-                )
+                processed_css, c_loc, c_rem = process_css_content(css_text, css_base_path, base_url)
                 stats["local"] += c_loc
                 stats["remote"] += c_rem
                 style_tag = soup.new_tag("style")
@@ -200,9 +192,7 @@ def process_html_file(path: Path) -> dict[str, Any]:
                 clean_src = src.split("?")[0].split("#")[0]
                 local_script: Path = (path.parent / clean_src).resolve()
                 if local_script.exists():
-                    script_text = local_script.read_text(
-                        encoding="utf-8", errors="ignore"
-                    )
+                    script_text = local_script.read_text(encoding="utf-8", errors="ignore")
                     stats["local"] += 1
                 else:
                     logger.warning(f"Missing local script: {local_script} in {path}")
@@ -305,9 +295,7 @@ def main() -> int:
             status: str = s["status"]
             if status == "success":
                 print(
-                    f"[SUCCESS] {display_path} "
-                    f"({s['time']:.2f}s) - Embedded: "
-                    f"{s['local']} local, {s['remote']} remote"
+                    f"[SUCCESS] {display_path} ({s['time']:.2f}s) - Embedded: {s['local']} local, {s['remote']} remote"
                 )
             elif status == "skipped":
                 pass

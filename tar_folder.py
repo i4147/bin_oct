@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that accepts a single folder path as an argument, validates that it exists and is a directory, then compresses it into a tar archive placed alongside the original folder using shutil.make_archive.
 If the compression succeeds, the script should delete the original folder (or file) safely, printing confirmation messages for removal or any errors encountered.
 Include proper usage instructions and error handling for missing or invalid arguments, and exit with appropriate status codes on failure."""

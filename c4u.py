@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that checks installed system packages for available updates and tracks their state over time.
 It should retrieve the list of installed packages (via a helper like get_installed_packages), compare installed versions against the latest available versions, and store results (package name, installed/latest version, upgradable flag, timestamp, and any errors) as PackageInfo dataclass records persisted in a JSON state file (default "pkgs_state.json") through a PackageStateManager class that can load and save this state.
 The script should use multiprocessing (Pool, cpu_count) to check package versions concurrently for performance, and should set up dual logging (console plus a "pkg_updater.log" file) with timestamps and configurable verbosity via a setup_logging function.
@@ -22,9 +22,7 @@ def setup_logging(verbose: bool = True) -> logging.Logger:
     console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
     file_handler = logging.FileHandler("pkg_updater.log")
     file_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)-8s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     console_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
@@ -63,13 +61,8 @@ class PackageStateManager:
             try:
                 with open(self.state_file) as f:
                     raw_state = json.load(f)
-                self.state = {
-                    name: PackageInfo.from_dict(data)
-                    for name, data in raw_state.items()
-                }
-                print(
-                    f"✓ Resumed state: {len(self.state)} packages loaded from {self.state_file}"
-                )
+                self.state = {name: PackageInfo.from_dict(data) for name, data in raw_state.items()}
+                print(f"✓ Resumed state: {len(self.state)} packages loaded from {self.state_file}")
             except (json.JSONDecodeError, KeyError) as e:
                 logger.error(f"✗ Failed to load state: {e}. Starting fresh.")
                 self.state = {}
@@ -92,9 +85,7 @@ class PackageStateManager:
         return [pkg for pkg in self.state.values() if pkg.upgradable]
 
 
-def query_pypi(
-    package_name: str, installed_version: str, retries: int = 2
-) -> PackageInfo:
+def query_pypi(package_name: str, installed_version: str, retries: int = 2) -> PackageInfo:
     import requests
 
     url = f"https://pypi.org/pypi/{package_name}/json"
@@ -112,9 +103,7 @@ def query_pypi(
             pkg_info.latest_version = latest_version
             pkg_info.upgradable = _is_upgradable(installed_version, latest_version)
             status = "🔄 upgradable" if pkg_info.upgradable else "✓ up-to-date"
-            logger.debug(
-                f"{status:20} | {package_name:30} {installed_version} → {latest_version}"
-            )
+            logger.debug(f"{status:20} | {package_name:30} {installed_version} → {latest_version}")
             return pkg_info
         except requests.exceptions.Timeout:
             if attempt < retries - 1:
@@ -165,9 +154,7 @@ def main() -> None:
     if not pending:
         print("✓ All packages already checked. Skipping PyPI queries.")
     else:
-        pending_packages = [
-            (name, next(v for n, v in installed if n == name)) for name in pending
-        ]
+        pending_packages = [(name, next(v for n, v in installed if n == name)) for name in pending]
         num_workers = min(cpu_count(), 8)
         print(f"🔄 Spawning {num_workers} workers to query PyPI...")
         with Pool(processes=num_workers) as pool:
@@ -185,8 +172,7 @@ def main() -> None:
         req_file = Path("requirements_upgradable.txt")
         with open(req_file, "w") as f:
             f.writelines(
-                f"{pkg.pkgname}=={pkg.latest_version}\n"
-                for pkg in sorted(upgradable, key=lambda x: x.pkgname)
+                f"{pkg.pkgname}=={pkg.latest_version}\n" for pkg in sorted(upgradable, key=lambda x: x.pkgname)
             )
         print(f"📝 {len(upgradable)} upgradable packages saved to {req_file}")
     else:

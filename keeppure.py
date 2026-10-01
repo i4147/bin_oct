@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans all installed package `.dist-info` directories across the system, user, and site-packages locations, and for each package inspects its RECORD file to detect whether it ifacts (`.so` or `.pyd` files).
 It should use multiprocessing (one worker per CPU core) to check packages in parallel and collect the lowercase names of those containing binaries into a set.
 Finally, it should read a given requirements.txt file (default path "requirements.txt"), print an error and exit gracefully if the file doesn't exist, and otherwise use the detected binary-package set to clean or filter the requirements file entries accordingly."""
@@ -15,9 +15,7 @@ def get_all_dist_info_dirs():
     for site_dir in [*site.getsitepackages(), site.getusersitepackages()]:
         if Path(site_dir).exists():
             dist_info_dirs.extend(
-                os.path.join(site_dir, item)
-                for item in os.listdir(site_dir)
-                if item.endswith(".dist-info")
+                os.path.join(site_dir, item) for item in os.listdir(site_dir) if item.endswith(".dist-info")
             )
     return dist_info_dirs
 
@@ -59,14 +57,7 @@ def clean_requirements_txt(requirements_file: str = "requirements.txt") -> None:
     pure_python = []
     removed = []
     for req in requirements:
-        pkg_name = (
-            req.split("==")[0]
-            .split(">=")[0]
-            .split("<=")[0]
-            .split("~=")[0]
-            .strip()
-            .lower()
-        )
+        pkg_name = req.split("==")[0].split(">=")[0].split("<=")[0].split("~=")[0].strip().lower()
         if pkg_name in binary_packages:
             removed.append(req)
         else:

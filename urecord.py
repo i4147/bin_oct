@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that cleans up pip-installed package RECORD files (from *.dist-info directories) by removing entries for .pyc files, direct_url.json, INSTALLER, and LICENSE files.
 The script should locate site-packages directories (falling back to the user site-packages if the standard ones aren't available), then scan and rewrite each RECORD CSV file found, printing a summary of how many entries were removed from each file and reporting any errors encountered during processing.
 It should accept command-line arguments via argparse and support running against the discovered site-packages paths."""
@@ -31,11 +31,7 @@ def update_record_file(record_path: Path) -> bool:
             if not row:
                 continue
             path = row[0] if row else ""
-            if (
-                path.endswith(".pyc")
-                or path in {"direct_url.json", "INSTALLER"}
-                or path.startswith("LICENSE")
-            ):
+            if path.endswith(".pyc") or path in {"direct_url.json", "INSTALLER"} or path.startswith("LICENSE"):
                 continue
             filtered_lines.append(row)
         if len(filtered_lines) == original_count:
@@ -43,9 +39,7 @@ def update_record_file(record_path: Path) -> bool:
         with record_path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(filtered_lines)
-        print(
-            f"  Updated: {record_path} (removed {original_count - len(filtered_lines)} entries)"
-        )
+        print(f"  Updated: {record_path} (removed {original_count - len(filtered_lines)} entries)")
         return True
     except Exception as e:
         print(f"  Error processing {record_path}: {e}", file=sys.stderr)
@@ -76,9 +70,7 @@ def main() -> None:
         action="append",
         help="Specific site-packages directory to scan (can be used multiple times)",
     )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Print more detailed information"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Print more detailed information")
     args = parser.parse_args()
     site_dirs = args.site_dir or find_site_packages()
     if not site_dirs:

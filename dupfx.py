@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Duplicate File Finder and Remover
 
@@ -118,9 +118,7 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
 
 def main() -> None:
     cwd = Path.cwd()
-    p = argparse.ArgumentParser(
-        description="Find and delete duplicate files by content."
-    )
+    p = argparse.ArgumentParser(description="Find and delete duplicate files by content.")
     p.add_argument(
         "--recursive",
         action="store_true",
@@ -181,18 +179,13 @@ def main() -> None:
         except OSError:
             continue
 
-    candidates: dict[int, list[Path]] = {
-        s: lst for s, lst in size_groups.items() if len(lst) > 1
-    }
+    candidates: dict[int, list[Path]] = {s: lst for s, lst in size_groups.items() if len(lst) > 1}
     if not candidates:
         print(f"Scanned {total_files} files. No potential duplicates found.")
         return
 
     candidate_count = sum(len(v) for v in candidates.values())
-    print(
-        f"Phase 1 complete: {candidate_count} files in "
-        f"{len(candidates)} size-groups to examine."
-    )
+    print(f"Phase 1 complete: {candidate_count} files in {len(candidates)} size-groups to examine.")
 
     print("Phase 2: Quick hash comparison...")
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
@@ -210,23 +203,16 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"Skipping {fpath}: {e}")
 
-    need_full: list[list[Path]] = [
-        group for group in quick_groups.values() if len(group) > 1
-    ]
+    need_full: list[list[Path]] = [group for group in quick_groups.values() if len(group) > 1]
     if not need_full:
         print("No duplicates found after quick hash comparison.")
         return
 
     full_candidates = sum(len(g) for g in need_full)
-    print(
-        f"Phase 2 complete: {full_candidates} files in "
-        f"{len(need_full)} groups need full hash."
-    )
+    print(f"Phase 2 complete: {full_candidates} files in {len(need_full)} groups need full hash.")
 
     print("Phase 3: Full hash comparison...")
-    full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = (
-        defaultdict(list)
-    )
+    full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
 
     with Pool(processes=POOL_WORKERS) as pool:
         futures2: list[tuple[Path, tuple[int, int] | None, object]] = []
@@ -308,9 +294,7 @@ def main() -> None:
     if failed:
         print(f"  Failed to delete: {failed}")
     if freed_space:
-        print(
-            f"  Space freed: {freed_space:,} bytes ({freed_space / 1024 / 1024:.2f} MB)"
-        )
+        print(f"  Space freed: {freed_space:,} bytes ({freed_space / 1024 / 1024:.2f} MB)")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that uses git subprocess commands to help clean up local git branches that have already been merged into the main branch.
 The script should detect whether the current directory is a git repository, determine the repository's main branch (via origin's HEAD or by checking for "main"/"master"), list all local branches, and identify which ones are safe to delete because their changes are already merged.
 It should print clear status/error messages for failed git commands and prompt or perform deletion of the merged branches, ensuring the currently checked-out branch is excluded from deletion.
@@ -10,13 +10,9 @@ import sys
 from subprocess import CompletedProcess
 
 
-def run_git_command(
-    cmd: str, check=True, capture_output=True
-) -> CompletedProcess[str] | None:
+def run_git_command(cmd: str, check=True, capture_output=True) -> CompletedProcess[str] | None:
     try:
-        return subprocess.run(
-            cmd, shell=True, check=check, capture_output=capture_output, text=True
-        )
+        return subprocess.run(cmd, shell=True, check=check, capture_output=capture_output, text=True)
     except subprocess.CalledProcessError as e:
         print(f"Error running command: {cmd}")
         print(f"Error: {e}")
@@ -44,9 +40,7 @@ def get_main_branch_name() -> str:
                 return line.split(":")[1].strip()
     result = run_git_command("git branch -l")
     if result:
-        branches = [
-            b.strip().replace("* ", "") for b in result.stdout.split("\n") if b.strip()
-        ]
+        branches = [b.strip().replace("* ", "") for b in result.stdout.split("\n") if b.strip()]
         for branch in branches:
             if branch in {"main", "master"}:
                 return branch

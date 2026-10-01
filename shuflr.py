@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that reads a text file (using mmap for files larger than 5MB, falling back to standard reading otherwise) and shuffles its lines using multiple selectable shuffling methods, such as "basic" (random.shuffle), "crypto" (secure random via secrets), and "shuffle3", each applied a configurable number of repeat passes.
 The script should accept the input file path, an optional output filename prefix, a list of shuffle methods, and a repeat count as parameters, print progress information like file size and line counts, and write the shuffled results to separate output files named according to the method used, preserving the original line count and encoding (UTF-8).
 It should be structured with argparse for CLI usage and use pathlib for file handling."""
@@ -11,9 +11,7 @@ import secrets
 from pathlib import Path
 
 
-def enhanced_shuffle(
-    input_file, output_file_prefix=None, methods=None, repeats=3
-) -> None:
+def enhanced_shuffle(input_file, output_file_prefix=None, methods=None, repeats=3) -> None:
     if methods is None:
         methods = ["basic", "crypto", "shuffle3"]
     input_path = Path(input_file)
@@ -55,9 +53,7 @@ def enhanced_shuffle(
             output_path = f"{base}_{method}{ext}"
         with Path(output_path).open("w", encoding="utf-8") as f:
             f.writelines(shuffled_lines)
-        print(
-            f"Shuffled {original_count} lines using method '{method}' with {repeats} passes"
-        )
+        print(f"Shuffled {original_count} lines using method '{method}' with {repeats} passes")
         print(f"Output written to: {output_path}")
 
 
@@ -96,12 +92,8 @@ def test_randomness(input_file) -> None:
             crypto_shuffle(current_lines)
         elif method_to_test == "shuffle3":
             shuffle3(current_lines)
-        changes = sum(
-            1 for a, b in zip(original_order, current_lines, strict=False) if a != b
-        )
-        print(
-            f"Shuffle {i + 1}: {changes} out of {len(current_lines)} positions changed"
-        )
+        changes = sum(1 for a, b in zip(original_order, current_lines, strict=False) if a != b)
+        print(f"Shuffle {i + 1}: {changes} out of {len(current_lines)} positions changed")
 
 
 def main() -> None:

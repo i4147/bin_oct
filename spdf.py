@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that compresses PDF files using Ghostscript, invoked as a script operating on a target file or directory.
 It should recursively discover PDFs via a `get_files` helper, and for each one run Ghostscript with a set of downsampling/compression flags, offering a `--fast` mode (partial-bound flag set using `/Subsample`, 70 DPI, font subsetting) versus a higher-quality default mode, executing the conversion via a `runcmd` helper.
 The script should report original and compressed file sizes (using `fsz`/`gsz` helpers) for each processed file, optionally leveraging a multiprocessing map helper (`mpf`) to process multiple files in parallel up to `MAX_WORKERS`, and print a summary of space saved after processing completes."""

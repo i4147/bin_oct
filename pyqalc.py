@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a command-line unit conversion tool in Python that supports converting values between units of length, mass, and volume (e.g., nm/mm/cm/m/km/in/ft/mile/ly for length, mg/g/kg/ton/oz/lb for mass, and ml/l/cl/dl/fl oz/pint/quart for volume), using dictionaries that map each unit's abbreviation and full name to its base-unit conversion factor (meters, kilograms, or liters respectively).
 It should use argparse to accept inputs such as the value, source unit, and target unit from the command line, use regex to parse or validate unit strings, and leverage Python's decimal module with increased precision for accurate numeric conversions.
 The output should be the converted value printed to the console, with the script structured around a UnitConverter class containing the conversion tables and logic to look up units and compute the converted result."""
@@ -80,28 +80,16 @@ class UnitConverter:
         to_unit = to_unit.lower().strip()
         if from_unit == to_unit:
             return value
-        if (
-            from_unit in UnitConverter.LENGTH_TO_METERS
-            and to_unit in UnitConverter.LENGTH_TO_METERS
-        ):
+        if from_unit in UnitConverter.LENGTH_TO_METERS and to_unit in UnitConverter.LENGTH_TO_METERS:
             meters = value * UnitConverter.LENGTH_TO_METERS[from_unit]
             return meters / UnitConverter.LENGTH_TO_METERS[to_unit]
-        if (
-            from_unit in UnitConverter.MASS_TO_KG
-            and to_unit in UnitConverter.MASS_TO_KG
-        ):
+        if from_unit in UnitConverter.MASS_TO_KG and to_unit in UnitConverter.MASS_TO_KG:
             kg = value * UnitConverter.MASS_TO_KG[from_unit]
             return kg / UnitConverter.MASS_TO_KG[to_unit]
-        if (
-            from_unit in UnitConverter.VOLUME_TO_LITERS
-            and to_unit in UnitConverter.VOLUME_TO_LITERS
-        ):
+        if from_unit in UnitConverter.VOLUME_TO_LITERS and to_unit in UnitConverter.VOLUME_TO_LITERS:
             liters = value * UnitConverter.VOLUME_TO_LITERS[from_unit]
             return liters / UnitConverter.VOLUME_TO_LITERS[to_unit]
-        if (
-            from_unit in UnitConverter.TEMP_UNITS
-            and to_unit in UnitConverter.TEMP_UNITS
-        ):
+        if from_unit in UnitConverter.TEMP_UNITS and to_unit in UnitConverter.TEMP_UNITS:
             return UnitConverter._convert_temperature(value, from_unit, to_unit)
         raise ValueError(f"Cannot convert between {from_unit} and {to_unit}")
 
@@ -184,11 +172,7 @@ class Calculator:
                 try:
                     value = float(value_str)
                     from_unit = tokens[i + 2]
-                    to_unit = (
-                        tokens[i + 3]
-                        if i + 3 < len(tokens) and tokens[i + 3] not in "+-*/%()"
-                        else None
-                    )
+                    to_unit = tokens[i + 3] if i + 3 < len(tokens) and tokens[i + 3] not in "+-*/%()" else None
                     if to_unit:
                         converted = UnitConverter.convert(value, from_unit, to_unit)
                         result.append(str(converted))
@@ -246,9 +230,7 @@ def create_parser() -> argparse.ArgumentParser:
         description="Quick command-line calculator with unit conversion support",
         add_help=True,
     )
-    parser.add_argument(
-        "expression", nargs="*", help="Mathematical expression to evaluate"
-    )
+    parser.add_argument("expression", nargs="*", help="Mathematical expression to evaluate")
     parser.add_argument(
         "-f",
         "--format",

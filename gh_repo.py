@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 gh_repo.py — create a GitHub repository from a local project and push code.
 
@@ -129,9 +129,7 @@ class GitBackend(ABC):
     @abstractmethod
     def remove_remote(self, path: Path, name: str) -> None: ...
     @abstractmethod
-    def push(
-        self, path: Path, remote: str, branch: str, set_upstream: bool = True
-    ) -> None: ...
+    def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None: ...
     @abstractmethod
     def current_branch(self, path: Path) -> str: ...
     @abstractmethod
@@ -139,16 +137,11 @@ class GitBackend(ABC):
 
 
 class SubprocessGit(GitBackend):
-    def _run(
-        self, cmd: Sequence[str], cwd: Path, check: bool = True
-    ) -> subprocess.CompletedProcess:
+    def _run(self, cmd: Sequence[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
         return run_cli(cmd, cwd=cwd, check=check)
 
     def is_git_repo(self, path: Path) -> bool:
-        return (
-            self._run(["git", "rev-parse", "--git-dir"], path, check=False).returncode
-            == 0
-        )
+        return self._run(["git", "rev-parse", "--git-dir"], path, check=False).returncode == 0
 
     def init_repo(self, path: Path) -> None:
         self._run(["git", "init"], path)
@@ -181,9 +174,7 @@ class SubprocessGit(GitBackend):
     def remove_remote(self, path: Path, name: str) -> None:
         self._run(["git", "remote", "remove", name], path, check=False)
 
-    def push(
-        self, path: Path, remote: str, branch: str, set_upstream: bool = True
-    ) -> None:
+    def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
         cmd = ["git", "push"]
         if set_upstream:
             cmd.append("-u")
@@ -269,9 +260,7 @@ class GitPythonGit(GitBackend):
             except Exception:
                 pass
 
-    def push(
-        self, path: Path, remote: str, branch: str, set_upstream: bool = True
-    ) -> None:
+    def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
         repo = self._repo(path)
         if not repo:
             raise RuntimeError("Not a git repository")
@@ -331,9 +320,7 @@ class DulwichGit(GitBackend):
         status = porcelain.status(repo)
         if not (status.untracked or status.unstaged or status.staged):
             return False
-        porcelain.commit(
-            str(path), message=message.encode(), author=None, committer=None
-        )
+        porcelain.commit(str(path), message=message.encode(), author=None, committer=None)
         return True
 
     def is_dirty(self, path: Path) -> bool:
@@ -379,9 +366,7 @@ class DulwichGit(GitBackend):
         except KeyError:
             pass
 
-    def push(
-        self, path: Path, remote: str, branch: str, set_upstream: bool = True
-    ) -> None:
+    def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
         porcelain, _ = self._dulwich()
         porcelain.push(str(path), remote, f"refs/heads/{branch}:refs/heads/{branch}")
 
@@ -501,12 +486,9 @@ class Pygit2Git(GitBackend):
             except Exception:
                 pass
 
-    def push(
-        self, path: Path, remote: str, branch: str, set_upstream: bool = True
-    ) -> None:
+    def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
         raise NotImplementedError(
-            "push via pygit2 requires credential callbacks. "
-            "Use the 'subprocess' backend for authenticated pushes."
+            "push via pygit2 requires credential callbacks. Use the 'subprocess' backend for authenticated pushes."
         )
 
     def current_branch(self, path: Path) -> str:
@@ -552,9 +534,7 @@ class GhCliGitHub(GitHubBackend):
         r = run_cli(["gh", "repo", "view", f"{owner}/{name}"])
         return r.returncode == 0
 
-    def create_repo(
-        self, name, description="", private=False, auto_init=False, owner=None
-    ):
+    def create_repo(self, name, description="", private=False, auto_init=False, owner=None):
         cmd = [
             "gh",
             "repo",
@@ -594,9 +574,7 @@ class RestGitHub(GitHubBackend):
         )
         return r.status_code == 200
 
-    def create_repo(
-        self, name, description="", private=False, auto_init=False, owner=None
-    ):
+    def create_repo(self, name, description="", private=False, auto_init=False, owner=None):
         import requests
 
         payload = {
@@ -627,9 +605,7 @@ class PyGithubGitHub(GitHubBackend):
             from github import Github
             from github.Auth import Token
         except ImportError as exc:
-            raise SystemExit(
-                "pygithub backend requires `pip install PyGithub`"
-            ) from exc
+            raise SystemExit("pygithub backend requires `pip install PyGithub`") from exc
         self.client = Github(auth=Token(token))
         self.username = username
 
@@ -641,9 +617,7 @@ class PyGithubGitHub(GitHubBackend):
         except Exception:
             return False
 
-    def create_repo(
-        self, name, description="", private=False, auto_init=False, owner=None
-    ):
+    def create_repo(self, name, description="", private=False, auto_init=False, owner=None):
         try:
             user = self.client.get_user(owner) if owner else self.client.get_user()
             repo = user.create_repo(
@@ -670,9 +644,7 @@ class Github3GitHub(GitHubBackend):
         try:
             import github3
         except ImportError as exc:
-            raise SystemExit(
-                "githubpython backend requires `pip install github3.py`"
-            ) from exc
+            raise SystemExit("githubpython backend requires `pip install github3.py`") from exc
         self.client = github3.login(token=token)
         self.username = username
 
@@ -682,9 +654,7 @@ class Github3GitHub(GitHubBackend):
         except Exception:
             return False
 
-    def create_repo(
-        self, name, description="", private=False, auto_init=False, owner=None
-    ):
+    def create_repo(self, name, description="", private=False, auto_init=False, owner=None):
         try:
             repo = self.client.create_repo(
                 name,
@@ -760,9 +730,7 @@ def cmd_api(args: argparse.Namespace) -> int:
         return 1
     print("✅ Repository created successfully!")
     print(f"📁 Name: {data.get('name', args.repo_name)}")
-    print(
-        f"🔗 URL: {data.get('html_url', f'https://github.com/{owner}/{args.repo_name}')}"
-    )
+    print(f"🔗 URL: {data.get('html_url', f'https://github.com/{owner}/{args.repo_name}')}")
     print(f"📝 Clone URL: {data.get('clone_url', data.get('ssh_url', ''))}")
     return 0
 
@@ -910,9 +878,7 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
         if fetch.returncode == 0:
             print("GitHub repository exists. Will push changes.")
         else:
-            print(
-                "Remote exists but seems inaccessible. You might need to authenticate."
-            )
+            print("Remote exists but seems inaccessible. You might need to authenticate.")
             print(f"Remote URL: {origin_url}")
 
     print("Adding all files...")
@@ -993,10 +959,7 @@ class GitHubRepoManager:
             print("📄 No files found, creating initial README.md...")
             readme = self.cwd / "README.md"
             if not readme.exists():
-                readme.write_text(
-                    f"# {self.repo_name}\n"
-                    f"Repository initialized on {datetime.now():%Y-%m-%d %H:%M:%S}\n"
-                )
+                readme.write_text(f"# {self.repo_name}\nRepository initialized on {datetime.now():%Y-%m-%d %H:%M:%S}\n")
                 print("✓ Created README.md")
                 return True
         return has_content
@@ -1068,9 +1031,7 @@ class GitHubRepoManager:
                     print("Error: Repository name cannot be empty.")
                     continue
                 self.repo_name = new_name
-                self.repo_url = (
-                    f"https://github.com/{self.github_username}/{self.repo_name}.git"
-                )
+                self.repo_url = f"https://github.com/{self.github_username}/{self.repo_name}.git"
                 print(f"✓ New repository name set: {self.repo_name}")
                 return False
             if choice == "3":
@@ -1124,9 +1085,7 @@ class GitHubRepoManager:
 
         print("\n" + "=" * 40)
         print("✅ Success! Repository created and pushed to GitHub")
-        print(
-            f"Repository URL: https://github.com/{self.github_username}/{self.repo_name}"
-        )
+        print(f"Repository URL: https://github.com/{self.github_username}/{self.repo_name}")
         print("-" * 40)
         return 0
 
@@ -1195,12 +1154,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_api)
 
     # api-push
-    p = sub.add_parser(
-        "api-push", help="Init/commit + API create + push (new_repo.py)."
-    )
-    p.add_argument(
-        "-n", "--name", help="Repository name. Default: current directory name."
-    )
+    p = sub.add_parser("api-push", help="Init/commit + API create + push (new_repo.py).")
+    p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
         "--branch",
         default=DEFAULT_BRANCH,
@@ -1215,12 +1170,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_api_push)
 
     # gh-create
-    p = sub.add_parser(
-        "gh-create", help="PyGithub/gh-CLI hybrid create+push (new_repo2.py)."
-    )
-    p.add_argument(
-        "-n", "--name", help="Repository name. Default: current directory name."
-    )
+    p = sub.add_parser("gh-create", help="PyGithub/gh-CLI hybrid create+push (new_repo2.py).")
+    p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
         "--global-gitignore",
         default=str(DEFAULT_GLOBAL_GITIGNORE),
@@ -1235,12 +1186,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_gh_create)
 
     # gh-cli
-    p = sub.add_parser(
-        "gh-cli", help="Pure gh CLI + git subprocess workflow (newrepo.py)."
-    )
-    p.add_argument(
-        "-n", "--name", help="Repository name. Default: current directory name."
-    )
+    p = sub.add_parser("gh-cli", help="Pure gh CLI + git subprocess workflow (newrepo.py).")
+    p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
         "--branch",
         default=DEFAULT_BRANCH,
@@ -1255,12 +1202,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_gh_cli)
 
     # gh-managed
-    p = sub.add_parser(
-        "gh-managed", help="Interactive manager with prompts & README (pynewrepo.py)."
-    )
-    p.add_argument(
-        "-n", "--name", help="Repository name. Default: current directory name."
-    )
+    p = sub.add_parser("gh-managed", help="Interactive manager with prompts & README (pynewrepo.py).")
+    p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
         "-m",
         "--message",

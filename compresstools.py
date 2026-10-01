@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that benchmarks and/or batch-compresses files and directories using multiple compression algorithms (zstd, xz, py7zr, gzip, bz2, brotli, lz4), each configured with its own file extension, tar-archive pattern, and compression settings (e.g., level 22 for zstd, preset 9 for xz).
 The script should use argparse for CLI options, asyncio with a worker pool (MAX_WORKERS=4) to process files concurrently in chunks (CHUNK_SIZE=1MB), and helper functions from a local "dh" module (fsz, get_dirs, get_files) to determine file sizes and enumerate directory/file inputs.
 It should support selecting which compressor(s) to use, process input paths recursively, and report or output compression results (such as output archive files and/or size comparisons) to standard output."""
@@ -97,9 +97,7 @@ def compress_in_memory(path: Path, out_path: Path, compressor: str) -> bool:
             data = f.read()
         with open(out_path, "wb") as f:
             if compressor == "zstd":
-                cctx = zstd.ZstdCompressor(
-                    level=COMPRESSORS["zstd"]["settings"]["level"]
-                )
+                cctx = zstd.ZstdCompressor(level=COMPRESSORS["zstd"]["settings"]["level"])
                 f.write(cctx.compress(data))
             elif compressor == "gzip":
                 f.write(
@@ -127,17 +125,13 @@ def compress_in_memory(path: Path, out_path: Path, compressor: str) -> bool:
                 f.write(
                     lz4.frame.compress(
                         data,
-                        compression_level=COMPRESSORS["lz4"]["settings"][
-                            "compression_level"
-                        ],
+                        compression_level=COMPRESSORS["lz4"]["settings"]["compression_level"],
                     )
                 )
             elif compressor == "xz":
                 import lzma
 
-                cctx = lzma.LZMACompressor(
-                    preset=COMPRESSORS["xz"]["settings"]["preset"]
-                )
+                cctx = lzma.LZMACompressor(preset=COMPRESSORS["xz"]["settings"]["preset"])
                 f.write(cctx.compress(data))
                 f.write(cctx.flush())
             elif compressor == "py7zr":
@@ -150,9 +144,7 @@ def compress_in_memory(path: Path, out_path: Path, compressor: str) -> bool:
         return False
 
 
-def compress_chunked(
-    path: Path, out_path: Path, original_size: int, compressor: str
-) -> bool:
+def compress_chunked(path: Path, out_path: Path, original_size: int, compressor: str) -> bool:
     try:
         if compressor == "zstd":
             cctx = zstd.ZstdCompressor(level=COMPRESSORS["zstd"]["settings"]["level"])
@@ -216,9 +208,7 @@ def compress_chunked(
                     compressed = lz4.frame.compress_chunk(
                         context,
                         chunk,
-                        compression_level=COMPRESSORS["lz4"]["settings"][
-                            "compression_level"
-                        ],
+                        compression_level=COMPRESSORS["lz4"]["settings"]["compression_level"],
                     )
                     outf.write(compressed)
         elif compressor == "xz":
@@ -226,9 +216,7 @@ def compress_chunked(
 
             with (
                 open(path, "rb") as inf,
-                lzma.open(
-                    out_path, "wb", preset=COMPRESSORS["xz"]["settings"]["preset"]
-                ) as outf,
+                lzma.open(out_path, "wb", preset=COMPRESSORS["xz"]["settings"]["preset"]) as outf,
             ):
                 while True:
                     chunk = inf.read(CHUNK_SIZE)
@@ -322,14 +310,10 @@ def decompress_archive(archive_path: Path, compressor: str) -> bool:
         return False
 
 
-async def compress_folder_async(
-    dir_path: Path, archive_path: str, compressor: str
-) -> bool:
+async def compress_folder_async(dir_path: Path, archive_path: str, compressor: str) -> bool:
     try:
         if compressor == "py7zr":
-            with py7zr.SevenZipFile(
-                f"{archive_path}{COMPRESSORS[compressor]['ext']}", "w"
-            ) as archive:
+            with py7zr.SevenZipFile(f"{archive_path}{COMPRESSORS[compressor]['ext']}", "w") as archive:
                 archive.writeall(dir_path, arcname=dir_path.name)
         else:
             print(f"  ⚠️  Folder compression not fully implemented for {compressor}")
@@ -362,9 +346,7 @@ async def process_compress(compressor: str) -> None:
     if not files_to_compress:
         print("\n📄 No files to compress")
         return
-    print(
-        f"\n📄 Compressing {len(files_to_compress)} files with {compressor.upper()}..."
-    )
+    print(f"\n📄 Compressing {len(files_to_compress)} files with {compressor.upper()}...")
     total_original = 0
     total_compressed = 0
     successful = 0
@@ -385,9 +367,7 @@ async def process_compress(compressor: str) -> None:
             if compressed_size > 0 and compressed_size < original_size:
                 path.unlink()
                 reduction = (original_size - compressed_size) / original_size * 40
-                print(
-                    f"  ✓ {path.name}: {reduction:.1f}% saved ({fsz(original_size)} → {fsz(compressed_size)})"
-                )
+                print(f"  ✓ {path.name}: {reduction:.1f}% saved ({fsz(original_size)} → {fsz(compressed_size)})")
                 successful += 1
                 total_compressed += compressed_size
             else:
@@ -417,22 +397,14 @@ async def process_decompress(compressor: str) -> None:
         for archive in sorted(archives):
             print(f"\n  Decompressing {archive.name}...")
             decompress_archive(archive, compressor)
-    files_to_decompress = [
-        p for p in get_files(cwd) if p.suffix == COMPRESSORS[compressor]["ext"]
-    ]
+    files_to_decompress = [p for p in get_files(cwd) if p.suffix == COMPRESSORS[compressor]["ext"]]
     if not files_to_decompress:
         print("\n📄 No files to decompress")
         return
-    files_to_decompress = [
-        p
-        for p in files_to_decompress
-        if not p.name.endswith(COMPRESSORS[compressor]["tar_ext"])
-    ]
+    files_to_decompress = [p for p in files_to_decompress if not p.name.endswith(COMPRESSORS[compressor]["tar_ext"])]
     if not files_to_decompress:
         return
-    print(
-        f"\n📄 Decompressing {len(files_to_decompress)} {compressor.upper()} files..."
-    )
+    print(f"\n📄 Decompressing {len(files_to_decompress)} {compressor.upper()} files...")
     total_original = 0
     total_decompressed = 0
     successful = 0
@@ -509,30 +481,14 @@ Examples:
         """,
     )
     method_group = parser.add_mutually_exclusive_group()
-    method_group.add_argument(
-        "-z", "--zstd", action="store_true", help="Use Zstandard compression"
-    )
-    method_group.add_argument(
-        "-x", "--xz", action="store_true", help="Use XZ/LZMA compression"
-    )
-    method_group.add_argument(
-        "-7", "--7z", action="store_true", help="Use 7-Zip compression"
-    )
-    method_group.add_argument(
-        "-g", "--gzip", action="store_true", help="Use Gzip compression"
-    )
-    method_group.add_argument(
-        "-b", "--bz2", action="store_true", help="Use Bzip2 compression"
-    )
-    method_group.add_argument(
-        "-r", "--brotli", action="store_true", help="Use Brotli compression"
-    )
-    method_group.add_argument(
-        "-l", "--lz4", action="store_true", help="Use LZ4 compression"
-    )
-    parser.add_argument(
-        "-d", "--decompress", action="store_true", help="Decompress files"
-    )
+    method_group.add_argument("-z", "--zstd", action="store_true", help="Use Zstandard compression")
+    method_group.add_argument("-x", "--xz", action="store_true", help="Use XZ/LZMA compression")
+    method_group.add_argument("-7", "--7z", action="store_true", help="Use 7-Zip compression")
+    method_group.add_argument("-g", "--gzip", action="store_true", help="Use Gzip compression")
+    method_group.add_argument("-b", "--bz2", action="store_true", help="Use Bzip2 compression")
+    method_group.add_argument("-r", "--brotli", action="store_true", help="Use Brotli compression")
+    method_group.add_argument("-l", "--lz4", action="store_true", help="Use LZ4 compression")
+    parser.add_argument("-d", "--decompress", action="store_true", help="Decompress files")
     args = parser.parse_args()
     compressor = "zstd"
     if args.xz:

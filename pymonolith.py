@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 monolith.py — Unified single-file webpage archiver.
 
@@ -313,8 +313,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="monolith",
         description=(
-            "Save a webpage (URL or local file) as a single HTML file with "
-            "embedded CSS / JS / images / fonts."
+            "Save a webpage (URL or local file) as a single HTML file with embedded CSS / JS / images / fonts."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )

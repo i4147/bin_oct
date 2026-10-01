@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 chmodnorm.py — unified file/directory permission normalizer.
 
@@ -228,12 +228,8 @@ class Config:
             return False
 
 
-def walk_items(
-    cfg: Config, include_dirs: bool = True, include_files: bool = True
-) -> Iterator[tuple[str, Path]]:
-    for dirpath, dirnames, filenames in os.walk(
-        str(cfg.root), topdown=True, followlinks=False
-    ):
+def walk_items(cfg: Config, include_dirs: bool = True, include_files: bool = True) -> Iterator[tuple[str, Path]]:
+    for dirpath, dirnames, filenames in os.walk(str(cfg.root), topdown=True, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in cfg.skip_dirs]
         base = Path(dirpath)
 
@@ -269,9 +265,7 @@ def decide(cfg: Config, kind: str, path: Path) -> Decision:
     # Files
     if is_executable(path):
         if cfg.preserve_existing_exec:
-            return Decision(
-                "skip_exec", path, mode_of(path), None, "already executable"
-            )
+            return Decision("skip_exec", path, mode_of(path), None, "already executable")
         cur = mode_of(path) or 0
         return Decision("change", path, cur, cfg.exec_mode)
 
@@ -390,9 +384,7 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
                 if chmod_safe(path, cfg.dir_mode):
                     s.dirs_changed += 1
                     if verbose:
-                        s.messages.append(
-                            f"[DIR]  {path} {oct(cur)}->{oct(cfg.dir_mode)}"
-                        )
+                        s.messages.append(f"[DIR]  {path} {oct(cur)}->{oct(cfg.dir_mode)}")
                 else:
                     s.errors += 1
             continue
@@ -557,9 +549,7 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
                     print(f"  ... and {len(buckets[key]) - 50} more")
 
 
-def show_examples(
-    cfg: Config, items: list[tuple[str, Path]], per_bucket: int = 5
-) -> None:
+def show_examples(cfg: Config, items: list[tuple[str, Path]], per_bucket: int = 5) -> None:
     buckets: dict[str, list[Path]] = {
         "dirs": [],
         "make_exec": [],
@@ -629,9 +619,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    p.add_argument(
-        "path", nargs="?", default=".", help="root path (default: current directory)"
-    )
+    p.add_argument("path", nargs="?", default=".", help="root path (default: current directory)")
     p.add_argument(
         "--skip-dir",
         action="append",
@@ -683,10 +671,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--keep-exec-parent",
         action="append",
         default=None,
-        help=(
-            "parent dir name whose files keep exec state in deexec mode "
-            "(repeatable; default: bin, sbin)"
-        ),
+        help=("parent dir name whose files keep exec state in deexec mode (repeatable; default: bin, sbin)"),
     )
 
     p.add_argument(
@@ -703,17 +688,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="glob patterns for deexec mode (default: *.py).",
     )
 
-    p.add_argument(
-        "--dry-run", action="store_true", help="analyze but do not change anything"
-    )
+    p.add_argument("--dry-run", action="store_true", help="analyze but do not change anything")
     p.add_argument(
         "--show-examples",
         action="store_true",
         help="print examples of items that would change",
     )
-    p.add_argument(
-        "-v", "--verbose", action="store_true", help="print detailed change log"
-    )
+    p.add_argument("-v", "--verbose", action="store_true", help="print detailed change log")
     p.add_argument(
         "-j",
         "--jobs",
@@ -721,9 +702,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="worker processes (0 = auto, implies --parallel)",
     )
-    p.add_argument(
-        "--parallel", action="store_true", help="use multiprocessing (chmodi.py style)"
-    )
+    p.add_argument("--parallel", action="store_true", help="use multiprocessing (chmodi.py style)")
     return p
 
 
@@ -793,9 +772,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     include_dirs = args.mode in ("all", "dirs")
     include_files = args.mode in ("all", "files")
 
-    items = list(
-        walk_items(cfg, include_dirs=include_dirs, include_files=include_files)
-    )
+    items = list(walk_items(cfg, include_dirs=include_dirs, include_files=include_files))
     if not items:
         print("⚠️  No items found to process.")
         return 0

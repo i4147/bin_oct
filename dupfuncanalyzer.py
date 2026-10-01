@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Generate a script that detects duplicate Python functions across a codebase and optionally refactors them into a shared module.
 
 The script scans directories for Python files, parses them with ast, groups
@@ -133,19 +133,13 @@ def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
     for i, line in enumerate(lines):
         skip: bool = False
         for node in nodes_to_remove:
-            if (
-                node.lineno is not None
-                and node.end_lineno is not None
-                and node.lineno - 1 <= i < node.end_lineno
-            ):
+            if node.lineno is not None and node.end_lineno is not None and node.lineno - 1 <= i < node.end_lineno:
                 skip = True
                 break
         if not skip:
             lines_to_keep.append(line)
 
-    import_stmt: str = (
-        f"from {IMPORT_MODULE_NAME} import " + ", ".join(sorted(imports_to_add)) + "\n"
-    )
+    import_stmt: str = f"from {IMPORT_MODULE_NAME} import " + ", ".join(sorted(imports_to_add)) + "\n"
     insert_pos: int = 0
     for i, line in enumerate(lines_to_keep):
         if line.strip() and not line.strip().startswith("#"):
@@ -163,22 +157,16 @@ def apply_refactoring(
     py_files: list[Path] = []
     for target_dir in resolved_dirs:
         py_files.extend(target_dir.rglob("*.py"))
-    py_files = [
-        f for f in py_files if ".git" not in f.parts and f.name != DEFAULT_OUTPUT_NAME
-    ]
+    py_files = [f for f in py_files if ".git" not in f.parts and f.name != DEFAULT_OUTPUT_NAME]
 
     with Pool(processes=POOL_SIZE) as pool:
-        async_results = [
-            pool.apply_async(refactor_file, (f, repeated)) for f in py_files
-        ]
+        async_results = [pool.apply_async(refactor_file, (f, repeated)) for f in py_files]
         for r in async_results:
             r.get()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Detect and refactor duplicate functions"
-    )
+    parser = argparse.ArgumentParser(description="Detect and refactor duplicate functions")
     parser.add_argument(
         "-a",
         "--apply",
@@ -192,9 +180,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    target_dirs: list[Path] | None = (
-        [Path(p) for p in args.paths] if args.paths else None
-    )
+    target_dirs: list[Path] | None = [Path(p) for p in args.paths] if args.paths else None
     repeated: list[RepeatedItem] = analyze_files(target_dirs)
     save_dh_module(repeated)
 
@@ -202,9 +188,7 @@ def main() -> None:
         apply_refactoring(repeated, target_dirs)
         print(f"Saved {len(repeated)} functions to {DEFAULT_OUTPUT_NAME}")
     else:
-        print(
-            f"Found {len(repeated)} repeated functions. Saved to {DEFAULT_OUTPUT_NAME}"
-        )
+        print(f"Found {len(repeated)} repeated functions. Saved to {DEFAULT_OUTPUT_NAME}")
 
 
 if __name__ == "__main__":

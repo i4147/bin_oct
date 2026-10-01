@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line script that runs pylint over one or more targets and prints the results.
 It should import helper functions get_pyfiles and runcmd from a local dh module, accept optional file or directory arguments via sys.argv, and if none are given default to scanning all Python files in the current working directory.
 For each resolved file, it should build and execute a pylint command with persistent mode and reports disabled, parseable output format, and a custom message template showing category, line, column, object, message, and message ID, streaming the command's output live.

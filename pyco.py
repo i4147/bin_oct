@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively searches a given starting directory (defaulting to the current working directory) for all `__pycache__` folders and deletes them using `shutil.rmtree`.
 Before removing each folder, it should calculate its size using a helper `gsz` function and accumulate the total bytes freed and the count of directories removed.
 After processing, it should print a formatted summary showing the total size freed (using a helper `fsz` function to format bytes) and the number of directories removed, or print a message indicating nothing was found if no `__pycache__` directories exist.
@@ -6,7 +6,7 @@ The size/formatting helper functions `gsz` and `fsz` should be imported from a l
 
 import shutil
 from pathlib import Path
-from dh import fsz, gsz  # format & get size funcs
+from dh import fsz, gsz
 
 
 def clean_pycache(start_dir: Path = Path.cwd()) -> None:

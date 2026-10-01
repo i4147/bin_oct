@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Reinstall Termux packages listed in keys.txt
 Usage: python reinstall_pkgs.py <pkg_file> [--reset]
@@ -123,10 +123,7 @@ def main() -> None:
         sys.exit(0)
 
     if done:
-        print(
-            f"Resuming: {len(done)}/{len(pkgs)} already processed, "
-            f"{len(pending)} remaining."
-        )
+        print(f"Resuming: {len(done)}/{len(pkgs)} already processed, {len(pending)} remaining.")
 
     try:
         for i, pkg in enumerate(pending, 1):

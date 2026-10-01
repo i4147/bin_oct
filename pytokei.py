@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pytokei_merged.py — count lines of code, comments, and blanks by language.
 
@@ -156,9 +156,7 @@ def _add(
 def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
     stats: dict[str, Any] = {
         "total": {"code": 0, "comments": 0, "blank": 0},
-        "languages": {
-            lang: {"code": 0, "comments": 0, "blank": 0} for lang in LANGUAGE_EXTENSIONS
-        },
+        "languages": {lang: {"code": 0, "comments": 0, "blank": 0} for lang in LANGUAGE_EXTENSIONS},
     }
 
     for path in root.rglob("*"):

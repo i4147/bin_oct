@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans the current working directory for all files with a .sh extension and normalizes their shebang line to "#!/data/data/com.termux/files/usr/bin/bash", which is the standard interpreter path used in Termux environments on Android.
 For each matching file, it should replace an existing shebang line (if the first line starts with "#!") or insert a new one if missing, ensuring a blank line follows the shebang when the next line isn't already empty, then rewrite the file in place.
 It should print progress messages indicating which file is being processed and confirming the update, and if the file's path includes a "bin" directory component, it should also set the file's permissions to 0o755 (executable)."""

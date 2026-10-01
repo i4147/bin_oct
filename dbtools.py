@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 merged.py — Unified SQLite / JSON / SQL-dump conversion toolkit.
 
@@ -69,9 +69,7 @@ DEFAULT_TEXT_CHAR_LIMIT = 1024 * 1024
 
 
 def _table_exists(cursor: sqlite3.Cursor, table: str) -> bool:
-    cursor.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
-    )
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
     return cursor.fetchone() is not None
 
 
@@ -89,9 +87,7 @@ def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
 
 def _compress_blob(data: bytes) -> str | None:
     if py7zr is None:
-        raise RuntimeError(
-            "py7zr is required for --compress. Install with: pip install py7zr"
-        )
+        raise RuntimeError("py7zr is required for --compress. Install with: pip install py7zr")
     try:
         buf = io.BytesIO()
         with py7zr.SevenZipFile(buf, "w") as zf:
@@ -132,11 +128,7 @@ def _collect_cwd_files(
         if not entry.is_file():
             continue
         size = entry.stat().st_size
-        human = (
-            f"{size / 1024:.1f}KB"
-            if size < 1024 * 1024
-            else f"{size / 1024 / 1024:.1f}MB"
-        )
+        human = f"{size / 1024:.1f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
         print(f"  Processing: {entry.name} ({human})")
 
         if compress:
@@ -166,9 +158,7 @@ def _collect_cwd_files(
                             "compressed_size": len(encoded),
                         }
                     )
-                    print(
-                        f"    ✓ Compressed {len(data) / 1024:.1f}KB to {len(encoded) / 1024:.1f}KB"
-                    )
+                    print(f"    ✓ Compressed {len(data) / 1024:.1f}KB to {len(encoded) / 1024:.1f}KB")
                 else:
                     items.append(
                         {
@@ -224,9 +214,7 @@ def cmd_add_files(args: argparse.Namespace) -> int:
         return 1
 
     encodings: tuple[str, ...] = (
-        tuple(e.strip() for e in args.encodings.split(",") if e.strip())
-        if args.encodings
-        else DEFAULT_TEXT_ENCODINGS
+        tuple(e.strip() for e in args.encodings.split(",") if e.strip()) if args.encodings else DEFAULT_TEXT_ENCODINGS
     )
     compress = args.compress and not args.text_only
     max_chars = args.max_chars
@@ -274,10 +262,7 @@ def cmd_add_files(args: argparse.Namespace) -> int:
     print(f"   Total size: {total_orig / 1024 / 1024:.2f}MB")
     if total_comp:
         saved = (1 - total_comp / total_orig) * 100 if total_orig else 0
-        print(
-            f"   Compressed payload: {total_comp / 1024 / 1024:.2f}MB "
-            f"({saved:.1f}% saved)"
-        )
+        print(f"   Compressed payload: {total_comp / 1024 / 1024:.2f}MB ({saved:.1f}% saved)")
     return 0
 
 
@@ -308,10 +293,7 @@ def _serialize_value(value: Any, blob_format: str) -> Any:
 
 def _list_tables(conn: sqlite3.Connection) -> list[str]:
     cur = conn.cursor()
-    cur.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' "
-        "AND name NOT LIKE 'sqlite_%' ORDER BY name"
-    )
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
     return [row[0] for row in cur.fetchall()]
 
 
@@ -328,10 +310,7 @@ def _dump_single(
         result: dict[str, list[dict[str, Any]]] = {}
         for tbl in tables:
             rows = conn.execute(f'SELECT * FROM "{tbl}"').fetchall()
-            result[tbl] = [
-                {k: _serialize_value(row[k], blob_format) for k in row.keys()}
-                for row in rows
-            ]
+            result[tbl] = [{k: _serialize_value(row[k], blob_format) for k in row.keys()} for row in rows]
     output.write_text(
         json.dumps(result, indent=indent, ensure_ascii=False),
         encoding="utf-8",
@@ -354,10 +333,7 @@ def _dump_per_table(
         for tbl in tables:
             try:
                 rows = conn.execute(f'SELECT * FROM "{tbl}"').fetchall()
-                data = [
-                    {k: _serialize_value(row[k], blob_format) for k in row.keys()}
-                    for row in rows
-                ]
+                data = [{k: _serialize_value(row[k], blob_format) for k in row.keys()} for row in rows]
                 out = outdir / f"{tbl}.json"
                 out.write_text(
                     json.dumps(data, indent=indent, ensure_ascii=False, default=str),
@@ -390,9 +366,7 @@ def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
                 print(f"✓ Converted {db} → {output} ({n_tables} tables, {n_rows} rows)")
         else:
             outdir = args.output or Path(f"{db.stem}_json")
-            n_tables, n_rows = _dump_per_table(
-                db, Path(outdir), indent, blob_format, verbose
-            )
+            n_tables, n_rows = _dump_per_table(db, Path(outdir), indent, blob_format, verbose)
             if verbose:
                 print(f"✓ Converted {db} → {outdir} ({n_tables} tables, {n_rows} rows)")
     except sqlite3.DatabaseError as exc:
@@ -475,9 +449,7 @@ def cmd_search_rule(args: argparse.Namespace) -> int:
 
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT * FROM ruff_rules WHERE code = ?", (code.strip().upper(),)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM ruff_rules WHERE code = ?", (code.strip().upper(),)).fetchone()
 
     if not row:
         print(f"❌ No rule found matching code: {code}")
@@ -527,9 +499,7 @@ def _mdb_serialize(v: Any) -> Any:
 
 def _mdb_connect(path: Path):
     if pyodbc is None:
-        raise RuntimeError(
-            "pyodbc is required for mdb-to-json. Install with: pip install pyodbc"
-        )
+        raise RuntimeError("pyodbc is required for mdb-to-json. Install with: pip install pyodbc")
     src = str(path.resolve())
     drivers = [
         "Microsoft Access Driver (*.mdb, *.accdb)",
@@ -539,14 +509,10 @@ def _mdb_connect(path: Path):
     last: Exception | None = None
     for drv in drivers:
         try:
-            return pyodbc.connect(
-                f"DRIVER={{{drv}}};DBQ={src};", autocommit=True, timeout=30
-            )
+            return pyodbc.connect(f"DRIVER={{{drv}}};DBQ={src};", autocommit=True, timeout=30)
         except pyodbc.Error as exc:
             last = exc
-    raise RuntimeError(
-        f"Could not connect to {path} with any known ODBC driver. Last error: {last}"
-    )
+    raise RuntimeError(f"Could not connect to {path} with any known ODBC driver. Last error: {last}")
 
 
 def _mdb_convert(
@@ -581,41 +547,29 @@ def _mdb_convert(
             with out.open("w", encoding="utf-8") as fh:
                 fh.write("{\n")
                 fh.write(f'  "_source": {json.dumps(str(src_path))},\n')
-                fh.write(
-                    f'  "_converted_at": '
-                    f"{json.dumps(datetime.utcnow().isoformat() + 'Z')},\n"
-                )
+                fh.write(f'  "_converted_at": {json.dumps(datetime.utcnow().isoformat() + "Z")},\n')
                 fh.write('  "tables": {\n')
                 for idx, tbl in enumerate(names):
                     try:
                         escaped = tbl.replace("]", "]]")
                         cur.execute(f"SELECT * FROM [{escaped}]")
                         fh.write(f"    {json.dumps(tbl)}: [\n")
-                        cols = (
-                            [d[0] for d in cur.description] if cur.description else []
-                        )
+                        cols = [d[0] for d in cur.description] if cur.description else []
                         first = True
                         while True:
                             chunk = cur.fetchmany(MDB_FETCH)
                             if not chunk:
                                 break
                             for row in chunk:
-                                obj = {
-                                    cols[i]: _mdb_serialize(row[i])
-                                    for i in range(len(cols))
-                                }
+                                obj = {cols[i]: _mdb_serialize(row[i]) for i in range(len(cols))}
                                 fh.write("" if first else ",\n")
                                 first = False
                                 fh.write("      ")
-                                fh.write(
-                                    json.dumps(obj, ensure_ascii=False, default=str)
-                                )
+                                fh.write(json.dumps(obj, ensure_ascii=False, default=str))
                         fh.write("\n    ]")
                     except Exception as exc:
                         log.warning("Table %s in %s failed: %s", tbl, src_path, exc)
-                        fh.write(
-                            f'    {json.dumps(tbl)}: {{"_error": {json.dumps(str(exc))}}}'
-                        )
+                        fh.write(f'    {json.dumps(tbl)}: {{"_error": {json.dumps(str(exc))}}}')
                     fh.write(",\n" if idx < len(names) - 1 else "\n")
                 fh.write("  }\n}\n")
             kb = out.stat().st_size / 1024
@@ -688,12 +642,7 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     done = 0
     try:
         with ProcessPoolExecutor(max_workers=max(1, args.workers)) as pool:
-            futures = {
-                pool.submit(
-                    _mdb_convert, s, d, args.overwrite, args.pretty, args.tables
-                ): s
-                for s, d in tasks
-            }
+            futures = {pool.submit(_mdb_convert, s, d, args.overwrite, args.pretty, args.tables): s for s, d in tasks}
             for fut in as_completed(futures):
                 src = futures[fut]
                 done += 1
@@ -949,12 +898,7 @@ def _parse_insert_rows(stmt: str) -> Iterator[dict[str, Any]]:
             yield {"_table": table, "_values": values}
         else:
             row: dict[str, Any] = {"_table": table}
-            row.update(
-                {
-                    name: values[i] if i < len(values) else None
-                    for i, name in enumerate(cols)
-                }
-            )
+            row.update({name: values[i] if i < len(values) else None for i, name in enumerate(cols)})
             if len(values) > len(cols):
                 row["_extra_values"] = values[len(cols) :]
             yield row
@@ -967,9 +911,7 @@ def _convert_sql_file(job: SqlJob, encoding: str, strict: bool) -> SqlResult:
             return SqlResult(src, dst, error="output exists (use --overwrite)")
         dst.parent.mkdir(parents=True, exist_ok=True)
 
-        fd, tmp_path = tempfile.mkstemp(
-            prefix=f".{dst.name}.", suffix=".tmp", dir=dst.parent, text=True
-        )
+        fd, tmp_path = tempfile.mkstemp(prefix=f".{dst.name}.", suffix=".tmp", dir=dst.parent, text=True)
         tmp = Path(tmp_path)
         count = 0
         try:
@@ -1059,9 +1001,7 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
     fails = 0
     total_rows = 0
     with Pool(processes=SQL_DEFAULT_WORKERS) as pool:
-        for res in pool.imap_unordered(
-            _convert_sql_file_star, tasks, chunksize=chunksize
-        ):
+        for res in pool.imap_unordered(_convert_sql_file_star, tasks, chunksize=chunksize):
             if res.error is not None:
                 fails += 1
                 log.error("%s: %s", res.source, res.error)
@@ -1097,18 +1037,14 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Compress binary files with 7z (add7db behaviour).",
     )
-    ap.add_argument(
-        "--text-only", action="store_true", help="Force text mode (add2db behaviour)."
-    )
+    ap.add_argument("--text-only", action="store_true", help="Force text mode (add2db behaviour).")
     ap.add_argument(
         "--max-chars",
         type=int,
         default=None,
         help="Truncate text files to N characters.",
     )
-    ap.add_argument(
-        "--encodings", help="Comma-separated list of encodings to try, in order."
-    )
+    ap.add_argument("--encodings", help="Comma-separated list of encodings to try, in order.")
     ap.set_defaults(func=cmd_add_files)
 
     sp = sub.add_parser("sqlite-to-json", help="Convert a SQLite database to JSON.")
@@ -1127,55 +1063,37 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output shape: one JSON file, or one JSON per table.",
     )
     sp.add_argument("--indent", type=int, default=2, help="JSON indentation.")
-    sp.add_argument(
-        "--compact", action="store_true", help="Compact JSON (no indentation)."
-    )
+    sp.add_argument("--compact", action="store_true", help="Compact JSON (no indentation).")
     sp.add_argument(
         "--blob-format",
         choices=["hex", "prefixed", "decode", "ignore"],
         default=None,
         help="How to encode BLOB columns.",
     )
-    sp.add_argument(
-        "--no-verbose", action="store_true", help="Suppress progress output."
-    )
+    sp.add_argument("--no-verbose", action="store_true", help="Suppress progress output.")
     sp.set_defaults(func=cmd_sqlite_to_json)
 
-    mp = sub.add_parser(
-        "md-to-sqlite", help="Parse a ruff-style Markdown file into SQLite."
-    )
+    mp = sub.add_parser("md-to-sqlite", help="Parse a ruff-style Markdown file into SQLite.")
     mp.add_argument("--md", type=Path, default=Path("ruff.md"))
     mp.add_argument("--db", type=Path, default=Path("ruff_rules.db"))
     mp.set_defaults(func=cmd_md_to_sqlite)
 
-    rp = sub.add_parser(
-        "search-rule", help="Look up a Ruff rule from a SQLite database."
-    )
-    rp.add_argument(
-        "code", nargs="?", help="Rule code (e.g. TRY400). Prompts if omitted."
-    )
+    rp = sub.add_parser("search-rule", help="Look up a Ruff rule from a SQLite database.")
+    rp.add_argument("code", nargs="?", help="Rule code (e.g. TRY400). Prompts if omitted.")
     rp.add_argument("--db", default="/sdcard/data/ruff.db")
     rp.set_defaults(func=cmd_search_rule)
 
-    xp = sub.add_parser(
-        "mdb-to-json", help="Convert .mdb/.accdb files to JSON (requires pyodbc)."
-    )
-    xp.add_argument(
-        "inputs", nargs="*", help="Files or directories. Defaults to CWD recursively."
-    )
+    xp = sub.add_parser("mdb-to-json", help="Convert .mdb/.accdb files to JSON (requires pyodbc).")
+    xp.add_argument("inputs", nargs="*", help="Files or directories. Defaults to CWD recursively.")
     xp.add_argument("-o", "--output-dir", help="Directory for generated JSON.")
     xp.add_argument("-w", "--workers", type=int, default=MDB_DEFAULT_WORKERS)
     xp.add_argument("-f", "--overwrite", action="store_true")
     xp.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
-    xp.add_argument(
-        "-t", "--tables", nargs="+", help="Only convert the specified tables."
-    )
+    xp.add_argument("-t", "--tables", nargs="+", help="Only convert the specified tables.")
     xp.add_argument("-v", "--verbose", action="store_true")
     xp.set_defaults(func=cmd_mdb_to_json)
 
-    qp = sub.add_parser(
-        "sql-to-json", help="Convert SQL INSERT dumps to newline-delimited JSON."
-    )
+    qp = sub.add_parser("sql-to-json", help="Convert SQL INSERT dumps to newline-delimited JSON.")
     qp.add_argument(
         "inputs",
         nargs="*",

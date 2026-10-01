@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that recursively scans a given directory (default: current working directory) for .srt subtitle files, detects the language of each file's text content using the pycld2 library (stripping out sequence numbers and timestamp lines before detection), and organizes/reports the files grouped by detected language.
 It should print progress messages with emojis for each step (scanning, files found, per-file detection results, and errors), gracefully handle unreadable files or undetectable languages by skipping them, and build a dictionary mapping language names/codes to lists of matching subtitle file paths."""
 
@@ -15,11 +15,7 @@ def detect_language(file_path: Path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         lines = content.split("\n")
-        subtitle_text = "\n".join(
-            line
-            for line in lines
-            if line.strip() and not line.isdigit() and "-->" not in line
-        )
+        subtitle_text = "\n".join(line for line in lines if line.strip() and not line.isdigit() and "-->" not in line)
         if not subtitle_text.strip():
             return None
         _is_reliable, _text_bytes_found, details = cld2.detect(subtitle_text)
@@ -68,9 +64,7 @@ def organize_subtitles(directory: Path = Path.cwd()) -> None:
             file_path.rename(new_path)
             print(f"   ➜ {file_path.name}")
             total_moved += 1
-    print(
-        f"\n✅ Complete! Moved {total_moved} file(s) into {len(language_folders)} language folder(s)."
-    )
+    print(f"\n✅ Complete! Moved {total_moved} file(s) into {len(language_folders)} language folder(s).")
 
 
 if __name__ == "__main__":

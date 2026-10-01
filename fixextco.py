@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Generate a Python script that scans a directory tree for files whose extensions do not match their detected MIME type (using the `file` command) or shebang, then interactively or automatically renames them to the correct extension. Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for logging, pathlib for all path operations, complete type annotations, and a MIME-to-extension mapping table with skip lists.
 """
@@ -109,18 +109,14 @@ def colored(
 MIME_TO_EXTENSIONS: Final[dict[str, list[str]]] = {
     "application/pdf": [".pdf"],
     "application/msword": [".doc"],
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-        ".docx"
-    ],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     "application/vnd.oasis.opendocument.text": [".odt"],
     "application/vnd.oasis.opendocument.presentation": [".odp"],
     "application/vnd.oasis.opendocument.spreadsheet": [".ods"],
     "application/vnd.ms-excel": [".xls"],
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
     "application/vnd.ms-powerpoint": [".ppt"],
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-        ".pptx"
-    ],
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
     "application/rtf": [".rtf"],
     "application/x-abiword": [".abw"],
     "application/x-krita": [".kra"],
@@ -370,9 +366,7 @@ MIME_TO_EXTENSIONS: Final[dict[str, list[str]]] = {
 
 SKIP_EXTENSIONS: Final[set[str]] = {".css", ".js", ".ts", ".jsx", ".tsx"}
 SKIP_MIME_TYPES: Final[set[str]] = {"text/plain", "application/octet-stream"}
-SKIP_DIRECTORIES: Final[frozenset[str]] = frozenset(
-    {".git", "__pycache__", ".venv", "node_modules", ".env"}
-)
+SKIP_DIRECTORIES: Final[frozenset[str]] = frozenset({".git", "__pycache__", ".venv", "node_modules", ".env"})
 
 WORKER_COUNT: Final[int] = 8
 
@@ -428,15 +422,11 @@ def get_file_mime(path: Path) -> MimeResult:
         exit_code: int
         stdout: str
         stderr: str
-        exit_code, stdout, stderr = runcmd(
-            ["file", "--brief", "--mime-type", str(path)], timeout=5
-        )
+        exit_code, stdout, stderr = runcmd(["file", "--brief", "--mime-type", str(path)], timeout=5)
         if exit_code == 127:
             return MimeResult(None, "file command not found")
         if exit_code != 0:
-            return MimeResult(
-                None, stderr or f"file command failed with code {exit_code}"
-            )
+            return MimeResult(None, stderr or f"file command failed with code {exit_code}")
         mime_type: str = stdout.strip()
         if mime_type:
             return MimeResult(mime_type)
@@ -465,9 +455,7 @@ def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
         return MismatchResult(
             path=path,
             current_ext=current_ext,
-            detected_mime="text/x-shellscript"
-            if shebang_ext == ".sh"
-            else "text/x-python",
+            detected_mime="text/x-shellscript" if shebang_ext == ".sh" else "text/x-python",
             expected_exts=[shebang_ext],
             new_path=unique_path(new_path),
         )
@@ -528,9 +516,7 @@ def scan_directory(directory: str) -> list[MismatchResult]:
     tasks: list[tuple[Path, Path]] = [(base_dir, f) for f in files]
 
     with Pool(processes=WORKER_COUNT) as pool:
-        async_results: list[Any] = [
-            pool.apply_async(process_file_worker, (task,)) for task in tasks
-        ]
+        async_results: list[Any] = [pool.apply_async(process_file_worker, (task,)) for task in tasks]
         completed: int = 0
         for ar in async_results:
             completed += 1
@@ -562,14 +548,9 @@ def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> in
         except ValueError:
             rel_path = result.path
         new_name: str = result.new_path.name if result.new_path else "<unknown>"
-        print(
-            f"  {colored(str(rel_path), fg=Color.CYAN)} → "
-            f"{colored(new_name, fg=Color.GREEN)}"
-        )
+        print(f"  {colored(str(rel_path), fg=Color.CYAN)} → {colored(new_name, fg=Color.GREEN)}")
         print(f"    MIME: {colored(result.detected_mime, fg=Color.LIGHT_CYAN)}")
-        print(
-            f"    Expected ext: {colored(result.expected_exts[0], fg=Color.LIGHT_GREEN)}"
-        )
+        print(f"    Expected ext: {colored(result.expected_exts[0], fg=Color.LIGHT_GREEN)}")
         if result.new_path is None:
             logger.error("    ✗ No target path computed")
             print()
@@ -626,9 +607,7 @@ def main() -> int:
     else:
         Color.enable()
 
-    cprint = lambda text, fg=None, bg=None, attrs=None: print(
-        colored(text, fg, bg, attrs)
-    )  # noqa: E731
+    cprint = lambda text, fg=None, bg=None, attrs=None: print(colored(text, fg, bg, attrs))  # noqa: E731
 
     cprint("╔══════════════════════════════════════════╗", fg=Color.CYAN)
     cprint("║  File Extension Mismatch Fixer            ║", fg=Color.CYAN)

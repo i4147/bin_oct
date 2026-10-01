@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans the current directory for all `.pkl` files, loads each one with pickle, and validates that its contents are a pandas DataFrame, printing a warning and skipping any file that isn't or that fails to load.
 It should report each loaded file's shape, then concatenate all valid DataFrames into a single merged DataFrame, remove duplicate rows, and print progress messages including counts of files found, rows merged, and duplicates dropped.
 Handle the case where no `.pkl` files exist or none contain valid DataFrames by printing an appropriate message and exiting gracefully."""
@@ -14,9 +14,7 @@ def load_pkl_file(filepath):
         with open(filepath, "rb") as f:
             data = pickle.load(f)
         if not isinstance(data, pd.DataFrame):
-            print(
-                f"Warning: {filepath} does not contain a DataFrame (got {type(data)}). Skipping."
-            )
+            print(f"Warning: {filepath} does not contain a DataFrame (got {type(data)}). Skipping.")
             return None
         print(f"Loaded {filepath}: {len(data)} rows, {len(data.columns)} columns")
         return data

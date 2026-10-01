@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that reorganizes all files within a given root directory (defaulting to the current working directory) into subfolders based on the first character of each filename: letters become single-letter folders (case-insensitive) and digits or other symbols go into a "0-9" folder, while any files inside ".git" are skipped.
 It should recursively scan for files, create the target folders as needed, move each file into its corresponding folder while resolving filename collisions by appending an incrementing counter to the stem, and print progress messages such as the number of files found and organized.
 After moving files, it should also traverse the directory tree bottom-up to remove any resulting empty subdirectories (excluding the root itself), printing each one it deletes. aborr mission if current dir is a  a git repo
@@ -59,9 +59,7 @@ def folderize_files(root: Path = Path.cwd()) -> None:
             shutil.move(str(path), str(target_path))
             if counter > 1:
                 renamed_count += 1
-                print(
-                    f"Moved and renamed: {original_name} -> {target_path.name} (duplicate avoided)"
-                )
+                print(f"Moved and renamed: {original_name} -> {target_path.name} (duplicate avoided)")
             else:
                 print(f"Moved: {path} -> {target_path}")
     print("\nCleaning up empty directories...")
@@ -75,9 +73,7 @@ def folderize_files(root: Path = Path.cwd()) -> None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Organize files recursively into alphabetical folders"
-    )
+    parser = argparse.ArgumentParser(description="Organize files recursively into alphabetical folders")
     parser.add_argument(
         "directory",
         nargs="?",

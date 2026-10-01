@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 pybat.py — a Python port of the Rust `bat` crate.
 
@@ -204,16 +204,12 @@ class Printer:
     def _get_lexer(self, path, content):
         if self.config.language:
             try:
-                return get_lexer_by_name(
-                    self.config.language, stripnl=False, tabsize=self.config.tab_width
-                )
+                return get_lexer_by_name(self.config.language, stripnl=False, tabsize=self.config.tab_width)
             except ClassNotFound:
                 pass
         if path:
             try:
-                return get_lexer_for_filename(
-                    str(path), content, stripnl=False, tabsize=self.config.tab_width
-                )
+                return get_lexer_for_filename(str(path), content, stripnl=False, tabsize=self.config.tab_width)
             except ClassNotFound:
                 pass
         try:
@@ -228,9 +224,7 @@ class Printer:
             style = get_style_by_name(self.config.theme)
         except ClassNotFound:
             style = get_style_by_name("default")
-        if "truecolor" in os.environ.get("COLORTERM", "") or "24bit" in os.environ.get(
-            "COLORTERM", ""
-        ):
+        if "truecolor" in os.environ.get("COLORTERM", "") or "24bit" in os.environ.get("COLORTERM", ""):
             return TerminalTrueColorFormatter(style=style)
         return Terminal256Formatter(style=style)
 
@@ -255,10 +249,7 @@ class Printer:
         title = f" {name} "
         left = BOX_H * 2
         right = BOX_H * max(width - len(left) - len(title) - 2, 0)
-        out.write(
-            f"{GRID_COLOR}{BOX_TL}{left}{RESET}{HEADER_COLOR}{title}{RESET}"
-            f"{GRID_COLOR}{right}{BOX_TR}{RESET}\n"
-        )
+        out.write(f"{GRID_COLOR}{BOX_TL}{left}{RESET}{HEADER_COLOR}{title}{RESET}{GRID_COLOR}{right}{BOX_TR}{RESET}\n")
 
     def _print_line(self, out, line_no, text, git):
         prefix_parts = []
@@ -283,11 +274,7 @@ class Printer:
             prefix_parts.append(f"{GRID_COLOR}{BOX_V}{RESET}")
 
         prefix = " ".join(prefix_parts)
-        line_out = (
-            f"{HIGHLIGHT_BG}{text}{RESET}"
-            if line_no in self.config.highlight_lines
-            else text
-        )
+        line_out = f"{HIGHLIGHT_BG}{text}{RESET}" if line_no in self.config.highlight_lines else text
 
         out.write(f"{prefix} {line_out}\n" if prefix else f"{line_out}\n")
 

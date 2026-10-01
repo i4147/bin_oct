@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Split PDFs into per-page PDFs, or extract per-page text to .txt files with --text.
 
 Regenerate this script: parse positional inputs plus -t/--text and --pool-method, resolve PDF files from
@@ -91,14 +91,10 @@ def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
             return pool.starmap(_process_pdf, [(task,) for task in tasks])
 
         if method == "imap_unordered":
-            return list(
-                pool.imap_unordered(_process_pdf_tuple, [(task,) for task in tasks])
-            )
+            return list(pool.imap_unordered(_process_pdf_tuple, [(task,) for task in tasks]))
 
         if method == "apply_async":
-            async_results: list[AsyncResult[SplitResult]] = [
-                pool.apply_async(_process_pdf, (task,)) for task in tasks
-            ]
+            async_results: list[AsyncResult[SplitResult]] = [pool.apply_async(_process_pdf, (task,)) for task in tasks]
             return [result.get() for result in async_results]
 
     raise ValueError(f"Unsupported pool method: {method}")
@@ -176,9 +172,7 @@ def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     text_mode: bool = bool(args.text)
-    output_dir: Path | None = (
-        Path(args.output_dir) if args.output_dir is not None else None
-    )
+    output_dir: Path | None = Path(args.output_dir) if args.output_dir is not None else None
     paths: list[str] = list(args.paths)
 
     process_pdfs(

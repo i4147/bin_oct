@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Inspect .py files in the current folder and report ones missing the main guard.
 """
@@ -38,9 +38,7 @@ def has_main_guard(filepath: Path) -> bool:
         def is_main_string(n):
             return isinstance(n, ast.Constant) and n.value == "__main__"
 
-        if (is_dunder_name(left) and is_main_string(right)) or (
-            is_dunder_name(right) and is_main_string(left)
-        ):
+        if (is_dunder_name(left) and is_main_string(right)) or (is_dunder_name(right) and is_main_string(left)):
             return True
 
     return False

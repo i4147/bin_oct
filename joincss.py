@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line utility that scans one or more given file or directory paths to locate all CSS files (recursively for directories), then reads and processes their contents to strip out Google Fonts @import statements and rewrite remote font URLs (woff, woff2, ttf, otf, eot) into local paths under a fixed "/sdcard/_static/fonts" directory, preserving filenames and any CSS @charset declaration.
 It should use regular expressions for detecting the import statements and font URL patterns, define sets of recognized font and image file extensions, and include a mapping of known font family name variants (like Roboto, Lato, Open Sans, Font Awesome) to normalized short identifiers.
 Invalid paths passed as arguments should be reported as skipped via stderr, and duplicate files should be avoided when building the final list of CSS files to process."""
@@ -19,9 +19,7 @@ FAMILY_RULES = {
     "fontawesome": "fa",
     "fa-": "fa",
 }
-URL_RE = re.compile(
-    "url\\(([\\\"\\']?)(https?://[^)]+?\\.(?:woff2?|ttf|otf|eot))\\1\\)", re.IGNORECASE
-)
+URL_RE = re.compile("url\\(([\\\"\\']?)(https?://[^)]+?\\.(?:woff2?|ttf|otf|eot))\\1\\)", re.IGNORECASE)
 
 
 def find_css(paths: str):

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """
 Text file translator using the `translate` library.
 
@@ -132,15 +132,12 @@ def chunk_lines(lines: list[str], max_chars: int = CHUNK_SIZE) -> list[list[str]
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Translate a text file between languages."
-    )
+    parser = argparse.ArgumentParser(description="Translate a text file between languages.")
     parser.add_argument("input", help="Path to the input file (UTF-8).")
     parser.add_argument(
         "output",
         nargs="?",
-        help="Optional output path. Defaults depend on mode "
-        "(<input>.<target> for chunked, <input>.json for -l).",
+        help="Optional output path. Defaults depend on mode (<input>.<target> for chunked, <input>.json for -l).",
     )
     parser.add_argument(
         "-s",
@@ -158,16 +155,14 @@ def parse_args() -> argparse.Namespace:
         "-l",
         "--line",
         action="store_true",
-        help="Line-by-line mode: print each translation immediately "
-        "and save source/target pairs to a JSON file.",
+        help="Line-by-line mode: print each translation immediately and save source/target pairs to a JSON file.",
     )
     parser.add_argument(
         "-c",
         "--chunk-size",
         type=int,
         default=CHUNK_SIZE,
-        help=f"Target characters per chunk in default mode "
-        f"(default: {CHUNK_SIZE}, hard max: {MAX_CHARS}).",
+        help=f"Target characters per chunk in default mode (default: {CHUNK_SIZE}, hard max: {MAX_CHARS}).",
     )
     return parser.parse_args()
 
@@ -181,9 +176,7 @@ def run_chunked(
 ) -> int:
 
     if chunk_size > MAX_CHARS:
-        print(
-            f"  ! --chunk-size capped at {MAX_CHARS} (backend limit)", file=sys.stderr
-        )
+        print(f"  ! --chunk-size capped at {MAX_CHARS} (backend limit)", file=sys.stderr)
         chunk_size = MAX_CHARS
 
     prog_path = progress_path(out_path)
@@ -194,9 +187,7 @@ def run_chunked(
             start_chunk = int(prog_path.read_text(encoding="utf-8").strip() or "0")
             print(f"↻ Resuming from chunk {start_chunk} (progress file found)")
         except ValueError:
-            print(
-                "  ! Progress file unreadable, starting from scratch", file=sys.stderr
-            )
+            print("  ! Progress file unreadable, starting from scratch", file=sys.stderr)
             start_chunk = 0
 
     with in_path.open("r", encoding="utf-8") as f:
@@ -259,16 +250,13 @@ def load_pairs(json_path: Path, src_key: str, tgt_key: str) -> list[dict[str, st
         if isinstance(data, list):
             if data and not (src_key in data[0] and tgt_key in data[0]):
                 print(
-                    f"  ! Existing JSON uses different keys "
-                    f"(expected '{src_key}'/'{tgt_key}'), starting fresh",
+                    f"  ! Existing JSON uses different keys (expected '{src_key}'/'{tgt_key}'), starting fresh",
                     file=sys.stderr,
                 )
                 return []
             return data
     except (json.JSONDecodeError, OSError) as err:
-        print(
-            f"  ! Could not read existing JSON ({err}), starting fresh", file=sys.stderr
-        )
+        print(f"  ! Could not read existing JSON ({err}), starting fresh", file=sys.stderr)
     return []
 
 
@@ -321,17 +309,13 @@ def run_line_mode(
                 )
                 prog_path.write_text(str(idx), encoding="utf-8")
                 print(
-                    f"\n✖ Aborting at line {idx + 1}, "
-                    f"piece {p_idx + 1}/{len(pieces)}: {err}",
+                    f"\n✖ Aborting at line {idx + 1}, piece {p_idx + 1}/{len(pieces)}: {err}",
                     file=sys.stderr,
                 )
                 return 2
 
             if len(pieces) > 1:
-                print(
-                    f"  · piece {p_idx + 1}/{len(pieces)} "
-                    f"({len(piece)} chars) translated"
-                )
+                print(f"  · piece {p_idx + 1}/{len(pieces)} ({len(piece)} chars) translated")
             time.sleep(SLEEP_BETWEEN)
 
         translated_full = " ".join(p.strip() for p in translated_pieces).strip()
@@ -339,11 +323,7 @@ def run_line_mode(
         pairs.append({source: raw, target: translated_full})
 
         preview_src = raw if len(raw) <= 120 else raw[:117] + "…"
-        preview_tgt = (
-            translated_full
-            if len(translated_full) <= 120
-            else translated_full[:117] + "…"
-        )
+        preview_tgt = translated_full if len(translated_full) <= 120 else translated_full[:117] + "…"
         print(f"[{idx + 1}/{total}]")
         print(f"  {source}: {preview_src}")
         print(f"  {target}: {preview_tgt}")

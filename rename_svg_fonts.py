@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that renames SVG font files based on the font ID embedded inside them.
 For each given file path, it should read the SVG content, extract the value of the id attribute from the <font> tag using a regex search, and sanitize that ID by replacing filesystem-invalid characters (<>:"/\\|?*) with underscores.
 It should then rename the file to "{font_id}.svg" in the same directory, skipping non-files, files without a detectable font ID, and files that already have the correct name, while printing informative messages for skips, warnings about sanitization, successful renames, and errors such as a target filename already existing.
@@ -31,9 +31,7 @@ def rename_svg_font(path_obj: Path) -> None:
         return
     sanitized_font_id = re.sub(r'[<>:"/\\|?*]', "_", font_id)
     if sanitized_font_id != font_id:
-        print(
-            f"Warning: Sanitized font ID for '{font_id}' in '{path_obj.name}' to '{sanitized_font_id}'."
-        )
+        print(f"Warning: Sanitized font ID for '{font_id}' in '{path_obj.name}' to '{sanitized_font_id}'.")
         font_id = sanitized_font_id
     new_name_obj = path_obj.with_name(font_id + ".svg")
     if new_name_obj == path_obj:
@@ -43,9 +41,7 @@ def rename_svg_font(path_obj: Path) -> None:
         path_obj.rename(new_name_obj)
         print(f"Renamed '{path_obj.name}' to '{new_name_obj.name}'")
     except FileExistsError:
-        print(
-            f"Error renaming '{path_obj.name}' to '{new_name_obj.name}': Target file already exists."
-        )
+        print(f"Error renaming '{path_obj.name}' to '{new_name_obj.name}': Target file already exists.")
     except Exception as e:
         print(f"Error renaming '{path_obj.name}': {e}")
 
@@ -60,9 +56,7 @@ if __name__ == "__main__":
         elif input_path.is_file() and input_path.suffix.lower() == ".svg":
             rename_svg_font(input_path)
         else:
-            print(
-                f"Error: Invalid path provided. Must be an SVG file or a directory. Path: {input_path}"
-            )
+            print(f"Error: Invalid path provided. Must be an SVG file or a directory. Path: {input_path}")
             sys.exit(1)
     else:
         cwd = Path()

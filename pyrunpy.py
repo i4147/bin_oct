@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively find and execute all ``.py`` files in a directory in parallel.
 
 Each Python file is executed in a separate process with a per-file timeout. The
@@ -150,20 +150,14 @@ def _log_result(result: FileResult, verbose: bool) -> None:
         if verbose:
             logger.success(f"OK   {result.path} ({result.duration:.2f}s)")
     else:
-        logger.error(
-            f"FAIL {result.path} -> {result.outcome.value} "
-            f"(rc={result.returncode}, {result.duration:.2f}s)"
-        )
+        logger.error(f"FAIL {result.path} -> {result.outcome.value} (rc={result.returncode}, {result.duration:.2f}s)")
         if verbose and result.stderr:
             logger.debug(f"{result.path} stderr:\n{result.stderr}")
 
 
 def report_summary(summary: Summary) -> None:
     print("=" * 60)
-    print(
-        f"Summary: {summary.total} file(s), "
-        f"{summary.succeeded} succeeded, {summary.failed} failed"
-    )
+    print(f"Summary: {summary.total} file(s), {summary.succeeded} succeeded, {summary.failed} failed")
     counts = summary.counts_by_outcome()
     for outcome in Outcome:
         count = counts.get(outcome)
@@ -175,10 +169,7 @@ def report_summary(summary: Summary) -> None:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pyrunner",
-        description=(
-            "Recursively find and execute all .py files in a directory "
-            "with a per-file timeout, in parallel."
-        ),
+        description=("Recursively find and execute all .py files in a directory with a per-file timeout, in parallel."),
     )
     parser.add_argument(
         "directory",

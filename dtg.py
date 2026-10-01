@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python command-line tool that automatically translates the comments, docstrings, and print-statement string literals found in a given Python source file into another language (e.g., using an external translation API), while leaving actual code logic untouched.
 The script should use the ast module combined with a NodeVisitor to precisely locate translatable targets (print call string arguments, and docstrings of functions, async functions, classes, and modules), and use tokenize/regex to safely parse and reconstruct string and comment tokens including their quote styles and prefixes.
 It should support concurrent translation requests via ThreadPoolExecutor for speed, persist progress in a local JSON state file (.translation_state.json) to allow resuming interrupted runs, and accept command-line arguments (via argparse) for specifying the input file and other options.
@@ -74,16 +74,12 @@ def get_translator_func(backend_name):
         elif backend_name == "translators":
             import translators as ts
 
-            return lambda text: ts.translate_text(
-                text, translator="google", to_language="en"
-            )
+            return lambda text: ts.translate_text(text, translator="google", to_language="en")
         else:
             raise ValueError(f"Unknown backend: {backend_name}")
     except ImportError:
         print(f"Error: Required package for backend '{backend_name}' is missing.")
-        print(
-            f"Please install it (e.g., `pip install {backend_name.replace('_', '-')}`)"
-        )
+        print(f"Please install it (e.g., `pip install {backend_name.replace('_', '-')}`)")
         sys.exit(1)
 
 
@@ -106,8 +102,7 @@ def batch_translate(items, translate_func):
         batch_results = [None] * len(batch)
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
             futures = {
-                executor.submit(safe_translate, item["content"], translate_func): idx
-                for idx, item in enumerate(batch)
+                executor.submit(safe_translate, item["content"], translate_func): idx for idx, item in enumerate(batch)
             }
             for future in as_completed(futures):
                 idx = futures[future]
@@ -222,9 +217,7 @@ def save_state(state):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="In-place Python Comment, Docstring, and Print Statement Translator"
-    )
+    parser = argparse.ArgumentParser(description="In-place Python Comment, Docstring, and Print Statement Translator")
     parser.add_argument(
         "inputs",
         nargs="*",

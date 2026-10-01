@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a given bash script file for Python heredoc blocks (e.g., "python3 <<EOF ...
 EOF" or with a quoted/dashed delimiter) using a regex to detect the start marker, then extracts the embedded Python code between the start line and the matching terminator line.
 It should take the bash script path as a command-line argument, read the file, find all such heredoc blocks (handling optional "-" dash stripping of leading whitespace and quoted delimiters), and return/print the extracted Python code blocks; if no terminator is found, it should treat the remainder of the file as the block content.

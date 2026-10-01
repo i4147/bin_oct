@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that builds a self-contained CSS string with embedded web fonts for a WeasyPrint PDF/HTML rendering pipeline.
 It should read TrueType font files (Inter Regular, Bold, Italic, BoldItalic, and JetBrains Mono Regular) from the current directory, base64-encode their binary contents, and inject them into corresponding @font-face rules using data URIs, skipping and warning (without failing) for any font file that is missing so WeasyPrint falls back to default system fonts for that style.
 The main output is an assembled CSS string containing only the @font-face blocks for fonts that were successfully found and encoded, with helper functions handling file reading, base64 conversion, and console status/warning messages throughout the process."""
@@ -11,9 +11,7 @@ def get_font_b64_or_fallback(filename):
     path = Path(filename)
     if not path.exists():
         print(f"⚠️  Warning: '{filename}' not found in current directory.")
-        print(
-            f"   WeasyPrint will fall back to default system typography for this style."
-        )
+        print(f"   WeasyPrint will fall back to default system typography for this style.")
         return ""
     binary_data = path.read_bytes()
     b64_encoded = base64.b64encode(binary_data).decode("utf-8")

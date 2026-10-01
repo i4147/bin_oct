@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/home/.local/bin/python
+#!/data/data/com.termux/files/usr/bin/python3.12
 """Write a Python script that scans a directory tree (excluding .git folders) to find duplicate folders based on their content, using xxh64 hashing computed from each file's relative path and binary contents in sorted order.
 It should retrieve candidate directories via a helper get_dirs function from a local dh module, skip symlinks, and group folders sharing identical hashes into a dictionary, keeping only groups with more than one match.
 Include a helper function to detect whether one path is nested inside another, and ensure results (e.g., serialized as JSON) can be reported when run as the main script."""
