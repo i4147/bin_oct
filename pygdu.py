@@ -1,14 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a terminal-based interactive disk usage analyzer. The script scans a
-target directory recursively, computes the total size of each entry, and
-displays a navigable TUI with per-item size, a proportional bar, status flags,
-and directory/file names. Use arrow keys or hjkl to navigate, Enter/l/Right to
-descend into directories, h/Left/Esc to go back up, and q or Ctrl-C to quit.
-Concurrency is provided by a multiprocessing.Pool with 8 workers via
-apply_async; no CLI flags control parallelism. Use loguru for logging, pathlib
-for all path handling, full type annotations, and docstrings throughout.
-"""
+"""Generate a terminal-based interactive disk usage analyzer.
+The script scans a target directory recursively, computes the total size of each entry, and displays a navigable TUI with per-item size, a proportional bar, status flags, and directory/file names.
+Use arrow keys or hjkl to navigate, Enter/l/Right to descend into directories, h/Left/Esc to go back up, and q or Ctrl-C to quit.
+Concurrency is provided by a multiprocessing.Pool with 8 workers via apply_async; no CLI flags control parallelism.
+Use loguru for logging, pathlib for all path handling, full type annotations, and docstrings throughout."""
 
 from __future__ import annotations
 

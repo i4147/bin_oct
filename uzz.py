@@ -1,19 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Python equivalent of:
-
-    for f in *.whl; do
-        unzip $f
-        rm -v $f
-    done
-
-Behavior:
-    * Iterate over every .whl file (a .whl is just a ZIP archive)
-      in the target directory.
-    * Extract each archive into the same directory that contains it.
-    * Delete the original .whl **only if extraction succeeded**.
-    * Any error is logged via `loguru` and the original .whl is preserved.
-"""
+"""Python equivalent of: for f in *.whl; do unzip $f rm -v $f done Behavior: * Iterate over every .whl file (a .whl is just a ZIP archive) in the target directory.
+* Extract each archive into the same directory that contains it.
+* Delete the original .whl **only if extraction succeeded**.
+* Any error is logged via `loguru` and the original .whl is preserved."""
 
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile

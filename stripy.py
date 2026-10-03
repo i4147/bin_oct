@@ -1,25 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively strip comments and docstrings from Python files in-place.
-
-Uses :mod:`libcst` so that only comments / docstrings are removed without
-reformatting the rest of the file.
-
-* If stripping a docstring leaves a function/class body empty, a ``pass``
-  statement is inserted so the result stays valid Python.
-* The transformed source is re-parsed with :mod:`ast` *and* :mod:`libcst`
-  before writing; if it is not valid Python the file is left untouched.
-* Files are processed in parallel with a :class:`multiprocessing.Pool` of
-  ``WORKERS`` workers using :meth:`multiprocessing.pool.Pool.starmap`.
+Uses :mod:`libcst` so that only comments / docstrings are removed without reformatting the rest of the file.
+* If stripping a docstring leaves a function/class body empty, a ``pass`` statement is inserted so the result stays valid Python.
+* The transformed source is re-parsed with :mod:`ast` *and* :mod:`libcst` before writing; if it is not valid Python the file is left untouched.
+* Files are processed in parallel with a :class:`multiprocessing.Pool` of ``WORKERS`` workers using :meth:`multiprocessing.pool.Pool.starmap`.
 * Every action and every error is reported through :mod:`loguru`.
-
-Usage::
-
-    strip_comments.py [PATH ...]
-
-Every ``PATH`` may be either a Python file or a directory; directories are
-searched recursively for ``*.py`` files.  With no arguments the current
-directory is used.
-"""
+Usage:: strip_comments.py [PATH ...] Every ``PATH`` may be either a Python file or a directory; directories are searched recursively for ``*.py`` files.
+With no arguments the current directory is used."""
 
 from __future__ import annotations
 

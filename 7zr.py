@@ -1,18 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Multi-threaded 7-Zip compression/decompression tool.
-
-Generate a Python script that compresses and decompresses files and folders
-using py7zr with maximum LZMA2 compression settings (preset 9, 256MB
-dictionary, solid, header compression, 4MB blocks). Use multiprocessing.Pool
-with 8 workers for parallel chunk compression. Provide a CLI with -c/--compress
-(default) and -d/--decompress modes. Chunk large files via mmap at 512KB
-(CHUNK_SIZE), compress small files in memory, and compress folders recursively.
-Only compress files >= 1KB that are not already compressed (.7z, .xz, .gz,
-.bz2, .br, .zst, .zip, .rar). Skip compression when no space is saved. Use
-loguru for logging, pathlib for paths, and full type annotations with
-docstrings. Include a fsz() helper for human-readable file sizes. Use a
-temporary directory under the system temp path named py7zr_temp.
-"""
+Generate a Python script that compresses and decompresses files and folders using py7zr with maximum LZMA2 compression settings (preset 9, 256MB dictionary, solid, header compression, 4MB blocks).
+Use multiprocessing.Pool with 8 workers for parallel chunk compression.
+Provide a CLI with -c/--compress (default) and -d/--decompress modes.
+Chunk large files via mmap at 512KB (CHUNK_SIZE), compress small files in memory, and compress folders recursively.
+Only compress files >= 1KB that are not already compressed (.7z, .xz, .gz, .bz2, .br, .zst, .zip, .rar).
+Skip compression when no space is saved.
+Use loguru for logging, pathlib for paths, and full type annotations with docstrings.
+Include a fsz() helper for human-readable file sizes.
+Use a temporary directory under the system temp path named py7zr_temp."""
 
 from __future__ import annotations
 

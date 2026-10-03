@@ -1,31 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Optimize ``.png`` files in place by shelling out to ``pngquant``.
-
-The script discovers PNG files (case-insensitively) under the paths supplied
-on the command line, runs ``pngquant`` on each of them through a bounded
-``multiprocessing.Pool``, validates the result, and — only when the result is
-a well-formed PNG, not byte-identical, and strictly smaller — atomically
-replaces the original.
-
-Design highlights
------------------
-* Discovery uses the Rust ``fastwalk`` extension (``walk_files``). Because
-  that helper exposes no pruning hooks, every filter (``SKIP_DIRS``,
-  case-insensitive ``PNG_SUFFIXES``, symlinks, deduplication) is applied in
-  Python on the returned list.
-* Every file is processed in a worker process; the parent prints each
-  worker's captured ``pngquant`` stdout/stderr verbatim, so lines never
-  interleave across workers.
-* Writes go through a sibling temp file followed by ``os.replace`` so a
-  crash can never leave a half-written PNG behind. The original mode bits
-  are preserved.
-* Failures never propagate out of a worker: they are reported through the
-  ``error`` field of :class:`ProcessResult`.
+The script discovers PNG files (case-insensitively) under the paths supplied on the command line, runs ``pngquant`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is a well-formed PNG, not byte-identical, and strictly smaller — atomically replaces the original.
+Design highlights ----------------- * Discovery uses the Rust ``fastwalk`` extension (``walk_files``).
+Because that helper exposes no pruning hooks, every filter (``SKIP_DIRS``, case-insensitive ``PNG_SUFFIXES``, symlinks, deduplication) is applied in Python on the returned list.
+* Every file is processed in a worker process; the parent prints each worker's captured ``pngquant`` stdout/stderr verbatim, so lines never interleave across workers.
+* Writes go through a sibling temp file followed by ``os.replace`` so a crash can never leave a half-written PNG behind.
+The original mode bits are preserved.
+* Failures never propagate out of a worker: they are reported through the ``error`` field of :class:`ProcessResult`.
 * A non-zero exit code from ``main`` signals that at least one file errored.
-
-External requirements: the ``fastwalk`` extension module and the
-``pngquant`` CLI (or a compatible path supplied via ``--pngquant``).
-"""
+External requirements: the ``fastwalk`` extension module and the ``pngquant`` CLI (or a compatible path supplied via ``--pngquant``)."""
 
 from __future__ import annotations
 

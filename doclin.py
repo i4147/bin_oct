@@ -1,16 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Remove embedded image and badge references from reStructuredText and Markdown
-documentation files.
-
-This script scans a set of directories (or the current working directory when
-none are given) for ``.rst`` and ``.md`` files, strips image directives,
-figure directives, markdown image tags, linked badges, and badge/image URLs
-from known badge domains, then rewrites the affected files in place. It uses
-``multiprocessing.Pool.apply_async`` with a fixed pool of 8 workers to process
-files in parallel, reports per-file and aggregate statistics, and logs all
-output via ``loguru``.
-"""
+"""Remove embedded image and badge references from reStructuredText and Markdown documentation files.
+This script scans a set of directories (or the current working directory when none are given) for ``.rst`` and ``.md`` files, strips image directives, figure directives, markdown image tags, linked badges, and badge/image URLs from known badge domains, then rewrites the affected files in place.
+It uses ``multiprocessing.Pool.apply_async`` with a fixed pool of 8 workers to process files in parallel, reports per-file and aggregate statistics, and logs all output via ``loguru``."""
 
 from __future__ import annotations
 

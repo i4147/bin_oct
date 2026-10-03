@@ -1,38 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-module_usage.py — analyze import usage in a directory of Python scripts.
-
-Merged from:
-  - module_usage.py              (text report only)
-  - module_usage_with_charts.py  (text report + matplotlib charts)
-
-Original mapping
-----------------
-module_usage.py              -> python module_usage.py report
-module_usage_with_charts.py  -> python module_usage.py charts
-
-Both scripts scan a directory of Python files, extract imports, count how
-often each imported name/attribute is called, and classify the imports into
-three buckets:
-  * standard library modules
-  * third-party packages
-  * the custom package (default: "dh")
-
-`report` writes/prints the text report.
+"""module_usage.py — analyze import usage in a directory of Python scripts.
+Merged from: - module_usage.py (text report only) - module_usage_with_charts.py (text report + matplotlib charts) Original mapping ---------------- module_usage.py -> python module_usage.py report module_usage_with_charts.py -> python module_usage.py charts Both scripts scan a directory of Python files, extract imports, count how often each imported name/attribute is called, and classify the imports into three buckets: * standard library modules * third-party packages * the custom package (default: "dh") `report` writes/prints the text report.
 `charts` additionally renders matplotlib PNG charts into the chart directory.
-
-Usage examples
---------------
-  python module_usage.py report
-  python module_usage.py report --dir ./src --output ./report.txt
-  python module_usage.py charts
-  python module_usage.py charts --dir ~/bin --chart-dir ./charts
-
-Dependencies
-------------
-  - Standard library only for `report`.
-  - `matplotlib` (with a `seaborn-v0_8-darkgrid` style) for `charts`.
-"""
+Usage examples -------------- python module_usage.py report python module_usage.py report --dir ./src --output ./report.txt python module_usage.py charts python module_usage.py charts --dir ~/bin --chart-dir ./charts Dependencies ------------ - Standard library only for `report`.
+- `matplotlib` (with a `seaborn-v0_8-darkgrid` style) for `charts`."""
 
 from __future__ import annotations
 

@@ -1,17 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-deobfuscate.py — Convert variable-stuffed / eval-based bash scripts
-into readable, deobfuscated bash.
-
-Usage:
-    python3 deobfuscate.py <input.sh> [-o <output.sh>]
-
-If -o/--output is omitted, the output path is derived from the input:
-    input.sh   -> input.deobf.sh
-    script     -> script.deobf.sh
-    script.sh  -> script.deobf.sh
-Existing files are never overwritten: .1, .2, … suffixes are appended.
-"""
+"""deobfuscate.py — Convert variable-stuffed / eval-based bash scripts into readable, deobfuscated bash.
+Usage: python3 deobfuscate.py <input.sh> [-o <output.sh>] If -o/--output is omitted, the output path is derived from the input: input.sh -> input.deobf.sh script -> script.deobf.sh script.sh -> script.deobf.sh Existing files are never overwritten: .1, .2, … suffixes are appended."""
 
 from __future__ import annotations
 

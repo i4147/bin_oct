@@ -1,25 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-translate_words.py
-==================
-
-Translate a word-list file (one word per line) into a JSON mapping, using the
-first *usable* translation backend from a priority list.
-
-Features
---------
-* Backends tried in order: ``translate`` -> ``deep_translator`` -> ``googletrans``.
-  If the preferred backend cannot be imported or initialized, the script
-  automatically falls back to the next one and prints which backend was used.
-* The ``translate`` backend accepts both ``translate.Translator`` (upstream
-  PyPI) and ``translate.GoogleTranslator`` (forks / bundled distributions).
-* Detects the common footgun of a local ``translate.py`` shadowing the real
-  package.
-* Rejects "identity translations": if the backend returns the input unchanged,
-  the word is treated as a failure and retried.
+"""translate_words.py ================== Translate a word-list file (one word per line) into a JSON mapping, using the first *usable* translation backend from a priority list.
+Features -------- * Backends tried in order: ``translate`` -> ``deep_translator`` -> ``googletrans``.
+If the preferred backend cannot be imported or initialized, the script automatically falls back to the next one and prints which backend was used.
+* The ``translate`` backend accepts both ``translate.Translator`` (upstream PyPI) and ``translate.GoogleTranslator`` (forks / bundled distributions).
+* Detects the common footgun of a local ``translate.py`` shadowing the real package.
+* Rejects "identity translations": if the backend returns the input unchanged, the word is treated as a failure and retried.
 * Up to 3 attempts per word with exponential backoff.
-* Words that fail all attempts are written to ``failed.txt`` (one per line)
-  and never written to the output JSON.
+* Words that fail all attempts are written to ``failed.txt`` (one per line) and never written to the output JSON.
 * Live console output prints the raw translation result as received.
 * Structured error logging via ``loguru`` (console + ``translate_words.log``).
 * Concurrency via a thread pool (``-w``).
@@ -27,13 +14,7 @@ Features
 * Periodic *atomic* JSON saves (``--save-every``).
 * Automatic resume: words already in the output file are skipped.
 * Graceful Ctrl+C: saves progress before exiting.
-
-Usage
------
-    python translate_words.py -i words.txt -t en -b deep_translator
-    python translate_words.py -i words.txt -o out.json -s fr -t es -w 8 -d 0.1
-    python translate_words.py -i words.txt --no-continue
-"""
+Usage ----- python translate_words.py -i words.txt -t en -b deep_translator python translate_words.py -i words.txt -o out.json -s fr -t es -w 8 -d 0.1 python translate_words.py -i words.txt --no-continue"""
 
 import argparse
 import json

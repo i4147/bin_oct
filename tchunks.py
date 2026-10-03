@@ -1,24 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Split a text file into fixed-size, word-boundary-respecting chunks,
-translate each chunk through a pluggable backend, and write results to a
-resumable JSON file.
-
+"""Split a text file into fixed-size, word-boundary-respecting chunks, translate each chunk through a pluggable backend, and write results to a resumable JSON file.
 Designed for Termux on Android 7 / armv8l (32-bit ARM), Python 3.12.
-Avoids any backend or dependency that requires torch, ctranslate2,
-sentencepiece, grpcio, pydantic-core, or an LLM SDK without pydantic<2,
-since none of those reliably build/run on 32-bit ARM Termux.
-
-Usage:
-    python tchunks.py -i input.txt -o chunks.json -s en -t fr
-    python tchunks.py -i input.txt -b deep_translator -w 2
-    python tchunks.py --no-continue -i book.txt
-
-Resume behavior:
-    On startup, if the output JSON already exists (and --no-continue is
-    not passed), it is loaded and any chunk index already present is
-    skipped. This makes interrupted runs safe to simply re-run.
-"""
+Avoids any backend or dependency that requires torch, ctranslate2, sentencepiece, grpcio, pydantic-core, or an LLM SDK without pydantic<2, since none of those reliably build/run on 32-bit ARM Termux.
+Usage: python tchunks.py -i input.txt -o chunks.json -s en -t fr python tchunks.py -i input.txt -b deep_translator -w 2 python tchunks.py --no-continue -i book.txt Resume behavior: On startup, if the output JSON already exists (and --no-continue is not passed), it is loaded and any chunk index already present is skipped.
+This makes interrupted runs safe to simply re-run."""
 
 from __future__ import annotations
 

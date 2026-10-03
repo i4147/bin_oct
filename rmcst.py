@@ -1,31 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-strip_inline_comments.py
-
-Remove inline (trailing) comments from Python source files using libcst.
-
-An "inline" comment is one that appears on the same physical line as code:
-
-    DOWNLOAD_DIR = Path.cwd()  # Overwritten by -d / --dir
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^ removed
-
-    # A standalone comment on its own line is preserved.
-    x = 1
-
-Files are rewritten in place, but only when at least one inline comment was
-removed *and* the transformed source still parses as valid Python. Work is
-parallelised across 8 worker processes; file paths are streamed to the pool
-via `imap_unordered`, so memory stays flat even for very large trees.
-
-Usage:
-    strip_inline_comments.py [PATH ...]
-
-If no PATH is given, the current directory is walked recursively. PATH may
-be a file or a directory (which is walked recursively). Duplicate paths are
-processed once.
-
-Requires: Python 3.12+, libcst.
-"""
+"""strip_inline_comments.py Remove inline (trailing) comments from Python source files using libcst.
+An "inline" comment is one that appears on the same physical line as code: DOWNLOAD_DIR = Path.cwd() # Overwritten by -d / --dir ^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^ removed # A standalone comment on its own line is preserved.
+x = 1 Files are rewritten in place, but only when at least one inline comment was removed *and* the transformed source still parses as valid Python.
+Work is parallelised across 8 worker processes; file paths are streamed to the pool via `imap_unordered`, so memory stays flat even for very large trees.
+Usage: strip_inline_comments.py [PATH ...] If no PATH is given, the current directory is walked recursively.
+PATH may be a file or a directory (which is walked recursively).
+Duplicate paths are processed once.
+Requires: Python 3.12+, libcst."""
 
 from __future__ import annotations
 

@@ -1,28 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Find, compare, report, copy, move, or delete fuzzy-duplicate files.
-
-Dependencies:
-    pip install ssdeep xxhash
-    Optional presentation dependencies:
-    pip install tabulate colorama tqdm
-
-Examples:
-    python fuzzy_duplicates.py scan 70
-    python fuzzy_duplicates.py scan 70 --profile fsim --action move
-    python fuzzy_duplicates.py scan 70 --profile ssim --action copy --output output
-    python fuzzy_duplicates.py report 70 --format csv
-    python fuzzy_duplicates.py report 70 --format matrix --display
-    python fuzzy_duplicates.py move --root . --output output --threshold 60
-    python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report
-
-Original-script mapping:
-    fsim.py   -> python fuzzy_duplicates.py scan THRESHOLD --profile fsim --action move
-    ssdip.py  -> python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report
-    ssim.py   -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy
-    ssim3.py  -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy
-    ssim2.py  -> python fuzzy_duplicates.py report THRESHOLD --format copy
-    ssimove.py -> python fuzzy_duplicates.py move --threshold 60 --min-group-size 2
-"""
+Dependencies: pip install ssdeep xxhash Optional presentation dependencies: pip install tabulate colorama tqdm Examples: python fuzzy_duplicates.py scan 70 python fuzzy_duplicates.py scan 70 --profile fsim --action move python fuzzy_duplicates.py scan 70 --profile ssim --action copy --output output python fuzzy_duplicates.py report 70 --format csv python fuzzy_duplicates.py report 70 --format matrix --display python fuzzy_duplicates.py move --root .
+--output output --threshold 60 python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report Original-script mapping: fsim.py -> python fuzzy_duplicates.py scan THRESHOLD --profile fsim --action move ssdip.py -> python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report ssim.py -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy ssim3.py -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy ssim2.py -> python fuzzy_duplicates.py report THRESHOLD --format copy ssimove.py -> python fuzzy_duplicates.py move --threshold 60 --min-group-size 2"""
 
 from __future__ import annotations
 

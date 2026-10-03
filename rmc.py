@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 #!/usr/bin/env python3
 """Fast, conservative Python comment/docstring/type-annotation stripper.
-
 LibCST is used so formatting is retained and transformed files remain valid Python.
-The program intentionally parses every input file; it has no textual early-out based
-on '#', triple-single-quotes, or triple-double-quotes.
-"""
+The program intentionally parses every input file; it has no textual early-out based on '#', triple-single-quotes, or triple-double-quotes."""
 
 from __future__ import annotations
 
@@ -14,7 +11,7 @@ import ast
 import functools
 import io
 import multiprocessing as mp
-import os
+import os  # only used by atomic_replace()
 import re
 import sys
 import tempfile
@@ -114,6 +111,18 @@ def format_size(num_bytes: int) -> str:
             text = f"{value / threshold:.1f}".rstrip("0").rstrip(".")
             return f"{sign}{text}{suffix}"
     return f"{sign}{value} B"
+
+
+def display_path(path: Path) -> str:
+    """Return ``path`` relative to the current working directory when possible.
+
+    Uses ``PurePath.relative_to(walk_up=True)`` (Python 3.12+) so paths outside
+    the working directory yield ``..`` components, matching ``os.path.relpath``.
+    """
+    try:
+        return str(path.relative_to(Path.cwd(), walk_up=True))
+    except ValueError:
+        return str(path)
 
 
 def is_docstring_literal(expr: cst.BaseExpression) -> bool:
@@ -539,23 +548,27 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
 
 
 def _walk_python_files(root: Path, skip_names: frozenset[str]) -> Iterator[Path]:
-    """Iterative scandir traversal is faster than allocating Path objects for all entries."""
+    """Iterative directory traversal; symlinks are not followed."""
     stack = [root]
     while stack:
         directory = stack.pop()
         try:
-            with os.scandir(directory) as entries:
-                for entry in entries:
-                    try:
-                        if entry.is_dir(follow_symlinks=False):
-                            if entry.name not in skip_names:
-                                stack.append(Path(entry.path))
-                        elif entry.is_file(follow_symlinks=False) and entry.name.endswith(PY_SUFFIXES):
-                            yield Path(entry.path)
-                    except OSError as exc:
-                        print(f"warning: cannot inspect {entry.path}: {exc}", file=sys.stderr)
+            entries = list(directory.iterdir())
         except OSError as exc:
             print(f"warning: cannot scan {directory}: {exc}", file=sys.stderr)
+            continue
+        for entry in entries:
+            try:
+                # Mirror scandir(follow_symlinks=False): skip any symlink.
+                if entry.is_symlink():
+                    continue
+                if entry.is_dir():
+                    if entry.name not in skip_names:
+                        stack.append(entry)
+                elif entry.is_file() and entry.name.endswith(PY_SUFFIXES):
+                    yield entry
+            except OSError as exc:
+                print(f"warning: cannot inspect {entry}: {exc}", file=sys.stderr)
 
 
 def iter_python_files(paths: Iterable[Path], extra_excludes: Sequence[str]) -> Iterator[Path]:
@@ -594,14 +607,20 @@ def iter_backup_targets(paths: Iterable[Path], extra_excludes: Sequence[str]) ->
             while stack:
                 directory = stack.pop()
                 try:
-                    with os.scandir(directory) as entries:
-                        for entry in entries:
-                            if entry.is_dir(follow_symlinks=False) and entry.name not in skip_names:
-                                stack.append(Path(entry.path))
-                            elif entry.is_file(follow_symlinks=False) and entry.name.endswith(BACKUP_SUFFIX):
-                                candidates.append(Path(entry.path))
+                    entries = list(directory.iterdir())
                 except OSError as exc:
                     print(f"warning: cannot scan {directory}: {exc}", file=sys.stderr)
+                    continue
+                for entry in entries:
+                    try:
+                        if entry.is_symlink():
+                            continue
+                        if entry.is_dir() and entry.name not in skip_names:
+                            stack.append(entry)
+                        elif entry.is_file() and entry.name.endswith(BACKUP_SUFFIX):
+                            candidates.append(entry)
+                    except OSError:
+                        pass
         else:
             print(f"warning: skipping non-existent path: {given}", file=sys.stderr)
             continue
@@ -666,7 +685,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "-j",
         "--jobs",
         type=int,
-        default=min(DEFAULT_MAX_PROCESSES, os.cpu_count() or 1),
+        default=min(DEFAULT_MAX_PROCESSES, mp.cpu_count() or 1),
         metavar="N",
         help="worker processes (default: min(8, CPU count); 1 disables multiprocessing)",
     )
@@ -713,12 +732,12 @@ def run_reverse(paths: Sequence[Path], args: argparse.Namespace) -> int:
         changed, error = restore_from_backup(path, args.dry_run or args.check)
         if error:
             errors += 1
-            print(f"{path.name}: {error}", file=sys.stderr)
+            print(f"{display_path(path)}: {error}", file=sys.stderr)
         elif changed:
             restored += 1
             if not args.quiet:
                 action = "would restore" if args.dry_run or args.check else "restored"
-                print(f"{path.name}  {action}")
+                print(f"{display_path(path)}  {action}")
     print(f"\n{'Would restore' if args.dry_run or args.check else 'Restored'} {restored} file(s), {errors} error(s).")
     if errors:
         return 2
@@ -764,7 +783,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         total += 1
         if result.error:
             errors += 1
-            print(f"{result.path}: {result.error}", file=sys.stderr)
+            print(f"{display_path(result.path)}: {result.error}", file=sys.stderr)
             continue
         if not result.changed:
             continue
@@ -776,7 +795,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             color = "" if args.no_color or not sys.stdout.isatty() else GREEN
             reset = "" if not color else RESET
             action = "would reduce" if dry_run else " "
-            print(f"{result.path}  {action} {color}{format_size(delta)}{reset}")
+            print(f"{display_path(result.path)}  {action} {color}{format_size(delta)}{reset}")
 
     if total == 0:
         print("No Python files found.", file=sys.stderr)

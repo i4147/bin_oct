@@ -1,20 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Universal archive / compression detector, decompressor, and extractor.
-
-Pipeline:
-    STAGE 1  Magic-byte sniff        (fast hint — no decoding)
-    STAGE 2  libarchive catch-all    (covers ~40 archive formats)
-    STAGE 3  Individual decompressors (fallback for raw streams)
-
-Extraction:
-    Any format that is successfully recognized in any stage is registered,
-    and if at least one was recognized the input is extracted to the CWD
-    with zip-slip / tar-slip protection.
-
-Usage:
-    python this_script.py <filename>
-"""
+"""Universal archive / compression detector, decompressor, and extractor.
+Pipeline: STAGE 1 Magic-byte sniff (fast hint — no decoding) STAGE 2 libarchive catch-all (covers ~40 archive formats) STAGE 3 Individual decompressors (fallback for raw streams) Extraction: Any format that is successfully recognized in any stage is registered, and if at least one was recognized the input is extracted to the CWD with zip-slip / tar-slip protection.
+Usage: python this_script.py <filename>"""
 
 from __future__ import annotations
 

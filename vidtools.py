@@ -1,29 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-vidtools.py — merged video utilities.
-
-Merges:
-  * cutvid.py
-  * reverse_video.py
-
-Dependencies:
-  * cut subcommand: opencv-python (cv2)
-  * reverse subcommand: ffmpeg on PATH
-
-Usage:
-    python vidtools.py cut <input> <start_hh:mm:ss> <duration_hh:mm:ss> [options]
-    python vidtools.py reverse <input> [options]
-
-Original mappings:
-    cutvid.py                  -> python vidtools.py cut input.mkv 00:00:00 00:00:10
-    reverse_video.py main/u()  -> python vidtools.py reverse input.mp4
-    reverse_video.py s()       -> python vidtools.py reverse input.mp4 --keep-audio --preset fast --no-crf
-
-Note:
-    The cut command's default time parsing intentionally preserves the original
-    cutvid.py formula: (h*3600 + m*40 + s) * 400, then frames = ms * fps / 1000.
-    Use --time-mode correct for standard hh:mm:ss behavior.
-"""
+"""vidtools.py — merged video utilities.
+Merges: * cutvid.py * reverse_video.py Dependencies: * cut subcommand: opencv-python (cv2) * reverse subcommand: ffmpeg on PATH Usage: python vidtools.py cut <input> <start_hh:mm:ss> <duration_hh:mm:ss> [options] python vidtools.py reverse <input> [options] Original mappings: cutvid.py -> python vidtools.py cut input.mkv 00:00:00 00:00:10 reverse_video.py main/u() -> python vidtools.py reverse input.mp4 reverse_video.py s() -> python vidtools.py reverse input.mp4 --keep-audio --preset fast --no-crf Note: The cut command's default time parsing intentionally preserves the original cutvid.py formula: (h*3600 + m*40 + s) * 400, then frames = ms * fps / 1000.
+Use --time-mode correct for standard hh:mm:ss behavior."""
 
 from __future__ import annotations
 

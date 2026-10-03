@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Convert non-UTF8 text files to UTF-8 in place. Detects each file's encoding with
-chardet, skips binary/unsupported files via ``dh.is_binary``, and rewrites
-non-UTF8 sources as UTF-8 with ``errors="replace"``. Files are processed with a
-fixed multiprocessing.Pool of 8 workers. Logging via loguru.
-"""
+"""Convert non-UTF8 text files to UTF-8 in place.
+Detects each file's encoding with chardet, skips binary/unsupported files via ``dh.is_binary``, and rewrites non-UTF8 sources as UTF-8 with ``errors="replace"``.
+Files are processed with a fixed multiprocessing.Pool of 8 workers.
+Logging via loguru."""
 
 import argparse
 from collections.abc import Generator

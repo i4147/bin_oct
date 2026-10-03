@@ -1,33 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-imgtool.py — Unified image / HTML conversion toolkit.
-
-This single script merges the behaviour of 13 small scripts into one CLI with
-subcommands.  Every original script's behaviour is reachable.
-
-Subcommand mapping
-------------------
-avif2jpg.py    ->  python imgtool.py to-jpg avif_images --output jpg_images \
-                                       --ext .avif .aviff
-heif2jpg.py    ->  python imgtool.py to-jpg --ext .heif .heic
-png2jpg.py     ->  python imgtool.py to-jpg --ext .png --delete-source [paths ...]
-pngtojpg.py    ->  python imgtool.py to-jpg --ext .png --delete-source
-to_jpg.py      ->  python imgtool.py to-jpg --delete-source [paths ...]
-tojpg.py       ->  python imgtool.py to-jpg FILE --delete-source
-svg2png.py     ->  python imgtool.py to-png --ext .svg
-to_png.py      ->  python imgtool.py to-png --delete-source
-topng.py       ->  python imgtool.py to-png FILE --delete-source
-gif2jpg.py     ->  python imgtool.py gif-to-jpg
-neg.py         ->  python imgtool.py invert DIR [--dry-run] [-w N]
-htm2png.py     ->  python imgtool.py html-to-png --method cairosvg
-html2png.py    ->  python imgtool.py html-to-png --method pdf2image DIR OUT
-
-Dependencies
-------------
-Required    : Pillow
-Optional    : numpy, opencv-python, pillow-heif, cairosvg,
-              weasyprint, pdf2image, joblib
-"""
+"""imgtool.py — Unified image / HTML conversion toolkit.
+This single script merges the behaviour of 13 small scripts into one CLI with subcommands.
+Every original script's behaviour is reachable.
+Subcommand mapping ------------------ avif2jpg.py -> python imgtool.py to-jpg avif_images --output jpg_images --ext .avif .aviff heif2jpg.py -> python imgtool.py to-jpg --ext .heif .heic png2jpg.py -> python imgtool.py to-jpg --ext .png --delete-source [paths ...] pngtojpg.py -> python imgtool.py to-jpg --ext .png --delete-source to_jpg.py -> python imgtool.py to-jpg --delete-source [paths ...] tojpg.py -> python imgtool.py to-jpg FILE --delete-source svg2png.py -> python imgtool.py to-png --ext .svg to_png.py -> python imgtool.py to-png --delete-source topng.py -> python imgtool.py to-png FILE --delete-source gif2jpg.py -> python imgtool.py gif-to-jpg neg.py -> python imgtool.py invert DIR [--dry-run] [-w N] htm2png.py -> python imgtool.py html-to-png --method cairosvg html2png.py -> python imgtool.py html-to-png --method pdf2image DIR OUT Dependencies ------------ Required : Pillow Optional : numpy, opencv-python, pillow-heif, cairosvg, weasyprint, pdf2image, joblib"""
 
 from __future__ import annotations
 

@@ -1,32 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-pytokei_merged.py — count lines of code, comments, and blanks by language.
-
-Merged from:
-  - pytokei.py
-  - pytokei2.py
-
-Original mapping
-----------------
-pytokei.py   -> python pytokei_merged.py [root]
-pytokei2.py  -> python pytokei_merged.py [root] --no-report
-
-Both scripts count lines of code, comment lines, and blank lines for a set of
-languages. pytokei.py prints a final report; pytokei2.py computes the same
-statistics but does not print the final report (it still prints binary-file
-warnings). The --no-report flag reproduces pytokei2.py's output behavior.
-
-Usage examples
---------------
-  python pytokei_merged.py
-  python pytokei_merged.py src/
-  python pytokei_merged.py src/ --no-report
-  python pytokei_merged.py . --exclude .venv --exclude node_modules
-
-Dependencies
-------------
-Standard library only.
-"""
+"""pytokei_merged.py — count lines of code, comments, and blanks by language.
+Merged from: - pytokei.py - pytokei2.py Original mapping ---------------- pytokei.py -> python pytokei_merged.py [root] pytokei2.py -> python pytokei_merged.py [root] --no-report Both scripts count lines of code, comment lines, and blank lines for a set of languages.
+pytokei.py prints a final report; pytokei2.py computes the same statistics but does not print the final report (it still prints binary-file warnings).
+The --no-report flag reproduces pytokei2.py's output behavior.
+Usage examples -------------- python pytokei_merged.py python pytokei_merged.py src/ python pytokei_merged.py src/ --no-report python pytokei_merged.py .
+--exclude .venv --exclude node_modules Dependencies ------------ Standard library only."""
 
 from __future__ import annotations
 

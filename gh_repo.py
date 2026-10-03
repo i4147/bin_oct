@@ -1,39 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-gh_repo.py — create a GitHub repository from a local project and push code.
-
+"""gh_repo.py — create a GitHub repository from a local project and push code.
 Merged from 5 originals, with a pluggable --backend flag.
-
-Original mapping
-----------------
-    mkghrepo.py    -> python gh_repo.py api        <repo_name> [description] -b rest
-    new_repo.py    -> python gh_repo.py api-push   -b rest
-    new_repo2.py   -> python gh_repo.py gh-create  -b pygithub
-    newrepo.py     -> python gh_repo.py gh-cli     -b subprocess
-    pynewrepo.py   -> python gh_repo.py gh-managed -b subprocess
-
-Backends (-b / --backend)
--------------------------
-    subprocess    git CLI + gh CLI                     (default)
-    gitpython     GitPython + gh CLI
-    rest          git CLI + requests (GitHub REST API)
-    pygithub      git CLI + PyGithub
-    githubpython  git CLI + github3.py
-    dulwich       Dulwich + gh CLI
-    libgit2       pygit2 (libgit2 bindings) + gh CLI
-
-Usage examples
---------------
-    python gh_repo.py api my-new-project "my new repo" -b rest
-    python gh_repo.py gh-create -b pygithub
-    python gh_repo.py gh-cli -b dulwich
-    python gh_repo.py gh-managed -b libgit2
-
-Third-party dependencies (only what the chosen backend needs)
--------------------------------------------------------------
-    requests, python-dotenv, GitPython, PyGithub, github3.py, dulwich, pygit2
-    External tools: git, gh
-"""
+Original mapping ---------------- mkghrepo.py -> python gh_repo.py api <repo_name> [description] -b rest new_repo.py -> python gh_repo.py api-push -b rest new_repo2.py -> python gh_repo.py gh-create -b pygithub newrepo.py -> python gh_repo.py gh-cli -b subprocess pynewrepo.py -> python gh_repo.py gh-managed -b subprocess Backends (-b / --backend) ------------------------- subprocess git CLI + gh CLI (default) gitpython GitPython + gh CLI rest git CLI + requests (GitHub REST API) pygithub git CLI + PyGithub githubpython git CLI + github3.py dulwich Dulwich + gh CLI libgit2 pygit2 (libgit2 bindings) + gh CLI Usage examples -------------- python gh_repo.py api my-new-project "my new repo" -b rest python gh_repo.py gh-create -b pygithub python gh_repo.py gh-cli -b dulwich python gh_repo.py gh-managed -b libgit2 Third-party dependencies (only what the chosen backend needs) ------------------------------------------------------------- requests, python-dotenv, GitPython, PyGithub, github3.py, dulwich, pygit2 External tools: git, gh"""
 
 from __future__ import annotations
 

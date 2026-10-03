@@ -1,11 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Refactored blank line remover script. This is a parallel file processing tool that recursively
-removes blank lines (and optionally whitespace-only lines) from text files. It uses
-multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path
-handling, and complete type annotations. The script detects binary files and skips them,
-reports progress, and provides a summary of modified files, removed lines, and errors.
-"""
+"""Refactored blank line remover script.
+This is a parallel file processing tool that recursively removes blank lines (and optionally whitespace-only lines) from text files.
+It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, and complete type annotations.
+The script detects binary files and skips them, reports progress, and provides a summary of modified files, removed lines, and errors."""
 
 import argparse
 import sys

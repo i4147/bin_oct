@@ -1,32 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-dedup_tool.py — Unified Python duplicate-detection & refactoring tool.
-
-Merges the behaviours of:
-    check_const.py   →  python dedup_tool.py const     FILE
-    check_dups.py    →  python dedup_tool.py ast       [PATH ...]
-    diduper.py       →  python dedup_tool.py ts        --exclude-self
-    tsdeduper.py     →  python dedup_tool.py ts
-    refactorer.py    →  python dedup_tool.py refactor
-
-Dependencies:
-    Standard library only for `const`, `ast`, `refactor`.
-    `ts` additionally requires: tree_sitter, tree_sitter_python
-
-Examples
---------
-    # Strip duplicate constant definitions from one file, archive them
-    python dedup_tool.py const mymod/constants.py
-
-    # Multi-file AST dedup; keeps first occurrence, moves the rest
-    python dedup_tool.py ast src/ scripts/ --suffix _dups.py
-
-    # Tree-sitter content dedup across cwd; dump representatives to utils.py
-    python dedup_tool.py ts --output utils.py --exclude-self
-
-    # Extract every top-level def/class/const into output/ package
-    python dedup_tool.py refactor --input-dir . --output-dir output
-"""
+"""dedup_tool.py — Unified Python duplicate-detection & refactoring tool.
+Merges the behaviours of: check_const.py → python dedup_tool.py const FILE check_dups.py → python dedup_tool.py ast [PATH ...] diduper.py → python dedup_tool.py ts --exclude-self tsdeduper.py → python dedup_tool.py ts refactorer.py → python dedup_tool.py refactor Dependencies: Standard library only for `const`, `ast`, `refactor`.
+`ts` additionally requires: tree_sitter, tree_sitter_python Examples -------- # Strip duplicate constant definitions from one file, archive them python dedup_tool.py const mymod/constants.py # Multi-file AST dedup; keeps first occurrence, moves the rest python dedup_tool.py ast src/ scripts/ --suffix _dups.py # Tree-sitter content dedup across cwd; dump representatives to utils.py python dedup_tool.py ts --output utils.py --exclude-self # Extract every top-level def/class/const into output/ package python dedup_tool.py refactor --input-dir .
+--output-dir output"""
 
 from __future__ import annotations
 

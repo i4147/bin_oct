@@ -1,12 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python script that scans a directory tree for hardcoded secrets using regex patterns,
-skipping binary/large file types, common vendor directories, and any file containing known
-signatures of a zip brute-forcer or a pdfminer-based extraction tool. It uses multiprocessing.Pool
-with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, complete type hints,
-and excludes the script itself from the scan. The script reports leaks and exits with code 1 if any
-secrets are found, 0 if clean, and 2 on error or interrupt.
-"""
+"""Generate a Python script that scans a directory tree for hardcoded secrets using regex patterns, skipping binary/large file types, common vendor directories, and any file containing known signatures of a zip brute-forcer or a pdfminer-based extraction tool.
+It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, complete type hints, and excludes the script itself from the scan.
+The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt."""
 
 import re
 import sys

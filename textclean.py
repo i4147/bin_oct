@@ -1,43 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
-"""
-textclean.py — unified text-file cleaning toolkit.
-
-Merges the behaviour of ten small scripts into one CLI.  Standard library only.
-
-Sub-commands
-------------
-  empty-lines    Remove blank / whitespace-only lines from text files.
-  invisible      Strip non-printable characters from a single file.
-  pattern        Remove a multi-line text pattern from many files.
-  lines          Remove lines matching one or more substrings (or regexes).
-  header         Remove a header block (e.g. Author/Email/Time) via regex.
-  json-fields    Rewrite a JSON list of objects so every object uses
-                 `field_1`, `field_2`, ... keys.
-
-Mapping to original scripts
----------------------------
-  del_empty_lines.py                        -> textclean.py empty-lines [paths...]
-  delinvis.py                               -> textclean.py invisible <file>
-  detect_multiline_text.py                  -> textclean.py pattern [paths...] --apply
-  todel.py                                  -> textclean.py pattern --apply
-  remove_lines_containing_str_from_files.py -> textclean.py lines -p dist-info -p .so -p .py \
-                                                            -p .pth -p __ -p .zip [paths...]
-  rm_lines_that_contains.py                 -> textclean.py lines -p STR --dry-run <file>
-  rm_skipdirs.py                            -> textclean.py lines -p 'SKIP_DIRS: frozenset = ...' [paths...]
-  rmlines_with.py                           -> textclean.py lines -p STR <file>
-  rminfo.py                                 -> textclean.py header --ext .py [paths...]
-  remove_header.py                          -> textclean.py json-fields <file>
-
-Examples
---------
-  python textclean.py empty-lines --dry-run
-  python textclean.py invisible build.log
-  python textclean.py pattern --pattern-file /sdcard/lic --apply -j 8
-  python textclean.py lines -p TODO -p FIXME src/ --dry-run
-  python textclean.py header --ext .py --dry-run
-  python textclean.py json-fields data.json
-"""
+"""textclean.py — unified text-file cleaning toolkit.
+Merges the behaviour of ten small scripts into one CLI.
+Standard library only.
+Sub-commands ------------ empty-lines Remove blank / whitespace-only lines from text files.
+invisible Strip non-printable characters from a single file.
+pattern Remove a multi-line text pattern from many files.
+lines Remove lines matching one or more substrings (or regexes).
+header Remove a header block (e.g.
+Author/Email/Time) via regex.
+json-fields Rewrite a JSON list of objects so every object uses `field_1`, `field_2`, ...
+keys.
+Mapping to original scripts --------------------------- del_empty_lines.py -> textclean.py empty-lines [paths...] delinvis.py -> textclean.py invisible <file> detect_multiline_text.py -> textclean.py pattern [paths...] --apply todel.py -> textclean.py pattern --apply remove_lines_containing_str_from_files.py -> textclean.py lines -p dist-info -p .so -p .py -p .pth -p __ -p .zip [paths...] rm_lines_that_contains.py -> textclean.py lines -p STR --dry-run <file> rm_skipdirs.py -> textclean.py lines -p 'SKIP_DIRS: frozenset = ...' [paths...] rmlines_with.py -> textclean.py lines -p STR <file> rminfo.py -> textclean.py header --ext .py [paths...] remove_header.py -> textclean.py json-fields <file> Examples -------- python textclean.py empty-lines --dry-run python textclean.py invisible build.log python textclean.py pattern --pattern-file /sdcard/lic --apply -j 8 python textclean.py lines -p TODO -p FIXME src/ --dry-run python textclean.py header --ext .py --dry-run python textclean.py json-fields data.json"""
 
 from __future__ import annotations
 

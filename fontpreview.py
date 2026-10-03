@@ -1,31 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-fontpreview.py - unified font preview generator.
-
+"""fontpreview.py - unified font preview generator.
 Combines three standalone scripts into a single CLI with two subcommands.
-
-Original -> merged mapping
---------------------------
-    fafontpreview.py  ->  python fontpreview.py simple --preset fa
-    fontpreview.py    ->  python fontpreview.py simple --preset en
-    fontpre.py        ->  python fontpreview.py rich   [paths...] -o out.html
-
-Examples
---------
-    # Persian preset (default 'simple' preset)
-    python fontpreview.py simple
-    python fontpreview.py simple --preset fa ./fonts
-
-    # English preset
-    python fontpreview.py simple --preset en ./fonts
-
-    # Override text/sizes/output
-    python fontpreview.py simple --text "Hello World" --sizes 12 18 32 -o test.html ./fonts
-
-    # Rich preview with dark mode + metadata
-    python fontpreview.py rich ./fonts ~/Downloads -o preview.html -v
-    python fontpreview.py rich --max-fonts 200 .
-"""
+Original -> merged mapping -------------------------- fafontpreview.py -> python fontpreview.py simple --preset fa fontpreview.py -> python fontpreview.py simple --preset en fontpre.py -> python fontpreview.py rich [paths...] -o out.html Examples -------- # Persian preset (default 'simple' preset) python fontpreview.py simple python fontpreview.py simple --preset fa ./fonts # English preset python fontpreview.py simple --preset en ./fonts # Override text/sizes/output python fontpreview.py simple --text "Hello World" --sizes 12 18 32 -o test.html ./fonts # Rich preview with dark mode + metadata python fontpreview.py rich ./fonts ~/Downloads -o preview.html -v python fontpreview.py rich --max-fonts 200 ."""
 
 from __future__ import annotations
 

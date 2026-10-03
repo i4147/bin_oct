@@ -1,14 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Find duplicate folders in the current directory tree.
-
-By default: two folders are duplicates if their files have the same
-relative paths AND the same contents.
-
-With -s / --structure: two folders are duplicates if their tree structure
-is the same (same subfolders, same relative file paths) even if file
-contents differ.
-"""
+"""Find duplicate folders in the current directory tree.
+By default: two folders are duplicates if their files have the same relative paths AND the same contents.
+With -s / --structure: two folders are duplicates if their tree structure is the same (same subfolders, same relative file paths) even if file contents differ."""
 
 import argparse
 import os

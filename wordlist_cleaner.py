@@ -1,15 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-wordlist_cleaner.py - A unified CLI tool for cleaning and filtering wordlists.
-
-This script merges the functionality of two different wordlist cleaning utilities:
-1. 'similar' mode: Finds and isolates words that differ by a single character.
-2. 'repeats' mode: Rapidly streams a file to remove words with repeating characters.
-
-Mappings to original scripts:
-  - original clean_wordlist.py      ->  python wordlist_cleaner.py similar wordlist.txt
-  - original clean_wordlist_fast.py ->  python wordlist_cleaner.py repeats wordlist.txt
-"""
+"""wordlist_cleaner.py - A unified CLI tool for cleaning and filtering wordlists.
+This script merges the functionality of two different wordlist cleaning utilities: 1.
+'similar' mode: Finds and isolates words that differ by a single character.
+2.
+'repeats' mode: Rapidly streams a file to remove words with repeating characters.
+Mappings to original scripts: - original clean_wordlist.py -> python wordlist_cleaner.py similar wordlist.txt - original clean_wordlist_fast.py -> python wordlist_cleaner.py repeats wordlist.txt"""
 
 import argparse
 import contextlib

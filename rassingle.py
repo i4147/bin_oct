@@ -1,29 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-refactor_single_file.py — consolidate a small multi-file Python package into
-a single annotated module.
-
-Automates the mechanical parts of the refactor prompt:
-  1. merge every module into one file
-  2. drop Python 2 / six compat
-  3. migrate os.path -> pathlib
-  4. replace ProcessPoolExecutor with multiprocessing.Pool.imap_unordered
-  5. replace stdlib logging with loguru
-  6. emit code with no comments and no docstrings
-
-Adding PEP 484 annotations where none exist requires type inference and is
-NOT automated — existing annotations are preserved, unannotated code is left
-as-is. Fix those by hand.
-
-Usage:
-    # Directory / single-file mode (walks recursively):
-    python refactor_single_file.py path/to/pkg -o pkg_single.py
-    python refactor_single_file.py some_pkg/some_module.py -o out.py
-    python refactor_single_file.py                    # defaults to CWD
-
-    # Merged-file mode (single file containing "# File: <path>" headers):
-    python refactor_single_file.py -f merged.py -o out.py
-"""
+"""refactor_single_file.py — consolidate a small multi-file Python package into a single annotated module.
+Automates the mechanical parts of the refactor prompt: 1.
+merge every module into one file 2.
+drop Python 2 / six compat 3.
+migrate os.path -> pathlib 4.
+replace ProcessPoolExecutor with multiprocessing.Pool.imap_unordered 5.
+replace stdlib logging with loguru 6.
+emit code with no comments and no docstrings Adding PEP 484 annotations where none exist requires type inference and is NOT automated — existing annotations are preserved, unannotated code is left as-is.
+Fix those by hand.
+Usage: # Directory / single-file mode (walks recursively): python refactor_single_file.py path/to/pkg -o pkg_single.py python refactor_single_file.py some_pkg/some_module.py -o out.py python refactor_single_file.py # defaults to CWD # Merged-file mode (single file containing "# File: <path>" headers): python refactor_single_file.py -f merged.py -o out.py"""
 
 from __future__ import annotations
 

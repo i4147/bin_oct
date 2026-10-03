@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""A parallelized CLI tool using tree-sitter to strip regular comments from Lua files in-place while preserving LDoc/LuaLS annotations (starting with '---'). It accepts paths or directories, processes files concurrently with multiprocessing.Pool.imap, logs output using loguru, skips logging un-modified files, and reports summary stats upon completion."""
+"""A parallelized CLI tool using tree-sitter to strip regular comments from Lua files in-place while preserving LDoc/LuaLS annotations (starting with '---').
+It accepts paths or directories, processes files concurrently with multiprocessing.Pool.imap, logs output using loguru, skips logging un-modified files, and reports summary stats upon completion."""
 
 import argparse
 import multiprocessing as mp

@@ -1,8 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Prepend an AI-generated "how to reproduce this" prompt as a module
-docstring to one or more self-contained .py files.
-"""
+"""Prepend an AI-generated "how to reproduce this" prompt as a module docstring to one or more self-contained .py files."""
 
 from __future__ import annotations
 

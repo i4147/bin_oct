@@ -1,16 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-HTML Asset Extractor - Extract inline CSS and JavaScript to separate files.
-
-This script processes HTML files to extract inline <style> and <script> tags,
-saves them as separate files in an assets directory, and updates the HTML
-to reference these external files.
-
-Usage:
-    python extract_assets.py [files/dirs...]
-
-If no arguments provided, processes all HTML files in current directory recursively.
-"""
+"""HTML Asset Extractor - Extract inline CSS and JavaScript to separate files.
+This script processes HTML files to extract inline <style> and <script> tags, saves them as separate files in an assets directory, and updates the HTML to reference these external files.
+Usage: python extract_assets.py [files/dirs...] If no arguments provided, processes all HTML files in current directory recursively."""
 
 import argparse
 import hashlib

@@ -1,13 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Universal command wrapper with:
-- Glob expansion for arguments
-- Colored output (auto-disables when not a TTY)
-- Logging to ~/tmp/log/apps/
-- Exit code preservation
-- Optional timestamp prefix
-- Clipboard support via termux-clipboard-set (max 1MB) — ENABLED BY DEFAULT
-"""
+"""Universal command wrapper with: - Glob expansion for arguments - Colored output (auto-disables when not a TTY) - Logging to ~/tmp/log/apps/ - Exit code preservation - Optional timestamp prefix - Clipboard support via termux-clipboard-set (max 1MB) — ENABLED BY DEFAULT"""
 
 import argparse
 import datetime

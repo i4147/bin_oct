@@ -1,30 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-filefixer.py — merged extension-fixing / validation / Python-line extraction tool.
-
-Original scripts merged here:
-  fix_ext.py
-  fix_extension_mismatch_Version1.py
-  fix_extension_mismatch_Version2.py
-  fixext.py
-  fixext2.py
-  fixext3.py
-  fixfileext.py
-  fpy.py
-  validate_binary_extensions.py
-  validate_text_extensions.py
-
-Usage examples:
-  python filefixer.py fix . --apply --engines auto --workers 4
-  python filefixer.py fix . --scan-cwd --engines puremagic --apply
-  python filefixer.py fix . --engines signature --dry-run
-  python filefixer.py validate binary /data/data/com.termux --workers 4
-  python filefixer.py validate text . --workers 4
-  python filefixer.py extract-python some_file.py -o out.py
-
-Optional third-party packages:
-  pip install puremagic python-magic filetype
-"""
+"""filefixer.py — merged extension-fixing / validation / Python-line extraction tool.
+Original scripts merged here: fix_ext.py fix_extension_mismatch_Version1.py fix_extension_mismatch_Version2.py fixext.py fixext2.py fixext3.py fixfileext.py fpy.py validate_binary_extensions.py validate_text_extensions.py Usage examples: python filefixer.py fix .
+--apply --engines auto --workers 4 python filefixer.py fix .
+--scan-cwd --engines puremagic --apply python filefixer.py fix .
+--engines signature --dry-run python filefixer.py validate binary /data/data/com.termux --workers 4 python filefixer.py validate text .
+--workers 4 python filefixer.py extract-python some_file.py -o out.py Optional third-party packages: pip install puremagic python-magic filetype"""
 
 from __future__ import annotations
 

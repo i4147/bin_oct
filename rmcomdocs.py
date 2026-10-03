@@ -1,33 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
-
-This single script merges the behaviour of four earlier tools
-(gemc.py, t5.py, grmc_ts.py, tsrmc.py) behind one argparse CLI.
-
-Subcommands
------------
-strip     Remove comments (and optionally docstrings) from Python files.
-compare   Dry-run comparison between the tree-sitter and AST engines.
-
-Original script -> equivalent command
--------------------------------------
-gemc.py       ->  python rmcomdocs.py strip . --engine query  --docstring pass \\
-                          --workers 4
-t5.py         ->  python rmcomdocs.py strip . --engine query  --docstring pass \\
-                          --eat-trailing-newline --remove-blank-lines \\
-                          --keep-todo --workers 4
-grmc_ts.py    ->  python rmcomdocs.py strip . --engine cursor --docstring pass \\
-                          --keep-module-docstring --workers 8
-tsrmc.py      ->  python rmcomdocs.py strip . --engine query  --preserve-lines \\
-                          --workers 8
-tsrmc.py --compare -> python rmcomdocs.py compare . --workers 8
-
-Third-party dependencies
-------------------------
-    tree-sitter
-    tree-sitter-python
-"""
+"""rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
+This single script merges the behaviour of four earlier tools (gemc.py, t5.py, grmc_ts.py, tsrmc.py) behind one argparse CLI.
+Subcommands ----------- strip Remove comments (and optionally docstrings) from Python files.
+compare Dry-run comparison between the tree-sitter and AST engines.
+Original script -> equivalent command ------------------------------------- gemc.py -> python rmcomdocs.py strip .
+--engine query --docstring pass \ --workers 4 t5.py -> python rmcomdocs.py strip .
+--engine query --docstring pass \ --eat-trailing-newline --remove-blank-lines \ --keep-todo --workers 4 grmc_ts.py -> python rmcomdocs.py strip .
+--engine cursor --docstring pass \ --keep-module-docstring --workers 8 tsrmc.py -> python rmcomdocs.py strip .
+--engine query --preserve-lines \ --workers 8 tsrmc.py --compare -> python rmcomdocs.py compare .
+--workers 8 Third-party dependencies ------------------------ tree-sitter tree-sitter-python"""
 
 from __future__ import annotations
 

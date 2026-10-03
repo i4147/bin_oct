@@ -1,24 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-dl — a small pip-style download manager for the command line.
-
-Features
---------
-* Three interchangeable HTTP backends (`-b python|requests|pycurl`).
+"""dl — a small pip-style download manager for the command line.
+Features -------- * Three interchangeable HTTP backends (`-b python|requests|pycurl`).
 * Resumable downloads via `.part` files + HTTP `Range`.
 * Skips files that already exist on disk with a non-zero size.
 * Chunked streaming with adaptive chunk sizes for large files.
 * Reads URLs from the command line and/or from a file (`-f`).
 * Concurrent downloads with a pip-flavoured progress display.
 * Uses `pathlib` for every filesystem traversal.
-
-Usage
------
-    dl https://example.com/file.iso
-    dl -b requests -j 4 url1 url2 url3
-    dl -f urls.txt -b pycurl
-    dl -o movie.mp4 https://example.com/video
-"""
+Usage ----- dl https://example.com/file.iso dl -b requests -j 4 url1 url2 url3 dl -f urls.txt -b pycurl dl -o movie.mp4 https://example.com/video"""
 
 from __future__ import annotations
 

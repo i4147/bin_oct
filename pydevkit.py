@@ -1,36 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-pydevkit.py - Unified Python/Rust project scaffolding & packaging toolkit.
-
-Merges the behaviour of the following original scripts:
-
-    create_cargo_toml.py   -> pydevkit cargo-toml [-i Cargo.lock] [-o Cargo.toml]
-    create_setuppy.py      -> pydevkit make-setup --from pyproject --style simple
-    generate_setuppy.py    -> pydevkit make-setup --from pyproject --style detailed
-    new2old.py             -> pydevkit make-setup --from pyproject --style detailed --with-cfg
-    mk_setup.py            -> pydevkit make-setup --from dir <project_dir>
-    mksetup.py             -> pydevkit make-setup --from wheel <wheel.whl>
-    mksetuppy.py           -> pydevkit make-setup --from pyproject --style runtime
-    init_project.py        -> pydevkit init <name> --style setuptools-src [--simple-cli]
-    initproj.py            -> pydevkit init <name> --style hatchling-typer
-    pyproj2.py             -> pydevkit init <name> --style setuptools-cfg
-    pnew.py                -> pydevkit new-script <path>
-    py_dev.py              -> pydevkit dev [path]
-
-Third-party packages: none required. `tomllib` (3.11+) or `tomli` is used to
-read TOML; if neither is available the TOML-reading subcommands will fail,
-but `cargo-toml` (regex based) and `new-script` still work.
-
-Usage examples
---------------
-    python pydevkit.py init mylib --style hatchling-typer --simple-cli
-    python pydevkit.py make-setup --from pyproject . --style detailed --force
-    python pydevkit.py make-setup --from dir ./myproj
-    python pydevkit.py make-setup --from wheel ./dist/myproj-0.1.0-py3-none-any.whl
-    python pydevkit.py cargo-toml -i Cargo.lock -o Cargo.toml
-    python pydevkit.py dev .
-    python pydevkit.py new-script ./myscript.py
-"""
+"""pydevkit.py - Unified Python/Rust project scaffolding & packaging toolkit.
+Merges the behaviour of the following original scripts: create_cargo_toml.py -> pydevkit cargo-toml [-i Cargo.lock] [-o Cargo.toml] create_setuppy.py -> pydevkit make-setup --from pyproject --style simple generate_setuppy.py -> pydevkit make-setup --from pyproject --style detailed new2old.py -> pydevkit make-setup --from pyproject --style detailed --with-cfg mk_setup.py -> pydevkit make-setup --from dir <project_dir> mksetup.py -> pydevkit make-setup --from wheel <wheel.whl> mksetuppy.py -> pydevkit make-setup --from pyproject --style runtime init_project.py -> pydevkit init <name> --style setuptools-src [--simple-cli] initproj.py -> pydevkit init <name> --style hatchling-typer pyproj2.py -> pydevkit init <name> --style setuptools-cfg pnew.py -> pydevkit new-script <path> py_dev.py -> pydevkit dev [path] Third-party packages: none required.
+`tomllib` (3.11+) or `tomli` is used to read TOML; if neither is available the TOML-reading subcommands will fail, but `cargo-toml` (regex based) and `new-script` still work.
+Usage examples -------------- python pydevkit.py init mylib --style hatchling-typer --simple-cli python pydevkit.py make-setup --from pyproject .
+--style detailed --force python pydevkit.py make-setup --from dir ./myproj python pydevkit.py make-setup --from wheel ./dist/myproj-0.1.0-py3-none-any.whl python pydevkit.py cargo-toml -i Cargo.lock -o Cargo.toml python pydevkit.py dev .
+python pydevkit.py new-script ./myscript.py"""
 
 from __future__ import annotations
 

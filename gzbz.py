@@ -1,41 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-compress_tool.py — unified multi-algorithm compression / decompression CLI.
-
-Merges three previously independent scripts:
-
-    * bzr.py    — bzip2 compression / decompression with tar support
-    * gzr.py    — gzip  compression / decompression with tar support
-    * gziper.py — recursive gzip file compression with a summary table
-
-Original-script → merged-CLI mapping
-------------------------------------
-    bzr.py      →  python compress_tool.py bz2         [paths...]   # compress
-                   python compress_tool.py bz2  -d     [paths...]   # decompress
-
-    gzr.py      →  python compress_tool.py gz          [paths...]   # compress
-                   python compress_tool.py gz   -d     [paths...]   # decompress
-
-    gziper.py   →  python compress_tool.py gzip-files  [dirs...]    # compress only
-
-Usage examples
---------------
-    # Same as running `bzr.py` (no args): compress everything in the cwd
-    python compress_tool.py bz2
-
-    # Decompress every *.bz2 / *.tar.bz2 in the cwd
-    python compress_tool.py bz2 -d
-
-    # Same as running `gzr.py` on the current directory
-    python compress_tool.py gz
-
-    # Same as running `gziper.py` on two dirs with extra exclusions
-    python compress_tool.py gzip-files ./src ./docs -e .pdf .jpg
-
-Dependencies
-------------
-    loguru  (third-party; the original scripts already required it)
-"""
+"""compress_tool.py — unified multi-algorithm compression / decompression CLI.
+Merges three previously independent scripts: * bzr.py — bzip2 compression / decompression with tar support * gzr.py — gzip compression / decompression with tar support * gziper.py — recursive gzip file compression with a summary table Original-script → merged-CLI mapping ------------------------------------ bzr.py → python compress_tool.py bz2 [paths...] # compress python compress_tool.py bz2 -d [paths...] # decompress gzr.py → python compress_tool.py gz [paths...] # compress python compress_tool.py gz -d [paths...] # decompress gziper.py → python compress_tool.py gzip-files [dirs...] # compress only Usage examples -------------- # Same as running `bzr.py` (no args): compress everything in the cwd python compress_tool.py bz2 # Decompress every *.bz2 / *.tar.bz2 in the cwd python compress_tool.py bz2 -d # Same as running `gzr.py` on the current directory python compress_tool.py gz # Same as running `gziper.py` on two dirs with extra exclusions python compress_tool.py gzip-files ./src ./docs -e .pdf .jpg Dependencies ------------ loguru (third-party; the original scripts already required it)"""
 
 from __future__ import annotations
 

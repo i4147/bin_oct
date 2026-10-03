@@ -1,30 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-langtool.py — unified language-detection / filtering toolkit.
-
-Subcommands
------------
-move-chinese    Move files containing Chinese (CJK) characters into a folder.
-filter-lines    Filter non-English lines out of a single file (gcld3, or
-                gcld3+NLTK with --strict).
-find-files      Recursively find non-English files (pycld2).
-find-lines      Find non-English lines across many files, save to TSV.
-
-Mapping of original scripts
----------------------------
-    fchin.py                    ->  python langtool.py move-chinese [DIR]
-    filter_noneng.py            ->  python langtool.py filter-lines FILE -m
-    strict_filter_noneng.py     ->  python langtool.py filter-lines FILE -m --strict
-    find_non_eng.py             ->  python langtool.py find-files DIR
-    find_nonenglish_files.py    ->  python langtool.py find-files DIR --detailed
-    find_noneng.py              ->  python langtool.py find-lines
-
-Third-party dependencies (install only what you need)
------------------------------------------------------
-    pycld2   ->  find-files, find-lines
-    gcld3    ->  filter-lines
-    nltk     ->  filter-lines --strict   (also: python -m nltk.downloader words)
-"""
+"""langtool.py — unified language-detection / filtering toolkit.
+Subcommands ----------- move-chinese Move files containing Chinese (CJK) characters into a folder.
+filter-lines Filter non-English lines out of a single file (gcld3, or gcld3+NLTK with --strict).
+find-files Recursively find non-English files (pycld2).
+find-lines Find non-English lines across many files, save to TSV.
+Mapping of original scripts --------------------------- fchin.py -> python langtool.py move-chinese [DIR] filter_noneng.py -> python langtool.py filter-lines FILE -m strict_filter_noneng.py -> python langtool.py filter-lines FILE -m --strict find_non_eng.py -> python langtool.py find-files DIR find_nonenglish_files.py -> python langtool.py find-files DIR --detailed find_noneng.py -> python langtool.py find-lines Third-party dependencies (install only what you need) ----------------------------------------------------- pycld2 -> find-files, find-lines gcld3 -> filter-lines nltk -> filter-lines --strict (also: python -m nltk.downloader words)"""
 
 from __future__ import annotations
 

@@ -1,33 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """GitHub repository cloning utility with pluggable backends.
-
-Fetches repository information from GitHub, prompts for confirmation on large
-repositories, and clones the repository using one of several backends:
-``gh``/``git`` subprocess calls (default), ``dulwich`` (pure Python),
-``GitPython``, ``pygit2`` (libgit2 bindings), or ``typer`` (CLI wrapper).
+Fetches repository information from GitHub, prompts for confirmation on large repositories, and clones the repository using one of several backends: ``gh``/``git`` subprocess calls (default), ``dulwich`` (pure Python), ``GitPython``, ``pygit2`` (libgit2 bindings), or ``typer`` (CLI wrapper).
 Backends that cannot perform a given operation fall back to subprocess calls.
-
-Usage:
-    script.py <repository_url> [--token YOUR_GITHUB_TOKEN] [-d] [-b BACKEND]
-
-Examples:
-    script.py owner/repo
-    script.py https://github.com/owner/repo
-    script.py git@github.com:owner/repo.git -d
-    script.py owner/repo -b dulwich
-    script.py owner/repo -b gitpython --token YOUR_TOKEN
-
-Options:
-    --token TOKEN        GitHub personal access token (increases rate limit).
-    -d, --depth          Perform a shallow clone with depth 1.
-    -b, --backend NAME   Backend to use: gh, git, dulwich, gitpython, libgit2,
-                         typer. Defaults to ``gh`` (subprocess git/gh).
-
-The script prompts before cloning repositories larger than 5 MB and before
-initializing submodules. All progress and status messages are emitted via
-loguru. If a selected backend cannot perform an operation, the script falls
-back to subprocess-based git commands.
-"""
+Usage: script.py <repository_url> [--token YOUR_GITHUB_TOKEN] [-d] [-b BACKEND] Examples: script.py owner/repo script.py https://github.com/owner/repo script.py git@github.com:owner/repo.git -d script.py owner/repo -b dulwich script.py owner/repo -b gitpython --token YOUR_TOKEN Options: --token TOKEN GitHub personal access token (increases rate limit).
+-d, --depth Perform a shallow clone with depth 1.
+-b, --backend NAME Backend to use: gh, git, dulwich, gitpython, libgit2, typer.
+Defaults to ``gh`` (subprocess git/gh).
+The script prompts before cloning repositories larger than 5 MB and before initializing submodules.
+All progress and status messages are emitted via loguru.
+If a selected backend cannot perform an operation, the script falls back to subprocess-based git commands."""
 
 from __future__ import annotations
 

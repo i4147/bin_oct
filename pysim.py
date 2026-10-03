@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Similarity check script for Python files in the current directory.
-Detects shared functions, classes, and constants across files using content hashing.
-"""
+"""Similarity check script for Python files in the current directory.
+Detects shared functions, classes, and constants across files using content hashing."""
 
 import ast
 import hashlib

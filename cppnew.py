@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Create a new C++ file with a starter template and open it in an editor.
-Usage: cppnew <filename.cpp>
-"""
+"""Create a new C++ file with a starter template and open it in an editor.
+Usage: cppnew <filename.cpp>"""
 
 import subprocess
 import sys

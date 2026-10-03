@@ -1,13 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Check Python files in current directory and report definitions
-that are not exported in __init__.py.
-
-Usage:
-    python check_exports.py           # just report
-    python check_exports.py -a        # autofix __init__.py
-    python check_exports.py -a --dry-run  # preview autofix changes
-"""
+"""Check Python files in current directory and report definitions that are not exported in __init__.py.
+Usage: python check_exports.py # just report python check_exports.py -a # autofix __init__.py python check_exports.py -a --dry-run # preview autofix changes"""
 
 import argparse
 import ast

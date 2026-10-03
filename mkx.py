@@ -1,20 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-mkx.py — make files in the current directory tree executable.
-
-Behaviors merged from two original scripts and applied in a single pass:
-  * suffix mode (from make_executable.py): files whose suffix is in
-    {.py,.sh,.bash,.pl,.rb,.pyw,.txt}, or files with no suffix, AND that
-    start with a shebang ("#!").
-  * heuristic mode (from mkx.py): files inside a bin/sbin/.bin directory,
-    *.so* libraries, shebang files, or binary files with no suffix.
-
-Runs recursively from the current working directory, updates in place,
-skips .git and symlinks, uses a fixed 8-worker multiprocessing pool.
-
-Usage:
-    python mkx.py
-"""
+"""mkx.py — make files in the current directory tree executable.
+Behaviors merged from two original scripts and applied in a single pass: * suffix mode (from make_executable.py): files whose suffix is in {.py,.sh,.bash,.pl,.rb,.pyw,.txt}, or files with no suffix, AND that start with a shebang ("#!").
+* heuristic mode (from mkx.py): files inside a bin/sbin/.bin directory, *.so* libraries, shebang files, or binary files with no suffix.
+Runs recursively from the current working directory, updates in place, skips .git and symlinks, uses a fixed 8-worker multiprocessing pool.
+Usage: python mkx.py"""
 
 import multiprocessing as mp
 import os

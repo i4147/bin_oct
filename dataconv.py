@@ -1,32 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-dataconv.py — universal data container converter.
-
-Convert between: csv, tsv, json, jsonl/ndjson, sqlite (.db), sql dump (.sql),
-excel (.xlsx/.xls/.xlsm), parquet, feather, orc, arrow, yaml, toml, xml,
-pickle, msgpack, avro, dbf, hdf5, netcdf, zarr, ods, xlsb, rds, dta, sav,
-sas7bdat, geojson, shapefile, bson, lua-like, ini, fixed-width, and more.
-
-Design
-------
-* Every loader returns a common in-memory model:
-      Tables = {table_name: [ {col: value, ...}, ... ]}
-* Every writer consumes that model and writes a file (or set of files).
+"""dataconv.py — universal data container converter.
+Convert between: csv, tsv, json, jsonl/ndjson, sqlite (.db), sql dump (.sql), excel (.xlsx/.xls/.xlsm), parquet, feather, orc, arrow, yaml, toml, xml, pickle, msgpack, avro, dbf, hdf5, netcdf, zarr, ods, xlsb, rds, dta, sav, sas7bdat, geojson, shapefile, bson, lua-like, ini, fixed-width, and more.
+Design ------ * Every loader returns a common in-memory model: Tables = {table_name: [ {col: value, ...}, ...
+]} * Every writer consumes that model and writes a file (or set of files).
 * Files > 5 MB are read via `mmap` (for text formats).
 * Multiple input files convert in parallel via ``multiprocessing.Pool.map``.
-* Optional 3rd-party libs are imported lazily; missing ones only affect
-  the specific format, with a clear install hint.
+* Optional 3rd-party libs are imported lazily; missing ones only affect the specific format, with a clear install hint.
 * All failures go through loguru.
-
-Examples
---------
-    python dataconv.py --csv   data.json
-    python dataconv.py --json  data.csv
-    python dataconv.py --db    dump.sql
-    python dataconv.py --parquet data.csv
-    python dataconv.py --csv   a.json b.json c.json -j 4 -o out/
-    python dataconv.py --xlsx  report.parquet
-"""
+Examples -------- python dataconv.py --csv data.json python dataconv.py --json data.csv python dataconv.py --db dump.sql python dataconv.py --parquet data.csv python dataconv.py --csv a.json b.json c.json -j 4 -o out/ python dataconv.py --xlsx report.parquet"""
 
 from __future__ import annotations
 

@@ -1,20 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python CLI tool that halves the bitrate of MP3 files.
-
-Requirements:
-- Use argparse to accept zero or more directory paths (default: current working directory).
+"""Generate a Python CLI tool that halves the bitrate of MP3 files.
+Requirements: - Use argparse to accept zero or more directory paths (default: current working directory).
 - Provide a --no-color flag to disable ANSI colored output.
-- Use loguru for all logging/output (no print(statements, no standard logging).)
-- Use pathlib exclusively for filesystem paths (no os.path).
+- Use loguru for all logging/output (no print(statements, no standard logging).) - Use pathlib exclusively for filesystem paths (no os.path).
 - Use multiprocessing.Pool with a fixed pool of 8 workers via apply_async for parallel conversion.
 - For each MP3, probe the original bitrate/size with ffprobe (JSON output); if bitrate is unavailable, estimate it from size and duration.
 - Compute new_bitrate = original_bitrate // 2; skip files where new bitrate < 8 kbps.
 - Re-encode with ffmpeg (libmp3lame, -ab <new_bitrate>k) to a temporary file, then atomically replace the original on success.
-- Collect per-file ConversionStats (path, bitrates, sizes, success, error, duration) and print(a final summary with total space saved and elapsed time.)
-- Include docstrings on module, classes, and functions; full type hints throughout.
-- Verify ffmpeg and ffprobe are installed at startup and exit(1) if missing.
-"""
+- Collect per-file ConversionStats (path, bitrates, sizes, success, error, duration) and print(a final summary with total space saved and elapsed time.) - Include docstrings on module, classes, and functions; full type hints throughout.
+- Verify ffmpeg and ffprobe are installed at startup and exit(1) if missing."""
 
 from __future__ import annotations
 

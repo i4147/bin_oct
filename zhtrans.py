@@ -1,46 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-merged_translate.py — unified Chinese→English translation utility.
-
-This single file replaces four scripts that overlapped heavily:
-
-    chintrans.py           ->  python merged_translate.py chunked  <input_file>
-    transchin.py           ->  python merged_translate.py line     <input_file>
-    dtransline_chinese.py  ->  python merged_translate.py walk     [paths ...]
-    tchin.py               ->  python merged_translate.py whole    <input_path>
-
-Common behaviour (line-oriented translation via Google Translate) is
-factored into shared helpers; each subcommand preserves its original
-script's distinctive logic.
-
-Third-party dependencies (install before running):
-
-    pip install deep-translator loguru
-
-Examples
---------
-    # Translate a single file in place, batching lines into ≤5000-char chunks.
-    python merged_translate.py chunked input.txt
-
-    # Same, but one API call per line, 4 worker processes.
-    python merged_translate.py line input.txt --workers 4
-
-    # Walk a tree and translate every Chinese line in place (dry-run first).
-    python merged_translate.py walk ./docs --dry-run
-    python merged_translate.py walk ./docs -e .py .md --workers 8
-
-    # Whole-file translation to `input_eng.txt` with auto language detection.
-    python merged_translate.py whole input.txt --lang auto
-
-Assumptions / deviations from originals (documented so nothing is silent):
-  * tchin.py's chunker had a bug (`range(0, len, 32768)` with chunks of 4500);
-    fixed to `range(0, len, chunk_size)`. Otherwise long texts silently lost
-    content. Controlled via `--chunk-size`.
-  * dtransline_chinese.py printed `threshold*40`; corrected to `threshold*100`
-    (purely cosmetic).
-  * logging is unified on loguru, which was already a dependency of two of the
-    four scripts.
-"""
+"""merged_translate.py — unified Chinese→English translation utility.
+This single file replaces four scripts that overlapped heavily: chintrans.py -> python merged_translate.py chunked <input_file> transchin.py -> python merged_translate.py line <input_file> dtransline_chinese.py -> python merged_translate.py walk [paths ...] tchin.py -> python merged_translate.py whole <input_path> Common behaviour (line-oriented translation via Google Translate) is factored into shared helpers; each subcommand preserves its original script's distinctive logic.
+Third-party dependencies (install before running): pip install deep-translator loguru Examples -------- # Translate a single file in place, batching lines into ≤5000-char chunks.
+python merged_translate.py chunked input.txt # Same, but one API call per line, 4 worker processes.
+python merged_translate.py line input.txt --workers 4 # Walk a tree and translate every Chinese line in place (dry-run first).
+python merged_translate.py walk ./docs --dry-run python merged_translate.py walk ./docs -e .py .md --workers 8 # Whole-file translation to `input_eng.txt` with auto language detection.
+python merged_translate.py whole input.txt --lang auto Assumptions / deviations from originals (documented so nothing is silent): * tchin.py's chunker had a bug (`range(0, len, 32768)` with chunks of 4500); fixed to `range(0, len, chunk_size)`.
+Otherwise long texts silently lost content.
+Controlled via `--chunk-size`.
+* dtransline_chinese.py printed `threshold*40`; corrected to `threshold*100` (purely cosmetic).
+* logging is unified on loguru, which was already a dependency of two of the four scripts."""
 
 from __future__ import annotations
 

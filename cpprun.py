@@ -1,10 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Termux-friendly C / C++ runner using the `sh` library.
-Usage: cpprun <file.c|file.cpp|file.cc> [args...]
-
-Install:  pip install sh
-"""
+"""Termux-friendly C / C++ runner using the `sh` library.
+Usage: cpprun <file.c|file.cpp|file.cc> [args...] Install: pip install sh"""
 
 import os
 import stat

@@ -1,50 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-snippetforge.py — Unified code-snippet extractor.
-
+"""snippetforge.py — Unified code-snippet extractor.
 Merges the behavior of seven standalone scripts into one CLI.
-
-    Original script           ->  Merged command
-    ------------------------      ---------------------------------------------
-    23line.py                 ->  python snippetforge.py head
-    code_snip_extractor.py    ->  python snippetforge.py snips
-    excode.py                 ->  python snippetforge.py md-blocks --naming block
-    extcode_md.py             ->  python snippetforge.py md-blocks --naming block
-    exmd.py                   ->  python snippetforge.py md-blocks --naming lines --include-unclosed
-    xpy_code.py               ->  python snippetforge.py pytext
-    pycodex.py                ->  python snippetforge.py html
-
-Usage examples
---------------
-    # First 23 lines of every source file under cwd, deduped into all.txt
-    python snippetforge.py head
-
-    # First 50 lines of all .py/.h under ./src, into snippets.txt
-    python snippetforge.py head --root ./src --lines 50 --ext .py .h -o snippets.txt
-
-    # Markdown → one file per fenced block, excode/extcode_md compatible
-    python snippetforge.py md-blocks ./docs --naming block -o output
-
-    # Markdown → line-range-named files, exmd compatible (includes unclosed)
-    python snippetforge.py md-blocks ./docs --naming lines --include-unclosed
-
-    # Fenced + doctest snippets with line numbers (code_snip_extractor style)
-    python snippetforge.py snips . -w 8 -o output
-
-    # Python blocks from md/txt/html/PKGINFO
-    python snippetforge.py pytext . -w 8 -o extracted_code
-
-    # HTML scraping (requires: requests, beautifulsoup4, loguru)
-    python snippetforge.py html -f page.html
-    python snippetforge.py html -p ./html_docs -w 4
-    python snippetforge.py html -u https://example.com/page.html
-
-Third-party dependencies
-------------------------
-Only the ``html`` subcommand requires extra packages:
-    pip install requests beautifulsoup4 loguru
-Everything else uses the standard library only.
-"""
+Original script -> Merged command ------------------------ --------------------------------------------- 23line.py -> python snippetforge.py head code_snip_extractor.py -> python snippetforge.py snips excode.py -> python snippetforge.py md-blocks --naming block extcode_md.py -> python snippetforge.py md-blocks --naming block exmd.py -> python snippetforge.py md-blocks --naming lines --include-unclosed xpy_code.py -> python snippetforge.py pytext pycodex.py -> python snippetforge.py html Usage examples -------------- # First 23 lines of every source file under cwd, deduped into all.txt python snippetforge.py head # First 50 lines of all .py/.h under ./src, into snippets.txt python snippetforge.py head --root ./src --lines 50 --ext .py .h -o snippets.txt # Markdown → one file per fenced block, excode/extcode_md compatible python snippetforge.py md-blocks ./docs --naming block -o output # Markdown → line-range-named files, exmd compatible (includes unclosed) python snippetforge.py md-blocks ./docs --naming lines --include-unclosed # Fenced + doctest snippets with line numbers (code_snip_extractor style) python snippetforge.py snips .
+-w 8 -o output # Python blocks from md/txt/html/PKGINFO python snippetforge.py pytext .
+-w 8 -o extracted_code # HTML scraping (requires: requests, beautifulsoup4, loguru) python snippetforge.py html -f page.html python snippetforge.py html -p ./html_docs -w 4 python snippetforge.py html -u https://example.com/page.html Third-party dependencies ------------------------ Only the ``html`` subcommand requires extra packages: pip install requests beautifulsoup4 loguru Everything else uses the standard library only."""
 
 from __future__ import annotations
 

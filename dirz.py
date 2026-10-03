@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """dirz.py — List top-level directories of the CWD, optionally with total sizes.
-Usage:
-    python dirz.py                # list top-level dirs
-    python dirz.py -s            # list top-level dirs with total sizes
-"""
+Usage: python dirz.py # list top-level dirs python dirz.py -s # list top-level dirs with total sizes"""
 
 from __future__ import annotations
 

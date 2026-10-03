@@ -1,23 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python CLI script that scans a directory tree for Python files,
-extracts every top-level import statement using tree-sitter, filters out
-imports that belong to the standard library or to already-installed packages,
-and writes the remaining third-party module names to "importz.txt".
-
-The generated script should:
-- Recursively discover "*.py" files under the current working directory.
-- Parse each file with tree_sitter_python and collect the text of any
-  top-level node whose type is "import_statement" or "import_from_statement".
-- Normalize each import (lowercase, strip "as" aliases, drop dotted subpaths,
-  skip relative and private modules) and exclude anything in
-  sys.stdlib_module_names or in the set of installed packages (via
-  importlib.metadata).
-- Process files concurrently with multiprocessing.Pool.imap_unordered using
-  a fixed pool of 8 workers (no CLI flag controls parallelism).
+"""Generate a Python CLI script that scans a directory tree for Python files, extracts every top-level import statement using tree-sitter, filters out imports that belong to the standard library or to already-installed packages, and writes the remaining third-party module names to "importz.txt".
+The generated script should: - Recursively discover "*.py" files under the current working directory.
+- Parse each file with tree_sitter_python and collect the text of any top-level node whose type is "import_statement" or "import_from_statement".
+- Normalize each import (lowercase, strip "as" aliases, drop dotted subpaths, skip relative and private modules) and exclude anything in sys.stdlib_module_names or in the set of installed packages (via importlib.metadata).
+- Process files concurrently with multiprocessing.Pool.imap_unordered using a fixed pool of 8 workers (no CLI flag controls parallelism).
 - Log progress with loguru and write the sorted result to "importz.txt".
-- Include complete type hints and docstrings throughout.
-"""
+- Include complete type hints and docstrings throughout."""
 
 from __future__ import annotations
 

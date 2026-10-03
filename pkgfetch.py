@@ -1,9 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-pkgfetch.py - Resolve and download Python packages from PEP 503/691 indexes.
-
-Features:
-- Resolves PEP 508 requirements from PyPI-compatible simple indexes.
+"""pkgfetch.py - Resolve and download Python packages from PEP 503/691 indexes.
+Features: - Resolves PEP 508 requirements from PyPI-compatible simple indexes.
 - Falls back to Tsinghua and Yandex mirrors when PyPI/index mirrors fail.
 - Prefers source archives (.tar.gz first) over wheels by default.
 - Supports .tar.gz, .tar.bz2, .tar.bz, .zip, and other common PyPI archives.
@@ -11,8 +8,7 @@ Features:
 - Verifies repository-provided hashes (when published by the index).
 - Verifies archive readability after downloading.
 - Uses chunked/ranged HTTP downloading for files above 5 MiB where supported.
-- Uses loguru for logging.
-"""
+- Uses loguru for logging."""
 
 from __future__ import annotations
 

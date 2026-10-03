@@ -1,12 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-dl - a pip-style download manager for the command line.
-
-Usage:
-    dl https://example.com/file.iso
-    dl -j 4 url1 url2 url3
-    dl -b requests -f urls.txt
-"""
+"""dl - a pip-style download manager for the command line.
+Usage: dl https://example.com/file.iso dl -j 4 url1 url2 url3 dl -b requests -f urls.txt"""
 
 from __future__ import annotations
 

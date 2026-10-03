@@ -1,12 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a ``repeated.json`` manifest of duplicated top-level functions, classes,
-and constant assignments across every ``.py`` file under the current directory,
-then use that manifest to refactor each affected file: strip the named
-definitions and inject a single ``from dh import ...`` line so the shared
-versions come from ``dh`` instead. Analysis and refactoring both run on a fixed
-multiprocessing.Pool of 8 workers; logging via loguru.
-"""
+"""Generate a ``repeated.json`` manifest of duplicated top-level functions, classes, and constant assignments across every ``.py`` file under the current directory, then use that manifest to refactor each affected file: strip the named definitions and inject a single ``from dh import ...`` line so the shared versions come from ``dh`` instead.
+Analysis and refactoring both run on a fixed multiprocessing.Pool of 8 workers; logging via loguru."""
 
 import ast
 import collections

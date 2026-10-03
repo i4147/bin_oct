@@ -1,46 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Download Python packages from a PyPI mirror.
-
-Backend
--------
-All network I/O goes through ``httpx.AsyncClient`` (async, connection-pooled,
-supports streaming).  Packages are processed concurrently, bounded by an
-``asyncio.Semaphore``.
-
-Strategy
---------
-For each package we fetch the mirror's package page, parse out the list of
-published files, and pick the "best" candidate according to this priority:
-
-    1. Source distribution (``.tar.gz``, ``.zip``, ``.tar.bz2``, ``.tar.xz``,
-       ``.tgz``) — portable across platforms.
-    2. Pure-Python wheel (``py3-none-any``) — portable across platforms.
-    3. Anything else is treated as an arch-specific binary and *skipped*.
-
-Any file larger than ``MAX_FILE_SIZE`` (default 1 MiB) is skipped, both as a
-pre-flight check on ``Content-Length`` and as a mid-stream safety net.
-
-Integrity
----------
-Every newly downloaded archive is validated before it's accepted:
-
-    * ``.tar.gz`` / ``.tgz`` / ``.tar.bz2`` / ``.tar.xz`` → ``tarfile``
-      (auto-detects compression); every file member's payload is drained
-      so gzip/bz2/xz checksums are verified.
-    * ``.zip`` / ``.whl``                                 → ``zipfile``
-      (``testzip`` checks CRCs of every member).
-
-Validation runs by default with no CLI flag.  If it fails, the partial
-file is removed and the download is retried (up to ``MAX_RETRIES``).
-
-Version pinning
----------------
-Each argument / line may be either ``name`` or ``name==version`` (e.g.
-``aiohttp==3.5.16``).  When a version is pinned we filter the mirror's
-file list down to entries whose *normalised* filename starts with
-``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before
-applying the usual sdist → pure-wheel → skip priority.
-"""
+Backend ------- All network I/O goes through ``httpx.AsyncClient`` (async, connection-pooled, supports streaming).
+Packages are processed concurrently, bounded by an ``asyncio.Semaphore``.
+Strategy -------- For each package we fetch the mirror's package page, parse out the list of published files, and pick the "best" candidate according to this priority: 1.
+Source distribution (``.tar.gz``, ``.zip``, ``.tar.bz2``, ``.tar.xz``, ``.tgz``) — portable across platforms.
+2.
+Pure-Python wheel (``py3-none-any``) — portable across platforms.
+3.
+Anything else is treated as an arch-specific binary and *skipped*.
+Any file larger than ``MAX_FILE_SIZE`` (default 1 MiB) is skipped, both as a pre-flight check on ``Content-Length`` and as a mid-stream safety net.
+Integrity --------- Every newly downloaded archive is validated before it's accepted: * ``.tar.gz`` / ``.tgz`` / ``.tar.bz2`` / ``.tar.xz`` → ``tarfile`` (auto-detects compression); every file member's payload is drained so gzip/bz2/xz checksums are verified.
+* ``.zip`` / ``.whl`` → ``zipfile`` (``testzip`` checks CRCs of every member).
+Validation runs by default with no CLI flag.
+If it fails, the partial file is removed and the download is retried (up to ``MAX_RETRIES``).
+Version pinning --------------- Each argument / line may be either ``name`` or ``name==version`` (e.g.
+``aiohttp==3.5.16``).
+When a version is pinned we filter the mirror's file list down to entries whose *normalised* filename starts with ``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before applying the usual sdist → pure-wheel → skip priority."""
 
 import argparse
 import asyncio

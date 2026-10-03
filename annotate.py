@@ -1,22 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-batch_annotate.py — Add OR remove type annotations on Python files.
-
-Two modes:
-
-  annotate (default)  Add annotations using a sibling .pyi stub via LibCST.
-                      A .pyi stub is REQUIRED beside each .py file.
-  remove / --strip    Remove all type annotations (and `# type:` comments)
-                      using tree-sitter. No stub is needed.
-
-Merges useful behaviour of:
-  * add_typing.py  -> LibCST ApplyTypeAnnotationsVisitor + typeshed sanitizer,
-                      atomic in-place write, dry-run, diff, future-annotations.
-  * annotate.py    -> ast/compile syntax validation, .bak backup, mypy check.
-  * unnotate.py    -> tree-sitter annotation removal, multi-file/dir/glob
-                      gathering, multiprocessing pool, summary.
-  * create_stub.py / type_hinter.py -> superseded (stub generation is skipped).
-"""
+"""batch_annotate.py — Add OR remove type annotations on Python files.
+Two modes: annotate (default) Add annotations using a sibling .pyi stub via LibCST.
+A .pyi stub is REQUIRED beside each .py file.
+remove / --strip Remove all type annotations (and `# type:` comments) using tree-sitter.
+No stub is needed.
+Merges useful behaviour of: * add_typing.py -> LibCST ApplyTypeAnnotationsVisitor + typeshed sanitizer, atomic in-place write, dry-run, diff, future-annotations.
+* annotate.py -> ast/compile syntax validation, .bak backup, mypy check.
+* unnotate.py -> tree-sitter annotation removal, multi-file/dir/glob gathering, multiprocessing pool, summary.
+* create_stub.py / type_hinter.py -> superseded (stub generation is skipped)."""
 
 from __future__ import annotations
 

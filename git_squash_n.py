@@ -1,21 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-git_squash_n.py
-
-Usage:
-  python git_squash_n.py N [-b backend] [--patch-file PATCH] [--meta-file META] [--force] [--dry-run]
-
-Description:
-  - Save the combined changes of the last N commits to a patch file and metadata JSON.
-  - Reset the repo to the state before those N commits.
-  - Apply the saved patch at once and create a single commit that reproduces the net effect.
-  - Supported backends (names): subprocess (default), pygithub, gitpython, libgit2, dulwich, typer
-  - If the chosen backend cannot complete an operation, the script falls back to subprocess/git CLI automatically.
-
-Notes:
-  - The script requires a clean working tree by default (use --force to proceed with uncommitted changes; the script will stash/restore).
-  - It creates temporary backups and will attempt to restore the original HEAD on failure.
-"""
+"""git_squash_n.py Usage: python git_squash_n.py N [-b backend] [--patch-file PATCH] [--meta-file META] [--force] [--dry-run] Description: - Save the combined changes of the last N commits to a patch file and metadata JSON.
+- Reset the repo to the state before those N commits.
+- Apply the saved patch at once and create a single commit that reproduces the net effect.
+- Supported backends (names): subprocess (default), pygithub, gitpython, libgit2, dulwich, typer - If the chosen backend cannot complete an operation, the script falls back to subprocess/git CLI automatically.
+Notes: - The script requires a clean working tree by default (use --force to proceed with uncommitted changes; the script will stash/restore).
+- It creates temporary backups and will attempt to restore the original HEAD on failure."""
 
 import argparse
 import os

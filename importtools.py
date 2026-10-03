@@ -1,34 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-import_tools.py — unified Python import hygiene toolkit.
-
-Merges these original scripts into one CLI:
-
-    addimport.py                 -> check-missing? no  -> add-import
-    check4missing_imports.py     -> check-missing --strategy spec
-    find_missing_imports.py      -> check-missing --strategy stdlib
-    fix_stdlib_imports.py        -> check-missing --strategy mapped
-    chk_imports.py               -> check-position --deep [--autofix] [-o FILE]
-    imdetector.py                -> check-position
-    check_imports.py             -> check-load
-    find_py2_imports.py          -> find-py2
-    transformimports.py          -> transform
-
-Usage
------
-    python import_tools.py check-missing                     # spec strategy, no fix
-    python import_tools.py check-missing --strategy stdlib --autofix -d src
-    python import_tools.py check-missing --strategy mapped -j 8
-    python import_tools.py check-position --deep --autofix -o report.txt
-    python import_tools.py add-import pathlib -d .
-    python import_tools.py check-load file1.py file2.py
-    python import_tools.py find-py2 -d .
-    python import_tools.py transform some_file.py
-
-Optional third-party packages (only used by specific subcommands):
-    pip install loguru           # nicer logs (fallback to logging)
-    pip install tree_sitter tree_sitter_python rapidfuzz   # for find-py2
-"""
+"""import_tools.py — unified Python import hygiene toolkit.
+Merges these original scripts into one CLI: addimport.py -> check-missing?
+no -> add-import check4missing_imports.py -> check-missing --strategy spec find_missing_imports.py -> check-missing --strategy stdlib fix_stdlib_imports.py -> check-missing --strategy mapped chk_imports.py -> check-position --deep [--autofix] [-o FILE] imdetector.py -> check-position check_imports.py -> check-load find_py2_imports.py -> find-py2 transformimports.py -> transform Usage ----- python import_tools.py check-missing # spec strategy, no fix python import_tools.py check-missing --strategy stdlib --autofix -d src python import_tools.py check-missing --strategy mapped -j 8 python import_tools.py check-position --deep --autofix -o report.txt python import_tools.py add-import pathlib -d .
+python import_tools.py check-load file1.py file2.py python import_tools.py find-py2 -d .
+python import_tools.py transform some_file.py Optional third-party packages (only used by specific subcommands): pip install loguru # nicer logs (fallback to logging) pip install tree_sitter tree_sitter_python rapidfuzz # for find-py2"""
 
 from __future__ import annotations
 

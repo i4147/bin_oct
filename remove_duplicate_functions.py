@@ -1,23 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python script that removes duplicate top-level functions from Python
-files by comparing them against a reference file. The script should:
-
-- Use argparse to accept a reference .py file, zero or more target files/dirs
-  (defaulting to the current directory), and an -a/--apply flag for dry-run vs
-  actual removal.
-- Parse each file with the ast module, extract top-level FunctionDef nodes,
-  and compute an MD5 hash of each function's normalized body plus its argument
-  and return annotations.
+"""Generate a Python script that removes duplicate top-level functions from Python files by comparing them against a reference file.
+The script should: - Use argparse to accept a reference .py file, zero or more target files/dirs (defaulting to the current directory), and an -a/--apply flag for dry-run vs actual removal.
+- Parse each file with the ast module, extract top-level FunctionDef nodes, and compute an MD5 hash of each function's normalized body plus its argument and return annotations.
 - Normalize bodies by stripping common leading indentation and blank lines.
-- Use multiprocessing.Pool with apply_async and a fixed pool of 8 workers to
-  process target files concurrently (no CLI flags controlling parallelism).
+- Use multiprocessing.Pool with apply_async and a fixed pool of 8 workers to process target files concurrently (no CLI flags controlling parallelism).
 - Report per-file status (skipped, ok, found, updated, error) using loguru.
-- When applying, delete duplicate functions (including preceding decorators and
-  blank lines) from the bottom of each file upward to keep line numbers valid.
-- Use pathlib exclusively for all path handling, with full type annotations
-  throughout so the code passes a strict type checker.
-"""
+- When applying, delete duplicate functions (including preceding decorators and blank lines) from the bottom of each file upward to keep line numbers valid.
+- Use pathlib exclusively for all path handling, with full type annotations throughout so the code passes a strict type checker."""
 
 from __future__ import annotations
 

@@ -1,77 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
-"""
-wheel_cleaner.py
-================
-
-Unified tool for finding "empty" Python wheels (wheels that ship only
-metadata / ``*.dist-info`` and no importable code) and for finding broken
-installations whose ``.dist-info`` directory contains only itself.
-
+"""wheel_cleaner.py ================ Unified tool for finding "empty" Python wheels (wheels that ship only metadata / ``*.dist-info`` and no importable code) and for finding broken installations whose ``.dist-info`` directory contains only itself.
 Standard library only -- no third-party dependencies.
-
-Subcommands
------------
-
-``wheels``
-    Scan a directory for ``*.whl`` files, classify them and optionally move
-    the empty ones into a destination subdirectory.
-
-``installed``
-    Scan a site-packages directory for ``*.dist-info`` directories whose
-    ``RECORD`` file only references files inside that same directory
-    (i.e. the package was installed from an empty wheel).
-
-``scan``
-    Do both of the above in one pass.
-
-Examples
---------
-
-    # Just report empty wheels in the current directory
-    python wheel_cleaner.py wheels
-
-    # Report + move them (no prompt)
-    python wheel_cleaner.py wheels . --move -y
-
-    # Same as ewhl2.py: audit installed packages and prompt before moving
-    python wheel_cleaner.py wheels . --move --check-installed
-
-    # Recursively find wheels that contain no code at all
-    python wheel_cleaner.py wheels . -r --detect no-code
-
-    # Inspect a site-packages directory
-    python wheel_cleaner.py installed --path /usr/lib/python3/dist-packages
-
-    # Combined report (same as emptypkg.py)
-    python wheel_cleaner.py scan .
-
-Mapping from the original scripts
----------------------------------
-
-    ewhl.py               ->  python wheel_cleaner.py wheels . --move -y
-    ewhl2.py              ->  python wheel_cleaner.py wheels . --move --check-installed
-    emptypkg.py           ->  python wheel_cleaner.py scan .
-    emptywhl.py           ->  python wheel_cleaner.py wheels --detect record --move -y
-    find_empty_wheels.py  ->  python wheel_cleaner.py wheels . -r --detect no-code --move -y
-
-Detectors (``--detect``, repeatable / comma-separated)
-------------------------------------------------------
-
-    dist-info-only  every archive entry lives under a single ``*.dist-info/``
-                    directory (default; the documented intent of ewhl.py)
-    record          every ``RECORD`` row points inside the ``*.dist-info/``
-                    directory (emptywhl.py)
-    no-code         the archive contains no ``.py`` / ``.so`` / ``.pyi`` file
-                    (find_empty_wheels.py)
-    no-payload      literal ewhl.py / ewhl2.py logic: no ``.py`` file *and*
-                    no other non-metadata file.  Kept for exact backwards
-                    compatibility -- it is arguably buggy because it only
-                    ignores a *top-level* ``dist-info/`` directory.
-    all             union of all of the above
-
-A wheel is reported as empty when **any** selected detector matches.
-"""
+Subcommands ----------- ``wheels`` Scan a directory for ``*.whl`` files, classify them and optionally move the empty ones into a destination subdirectory.
+``installed`` Scan a site-packages directory for ``*.dist-info`` directories whose ``RECORD`` file only references files inside that same directory (i.e.
+the package was installed from an empty wheel).
+``scan`` Do both of the above in one pass.
+Examples -------- # Just report empty wheels in the current directory python wheel_cleaner.py wheels # Report + move them (no prompt) python wheel_cleaner.py wheels .
+--move -y # Same as ewhl2.py: audit installed packages and prompt before moving python wheel_cleaner.py wheels .
+--move --check-installed # Recursively find wheels that contain no code at all python wheel_cleaner.py wheels .
+-r --detect no-code # Inspect a site-packages directory python wheel_cleaner.py installed --path /usr/lib/python3/dist-packages # Combined report (same as emptypkg.py) python wheel_cleaner.py scan .
+Mapping from the original scripts --------------------------------- ewhl.py -> python wheel_cleaner.py wheels .
+--move -y ewhl2.py -> python wheel_cleaner.py wheels .
+--move --check-installed emptypkg.py -> python wheel_cleaner.py scan .
+emptywhl.py -> python wheel_cleaner.py wheels --detect record --move -y find_empty_wheels.py -> python wheel_cleaner.py wheels .
+-r --detect no-code --move -y Detectors (``--detect``, repeatable / comma-separated) ------------------------------------------------------ dist-info-only every archive entry lives under a single ``*.dist-info/`` directory (default; the documented intent of ewhl.py) record every ``RECORD`` row points inside the ``*.dist-info/`` directory (emptywhl.py) no-code the archive contains no ``.py`` / ``.so`` / ``.pyi`` file (find_empty_wheels.py) no-payload literal ewhl.py / ewhl2.py logic: no ``.py`` file *and* no other non-metadata file.
+Kept for exact backwards compatibility -- it is arguably buggy because it only ignores a *top-level* ``dist-info/`` directory.
+all union of all of the above A wheel is reported as empty when **any** selected detector matches."""
 
 from __future__ import annotations
 

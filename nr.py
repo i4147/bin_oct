@@ -1,15 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Create and push a new GitHub repo from current folder contents.
-
-Features:
-- Auto-detect repo name from dirname or use -n/--name
-- Copy .gitignore from ~ (unless --no-gitignore)
-- Handle existing repos (owned vs unowned)
-- GitHub API integration via GITHUB_TOKEN (env or ~/.env)
-- Non-interactive mode via -y/--yes or non-TTY stdin
-- Robust error handling, logging, and retries
-"""
+"""Create and push a new GitHub repo from current folder contents.
+Features: - Auto-detect repo name from dirname or use -n/--name - Copy .gitignore from ~ (unless --no-gitignore) - Handle existing repos (owned vs unowned) - GitHub API integration via GITHUB_TOKEN (env or ~/.env) - Non-interactive mode via -y/--yes or non-TTY stdin - Robust error handling, logging, and retries"""
 
 import argparse
 import os

@@ -1,55 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-archive_report.py — Unified archive scanner and uncompressed-size reporter.
-
-This single file merges three near-duplicate scripts into one CLI:
-
-    * xreport.py   — full archive scan (integrity, extracted size, auto-extract, JSON)
-    * xreport2.py  — byte-for-byte equivalent of xreport.py (renamed identifiers)
-    * zreport.py   — focused report of *accurately measured* uncompressed sizes
-                     plus a "do you have enough disk space?" warning
-
-Equivalent invocations
-----------------------
-    python xreport.py  DIR [-a] [-t] [-v] [-j]
-        ->  python archive_report.py scan DIR [-a] [-t] [-v] [-j]
-
-    python xreport2.py DIR [-a] [-t] [-v] [-j]
-        ->  python archive_report.py scan DIR [-a] [-t] [-v] [-j]
-
-    python zreport.py  [PATH]
-        ->  python archive_report.py sizes [PATH]
-
-Usage examples
---------------
-    # Quick scan of the current directory
-    python archive_report.py
-
-    # Full scan with per-file details and auto-extraction
-    python archive_report.py scan ~/Downloads -v -a
-
-    # Machine-readable output
-    python archive_report.py scan . -j
-
-    # Report *exact* uncompressed sizes and disk-space headroom
-    python archive_report.py sizes ~/Downloads
-
-Notes / compatibility quirks preserved from the originals
---------------------------------------------------------
-* In the original `xreport*.py`, `-t/--test-integrity` actually toggles the
-  banner and `-v/--verbose` toggles per-file output. We keep that behaviour
-  so existing command lines keep working, but the --help text now explains it.
-* `.tar.bz3` and `.tar.snappy` fall into the generic tar branch (they can't be
-  opened by `tarfile`), so they are reported as FAIL with an estimated size —
-  exactly like the originals.
-
-Optional third-party packages (used when available):
-    py7zr       — .7z support
-    zstandard   — .zst support
-    lz4.frame   — .lz4 support
-    snappy      — .snappy support (estimate)
-    brotli      — .br support (estimate)
-"""
+"""archive_report.py — Unified archive scanner and uncompressed-size reporter.
+This single file merges three near-duplicate scripts into one CLI: * xreport.py — full archive scan (integrity, extracted size, auto-extract, JSON) * xreport2.py — byte-for-byte equivalent of xreport.py (renamed identifiers) * zreport.py — focused report of *accurately measured* uncompressed sizes plus a "do you have enough disk space?" warning Equivalent invocations ---------------------- python xreport.py DIR [-a] [-t] [-v] [-j] -> python archive_report.py scan DIR [-a] [-t] [-v] [-j] python xreport2.py DIR [-a] [-t] [-v] [-j] -> python archive_report.py scan DIR [-a] [-t] [-v] [-j] python zreport.py [PATH] -> python archive_report.py sizes [PATH] Usage examples -------------- # Quick scan of the current directory python archive_report.py # Full scan with per-file details and auto-extraction python archive_report.py scan ~/Downloads -v -a # Machine-readable output python archive_report.py scan .
+-j # Report *exact* uncompressed sizes and disk-space headroom python archive_report.py sizes ~/Downloads Notes / compatibility quirks preserved from the originals -------------------------------------------------------- * In the original `xreport*.py`, `-t/--test-integrity` actually toggles the banner and `-v/--verbose` toggles per-file output.
+We keep that behaviour so existing command lines keep working, but the --help text now explains it.
+* `.tar.bz3` and `.tar.snappy` fall into the generic tar branch (they can't be opened by `tarfile`), so they are reported as FAIL with an estimated size — exactly like the originals.
+Optional third-party packages (used when available): py7zr — .7z support zstandard — .zst support lz4.frame — .lz4 support snappy — .snappy support (estimate) brotli — .br support (estimate)"""
 
 from __future__ import annotations
 

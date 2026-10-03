@@ -1,11 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-fix_shebangs.py — Rewrite Python shebangs in ~/bin to point to the new
-custom Python 3.12 installation (via the wrapper in $PREFIX/bin).
-
-Uses pathlib only, edits files in place, and preserves everything
-except the shebang line.
-"""
+"""fix_shebangs.py — Rewrite Python shebangs in ~/bin to point to the new custom Python 3.12 installation (via the wrapper in $PREFIX/bin).
+Uses pathlib only, edits files in place, and preserves everything except the shebang line."""
 
 from pathlib import Path
 import os

@@ -1,34 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-xb_extract.py — unified extractor for shell functions.
-
-This module merges the two original scripts into a single pipeline with
-flags that reproduce every behavior of both.
-
-Original-script mapping
------------------------
-    xbash_functions.py   ->  python xb_extract.py --walker fastwalk --parallel \
-                                                   --no-header --no-chmod
-    xbash_functions2.py  ->  python xb_extract.py          # (all defaults)
-
-Pipeline
---------
-    1. Collect candidate shell scripts (.sh OR shebang scripts, unless
-       --sh-only is given) from the inputs (files and/or directories).
-    2. For each script, scan for function definitions of the form:
-           name()   { ... }
-           name     { ... }
-           function name { ... }
-       using brace-matching to find the closing '}'.
-    3. Write each function to:
-           <output>/<relative-dir-of-source>/<sanitized-name>[.sh]
-
-Third-party dependencies
-------------------------
-    Optional: fastwalk  (only when --walker fastwalk is used)
-    Optional: loguru    (only when --use-loguru is used)
-Both are guarded with try/except and fall back to stdlib behavior.
-"""
+"""xb_extract.py — unified extractor for shell functions.
+This module merges the two original scripts into a single pipeline with flags that reproduce every behavior of both.
+Original-script mapping ----------------------- xbash_functions.py -> python xb_extract.py --walker fastwalk --parallel --no-header --no-chmod xbash_functions2.py -> python xb_extract.py # (all defaults) Pipeline -------- 1.
+Collect candidate shell scripts (.sh OR shebang scripts, unless --sh-only is given) from the inputs (files and/or directories).
+2.
+For each script, scan for function definitions of the form: name() { ...
+} name { ...
+} function name { ...
+} using brace-matching to find the closing '}'.
+3.
+Write each function to: <output>/<relative-dir-of-source>/<sanitized-name>[.sh] Third-party dependencies ------------------------ Optional: fastwalk (only when --walker fastwalk is used) Optional: loguru (only when --use-loguru is used) Both are guarded with try/except and fall back to stdlib behavior."""
 
 from __future__ import annotations
 

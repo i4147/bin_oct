@@ -1,24 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-gdrive_sync.py — Unified Google Drive downloader / syncer.
-
+"""gdrive_sync.py — Unified Google Drive downloader / syncer.
 Merges the behaviours of five near-identical scripts into one CLI.
-
-Originals -> this script
-------------------------
-    gdrive_downloader.py  ->  python gdrive_sync.py download --folder notebooks
-    gdrive_syncer.py      ->  python gdrive_sync.py sync
-    gdrive_syncer2.py     ->  python gdrive_sync.py sync --auth-mode installed
-    gdrive_syncer3.py     ->  python gdrive_sync.py sync --auth-mode manual \
-                                                     --dest /sdcard/GoogleDriveBackup
-    gdrive_syncer4.py     ->  python gdrive_sync.py sync --auth-mode manual \
-                                                     --sanitize \
-                                                     --dest /sdcard/GoogleDriveBackup
-
-Third-party requirements (install once):
-    pip install google-api-python-client google-auth-oauthlib \
-                google-auth-httplib2 python-dotenv requests
-"""
+Originals -> this script ------------------------ gdrive_downloader.py -> python gdrive_sync.py download --folder notebooks gdrive_syncer.py -> python gdrive_sync.py sync gdrive_syncer2.py -> python gdrive_sync.py sync --auth-mode installed gdrive_syncer3.py -> python gdrive_sync.py sync --auth-mode manual --dest /sdcard/GoogleDriveBackup gdrive_syncer4.py -> python gdrive_sync.py sync --auth-mode manual --sanitize --dest /sdcard/GoogleDriveBackup Third-party requirements (install once): pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 python-dotenv requests"""
 
 from __future__ import annotations
 

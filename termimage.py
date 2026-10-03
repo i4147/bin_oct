@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-A lightweight Python implementation of termimage.
-Displays images directly in the terminal using ANSI escape codes.
-"""
+"""A lightweight Python implementation of termimage.
+Displays images directly in the terminal using ANSI escape codes."""
 
 import argparse
 import os

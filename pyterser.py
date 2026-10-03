@@ -1,54 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Minify ``.js`` / ``.mjs`` / ``.cjs`` files in place using ``terser``.
-
-The script discovers JavaScript files (case-insensitively, across ``.js``,
-``.mjs`` and ``.cjs`` extensions) under the paths supplied on the command
-line, runs ``terser`` on each of them through a bounded
-``multiprocessing.Pool``, validates the result, and — only when the result is
-non-empty, not byte-identical, and strictly smaller by at least
-``MIN_SAVINGS_BYTES`` — atomically replaces the original. ``--mangle`` and
-``--compress`` are on by default and can be turned off with ``--no-mangle``
-/ ``--no-compress``.
-
-Design highlights
------------------
-* Discovery uses the Rust ``fastwalk`` extension (``walk_files``). Because
-  that helper exposes no pruning hooks, every filter (``SKIP_DIRS``,
-  case-insensitive ``JS_SUFFIXES``, symlinks, deduplication) is applied in
-  Python on the returned list.
-* ``terser`` accepts ``-o OUTPUT`` and writes there directly, so the worker
-  allocates a sibling temp file, points terser at it, validates the result,
-  and only then swaps it in via ``os.replace``. The original mode bits are
-  preserved.
-* **On any terser error the original file is never touched.** The temp file
-  is unlinked in the worker's ``finally`` block and the report carries an
-  ``ERROR`` tag with a short message.
-* **Trivial savings are ignored.** If terser's output is only
-  ``MIN_SAVINGS_BYTES - 1`` bytes smaller (i.e. saves 0 or 1 byte), the
-  write is skipped and the file is reported as ``NOCHG`` — the inode churn,
-  mtime bump, and risk of a crash mid-replace are not worth a single byte.
-* **Paths are shown relative to the current working directory** wherever
-  possible, keeping output compact and making logs from different machines
-  comparable. Absolute paths are used only when relpath fails.
-* Every file is processed in a worker process; the parent prints each
-  worker's captured ``terser`` stdout/stderr verbatim, so lines never
-  interleave across workers.
-* Failures never propagate out of a worker: they are reported through the
-  ``error`` field of :class:`ProcessResult`.
+The script discovers JavaScript files (case-insensitively, across ``.js``, ``.mjs`` and ``.cjs`` extensions) under the paths supplied on the command line, runs ``terser`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is non-empty, not byte-identical, and strictly smaller by at least ``MIN_SAVINGS_BYTES`` — atomically replaces the original.
+``--mangle`` and ``--compress`` are on by default and can be turned off with ``--no-mangle`` / ``--no-compress``.
+Design highlights ----------------- * Discovery uses the Rust ``fastwalk`` extension (``walk_files``).
+Because that helper exposes no pruning hooks, every filter (``SKIP_DIRS``, case-insensitive ``JS_SUFFIXES``, symlinks, deduplication) is applied in Python on the returned list.
+* ``terser`` accepts ``-o OUTPUT`` and writes there directly, so the worker allocates a sibling temp file, points terser at it, validates the result, and only then swaps it in via ``os.replace``.
+The original mode bits are preserved.
+* **On any terser error the original file is never touched.** The temp file is unlinked in the worker's ``finally`` block and the report carries an ``ERROR`` tag with a short message.
+* **Trivial savings are ignored.** If terser's output is only ``MIN_SAVINGS_BYTES - 1`` bytes smaller (i.e.
+saves 0 or 1 byte), the write is skipped and the file is reported as ``NOCHG`` — the inode churn, mtime bump, and risk of a crash mid-replace are not worth a single byte.
+* **Paths are shown relative to the current working directory** wherever possible, keeping output compact and making logs from different machines comparable.
+Absolute paths are used only when relpath fails.
+* Every file is processed in a worker process; the parent prints each worker's captured ``terser`` stdout/stderr verbatim, so lines never interleave across workers.
+* Failures never propagate out of a worker: they are reported through the ``error`` field of :class:`ProcessResult`.
 * A non-zero exit code from ``main`` signals that at least one file errored.
-
-Well-formedness
----------------
-JavaScript has no magic number, so unlike the SVG / PNG / JPEG siblings there
-is no cheap signature check. Instead we rely on terser itself: it parses the
-input, transforms the AST, and only then serialises the output. A terser
-exit code of 0 therefore implies both that the input parsed and that the
-output was written. The only additional check we apply is that the output is
-non-empty.
-
-External requirements: the ``fastwalk`` extension module and the ``terser``
-CLI (or a compatible path supplied via ``--terser``).
-"""
+Well-formedness --------------- JavaScript has no magic number, so unlike the SVG / PNG / JPEG siblings there is no cheap signature check.
+Instead we rely on terser itself: it parses the input, transforms the AST, and only then serialises the output.
+A terser exit code of 0 therefore implies both that the input parsed and that the output was written.
+The only additional check we apply is that the output is non-empty.
+External requirements: the ``fastwalk`` extension module and the ``terser`` CLI (or a compatible path supplied via ``--terser``)."""
 
 from __future__ import annotations
 

@@ -1,33 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-text_toolkit.py — unified text splitting and merging tool.
-
-Usage examples:
-    python text_toolkit.py split-chars --min-chars 4900 --max-chars 4990 --algorithm range ...
-    python text_toolkit.py split-chars --algorithm target-window --target 5000 --window 500 ...
-    python text_toolkit.py split-chars --algorithm sentences --tokenizer nltk --max-chars 5000 ...
-    python text_toolkit.py split-lines file.txt 5
-    python text_toolkit.py split-delimiter file.txt "---" --suffix-delimiter
-    python text_toolkit.py split-delimiter file.txt "---" -o output --prefix-delimiter
-    python text_toolkit.py split-by-letter file.txt -o output
-    python text_toolkit.py merge-parts [paths ...]
-    python text_toolkit.py merge-text [-e py cpp ...] [-c]
-
-Original script mapping:
-    fspliter.py        -> split-chars --algorithm range --min-chars 4900 --max-chars 4990 --boundary-order sentence,whitespace --strip right --pad-width 3 --jobs 8 -o split_output ...
-    text_chunker.py    -> split-chars --algorithm target-window --target 5000 --window 500 --max-chars 4999 --boundary-order sentence,whitespace --strip both --pad-width 0 -o output ...
-    s16.py             -> split-chars --algorithm range --min-chars 0 --max-chars 15850 --boundary-order newline,whitespace --strip none --output-same-dir --pad-width 3 ...
-    split5000.py       -> split-chars --algorithm sentences --tokenizer nltk --max-chars 5000 --output-same-dir --pad-width 0 --strip none <file>
-    pysplit.py         -> split-lines <path> <n>
-    splitby.py         -> split-delimiter <path> <delim> --strip both --suffix-delimiter
-    splitt.py          -> split-delimiter <path> <delim> -o output --prefix-delimiter --strip none
-    splitbyletter.py   -> split-by-letter <path> -o output
-    merge_parts.py     -> merge-parts [paths ...]
-    merger.py          -> merge-text [-e ...] [-c]
-
-Optional third-party packages used by originals: loguru, binaryornot, nltk.
-This script falls back to stdlib behaviour if they are not installed.
-"""
+"""text_toolkit.py — unified text splitting and merging tool.
+Usage examples: python text_toolkit.py split-chars --min-chars 4900 --max-chars 4990 --algorithm range ...
+python text_toolkit.py split-chars --algorithm target-window --target 5000 --window 500 ...
+python text_toolkit.py split-chars --algorithm sentences --tokenizer nltk --max-chars 5000 ...
+python text_toolkit.py split-lines file.txt 5 python text_toolkit.py split-delimiter file.txt "---" --suffix-delimiter python text_toolkit.py split-delimiter file.txt "---" -o output --prefix-delimiter python text_toolkit.py split-by-letter file.txt -o output python text_toolkit.py merge-parts [paths ...] python text_toolkit.py merge-text [-e py cpp ...] [-c] Original script mapping: fspliter.py -> split-chars --algorithm range --min-chars 4900 --max-chars 4990 --boundary-order sentence,whitespace --strip right --pad-width 3 --jobs 8 -o split_output ...
+text_chunker.py -> split-chars --algorithm target-window --target 5000 --window 500 --max-chars 4999 --boundary-order sentence,whitespace --strip both --pad-width 0 -o output ...
+s16.py -> split-chars --algorithm range --min-chars 0 --max-chars 15850 --boundary-order newline,whitespace --strip none --output-same-dir --pad-width 3 ...
+split5000.py -> split-chars --algorithm sentences --tokenizer nltk --max-chars 5000 --output-same-dir --pad-width 0 --strip none <file> pysplit.py -> split-lines <path> <n> splitby.py -> split-delimiter <path> <delim> --strip both --suffix-delimiter splitt.py -> split-delimiter <path> <delim> -o output --prefix-delimiter --strip none splitbyletter.py -> split-by-letter <path> -o output merge_parts.py -> merge-parts [paths ...] merger.py -> merge-text [-e ...] [-c] Optional third-party packages used by originals: loguru, binaryornot, nltk.
+This script falls back to stdlib behaviour if they are not installed."""
 
 import argparse
 import concurrent.futures

@@ -1,8 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Report files added in every commit of a git repo as JSON.
-Uses dulwich (pure Python git implementation) - no subprocess.
-"""
+"""Report files added in every commit of a git repo as JSON.
+Uses dulwich (pure Python git implementation) - no subprocess."""
 
 import json
 import sys

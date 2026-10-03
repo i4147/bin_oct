@@ -1,10 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Generate a Python utility that strips comments and docstrings from Python source files and .whl archives.
-
-The script should:
-- Accept a file or directory path as a positional argument (default: current directory).
+The script should: - Accept a file or directory path as a positional argument (default: current directory).
 - Recursively discover .py files and .whl archives, skipping common cache and virtualenv directories.
-- For each .py file, remove inline comments (while preserving shebangs, encoding declarations, type comments, noqa, pragma, and pylint comments) and remove function, async function, and class docstrings. Optionally remove module-level docstrings via a flag.
+- For each .py file, remove inline comments (while preserving shebangs, encoding declarations, type comments, noqa, pragma, and pylint comments) and remove function, async function, and class docstrings.
+Optionally remove module-level docstrings via a flag.
 - For each .whl file, process its contained .py members the same way and rewrite the archive in place only if changes were made.
 - Support a --dry-run flag to report changes without writing files.
 - Use multiprocessing.Pool.apply_async with a fixed pool of 8 worker processes for .py file processing.
@@ -13,9 +12,7 @@ The script should:
 - Preserve the original source formatting except for removed comments and docstrings (do not reformat via ast.unparse).
 - Print a per-file result list and a final summary of total files, changed files, comments removed, docstrings removed, and errors.
 - Exit with status 0 if no errors occurred, otherwise 1.
-
-The implementation should include dataclasses for FileResult and ProcessingStats, a CommentRemover class, a DocstringRemover AST transformer, functions for processing single files, wheel files, discovering files, printing results and summaries, and a main entry point with argparse.
-"""
+The implementation should include dataclasses for FileResult and ProcessingStats, a CommentRemover class, a DocstringRemover AST transformer, functions for processing single files, wheel files, discovering files, printing results and summaries, and a main entry point with argparse."""
 
 from __future__ import annotations
 

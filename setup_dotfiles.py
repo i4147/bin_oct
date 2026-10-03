@@ -1,16 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Set up an encrypted dotfiles repo in $HOME using git + age + a Python filter.
-
-What it does:
-  1. Verifies age + git are installed.
-  2. Generates an age keypair (if missing) at ~/.config/age/.
-  3. Writes the git filter script to ~/.local/bin/git-age-filter.
-  4. Creates .gitattributes and .gitignore in $HOME.
-  5. Initializes a bare repo at ~/dotfiles.git using a work-tree=$HOME setup.
-  6. Registers the age clean/smudge filters in the repo config.
-  7. Prints next steps.
-"""
+"""Set up an encrypted dotfiles repo in $HOME using git + age + a Python filter.
+What it does: 1.
+Verifies age + git are installed.
+2.
+Generates an age keypair (if missing) at ~/.config/age/.
+3.
+Writes the git filter script to ~/.local/bin/git-age-filter.
+4.
+Creates .gitattributes and .gitignore in $HOME.
+5.
+Initializes a bare repo at ~/dotfiles.git using a work-tree=$HOME setup.
+6.
+Registers the age clean/smudge filters in the repo config.
+7.
+Prints next steps."""
 
 from __future__ import annotations
 

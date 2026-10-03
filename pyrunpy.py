@@ -1,17 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively find and execute all ``.py`` files in a directory in parallel.
-
-Each Python file is executed in a separate process with a per-file timeout. The
-tool uses a fixed :class:`multiprocessing.Pool` of 8 workers together with
-:meth:`multiprocessing.pool.Pool.apply_async` and classifies any failures by
-error type before printing a summary with :mod:`loguru`.
-
-Example
--------
-::
-
-    python runner.py ./scripts --timeout 30 --verbose
-"""
+Each Python file is executed in a separate process with a per-file timeout.
+The tool uses a fixed :class:`multiprocessing.Pool` of 8 workers together with :meth:`multiprocessing.pool.Pool.apply_async` and classifies any failures by error type before printing a summary with :mod:`loguru`.
+Example ------- :: python runner.py ./scripts --timeout 30 --verbose"""
 
 from __future__ import annotations
 

@@ -1,25 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python script that checks Python files for syntax errors and moves
-invalid ones into per-directory ``error`` folders.
-
-The script should:
-- Accept file and directory paths as positional CLI arguments, defaulting to
-  the current working directory when none are supplied.
-- Recursively discover ``.py`` files using a helper ``get_pyfiles`` imported
-  from a module named ``dh``.
-- Validate each file's syntax with ``ast.parse`` (reading as UTF-8).
-- On failure, copy the offending file into an ``error`` subdirectory next to
-  it, disambiguating name collisions with a numeric suffix.
-- Support a ``--dry-run/-n`` flag that reports intended actions without
-  touching the filesystem.
-- Use ``loguru`` for all logging output.
-- Use ``pathlib.Path`` exclusively for filesystem operations.
-- Use ``multiprocessing.Pool.apply_async`` with a fixed pool of 8 workers to
-  process files concurrently, with no CLI options controlling parallelism.
-- Include complete, strict type hints and docstrings on all functions.
-- Provide a ``main()`` entry point returning an integer exit code.
-"""
 
 from __future__ import annotations
 import argparse
@@ -54,6 +33,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Report intended actions without modifying the filesystem.",
     )
     parser.add_argument(
+        "-m",
+        "--move",
+        action="store_true",
+        help="Move files with issues instead of copying them.",
+    )
+    parser.add_argument(
         "--pool-method",
         choices=["map", "imap_unordered", "starmap", "apply_async"],
         default="starmap",
@@ -76,7 +61,7 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
         counter += 1
 
 
-def check_and_quarantine(path: Path, dry_run: bool) -> bool:
+def check_and_quarantine(path: Path, dry_run: bool, move: bool) -> bool:
     try:
         source = path.read_text(encoding="utf-8")
         ast.parse(source, filename=str(path))
@@ -85,12 +70,16 @@ def check_and_quarantine(path: Path, dry_run: bool) -> bool:
         logger.warning("Syntax error in {}: {}", path, exc)
         error_dir = path.parent / "error"
         dest = unique_destination(error_dir, path.name)
+        action = "move" if move else "copy"
         if dry_run:
-            logger.info("[dry-run] Would copy {} -> {}", path, dest)
+            logger.info("[dry-run] Would {} {} -> {}", action, path, dest)
         else:
             error_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, dest)
-            logger.info("Copied {} -> {}", path, dest)
+            if move:
+                shutil.move(str(path), str(dest))
+            else:
+                shutil.copy2(path, dest)
+            logger.info("{} {} -> {}", action, path, dest)
         return True
 
 
@@ -102,27 +91,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info("No Python files found.")
         return 0
     logger.info(
-        "Processing {} file(s) with 8 workers (dry-run={}, pool-method={})",
+        "Processing {} file(s) with 8 workers (dry-run={}, move={}, pool-method={})",
         len(py_files),
         args.dry_run,
+        args.move,
         args.pool_method,
     )
     invalid_count = 0
     with Pool(processes=8) as pool:
         if args.pool_method == "map":
-            worker = partial(check_and_quarantine, dry_run=args.dry_run)
+            worker = partial(check_and_quarantine, dry_run=args.dry_run, move=args.move)
             results: list[bool] = pool.map(worker, py_files)
             invalid_count = sum(results)
         elif args.pool_method == "imap_unordered":
-            worker = partial(check_and_quarantine, dry_run=args.dry_run)
+            worker = partial(check_and_quarantine, dry_run=args.dry_run, move=args.move)
             results_iter = pool.imap_unordered(worker, py_files)
             invalid_count = sum(results_iter)
         elif args.pool_method == "starmap":
-            args_list: list[tuple[Path, bool]] = [(p, args.dry_run) for p in py_files]
+            args_list: list[tuple[Path, bool, bool]] = [(p, args.dry_run, args.move) for p in py_files]
             results = pool.starmap(check_and_quarantine, args_list)
             invalid_count = sum(results)
         else:
-            async_results = [pool.apply_async(check_and_quarantine, (path, args.dry_run)) for path in py_files]
+            async_results = [
+                pool.apply_async(check_and_quarantine, (path, args.dry_run, args.move)) for path in py_files
+            ]
             for result in async_results:
                 if result.get():
                     invalid_count += 1

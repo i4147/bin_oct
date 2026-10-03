@@ -1,41 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-pkg_toolkit.py — merged toolkit for Debian/Termux package and /system/bin inspection.
-
-Usage:
-  python pkg_toolkit.py <subcommand> [options]
-
-Subcommands:
-  check-system-bin      Scan /system/bin and move same-name matching files from CWD.
-  missing-files         Audit installed dpkg packages for missing files.
-  copy-pkg-files        Copy files belonging to one dpkg/rpm package.
-  orphan-libs-debian    Find orphan-ish Debian libraries from dpkg status.
-  orphan-pkgs-termux    Find Termux orphan packages (pkg list-installed/show).
-  list-installed-sizes  List installed apt packages by installed size.
-  make-deb              Create .deb files from apt cache for installed packages.
-  suggest-removals      Suggest unused packages from bash history.
-  save-deb-names        Save installed dpkg package names.
-  show-big-packages     Scan apt packages by download size.
-  sort-csv              Sort a package CSV by Installed-Size.
-
-Original mapping:
-  check_system_bin.py              -> check-system-bin
-  check_system_missing_files.py    -> missing-files --report-style simple --filter-mode parts
-  chk_sys_missing.py               -> missing-files --report-style audit --filter-mode substring
-  copy_system_pkg_files.py         -> copy-pkg-files PKG
-  deborphan.py                     -> orphan-libs-debian
-  deborphan2.py                    -> orphan-pkgs-termux [--interactive]
-  list_pkgs_bysize.py              -> list-installed-sizes
-  make_deb.py                      -> make-deb [--output-dir ...]
-  pkgtoremove.py                   -> suggest-removals
-  savedebnames.py                  -> save-deb-names
-  show_big_system_pkgs.py          -> show-big-packages
-  sortpkgbysize.py                 -> sort-csv FILE
-
-Third-party packages:
-  make-deb requires python-apt and loguru.
-  All other subcommands use only the Python standard library.
-"""
+"""pkg_toolkit.py — merged toolkit for Debian/Termux package and /system/bin inspection.
+Usage: python pkg_toolkit.py <subcommand> [options] Subcommands: check-system-bin Scan /system/bin and move same-name matching files from CWD.
+missing-files Audit installed dpkg packages for missing files.
+copy-pkg-files Copy files belonging to one dpkg/rpm package.
+orphan-libs-debian Find orphan-ish Debian libraries from dpkg status.
+orphan-pkgs-termux Find Termux orphan packages (pkg list-installed/show).
+list-installed-sizes List installed apt packages by installed size.
+make-deb Create .deb files from apt cache for installed packages.
+suggest-removals Suggest unused packages from bash history.
+save-deb-names Save installed dpkg package names.
+show-big-packages Scan apt packages by download size.
+sort-csv Sort a package CSV by Installed-Size.
+Original mapping: check_system_bin.py -> check-system-bin check_system_missing_files.py -> missing-files --report-style simple --filter-mode parts chk_sys_missing.py -> missing-files --report-style audit --filter-mode substring copy_system_pkg_files.py -> copy-pkg-files PKG deborphan.py -> orphan-libs-debian deborphan2.py -> orphan-pkgs-termux [--interactive] list_pkgs_bysize.py -> list-installed-sizes make_deb.py -> make-deb [--output-dir ...] pkgtoremove.py -> suggest-removals savedebnames.py -> save-deb-names show_big_system_pkgs.py -> show-big-packages sortpkgbysize.py -> sort-csv FILE Third-party packages: make-deb requires python-apt and loguru.
+All other subcommands use only the Python standard library."""
 
 from __future__ import annotations
 

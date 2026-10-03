@@ -1,26 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Refactor MicroPython .py sources to standard Python.
-
-Two transformations are applied:
-
-1. Filenames
-   Strip a leading 'u' from a .py filename when the remainder is a
-   standard-library module name (e.g. ``uos.py`` -> ``os.py``).
-
-2. Content
-   Replace identifiers of the form ``u<name>`` (word-boundary matched)
-   with ``<name>`` whenever ``<name>`` is a standard-library module
-   name (e.g. ``import utime`` -> ``import time``, ``uos.path`` ->
-   ``os.path``).
-
-Usage:
-    python refactor_micropython.py [path ...] [-n]
-
-If no path is given, the current directory ('.') is processed
-recursively. Every path may be a file or a directory; directories are
-walked recursively for ``*.py`` files.
-"""
+"""Refactor MicroPython .py sources to standard Python.
+Two transformations are applied: 1.
+Filenames Strip a leading 'u' from a .py filename when the remainder is a standard-library module name (e.g.
+``uos.py`` -> ``os.py``).
+2.
+Content Replace identifiers of the form ``u<name>`` (word-boundary matched) with ``<name>`` whenever ``<name>`` is a standard-library module name (e.g.
+``import utime`` -> ``import time``, ``uos.path`` -> ``os.path``).
+Usage: python refactor_micropython.py [path ...] [-n] If no path is given, the current directory ('.') is processed recursively.
+Every path may be a file or a directory; directories are walked recursively for ``*.py`` files."""
 
 from __future__ import annotations
 

@@ -1,25 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Convert JSON Lines (*.jsonl) files to JSON arrays.
-
-Features:
-- Python 3.12+
-- pathlib-only filesystem traversal
-- Multiple file and directory inputs
-- If no inputs are supplied: recursively scans the current directory
-- Uses multiprocessing.Pool.imap_unordered with exactly 8 workers
-- Streams input and output: memory usage is essentially constant per file
-- Atomic output replacement: avoids leaving a partial destination file
-- Detects output collisions and skips generated/invalid inputs safely
-- Optional strict or lenient malformed-line handling
-
-Examples:
-    python jsonl_to_json.py
-    python jsonl_to_json.py data.jsonl logs/ archive/
-    python jsonl_to_json.py input/ --output-dir converted/
-    python jsonl_to_json.py records.jsonl --indent 2
-    python jsonl_to_json.py data/ --skip-invalid
-"""
+"""Convert JSON Lines (*.jsonl) files to JSON arrays.
+Features: - Python 3.12+ - pathlib-only filesystem traversal - Multiple file and directory inputs - If no inputs are supplied: recursively scans the current directory - Uses multiprocessing.Pool.imap_unordered with exactly 8 workers - Streams input and output: memory usage is essentially constant per file - Atomic output replacement: avoids leaving a partial destination file - Detects output collisions and skips generated/invalid inputs safely - Optional strict or lenient malformed-line handling Examples: python jsonl_to_json.py python jsonl_to_json.py data.jsonl logs/ archive/ python jsonl_to_json.py input/ --output-dir converted/ python jsonl_to_json.py records.jsonl --indent 2 python jsonl_to_json.py data/ --skip-invalid"""
 
 from __future__ import annotations
 

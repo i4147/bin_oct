@@ -1,54 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """extract_subs.py - extract embedded subtitle tracks from a video file.
-
-Merged from: ex_srt.py, ex_srt2.py, exsrt.py, exsrt2.py, exsrt3.py,
-getsrt.py, xsub.py.  Requires the ffmpeg/ffprobe executables on PATH.
-No third-party Python packages are needed: the originals' ffmpy /
-ffmpeg-python wrappers are reproduced with subprocess (stdlib only).
-
-Subcommands:
-    extract VIDEO   Extract every subtitle stream (ex_srt.py, ex_srt2.py,
-                    exsrt2.py, exsrt3.py, xsub.py).
-    first VIDEO     Extract one subtitle stream to <video>.srt
-                    (exsrt.py, getsrt.py).
-    list VIDEO      Probe and print subtitle stream info, no extraction
-                    (listing half of exsrt3.py).
-
-Key options:
-    --naming {indexed,rich,codec}
-        indexed : <stem>.sub<i>.<lang>.srt                  (ex_srt/ex_srt2/exsrt2)
-        rich    : <stem>.sub<abs>.<lang>.<Title>.forced.srt (exsrt3)
-        codec   : <stem>.<lang>[.<Title>].<srt|codec>       (xsub)
-    -o/--output-dir   destination directory (default: video's directory;
-                      xsub.py defaulted to ./subtitles)
-    --on-error {abort,continue}   abort exits 1 on first failure;
-                      continue keeps going and exits 0 (xsub/ex_srt style)
-    --check-ffmpeg   pre-flight `ffmpeg -version` (exsrt2.py)
-    --no-overwrite   omit -y so ffmpeg prompts before overwriting (exsrt.py)
-    --verbose        print raw + parsed stream details (exsrt3.py)
-    first: -o/--output, -n/--stream-index (default 0)
-
-Equivalence map (original -> merged command):
-    ex_srt.py   -> python extract_subs.py extract video.mkv --on-error continue
-    ex_srt2.py  -> python extract_subs.py extract video.mkv
-    exsrt.py    -> python extract_subs.py first video.mkv --no-overwrite
-    exsrt2.py   -> python extract_subs.py extract video.mkv --check-ffmpeg
-    exsrt3.py   -> python extract_subs.py extract video.mkv --naming rich --verbose
-    getsrt.py   -> python extract_subs.py first video.mkv
-    xsub.py     -> python extract_subs.py extract video.mkv --naming codec -o subtitles --on-error continue
-    exsrt3.py (listing only) -> python extract_subs.py list video.mkv --verbose
-
-Assumptions / documented deviations:
-    * exsrt3.py as submitted never invoked ffmpeg (compression artifact);
-      the evident intent (extract with rich filenames) is implemented here.
-    * exsrt.py's input.replace('.mkv', '.srt') only works for .mkv inputs;
-      `first` uses with_suffix('.srt') (getsrt.py semantics) instead.
-    * exsrt.py/getsrt.py exited 0 even when ffmpeg failed; `first` now
-      exits 1 on failure.  Input existence is always checked up front.
-    * exsrt2.py crashed with a traceback on ffmpeg failure; abort mode
-      prints the error and exits 1.  Probe format (CSV vs JSON) is not
-      user-visible; JSON is used.
-"""
+Merged from: ex_srt.py, ex_srt2.py, exsrt.py, exsrt2.py, exsrt3.py, getsrt.py, xsub.py.
+Requires the ffmpeg/ffprobe executables on PATH.
+No third-party Python packages are needed: the originals' ffmpy / ffmpeg-python wrappers are reproduced with subprocess (stdlib only).
+Subcommands: extract VIDEO Extract every subtitle stream (ex_srt.py, ex_srt2.py, exsrt2.py, exsrt3.py, xsub.py).
+first VIDEO Extract one subtitle stream to <video>.srt (exsrt.py, getsrt.py).
+list VIDEO Probe and print subtitle stream info, no extraction (listing half of exsrt3.py).
+Key options: --naming {indexed,rich,codec} indexed : <stem>.sub<i>.<lang>.srt (ex_srt/ex_srt2/exsrt2) rich : <stem>.sub<abs>.<lang>.<Title>.forced.srt (exsrt3) codec : <stem>.<lang>[.<Title>].<srt|codec> (xsub) -o/--output-dir destination directory (default: video's directory; xsub.py defaulted to ./subtitles) --on-error {abort,continue} abort exits 1 on first failure; continue keeps going and exits 0 (xsub/ex_srt style) --check-ffmpeg pre-flight `ffmpeg -version` (exsrt2.py) --no-overwrite omit -y so ffmpeg prompts before overwriting (exsrt.py) --verbose print raw + parsed stream details (exsrt3.py) first: -o/--output, -n/--stream-index (default 0) Equivalence map (original -> merged command): ex_srt.py -> python extract_subs.py extract video.mkv --on-error continue ex_srt2.py -> python extract_subs.py extract video.mkv exsrt.py -> python extract_subs.py first video.mkv --no-overwrite exsrt2.py -> python extract_subs.py extract video.mkv --check-ffmpeg exsrt3.py -> python extract_subs.py extract video.mkv --naming rich --verbose getsrt.py -> python extract_subs.py first video.mkv xsub.py -> python extract_subs.py extract video.mkv --naming codec -o subtitles --on-error continue exsrt3.py (listing only) -> python extract_subs.py list video.mkv --verbose Assumptions / documented deviations: * exsrt3.py as submitted never invoked ffmpeg (compression artifact); the evident intent (extract with rich filenames) is implemented here.
+* exsrt.py's input.replace('.mkv', '.srt') only works for .mkv inputs; `first` uses with_suffix('.srt') (getsrt.py semantics) instead.
+* exsrt.py/getsrt.py exited 0 even when ffmpeg failed; `first` now exits 1 on failure.
+Input existence is always checked up front.
+* exsrt2.py crashed with a traceback on ffmpeg failure; abort mode prints the error and exits 1.
+Probe format (CSV vs JSON) is not user-visible; JSON is used."""
 
 from __future__ import annotations
 

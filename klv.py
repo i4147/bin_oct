@@ -1,25 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-pkg_latest_tool.py
-
-Unified package/version cleanup and ARMv7 wheel URL filtering tool.
-
-Usage examples:
-  python pkg_latest_tool.py urls urls.txt --output latest.txt --download
-  python pkg_latest_tool.py clean --type wheel --dir . --dry-run --verbose
-  python pkg_latest_tool.py clean --type all --recursive --workers 8
-  python pkg_latest_tool.py metadata . --dry-run --backup-dir backup --batch-size 100
-
-Original mapping:
-  filter_latest_version.py          -> python pkg_latest_tool.py urls ...
-  keep_latest_version.py            -> python pkg_latest_tool.py clean --type wheel|deb|targz|all ...
-  keep_latest_version_metadata.py   -> python pkg_latest_tool.py metadata ...
-  klv.py                            -> python pkg_latest_tool.py clean --type wheel|deb|all --recursive ...
-
-Optional third-party dependency: packaging
-  If installed, packaging.version is used for version comparison.
-  Otherwise a stdlib fallback version key is used.
-"""
+"""pkg_latest_tool.py Unified package/version cleanup and ARMv7 wheel URL filtering tool.
+Usage examples: python pkg_latest_tool.py urls urls.txt --output latest.txt --download python pkg_latest_tool.py clean --type wheel --dir .
+--dry-run --verbose python pkg_latest_tool.py clean --type all --recursive --workers 8 python pkg_latest_tool.py metadata .
+--dry-run --backup-dir backup --batch-size 100 Original mapping: filter_latest_version.py -> python pkg_latest_tool.py urls ...
+keep_latest_version.py -> python pkg_latest_tool.py clean --type wheel|deb|targz|all ...
+keep_latest_version_metadata.py -> python pkg_latest_tool.py metadata ...
+klv.py -> python pkg_latest_tool.py clean --type wheel|deb|all --recursive ...
+Optional third-party dependency: packaging If installed, packaging.version is used for version comparison.
+Otherwise a stdlib fallback version key is used."""
 
 from __future__ import annotations
 

@@ -1,16 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Strip comments from source files recursively.
-
-Prompt: Write a Python CLI that recursively strips comments from Rust, TOML,
-JavaScript/TypeScript, Python, Shell, and Lua files. Use multiprocessing.Pool
-with a fixed pool of 8 workers via apply_async. Parse source with hand-written
-lexers that respect strings, raw strings, chars, and nested block comments for
-Rust; string-aware hash comments for TOML/Shell; template literals and block
-comments for JS/TS; tokenize-based preservation of shebangs, type/fmt/noqa
-pragmas, and module/nested docstrings for Python; long-bracket strings and
-comments for Lua. Collapse runs of blank lines to at most two. Report per-file
-results and a summary with line and byte savings using loguru and ANSI colors.
-"""
+Prompt: Write a Python CLI that recursively strips comments from Rust, TOML, JavaScript/TypeScript, Python, Shell, and Lua files.
+Use multiprocessing.Pool with a fixed pool of 8 workers via apply_async.
+Parse source with hand-written lexers that respect strings, raw strings, chars, and nested block comments for Rust; string-aware hash comments for TOML/Shell; template literals and block comments for JS/TS; tokenize-based preservation of shebangs, type/fmt/noqa pragmas, and module/nested docstrings for Python; long-bracket strings and comments for Lua.
+Collapse runs of blank lines to at most two.
+Report per-file results and a summary with line and byte savings using loguru and ANSI colors."""
 
 from __future__ import annotations
 

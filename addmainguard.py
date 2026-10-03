@@ -1,29 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python CLI tool that scans a directory tree for Python files missing
-an `if __name__ == "__main__":` guard, and optionally injects a `main()`
-function and guard into them.
-
-The tool uses `multiprocessing.Pool.apply_async` with a fixed pool of 8
-workers, `pathlib` for all filesystem access, `loguru` for logging, full
-type annotations, and `argparse` for the CLI. It supports `--add`, `--dry-run`,
-and `--exclude` flags. The script itself must remain runnable via a
-`if __name__ == "__main__":` guard.
-"""
+"""add_main_guard — detect and add ``if __name__ == "__main__":`` guards to Python files.
+This script merges two previously separate tools: * ``addmain.py`` — AST-based detection and refactoring.
+* ``addmainguard.py`` — regex-based detection and template insertion, with multiprocessing and directory exclusions.
+Usage ----- python add_main_guard.py check [paths ...] [--detect ast|regex] [--workers N] [--exclude DIR ...] [--no-default-excludes] python add_main_guard.py fix [paths ...] [--strategy ast|template] [--dry-run] [--indent N] [--workers N] [--exclude DIR ...] [--no-default-excludes] Mapping to the original scripts ------------------------------- addmain.py python addmain.py -> python add_main_guard.py check --no-default-excludes python addmain.py -a -> python add_main_guard.py fix --strategy ast --no-default-excludes python addmain.py FILE DIR -a -> python add_main_guard.py fix --strategy ast --no-default-excludes FILE DIR addmainguard.py python addmainguard.py -> python add_main_guard.py check --detect regex python addmainguard.py -a -> python add_main_guard.py fix --strategy template python addmainguard.py src/ -a -> python add_main_guard.py fix --strategy template src/ python addmainguard.py -a --dry-run -> python add_main_guard.py fix --strategy template --dry-run Notes ----- * Only the Python standard library is used.
+``loguru`` from the original ``addmainguard.py`` was replaced by :mod:`logging`.
+* Default exclusion directories are: .git, __pycache__, venv, .venv, env, dist, build, .pytest_cache, .mypy_cache."""
 
 from __future__ import annotations
 
 import argparse
+import ast
+import logging
 import re
 import sys
-from collections.abc import Sequence
-from multiprocessing.pool import AsyncResult, Pool
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Final, Literal, TypedDict
+from typing import Sequence
 
-from loguru import logger
+logger = logging.getLogger("add_main_guard")
 
-DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
+DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",
     "__pycache__",
     "venv",
@@ -34,237 +30,439 @@ DEFAULT_EXCLUDES: Final[tuple[str, ...]] = (
     ".pytest_cache",
     ".mypy_cache",
 )
+DEFAULT_WORKERS: int = 8
+DEFAULT_INDENT: int = 4
 
-POOL_SIZE: Final[int] = 8
+MAIN_GUARD_RE: re.Pattern[str] = re.compile(r'if\s+__name__\s*==\s*["\']__main__["\']\s*:')
 
-MAIN_GUARD_PATTERN: Final[re.Pattern[str]] = re.compile(r"if\s+__name__\s*==\s*[\"\']__main__[\"\']\s*:")
-
-MAIN_FUNC_TEMPLATE: Final[str] = (
-    "\n\ndef main() -> None:\n"
+MAIN_TEMPLATE: str = (
+    "\n\n"
+    "def main() -> None:\n"
     '    """Entry point for the script."""\n'
     "    # TODO: Add your main logic here\n"
     '    print("Hello from main!")\n'
 )
 
-MAIN_GUARD_TEMPLATE: Final[str] = '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
-
-Status = Literal["skipped", "missing", "would_add", "added", "error"]
+GUARD_TEMPLATE: str = '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
 
 
-class ProcessResult(TypedDict):
-    status: Status
-    message: str
-    path: Path
+def is_main_guard_if(node: ast.If) -> bool:
+    test = node.test
+    if not isinstance(test, ast.Compare):
+        return False
+    if len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq):
+        return False
+    left = test.left
+    if not (isinstance(left, ast.Name) and left.id == "__name__"):
+        return False
+    if len(test.comparators) != 1:
+        return False
+    comp = test.comparators[0]
+    return isinstance(comp, ast.Constant) and comp.value == "__main__"
 
 
-def has_main_guard(content: str) -> bool:
-    return bool(MAIN_GUARD_PATTERN.search(content))
+def has_main_guard_ast(tree: ast.Module) -> bool:
+    return any(isinstance(n, ast.If) and is_main_guard_if(n) for n in tree.body)
 
 
-def add_main_function(content: str) -> str:
-    if "def main(" in content:
-        return content
+def is_movable(node: ast.stmt) -> bool:
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return False
+    if isinstance(node, (ast.Import, ast.ImportFrom)):
+        return False
+    if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+        return False
+    if isinstance(node, ast.If) and is_main_guard_if(node):
+        return False
+    return True
 
-    lines: list[str] = content.split("\n")
-    insert_pos: int = 0
+
+def indent_text(text: str, spaces: int = DEFAULT_INDENT) -> str:
+    prefix = " " * spaces
+    out: list[str] = []
+    for line in text.splitlines(True):
+        if line.strip() == "":
+            out.append(line)
+        else:
+            out.append(prefix + line)
+    return "".join(out)
+
+
+def fix_with_ast(
+    path: Path,
+    *,
+    indent_size: int = DEFAULT_INDENT,
+    dry_run: bool = False,
+) -> tuple[str, str]:
+    try:
+        source = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return "error", f"read failed: {exc}"
+
+    try:
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError as exc:
+        return "error", f"parse error: {exc}"
+
+    if has_main_guard_ast(tree):
+        return "skipped", "already has main guard"
+
+    top = list(tree.body)
+    movable = [n for n in top if is_movable(n)]
+    if not movable:
+        return "skipped", "nothing to wrap"
+
+    lines = source.splitlines(True)
+    body_chunks: list[str] = []
+    keep_ranges: list[tuple[int, int]] = []
+
+    for node in top:
+        start = getattr(node, "lineno", None)
+        end = getattr(node, "end_lineno", None)
+        if not isinstance(start, int) or not isinstance(end, int):
+            return "error", "missing lineno/end_lineno"
+        if is_movable(node):
+            body_chunks.append("".join(lines[start - 1 : end]).rstrip() + "\n")
+        else:
+            keep_ranges.append((start, end))
+
+    keep_ranges.sort()
+    kept: list[str] = []
+    cursor = 1
+    for start, end in keep_ranges:
+        if start > cursor:
+            kept.append("".join(lines[cursor - 1 : start - 1]))
+        kept.append("".join(lines[start - 1 : end]))
+        cursor = end + 1
+    if cursor <= len(lines):
+        kept.append("".join(lines[cursor - 1 :]))
+
+    body = "".join(body_chunks).rstrip("\n")
+    tail: list[str] = ["\n\n", "def main():\n"]
+    if body.strip() == "":
+        tail.append("    pass\n")
+    else:
+        tail.append(indent_text(body + "\n", indent_size).rstrip("\n") + "\n")
+    tail.append('\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n')
+
+    new_source = "".join(kept).rstrip() + "".join(tail)
+
+    if dry_run:
+        return "would_add", "would wrap top-level code in main()"
+    try:
+        path.write_text(new_source, encoding="utf-8")
+    except OSError as exc:
+        return "error", f"write failed: {exc}"
+    return "added", "wrapped top-level code in main()"
+
+
+def insert_main_template(source: str) -> str:
+    if "def main(" in source:
+        return source
+    lines = source.split("\n")
+    insert_at = 0
     for i, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith(("import ", "from ")):
-            insert_pos = i + 1
-        elif stripped and insert_pos == 0:
-            insert_pos = 0
-
-    lines.insert(insert_pos, MAIN_FUNC_TEMPLATE)
+            insert_at = i + 1
+        elif stripped and insert_at == 0:
+            insert_at = 0
+    lines.insert(insert_at, MAIN_TEMPLATE)
     return "\n".join(lines)
 
 
-def add_main_guard(content: str) -> str:
-    if has_main_guard(content):
-        return content
-    return content.rstrip() + MAIN_GUARD_TEMPLATE
+def append_main_guard(source: str) -> str:
+    if MAIN_GUARD_RE.search(source):
+        return source
+    return source.rstrip() + GUARD_TEMPLATE
 
 
-def process_file(path: Path, add: bool = False, dry_run: bool = False) -> ProcessResult:
+def fix_with_template(path: Path, *, dry_run: bool = False) -> tuple[str, str]:
     try:
-        content = path.read_text(encoding="utf-8")
+        source = path.read_text(encoding="utf-8")
     except OSError as exc:
-        logger.error(f"Failed to read {path}: {exc}")
-        return {"status": "error", "message": str(exc), "path": path}
+        return "error", f"read failed: {exc}"
 
-    if has_main_guard(content):
-        return {"status": "skipped", "message": "Already has guard", "path": path}
+    if MAIN_GUARD_RE.search(source):
+        return "skipped", "already has guard"
 
-    if not add:
-        return {"status": "missing", "message": "Missing guard", "path": path}
-
-    new_content = add_main_guard(add_main_function(content))
+    new_source = append_main_guard(insert_main_template(source))
 
     if dry_run:
-        return {"status": "would_add", "message": "Would add guard", "path": path}
+        return "would_add", "would add guard"
+    try:
+        path.write_text(new_source, encoding="utf-8")
+    except OSError as exc:
+        return "error", f"write failed: {exc}"
+    return "added", "added guard successfully"
+
+
+def discover_files(paths: Sequence[str], excludes: frozenset[str]) -> list[Path]:
+    roots = [Path(p) for p in paths] if paths else [Path(".")]
+    found: list[Path] = []
+    for root in roots:
+        if root.is_dir():
+            for candidate in root.rglob("*.py"):
+                if not candidate.is_file():
+                    continue
+                if excludes.intersection(candidate.parts):
+                    continue
+                found.append(candidate)
+        elif root.suffix == ".py" and root.is_file():
+            found.append(root)
+    return sorted(set(found))
+
+
+def _fix_worker(payload: tuple[str, str, bool, int]) -> tuple[Path, str, str]:
+    path_str, strategy, dry_run, indent_size = payload
+    path = Path(path_str)
+    if strategy == "ast":
+        status, message = fix_with_ast(path, indent_size=indent_size, dry_run=dry_run)
+    else:
+        status, message = fix_with_template(path, dry_run=dry_run)
+    return path, status, message
+
+
+def _check_worker(payload: tuple[str, str]) -> tuple[Path, str, str]:
+    path_str, detect = payload
+    path = Path(path_str)
+    try:
+        source = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return path, "error", f"read failed: {exc}"
+
+    if detect == "regex":
+        status = "skipped" if MAIN_GUARD_RE.search(source) else "missing"
+        return path, status, ""
 
     try:
-        path.write_text(new_content, encoding="utf-8")
-    except OSError as exc:
-        logger.error(f"Failed to write {path}: {exc}")
-        return {"status": "error", "message": str(exc), "path": path}
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError as exc:
+        return path, "error", f"parse error: {exc}"
+    status = "skipped" if has_main_guard_ast(tree) else "missing"
+    return path, status, ""
 
-    return {"status": "added", "message": "Added guard successfully", "path": path}
+
+def _resolve_excludes(args: argparse.Namespace) -> frozenset[str]:
+    base: list[str] = []
+    if not args.no_default_excludes:
+        base.extend(DEFAULT_EXCLUDES)
+    base.extend(args.exclude)
+    return frozenset(base)
 
 
-def find_python_files(
-    directory: Path,
-    exclude_patterns: Sequence[str] = DEFAULT_EXCLUDES,
-) -> list[Path]:
-    if not directory.exists():
-        logger.warning(f"Directory does not exist: {directory}")
-        return []
+def run_check(args: argparse.Namespace) -> int:
+    excludes = _resolve_excludes(args)
+    files = discover_files(args.paths, excludes)
+    if not files:
+        logger.warning("No Python files found")
+        return 0
 
-    excluded: frozenset[str] = frozenset(exclude_patterns)
-    results: list[Path] = []
-    for path in directory.rglob("*.py"):
-        if excluded.intersection(path.parts):
-            continue
-        results.append(path)
-    return results
+    print(f"Found {len(files)} Python files (detect={args.detect}, workers={args.workers}, excludes={len(excludes)})")
+
+    missing: list[Path] = []
+    skipped = 0
+    errors: list[tuple[Path, str]] = []
+
+    payloads = [(str(p), args.detect) for p in files]
+
+    def handle(path: Path, status: str, message: str) -> None:
+        nonlocal skipped
+        if status == "missing":
+            missing.append(path)
+        elif status == "skipped":
+            skipped += 1
+        else:
+            errors.append((path, message))
+
+    if args.workers > 1 and len(files) > 1:
+        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+            for path, status, message in pool.map(_check_worker, payloads):
+                handle(path, status, message)
+    else:
+        for payload in payloads:
+            handle(*_check_worker(payload))
+
+    print(f"  already had guard: {skipped}")
+    for path, message in errors:
+        print(f"  ERROR {path}: {message}", file=sys.stderr)
+
+    if missing:
+        print(f"Missing main guard in {len(missing)} file(s):")
+        for path in sorted(missing):
+            print(f"  {path}")
+        print("Tip: run `add_main_guard.py fix` to add them")
+        return 1
+
+    print("All Python files have the main guard")
+    return 0
+
+
+def _classify(
+    status: str,
+    path: Path,
+    message: str,
+    added: list[Path],
+    would_add: list[Path],
+    skipped: list[Path],
+    errors: list[tuple[Path, str]],
+) -> None:
+    if status == "added":
+        added.append(path)
+    elif status == "would_add":
+        would_add.append(path)
+    elif status == "skipped":
+        skipped.append(path)
+    else:
+        errors.append((path, message))
+
+
+def run_fix(args: argparse.Namespace) -> int:
+    excludes = _resolve_excludes(args)
+    files = discover_files(args.paths, excludes)
+    if not files:
+        logger.warning("No Python files found")
+        return 0
+
+    print(
+        f"Found {len(files)} Python files "
+        f"(strategy={args.strategy}, dry_run={args.dry_run}, "
+        f"workers={args.workers}, indent={args.indent})"
+    )
+
+    added: list[Path] = []
+    would_add: list[Path] = []
+    skipped: list[Path] = []
+    errors: list[tuple[Path, str]] = []
+
+    payloads = [(str(p), args.strategy, args.dry_run, args.indent) for p in files]
+
+    if args.workers > 1 and len(files) > 1:
+        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+            for path, status, message in pool.map(_fix_worker, payloads):
+                _classify(status, path, message, added, would_add, skipped, errors)
+    else:
+        for payload in payloads:
+            _classify(*_fix_worker(payload), added, would_add, skipped, errors)
+
+    print("Results:")
+    print(f"  already had guard: {len(skipped)}")
+    if args.dry_run:
+        print(f"  would add guard:   {len(would_add)}")
+        for path in sorted(would_add):
+            print(f"    {path}")
+    else:
+        print(f"  added guard:       {len(added)}")
+    print(f"  errors:            {len(errors)}")
+    for path, message in errors:
+        print(f"    ERROR {path}: {message}", file=sys.stderr)
+
+    if args.dry_run and would_add:
+        print("Dry run complete: no files were modified")
+
+    return 0 if not errors else 2
+
+
+def _add_common_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=DEFAULT_WORKERS,
+        help=f"Parallel worker processes (default: {DEFAULT_WORKERS})",
+    )
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="Extra directory name to exclude (repeatable)",
+    )
+    parser.add_argument(
+        "--no-default-excludes",
+        action="store_true",
+        help="Do not apply the built-in exclusion list",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Verbose logging",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Find and optionally add main guard to Python files",
+        prog="add_main_guard",
+        description=("Detect and add `if __name__ == '__main__':` guards to Python files."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
-            "\nExamples:\n"
-            "  %(prog)s                    # Find missing guards in current directory\n"
-            "  %(prog)s -a                 # Add guards to all missing files\n"
-            "  %(prog)s src/ -a            # Check src/ directory and add guards\n"
-            "  %(prog)s -a --dry-run       # Preview changes without modifying\n"
+            "Examples:\n"
+            "  add_main_guard.py check\n"
+            "  add_main_guard.py check src/ tool.py --detect regex\n"
+            "  add_main_guard.py fix --strategy ast --dry-run\n"
+            "  add_main_guard.py fix --strategy template -a src/\n"
         ),
     )
-    parser.add_argument(
-        "directory",
-        nargs="?",
-        default=".",
-        help="Directory to scan (default: current directory)",
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    check = sub.add_parser("check", help="Report files missing a main guard")
+    check.add_argument(
+        "paths",
+        nargs="*",
+        help="Files or directories (default: current directory)",
     )
-    parser.add_argument(
-        "-a",
-        "--add",
-        action="store_true",
-        help="Add the main guard to missing files",
+    check.add_argument(
+        "--detect",
+        choices=("ast", "regex"),
+        default="ast",
+        help="Detection backend (default: ast)",
     )
-    parser.add_argument(
+    _add_common_options(check)
+
+    fix = sub.add_parser("fix", help="Add main guards to files missing them")
+    fix.add_argument(
+        "paths",
+        nargs="*",
+        help="Files or directories (default: current directory)",
+    )
+    fix.add_argument(
+        "--strategy",
+        choices=("ast", "template"),
+        default="ast",
+        help=(
+            "Fix strategy: 'ast' moves top-level code into main(); "
+            "'template' inserts a placeholder main() (default: ast)"
+        ),
+    )
+    fix.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be changed without actually modifying files",
+        help="Preview without writing",
     )
-    parser.add_argument(
-        "--exclude",
-        nargs="+",
-        default=[],
-        help="Additional directories to exclude",
+    fix.add_argument(
+        "--indent",
+        type=int,
+        default=DEFAULT_INDENT,
+        help=f"Indent width for AST strategy (default: {DEFAULT_INDENT})",
     )
+    _add_common_options(fix)
+
     return parser
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args()
-
-    directory = Path(args.directory).resolve()
-    exclude_patterns: tuple[str, ...] = DEFAULT_EXCLUDES + tuple(args.exclude)
-
-    print(f"📂 Scanning: {directory}")
-    print(f"🚫 Excluding: {', '.join(exclude_patterns)}")
-    print(f"⚡ Using {POOL_SIZE} parallel workers")
-
-    py_files = find_python_files(directory, exclude_patterns)
-    total = len(py_files)
-
-    if total == 0:
-        logger.warning("⚠️  No Python files found!")
-        return 0
-
-    print(f"📄 Found {total} Python files")
-
-    results: dict[str, list[Path | tuple[Path, str]]] = {
-        "skipped": [],
-        "missing": [],
-        "added": [],
-        "would_add": [],
-        "errors": [],
-    }
-
-    pool = Pool(processes=POOL_SIZE)
-    try:
-        async_results: list[AsyncResult[ProcessResult]] = [
-            pool.apply_async(process_file, (path, args.add, args.dry_run)) for path in py_files
-        ]
-
-        completed = 0
-        for ar in async_results:
-            result: ProcessResult = ar.get()
-            completed += 1
-            if completed % 10 == 0 or completed == total:
-                print(f"⏳ Processing: {completed}/{total}")
-
-            status = result["status"]
-            path = result["path"]
-            if status == "skipped":
-                results["skipped"].append(path)
-            elif status == "missing":
-                results["missing"].append(path)
-            elif status == "added":
-                results["added"].append(path)
-            elif status == "would_add":
-                results["would_add"].append(path)
-            elif status == "error":
-                results["errors"].append((path, result["message"]))
-    finally:
-        pool.close()
-        pool.join()
-
-    has_guard = len(results["skipped"])
-
-    if args.add:
-        added = len(results["added"])
-        would_add = len(results["would_add"])
-        errors = len(results["errors"])
-
-        print("📊 Results:")
-        print(f"  ✅ Already had guard: {has_guard}")
-        if args.dry_run:
-            print(f"  🔍 Would add guard: {would_add}")
-        else:
-            print(f"  ➕ Added guard: {added}")
-        print(f"  ❌ Errors: {errors}")
-
-        if errors > 0:
-            logger.error("❌ Errors encountered:")
-            for path, error in results["errors"]:  # type: ignore[misc]
-                logger.error(f"  {path}: {error}")
-
-        if args.dry_run and would_add > 0:
-            print(f"🔍 Dry run complete: Would have modified {would_add} files")
-            print("   Run without --dry-run to apply changes")
-    else:
-        missing = len(results["missing"])
-        print(f"📋 Found {missing} files without the main guard:")
-        for path in sorted(results["missing"]):  # type: ignore[arg-type]
-            path_obj = Path(path)
-            try:
-                rel_path = path_obj.relative_to(directory) if directory != Path(".") else path_obj
-            except ValueError:
-                rel_path = path_obj
-            print(f"  {rel_path}")
-        if missing > 0:
-            print(f"💡 Run with -a to add the guard: python {sys.argv[0]} {args.directory} -a")
-        else:
-            print("✅ All Python files have the main guard!")
-
-    if args.add and not args.dry_run and results["added"]:
-        print(f"✅ Successfully added main guard to {len(results['added'])} files")
-
-    return 0
+    args = parser.parse_args(argv)
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
+    if args.command == "check":
+        return run_check(args)
+    if args.command == "fix":
+        return run_fix(args)
+    parser.print_help()
+    return 2
 
 
 if __name__ == "__main__":

@@ -1,24 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Strip type annotations from Python source files.
-
-The script rewrites ``.py`` files in place using libcst, removing:
-
-* parameter annotations,
-* return annotations,
-* PEP 695 type parameter lists on functions / classes,
-* annotated assignments (``x: int`` and ``x: int = 0``).
-
-Transformed source is validated with :func:`compile` before being written,
-so a broken transformation never clobbers the original file.
-
-Usage::
-
-    python strip_annotations.py [PATH ...]
-
-Each PATH may be a ``.py`` file or a directory (searched recursively). If
-no paths are supplied, the current working directory is processed
-recursively.
-"""
+The script rewrites ``.py`` files in place using libcst, removing: * parameter annotations, * return annotations, * PEP 695 type parameter lists on functions / classes, * annotated assignments (``x: int`` and ``x: int = 0``).
+Transformed source is validated with :func:`compile` before being written, so a broken transformation never clobbers the original file.
+Usage:: python strip_annotations.py [PATH ...] Each PATH may be a ``.py`` file or a directory (searched recursively).
+If no paths are supplied, the current working directory is processed recursively."""
 
 import io
 import multiprocessing as mp

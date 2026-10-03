@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Inspect .py files in the current folder and report ones missing the main guard.
-"""
+"""Inspect .py files in the current folder and report ones missing the main guard."""
 
 import ast
 import sys

@@ -1,47 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Unified file & folder watcher.
-
-Merges the behaviour of your previous scripts:
-
-  dw.py         poll-based recursive folder watcher; optional copy to
-                ~/tmp/tmp; exits when "boostraped 100%" appears in the
-                tail of a modified file.
-  fwatcher.py   watches ~/.tor/tor.log; exits on "100% (done)".
-  watch_file.py watches a single file; exits on "boostraped 100%".
-  watcher.py    minimal cwd watcher (just prints change events).
-  where.py      watchdog-based recursive watcher with copy, extension
-                filtering, delete-sync and periodic batching.
-  wtmp.py       watchdog-based watcher of the termux temp dir; copies
-                archive files (.tar.gz, .whl, .zip, ...) to ~/tmp/tgz.
-
-Usage examples
---------------
-Watch the current directory (print events only)::
-
-    watch.py
-
-Watch a folder recursively and copy changed files to ~/tmp/tgz::
-
-    watch.py /some/folder -c
-
-Watch a folder, copy only images, batch every 2s::
-
-    watch.py /some/folder -c -e png,jpg,svg -i 2
-
-Watch a single file and exit when "boostraped 100%" appears::
-
-    watch.py myfile.log -p "boostraped 100%"
-
-Watch the Tor log and exit on "100% (done)"::
-
-    watch.py ~/.tor/tor.log -p "100% (done)"
-
-Reproduce wtmp.py (watch termux tmp for archives)::
-
-    watch.py /data/data/com.termux/files/usr/tmp \\
-        -e ".tar.gz,.whl,.tar.xz,.zip,.tar.bz2,.tgz,.txz,.tbz2" \\
-        -c -d ~/tmp/tgz --initial-copy
-"""
+Merges the behaviour of your previous scripts: dw.py poll-based recursive folder watcher; optional copy to ~/tmp/tmp; exits when "boostraped 100%" appears in the tail of a modified file.
+fwatcher.py watches ~/.tor/tor.log; exits on "100% (done)".
+watch_file.py watches a single file; exits on "boostraped 100%".
+watcher.py minimal cwd watcher (just prints change events).
+where.py watchdog-based recursive watcher with copy, extension filtering, delete-sync and periodic batching.
+wtmp.py watchdog-based watcher of the termux temp dir; copies archive files (.tar.gz, .whl, .zip, ...) to ~/tmp/tgz.
+Usage examples -------------- Watch the current directory (print events only):: watch.py Watch a folder recursively and copy changed files to ~/tmp/tgz:: watch.py /some/folder -c Watch a folder, copy only images, batch every 2s:: watch.py /some/folder -c -e png,jpg,svg -i 2 Watch a single file and exit when "boostraped 100%" appears:: watch.py myfile.log -p "boostraped 100%" Watch the Tor log and exit on "100% (done)":: watch.py ~/.tor/tor.log -p "100% (done)" Reproduce wtmp.py (watch termux tmp for archives):: watch.py /data/data/com.termux/files/usr/tmp \ -e ".tar.gz,.whl,.tar.xz,.zip,.tar.bz2,.tgz,.txz,.tbz2" \ -c -d ~/tmp/tgz --initial-copy"""
 
 from __future__ import annotations
 

@@ -1,31 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-merged_net_tools.py — unified network toolkit.
-
-Consolidates the following scripts into a single CLI:
-
-    proxy_tester.py  ->  python merged_net_tools.py proxy-test ...
-    pynet.py         ->  python merged_net_tools.py net-info ...
-    pyng.py          ->  python merged_net_tools.py ping ...
-    set_dns.py       ->  python merged_net_tools.py set-dns ...
-    show_ip.py       ->  python merged_net_tools.py show-ip ...
-    signal_meter.py  ->  python merged_net_tools.py signal ...
-
-External dependencies (install via `pip install ...`):
-    requests       # proxy-test
-    colorama       # proxy-test (colored ✅/❌)
-    rich           # signal (panel/TUI)
-    pycurl         # show-ip --engine=pycurl (optional; urllib fallback)
-
-Usage examples
---------------
-    python merged_net_tools.py proxy-test -f proxies.txt -w 8
-    python merged_net_tools.py net-info --no-speedtest
-    python merged_net_tools.py ping 8.8.8.8 -c 5 -q
-    python merged_net_tools.py set-dns -n "Cloudflare DNS"
-    python merged_net_tools.py show-ip --engine pycurl
-    python merged_net_tools.py signal --interval 1.5
-"""
+"""merged_net_tools.py — unified network toolkit.
+Consolidates the following scripts into a single CLI: proxy_tester.py -> python merged_net_tools.py proxy-test ...
+pynet.py -> python merged_net_tools.py net-info ...
+pyng.py -> python merged_net_tools.py ping ...
+set_dns.py -> python merged_net_tools.py set-dns ...
+show_ip.py -> python merged_net_tools.py show-ip ...
+signal_meter.py -> python merged_net_tools.py signal ...
+External dependencies (install via `pip install ...`): requests # proxy-test colorama # proxy-test (colored ✅/❌) rich # signal (panel/TUI) pycurl # show-ip --engine=pycurl (optional; urllib fallback) Usage examples -------------- python merged_net_tools.py proxy-test -f proxies.txt -w 8 python merged_net_tools.py net-info --no-speedtest python merged_net_tools.py ping 8.8.8.8 -c 5 -q python merged_net_tools.py set-dns -n "Cloudflare DNS" python merged_net_tools.py show-ip --engine pycurl python merged_net_tools.py signal --interval 1.5"""
 
 from __future__ import annotations
 

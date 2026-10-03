@@ -1,11 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Create a .tar.gz archive of a directory and then delete the original contents.
-
-The script resolves the given root directory (defaults to the current directory),
-writes an archive named ``<root-name>.tar.gz`` next to it, then removes every
-entry inside the root concurrently using a multiprocessing pool of 8 workers.
-"""
+"""Create a .tar.gz archive of a directory and then delete the original contents.
+The script resolves the given root directory (defaults to the current directory), writes an archive named ``<root-name>.tar.gz`` next to it, then removes every entry inside the root concurrently using a multiprocessing pool of 8 workers."""
 
 from __future__ import annotations
 

@@ -1,13 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Generate a Python utility that scans a folder for .md/.html/.htm files, inlines local
-image references as base64 data URIs inside HTML attributes (href/src) and Markdown
-image links, drops image references (remote and local) that are unreachable, and
-reports every removal. Use multiprocessing.Pool.apply_async with a fixed pool of 8
-workers, pathlib for all path handling, loguru for logging, complete type hints
-(mypy/pyright strict compatible), and docstrings on every function. No CLI flags
-control parallelism; only positional root plus --timeout are accepted.
-"""
+"""Generate a Python utility that scans a folder for .md/.html/.htm files, inlines local image references as base64 data URIs inside HTML attributes (href/src) and Markdown image links, drops image references (remote and local) that are unreachable, and reports every removal.
+Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for all path handling, loguru for logging, complete type hints (mypy/pyright strict compatible), and docstrings on every function.
+No CLI flags control parallelism; only positional root plus --timeout are accepted."""
 
 from __future__ import annotations
 

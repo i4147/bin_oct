@@ -1,57 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Translate a one-word-per-line file into a JSON mapping on Termux.
-
-Target platform
----------------
-This script is designed for Termux on Android 7 running Python 3.12 on
-32-bit ARM (armv8l). It uses only the Python standard library, loguru, and
-the backend selected by the user.
-
-Supported backends
-------------------
-Tier 1:
-    deep_translator
-    deepl
-
-Tier 2:
-    translate
-    googletrans
-    pygoogletranslation
-    translators_bing
-
-Tier 3:
-    boto3
-    baidu
-    alibaba
-    watson
-    azure
-
-Remote/offline alternative:
-    libretranslate_remote
-
-The remote LibreTranslate option does not run a translation engine locally.
-It sends requests to a LibreTranslate server on another machine, such as a
-PC, VPS, or Raspberry Pi on the LAN. Set LIBRETRANSLATE_URL, for example:
-
-    export LIBRETRANSLATE_URL=http://192.168.1.50:5000
-
-Excluded backends
------------------
-Local neural-machine-translation engines and cloud SDKs that require native
-packages unavailable for this platform are deliberately not supported here.
-This includes argostranslate, self-hosted libretranslate, opus_mt, nllb,
-m2m100, transformers, torch, sentencepiece, ctranslate2, pydantic-core,
-google-cloud-translate, yandex_cloud, openai, anthropic, and mistralai.
-
-Those packages either require unavailable 32-bit ARM wheels, Rust/native
-extensions that do not build reliably on Android 7, or heavyweight machine
-learning dependencies. For offline use, run LibreTranslate on another
-machine and use the pure-Python libretranslate_remote backend.
-
-The program resumes from an existing JSON file by default, saves atomically,
-retries failed requests, and can be interrupted safely with Ctrl+C.
-"""
+"""Translate a one-word-per-line file into a JSON mapping on Termux.
+Target platform --------------- This script is designed for Termux on Android 7 running Python 3.12 on 32-bit ARM (armv8l).
+It uses only the Python standard library, loguru, and the backend selected by the user.
+Supported backends ------------------ Tier 1: deep_translator deepl Tier 2: translate googletrans pygoogletranslation translators_bing Tier 3: boto3 baidu alibaba watson azure Remote/offline alternative: libretranslate_remote The remote LibreTranslate option does not run a translation engine locally.
+It sends requests to a LibreTranslate server on another machine, such as a PC, VPS, or Raspberry Pi on the LAN.
+Set LIBRETRANSLATE_URL, for example: export LIBRETRANSLATE_URL=http://192.168.1.50:5000 Excluded backends ----------------- Local neural-machine-translation engines and cloud SDKs that require native packages unavailable for this platform are deliberately not supported here.
+This includes argostranslate, self-hosted libretranslate, opus_mt, nllb, m2m100, transformers, torch, sentencepiece, ctranslate2, pydantic-core, google-cloud-translate, yandex_cloud, openai, anthropic, and mistralai.
+Those packages either require unavailable 32-bit ARM wheels, Rust/native extensions that do not build reliably on Android 7, or heavyweight machine learning dependencies.
+For offline use, run LibreTranslate on another machine and use the pure-Python libretranslate_remote backend.
+The program resumes from an existing JSON file by default, saves atomically, retries failed requests, and can be interrupted safely with Ctrl+C."""
 
 from __future__ import annotations
 

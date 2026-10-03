@@ -1,34 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-dl.py - Unified downloader toolbox.
-
-Merged from 10 related scripts; every original behavior is preserved
-behind a subcommand. See mapping below.
-
-Mapping of originals to new CLI
--------------------------------
-    cget.py                -> python dl.py batch --urls urls.txt --dir downloads \
-                                                --engine pycurl --workers 1
-    download_checker.py    -> python dl.py check <URL> [--download] [--output F]
-    dsize.py               -> python dl.py size <URL|FILE>
-    dsized.py              -> python dl.py size <URL|FILE> --download-small \
-                                                [--download DIR] [--max-size N]
-    gget.py                -> python dl.py chunked <URL> [out] [sha256]
-    ghost_downloader.py    -> python dl.py threaded <URL> [--output F] [--chunks N]
-    pycurl_downloader.py   -> python dl.py batch --engine pycurl --workers 8 \
-                                                --update-file
-    pywget.py              -> python dl.py wget <URL> [-o OUT] [--resume]
-    rget.py                -> python dl.py batch --engine requests --workers 8 \
-                                                --resume --filter-ext
-    url_downloader.py      -> python dl.py batch --engine auto --workers 8 \
-                                                --update-file
-
-Third-party requirements (declared, as originals used them):
-    requests, pycurl, loguru, rich, tqdm
-
-Standard-library fallbacks: pycurl is optional (auto-detected); loguru/rich are
-required by the "chunked" subcommand. Everything else runs on stdlib alone.
-"""
+"""dl.py - Unified downloader toolbox.
+Merged from 10 related scripts; every original behavior is preserved behind a subcommand.
+See mapping below.
+Mapping of originals to new CLI ------------------------------- cget.py -> python dl.py batch --urls urls.txt --dir downloads --engine pycurl --workers 1 download_checker.py -> python dl.py check <URL> [--download] [--output F] dsize.py -> python dl.py size <URL|FILE> dsized.py -> python dl.py size <URL|FILE> --download-small [--download DIR] [--max-size N] gget.py -> python dl.py chunked <URL> [out] [sha256] ghost_downloader.py -> python dl.py threaded <URL> [--output F] [--chunks N] pycurl_downloader.py -> python dl.py batch --engine pycurl --workers 8 --update-file pywget.py -> python dl.py wget <URL> [-o OUT] [--resume] rget.py -> python dl.py batch --engine requests --workers 8 --resume --filter-ext url_downloader.py -> python dl.py batch --engine auto --workers 8 --update-file Third-party requirements (declared, as originals used them): requests, pycurl, loguru, rich, tqdm Standard-library fallbacks: pycurl is optional (auto-detected); loguru/rich are required by the "chunked" subcommand.
+Everything else runs on stdlib alone."""
 
 from __future__ import annotations
 

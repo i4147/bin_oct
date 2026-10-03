@@ -1,31 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """pyrg — ripgrep-like recursive search in Python.
-
-A single-file, dependency-light re-implementation of the parts of ripgrep
-that matter for interactive and scripted use.
-
-Highlights over the previous iteration:
-    * -t/--type presets (py, md, json, log, ...)
-    * -A/-B/-C context lines, with '--' separators between groups
-    * -v/--invert-match
-    * --stats (files searched / matched / matches / elapsed)
-    * --no-messages, otherwise unreadable files report to stderr
-    * -M/--max-count N
-    * -q/--quiet (exit code only)
-    * --json (one JSON object per match)
-    * .gitignore / .ignore awareness with --no-ignore opt-out
-    * --files (list candidates, do not search)
-    * -o/--only-matching and --replace REPL (with backrefs)
-    * --multiline (regex over whole file, DOTALL)
-    * --encoding ENC
-    * -L/--follow symlinks with cycle detection
-    * --sort path|none
-    * --heading / --no-heading
-    * --max-depth N, --exclude-dir NAME
-    * --files-without-match
-    * per-directory filename colors
-    * ProcessPoolExecutor + as_completed (streaming results)
-"""
+A single-file, dependency-light re-implementation of the parts of ripgrep that matter for interactive and scripted use.
+Highlights over the previous iteration: * -t/--type presets (py, md, json, log, ...) * -A/-B/-C context lines, with '--' separators between groups * -v/--invert-match * --stats (files searched / matched / matches / elapsed) * --no-messages, otherwise unreadable files report to stderr * -M/--max-count N * -q/--quiet (exit code only) * --json (one JSON object per match) * .gitignore / .ignore awareness with --no-ignore opt-out * --files (list candidates, do not search) * -o/--only-matching and --replace REPL (with backrefs) * --multiline (regex over whole file, DOTALL) * --encoding ENC * -L/--follow symlinks with cycle detection * --sort path|none * --heading / --no-heading * --max-depth N, --exclude-dir NAME * --files-without-match * per-directory filename colors * ProcessPoolExecutor + as_completed (streaming results)"""
 
 from __future__ import annotations
 

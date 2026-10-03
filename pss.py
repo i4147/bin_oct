@@ -1,32 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-Search PyPI packages by name (case-insensitive substring) using SQLite FTS5.
-
-Data flow:
-  /sdcard/data/pip.db   --  prebuilt SQLite database (read-only)
-
-The script auto-detects the table name and column names at runtime.
-It assumes the table has exactly two columns: the first is the package
-name (searchable), the second is the download count (sortable).
-
+"""Search PyPI packages by name (case-insensitive substring) using SQLite FTS5.
+Data flow: /sdcard/data/pip.db -- prebuilt SQLite database (read-only) The script auto-detects the table name and column names at runtime.
+It assumes the table has exactly two columns: the first is the package name (searchable), the second is the download count (sortable).
 Why FTS5 with the trigram tokenizer?
-  A plain SQLite table with `LIKE '%foo%'` still does a full table scan.
-  The trigram tokenizer builds an inverted index of 3-character substrings,
-  so a query like "pand" becomes a small B-tree intersection -- O(matches)
-  instead of O(rows). This is what makes SQLite beat the mmap/CSV approach
-  by an order of magnitude for substring search.
-
+A plain SQLite table with `LIKE '%foo%'` still does a full table scan.
+The trigram tokenizer builds an inverted index of 3-character substrings, so a query like "pand" becomes a small B-tree intersection -- O(matches) instead of O(rows).
+This is what makes SQLite beat the mmap/CSV approach by an order of magnitude for substring search.
 Why heapq.nlargest?
-  For a broad keyword (e.g. "py") FTS5 may return tens of thousands of rows.
-  Sorting the full list with `list.sort` is O(k log k) time and O(k) memory.
-  `heapq.nlargest` streams the SQLite cursor through a size-`limit` min-heap,
-  giving O(k log limit) time and O(limit) extra memory. It never materialises
-  the full result set.
-
-Usage:
-  search pandas                 # top 20 substring matches by downloads
-  search -n 100 pandas          # top 100
-"""
+For a broad keyword (e.g.
+"py") FTS5 may return tens of thousands of rows.
+Sorting the full list with `list.sort` is O(k log k) time and O(k) memory.
+`heapq.nlargest` streams the SQLite cursor through a size-`limit` min-heap, giving O(k log limit) time and O(limit) extra memory.
+It never materialises the full result set.
+Usage: search pandas # top 20 substring matches by downloads search -n 100 pandas # top 100"""
 
 import argparse
 import heapq

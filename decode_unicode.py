@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""Write a Python script that takes a file path as a command-line argument, reads the file's raw bytes, and decodes any literal escape sequences (such as \\n, \\t, or unicode escapes) into their actual characters using unicode_escape decoding.
+"""Write a Python script that takes a file path as a command-line argument, reads the file's raw bytes, and decodes any literal escape sequences (such as \n, \t, or unicode escapes) into their actual characters using unicode_escape decoding.
 The script should then overwrite the original file with the decoded text content using UTF-8 encoding, and finally print a confirmation message showing the file path followed by "updated".
 The path argument should have surrounding whitespace stripped before use."""
 

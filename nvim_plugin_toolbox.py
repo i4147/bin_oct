@@ -1,25 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-nvim_plugin_toolbox.py
-======================
-One-stop CLI for the four original Neovim plugin helper scripts.
-
-Original name           ->  equivalent invocation
--------------------------------------------------------------------------------
-folderize_plugins.py    ->  python nvim_plugin_toolbox.py folderize [--dry-run]
-
-generate_lazy_lock.py   ->  python nvim_plugin_toolbox.py lock
-                            [--lazy-dir ~/.local/share/nvim/lazy]
-                            [--output   ~/.config/nvim/lazy-lock.json]
-
-split_lua_plugins.py    ->  python nvim_plugin_toolbox.py split FILE --engine strict [-m]
-
-split_plugins.py        ->  python nvim_plugin_toolbox.py split FILE --engine simple
-                            [-o plugins] [--keep-input]
-                            (stdin: cat FILE | python nvim_plugin_toolbox.py split -)
-
-Standard library only.
-"""
+"""nvim_plugin_toolbox.py ====================== One-stop CLI for the four original Neovim plugin helper scripts.
+Original name -> equivalent invocation ------------------------------------------------------------------------------- folderize_plugins.py -> python nvim_plugin_toolbox.py folderize [--dry-run] generate_lazy_lock.py -> python nvim_plugin_toolbox.py lock [--lazy-dir ~/.local/share/nvim/lazy] [--output ~/.config/nvim/lazy-lock.json] split_lua_plugins.py -> python nvim_plugin_toolbox.py split FILE --engine strict [-m] split_plugins.py -> python nvim_plugin_toolbox.py split FILE --engine simple [-o plugins] [--keep-input] (stdin: cat FILE | python nvim_plugin_toolbox.py split -) Standard library only."""
 
 from __future__ import annotations
 

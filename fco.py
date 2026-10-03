@@ -1,23 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-merged_font_converter.py
-
-Merged refactor of fco.py and fontconverter.py.
-
-Features kept:
-- TTF / OTF / WOFF / WOFF2 conversion via fontTools.
+"""merged_font_converter.py Merged refactor of fco.py and fontconverter.py.
+Features kept: - TTF / OTF / WOFF / WOFF2 conversion via fontTools.
 - Recursive directory input.
 - Output directory, force overwrite, dry-run, verbose logging.
 - Parallel conversion with multiprocessing.
 - Optional original removal after successful conversion.
-- Safe default: refuses TTF<->OTF outline mismatches unless
-  --allow-outline-mismatch is given.
-
-Requires:
-    pip install fonttools loguru brotli
-
-Also imports `fsz` from a local `dh` module, same as the original scripts.
-"""
+- Safe default: refuses TTF<->OTF outline mismatches unless --allow-outline-mismatch is given.
+Requires: pip install fonttools loguru brotli Also imports `fsz` from a local `dh` module, same as the original scripts."""
 
 from __future__ import annotations
 

@@ -1,8 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""
-HTML Formatter using Tree-sitter
-Formats HTML files so every tag starts on a new line.
-"""
+"""HTML Formatter using Tree-sitter Formats HTML files so every tag starts on a new line."""
 
 import logging
 import multiprocessing as mp
