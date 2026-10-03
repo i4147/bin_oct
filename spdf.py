@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from loguru import logger
 
 
-def compress_pdf(input_path: Path) -> Optional[Tuple[Path, int, int]]:
+def compress_pdf(input_path: Path) -> Optional[tuple[Path, int, int]]:
     input_path = input_path.resolve()
 
     if not input_path.exists() or input_path.suffix.lower() != ".pdf":
@@ -77,8 +77,8 @@ def compress_pdf(input_path: Path) -> Optional[Tuple[Path, int, int]]:
             pass
 
 
-def collect_pdf_files(paths: List[Path]) -> List[Path]:
-    pdf_files: List[Path] = []
+def collect_pdf_files(paths: list[Path]) -> list[Path]:
+    pdf_files: list[Path] = []
 
     for path in paths:
         path = path.resolve()
