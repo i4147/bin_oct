@@ -3,10 +3,13 @@
 Use this metadata to restore or rename each wheel file to reflect its proper canonical name/version, moving files with duplicate or conflicting target names into a `_wheel_name_conflicts` subfolder instead of overwriting.
 Include a helper that generates a safe, non-colliding destination path by appending an incrementing numeric suffix when a file with the same name already exists, and track encountered package versions using a dictionary of sets keyed by package name."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 from email.parser import Parser
 from pathlib import Path
 from zipfile import ZipFile
+
 from packaging.utils import canonicalize_name
 
 
@@ -17,13 +20,15 @@ def parse_metadata_from_wheel(wheel_path: Path):
             None,
         )
         if meta_name is None:
-            raise ValueError("missing .dist-info/METADATA")
+            msg = "missing .dist-info/METADATA"
+            raise ValueError(msg)
         text = zf.read(meta_name).decode("utf-8", errors="replace")
         msg = Parser().parsestr(text)
         name = msg.get("Name")
         version = msg.get("Version")
         if not name or not version:
-            raise ValueError("missing Name or Version in METADATA")
+            msg_0 = "missing Name or Version in METADATA"
+            raise ValueError(msg_0)
         dist = canonicalize_name(name).replace("-", "_")
         return dist, version
 

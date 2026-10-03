@@ -3,6 +3,8 @@
 Implement a function that accepts a word string and prints (or returns) the corresponding letters' ASCII art side by side to render the word in large stylized text.
 Handle letters not present in the dictionary gracefully (e.g., skipping or substituting blank space), and include a usage example that demonstrates converting a sample word into its ASCII-art banner output."""
 
+from __future__ import annotations
+
 import os
 
 
@@ -943,7 +945,7 @@ def main():
         if text.lower() in ["quit", "exit", "q"]:
             print("Goodbye!")
             break
-        elif text.lower() == "clear":
+        if text.lower() == "clear":
             os.system("cls" if os.name == "nt" else "clear")
             continue
         if not text:

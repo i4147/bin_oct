@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+from __future__ import annotations
+
 from pathlib import Path
 
 from summa import summarizer

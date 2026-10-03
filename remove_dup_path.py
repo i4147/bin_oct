@@ -3,6 +3,8 @@
 It should print a "dup found" message if duplicates were removed, then print the counts and sorted contents of both the original and deduplicated entry lists separated by a divider line.
 Finally, it should append a new export PATH line built from the deduplicated entries to the user's ~/.bashrc file."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 if __name__ == "__main__":

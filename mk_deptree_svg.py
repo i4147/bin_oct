@@ -4,12 +4,15 @@ The script should only keep dependency edges pointing to packages that are actua
 It should expose a command-line interface (via argparse) for specifying options like a target package, and produce output (e.g., an HTML report using the html module, or console text) summarizing the dependency structure.
 Include helper functions for name normalization and for extracting a package's direct dependencies from its distribution metadata."""
 
+from __future__ import annotations
+
 import argparse
 import html
 import re
 from collections import defaultdict, deque
 from importlib import metadata
 from pathlib import Path
+
 from joblib import Parallel, delayed
 
 WORKERS = 8
@@ -64,7 +67,8 @@ def reachable_graph(
     else:
         selected_roots = [normalize_name(root) for root in roots if normalize_name(root) in graph]
     if not selected_roots:
-        raise ValueError("None of the requested root packages are installed.")
+        msg = "None of the requested root packages are installed."
+        raise ValueError(msg)
     included = set()
     queue = deque(selected_roots)
     while queue:
@@ -86,7 +90,7 @@ def topological_levels(
     graph: dict[str, list[str]],
     roots: list[str],
 ) -> dict[str, int]:
-    levels = {root: 0 for root in roots}
+    levels = dict.fromkeys(roots, 0)
     queue = deque(roots)
     while queue:
         package = queue.popleft()
@@ -141,7 +145,7 @@ def create_svg(
         900,
         margin * 2 + max_nodes_on_level * node_width + max(0, max_nodes_on_level - 1) * horizontal_gap,
     )
-    height = margin * 2 + (max(by_level) + 1) * node_height + max(0, max(by_level)) * vertical_gap
+    height = margin * 2 + (max(by_level) + 1) * node_height + max(0, *by_level) * vertical_gap
     positions: dict[str, tuple[int, int]] = {}
     for level, packages in by_level.items():
         total_width = len(packages) * node_width + max(0, len(packages) - 1) * horizontal_gap
@@ -236,7 +240,8 @@ def main() -> None:
     args = parser.parse_args()
     packages = get_installed_packages()
     if not packages:
-        raise SystemExit("No installed Python packages were found.")
+        msg = "No installed Python packages were found."
+        raise SystemExit(msg)
     packages = dict(sorted(packages.items(), key=lambda item: item[0]))
     graph = build_dependency_graph(packages)
     try:

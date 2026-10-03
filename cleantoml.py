@@ -5,11 +5,14 @@ It should process files concurrently using a multiprocessing Pool with a fixed w
 The script should print a progress report listing each processed file name (aligned/padded to a fixed width), its processing time, and size before/after, then output a final summary of total files processed, total time elapsed, and overall size reduction.
 It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
 
+from __future__ import annotations
+
 import sys
 import time
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final, Optional
+
 from dh import fsz
 
 _parser: Optional[Any] = None
@@ -21,8 +24,10 @@ def _get_parser() -> Any:
     global _parser
     if _parser is None:
         import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
-        from tree_sitter import Language  # type: ignore[import-untyped]
-        from tree_sitter import Parser
+        from tree_sitter import (
+            Language,  # type: ignore[import-untyped]
+            Parser,
+        )
 
         _parser = Parser(Language(tstoml.language()))
     return _parser

@@ -4,6 +4,8 @@ It should move each qualifying file into a "5min" subfolder created at the root 
 When a destination file with the same name already exists, the script must generate a unique filename by appending an incrementing numeric suffix before the extension.
 The script should track and report counts of moved, skipped, and errored files, and raise a ValueError if the specified starting directory does not exist."""
 
+from __future__ import annotations
+
 import shutil
 import time
 from pathlib import Path
@@ -35,7 +37,8 @@ def get_unique_filename(dest_dir: Path, filename: str) -> Path:
 def move_recent_files(start_dir: Path | str = ".") -> None:
     start_dir = Path(start_dir)
     if not start_dir.is_dir():
-        raise ValueError(f"Directory not found: {start_dir}")
+        msg = f"Directory not found: {start_dir}"
+        raise ValueError(msg)
     target_dir = start_dir / "5min"
     target_dir.mkdir(exist_ok=True, parents=True)
     moved_count = 0
@@ -79,7 +82,8 @@ def move_recent_files_with_filters(
 ) -> None:
     start_dir = Path(start_dir)
     if not start_dir.is_dir():
-        raise ValueError(f"Directory not found: {start_dir}")
+        msg = f"Directory not found: {start_dir}"
+        raise ValueError(msg)
     target_dir = start_dir / "5min"
     target_dir.mkdir(exist_ok=True, parents=True)
     if recursive:
@@ -120,7 +124,8 @@ def move_recent_files_by_age(
 ) -> None:
     start_dir = Path(start_dir)
     if not start_dir.is_dir():
-        raise ValueError(f"Directory not found: {start_dir}")
+        msg = f"Directory not found: {start_dir}"
+        raise ValueError(msg)
     target_dir = start_dir / destination
     target_dir.mkdir(exist_ok=True, parents=True)
     moved_count = 0

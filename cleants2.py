@@ -3,6 +3,8 @@
 It should process files in parallel using multiprocessing, track per-file results (success/failure, number of comments removed, processing time, file size, error messages) in a dataclass, and report overall statistics after the run.
 Include robust error handling so that unsupported file types or parsing failures for a single file don't crash the whole batch job."""
 
+from __future__ import annotations
+
 import importlib
 import multiprocessing as mp
 import os
@@ -10,6 +12,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
 from tree_sitter import Language, Node, Parser
 
 PathLike = str | Path
@@ -317,7 +320,7 @@ def process_file(path: Path) -> ProcessResult:
             success=False,
             error_message=str(e),
             processing_time=processing_time,
-            file_type=path.suffix if path.suffix else "unknown",
+            file_type=path.suffix or "unknown",
         )
 
 
@@ -372,7 +375,7 @@ def print_summary(results: list[ProcessResult], total_files: int, start_time: fl
     type_stats = {}
     for r in results:
         if r.success and r.comments_removed > 0:
-            ext = r.file_type if r.file_type else "unknown"
+            ext = r.file_type or "unknown"
             if ext not in type_stats:
                 type_stats[ext] = {"files": 0, "comments": 0}
             type_stats[ext]["files"] += 1

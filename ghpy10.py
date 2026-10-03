@@ -3,9 +3,12 @@
 It should load a GITHUB_TOKEN from a .env file in the user's home directory for authentication, fetch up to 50 results via requests, and raise an error if the token is missing.
 The script should write each repository's full name and star count to a local file named "ghpy10.txt" and print a confirmation message showing how many repositories were saved."""
 
+from __future__ import annotations
+
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+
 import requests
 from dotenv import load_dotenv
 
@@ -15,7 +18,8 @@ def search_github_repos() -> None:
     load_dotenv(env_path)
     token = os.getenv("GITHUB_TOKEN")
     if not token:
-        raise ValueError(f"GITHUB_TOKEN not found in {env_path}")
+        msg = f"GITHUB_TOKEN not found in {env_path}"
+        raise ValueError(msg)
     date_10_days_ago = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
     query = f"language:Python created:>{date_10_days_ago}"
     headers = {

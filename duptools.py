@@ -5,6 +5,7 @@ Merges these originals into one CLI: dupf.py -> report findupy.py -> report --al
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import shutil
@@ -74,7 +75,7 @@ def err(msg: str) -> None:
 def _new_hasher(algorithm: str):
     if algorithm == "xxhash" and _HAS_XXHASH:
         return xxhash.xxh64()
-    if algorithm == "blake2b" or algorithm == "xxhash":
+    if algorithm in {"blake2b", "xxhash"}:
         return hashlib.blake2b(digest_size=16)
     if algorithm == "sha256":
         return hashlib.sha256()
@@ -84,7 +85,8 @@ def _new_hasher(algorithm: str):
         return _XorHasher()
     if algorithm == "ppdeep":
         return _PPDeepHasher()
-    raise ValueError(f"Unknown algorithm: {algorithm!r}")
+    msg = f"Unknown algorithm: {algorithm!r}"
+    raise ValueError(msg)
 
 
 class _XorHasher:
@@ -103,7 +105,7 @@ class _XorHasher:
 
 
 class _PPDeepHasher:
-    __slots__ = ("_h", "_buf")
+    __slots__ = ("_buf", "_h")
 
     def __init__(self) -> None:
         self._h = hashlib.blake2b(digest_size=8)
@@ -251,7 +253,8 @@ def find_duplicates(
 
 def select_keeper(group: list[Path], policy: str) -> Path:
     if not group:
-        raise ValueError("empty group")
+        msg = "empty group"
+        raise ValueError(msg)
     if policy == "first":
         return min(group, key=str)
     if policy == "oldest":
@@ -369,7 +372,7 @@ def cmd_delete(args: argparse.Namespace) -> int:
 
     deleted = 0
     freed = 0
-    for h, group in groups.items():
+    for group in groups.values():
         keeper = select_keeper(group, args.keep)
         for p in group:
             if p == keeper:
@@ -462,13 +465,12 @@ def cmd_symlink(args: argparse.Namespace) -> int:
             except OSError as e:
                 warn(f"could not move {keeper}: {e}")
                 continue
-        else:
-            if keeper.exists():
-                try:
-                    keeper.unlink()
-                    print(f"removed original file: {keeper}")
-                except OSError as e:
-                    warn(f"could not remove {keeper}: {e}")
+        elif keeper.exists():
+            try:
+                keeper.unlink()
+                print(f"removed original file: {keeper}")
+            except OSError as e:
+                warn(f"could not remove {keeper}: {e}")
 
         for p in group:
             if p == keeper:
@@ -557,10 +559,8 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
     if not args.dry_run:
         for stash_path in stash_map:
-            try:
+            with contextlib.suppress(OSError):
                 Path(stash_path).unlink()
-            except OSError:
-                pass
         backup = manifest_path.with_suffix(manifest_path.suffix + f".restored.{int(time.time())}")
         try:
             manifest_path.rename(backup)

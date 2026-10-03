@@ -37,7 +37,8 @@ def extract_pages(pdf_path: Path, engine: str, encoding: str) -> Iterator[str]:
     elif engine == "pdfplumber":
         yield from _extract_pages_pdfplumber(pdf_path, encoding)
     else:
-        raise ValueError(f"Unsupported engine: {engine}")
+        msg = f"Unsupported engine: {engine}"
+        raise ValueError(msg)
 
 
 def write_text(path: Path, text: str, encoding: str) -> None:
@@ -81,7 +82,8 @@ def split_text(
     quiet: bool,
 ) -> int:
     if pad_width < 1:
-        raise ValueError("--pad-width must be at least 1")
+        msg = "--pad-width must be at least 1"
+        raise ValueError(msg)
 
     if output_dir is None:
         output_dir = default_split_output_dir(pdf_path)

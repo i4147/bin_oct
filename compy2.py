@@ -4,6 +4,8 @@ It should use the ast and tokenize modules to strip comments and shebang lines, 
 The script should process files in parallel using multiprocessing (configurable worker count), write the compressed output to a file (default compressed.txt), and prepend a note explaining that the code has been compressed and that identifiers were renamed freely.
 It should accept file paths via argparse and rely on an external helper module (dh) for running shell commands."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import builtins
@@ -16,6 +18,7 @@ import token
 import tokenize
 from io import StringIO
 from pathlib import Path
+
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")
@@ -132,10 +135,7 @@ def is_terminating_statement(node: ast.stmt) -> bool:
 def block_terminates(statements: list[ast.stmt]) -> bool:
     if not statements:
         return False
-    for statement in statements:
-        if is_terminating_statement(statement):
-            return True
-    return False
+    return any(is_terminating_statement(statement) for statement in statements)
 
 
 def make_short_name(index: int) -> str:
@@ -590,9 +590,7 @@ def join_simple_lines(source: str) -> str:
         stripped = line.strip()
         if not stripped:
             return False
-        if stripped.endswith(":"):
-            return False
-        return True
+        return not stripped.endswith(":")
 
     index = 0
     while index < len(lines):
@@ -688,7 +686,7 @@ def discover_python_files(inputs: list[str]) -> list[Path]:
                     continue
                 if path.is_file():
                     found.add(path.resolve())
-    return sorted(found, key=lambda path: str(path))
+    return sorted(found, key=str)
 
 
 def process_file(path_string: str) -> tuple[str, str, str | None]:

@@ -17,8 +17,11 @@ Version pinning --------------- Each argument / line may be either ``name`` or `
 ``aiohttp==3.5.16``).
 When a version is pinned we filter the mirror's file list down to entries whose *normalised* filename starts with ``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before applying the usual sdist → pure-wheel → skip priority."""
 
+from __future__ import annotations
+
 import argparse
 import asyncio
+import contextlib
 import re
 import sys
 import tarfile
@@ -148,10 +151,7 @@ def has_arch_tag(url: str) -> bool:
     lower = url.lower()
     if WHEEL_PLATFORM_RE.search(lower):
         return True
-    for tag in ARCH_TAGS:
-        if tag in lower:
-            return True
-    return False
+    return any(tag in lower for tag in ARCH_TAGS)
 
 
 def is_sdist(url: str) -> bool:
@@ -370,20 +370,16 @@ async def download_file(
         ok, msg = await asyncio.to_thread(validate_archive, output_path, filename)
         if not ok:
             print(f"[{pkg_name}]  Integrity check failed: {msg}")
-            try:
+            with contextlib.suppress(OSError):
                 output_path.unlink()
-            except OSError:
-                pass
             return False
 
         return True
 
     except FileTooLarge:
         if output_path.exists():
-            try:
+            with contextlib.suppress(OSError):
                 output_path.unlink()
-            except OSError:
-                pass
         raise
 
     except httpx.HTTPError as e:

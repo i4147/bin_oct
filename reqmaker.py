@@ -3,6 +3,8 @@
 It should build a mapping of each missing dependency to the list of packages that require it, print this as a formatted dependency tree, and provide a helper function to write a list of package names into a requirements.txt file.
 The script should gracefully handle a non-zero exit code from pip check by still capturing and processing its stdout output."""
 
+from __future__ import annotations
+
 import re
 import subprocess
 import sys

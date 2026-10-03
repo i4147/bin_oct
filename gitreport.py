@@ -2,6 +2,8 @@
 """Report files added in every commit of a git repo as JSON.
 Uses dulwich (pure Python git implementation) - no subprocess."""
 
+from __future__ import annotations
+
 import json
 import sys
 

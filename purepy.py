@@ -5,13 +5,15 @@ Regenerate this script: read newline-separated package names from a file, query 
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import Any, Final, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, TypeAlias
 
 import requests
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
@@ -92,7 +94,8 @@ def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
             ]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def load_packages(path: Path) -> list[str]:

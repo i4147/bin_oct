@@ -3,6 +3,8 @@
 It should skip symlinks and any files inside ".git" directories, and use BOM detection followed by fallback attempts with utf-8, cp1252, and latin-1 decoding to determine each file's encoding, treating files containing null bytes in their first 8KB as binary and skipping them.
 The script should use argparse to accept an optional "-a"/"--apply" flag that, when provided, converts detected non-UTF-8 files to UTF-8 in place, and it should print a report listing the non-UTF-8 files found (and converted, if applicable) along with summary counts."""
 
+from __future__ import annotations
+
 import argparse
 import codecs
 from pathlib import Path

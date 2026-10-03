@@ -5,11 +5,17 @@ Input files come from command-line arguments if provided, otherwise the script s
 Processing of multiple files should be parallelized using an `mpf` (multiprocessing/multithreading) helper, and status/progress messages should be printed with colored output via a `cprint` helper.
 These helper functions (`cprint`, `get_files`, `get_random_filename`, `mpf`) are imported from a local module named `dh`."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from bs4 import BeautifulSoup
-from bs4.element import PageElement
 from dh import cprint, get_files, get_random_filename, mpf
+
+if TYPE_CHECKING:
+    from bs4.element import PageElement
 
 MAX_QUEUE = 16
 

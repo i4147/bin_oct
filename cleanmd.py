@@ -1,273 +1,484 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""Write a Python command-line utility that scans a directory tree for Markdown files, extracts image references (e.g., `![alt](path)` links), and checks whether the referenced image files actually exist on disk, reporting missing or broken image links per file.
-It should use colorized terminal output (via an Enum-based Color/Styling helper) to distinguish success, error, warning, and info messages, and leverage multiprocessing.Pool to process multiple files concurrently for speed.
-The script should accept a target directory as an argument, walk it recursively using pathlib, use regex to parse image syntax from Markdown content, collect statistics (e.g., total images checked, valid vs.
-missing counts) into a NamedTuple/dataclass structure, and print a summary report to stdout, exiting with a non-zero status code if broken image links are found."""
+"""remove_images.py — unified image-reference remover for Markdown, reStructuredText and HTML.
 
+Original-script mapping
+-----------------------
+    clean_md.py                -> python remove_images.py --ext .md .markdown
+    doclin.py                  -> python remove_images.py --ext .rst .md --badges --report detailed
+    markdown_image_remover.py  -> python remove_images.py --ext .md .markdown --backup --aggressive-defs
+    remove_image_refrences.py  -> python remove_images.py --remote-only --ext .html .htm .md .rst .txt
+    rmimg.py                   -> python remove_images.py --ext .html .htm --html-parser bs4
+
+Optional third-party dependency: beautifulsoup4 (only required with --html-parser bs4).
+
+Examples
+--------
+    python remove_images.py
+    python remove_images.py docs/ README.md --ext .md .markdown
+    python remove_images.py --remote-only --ext .html .md .rst .txt
+    python remove_images.py docs/ --html-parser bs4 --ext .html .htm
+    python remove_images.py --badges --report detailed --ext .rst .md
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
-from enum import Enum
-from multiprocessing import Pool
 from pathlib import Path
-from typing import NamedTuple
+from typing import Optional, Sequence
 
+try:
+    from bs4 import BeautifulSoup
 
-class Color(Enum):
-    RESET = "\033[0m"
-    BOLD = "\033[1m"
-    DIM = "\033[2m"
-    BLACK = "\033[30m"
-    RED = "\033[31m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    BLUE = "\033[34m"
-    MAGENTA = "\033[35m"
-    CYAN = "\033[36m"
-    WHITE = "\033[37m"
-    BRIGHT_RED = "\033[91m"
-    BRIGHT_GREEN = "\033[92m"
-    BRIGHT_YELLOW = "\033[93m"
-    BRIGHT_BLUE = "\033[94m"
-    BRIGHT_MAGENTA = "\033[95m"
-    BRIGHT_CYAN = "\033[96m"
-    BRIGHT_WHITE = "\033[97m"
+    _HAS_BS4 = True
+except ImportError:
+    _HAS_BS4 = False
 
+log = logging.getLogger("remove_images")
 
-class Styling:
-    @staticmethod
-    def style(text: str, color: Color, bold: bool = False) -> str:
-        bold_code = Color.BOLD.value if bold else ""
-        return f"{bold_code}{color.value}{text}{Color.RESET.value}"
+_REMOTE_PREFIXES = ("http://", "https://", "//")
+_BADGE_PATTERNS = tuple(
+    re.compile(p, re.IGNORECASE)
+    for p in (
+        r"shields\.io",
+        r"img\.shields\.io",
+        r"badge\.fury\.io",
+        r"badges\.gitter\.im",
+        r"travis-ci\.org",
+        r"travis-ci\.com",
+        r"circleci\.com",
+        r"codecov\.io",
+        r"coveralls\.io",
+        r"readthedocs\.org",
+        r"readthedocs\.io",
+        r"github\.com/.*/workflows/.*badge",
+        r"ci\.appveyor\.com",
+        r"dev\.azure\.com",
+        r"scrutinizer-ci\.com",
+        r"packagist\.org",
+        r"david-dm\.org",
+        r"snyk\.io",
+        r"badges\.greenkeeper\.io",
+        r"api\.codacy\.com",
+        r"goreportcard\.com",
+        r"opencollective\.com",
+        r"buymeacoffee\.com",
+        r"patreon\.com",
+    )
+)
+_IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".bmp")
 
-    @staticmethod
-    def success(text: str) -> str:
-        return Styling.style(text, Color.BRIGHT_GREEN)
+RE_MD_BADGE = re.compile(r"\[!\[[^\]]*\]\(([^\)]+)\)\]\(([^\)]+)\)")
+RE_MD_INLINE = re.compile(r"!\[([^\[\]]*)\]\(([^\)]+)\)")
+RE_MD_REF_IMG = re.compile(r"!\[([^\[\]]*)\]\[([^\[\]]+)\]")
+RE_MD_IMAGE_DEF = re.compile(
+    r'^\s*\[([^\[\]]+)\]:\s*(\S+)(?:\s+["\'][^"\']*["\'])?\s*$',
+    re.MULTILINE,
+)
+RE_HTML_IMG = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
+RE_HTML_PICTURE = re.compile(r"<picture\b[^>]*>.*?</picture>", re.DOTALL | re.IGNORECASE)
+RE_HTML_FIGURE = re.compile(r"<figure\b[^>]*>.*?</figure>", re.DOTALL | re.IGNORECASE)
+RE_HTML_IMG_SRC = re.compile(r"<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
 
-    @staticmethod
-    def error(text: str) -> str:
-        return Styling.style(text, Color.BRIGHT_RED)
+RE_RST_IMAGE = re.compile(r"^\s*\.\.\s+image::\s+(\S+)")
+RE_RST_FIGURE = re.compile(r"^\s*\.\.\s+figure::\s+(\S+)")
+RE_RST_SUBST_IMAGE = re.compile(r"^\s*\.\.\s+\|[^|]+\|\s+image::\s+(\S+)")
+RE_RST_SUBST_REPLACE = re.compile(
+    r"^\s*\.\.\s+\|[^|]+\|\s+replace::\s+(\S+\.(?:png|jpg|jpeg|gif|svg|ico|webp|bmp))",
+    re.IGNORECASE,
+)
+_RST_PATTERNS = (RE_RST_IMAGE, RE_RST_FIGURE, RE_RST_SUBST_IMAGE, RE_RST_SUBST_REPLACE)
 
-    @staticmethod
-    def warning(text: str) -> str:
-        return Styling.style(text, Color.BRIGHT_YELLOW)
-
-    @staticmethod
-    def info(text: str) -> str:
-        return Styling.style(text, Color.BRIGHT_CYAN)
-
-    @staticmethod
-    def dim(text: str) -> str:
-        return Styling.style(text, Color.DIM)
-
-
-class ImageStats(NamedTuple):
-    path: Path
-    rel_path: str
-    images_removed: int
-    references_removed: int
-    original_size: int
-    final_size: int
-    error: str | None
+_RE_BLANKLINES = re.compile(r"\n{3,}")
 
 
 @dataclass
-class ProcessingConfig:
-    workers: int = 4
-    chunk_size: int = 8192
-    encoding: str = "utf-8"
-    backup: bool = False
+class Result:
+    path: Path
+    removed_refs: int
+    lines_before: int
+    lines_after: int
+    size_before: int
+    size_after: int
+    error: Optional[str] = None
 
 
-class MarkdownPatterns:
-    INLINE_IMAGE = re.compile(r"!\[([^\[\]]*)\]\(([^\)]+)\)", re.MULTILINE)
-    HTML_IMG_TAG = re.compile(r"<img\b[^>]*>", re.IGNORECASE | re.MULTILINE)
-    REFERENCE_IMAGE = re.compile(r"!\[([^\[\]]*)\]\[([^\[\]]+)\]", re.MULTILINE)
-    IMAGE_DEF = re.compile(
-        r"^\s*\[([^\[\]]+)\]:\s*(.+?(?:\.(?:png|jpg|jpeg|gif|webp|svg|bmp))?)\s*(?:\"[^\"]*\")?\s*$",
-        re.MULTILINE | re.IGNORECASE,
-    )
-    PICTURE_TAG = re.compile(r"<picture\b[^>]*>.*?</picture>", re.DOTALL | re.IGNORECASE)
-    FIGURE_TAG = re.compile(r"<figure\b[^>]*>.*?</figure>", re.DOTALL | re.IGNORECASE)
-    EMPTY_LINK = re.compile(r"\[\]\(([^\)]+)\)", re.MULTILINE)
+def is_remote(url: str) -> bool:
+    return url.startswith(_REMOTE_PREFIXES)
 
 
-class MarkdownImageRemover:
-    def __init__(self, config: ProcessingConfig):
-        self.config = config
-        self.patterns = MarkdownPatterns()
-
-    def remove_images(self, content: str) -> tuple[str, int]:
-        original_len = len(content)
-        count = 0
-        content, inline_count = self._remove_pattern(content, self.patterns.INLINE_IMAGE)
-        count += inline_count
-        content, ref_count = self._remove_pattern(content, self.patterns.REFERENCE_IMAGE)
-        count += ref_count
-        content, def_count = self._remove_pattern(content, self.patterns.IMAGE_DEF)
-        count += def_count
-        content, html_count = self._remove_pattern(content, self.patterns.HTML_IMG_TAG)
-        count += html_count
-        content, pic_count = self._remove_pattern(content, self.patterns.PICTURE_TAG)
-        count += pic_count
-        content, fig_count = self._remove_pattern(content, self.patterns.FIGURE_TAG)
-        count += fig_count
-        content, empty_link_count = self._remove_pattern(content, self.patterns.EMPTY_LINK)
-        count += empty_link_count
-        content = re.sub(r"\n{2,}", "\n\n", content)
-        content = re.sub(r"^\n+", "", content)
-        content = re.sub(r"\n+$", "\n", content)
-        return content, count
-
-    def _remove_pattern(self, content: str, pattern: re.Pattern) -> tuple[str, int]:
-        matches = list(pattern.finditer(content))
-        if not matches:
-            return content, 0
-        for match in reversed(matches):
-            content = content[: match.start()] + content[match.end() :]
-        return content, len(matches)
+def is_badge(url: str) -> bool:
+    return any(p.search(url) for p in _BADGE_PATTERNS)
 
 
-def get_markdown_files(path: Path) -> list[Path]:
-    if path.is_file():
-        if path.suffix.lower() in {".md", ".markdown", ".txt"}:
-            return [path]
-        return []
-    if path.is_dir():
-        return list(path.rglob("*.md")) + list(path.rglob("*.markdown")) + list(path.rglob("*.txt"))
-    return []
+def is_image_url(url: str) -> bool:
+    path = url.split("?", 1)[0].split("#", 1)[0].lower()
+    return path.endswith(_IMAGE_EXTS)
 
 
-def process_file(path: Path, config: ProcessingConfig) -> ImageStats:
+def fmt_size(n: float) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if abs(n) < 1024:
+            return f"{n:.1f}{unit}"
+        n /= 1024
+    return f"{n:.1f}TB"
+
+
+def _finalize(text: str, ends_nl: bool) -> str:
+    text = _RE_BLANKLINES.sub("\n\n", text)
+    if ends_nl and not text.endswith("\n"):
+        text += "\n"
+    return text
+
+
+def process_markdown(
+    text: str,
+    remote_only: bool,
+    badges: bool,
+    aggressive_defs: bool,
+) -> tuple[str, int]:
+    removed = 0
+    ends_nl = text.endswith("\n")
+
+    if badges:
+
+        def repl_badge(m: re.Match[str]) -> str:
+            nonlocal removed
+            img_url, link_url = m.group(1), m.group(2)
+            if remote_only and not (is_remote(img_url) or is_remote(link_url)):
+                return m.group(0)
+            if is_badge(img_url) or is_badge(link_url):
+                removed += 1
+                return ""
+            return m.group(0)
+
+        text = RE_MD_BADGE.sub(repl_badge, text)
+
+    remote_defs: set[str] = set()
+    if remote_only:
+        for m in RE_MD_IMAGE_DEF.finditer(text):
+            if is_remote(m.group(2)):
+                remote_defs.add(m.group(1))
+
+    def repl_inline(m: re.Match[str]) -> str:
+        nonlocal removed
+        if remote_only and not is_remote(m.group(2)):
+            return m.group(0)
+        removed += 1
+        return ""
+
+    text = RE_MD_INLINE.sub(repl_inline, text)
+
+    def repl_ref(m: re.Match[str]) -> str:
+        nonlocal removed
+        if remote_only and m.group(2) not in remote_defs:
+            return m.group(0)
+        removed += 1
+        return ""
+
+    text = RE_MD_REF_IMG.sub(repl_ref, text)
+
+    def repl_def(m: re.Match[str]) -> str:
+        nonlocal removed
+        url = m.group(2)
+        if remote_only:
+            if is_remote(url):
+                removed += 1
+                return ""
+            return m.group(0)
+        if aggressive_defs or is_image_url(url):
+            removed += 1
+            return ""
+        return m.group(0)
+
+    text = RE_MD_IMAGE_DEF.sub(repl_def, text)
+
+    def repl_img(m: re.Match[str]) -> str:
+        nonlocal removed
+        tag = m.group(0)
+        if remote_only:
+            sm = RE_HTML_IMG_SRC.search(tag)
+            if sm and not is_remote(sm.group(1)):
+                return tag
+        removed += 1
+        return ""
+
+    text = RE_HTML_IMG.sub(repl_img, text)
+
+    if not remote_only:
+
+        def repl_block(m: re.Match[str]) -> str:
+            nonlocal removed
+            removed += 1
+            return ""
+
+        text = RE_HTML_PICTURE.sub(repl_block, text)
+        text = RE_HTML_FIGURE.sub(repl_block, text)
+
+    return _finalize(text, ends_nl), removed
+
+
+def process_rst(text: str, remote_only: bool) -> tuple[str, int]:
+    lines = text.split("\n")
+    out: list[str] = []
+    removed = 0
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        matched: Optional[re.Match[str]] = None
+        for pat in _RST_PATTERNS:
+            matched = pat.match(line)
+            if matched:
+                break
+        if matched is not None:
+            url = matched.group(1)
+            if remote_only and not is_remote(url):
+                out.append(line)
+            else:
+                removed += 1
+                j = i + 1
+                while j < len(lines) and lines[j].strip().startswith(":"):
+                    j += 1
+                i = j
+                continue
+        else:
+            out.append(line)
+        i += 1
+    return _finalize("\n".join(out), text.endswith("\n")), removed
+
+
+def _process_html_regex(text: str, remote_only: bool) -> tuple[str, int]:
+    removed = 0
+
+    def repl(m: re.Match[str]) -> str:
+        nonlocal removed
+        tag = m.group(0)
+        if remote_only:
+            sm = RE_HTML_IMG_SRC.search(tag)
+            if sm and not is_remote(sm.group(1)):
+                return tag
+        removed += 1
+        return ""
+
+    return RE_HTML_IMG.sub(repl, text), removed
+
+
+def _process_html_bs4(text: str, remote_only: bool) -> tuple[str, int]:
+    soup = BeautifulSoup(text, "html.parser")
+    removed = 0
+
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+        if isinstance(src, list):
+            src = src[0] if src else ""
+        if remote_only and src and not is_remote(src):
+            continue
+        img.decompose()
+        removed += 1
+
+    for tag in soup.find_all(style=True):
+        parts = [p.strip() for p in tag["style"].split(";") if p.strip()]
+        kept: list[str] = []
+        for part in parts:
+            if "background-image" not in part.lower():
+                kept.append(part)
+                continue
+            m = re.search(r"url\(\s*['\"]?([^'\")]+)['\"]?\s*\)", part)
+            if m and remote_only and not is_remote(m.group(1)):
+                kept.append(part)
+                continue
+            removed += 1
+        if kept:
+            tag["style"] = "; ".join(kept)
+        else:
+            del tag["style"]
+
+    return str(soup), removed
+
+
+def process_html(text: str, remote_only: bool, html_parser: str) -> tuple[str, int]:
+    if html_parser == "bs4":
+        if not _HAS_BS4:
+            msg = "beautifulsoup4 is required for --html-parser bs4"
+            raise RuntimeError(msg)
+        return _process_html_bs4(text, remote_only)
+    return _process_html_regex(text, remote_only)
+
+
+def process_file(
+    path: Path,
+    remote_only: bool,
+    badges: bool,
+    aggressive_defs: bool,
+    html_parser: str,
+    backup: bool,
+) -> Result:
     try:
-        original_content = path.read_text(encoding=config.encoding)
-        original_size = len(original_content.encode(config.encoding))
-        remover = MarkdownImageRemover(config)
-        cleaned_content, images_removed = remover.remove_images(original_content)
-        references_removed = images_removed
-        if cleaned_content != original_content:
-            if config.backup:
-                backup_path = path.with_suffix(path.suffix + ".bak")
-                backup_path.write_text(original_content, encoding=config.encoding)
-            path.write_text(cleaned_content, encoding=config.encoding)
-        final_size = len(cleaned_content.encode(config.encoding))
-        return ImageStats(
-            path=path,
-            rel_path=str(path.relative_to(Path.cwd())),
-            images_removed=images_removed,
-            references_removed=references_removed,
-            original_size=original_size,
-            final_size=final_size,
-            error=None,
-        )
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError as e:
+        return Result(path, 0, 0, 0, 0, 0, str(e))
+
+    lines_before = text.count("\n") + 1
+    size_before = len(text.encode("utf-8"))
+    ext = path.suffix.lower()
+
+    try:
+        if ext in (".md", ".markdown"):
+            new_text, removed = process_markdown(text, remote_only, badges, aggressive_defs)
+        elif ext in (".rst", ".txt"):
+            new_text, removed = process_rst(text, remote_only)
+        elif ext in (".html", ".htm"):
+            new_text, removed = process_html(text, remote_only, html_parser)
+        else:
+            return Result(path, 0, lines_before, lines_before, size_before, size_before)
     except Exception as e:
-        return ImageStats(
-            path=path,
-            rel_path=str(path.relative_to(Path.cwd())),
-            images_removed=0,
-            references_removed=0,
-            original_size=0,
-            final_size=0,
-            error=str(e),
-        )
+        return Result(path, 0, lines_before, lines_before, size_before, size_before, str(e))
 
+    if removed == 0:
+        return Result(path, 0, lines_before, lines_before, size_before, size_before)
 
-def worker_process_file(args: tuple[Path, ProcessingConfig]) -> ImageStats:
-    path, config = args
-    return process_file(path, config)
-
-
-class Reporter:
-    @staticmethod
-    def print_header():
-        print()
-        print(Styling.style("=" * 40, Color.BRIGHT_CYAN, bold=True))
-        print(Styling.style("  Markdown Image Remover v1.3", Color.BRIGHT_CYAN, bold=True))
-        print(Styling.style("=" * 40, Color.BRIGHT_CYAN, bold=True))
-        print()
-
-    @staticmethod
-    def print_file_result(stats: ImageStats):
-        if stats.error:
-            print(f"{Styling.error('✗')} {stats.rel_path}\n  {Styling.error('Error')}: {stats.error}")
-            return
-        reduction = stats.original_size - stats.final_size
-        reduction_pct = (reduction / stats.original_size * 100) if stats.original_size > 0 else 0
-        status = Styling.success("✓") if stats.images_removed > 0 else Styling.dim("∘")
-        print(
-            f"{status} {Styling.info(stats.rel_path)}\n"
-            f"  Images removed: {Styling.style(str(stats.images_removed), Color.YELLOW, bold=True)} | "
-            f"Size: {Styling.dim(Reporter._format_size(stats.original_size))} → "
-            f"{Styling.dim(Reporter._format_size(stats.final_size))} "
-            f"{Styling.dim(f'(-{reduction_pct:.1f}%)')}"
-        )
-
-    @staticmethod
-    def print_summary(results: list[ImageStats]):
-        print()
-        print(Styling.style("-" * 40, Color.BRIGHT_CYAN))
-        successful = [r for r in results if not r.error]
-        failed = [r for r in results if r.error]
-        total_images = sum(r.images_removed for r in successful)
-        total_original = sum(r.original_size for r in successful)
-        total_final = sum(r.final_size for r in successful)
-        total_reduction = total_original - total_final
-        reduction_pct = (total_reduction / total_original * 100) if total_original > 0 else 0
-        print(f"\n{Styling.style('SUMMARY', Color.BRIGHT_CYAN, bold=True)}")
-        print(f"  Files processed: {Styling.style(str(len(successful)), Color.BRIGHT_GREEN, bold=True)}")
-        if failed:
-            print(f"  Failed: {Styling.error(str(len(failed)))}")
-        print(f"  Total images/links removed: {Styling.style(str(total_images), Color.YELLOW, bold=True)}")
-        print(
-            f"  Total size reduction: {Styling.style(Reporter._format_size(total_reduction), Color.BRIGHT_GREEN)} "
-            f"{Styling.dim(f'(-{reduction_pct:.1f}%)')}"
-        )
-        print()
-
-    @staticmethod
-    def _format_size(size: int) -> str:
-        for unit in ("B", "KB", "MB", "GB"):
-            if size < 1024:
-                return f"{size:.1f}{unit}"
-            size /= 1024
-        return f"{size:.1f}TB"
-
-
-def main():
-    Reporter.print_header()
-    args = sys.argv[1:]
-    if not args:
-        search_path = Path.cwd()
-        print(f"No input provided. Processing {Styling.info(str(search_path))} recursively...\n")
-        files = get_markdown_files(search_path)
-    else:
-        files = []
-        for arg in args:
-            p = Path(arg)
-            files.extend(get_markdown_files(p))
-    if not files:
-        print(Styling.warning("No markdown or text files found."))
-        sys.exit(0)
-    print(f"Found {Styling.style(str(len(files)), Color.BRIGHT_YELLOW, bold=True)} file(s) to process.\n")
-    config = ProcessingConfig(workers=4)
-    results = []
     try:
-        with Pool(processes=config.workers) as pool:
-            file_args = [(f, config) for f in files]
-            async_results = [pool.apply_async(worker_process_file, (args,)) for args in file_args]
-            for async_result in async_results:
+        if backup:
+            path.with_suffix(path.suffix + ".bak").write_text(text, encoding="utf-8")
+        path.write_text(new_text, encoding="utf-8")
+    except OSError as e:
+        return Result(path, 0, lines_before, lines_before, size_before, size_before, str(e))
+
+    lines_after = new_text.count("\n") + 1
+    size_after = len(new_text.encode("utf-8"))
+    return Result(path, removed, lines_before, lines_after, size_before, size_after)
+
+
+def discover_files(paths: Sequence[Path], exts: Sequence[str]) -> list[Path]:
+    norm = {e.lower() if e.startswith(".") else "." + e.lower() for e in exts}
+    found: set[Path] = set()
+    for p in paths:
+        if p.is_file():
+            if p.suffix.lower() in norm:
+                found.add(p.resolve())
+        elif p.is_dir():
+            for f in p.rglob("*"):
+                if f.is_file() and f.suffix.lower() in norm:
+                    found.add(f.resolve())
+        else:
+            log.warning("Path does not exist: %s", p)
+    return sorted(found)
+
+
+def print_result(r: Result, report: str) -> None:
+    if r.error:
+        print(f"ERROR: {r.path}: {r.error}")
+        return
+    if r.removed_refs > 0:
+        print(f"Updated: {r.path} ({r.removed_refs} removed)")
+    elif report == "simple":
+        print(f"Skipped (no changes): {r.path}")
+
+
+def print_summary(results: Sequence[Result]) -> None:
+    modified = [r for r in results if r.removed_refs > 0]
+    errors = [r for r in results if r.error]
+    total_removed = sum(r.removed_refs for r in modified)
+    lb = sum(r.lines_before for r in results)
+    la = sum(r.lines_after for r in results)
+    sb = sum(r.size_before for r in results)
+    sa = sum(r.size_after for r in results)
+    print("=" * 40)
+    print("SUMMARY")
+    print("-" * 40)
+    print(f"Files modified: {len(modified)}")
+    if errors:
+        print(f"Errors: {len(errors)}")
+    print(f"Total image references removed: {total_removed}")
+    print(f"Total lines: {lb} -> {la} ({lb - la:+d})")
+    print(f"Total size: {fmt_size(sb)} -> {fmt_size(sa)} ({fmt_size(sb - sa)} saved)")
+    if sb > 0:
+        print(f"Overall reduction: {(sb - sa) / sb * 100:.1f}%")
+    print("-" * 40)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="remove_images",
+        description="Remove image references from Markdown / RST / HTML files.",
+    )
+    p.add_argument("paths", nargs="*", type=Path, help="Files or directories to scan (default: current directory)")
+    p.add_argument(
+        "--ext", nargs="+", default=None, help="File extensions to process (default: .md .markdown .rst .html .htm)"
+    )
+    p.add_argument(
+        "--remote-only", action="store_true", help="Only remove remote image references (http://, https://, //)"
+    )
+    p.add_argument("--badges", action="store_true", help="Also strip badge / shield link blocks")
+    p.add_argument(
+        "--aggressive-defs", action="store_true", help="Remove every link definition line, even non-image ones"
+    )
+    p.add_argument("--workers", type=int, default=8, help="Parallel worker processes (default: 8)")
+    p.add_argument("--backup", action="store_true", help="Write a .bak copy before modifying each file")
+    p.add_argument(
+        "--html-parser", choices=("regex", "bs4"), default="regex", help="HTML parsing backend (default: regex)"
+    )
+    p.add_argument(
+        "--report", choices=("none", "simple", "detailed"), default="simple", help="Output verbosity (default: simple)"
+    )
+    p.add_argument("-v", "--verbose", action="store_true")
+    return p
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.WARNING,
+        format="%(levelname)s: %(message)s",
+    )
+
+    exts = args.ext or [".md", ".markdown", ".rst", ".html", ".htm"]
+    paths = args.paths or [Path.cwd()]
+    files = discover_files(paths, exts)
+
+    if not files:
+        print("No matching files found.")
+        return 0
+
+    if args.report != "none":
+        print(f"Processing {len(files)} file(s) with {args.workers} worker(s)...")
+
+    results: list[Result] = []
+    try:
+        with ProcessPoolExecutor(max_workers=args.workers) as ex:
+            futures = {
+                ex.submit(
+                    process_file,
+                    f,
+                    args.remote_only,
+                    args.badges,
+                    args.aggressive_defs,
+                    args.html_parser,
+                    args.backup,
+                ): f
+                for f in files
+            }
+            for fut in as_completed(futures):
                 try:
-                    result = async_result.get(timeout=30)
-                    results.append(result)
-                    Reporter.print_file_result(result)
+                    r = fut.result()
                 except Exception as e:
-                    print(Styling.error(f"✗ Worker error: {e}"))
+                    log.error("Worker failed: %s", e)
+                    continue
+                results.append(r)
+                if args.report != "none":
+                    print_result(r, args.report)
     except KeyboardInterrupt:
-        print(Styling.warning("\n\nInterrupted by user."))
-        sys.exit(1)
-    Reporter.print_summary(results)
-    failed_count = sum(1 for r in results if r.error)
-    sys.exit(1 if failed_count > 0 else 0)
+        print("\nInterrupted.", file=sys.stderr)
+        return 1
+
+    if args.report == "detailed":
+        print_summary(results)
+
+    return 1 if any(r.error for r in results) else 0
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 It should read all lines from the first file into a set for lookup, then iterate through the second file's lines in order, printing each line that appears in the first file, while avoiding duplicate output for repeated matching lines.
 The script must validate that both files exist before processing, printing an error and exiting if either is missing, and it should also display a usage message and exit if the required command-line arguments are not provided."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

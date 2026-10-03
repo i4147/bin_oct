@@ -3,6 +3,8 @@
 It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, complete type hints, and excludes the script itself from the scan.
 The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt."""
 
+from __future__ import annotations
+
 import re
 import sys
 from multiprocessing import Pool
@@ -122,7 +124,7 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
     return str(path), leaks
 
 
-def get_all_files(root_dir: Path = Path(".")) -> list[Path]:
+def get_all_files(root_dir: Path = Path()) -> list[Path]:
     files: list[Path] = []
     try:
         for path in root_dir.rglob("*"):
@@ -133,7 +135,7 @@ def get_all_files(root_dir: Path = Path(".")) -> list[Path]:
     return files
 
 
-def check_secrets(root_dir: Path = Path(".")) -> tuple[int, int, int]:
+def check_secrets(root_dir: Path = Path()) -> tuple[int, int, int]:
     files: list[Path] = get_all_files(root_dir)
     if not files:
         print("No files found to scan.")

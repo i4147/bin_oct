@@ -295,7 +295,8 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             new_source = _strip_via_ast_line(source)
 
         else:
-            raise ValueError(f"unknown engine: {cfg.engine!r}")
+            msg = f"unknown engine: {cfg.engine!r}"
+            raise ValueError(msg)
 
     except Exception as exc:  # noqa: BLE001 — per-file robustness
         return FileResult(path=path, success=False, error=str(exc), elapsed=time.perf_counter() - t0)

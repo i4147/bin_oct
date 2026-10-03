@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import argparse
 import re
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import TYPE_CHECKING, Final, TypeAlias
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
@@ -83,7 +85,8 @@ def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
             ]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def parse_args() -> argparse.Namespace:

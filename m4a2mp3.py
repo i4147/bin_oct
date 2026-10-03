@@ -3,10 +3,13 @@
 It should take an input file path and an optional bitrate (default "64k"), validate that the file exists and warn if it lacks the .m4a extension, then build and run the appropriate ffmpeg command to produce an output file with the same name but .mp3 extension.
 After conversion it should print the input and output file sizes in MB along with the compression ratio, and it must handle missing ffmpeg or subprocess errors gracefully by printing an error message and exiting with a non-zero status."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
 from pathlib import Path
+
 from dh import runcmd
 
 

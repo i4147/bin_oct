@@ -179,9 +179,7 @@ class Config:
             return True
         if self.use_binary_check and _HAVE_DH and _is_binary(p):
             return True
-        if self.in_exec_dir(p):
-            return True
-        return False
+        return bool(self.in_exec_dir(p))
 
     def matches_deexec(self, p: Path) -> bool:
         name = p.name
@@ -435,11 +433,10 @@ def run_parallel(cfg: Config, items: list[tuple[str, Path]], jobs: int) -> Stats
         return apply_one(cfg, *pair)
 
     total = Stats()
-    with mp.Pool(processes=jobs) as pool:
-        with tqdm(total=len(items), desc="parallel", unit="items") as bar:
-            for st_ in pool.imap_unordered(_work, items, chunksize=chunk):
-                total.merge(st_)
-                bar.update(1)
+    with mp.Pool(processes=jobs) as pool, tqdm(total=len(items), desc="parallel", unit="items") as bar:
+        for st_ in pool.imap_unordered(_work, items, chunksize=chunk):
+            total.merge(st_)
+            bar.update(1)
     return total
 
 
@@ -561,7 +558,8 @@ def parse_mode(s: str) -> int:
     try:
         return int(s, 8)
     except ValueError:
-        raise argparse.ArgumentTypeError(f"invalid octal mode: {s!r}")
+        msg = f"invalid octal mode: {s!r}"
+        raise argparse.ArgumentTypeError(msg)
 
 
 def build_parser() -> argparse.ArgumentParser:

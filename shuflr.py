@@ -3,6 +3,8 @@
 The script should accept the input file path, an optional output filename prefix, a list of shuffle methods, and a repeat count as parameters, print progress information like file size and line counts, and write the shuffled results to separate output files named according to the method used, preserving the original line count and encoding (UTF-8).
 It should be structured with argparse for CLI usage and use pathlib for file handling."""
 
+from __future__ import annotations
+
 import argparse
 import mmap
 import os

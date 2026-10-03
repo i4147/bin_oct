@@ -4,7 +4,10 @@ It should list all installed packages via dpkg-query, then for each package run 
 It should also include a function that runs "apt-get -s upgrade" (simulated upgrade) to check for available updates, returning the raw output.
 The main function should print progress messages and a summary of installed package count and any detected issues, handling errors gracefully by printing an error message and exiting on failure where appropriate."""
 
+from __future__ import annotations
+
 import sys
+
 from dh import runcmd
 
 

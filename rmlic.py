@@ -5,8 +5,11 @@ It should load a license file (e.g.
 For each processed file it should compare file size before and after cleaning, only rewrite the file if content chang statusors using helper functions like cprint, fsz, gsz, and get_nobinary from a local "dh" module.
 The script should be designed to process multiple files, using a worker count constant (NUM_WORKERS = 8) to support concurrent/parallel processing."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
+
 from dh import cprint, fsz, get_nobinary, gsz
 
 LIC_FILE = Path("/sdcard/lic")

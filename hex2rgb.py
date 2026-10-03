@@ -3,6 +3,8 @@
 Include three helper functions: one that converts a standard 6-digit hex string to an (r, g, b) tuple, one that additionally supports 3-digit shorthand hex codes by duplicating each digit, and one that returns the RGB values as a dictionary with keys "r", "g", "b" instead of a tuple.
 The script should accept the hex color as a command-line argument, strip whitespace, and print the resulting RGB conversion to standard output."""
 
+from __future__ import annotations
+
 import sys
 
 

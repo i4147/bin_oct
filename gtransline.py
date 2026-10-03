@@ -3,6 +3,8 @@
 It should detect non-English text via a Unicode regex matching CJK character ranges with a configurable density threshold, process files in parallel using multiprocessing for speed, and log progress and results via the logging module.
 The script should accept command-line arguments (via argparse) to specify the target path and translation options, then rewrite the matched Chinese strings in place with their translated English equivalents."""
 
+from __future__ import annotations
+
 import argparse
 import logging
 import multiprocessing as mp

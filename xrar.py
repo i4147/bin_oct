@@ -73,8 +73,7 @@ def extract_libarchive(archive: Path, dest: Path) -> bool:
                     continue
                 out.parent.mkdir(parents=True, exist_ok=True)
                 with open(out, "wb") as f:
-                    for block in entry.get_blocks():
-                        f.write(block)
+                    f.writelines(entry.get_blocks())
         return True
     except Exception as e:
         print(f"  ! libarchive failed: {e}", file=sys.stderr)

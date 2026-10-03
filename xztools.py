@@ -256,7 +256,8 @@ def compress_bytes(
     if backend in ("auto", "lzma_mt", "lzmamt") and _HAS_LZMA_MT:
         return lzma_mt.compress(data, preset=preset, threads=threads)
     if backend in ("lzma_mt", "lzmamt"):
-        raise RuntimeError("lzma_mt requested but not installed. `pip install lzma_mt` or pass --backend lzma")
+        msg = "lzma_mt requested but not installed. `pip install lzma_mt` or pass --backend lzma"
+        raise RuntimeError(msg)
 
     lvl = preset | lzma.PRESET_EXTREME if preset == 9 else preset
     return lzma.compress(data, format=lzma.FORMAT_XZ, preset=lvl)
@@ -266,7 +267,8 @@ def decompress_bytes(data: bytes, *, backend: str = "auto") -> bytes:
     if backend in ("auto", "lzma_mt", "lzmamt") and _HAS_LZMA_MT:
         return lzma_mt.decompress(data)
     if backend in ("lzma_mt", "lzmamt"):
-        raise RuntimeError("lzma_mt requested but not installed.")
+        msg = "lzma_mt requested but not installed."
+        raise RuntimeError(msg)
     return lzma.decompress(data, format=lzma.FORMAT_XZ)
 
 
@@ -368,9 +370,11 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
 
     try:
         if not src.is_dir():
-            raise FileNotFoundError(f"Not a directory: {src}")
+            msg = f"Not a directory: {src}"
+            raise FileNotFoundError(msg)
         if dst.exists():
-            raise FileExistsError(f"archive exists: {dst.name}")
+            msg = f"archive exists: {dst.name}"
+            raise FileExistsError(msg)
 
         orig_size = dir_size(src)
         with (
@@ -390,7 +394,8 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
 
         comp_size = dst.stat().st_size
         if comp_size <= 0:
-            raise OSError("Created archive is empty")
+            msg = "Created archive is empty"
+            raise OSError(msg)
         if remove_orig:
             shutil.rmtree(src)
         return {
@@ -426,13 +431,15 @@ def _read_file_bytes(args: tuple[str]) -> tuple[str, bytes]:
 
 def _pylzma_compress_blob(data: bytes) -> bytes:
     if not _HAS_PYLZMA:
-        raise RuntimeError("pylzma is not installed (`pip install pylzma`).")
+        msg = "pylzma is not installed (`pip install pylzma`)."
+        raise RuntimeError(msg)
     return pylzma.compress(data, filters=_PYLZMA_FILTERS)
 
 
 def _pylzma_decompress_blob(data: bytes) -> bytes:
     if not _HAS_PYLZMA:
-        raise RuntimeError("pylzma is not installed.")
+        msg = "pylzma is not installed."
+        raise RuntimeError(msg)
     return pylzma.decompress(data)
 
 
@@ -555,16 +562,19 @@ def _chunked_decompress_file(src: Path, dst: Path) -> bool:
     with src.open("rb") as fin, dst.open("wb") as fout:
         header = fin.read(4)
         if len(header) != 4:
-            raise ValueError("invalid chunked header")
+            msg = "invalid chunked header"
+            raise ValueError(msg)
         n_chunks = int.from_bytes(header, "big")
         for _ in range(n_chunks):
             size_raw = fin.read(8)
             if len(size_raw) != 8:
-                raise ValueError("truncated chunk size")
+                msg = "truncated chunk size"
+                raise ValueError(msg)
             size = int.from_bytes(size_raw, "big")
             blob = fin.read(size)
             if len(blob) != size:
-                raise ValueError("truncated chunk")
+                msg = "truncated chunk"
+                raise ValueError(msg)
             fout.write(_pylzma_decompress_blob(blob))
     return True
 

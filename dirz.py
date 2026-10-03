@@ -18,6 +18,7 @@ def format_size(num_bytes: int) -> str:
                 return f"{int(value)}B"
             return f"{value:.1f}{unit}"
         value /= 1024
+    return None
 
 
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:

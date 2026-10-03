@@ -114,7 +114,8 @@ def convert_font(
     try:
         input_format = detect_format(input_path)
         if input_format is None:
-            raise ValueError(f"unsupported extension '{input_path.suffix}'")
+            msg = f"unsupported extension '{input_path.suffix}'"
+            raise ValueError(msg)
 
         result.input_format = input_format
         result.input_size = input_path.stat().st_size
@@ -129,7 +130,8 @@ def convert_font(
         output_existed_before = output_path.exists()
 
         if output_existed_before and not force:
-            raise FileExistsError(f"output exists (use --force): {output_path}")
+            msg = f"output exists (use --force): {output_path}"
+            raise FileExistsError(msg)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -205,7 +207,8 @@ def convert_font(
                     font.sfntVersion = SFNT_VERSIONS["ttf"]
 
                 else:
-                    raise ValueError(f"unsupported output format: {output_format}")
+                    msg = f"unsupported output format: {output_format}"
+                    raise ValueError(msg)
 
             font.save(str(output_path))
 
@@ -515,10 +518,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
                 for ar in async_results:
                     if ar.ready():
-                        try:
+                        with contextlib.suppress(Exception):
                             all_results.append(ar.get(timeout=0))
-                        except Exception:
-                            pass
 
                 print_summary(all_results)
                 return 130

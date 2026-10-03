@@ -3,6 +3,8 @@
 It should use argparse to accept inputs such as the value, source unit, and target unit from the command line, use regex to parse or validate unit strings, and leverage Python's decimal module with increased precision for accurate numeric conversions.
 The output should be the converted value printed to the console, with the script structured around a UnitConverter class containing the conversion tables and logic to look up units and compute the converted result."""
 
+from __future__ import annotations
+
 import argparse
 import math
 import re
@@ -91,7 +93,8 @@ class UnitConverter:
             return liters / UnitConverter.VOLUME_TO_LITERS[to_unit]
         if from_unit in UnitConverter.TEMP_UNITS and to_unit in UnitConverter.TEMP_UNITS:
             return UnitConverter._convert_temperature(value, from_unit, to_unit)
-        raise ValueError(f"Cannot convert between {from_unit} and {to_unit}")
+        msg = f"Cannot convert between {from_unit} and {to_unit}"
+        raise ValueError(msg)
 
     @staticmethod
     def _convert_temperature(value: float, from_unit: str, to_unit: str) -> float:

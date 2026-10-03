@@ -30,7 +30,7 @@ class FontInfo:
     weight: int
     is_italic: bool
     extension: str
-    original_path: Path = field(default_factory=lambda: Path(""))
+    original_path: Path = field(default_factory=Path)
 
 
 class APKFontExtractor:
@@ -151,7 +151,7 @@ class APKFontExtractor:
                 weight=weight,
                 is_italic=is_italic,
                 extension=extension,
-                original_path=Path(""),
+                original_path=Path(),
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to extract font metadata: {}", exc)

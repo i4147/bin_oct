@@ -4,8 +4,11 @@ It should skip empty files, symlinks, and anything under ".git" directories, com
 The script should print each group of duplicates with their hash and file paths, report the total number of duplicate groups found, and exit with status 1 if no duplicates exist.
 It must also support an optional "-r" command-line flag that, when present, automatically deletes all but the first file in each duplicate group."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, mpf
 from xorhash import get_xorhash
 

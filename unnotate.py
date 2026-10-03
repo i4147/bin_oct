@@ -4,6 +4,8 @@ The tool should accept file or directory paths via command-line arguments, walk 
 It should support multiprocessing for parallel processing of multiple files, report per-file results including whether content changed, any warnings, or errors encountered, and provide a Result dataclass summarizing each file's outcome.
 The script should carefully handle whitespace and formatting edge cases when removing annotation nodes so the resulting code remains syntactically valid."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import os
@@ -11,9 +13,12 @@ import re
 import stat
 import sys
 import tempfile
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 try:
     from tree_sitter import Parser
@@ -23,12 +28,14 @@ try:
 
         PY_LANGUAGE = get_language("python")
     except Exception as exc:
-        raise RuntimeError(
+        msg = (
             "Failed to load prebuilt Python grammar from tree_sitter_languages. "
             "Install 'tree_sitter_languages' (pip install tree_sitter_languages)."
-        ) from exc
+        )
+        raise RuntimeError(msg) from exc
 except Exception as exc:
-    raise RuntimeError("tree-sitter is required. Install with: pip install tree_sitter tree_sitter_languages") from exc
+    msg = "tree-sitter is required. Install with: pip install tree_sitter tree_sitter_languages"
+    raise RuntimeError(msg) from exc
 TYPE_COMMENT_RE = re.compile(r"\s*#\s*type\s*:\s*([^\n]*)$", flags=re.IGNORECASE)
 
 
@@ -188,10 +195,10 @@ def gather_py_files(paths: Iterable[str]) -> list[Path]:
                 if f.is_file():
                     out.append(f.resolve())
         else:
-            for f in Path(".").glob(p):
+            for f in Path().glob(p):
                 if f.is_file() and f.suffix == ".py":
                     out.append(f.resolve())
-    unique = sorted({p for p in out})
+    unique = sorted(set(out))
     return unique
 
 

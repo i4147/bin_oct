@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import time
+
 from dh import DOC_TH1, DOC_TH2
 
 FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
@@ -102,7 +103,7 @@ def split_header(body: str) -> tuple[str, str]:
 
 def has_module_docstring(body: str) -> bool:
     s = body.lstrip()
-    return s.startswith(DOC_TH1) or s.startswith(DOC_TH2)
+    return s.startswith((DOC_TH1, DOC_TH2))
 
 
 def ask_felo(code: str) -> str:
@@ -128,7 +129,8 @@ def ask_felo(code: str) -> str:
         timeout=FELO_TIMEOUT,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"felo exited {proc.returncode}: {proc.stderr.strip()[:300]}")
+        msg = f"felo exited {proc.returncode}: {proc.stderr.strip()[:300]}"
+        raise RuntimeError(msg)
     return proc.stdout
 
 
@@ -234,7 +236,7 @@ def main() -> None:
     ap.add_argument("--delay", type=float, default=0.0)
     args = ap.parse_args()
 
-    inputs = args.paths if args.paths else ["."]
+    inputs = args.paths or ["."]
     paths = collect_files(inputs, args.pattern)
 
     if not paths:

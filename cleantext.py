@@ -4,6 +4,8 @@ The script should read the file as UTF-8, filter out characters whose Unicode ca
 It should print a success message when done, and handle errors gracefully by printing a friendly message if the file is not found or if any other exception occurs.
 If no filename is provided as a command-line argument, print a usage instructions message instead."""
 
+from __future__ import annotations
+
 import sys
 import unicodedata
 from pathlib import Path

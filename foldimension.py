@@ -3,6 +3,8 @@
 It should then organize the images into subfolders named after their resolution (e.g., "1920x1080"), placing any dimension that only has a single matching file into an "other" folder instead, while moving/copying files and avoiding filename collisions by appending an incrementing counter to duplicate names.
 The script should gracefully handle missing Pillow by printing an install instruction and exiting, and should print warnings for files that fail to open as images rather than crashing."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from collections import defaultdict

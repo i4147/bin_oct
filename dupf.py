@@ -6,14 +6,16 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from dh import fsz, gsz  # type: ignore[import-untyped]
 from loguru import logger
 from xxhash import xxh64  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 CHUNKSIZE: int = 32768
 POOL_WORKERS: int = 8
@@ -66,7 +68,8 @@ def hash_paths(paths: Sequence[Path], method: str) -> list[HashResult]:
             async_results: list[AsyncResult[HashResult]] = [pool.apply_async(get_hash_file, (path,)) for path in paths]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def find_duplicates(pool_method: str = "map") -> None:

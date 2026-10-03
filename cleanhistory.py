@@ -3,6 +3,8 @@
 The script should read all lines from the file, filter out any lines containing the substring 'cd "`printf', then deduplicate the remaining lines using a set, and finally overwrite the original file with the resulting unique lines.
 After completing the operation, it should print "done." to indicate success."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 if __name__ == "__main__":

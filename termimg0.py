@@ -4,8 +4,11 @@ The script should accept an image file path as a command-line argument, open it 
 It should iterate over pairs of pixel rows, using each pixel pair to set the background and foreground color of a half-block character (▀) so two vertically stacked pixels are displayed per printed character cell, resetting the color codes after each line.
 If no image path is provided as an argument, it should print a usage message instead of running."""
 
+from __future__ import annotations
+
 import sys
 from shutil import get_terminal_size
+
 from PIL import Image
 
 

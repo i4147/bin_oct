@@ -28,8 +28,11 @@ from urllib import request as urlrequest
 
 try:
     import requests  # type: ignore
-    from colorama import Fore, Style
-    from colorama import init as colorama_init  # type: ignore
+    from colorama import (
+        Fore,
+        Style,
+        init as colorama_init,  # type: ignore
+    )
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True
@@ -390,7 +393,7 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
 
 def _public_ip_urllib() -> str:
     ip = get_public_ip()
-    return ip if ip else "Unable to determine public IP"
+    return ip or "Unable to determine public IP"
 
 
 def _public_ip_pycurl() -> str:

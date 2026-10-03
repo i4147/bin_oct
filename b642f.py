@@ -4,9 +4,12 @@ For each line, it should extract and clean the base64 portion, decode it into by
 The script should gracefully handle decoding failures (including a fallback retry that strips the last character before decoding again) and keep track of counts of successful and failed decodes as well as lists of failed/remaining lines.
 It relies on a helper "cprint" from a local module "dh" for colored console output and uses "pathlib.Path" for file operations."""
 
+from __future__ import annotations
+
 import base64
 import sys
 from pathlib import Path
+
 from dh import cprint
 
 

@@ -4,8 +4,11 @@ It should accept file and/or directory paths as command-line arguments (recursiv
 For each file, read its content, perform the tab-to-space replacement, and only rewrite the file if the content actually changed, printing a colored status message ("no change" or "updated") using a custom cprint helper.
 When processing a single file, exit with status code 1 afterward; when processing multiple files, use a multiprocessing helper (mpf) to process them in parallel."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, get_nobinary, mpf
 
 

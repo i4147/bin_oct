@@ -13,14 +13,16 @@ import os
 import re
 import sys
 import time
-from collections.abc import Iterator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
 
 from dh import is_binary
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 logger.remove()
 logger.add("/data/data/com.termux/files/home/tmp/apps/pyrg.log")
@@ -131,7 +133,8 @@ def resolve_type_presets(types: list[str] | None) -> set[str]:
             if not key:
                 continue
             if key not in TYPE_PRESETS:
-                raise ValueError(f"unknown type preset {key!r}; known presets: {', '.join(sorted(TYPE_PRESETS))}")
+                msg = f"unknown type preset {key!r}; known presets: {', '.join(sorted(TYPE_PRESETS))}"
+                raise ValueError(msg)
             out |= TYPE_PRESETS[key]
     return out
 
@@ -182,7 +185,7 @@ class IgnoreMatcher:
                 line = raw.rstrip()
                 if not line or line.lstrip().startswith("#"):
                     continue
-                if line.startswith("\\#") or line.startswith("\\!"):
+                if line.startswith(("\\#", "\\!")):
                     line = line[1:]
                 negated = line.startswith("!")
                 if negated:
@@ -256,7 +259,7 @@ class IgnoreMatcher:
         for i in range(1, len(parts) + 1):
             is_dir = i < len(parts)
             ignored = False
-            for j in range(0, i):
+            for j in range(i):
                 d = root if j == 0 else root / Path(*parts[:j])
                 rel_from_d = Path(*parts[j:i]).as_posix()
                 for rx, neg, dir_only in self._load(d):
@@ -364,9 +367,7 @@ def get_files(
                 return False
         if include_globs and not matches_any_glob(p, include_globs):
             return False
-        if exclude_globs and matches_any_glob(p, exclude_globs):
-            return False
-        return True
+        return not (exclude_globs and matches_any_glob(p, exclude_globs))
 
     for p_str in paths:
         p = Path(p_str)
@@ -976,7 +977,7 @@ def _collect_files(args: argparse.Namespace) -> list[Path]:
 def _run_files_mode(args: argparse.Namespace, cwd: Path) -> int:
     files = _collect_files(args)
     if args.sort == "path":
-        files.sort(key=lambda p: str(p))
+        files.sort(key=str)
     out_fh, should_close = _open_output(args.out_file)
     try:
         for f in files:
@@ -1077,7 +1078,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.sort == "path":
-        files.sort(key=lambda p: str(p))
+        files.sort(key=str)
 
     if not files:
         if not args.no_messages:

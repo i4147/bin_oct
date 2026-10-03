@@ -6,6 +6,7 @@ Usage: python this_script.py <filename>"""
 from __future__ import annotations
 
 import bz2
+import contextlib
 import gzip
 import lzma
 import pickle
@@ -234,7 +235,7 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
 
     brotli = _brotli_mod
     if brotli is not None:
-        methods["brotli"] = lambda d: brotli.decompress(d)  # type: ignore[misc]
+        methods["brotli"] = brotli.decompress  # type: ignore[misc]
 
     zstd = _zstd_mod
     if zstd is not None:
@@ -278,13 +279,14 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
                     return pyppmd.Ppmd7Decoder(order, mem).decode(data, 64 << 20)  # type: ignore[union-attr]
                 except Exception:
                     continue
-            raise ValueError("no PPMd7 variant matched")
+            msg = "no PPMd7 variant matched"
+            raise ValueError(msg)
 
         methods["ppmd7 (raw)"] = _ppmd_dec
 
     bz3 = _bz3_mod
     if bz3 is not None:
-        methods["bzip3"] = lambda d: bz3.decompress(d)  # type: ignore[misc]
+        methods["bzip3"] = bz3.decompress  # type: ignore[misc]
 
     lzo = _lzo_mod
     if lzo is not None:
@@ -486,16 +488,12 @@ def try_pycdlib(filename: str) -> bool:
         print(f"  FAILED: pycdlib: {type(exc).__name__}: {exc}\n")
         return False
     finally:
-        try:
+        with contextlib.suppress(Exception):
             iso.close()
-        except Exception:
-            pass
 
 
 def try_pickle(data: bytes) -> bool:
-    if not (
-        data.startswith(b"\x80\x04") or data.startswith(b"\x80\x05") or data.startswith(b"c") or data.startswith(b"(")
-    ):
+    if not (data.startswith((b"\x80\x04", b"\x80\x05", b"c", b"("))):
         return False
     try:
         print("Trying pickle (WARNING: unsafe on untrusted input)...")
@@ -628,8 +626,7 @@ def extract_libarchive(src: Path) -> None:
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
             with open(target, "wb") as out:
-                for block in entry.get_blocks():
-                    out.write(block)
+                out.writelines(entry.get_blocks())
 
 
 def extract_stream(name: str, blob: bytes, src_name: str) -> None:

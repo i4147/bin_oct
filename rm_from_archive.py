@@ -3,11 +3,14 @@
 It should accept the archive path and the target file path inside the archive, decompress the archive with zstandard into a temporary tar file, then rebuild a new tar archive excluding the specified member while preserving all others, recompress it with zstandard, and save the result to a new output file (e.g., appending "_modified" to the original name).
 The script should print progress messages, handle the case where the target file isn't found in the archive by warning and copying the original archive unchanged, and exit with an error if the input archive doesn't exist."""
 
+from __future__ import annotations
+
 import os
 import shutil
 import sys
 import tarfile
 import tempfile
+
 import zstandard as zstd
 
 

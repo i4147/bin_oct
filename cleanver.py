@@ -3,6 +3,8 @@
 It should read the file line by line, skip empty lines and comments starting with "#", and parse each remaining line by splitting off version specifiers such as "==", ">=", "<=", "~=", the " @ " syntax for URL references, or trailing spaces.
 The cleaned package names should then be written back to the same file, one per line, overwriting the original content."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

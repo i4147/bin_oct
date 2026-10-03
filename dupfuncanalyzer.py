@@ -51,7 +51,7 @@ def analyze_file(path: Path) -> dict[str, Any]:
 
 
 def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
-    resolved_dirs: list[Path] = target_dirs if target_dirs else [Path.cwd()]
+    resolved_dirs: list[Path] = target_dirs or [Path.cwd()]
     py_files: list[Path] = []
     for target_dir in resolved_dirs:
         py_files.extend(target_dir.rglob("*.py"))
@@ -146,7 +146,7 @@ def apply_refactoring(
     repeated: list[RepeatedItem],
     target_dirs: list[Path] | None = None,
 ) -> None:
-    resolved_dirs: list[Path] = target_dirs if target_dirs else [Path.cwd()]
+    resolved_dirs: list[Path] = target_dirs or [Path.cwd()]
     py_files: list[Path] = []
     for target_dir in resolved_dirs:
         py_files.extend(target_dir.rglob("*.py"))

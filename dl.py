@@ -190,23 +190,26 @@ def _download_urllib(
         headers["Range"] = f"bytes={start}-"
     req = urllib.request.Request(url, headers=headers)
     mode = "ab" if start else "wb"
-    with tqdm(
-        total=total or 0,
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-        desc="Downloading",
-        leave=False,
-        disable=quiet,
-        initial=start,
-    ) as bar:
-        with urllib.request.urlopen(req, timeout=timeout) as r, dest.open(mode) as f:
-            while True:
-                chunk = r.read(65536)
-                if not chunk:
-                    break
-                f.write(chunk)
-                bar.update(len(chunk))
+    with (
+        tqdm(
+            total=total or 0,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            desc="Downloading",
+            leave=False,
+            disable=quiet,
+            initial=start,
+        ) as bar,
+        urllib.request.urlopen(req, timeout=timeout) as r,
+        dest.open(mode) as f,
+    ):
+        while True:
+            chunk = r.read(65536)
+            if not chunk:
+                break
+            f.write(chunk)
+            bar.update(len(chunk))
     if not quiet:
         print(f"\n✅ Saved to: {dest}")
     return dest
@@ -242,7 +245,8 @@ def _download_pycurl(
     resume: bool = False,
 ) -> Path:
     if not _HAS_PYCURL:
-        raise RuntimeError("pycurl not available")
+        msg = "pycurl not available"
+        raise RuntimeError(msg)
     dest.parent.mkdir(parents=True, exist_ok=True)
     mode = "ab" if (resume and dest.exists()) else "wb"
     c = pycurl.Curl()
@@ -261,7 +265,8 @@ def _download_pycurl(
             c.perform()
             code = c.getinfo(c.RESPONSE_CODE)
             if code >= 400:
-                raise RuntimeError(f"HTTP {code}")
+                msg = f"HTTP {code}"
+                raise RuntimeError(msg)
     finally:
         c.close()
     return dest
@@ -459,14 +464,13 @@ def _batch_worker(url: str, dest_dir: str, engine: str, resume: bool, timeout: f
             _download_requests(url, fpath, timeout, ua, resume)
         elif engine == "urllib":
             _download_urllib(url, fpath, timeout, ua, resume, quiet=True)
-        else:
-            if _HAS_PYCURL:
-                try:
-                    _download_pycurl(url, fpath, timeout, ua, resume)
-                except Exception:
-                    _download_requests(url, fpath, timeout, ua, resume)
-            else:
+        elif _HAS_PYCURL:
+            try:
+                _download_pycurl(url, fpath, timeout, ua, resume)
+            except Exception:
                 _download_requests(url, fpath, timeout, ua, resume)
+        else:
+            _download_requests(url, fpath, timeout, ua, resume)
         return (url, True, str(fpath))
     except Exception as e:
         with contextlib.suppress(Exception):

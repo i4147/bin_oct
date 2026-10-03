@@ -3,6 +3,8 @@
 It should retrieve each commit's metadata (hash, author name, email, date, and subject) via "git show", and compute per-file change statistics (status such as added/modified/deleted, plus lines added/removed) by parsing the output of "git diff --name-status" and "git diff --numstat" between the older and newer commit.
 The script should raise a clear error if the repository has fewer than two commits or if any git command fails, and it should assemble the collected commit metadata and file-level diff stats into a structured result (e.g., a dictionary) intended to be output as JSON."""
 
+from __future__ import annotations
+
 import json
 import subprocess
 import sys
@@ -18,14 +20,16 @@ def run_git(*args: str, cwd: Path) -> str:
         check=False,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+        msg = f"git {' '.join(args)} failed: {result.stderr.strip()}"
+        raise RuntimeError(msg)
     return result.stdout
 
 
 def get_last_two_commits(repo: Path) -> tuple[str, str]:
     log_output = run_git("log", "-2", "--format=%H", cwd=repo).strip().splitlines()
     if len(log_output) < 2:
-        raise RuntimeError("Repository needs at least 2 commits to diff.")
+        msg = "Repository needs at least 2 commits to diff."
+        raise RuntimeError(msg)
     newer, older = log_output
     return older, newer
 

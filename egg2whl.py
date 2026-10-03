@@ -3,6 +3,8 @@
 It should locate the EGG-INFO directory within the extracted egg, parse PKG-INFO to extract metadata such as package name and version, and read entry_points.txt if present to preserve console scripts or plugin entry points.
 Using this information, it should dynamically generate a setup.py file in a temporary directory, then invoke it via subprocess (using setuptools/wheel commands) to build the wheel, copying the resulting artifact to an output location while cleaning up temporary files afterward."""
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 import tempfile

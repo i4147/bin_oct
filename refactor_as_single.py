@@ -86,7 +86,7 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
             sys.exit("error: no '# filename: ...' sentinels found in -f input")
         return sources
 
-    root = Path(".").resolve()
+    root = Path.cwd()
     py_files = find_source_files(root)
     if not py_files:
         sys.exit(f"error: no .py files found under {root}")

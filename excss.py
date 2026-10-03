@@ -3,11 +3,17 @@
 It should accept HTML file paths as command-line arguments, or if none are given, automatically discover all .html/.htm files in the current working directory.
 The script should process files in parallel (via the `mpf` helper), print colored status messages (using `cprint`) indicating how many styles were found per file and confirming each CSS file's creation, and skip saving empty or trivially short style contents."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from bs4 import BeautifulSoup
-from bs4.element import PageElement
 from dh import cprint, get_files, get_random_filename, mpf
+
+if TYPE_CHECKING:
+    from bs4.element import PageElement
 
 
 def save_style(str1: list[PageElement]) -> None:

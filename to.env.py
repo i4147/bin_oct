@@ -3,6 +3,8 @@
 It should use the `re` module to search file contents for occurrences of these token names, `pathlib.Path` to walk through the target directory and read files, and `collections.defaultdict` to group the findings (e.g., by file or by token).
 The output should summarize which model tokens are used and in which files, aiding in auditing or documenting API token usage across a codebase."""
 
+from __future__ import annotations
+
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -58,7 +60,7 @@ def extract_tokens_with_models(text):
         token_pattern = "sk-[a-zA-Z0-9]+"
         tokens = re.findall(token_pattern, section)
         for token in tokens:
-            tokens_with_models.append((model_name if model_name else "unknown", token))
+            tokens_with_models.append((model_name or "unknown", token))
     return tokens_with_models
 
 

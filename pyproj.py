@@ -3,6 +3,8 @@
 It should generate standard project files (pyproject.toml, setup.py, .gitignore, __init__.py, and package source templates for both pure-Python and Cython variants) stamped with a fixed version number, initialize a local git repository, create the corresponding GitHub repo through the API, and push the initial commit to the default branch using subprocess calls to git.
 The script should accept command-line arguments (via argparse) to specify the package name and any relevant options, and should handle errors such as missing tokens, failed API requests, or git command failures by printing informative messages and exiting appropriately."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -12,6 +14,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Final
+
 from dotenv import load_dotenv
 
 ENV_PATH: Final[Path] = Path.home() / ".env"
@@ -238,13 +241,15 @@ def github_request(
             return json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
         detail: str = e.read().decode(errors="replace")
-        raise SystemExit(f"GitHub API error {e.code} on {method} {url}:\n{detail}") from e
+        msg = f"GitHub API error {e.code} on {method} {url}:\n{detail}"
+        raise SystemExit(msg) from e
 
 
 def get_github_token() -> str:
     token: str | None = os.environ.get("GITHUB_TOKEN")
     if not token:
-        raise SystemExit(f"GITHUB_TOKEN not found. Add it to {ENV_PATH}, e.g.\n    GITHUB_TOKEN=ghp_xxx")
+        msg = f"GITHUB_TOKEN not found. Add it to {ENV_PATH}, e.g.\n    GITHUB_TOKEN=ghp_xxx"
+        raise SystemExit(msg)
     return token
 
 
@@ -339,7 +344,8 @@ def init_project(pkgname: str, *, layout: str) -> tuple[Path, list[Path], list[P
     elif layout == LAYOUT_PACKAGE:
         files = render_package_files(pkgname)
     else:
-        raise ValueError(f"Unknown layout: {layout!r}")
+        msg = f"Unknown layout: {layout!r}"
+        raise ValueError(msg)
     created: list[Path] = []
     skipped: list[Path] = []
     for rel_path, content in files.items():
@@ -431,7 +437,8 @@ def main() -> None:
     cython: bool = args.cython
     do_git: bool = args.git
     if not pkgname.isidentifier():
-        raise SystemExit(f"Error: {pkgname!r} is not a valid Python identifier")
+        msg = f"Error: {pkgname!r} is not a valid Python identifier"
+        raise SystemExit(msg)
     if cython:
         layout: str = LAYOUT_CYTHON
         layout_desc: str = "Cython extension module"

@@ -3,6 +3,8 @@
 It should define a sort-key function that normalizes character variants (e.g., mapping "آ" to "ا", "ي" and "ئ" to "ی", "ة" to "ه") and assigns each character a rank based on a custom-defined Persian alphabet sequence, so that words containing characters outside this mapping still sort predictably by being ranked last.
 The script should use this key function together with Python's sorting mechanism to output the input lines sorted in correct Persian alphabetical order."""
 
+from __future__ import annotations
+
 import sys
 
 

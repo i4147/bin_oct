@@ -4,6 +4,8 @@ The destination file should be placed in `/sdcard/Download/` and named with a ra
 After copying, the script should print the destination filename along with the copied file's size in megabytes.
 The copy should be performed by reading all bytes from the largest file and writing them to the destination path."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

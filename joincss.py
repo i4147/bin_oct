@@ -3,6 +3,8 @@
 It should use regular expressions for detecting the import statements and font URL patterns, define sets of recognized font and image file extensions, and include a mapping of known font family name variants (like Roboto, Lato, Open Sans, Font Awesome) to normalized short identifiers.
 Invalid paths passed as arguments should be reported as skipped via stderr, and duplicate files should be avoided when building the final list of CSS files to process."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

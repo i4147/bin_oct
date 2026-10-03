@@ -18,10 +18,12 @@ import contextlib
 import os
 import re
 import sys
-from collections.abc import Iterable, Iterator
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final, Protocol
+from typing import TYPE_CHECKING, Final, Protocol
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset(
     {
@@ -422,7 +424,7 @@ def run(args: argparse.Namespace) -> int:
     if IS_TERMUX:
         print(f"Running in Termux environment (workers={args.workers})")
 
-    inputs: list[Path] = args.inputs or [Path(".")]
+    inputs: list[Path] = args.inputs or [Path()]
     include_extensionless = not args.sh_only
 
     print("Searching for shell scripts...")

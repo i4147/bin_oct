@@ -3,6 +3,8 @@
 It should skip symlinks and common irrelevant directories (like .git, node_modules, venv, __pycache__, build/dist folders, and OS/IDE cache directories), and provide a helper to format byte sizes into human-readable strings (B, KiB, MiB, etc.).
 The script should accept root paths via argparse, walk the filesystem recursively while handling OSErrors gracefully, and output groups of duplicate files along with reclaimable space statistics."""
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -173,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         "paths",
         nargs="*",
         type=Path,
-        default=[Path(".")],
+        default=[Path()],
         help="Files or directories to scan (default: current directory)",
     )
     ap.add_argument(
@@ -199,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-q", "--quiet", action="store_true", help="Suppress progress messages")
     args = ap.parse_args(argv)
     if not args.paths:
-        args.paths = [Path(".")]
+        args.paths = [Path()]
     for p in args.paths:
         if not p.exists():
             print(f"error: path does not exist: {p}", file=sys.stderr)

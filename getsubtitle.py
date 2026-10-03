@@ -3,9 +3,12 @@
 The function should accept a video file path and an optional output directory, scan the video to identify it, then query multiple subtitle providers (opensubtitles, podnapisi, addic7ed, tvsubtitles) to fetch the best English subtitle match.
 It should save the resulting subtitle as an .srt file named after the video (with an ".en.srt" suffix) into the specified or default output directory, log progress and errors via the logging module, and return a boolean indicating success or failure, handling cases like missing files, scan errors, or no subtitles found."""
 
+from __future__ import annotations
+
 import logging
 import sys
 from pathlib import Path
+
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.video import scan_video

@@ -3,6 +3,8 @@
 It should write these English strings, one per line, into a new text file that shares the same base name as the input but with a ".txt" extension.
 After writing, the script should print a confirmation message indicating where the output was saved."""
 
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path

@@ -5,8 +5,11 @@ Thumbs.db, desktop.ini, *.exe, *.dll).
 It should walk the directory using a recursive generator that gracefully handles permission or OS errors, match each file or folder name against predefined Darwin and Windows pattern sets (supporting wildcard suffixes and prefix-based matches), and for each matched path compute its size using a helper (fsz) from the dh module.
 The final output should be a report listing the matched file paths along with their sizes, using a tuple of (path string, size in bytes) as the per-item result format."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import fsz
 
 DARWIN_PATTERNS = {

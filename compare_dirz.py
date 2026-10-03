@@ -3,6 +3,8 @@
 It should take two directory paths as command-line arguments, recursively hash every file in each directory using relative paths as keys, then classify files into three categories: those present in both directories but with different content (changed), those identical in both (common), and those existing only in the first directory.
 The results should be written as newline-separated relative file paths into three output files named dir1.txt, common.txt, and only_in_dir1.txt respectively, and the script should print a completion message and usage instructions if arguments are missing."""
 
+from __future__ import annotations
+
 import hashlib
 import sys
 from pathlib import Path

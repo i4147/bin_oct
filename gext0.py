@@ -3,6 +3,8 @@
 It should recursively walk through nested archives if needed, filter files by allowed Python extensions, and use multiprocessing (via Pool and cpu_count) to process multiple archives or files in parallel for performance.
 The script should handle file I/O robustly with shutil for temporary extraction and cleanup, and use regex where needed for auxiliary text parsing."""
 
+from __future__ import annotations
+
 import ast
 import os
 import re
@@ -211,7 +213,7 @@ def main():
         print(f"Cleaned previous output directory: {OUTPUT_DIR}")
     OUTPUT_DIR.mkdir(exist_ok=True)
     files_to_process = []
-    current_dir = Path(".")
+    current_dir = Path()
     for root, _, filenames in os.walk(current_dir):
         for name in filenames:
             path = Path(root) / name

@@ -185,22 +185,26 @@ def _open_decompressor(path: Path, kind: str) -> Iterator:
             yield f
     elif kind == "zst":
         if zstd is None:
-            raise RuntimeError("zstandard is not installed")
+            msg = "zstandard is not installed"
+            raise RuntimeError(msg)
         with open(path, "rb") as raw, zstd.ZstdDecompressor().stream_reader(raw) as f:
             yield f
     elif kind == "br":
         if brotli is None:
-            raise RuntimeError("brotli is not installed")
+            msg = "brotli is not installed"
+            raise RuntimeError(msg)
         import io
 
         yield io.BytesIO(brotli.decompress(path.read_bytes()))
     elif kind == "lz4":
         if lz4frame is None:
-            raise RuntimeError("lz4 is not installed")
+            msg = "lz4 is not installed"
+            raise RuntimeError(msg)
         with lz4frame.open(path, "rb") as f:
             yield f
     else:
-        raise ValueError(f"unknown compression kind: {kind}")
+        msg = f"unknown compression kind: {kind}"
+        raise ValueError(msg)
 
 
 def _decompress_stream(src: Path, dst: Path, kind: str) -> None:
@@ -240,7 +244,8 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
     elif name.endswith(".tar"):
         mode = "r:"
     else:
-        raise ValueError(f"not a tar: {archive.name}")
+        msg = f"not a tar: {archive.name}"
+        raise ValueError(msg)
 
     with tarfile.open(archive, mode) as tar:
         _safe_extract_tar(tar, dest)
@@ -273,7 +278,8 @@ def extract_with_python(archive: Path, dest: Path) -> None:
 
     if name.endswith(".7z"):
         if py7zr is None:
-            raise RuntimeError("py7zr is not installed")
+            msg = "py7zr is not installed"
+            raise RuntimeError(msg)
         with py7zr.SevenZipFile(archive, mode="r") as sz:
             sz.extractall(path=dest)
         return
@@ -292,18 +298,21 @@ def extract_with_python(archive: Path, dest: Path) -> None:
             _decompress_stream(archive, dest / out_name, kind)
             return
 
-    raise ValueError(f"python engine does not support: {archive.name}")
+    msg = f"python engine does not support: {archive.name}"
+    raise ValueError(msg)
 
 
 def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
     ext = detect_extension(archive)
     if not ext or ext not in CLI_COMMANDS:
-        raise ValueError(f"no external tool for: {archive.name}")
+        msg = f"no external tool for: {archive.name}"
+        raise ValueError(msg)
 
     cmd = list(CLI_COMMANDS[ext])
     tool = cmd[0]
     if shutil.which(tool) is None:
-        raise RuntimeError(f"tool '{tool}' not found in PATH")
+        msg = f"tool '{tool}' not found in PATH"
+        raise RuntimeError(msg)
 
     dest.mkdir(parents=True, exist_ok=True)
 
@@ -404,7 +413,8 @@ def _try_extract(archive: Path, dest: Path, engine: str) -> None:
             errs.append(f"external: {e}")
         raise RuntimeError(" | ".join(errs))
     else:
-        raise ValueError(f"unknown engine: {engine}")
+        msg = f"unknown engine: {engine}"
+        raise ValueError(msg)
 
 
 def should_use_subdir(archive: Path) -> bool:
@@ -490,7 +500,7 @@ def check_integrity(archive: Path) -> tuple[bool, str]:
 
 
 def find_archives(roots: Iterable[Path], recursive: bool, formats: Optional[set[str]] = None) -> list[Path]:
-    exts = formats if formats else set(ALL_EXTENSIONS)
+    exts = formats or set(ALL_EXTENSIONS)
 
     ordered = sorted(exts, key=len, reverse=True)
 
@@ -508,10 +518,9 @@ def find_archives(roots: Iterable[Path], recursive: bool, formats: Optional[set[
             if not p.is_file():
                 continue
             low = p.name.lower()
-            if any(low.endswith(e) for e in ordered):
-                if p not in seen:
-                    found.append(p)
-                    seen.add(p)
+            if any(low.endswith(e) for e in ordered) and p not in seen:
+                found.append(p)
+                seen.add(p)
     return sorted(found)
 
 

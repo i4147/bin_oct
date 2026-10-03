@@ -184,9 +184,9 @@ def find_files(directory: Path, extensions: Sequence[str], recursive: bool) -> l
 def process_clean_file(path: Path) -> Optional[tuple[str, str, Path]]:
     name = path.name
     parsed: Optional[tuple[str, str]] = None
-    if name.endswith(".whl") or name.endswith(".metadata"):
+    if name.endswith((".whl", ".metadata")):
         parsed = parse_wheel_or_metadata(name)
-    elif name.endswith(".tar.gz") or name.endswith(".tgz"):
+    elif name.endswith((".tar.gz", ".tgz")):
         parsed = parse_targz(name)
     elif name.endswith(".deb"):
         parsed = parse_deb(name)

@@ -103,7 +103,8 @@ def find_dist_info(root: Path, pkg: str) -> Path:
         candidates = list(root.glob(f"{normalized}-*.dist-info"))
 
     if not candidates:
-        raise FileNotFoundError(f"dist-info not found for package {pkg!r} in {root}")
+        msg = f"dist-info not found for package {pkg!r} in {root}"
+        raise FileNotFoundError(msg)
 
     if len(candidates) > 1:
         logger.warning(

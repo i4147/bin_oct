@@ -4,9 +4,12 @@ It should accept image file paths as command-line arguments, or if none are give
 Use the `ascii_magic` library's `AsciiArt.from_image` to render each image, sizing the output to the current terminal width with a width ratio of 2 and preserving color (non-monochrome).
 If only a single file is provided or found, process it directly and exit; otherwise, process multiple files concurrently using a multiprocessing pool of 8 workers."""
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
+
 from ascii_magic import AsciiArt
 from dh import get_files
 

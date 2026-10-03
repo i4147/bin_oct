@@ -4,8 +4,11 @@ It should read files safely (ignoring undecodable/binary content via helper func
 It must support two modes: merging everything into a single randomly-named output file (reusing the shared extension when all filtered files share one), or grouping files by extension into separate output files inside a "mer..." subdirectory.
 The script should use argparse to expose these options (input paths, extension filter, group-by-extension flag) as CLI arguments and return the list of generated output file paths."""
 
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
+
 from dh import get_nobinary, get_random_filename, should_skip
 
 
@@ -89,7 +92,7 @@ def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], 
 
 def merge_files(args: argparse.Namespace) -> None:
     cwd = Path.cwd()
-    files = [f for f in get_nobinary(cwd)]
+    files = list(get_nobinary(cwd))
     if not args.group:
         pass
     if args.extensions:

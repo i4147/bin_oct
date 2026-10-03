@@ -580,7 +580,7 @@ def cmd_find_lines(args: argparse.Namespace) -> int:
                 stripped = raw.strip()
                 if len(stripped) < 3:
                     continue
-                name, code, conf = detect_with_pycld2(stripped, min_bytes=3)
+                _name, code, conf = detect_with_pycld2(stripped, min_bytes=3)
                 if code is None:
                     continue
                 code = code.lower()

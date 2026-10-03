@@ -6,16 +6,18 @@ from __future__ import annotations
 
 import argparse
 import re
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import TYPE_CHECKING, Final, TypeAlias
 
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from dh import unique_path  # type: ignore[import-untyped]
 from fastwalk import walk_files  # type: ignore[import-untyped]
 from loguru import logger
 from tqdm import tqdm
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 DIRECTORY: Final[str] = "."
 POOL_WORKERS: Final[int] = 8
@@ -72,7 +74,8 @@ def _run_pool(names: Sequence[str], method: str) -> list[NamePair]:
             async_results: list[AsyncResult[NamePair]] = [pool.apply_async(translate_name, (name,)) for name in names]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def _build_translation_map(paths: Sequence[Path], pool_method: str) -> dict[str, str]:

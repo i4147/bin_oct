@@ -10,14 +10,17 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Iterable, Iterator, Sequence
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tree_sitter_c
 import tree_sitter_cpp
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
 
 CPP_EXTS: frozenset[str] = frozenset(
     {
@@ -47,7 +50,8 @@ def get_parser(ext: str) -> Parser:
         elif ext in CPP_EXTS:
             lang = Language(tree_sitter_cpp.language())
         else:
-            raise ValueError(f"Unsupported extension: {ext}")
+            msg = f"Unsupported extension: {ext}"
+            raise ValueError(msg)
         parser: Parser = Parser()
         parser.language = lang
         _PARSERS[ext] = parser
@@ -268,7 +272,7 @@ def main() -> int:
         help="Interactive mode: show each comment and ask for confirmation before removal.",
     )
     args: argparse.Namespace = ap.parse_args()
-    inputs: list[Path] = list(args.paths) if args.paths else [Path(".")]
+    inputs: list[Path] = list(args.paths) if args.paths else [Path()]
     files: list[Path] = list(iter_cc_files(inputs))
     if not files:
         logger.error("No C/C++ files to process.")

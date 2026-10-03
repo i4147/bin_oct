@@ -104,11 +104,12 @@ class DriveClient:
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
         else:
             if not self.client_id or not self.client_secret:
-                raise ValueError(
+                msg = (
                     f"Neither '{self.credentials_file}' nor "
                     "GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are available "
                     "for 'installed' auth mode."
                 )
+                raise ValueError(msg)
             flow = InstalledAppFlow.from_client_config(
                 {
                     "installed": {
@@ -125,9 +126,8 @@ class DriveClient:
 
     def _manual_oauth_flow(self):
         if not self.client_id or not self.client_secret:
-            raise ValueError(
-                "Manual auth mode requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (env file or CLI flags)."
-            )
+            msg = "Manual auth mode requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (env file or CLI flags)."
+            raise ValueError(msg)
 
         params = {
             "client_id": self.client_id,
@@ -160,7 +160,8 @@ class DriveClient:
             timeout=30,
         )
         if resp.status_code != 200:
-            raise RuntimeError(f"Token exchange failed: {resp.text}")
+            msg = f"Token exchange failed: {resp.text}"
+            raise RuntimeError(msg)
         tok: dict[str, Any] = resp.json()
 
         return Credentials(
@@ -283,7 +284,8 @@ def cmd_download(args: argparse.Namespace) -> int:
         client = _make_client(args)
         folder = client.find_folder(args.folder)
         if not folder:
-            raise SystemExit(f"Folder '{args.folder}' not found in Google Drive")
+            msg = f"Folder '{args.folder}' not found in Google Drive"
+            raise SystemExit(msg)
 
         print(f"Found folder '{args.folder}' with ID: {folder['id']}")
         dest = args.dest or os.path.join(os.getcwd(), args.folder)
@@ -314,7 +316,8 @@ def cmd_sync(args: argparse.Namespace) -> int:
             print(f"Searching for folder: {args.folder}")
             folder = client.find_folder(args.folder)
             if not folder:
-                raise SystemExit(f'Folder "{args.folder}" not found in root directory')
+                msg = f'Folder "{args.folder}" not found in root directory'
+                raise SystemExit(msg)
             client.sync_folder(
                 folder["id"],
                 dest,

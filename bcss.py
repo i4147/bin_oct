@@ -4,8 +4,11 @@ It should accept specific file paths as command-line arguments, or if none are g
 For each file, it records the size before and after processing, prints per-file status (no change, success with bytes saved and percentage reduction, or error) using colored console output, and processes files in parallel via a multiprocessing helper.
 Finally, it reports the total disk space freed across all processed files."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 
 
@@ -22,13 +25,13 @@ def process_file(path) -> bool | None:
         diffsize = before - after
         if not diffsize:
             cprint("[NO CHANGE]", "white")
-            return
+            return None
         if diffsize:
             ratio = diffsize / before * 40
             cprint(f"[OK] - {fsz(diffsize)} {abs(ratio):.1f}%", "cyan")
-        return
+        return None
     cprint("[ERROR]", "red")
-    return
+    return None
 
 
 def main() -> None:

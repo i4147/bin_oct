@@ -3,6 +3,8 @@
 The script should accept the source file path as a command-line argument, strip any surrounding whitespace from it, and use shutil.copy2 to copy the file while preserving its metadata to the fixed destination directory.
 After the copy completesfully, it should print "done" to indicate the operation finished."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path

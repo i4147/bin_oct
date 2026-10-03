@@ -16,12 +16,14 @@ import argparse
 import multiprocessing as mp
 import sys
 import time
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 try:
     from langdet import LanguageDetector
@@ -394,7 +396,7 @@ class NonEnglishDetector:
             result.error = f"Error processing file: {e!s}"
         return result
 
-    def scan_directory(self, root_dir: Path = Path(".")) -> list[DetectionResult]:
+    def scan_directory(self, root_dir: Path = Path()) -> list[DetectionResult]:
         results: list[DetectionResult] = []
         paths: list[Path] = []
         print(f"Scanning directory: {root_dir.absolute()}")

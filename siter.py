@@ -4,6 +4,8 @@ The script should locate the venv root and its bin/Scripts directory from a give
 It should accept command-line arguments (via argparse) for the site-packages path, output directory, a force-rebuild-all flag, and options to control parallel processing (using multiprocessing across multiple workers, with a configurable worker count capped by CPU count).
 The tool should use temporary directories and zipfile operations to assemble each wheel, track already-processed packages to avoid duplicates, and write the resulting wheel files into the specified output directory, printing progress or errors to stdout/stderr as needed."""
 
+from __future__ import annotations
+
 import argparse
 import base64
 import csv

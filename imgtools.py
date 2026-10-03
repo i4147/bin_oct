@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import io
 import os
 import re
@@ -76,10 +77,8 @@ def dir_size(path: Path) -> int:
     total = 0
     for f in path.rglob("*"):
         if f.is_file():
-            try:
+            with contextlib.suppress(OSError):
                 total += f.stat().st_size
-            except OSError:
-                pass
     return total
 
 
@@ -171,7 +170,8 @@ def _import_cv2():
 
         return cv2, np
     except ImportError as exc:  # pragma: no cover
-        raise SystemExit("opencv-python and numpy are required for this command") from exc
+        msg = "opencv-python and numpy are required for this command"
+        raise SystemExit(msg) from exc
 
 
 def _import_pil():
@@ -180,7 +180,8 @@ def _import_pil():
 
         return Image, ImageEnhance
     except ImportError as exc:  # pragma: no cover
-        raise SystemExit("Pillow is required for this command") from exc
+        msg = "Pillow is required for this command"
+        raise SystemExit(msg) from exc
 
 
 def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
@@ -222,7 +223,7 @@ def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
 
 
 def cmd_auto_enhance(args: argparse.Namespace) -> int:
-    inputs = [Path(p) for p in args.inputs] if args.inputs else [Path(".")]
+    inputs = [Path(p) for p in args.inputs] if args.inputs else [Path()]
     files = iter_files(inputs, DEFAULT_IMAGE_EXTS, recursive=True)
 
     if not files:
@@ -402,9 +403,8 @@ def _optimize_embedded_resource(
         elif kind == "css":
             if not _run_embed_tool([args.css_command, str(src)], "ccss", args.timeout):
                 return None, None
-        elif kind == "js":
-            if not _run_embed_tool([args.js_command, str(src)], "ter_ser", args.timeout):
-                return None, None
+        elif kind == "js" and not _run_embed_tool([args.js_command, str(src)], "ter_ser", args.timeout):
+            return None, None
 
         if not result_path.exists():
             print(f"Result file missing after optimization: {result_path}")
@@ -412,10 +412,8 @@ def _optimize_embedded_resource(
         return result_path.read_bytes(), result_mime
     finally:
         for f in temp_paths:
-            try:
+            with contextlib.suppress(OSError):
                 f.unlink(missing_ok=True)
-            except OSError:
-                pass
 
 
 def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
@@ -796,7 +794,7 @@ def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
 
 
 def cmd_strip_exif(args: argparse.Namespace) -> int:
-    paths = [Path(p) for p in args.paths] if args.paths else [Path(".")]
+    paths = [Path(p) for p in args.paths] if args.paths else [Path()]
     extensions = parse_extensions(args.extensions)
     recursive = not args.no_recursive
     files = iter_files(paths, extensions, recursive=recursive)

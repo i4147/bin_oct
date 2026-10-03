@@ -3,6 +3,8 @@
 It should then distinguish third-party packages by excluding names that match local .py files or local packages (directories containing __init__.py) in the current directory, as well as excluding standard library modules obtained via sys.stdlib_module_names.
 The script should handle file reading errors and syntax errors gracefully by skipping problematic files, and finally write the resulting set of third-party import names to an output file named importz.txt in the current working directory."""
 
+from __future__ import annotations
+
 import ast
 import sys
 from pathlib import Path

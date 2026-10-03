@@ -4,12 +4,15 @@ The script should support optional pretty-printed table output via tabulate and 
 It should also provide a function to copy each group of similar files into separate subfolders under an output directory, and be able to export results (such as grouped file paths and similarity data) to CSV and/or JSON formats.
 The script is intended to run as a command-line tool for detecting and organizing near-duplicate files based on content similarity rather than exact hash matches."""
 
+from __future__ import annotations
+
 import csv
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
+
 import ssdeep
 
 try:

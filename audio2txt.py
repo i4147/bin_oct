@@ -4,9 +4,12 @@ It should accept an input .m4a file path and an optional output text file path (
 Using the speech_recognition library, it should load the WAV file, adjust for ambient noise, transcribe the audio with Google's speech recognition API, and write the resulting text to the output file, printing progress messages at each step (conversion, loading, noise adjustment, transcription) along with a preview of the transcribed text (truncated to 200 characters if longer).
 The script should handle missing input files by printing an error and exiting, and should clean up the temporary WAV file after processing."""
 
+from __future__ import annotations
+
 import os
 import sys
 import tempfile
+
 import speech_recognition as sr
 from pydub import AudioSegment
 

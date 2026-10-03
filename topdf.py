@@ -257,7 +257,8 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
 
     cf = pychm.CHMFile()
     if not cf.LoadCHM(str(chm_path)):
-        raise RuntimeError(f"failed to load CHM file: {chm_path}")
+        msg = f"failed to load CHM file: {chm_path}"
+        raise RuntimeError(msg)
 
     try:
         tree = cf.GetTopicsTree()
@@ -269,7 +270,8 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
             htmls = [f for f in files if f.lower().endswith((".html", ".htm"))]
             if htmls:
                 return _render_multiple_topics(cf, htmls)
-            raise RuntimeError("no HTML content found in CHM file")
+            msg = "no HTML content found in CHM file"
+            raise RuntimeError(msg)
 
         parts = [_CHM_STYLE_HEADER]
 
@@ -367,8 +369,10 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     try:
         from reportlab.lib.enums import TA_CENTER  # type: ignore
         from reportlab.lib.pagesizes import letter  # type: ignore
-        from reportlab.lib.styles import ParagraphStyle  # type: ignore
-        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.styles import (
+            ParagraphStyle,  # type: ignore
+            getSampleStyleSheet,
+        )
         from reportlab.lib.units import inch  # type: ignore
         from reportlab.platypus import (
             PageBreak,
@@ -569,8 +573,10 @@ def _convert_markdown2(
         try:
             from pygments import highlight  # type: ignore
             from pygments.formatters import HtmlFormatter  # type: ignore
-            from pygments.lexers import TextLexer  # type: ignore
-            from pygments.lexers import get_lexer_by_name
+            from pygments.lexers import (
+                TextLexer,  # type: ignore
+                get_lexer_by_name,
+            )
         except ImportError:
             warn("pygments not installed — skipping code highlighting")
             pygments = False

@@ -4,7 +4,10 @@ It should create three output folders named "safe", "sexy", and "porn" if they d
 Files whose paths contain the segments "porn", "nude", "safr", or "sexy" should be skipped during classification.
 The script should use helper functions from a local "dh" module (cprint for colored printing, get_files for recursive file discovery filtered by extension, and mpf for multiprocessing/parallel execution) to process all discovered files concurrently."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from dh import cprint, get_files, mpf
 from nudenet import NudeDetector
 

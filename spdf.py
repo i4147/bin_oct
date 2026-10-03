@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from pathlib import Path
-from typing import List, Optional, Tuple
+from __future__ import annotations
+
+import argparse
+import contextlib
+import shutil
 import subprocess
 import tempfile
-import shutil
-import argparse
 from multiprocessing import Pool
+from pathlib import Path
+from typing import List, Optional, Tuple
+
 from loguru import logger
 
 
@@ -16,7 +20,7 @@ def compress_pdf(input_path: Path) -> Optional[tuple[Path, int, int]]:
         logger.warning(f"Skipping non-PDF or missing file: {input_path}")
         return None
 
-    temp_fd, temp_path = tempfile.mkstemp(suffix=".pdf")
+    _temp_fd, temp_path = tempfile.mkstemp(suffix=".pdf")
 
     try:
         gs_command = [
@@ -71,10 +75,8 @@ def compress_pdf(input_path: Path) -> Optional[tuple[Path, int, int]]:
         return None
 
     finally:
-        try:
+        with contextlib.suppress(BaseException):
             Path(temp_path).unlink(missing_ok=True)
-        except:
-            pass
 
 
 def collect_pdf_files(paths: list[Path]) -> list[Path]:

@@ -3,6 +3,8 @@
 It should create these directories if they don't exist, print progress messages showing the check result for each file, and avoid overwriting existing files at the destination by appending a numeric suffix (e.g., `_1`, `_2`) when a name collision occurs.
 The script should exit with the return code of the `main()` function."""
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 from pathlib import Path

@@ -51,7 +51,7 @@ async def run_extractor(args: argparse.Namespace) -> None:
         )
         sys.exit(1)
 
-    pattern = args.pattern if args.pattern else PATTERN_PRESETS[args.pattern_preset]
+    pattern = args.pattern or PATTERN_PRESETS[args.pattern_preset]
 
     client = TelegramClient(args.session, api_id, api_hash)
     if args.phone:

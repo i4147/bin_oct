@@ -3,6 +3,8 @@
 For each wheel it opens the zip archive, locates the .dist-info folder and its RECORD file, and checks whether all recorded paths are prefixed by that .dist-info directory; any read, parsing, or zip errors should cause the wheel to be treated as not empty.
 The script should print progress while checking each wheel and finally report or handle the list of detected empty wheel filenames."""
 
+from __future__ import annotations
+
 import csv
 import zipfile
 from pathlib import Path
@@ -40,7 +42,7 @@ def is_empty_wheel(wheel_path: str) -> bool:
 
 
 def main() -> None:
-    current_dir = Path(".")
+    current_dir = Path()
     wheel_files = list(current_dir.glob("*.whl"))
     if not wheel_files:
         return

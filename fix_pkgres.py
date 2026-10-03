@@ -3,6 +3,8 @@
 It should use regular expressions to detect these patterns, report the files where matches are found, and optionally support an autofix mode that rewrites the code to use modern equivalents (e.g., importlib.metadata.version and packaging.version.parse), inserting the necessary import statements while removing the old pkg_resources import.
 The script should accept a command-line flag to toggle autofix behavior and print a summary of how many occurrences or files were found/modified."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -33,7 +35,7 @@ def fix_content(content):
 
 def process_files(autofix=False):
     count_found = 0
-    python_files = list(Path(".").rglob("*.py"))
+    python_files = list(Path().rglob("*.py"))
     for path in python_files:
         if path.name == os.path.basename(__file__):
             continue

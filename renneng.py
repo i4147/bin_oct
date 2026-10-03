@@ -3,9 +3,12 @@
 It should detect non-English names using a regex check for non-ASCII characters, skip names that are already English, and avoid overwriting existing files by appending an incrementing numeric suffix when a naming collision occurs.
 The script should print a log line for each successful rename showing the old and new names, and gracefully handle and report translation errors without stopping execution."""
 
+from __future__ import annotations
+
 import os
 import re
 from pathlib import Path
+
 from deep_translator import GoogleTranslator
 from fastwalk import walk_files
 

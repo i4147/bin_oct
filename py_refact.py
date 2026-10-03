@@ -128,7 +128,7 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
             sys.exit("error: no '# File: ...' sentinels found in -f input")
         return sources
 
-    root = Path(".").resolve()
+    root = Path.cwd()
     py_files = find_source_files(root)
     if not py_files:
         sys.exit(f"error: no .py files found under {root}")
@@ -168,7 +168,7 @@ def rewrite_parallelism(text: str) -> str:
     text = re.sub(r"^from concurrent\.futures import[^\n]*\n", "", text, flags=re.MULTILINE)
 
     def _replace_pool_block(match: re.Match) -> str:
-        loop_var, body, item_var, fn_name, iterable = match.groups()
+        _loop_var, _body, item_var, fn_name, iterable = match.groups()
         return (
             f"with mp.Pool(WORKERS) as pool:\n"
             f"    for {item_var} in pool.imap_unordered({fn_name.strip()}, {iterable.strip()}):"
@@ -213,7 +213,7 @@ def block_hash(node_source: str) -> str:
 
 
 class CollectedItem:
-    __slots__ = ("name", "kind", "source", "hash", "origin", "node")
+    __slots__ = ("hash", "kind", "name", "node", "origin", "source")
 
     def __init__(self, name: str, kind: str, source: str, origin: str, node: ast.AST) -> None:
         self.name = name
@@ -318,7 +318,7 @@ def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
         refs.discard(item.name)
         deps[item.name] = refs
 
-    in_degree = {name: 0 for name in by_name}
+    in_degree = dict.fromkeys(by_name, 0)
     dependents: dict[str, list[str]] = {name: [] for name in by_name}
     for name, refs in deps.items():
         for ref in refs:
@@ -344,7 +344,7 @@ def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
 
 
 def optimize_imports(raw_imports: list[str]) -> str:
-    unique = sorted(set(line for line in raw_imports if line.strip()))
+    unique = sorted({line for line in raw_imports if line.strip()})
     stdlib_modules = set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
 
     stdlib_lines: list[str] = []

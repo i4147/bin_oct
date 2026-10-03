@@ -4,8 +4,11 @@ It should accept file paths as command-line arguments, or if none are given, aut
 For each font, it loads it with TTFont, sets its flavor to "woff", saves it under the same name with a .woff extension (generating a unique filename if one already exists), deletes the original source file on success, and prints a confirmation or error message.
 If only a single file is processed it should run synchronously, otherwise it should process the files in parallel using a multiprocessing helper."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 

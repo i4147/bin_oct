@@ -4,8 +4,11 @@ For each input file, read its UTF-8 text and repeatedly split it near the size l
 Write each resulting chunk to a new file in the same directory, reusing the original stem with a zero-padded numeric suffix (width based on the total chunk count, minimum 3 digits) appended before the extension, preserving UTF-8 encoding.
 The script should skip empty files and catch and report any errors encountered while processing a given file without crashing the whole run."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import mpf_map
 
 CHUNKSIZE = 15_850

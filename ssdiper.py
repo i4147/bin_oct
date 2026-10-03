@@ -5,11 +5,14 @@ The script should output the results as JSON, sorted by similarity score in desc
 Pass -g/--group-similar to move paired files, into subdirs group001, group002, ...
 in the current directory."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import operator
 from collections import defaultdict
 from pathlib import Path
+
 import ssdeep
 from dh import get_files
 

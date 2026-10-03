@@ -36,7 +36,8 @@ def _require(modname: str):
     try:
         return importlib.import_module(modname)
     except ImportError as exc:
-        raise ImportError(f"format requires '{modname}'; install with: pip install {modname}") from exc
+        msg = f"format requires '{modname}'; install with: pip install {modname}"
+        raise ImportError(msg) from exc
 
 
 def read_text(path: Path) -> str:
@@ -45,9 +46,8 @@ def read_text(path: Path) -> str:
         return ""
     if size > MMAP_THRESHOLD:
         logger.debug(f"mmap read: {path} ({size / 1_048_576:.1f} MB)")
-        with path.open("rb") as fh:
-            with mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                return mm[:].decode("utf-8", errors="replace")
+        with path.open("rb") as fh, mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            return mm[:].decode("utf-8", errors="replace")
     return path.read_text(encoding="utf-8")
 
 
@@ -77,7 +77,7 @@ def _infer_sql_type(values) -> str:
     for v in values:
         if v is None:
             continue
-        if isinstance(v, bool) or isinstance(v, int):
+        if isinstance(v, (bool, int)):
             if kind in (None, "INTEGER"):
                 kind = "INTEGER"
             elif kind == "REAL":
@@ -179,7 +179,7 @@ def load_jsonl(path: Path) -> Tables:
 
 
 def write_jsonl(tables: Tables, out_path: Path) -> list[Path]:
-    name, rows = next(iter(tables.items()))
+    _name, rows = next(iter(tables.items()))
     with out_path.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
@@ -231,12 +231,12 @@ def write_db(tables: Tables, out_path: Path) -> list[Path]:
 
 _CREATE_RE = re.compile(
     r'CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\[\]]?(\w+)[`"\[\]]?\s*\(',
-    re.I,
+    re.IGNORECASE,
 )
 _INSERT_RE = re.compile(
     r'INSERT\s+(?:OR\s+\w+\s+)?INTO\s+[`"\[\]]?(\w+)[`"\[\]]?\s*'
     r"(?:\(([^)]*)\))?\s*VALUES\s*",
-    re.I,
+    re.IGNORECASE,
 )
 _NON_COLUMN_KEYWORDS = {
     "PRIMARY",
@@ -391,22 +391,21 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
                     continue
                 cur.append(c)
                 i += 1
+            elif c in "'\"":
+                in_str, quote = True, c
+                cur.append(c)
+                i += 1
+            elif c == ",":
+                row.append("".join(cur).strip())
+                cur = []
+                i += 1
+            elif c == ")":
+                row.append("".join(cur).strip())
+                i += 1
+                break
             else:
-                if c in "'\"":
-                    in_str, quote = True, c
-                    cur.append(c)
-                    i += 1
-                elif c == ",":
-                    row.append("".join(cur).strip())
-                    cur = []
-                    i += 1
-                elif c == ")":
-                    row.append("".join(cur).strip())
-                    i += 1
-                    break
-                else:
-                    cur.append(c)
-                    i += 1
+                cur.append(c)
+                i += 1
         rows.append([_convert_sql_value(v) for v in row])
     return rows
 
@@ -414,9 +413,9 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
 def load_sql(path: Path) -> Tables:
     text = read_text(path)
 
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-    text = re.sub(r"^\s*--.*$", "", text, flags=re.M)
-    text = re.sub(r"^\s*#.*$", "", text, flags=re.M)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    text = re.sub(r"^\s*--.*$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\s*#.*$", "", text, flags=re.MULTILINE)
 
     tables: Tables = {}
     declared_cols: dict[str, list[str]] = {}
@@ -615,7 +614,7 @@ def load_feather(path: Path) -> Tables:
 def write_feather(tables: Tables, out_path: Path) -> list[Path]:
     pa = _require("pyarrow")
     feather = _require("pyarrow.feather")
-    name, rows = next(iter(tables.items()))
+    _name, rows = next(iter(tables.items()))
     cols = _columns(rows)
     arrays = {c: [r.get(c) for r in rows] for c in cols}
     feather.write_feather(pa.table(arrays), out_path, compression="lz4")
@@ -652,9 +651,8 @@ def write_arrow(tables: Tables, out_path: Path) -> list[Path]:
     cols = _columns(rows)
     arrays = {c: [r.get(c) for r in rows] for c in cols}
     tbl = pa.table(arrays)
-    with out_path.open("wb") as fh:
-        with ipc.new_file(fh, tbl.schema) as writer:
-            writer.write_table(tbl)
+    with out_path.open("wb") as fh, ipc.new_file(fh, tbl.schema) as writer:
+        writer.write_table(tbl)
     return [out_path]
 
 
@@ -761,7 +759,8 @@ def write_avro(tables: Tables, out_path: Path) -> list[Path]:
     fastavro = _require("fastavro")
     name, rows = next(iter(tables.items()))
     if not rows:
-        raise ValueError("cannot infer Avro schema from empty table")
+        msg = "cannot infer Avro schema from empty table"
+        raise ValueError(msg)
     fields = []
     for c in _columns(rows):
         sample = next((r.get(c) for r in rows if r.get(c) is not None), None)
@@ -800,7 +799,7 @@ def load_hdf5(path: Path) -> Tables:
     pd = _require("pandas")
     out: Tables = {}
     with pd.HDFStore(path, mode="r") as store:
-        for key in store.keys():
+        for key in store:
             clean = key.lstrip("/")
             df = store.get(key)
             out[clean] = df.to_dict(orient="records")
@@ -904,7 +903,8 @@ def write_dbf(tables: Tables, out_path: Path) -> list[Path]:
     dbf = _require("dbf")
     _, rows = next(iter(tables.items()))
     if not rows:
-        raise ValueError("cannot write an empty dbf")
+        msg = "cannot write an empty dbf"
+        raise ValueError(msg)
     cols = _columns(rows)
     table = dbf.Table(str(out_path), " ".join(f"{c} C(254)" for c in cols))
     table.open(dbf.READ_WRITE)
@@ -995,7 +995,8 @@ def write_ini(tables: Tables, out_path: Path) -> list[Path]:
 def load_fixed_width(path: Path) -> Tables:
     schema_path = path.with_suffix(path.suffix + ".schema.json")
     if not schema_path.exists():
-        raise ValueError(f"fixed-width '{path}' requires a schema at {schema_path}")
+        msg = f"fixed-width '{path}' requires a schema at {schema_path}"
+        raise ValueError(msg)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     columns = schema["columns"]
 
@@ -1219,18 +1220,22 @@ def convert_job(
     try:
         src_fmt = detect_format(src)
         if src_fmt is None:
-            raise ValueError(f"unsupported input extension {src.suffix!r}")
+            msg = f"unsupported input extension {src.suffix!r}"
+            raise ValueError(msg)
         if src_fmt not in LOADERS:
-            raise ValueError(f"format {src_fmt!r} is write-only, cannot read")
+            msg = f"format {src_fmt!r} is write-only, cannot read"
+            raise ValueError(msg)
         if target_fmt not in WRITERS:
-            raise ValueError(f"format {target_fmt!r} is read-only, cannot write")
+            msg = f"format {target_fmt!r} is read-only, cannot write"
+            raise ValueError(msg)
         if src_fmt == target_fmt:
             return src_str, True, [], f"skipped: already {target_fmt}"
 
         logger.info(f"{src} [{src_fmt}] -> {target_fmt}")
         tables = LOADERS[src_fmt](src)
         if not tables:
-            raise ValueError("no tables / rows found in input")
+            msg = "no tables / rows found in input"
+            raise ValueError(msg)
 
         out_path = _output_path(src, target_fmt, Path(out_dir_str) if out_dir_str else None)
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1279,7 +1284,8 @@ def _resolve_target(args: argparse.Namespace) -> str:
     for fmt in WRITERS:
         if getattr(args, fmt, False):
             return fmt
-    raise SystemExit("no output format specified")
+    msg = "no output format specified"
+    raise SystemExit(msg)
 
 
 def main(argv: Optional[list[str]] = None) -> int:

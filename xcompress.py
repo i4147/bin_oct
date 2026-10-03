@@ -21,10 +21,12 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 try:
     import zstandard as zstd
@@ -72,7 +74,8 @@ def _lzma_c(d: bytes, l: int) -> bytes:
 
 def _sevenz_c(d: bytes, l: int, name: str = "data") -> bytes:
     if py7zr is None:
-        raise RuntimeError("py7zr not installed")
+        msg = "py7zr not installed"
+        raise RuntimeError(msg)
     with tempfile.TemporaryDirectory() as td:
         src = Path(td) / name
         src.write_bytes(d)
@@ -119,7 +122,7 @@ def _build_codecs() -> dict[str, Codec]:
             9,
         ),
         "xz": Codec("xz", ".xz", _lzma_c, lzma.decompress, 1, 9, 9),
-        "zlib": Codec("zlib", ".zlib", lambda d, l: zlib.compress(d, l), zlib.decompress, 1, 9, 9),
+        "zlib": Codec("zlib", ".zlib", zlib.compress, zlib.decompress, 1, 9, 9),
         "zip": Codec("zip", ".zip", _zip_c, _zip_d, 1, 9, 9),
     }
     if zstd:
@@ -245,7 +248,8 @@ def prepare_input(path: Path) -> tuple[bytes, str]:
         return path.read_bytes(), path.name
     if path.is_dir():
         return tar_bytes(path)
-    raise ValueError(f"Not a file or directory: {path}")
+    msg = f"Not a file or directory: {path}"
+    raise ValueError(msg)
 
 
 def sha256_file(p: Path, chunk: int = 1 << 20) -> str:
@@ -331,7 +335,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
 
 
 def _archive_one_file(job: tuple[str, str, list[str], bool]) -> Optional[str]:
-    fpath, out_dir, codecs, keep_all = job
+    fpath, out_dir, codecs, _keep_all = job
     p = Path(fpath)
     try:
         data = p.read_bytes()
@@ -442,7 +446,7 @@ def _compress_dir_as_tar(
     verify: bool,
     out_dir: Optional[Path] = None,
 ) -> Optional[Path]:
-    data, arc = tar_bytes(src)
+    data, _arc = tar_bytes(src)
     try:
         blob = codec.compress(data, level)
     except Exception as e:
@@ -518,7 +522,7 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
     if codec.decompress is None:
         log.error("No decompressor implemented for codec %s", codec.name)
         return None
-    base = src.name[: -len(codec.ext)] if src.name.endswith(codec.ext) else src.name
+    base = src.name.removesuffix(codec.ext)
     dst = (out_dir or src.parent) / base
     try:
         blob = src.read_bytes()
@@ -635,7 +639,7 @@ def _subdir_compress(job: tuple[str, str, int]) -> bool:
     src = Path(dpath)
     codec = CODECS[cname]
     try:
-        data, arcname = tar_bytes(src)
+        data, _arcname = tar_bytes(src)
         blob = codec.compress(data, level)
     except Exception as e:
         log.error("subdir compress %s: %s", src, e)

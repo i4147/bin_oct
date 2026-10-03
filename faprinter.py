@@ -3,8 +3,11 @@
 For each line, pass it through the `faprint` function imported from the `faprint` module, and print the returned result to standard output.
 The script should process the file lazily line-by-line rather than loading it all into memory at once, and assumes the file is UTF-8 encoded."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from faprint import faprint as pp
 
 

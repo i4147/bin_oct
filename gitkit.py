@@ -252,27 +252,32 @@ class GitPythonBackend(GitBackend):
         if self._r is None:
             return super().reset(ref, mode)
         self._r.git.reset(f"--{mode}", ref)
+        return None
 
     def checkout(self, ref: str) -> None:
         if self._r is None:
             return super().checkout(ref)
         self._r.git.checkout(ref)
+        return None
 
     def cherry_pick(self, sha: str, allow_empty: bool = True) -> None:
         if self._r is None:
             return super().cherry_pick(sha, allow_empty)
         args = ["--allow-empty"] if allow_empty else []
         self._r.git.cherry_pick(sha, *args)
+        return None
 
     def create_branch(self, name: str, start: Optional[str] = None) -> None:
         if self._r is None:
             return super().create_branch(name, start)
         self._r.create_head(name, start) if start else self._r.create_head(name)
+        return None
 
     def add(self, *files: str) -> None:
         if self._r is None:
             return super().add(*files)
         self._r.index.add(list(files))
+        return None
 
     def commit(self, message: str) -> str:
         if self._r is None:
@@ -290,6 +295,7 @@ class GitPythonBackend(GitBackend):
             return super().push(remote, refspec, force)
         args = ["--force"] if force else []
         self._r.git.push(remote, refspec, *args)
+        return None
 
 
 class Pygit2Backend(GitBackend):
@@ -389,7 +395,8 @@ def make_backend(name: str, repo: Path) -> GitBackend:
     if name == "typer":
         # typer is a CLI framework, not a git backend -> alias to subprocess.
         return GitBackend(repo)
-    raise ValueError(f"Unknown backend: {name!r}")
+    msg = f"Unknown backend: {name!r}"
+    raise ValueError(msg)
 
 
 BACKEND_CHOICES = (

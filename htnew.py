@@ -4,6 +4,8 @@ It should define a function accepting an optional filename parameter (defaulting
 The function should print a success message showing the created filename and current working directory, or print an error message if the file write fails due to an exception.
 The script should run the function automatically when executed directly."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

@@ -3,6 +3,8 @@
 It should use the secrets module to securely generate random red, green, and blue values between 0 and 255, then print a block of that color using ANSI escape codes followed by the numeric RGB values.
 The script should repeat this process a random number of times, up to 999 iterations, determined by a secure random number generator each time it runs."""
 
+from __future__ import annotations
+
 from secrets import randbelow
 
 

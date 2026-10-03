@@ -3,6 +3,8 @@
 The prefix should be supplied as a single command-line argument; if it is missing or empty, print a usage message to stderr and exit with status code 1.
 The script should iterate over entries in the current directory, skip any that are symbolic links, and print the names of the remaining entries whose names start with the specified prefix, one per line."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

@@ -3,6 +3,8 @@
 It should include a CSTTransformer (TypeshedSanitizer) that sanitizes references to the internal "_typeshed" module by rewriting imports and attribute accesses to use "typing" (e.g., "Any") instead, so the stub types remain valid outside typeshed.
 The script should accept file paths via argparse, parse both source and stub files with libcst/ast, apply the annotation visitor with a CodemodContext, and likely support showing a diff (via difflib) of the changes, optionally invoking subprocess/tempfile for formatting or validation steps before finalizing output."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import difflib
@@ -11,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
@@ -73,15 +76,18 @@ def generate_stub(py_path: Path, output_stub_path: Path, verbose: bool = False) 
                 check=False,
             )
         except Exception as e:
-            raise RuntimeError(f"Failed to execute stubgen: {e}") from e
+            msg = f"Failed to execute stubgen: {e}"
+            raise RuntimeError(msg) from e
         if result.returncode != 0:
             error_msg = result.stderr.strip() or result.stdout.strip()
-            raise RuntimeError(f"stubgen failed with exit code {result.returncode}:\n{error_msg}")
+            msg = f"stubgen failed with exit code {result.returncode}:\n{error_msg}"
+            raise RuntimeError(msg)
         generated_stubs = list(Path(tmp_out_dir).rglob("*.pyi"))
         if not generated_stubs:
-            raise RuntimeError(
+            msg = (
                 f"stubgen finished but no .pyi file was generated in output directory. Output: {result.stdout.strip()}"
             )
+            raise RuntimeError(msg)
         target_stub = next(
             (s for s in generated_stubs if s.stem == py_path.stem),
             generated_stubs[0],
@@ -101,11 +107,13 @@ def apply_type_annotations(
     try:
         source_cst = cst.parse_module(source_code)
     except Exception as e:
-        raise ValueError(f"Failed to parse source file with LibCST: {e}") from e
+        msg = f"Failed to parse source file with LibCST: {e}"
+        raise ValueError(msg) from e
     try:
         stub_cst = cst.parse_module(stub_code)
     except Exception as e:
-        raise ValueError(f"Failed to parse stub file with LibCST: {e}") from e
+        msg = f"Failed to parse stub file with LibCST: {e}"
+        raise ValueError(msg) from e
     stub_cst = sanitize_stub_cst(stub_cst)
     context = CodemodContext()
     ApplyTypeAnnotationsVisitor.store_stub_in_context(
@@ -123,10 +131,11 @@ def validate_python_code(code: str, filename: str) -> None:
     try:
         ast.parse(code, filename=filename)
     except SyntaxError as e:
-        raise SyntaxError(
+        msg = (
             f"Resulting code has invalid Python syntax at line {e.lineno}, column {e.offset}: {e.msg}\n"
             f"Code snippet:\n{e.text}"
-        ) from e
+        )
+        raise SyntaxError(msg) from e
 
 
 def compute_diff(original: str, modified: str, filename: str) -> str:
@@ -150,15 +159,19 @@ def annotate_file(
 ) -> tuple[bool, str]:
     py_path = Path(target_file).resolve()
     if not py_path.exists():
-        raise FileNotFoundError(f"Target file does not exist: {py_path}")
+        msg = f"Target file does not exist: {py_path}"
+        raise FileNotFoundError(msg)
     if not py_path.is_file():
-        raise IsADirectoryError(f"Target path is not a file: {py_path}")
+        msg = f"Target path is not a file: {py_path}"
+        raise IsADirectoryError(msg)
     if py_path.suffix != ".py":
-        raise ValueError(f"Target file must have a .py extension, got: {py_path.name}")
+        msg = f"Target file must have a .py extension, got: {py_path.name}"
+        raise ValueError(msg)
     if stub_file is not None:
         stub_path = Path(stub_file).resolve()
         if not stub_path.is_file():
-            raise FileNotFoundError(f"Specified stub file does not exist: {stub_path}")
+            msg = f"Specified stub file does not exist: {stub_path}"
+            raise FileNotFoundError(msg)
     else:
         stub_path = py_path.with_suffix(".pyi")
         if not stub_path.is_file():
@@ -191,15 +204,14 @@ def annotate_file(
             except Exception as e:
                 if temp_file.exists():
                     temp_file.unlink()
-                raise OSError(f"Failed to write updated file: {e}") from e
+                msg = f"Failed to write updated file: {e}"
+                raise OSError(msg) from e
             if verbose:
                 print(f"[+] Successfully updated '{py_path}' in-place with type annotations.")
-        else:
-            if verbose:
-                print(f"[*] [Dry Run] '{py_path}' would be updated in-place.")
-    else:
-        if verbose:
-            print(f"[*] No annotation changes needed for '{py_path}'.")
+        elif verbose:
+            print(f"[*] [Dry Run] '{py_path}' would be updated in-place.")
+    elif verbose:
+        print(f"[*] No annotation changes needed for '{py_path}'.")
     return is_changed, annotated_code
 
 

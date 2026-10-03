@@ -4,11 +4,14 @@ It should accept input file paths as command-line arguments or, if none are give
 Merged entries should be accumulated per direction using a dict-of-dicts structure (e.g., via defaultdict), later written out as JSON files with randomly generated filenames (using a "get_random_filename" helper) that avoid overwriting existing files via a uniquification helper.
 Throughout the process it should log progress, warnings, and errors using the "loguru" logger, and exit gracefully with a clear error message if something goes wrong (e.g., invalid JSON, non-dict content, or empty input list)."""
 
+from __future__ import annotations
+
 import json
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+
 from dh import get_random_filename
 from loguru import logger
 
@@ -23,13 +26,15 @@ def load_json(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
-        raise ValueError(f"{path} does not contain a JSON object (dict).")
+        msg = f"{path} does not contain a JSON object (dict)."
+        raise ValueError(msg)
     return data
 
 
 def detect_direction(data: dict, path: Path) -> str:
     if not data:
-        raise ValueError(f"{path} is empty.")
+        msg = f"{path} is empty."
+        raise ValueError(msg)
     en_count = sum(1 for k in data if looks_english(k))
     total = len(data)
     ratio = en_count / total
@@ -37,9 +42,8 @@ def detect_direction(data: dict, path: Path) -> str:
         return "en"
     if ratio <= 0.1:
         return "fa"
-    raise ValueError(
-        f"{path} has mixed key languages ({en_count}/{total} English-looking keys). Refusing to merge ambiguous file."
-    )
+    msg = f"{path} has mixed key languages ({en_count}/{total} English-looking keys). Refusing to merge ambiguous file."
+    raise ValueError(msg)
 
 
 def unique_path(base: Path) -> Path:

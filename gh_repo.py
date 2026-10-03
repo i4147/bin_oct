@@ -6,6 +6,7 @@ Original mapping ---------------- mkghrepo.py -> python gh_repo.py api <repo_nam
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import shutil
 import subprocess
@@ -149,7 +150,8 @@ class SubprocessGit(GitBackend):
         cmd += [remote, branch]
         r = self._run(cmd, path, check=False)
         if r.returncode != 0:
-            raise RuntimeError(f"Push failed: {r.stderr.strip() or r.stdout.strip()}")
+            msg = f"Push failed: {r.stderr.strip() or r.stdout.strip()}"
+            raise RuntimeError(msg)
 
     def current_branch(self, path: Path) -> str:
         r = self._run(["git", "branch", "--show-current"], path, check=False)
@@ -223,15 +225,14 @@ class GitPythonGit(GitBackend):
     def remove_remote(self, path: Path, name: str) -> None:
         repo = self._repo(path)
         if repo:
-            try:
+            with contextlib.suppress(Exception):
                 repo.delete_remote(name)
-            except Exception:
-                pass
 
     def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
         repo = self._repo(path)
         if not repo:
-            raise RuntimeError("Not a git repository")
+            msg = "Not a git repository"
+            raise RuntimeError(msg)
         kwargs = {"set_upstream": True} if set_upstream else {}
         repo.remote(remote).push(refspec=f"{branch}:{branch}", **kwargs)
 
@@ -256,7 +257,8 @@ class DulwichGit(GitBackend):
 
             return porcelain, Repo
         except ImportError as exc:
-            raise SystemExit("dulwich backend requires `pip install dulwich`") from exc
+            msg = "dulwich backend requires `pip install dulwich`"
+            raise SystemExit(msg) from exc
 
     def is_git_repo(self, path: Path) -> bool:
         _, Repo = self._dulwich()
@@ -362,10 +364,8 @@ class DulwichGit(GitBackend):
         if sha is None:
             return
         repo.refs[dst] = sha
-        try:
+        with contextlib.suppress(Exception):
             repo.refs.remove_if_equals(src, sha)
-        except Exception:
-            pass
         repo.refs.set_symbolic_ref(b"HEAD", dst)
 
 
@@ -377,7 +377,8 @@ class Pygit2Git(GitBackend):
 
             return pygit2
         except ImportError as exc:
-            raise SystemExit("libgit2 backend requires `pip install pygit2`") from exc
+            msg = "libgit2 backend requires `pip install pygit2`"
+            raise SystemExit(msg) from exc
 
     def _repo(self, path: Path):
         pg = self._pg()
@@ -449,15 +450,12 @@ class Pygit2Git(GitBackend):
     def remove_remote(self, path: Path, name: str) -> None:
         repo = self._repo(path)
         if repo:
-            try:
+            with contextlib.suppress(Exception):
                 repo.remotes.delete(name)
-            except Exception:
-                pass
 
     def push(self, path: Path, remote: str, branch: str, set_upstream: bool = True) -> None:
-        raise NotImplementedError(
-            "push via pygit2 requires credential callbacks. Use the 'subprocess' backend for authenticated pushes."
-        )
+        msg = "push via pygit2 requires credential callbacks. Use the 'subprocess' backend for authenticated pushes."
+        raise NotImplementedError(msg)
 
     def current_branch(self, path: Path) -> str:
         repo = self._repo(path)
@@ -560,10 +558,8 @@ class RestGitHub(GitHubBackend):
             return r.json()
         if r.status_code == 422 and owner:
             return {"ssh_url": f"git@github.com:{owner}/{name}.git"}
-        try:
+        with contextlib.suppress(Exception):
             print(f"REST create failed ({r.status_code}): {r.json().get('message')}")
-        except Exception:
-            pass
         return None
 
 
@@ -573,7 +569,8 @@ class PyGithubGitHub(GitHubBackend):
             from github import Github
             from github.Auth import Token
         except ImportError as exc:
-            raise SystemExit("pygithub backend requires `pip install PyGithub`") from exc
+            msg = "pygithub backend requires `pip install PyGithub`"
+            raise SystemExit(msg) from exc
         self.client = Github(auth=Token(token))
         self.username = username
 
@@ -612,7 +609,8 @@ class Github3GitHub(GitHubBackend):
         try:
             import github3
         except ImportError as exc:
-            raise SystemExit("githubpython backend requires `pip install github3.py`") from exc
+            msg = "githubpython backend requires `pip install github3.py`"
+            raise SystemExit(msg) from exc
         self.client = github3.login(token=token)
         self.username = username
 
@@ -661,21 +659,25 @@ def make_backend(
         return Backend(name, GitPythonGit(), GhCliGitHub(username))
     if name == "rest":
         if not token:
-            raise SystemExit("Backend 'rest' requires GITHUB_TOKEN.")
+            msg = "Backend 'rest' requires GITHUB_TOKEN."
+            raise SystemExit(msg)
         return Backend(name, SubprocessGit(), RestGitHub(token, username))
     if name == "pygithub":
         if not token:
-            raise SystemExit("Backend 'pygithub' requires GITHUB_TOKEN.")
+            msg = "Backend 'pygithub' requires GITHUB_TOKEN."
+            raise SystemExit(msg)
         return Backend(name, SubprocessGit(), PyGithubGitHub(token, username))
     if name == "githubpython":
         if not token:
-            raise SystemExit("Backend 'githubpython' requires GITHUB_TOKEN.")
+            msg = "Backend 'githubpython' requires GITHUB_TOKEN."
+            raise SystemExit(msg)
         return Backend(name, SubprocessGit(), Github3GitHub(token, username))
     if name == "dulwich":
         return Backend(name, DulwichGit(), GhCliGitHub(username))
     if name == "libgit2":
         return Backend(name, Pygit2Git(), GhCliGitHub(username))
-    raise SystemExit(f"Unknown backend: {name}")
+    msg = f"Unknown backend: {name}"
+    raise SystemExit(msg)
 
 
 def resolve_backend(args: argparse.Namespace) -> Backend:

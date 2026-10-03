@@ -4,6 +4,8 @@ It should first verify that msgunfmt is installed and accessible on the system, 
 Given one or more .mo file paths (via argparse), it should run msgunfmt on each, write the output to a corresponding .po file, validate that the result is non-empty, and optionally delete the original .mo file after a successful conversion.
 The script should support a verbose flag for detailed progress messages and handle errors gracefully, such as missing files, non-.mo extensions, failed subprocess calls, and empty output, printing clear error or warning messages for each case."""
 
+from __future__ import annotations
+
 import argparse
 import subprocess
 import sys
@@ -42,7 +44,8 @@ def mo_to_po(mo_path, remove_orig: bool = True, verbose: bool = False) -> bool:
                 check=True,
             )
         if po_path.stat().st_size == 0:
-            raise Exception("Generated .po file is empty")
+            msg = "Generated .po file is empty"
+            raise Exception(msg)
         if verbose:
             print(f"Converted: {mo_path} -> {po_path}")
         if remove_orig:
@@ -75,7 +78,8 @@ def mo_to_po_python_only(mo_path, remove_orig: bool = True, verbose: bool = Fals
             elif magic == b"\x95\x04\x12\xde":
                 endian = "<"
             else:
-                raise ValueError("Invalid .mo file magic number")
+                msg = "Invalid .mo file magic number"
+                raise ValueError(msg)
             struct.unpack(endian + "I", mo_file.read(4))[0]
             num_strings = struct.unpack(endian + "I", mo_file.read(4))[0]
             orig_table_offset = struct.unpack(endian + "I", mo_file.read(4))[0]

@@ -4,16 +4,21 @@ is never mistaken for a comment).
 After stripping comments, runs of 2+ consecutive blank lines are collapsed to a single blank line, and the resulting source is re-parsed and checked for syntax errors before it is written back to disk.
 Files that would become invalid are left untouched and reported as errors."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import os
 import re
 import sys
-from collections.abc import Generator, Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tree_sitter_bash
 from tree_sitter import Language, Node, Parser
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
 
 BASH_LANGUAGE: Language = Language(tree_sitter_bash.language())
 PARSER: Parser = Parser(BASH_LANGUAGE)

@@ -4,6 +4,8 @@ The script should then find every ".txt" file in the current working directory, 
 For each file processed, it should print a success message with a checkmark showing the filename, or if an error occurs while reading or writing a particular file, print a failure message with an X mark containing the filename and the exception details, without stopping the processing of the remaining files.
 The script should execute this logic only when run as the main module."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 if __name__ == "__main__":

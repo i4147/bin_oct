@@ -3,10 +3,13 @@
 It should skip binary files (via an is_binary helper from a local "dh" module) when walking through file paths with pathlib, and include helper functions like clamp01 for alpha normalization and parse_hex_to_rgba to convert hex strings of varying lengths into RGBA values, raising an error on unexpected hex lengths.
 The script should use contextlib and dataclasses utilities, and is intended as a foundation for detecting, validating, or converting color values found across a codebase or set of files."""
 
+from __future__ import annotations
+
 import contextlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
 from dh import is_binary
 
 HEX_RE = re.compile(
@@ -188,7 +191,7 @@ def demo_color_blocks(colors: list[Color], max_items: int = 200) -> None:
 
 
 def main() -> None:
-    root = Path(".")
+    root = Path()
     all_found: list[Color] = []
     for path in iter_text_files(root):
         text = safe_read_text(path)

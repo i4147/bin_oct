@@ -14,6 +14,8 @@ Sorting the full list with `list.sort` is O(k log k) time and O(k) memory.
 It never materialises the full result set.
 Usage: search pandas # top 20 substring matches by downloads search -n 100 pandas # top 100"""
 
+from __future__ import annotations
+
 import argparse
 import heapq
 import sqlite3

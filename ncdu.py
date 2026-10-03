@@ -309,9 +309,11 @@ def parallel_scan(
     try:
         rst = root.stat()
     except OSError as exc:
-        raise SystemExit(f"{PROGNAME}: cannot stat {root}: {exc}")
+        msg = f"{PROGNAME}: cannot stat {root}: {exc}"
+        raise SystemExit(msg)
     if not stat.S_ISDIR(rst.st_mode):
-        raise SystemExit(f"{PROGNAME}: {root} is not a directory")
+        msg = f"{PROGNAME}: {root} is not a directory"
+        raise SystemExit(msg)
 
     root_dev = rst.st_dev
     t_start = time.perf_counter()
@@ -319,7 +321,8 @@ def parallel_scan(
     try:
         top_entries = sorted(root.iterdir(), key=lambda p: p.name)
     except OSError as exc:
-        raise SystemExit(f"{PROGNAME}: cannot read {root}: {exc}")
+        msg = f"{PROGNAME}: cannot read {root}: {exc}"
+        raise SystemExit(msg)
 
     top_entries = [p for p in top_entries if p.name not in exclude]
     LOG.info("top-level entries to dispatch: %d", len(top_entries))
@@ -432,7 +435,8 @@ def import_json(path: Path) -> Node:
     LOG.info("importing JSON from %s", path)
     data = json.loads(path.read_text(encoding="utf-8"))
     if not (isinstance(data, list) and len(data) >= 4):
-        raise SystemExit(f"{PROGNAME}: {path}: not an ncdu export")
+        msg = f"{PROGNAME}: {path}: not an ncdu export"
+        raise SystemExit(msg)
     LOG.info("export header: major=%s minor=%s meta=%s", data[0], data[1], data[2])
 
     def dec(item: Any, parent: Node | None) -> Node:
@@ -495,7 +499,7 @@ class Browser:
 
     def listing(self) -> list[Node]:
         key = {
-            "size": lambda n: self.val(n),
+            "size": self.val,
             "name": lambda n: n.name.lower(),
             "items": lambda n: n.items,
             "mtime": lambda n: n.mtime,
@@ -532,8 +536,7 @@ class Browser:
 
         if self.cursor >= len(items):
             self.cursor = max(len(items) - 1, 0)
-        if self.cursor < self.offset:
-            self.offset = self.cursor
+        self.offset = min(self.offset, self.cursor)
         if self.cursor >= self.offset + body:
             self.offset = self.cursor - body + 1
 
@@ -561,7 +564,7 @@ class Browser:
             if self.show_percent:
                 parts.append(f"{pct:5.1f}%")
             if self.show_graph:
-                bars = int(round(pct / 100.0 * 10))
+                bars = round(pct / 100.0 * 10)
                 parts.append("[" + "#" * bars + " " * (10 - bars) + "]")
             prefix = " ".join(parts)
 

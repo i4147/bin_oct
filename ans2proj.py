@@ -3,9 +3,12 @@
 It should use a regex to locate headers and code fences, extract each file's relative path and body content between the opening and closing triple-backtick fences (gracefully handling missing closing fences by saving partial content and logging a warning via loguru), then write each extracted section to its corresponding file path under the root, creating parent directories as needed.
 The script should be runnable from the command line, taking the digest file path and target root directory as inputs, and should report progress/errors through logging while producing the restored file tree as output."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
+
 from loguru import logger
 
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)
@@ -29,8 +32,7 @@ def extract_sections(text: str) -> list[tuple[str, str]]:
         close_match = CLOSE_FENCE_RE.search(rest)
         if close_match:
             content = rest[: close_match.start()]
-            if content.endswith("\n"):
-                content = content[:-1]
+            content = content.removesuffix("\n")
         else:
             content = rest.rstrip("\n")
             logger.warning(f"{rel}: missing closing fence, saving partial content")

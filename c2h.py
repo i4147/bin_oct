@@ -3,6 +3,8 @@
 It should then build a simple HTML document containing a title "Color Display" and a body section, and save the result to /sdcard/colors.html using UTF-8 encoding.
 After writing the file, the script should print a confirmation message stating that /sdcard/colors.html was created, and it should run via a main() function invoked through the standard __main__ entry point."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

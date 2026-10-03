@@ -3,6 +3,8 @@
 Reads a text file, splits into word-boundary-preserving chunks, translates via pluggable backends (deep_translator, deepl, translate, googletrans, etc.), resumes from saved state, and writes JSON output with atomic saves.
 Features: - 2500-char chunks with word-boundary preservation - Multiple translation backends with fallback order - Retry logic (3 attempts, exponential backoff) - Thread-safe concurrent translation (≤2 workers) - Resume from existing JSON, skip translated chunks - Atomic writes (temp → rename every 10 chunks) - Failed chunks logged to separate file - Graceful Ctrl+C handling - Full debug logging to file, errors to stderr - Identity-translation detection (triggers retry) Platform: Termux (Android 7, armv8l 32-bit), Python 3.12 Author: Coding Coach Date: 2026-09-23"""
 
+from __future__ import annotations
+
 import argparse
 import json
 import signal
@@ -107,7 +109,8 @@ LANGUAGE_CODES = {
 
 def map_language_code(backend: str, code: str) -> str:
     if backend not in LANGUAGE_CODES:
-        raise ValueError(f"Unknown backend: {backend}")
+        msg = f"Unknown backend: {backend}"
+        raise ValueError(msg)
     return LANGUAGE_CODES[backend].get(code, code)
 
 
@@ -115,7 +118,8 @@ def _make_deep_translator(source: str, target: str) -> Callable:
     try:
         from deep_translator import GoogleTranslator
     except ImportError:
-        raise ImportError("deep_translator not installed. Run: pip install deep_translator")
+        msg = "deep_translator not installed. Run: pip install deep_translator"
+        raise ImportError(msg)
 
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
@@ -131,13 +135,15 @@ def _make_deepl(source: str, target: str) -> Callable:
     try:
         import deepl
     except ImportError:
-        raise ImportError("deepl not installed. Run: pip install deepl")
+        msg = "deepl not installed. Run: pip install deepl"
+        raise ImportError(msg)
 
     import os
 
     api_key = os.getenv("DEEPL_API_KEY")
     if not api_key:
-        raise ValueError("DEEPL_API_KEY environment variable not set")
+        msg = "DEEPL_API_KEY environment variable not set"
+        raise ValueError(msg)
 
     source = map_language_code("deepl", source).upper()
     target = map_language_code("deepl", target).upper()
@@ -154,7 +160,8 @@ def _make_translate(source: str, target: str) -> Callable:
     try:
         from translate import Translator
     except ImportError:
-        raise ImportError("translate not installed. Run: pip install translate")
+        msg = "translate not installed. Run: pip install translate"
+        raise ImportError(msg)
 
     source = map_language_code("translate", source)
     target = map_language_code("translate", target)
@@ -170,7 +177,8 @@ def _make_translators_bing(source: str, target: str) -> Callable:
     try:
         import translators
     except ImportError:
-        raise ImportError("translators not installed. Run: pip install translators")
+        msg = "translators not installed. Run: pip install translators"
+        raise ImportError(msg)
 
     source = map_language_code("translators_bing", source)
     target = map_language_code("translators_bing", target)
@@ -185,7 +193,8 @@ def _make_googletrans(source: str, target: str) -> Callable:
     try:
         from googletrans import Translator
     except ImportError:
-        raise ImportError('googletrans not installed. Run: pip install "googletrans==4.0.0rc1"')
+        msg = 'googletrans not installed. Run: pip install "googletrans==4.0.0rc1"'
+        raise ImportError(msg)
 
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
@@ -205,7 +214,8 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
     try:
         from pygoogletranslation import Translator
     except ImportError:
-        raise ImportError("pygoogletranslation not installed. Run: pip install pygoogletranslation")
+        msg = "pygoogletranslation not installed. Run: pip install pygoogletranslation"
+        raise ImportError(msg)
 
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
@@ -225,7 +235,8 @@ def _make_boto3(source: str, target: str) -> Callable:
     try:
         import boto3
     except ImportError:
-        raise ImportError("boto3 not installed. Run: pip install boto3")
+        msg = "boto3 not installed. Run: pip install boto3"
+        raise ImportError(msg)
 
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
@@ -441,11 +452,12 @@ class TranslatorEngine:
                 logger.info(f"Backend {name} unavailable: {e}")
 
         if not self.backends:
-            raise RuntimeError(
+            msg = (
                 "No translation backends available. Install one of: "
                 "deep_translator, deepl, translate, translators, "
                 "googletrans, pygoogletranslation, boto3"
             )
+            raise RuntimeError(msg)
 
     def translate_chunk(self, text: str) -> tuple[str, str]:
         errors: list[str] = []
@@ -518,20 +530,20 @@ def run_translation(
     output_path = Path(output_path)
 
     if not input_path.exists():
-        raise FileNotFoundError(f"Input file not found: {input_path}")
+        msg = f"Input file not found: {input_path}"
+        raise FileNotFoundError(msg)
 
     failed_path = output_path.with_suffix(output_path.suffix + ".failed.jsonl")
 
     state = load_state(output_path)
-    if state is not None:
-        if state.source_lang != source_lang or state.target_lang != target_lang:
-            logger.warning(
-                "Existing state has different language pair "
-                f"({state.source_lang}->{state.target_lang}); "
-                f"proceeding with current request ({source_lang}->{target_lang})"
-            )
-            state.source_lang = source_lang
-            state.target_lang = target_lang
+    if state is not None and (state.source_lang != source_lang or state.target_lang != target_lang):
+        logger.warning(
+            "Existing state has different language pair "
+            f"({state.source_lang}->{state.target_lang}); "
+            f"proceeding with current request ({source_lang}->{target_lang})"
+        )
+        state.source_lang = source_lang
+        state.target_lang = target_lang
 
     if state is None or not state.chunks:
         logger.info(f"Reading {input_path}")
@@ -579,32 +591,31 @@ def run_translation(
 
     completed_count = 0
     try:
-        with GracefulShutdown() as shutdown:
-            with ThreadPoolExecutor(max_workers=max_workers) as pool:
-                futures = {pool.submit(worker, i): i for i in pending}
-                for fut in as_completed(futures):
-                    idx, translated, backend, error = fut.result()
-                    completed_count += 1
+        with GracefulShutdown() as shutdown, ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(worker, i): i for i in pending}
+            for fut in as_completed(futures):
+                idx, translated, backend, error = fut.result()
+                completed_count += 1
 
-                    with state_lock:
-                        if error is None and translated is not None:
-                            state.translations[idx] = translated
-                            state.backend_used[idx] = backend or "unknown"
-                            state.failed.pop(idx, None)
-                            logger.debug(f"[{completed_count}/{len(pending)}] chunk {idx} ok via {backend}")
-                        else:
-                            state.failed[idx] = error or "unknown error"
-                            logger.error(f"[{completed_count}/{len(pending)}] chunk {idx} FAILED: {error}")
-                            append_failed_chunk(failed_path, idx, state.chunks[idx], error or "unknown")
+                with state_lock:
+                    if error is None and translated is not None:
+                        state.translations[idx] = translated
+                        state.backend_used[idx] = backend or "unknown"
+                        state.failed.pop(idx, None)
+                        logger.debug(f"[{completed_count}/{len(pending)}] chunk {idx} ok via {backend}")
+                    else:
+                        state.failed[idx] = error or "unknown error"
+                        logger.error(f"[{completed_count}/{len(pending)}] chunk {idx} FAILED: {error}")
+                        append_failed_chunk(failed_path, idx, state.chunks[idx], error or "unknown")
 
-                        done_since_save += 1
-                        need_save = (done_since_save >= save_every) or shutdown.event.is_set()
-                        if need_save:
-                            save_state(output_path, state)
-                            done_since_save = 0
+                    done_since_save += 1
+                    need_save = (done_since_save >= save_every) or shutdown.event.is_set()
+                    if need_save:
+                        save_state(output_path, state)
+                        done_since_save = 0
 
-                    if shutdown.event.is_set():
-                        stop_event.set()
+                if shutdown.event.is_set():
+                    stop_event.set()
 
     finally:
         with state_lock:

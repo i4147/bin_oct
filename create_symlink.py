@@ -4,6 +4,8 @@ For each script, the symlink name should be the file's stem (filename without ex
 If a non-symlink file already exists at the target symlink path, the script should delete it and replace it with the symlink; if a symlink already exists there, it should be left untouched; otherwise a new symlink is created.
 The script should print a "Created: <symlink_name> -> <target_filename>" message each time a new symlink is created, and run this process for both directories when executed as the main module."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 BASHBIN: Path = Path.home() / "bashbin"

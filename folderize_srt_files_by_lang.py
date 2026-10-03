@@ -2,7 +2,10 @@
 """Write a Python script that recursively scans a given directory (default: current working directory) for .srt subtitle files, detects the language of each file's text content using the pycld2 library (stripping out sequence numbers and timestamp lines before detection), and organizes/reports the files grouped by detected language.
 It should print progress messages with emojis for each step (scanning, files found, per-file detection results, and errors), gracefully handle unreadable files or undetectable languages by skipping them, and build a dictionary mapping language names/codes to lists of matching subtitle file paths."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 import pycld2 as cld2
 
 

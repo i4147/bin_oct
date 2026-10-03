@@ -4,10 +4,13 @@ It should accept file paths as command-line arguments, or if none are given, rec
 For each file, run `clang -fsyntax-only` (for C files) or `clang++ -fsyntax-only` (for C++ files) in parallel using a multiprocessing Pool (spawn context, 8 workers) with a bounded pending-task queue, collecting the return code, stdout, and stderr for each.
 Finally, iterate over the results and print a colored error message (using a `cprint` helper) for each file whose validation return code equals 2, indicating a syntax error."""
 
+from __future__ import annotations
+
 import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+
 from dh import cprint, get_files
 
 c_files = {".c", ".h", ".inc"}

@@ -3,6 +3,8 @@
 The script should accept three arguments—the file path, start line number, and end line number—validate that they are correct and that the file exists, then determine the appropriate comment prefix based on the file's extension (supporting languages like Python, JavaScript, C++, Java, Go, HTML, CSS, etc., defaulting to "#" for unrecognized types).
 It should read the file's lines, prepend the comment character to each line within the given range (clamping the end line to the file's actual length if needed), and handle edge cases such as missing arguments, invalid line numbers, or a start line beyond the file's total line count by printing clear error messages and exiting."""
 
+from __future__ import annotations
+
 import os
 import sys
 

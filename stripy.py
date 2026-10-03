@@ -242,7 +242,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     _configure_logger()
 
     raw_args = list(sys.argv[1:] if argv is None else argv)
-    inputs = [Path(a) for a in raw_args] if raw_args else [Path(".")]
+    inputs = [Path(a) for a in raw_args] if raw_args else [Path()]
 
     files = _collect_python_files(inputs)
     if not files:

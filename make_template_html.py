@@ -2,7 +2,10 @@
 """Write a Python script that recursively scans a directory (defaulting to the current working directory) for all ".html" files (excluding "template.html") and ".htm" files, returning a sorted list of their paths.
 It should then parse each found file with BeautifulSoup to extract common structural elements from the document head and body—collecting unique meta tags, link tags, and script tags (only those with a src attribute) from the head, plus deduplicated body CSS classes joined into a single string—while gracefully catching and printing any per-file parsing errors, and finally return this aggregated structural data as a dictionary."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from bs4 import BeautifulSoup
 
 

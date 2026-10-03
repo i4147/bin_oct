@@ -4,8 +4,11 @@ It should use a helper function `read_lines` imported from a local module `dh` t
 The script should accept the file path as a command-line argument and support an optional `-r` flag to sort in descending (reverse) order instead of ascending; if no path is provided, it should print a usage message and exit with status code 1.
 After sorting and overwriting the file, it should print a confirmation message showing the filename and whether reverse order was used."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import read_lines
 
 

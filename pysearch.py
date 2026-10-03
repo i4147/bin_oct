@@ -131,9 +131,7 @@ def walk_files(
         s = str(p)
         if include_globs and not any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in include_globs):
             return False
-        if exclude_globs and any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in exclude_globs):
-            return False
-        return True
+        return not (exclude_globs and any(fnmatch.fnmatch(s, g) or fnmatch.fnmatch(p.name, g) for g in exclude_globs))
 
     for root in roots:
         root = root.resolve()
@@ -253,9 +251,8 @@ def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
                         out.append((str(path), ln))
         except Exception:  # noqa: BLE001
             pass
-    else:
-        if query.lower() in path.name.lower():
-            out.append((str(path), None))
+    elif query.lower() in path.name.lower():
+        out.append((str(path), None))
     return out
 
 
@@ -340,7 +337,7 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
                 for entry in zf.namelist():
                     if needle in entry.lower():
                         out.append((str(archive), entry))
-        elif name.endswith(".tar.gz") or name.endswith(".tar"):
+        elif name.endswith((".tar.gz", ".tar")):
             with tarfile.open(archive, "r:*") as tf:
                 for m in tf.getmembers():
                     if needle in m.name.lower():

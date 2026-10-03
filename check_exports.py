@@ -2,6 +2,8 @@
 """Check Python files in current directory and report definitions that are not exported in __init__.py.
 Usage: python check_exports.py # just report python check_exports.py -a # autofix __init__.py python check_exports.py -a --dry-run # preview autofix changes"""
 
+from __future__ import annotations
+
 import argparse
 import ast
 from pathlib import Path

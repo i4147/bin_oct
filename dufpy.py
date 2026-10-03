@@ -3,13 +3,18 @@
 It should use the `ast` module with a custom `NodeTransformer` subclass to remove function argument/return annotations and convert annotated assignments into plain assignments (or `pass` if no value), then regenerate source code from the modified AST.
 File processing should run in parallel via `joblib.Parallel`/`delayed` (with a configurable worker count), use `xxhash` to detect whether content actually changed before rewriting files, and print progress/status messages using a `cprint` helper, skipping files that fail to read or parse."""
 
+from __future__ import annotations
+
 import ast
-from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
 from dh import cprint, get_pyfiles
 from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 
 class TypeAnnotationStripper(ast.NodeTransformer):

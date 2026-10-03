@@ -178,9 +178,7 @@ if _HAS_LIBCST:
         val = stmt.body[0].value
         if not isinstance(val, cst.SimpleString):
             return False
-        if binary_check and "b" in val.prefix.lower():
-            return False
-        return True
+        return not (binary_check and "b" in val.prefix.lower())
 
     class _LibCSTStripper(cst.CSTTransformer):
         def __init__(

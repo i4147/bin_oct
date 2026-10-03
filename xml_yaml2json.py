@@ -3,6 +3,8 @@
 This script consolidates four distinct conversion utilities into a single interface, allowing for file-based batch processing, stream processing, and multiple parsing strategies.
 Mappings to original scripts: - original toml2json.py -> python merged.py toml <file> - original xml2json.py -> python merged.py xml [files...] --engine xmltodict --delete-source --workers 16 - original xmltojson.py -> python merged.py xml <file> --engine defusedxml - original yaml2json.py -> python merged.py yaml <file> [options...]"""
 
+from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import json
@@ -105,7 +107,8 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
     try:
         if engine == "xmltodict":
             if xmltodict is None:
-                raise ImportError("xmltodict is not installed.")
+                msg = "xmltodict is not installed."
+                raise ImportError(msg)
             xml_text = filepath.read_text(encoding="utf-8", errors="ignore")
             data = xmltodict.parse(xml_text)
             write_json_file(data, out_path)
@@ -116,7 +119,8 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
 
         elif engine == "defusedxml":
             if defused_parse is None:
-                raise ImportError("defusedxml is not installed.")
+                msg = "defusedxml is not installed."
+                raise ImportError(msg)
             tree = defused_parse(str(filepath))
             root = tree.getroot()
             data = _element_to_dict_recursive(root)
@@ -144,12 +148,14 @@ def convert_yaml_to_json_str(
         else:
             data = yaml.safe_load(yaml_str)
     except yaml.YAMLError as e:
-        raise yaml.YAMLError(f"YAML parsing error: {e}") from e
+        msg = f"YAML parsing error: {e}"
+        raise yaml.YAMLError(msg) from e
 
     try:
         json.dumps(data, ensure_ascii=ensure_ascii, allow_nan=False)
     except (TypeError, ValueError) as e:
-        raise ValueError(f"Data cannot be serialized to JSON: {e}") from e
+        msg = f"Data cannot be serialized to JSON: {e}"
+        raise ValueError(msg) from e
 
     separators = (",", ":") if compact else None
     actual_indent = None if compact else indent
@@ -164,7 +170,8 @@ def convert_yaml_to_json_str(
             allow_nan=False,
         )
     except (TypeError, ValueError) as e:
-        raise ValueError(f"JSON serialization error: {e}") from e
+        msg = f"JSON serialization error: {e}"
+        raise ValueError(msg) from e
 
 
 def main() -> int:

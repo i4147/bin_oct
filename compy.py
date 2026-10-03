@@ -156,11 +156,7 @@ def block_terminates(statements: list[ast.stmt]) -> bool:
     if not statements:
         return False
 
-    for statement in statements:
-        if is_terminating_statement(statement):
-            return True
-
-    return False
+    return any(is_terminating_statement(statement) for statement in statements)
 
 
 def make_short_name(index: int) -> str:
@@ -692,10 +688,7 @@ def join_simple_lines(source: str) -> str:
         if not stripped:
             return False
 
-        if stripped.endswith(":"):
-            return False
-
-        return True
+        return not stripped.endswith(":")
 
     index = 0
 
@@ -814,7 +807,7 @@ def discover_python_files(inputs: list[str]) -> list[Path]:
                 if path.is_file():
                     found.add(path.resolve())
 
-    return sorted(found, key=lambda path: str(path))
+    return sorted(found, key=str)
 
 
 def process_file(path_string: str) -> tuple[str, str, str | None]:

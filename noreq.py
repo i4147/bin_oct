@@ -3,6 +3,8 @@
 It should expose a main function that takes a file path, checks basic conditions like file existence and non-zero size, then dispatches to format-specific checks based on the file extension, using zipfile to test wheel/zip integrity and tarfile (possibly combined with temporary decompression via shutil/tempfile for exotic compression formats) to verify tar archives can be opened and read without corruption.
 The function should return a boolean indicating whether the archive is valid, gracefully handling exceptions such as BadZipFile, FileNotFoundError, or tarfile errors by returning False instead of raising."""
 
+from __future__ import annotations
+
 import shutil
 import tarfile
 import tempfile

@@ -269,10 +269,12 @@ def save_jpeg(src: Path, dst: Path, quality: int = 95, backend: str = "auto") ->
             if ok:
                 return
             if backend == "cv2":
-                raise IOError(f"cv2 failed to write {dst}")
+                msg = f"cv2 failed to write {dst}"
+                raise IOError(msg)
 
     if not _HAS_PIL:
-        raise RuntimeError("Pillow is required for JPEG output")
+        msg = "Pillow is required for JPEG output"
+        raise RuntimeError(msg)
     with Image.open(src) as im:
         im = flatten_to_rgb(im)
         im.save(dst, "JPEG", quality=quality, optimize=True)
@@ -282,7 +284,8 @@ def save_png(src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool =
 
     if src.suffix.lower() == ".svg":
         if not _HAS_CAIROSVG:
-            raise RuntimeError("cairosvg is required to render SVG files")
+            msg = "cairosvg is required to render SVG files"
+            raise RuntimeError(msg)
         cairosvg.svg2png(url=str(src), write_to=str(dst))
         return
 
@@ -300,10 +303,12 @@ def save_png(src: Path, dst: Path, backend: str = "auto", preserve_alpha: bool =
             if cv2.imwrite(str(dst), img):
                 return
             if backend == "cv2":
-                raise IOError(f"cv2 failed to write {dst}")
+                msg = f"cv2 failed to write {dst}"
+                raise IOError(msg)
 
     if not _HAS_PIL:
-        raise RuntimeError("Pillow is required for PNG output")
+        msg = "Pillow is required for PNG output"
+        raise RuntimeError(msg)
     with Image.open(src) as im:
         if not preserve_alpha:
             im = flatten_to_rgb(im)
@@ -367,7 +372,8 @@ def _worker_invert(task):
 
 def _extract_gif_frames(path: Path, dup_mean: float, dup_frac: float) -> list["np.ndarray"]:
     if not (_HAS_PIL and _HAS_NUMPY):
-        raise RuntimeError("Pillow + numpy are required for GIF extraction")
+        msg = "Pillow + numpy are required for GIF extraction"
+        raise RuntimeError(msg)
 
     def is_dup(a, b) -> bool:
         if a.shape != b.shape:
@@ -554,7 +560,8 @@ def cmd_invert(args: argparse.Namespace) -> int:
 
 def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: int, scale: float) -> None:
     if not _HAS_WEASYPRINT:
-        raise RuntimeError("weasyprint is required for HTML rendering")
+        msg = "weasyprint is required for HTML rendering"
+        raise RuntimeError(msg)
 
     if src.lstrip().startswith("<"):
         html = HTML(string=src)
@@ -565,11 +572,13 @@ def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: in
 
     if method == "cairosvg":
         if not _HAS_CAIROSVG:
-            raise RuntimeError("cairosvg is required for method='cairosvg'")
+            msg = "cairosvg is required for method='cairosvg'"
+            raise RuntimeError(msg)
         cairosvg.svg2png(bytestring=pdf_bytes, write_to=str(dst), output_width=width, scale=scale)
     elif method == "pdf2image":
         if not _HAS_PDF2IMAGE:
-            raise RuntimeError("pdf2image is required for method='pdf2image'")
+            msg = "pdf2image is required for method='pdf2image'"
+            raise RuntimeError(msg)
         pages = convert_from_bytes(pdf_bytes, dpi=dpi)
         if len(pages) > 1:
             total_h = sum(p.height for p in pages)
@@ -583,7 +592,8 @@ def _html_to_png(src: str, dst: Path, method: str, width: Optional[int], dpi: in
         else:
             pages[0].save(dst, "PNG")
     else:
-        raise ValueError(f"Unknown HTML render method: {method}")
+        msg = f"Unknown HTML render method: {method}"
+        raise ValueError(msg)
 
 
 def cmd_html_to_png(args: argparse.Namespace) -> int:

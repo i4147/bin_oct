@@ -7,6 +7,7 @@ Usage: python tpv.py document.pdf [-p PAGE] [-z ZOOM] [-b BACKEND] Keys: q / Esc
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import re
 import select
@@ -36,7 +37,8 @@ NUMBER_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
 def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
     if len(data) < 2 or data[:2] != b"P6":
-        raise RuntimeError("renderer did not produce a P6 PPM image")
+        msg = "renderer did not produce a P6 PPM image"
+        raise RuntimeError(msg)
 
     pos = 2
     n = len(data)
@@ -46,7 +48,8 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
         while pos < n and data[pos] in WHITESPACE:
             pos += 1
         if pos >= n:
-            raise RuntimeError("truncated PPM header")
+            msg = "truncated PPM header"
+            raise RuntimeError(msg)
         if data[pos] == 0x23:
             while pos < n and data[pos] != 0x0A:
                 pos += 1
@@ -57,17 +60,20 @@ def parse_ppm(data: bytes) -> tuple[int, int, bytes]:
         try:
             fields.append(int(data[start:pos]))
         except ValueError:
-            raise RuntimeError("malformed PPM header") from None
+            msg = "malformed PPM header"
+            raise RuntimeError(msg) from None
 
     pos += 1
     w, h, maxval = fields
     if maxval != 255:
-        raise RuntimeError(f"unsupported PPM maxval {maxval}")
+        msg = f"unsupported PPM maxval {maxval}"
+        raise RuntimeError(msg)
 
     need = w * h * 3
     raster = data[pos : pos + need]
     if len(raster) != need:
-        raise RuntimeError("truncated PPM raster")
+        msg = "truncated PPM raster"
+        raise RuntimeError(msg)
     return w, h, raster
 
 
@@ -174,7 +180,8 @@ class Renderer:
             except (OSError, subprocess.SubprocessError):
                 pass
 
-        raise RenderError("could not determine the page count")
+        msg = "could not determine the page count"
+        raise RenderError(msg)
 
     @staticmethod
     def _ps_string(s: str) -> str:
@@ -210,7 +217,8 @@ class Renderer:
         try:
             res = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
         except (OSError, subprocess.SubprocessError) as exc:
-            raise RenderError(f"gs page query failed: {exc}") from None
+            msg = f"gs page query failed: {exc}"
+            raise RenderError(msg) from None
         if res.returncode != 0:
             msg = res.stderr.decode("utf-8", "replace").strip()
             raise RenderError(msg or "gs page query failed")
@@ -219,7 +227,8 @@ class Renderer:
 
         nums = [float(v) for v in NUMBER_RE.findall(" ".join(lines))]
         if len(nums) < 5:
-            raise RenderError("gs page query returned unexpected output")
+            msg_0 = "gs page query returned unexpected output"
+            raise RenderError(msg_0)
 
         llx, lly, urx, ury = nums[:4]
         rotate = int(nums[-1])
@@ -229,17 +238,16 @@ class Renderer:
         if rotate % 180 == 90:
             w, h = h, w
         if w <= 0 or h <= 0:
-            raise RenderError("gs reported an empty page")
+            msg_0 = "gs reported an empty page"
+            raise RenderError(msg_0)
 
         self._pt_cache[index] = (w, h)
         return w, h
 
     def _wipe_tmp(self) -> None:
         for name in os.listdir(self._tmp):
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(os.path.join(self._tmp, name))
-            except OSError:
-                pass
 
     def _run_gs(self, index: int, width: int) -> bytes:
         pw, _ph = self._gs_page_points(index)
@@ -268,7 +276,8 @@ class Renderer:
             with open(out, "rb") as fh:
                 return fh.read()
         except OSError:
-            raise RenderError("gs produced no output") from None
+            msg = "gs produced no output"
+            raise RenderError(msg) from None
 
     def _run_pdftoppm(self, index: int, width: int) -> bytes:
         self._wipe_tmp()
@@ -295,7 +304,8 @@ class Renderer:
         if not os.path.exists(out):
             leftovers = [os.path.join(self._tmp, f) for f in sorted(os.listdir(self._tmp))]
             if not leftovers:
-                raise RenderError("pdftoppm produced no output")
+                msg = "pdftoppm produced no output"
+                raise RenderError(msg)
             out = leftovers[0]
 
         with open(out, "rb") as fh:
@@ -322,7 +332,8 @@ class Renderer:
             with open(out, "rb") as fh:
                 return fh.read()
         except OSError:
-            raise RenderError("mutool draw produced no output") from None
+            msg = "mutool draw produced no output"
+            raise RenderError(msg) from None
 
     def page(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
@@ -338,7 +349,8 @@ class Renderer:
         try:
             raw = runner(index, width)
         except subprocess.TimeoutExpired:
-            raise RenderError(f"{self.tool} timed out") from None
+            msg = f"{self.tool} timed out"
+            raise RenderError(msg) from None
 
         result = parse_ppm(raw)
 
@@ -381,7 +393,8 @@ class Viewer:
         self.renderer = Renderer(path, backend)
         self.page_count = self.renderer.page_count()
         if self.page_count == 0:
-            raise RenderError("document contains no pages")
+            msg = "document contains no pages"
+            raise RenderError(msg)
 
         self.page_index = max(0, min(page - 1, self.page_count - 1))
         self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, zoom))
@@ -399,7 +412,7 @@ class Viewer:
 
     def render_width(self) -> int:
         cols, _ = self.term_size()
-        return max(1, min(self.MAX_RENDER_WIDTH, int(round(cols * self.zoom))))
+        return max(1, min(self.MAX_RENDER_WIDTH, round(cols * self.zoom)))
 
     def page_px_size(self) -> tuple[int, int]:
         w, h, _ = self.renderer.page(self.page_index, self.render_width())
@@ -462,7 +475,7 @@ class Viewer:
             except RenderError:
                 h = 0
             max_y = max(0, h - self.view_rows() * 2)
-            pct = 100 if max_y == 0 else int(round(100 * self.y / max_y))
+            pct = 100 if max_y == 0 else round(100 * self.y / max_y)
             line = (
                 f" {name}  {self.page_index + 1}/{self.page_count}  {pct:3d}%  {self.zoom:.2f}x [{self.renderer.tool}] "
             )

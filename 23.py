@@ -3,9 +3,12 @@
 It should run these operations concurrently across multiple files using a process pool (up to 8 workers), print a status line for each processed file, and collect/print any error output or issues encountered during the check or format steps under clearly labeled sections for each file.
 The script takes a target directory (or files) as input via command-line arguments and produces console output summarizing successes and problems, using a lock to keep printed output from interleaving across worker processes."""
 
+from __future__ import annotations
+
 import sys
 from multiprocessing import Lock, Pool
 from pathlib import Path
+
 from dh import runcmd
 from fastwalk import walk_files
 

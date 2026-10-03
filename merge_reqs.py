@@ -559,20 +559,19 @@ def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
         try:
             with path.open("rb") as fh:
                 dctx = zstandard.ZstdDecompressor()
-                with dctx.stream_reader(fh) as reader:
-                    with tarfile.open(fileobj=reader, mode="r|") as tf:
-                        for m in tf:
-                            if m.isfile() and m.name.endswith((".py", ".pyw")):
-                                f = tf.extractfile(m)
-                                if not f:
-                                    continue
-                                _merge_into(
-                                    res,
-                                    extract_imports(
-                                        f.read().decode("utf-8", "ignore"),
-                                        extractor,
-                                    ),
-                                )
+                with dctx.stream_reader(fh) as reader, tarfile.open(fileobj=reader, mode="r|") as tf:
+                    for m in tf:
+                        if m.isfile() and m.name.endswith((".py", ".pyw")):
+                            f = tf.extractfile(m)
+                            if not f:
+                                continue
+                            _merge_into(
+                                res,
+                                extract_imports(
+                                    f.read().decode("utf-8", "ignore"),
+                                    extractor,
+                                ),
+                            )
         except Exception:
             pass
         return res
@@ -709,11 +708,11 @@ def filter_packages(
 
         if pip_n:
             if cand_n in pip_n or n in pip_n:
-                out.add(target if target else imp)
+                out.add(target or imp)
             elif include_unknown:
-                out.add(target if target else imp)
+                out.add(target or imp)
         else:
-            out.add(target if target else imp)
+            out.add(target or imp)
     return out
 
 
@@ -827,8 +826,7 @@ def run_scan(args: argparse.Namespace) -> int:
 
 def _write_lines(path: str | os.PathLike, lines: Sequence[str]) -> None:
     with Path(path).open("w", encoding="utf-8") as f:
-        for line in lines:
-            f.write(f"{line}\n")
+        f.writelines(f"{line}\n" for line in lines)
 
 
 def _pip_freeze(pip_cmd: str) -> Optional[set[str]]:

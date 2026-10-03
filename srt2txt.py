@@ -4,6 +4,8 @@ It should take the input SRT file path as the first argument and an optional out
 If no input file is provided, it should print a usage message and exit with an error code.
 After successful conversion, it should print a confirmation message showing the source and destination file paths."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

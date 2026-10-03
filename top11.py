@@ -4,9 +4,12 @@ It should accept an optional command-line argument specifying how many top files
 The script should collect each file's relative path and size, sort them by size in descending order, and print a formatted table with columns for rank number, truncated file path (capped at 80 characters, with a leading "..." if truncated), and human-readable file size.
 If no files are found, it should print a message indicating so instead of the table."""
 
+from __future__ import annotations
+
 import operator
 import sys
 from pathlib import Path
+
 from dh import fsz, get_files
 
 cwd = Path.cwd()
@@ -23,7 +26,7 @@ def main() -> None:
         print("No files found or unable to access directory.")
         return
     sizez.sort(key=operator.itemgetter(1), reverse=True)
-    num_files = N if N else 11
+    num_files = N or 11
     top_files = sizez[:num_files]
     max_path_len = max((len(str(path)) for path, size in top_files))
     max_path_len = min(max_path_len, 80)

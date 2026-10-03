@@ -13,6 +13,7 @@ External requirements: the ``fastwalk`` extension module and the ``jpegoptim`` C
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import shutil
 import stat
@@ -45,7 +46,7 @@ COMPARE_CHUNK: Final[int] = 1 << 16
 
 JPEGOPTIM_SUCCESS: Final[int] = 0
 
-QUALITY_RANGE: Final[range] = range(0, 101)
+QUALITY_RANGE: Final[range] = range(101)
 
 
 class ProcessResult(NamedTuple):
@@ -219,10 +220,8 @@ def process_file(
                 suffix=target.suffix + ".tmp",
                 dir=str(target.parent),
             )
-            try:
+            with contextlib.suppress(OSError):
                 os.close(fd)
-            except OSError:
-                pass
             tmp_path = Path(tmp_name)
         except OSError as exc:
             return ProcessResult(
@@ -449,10 +448,8 @@ def process_file(
 
     finally:
         if tmp_path is not None:
-            try:
+            with contextlib.suppress(OSError):
                 tmp_path.unlink()
-            except OSError:
-                pass
 
 
 def _classify(result: ProcessResult, dry_run: bool) -> str:
@@ -639,7 +636,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 2
 
-    roots = [Path(p) for p in args.paths] if args.paths else [Path(".")]
+    roots = [Path(p) for p in args.paths] if args.paths else [Path()]
 
     worker = partial(
         process_file,

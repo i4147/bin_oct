@@ -4,6 +4,8 @@ It should load and validate the JSON structure, translate strings concurrently w
 Include logging via loguru for progress/errors, support for a dry-run or similarity check (using SequenceMatcher) to detect unchanged/near-duplicate translations, and safe file writing through temporary files.
 The script should be runnable as a standalone CLI using argparse, accepting inputs such as source file paths, target language, API key/credentials, and concurrency settings."""
 
+from __future__ import annotations
+
 import argparse
 import importlib.util
 import json
@@ -16,6 +18,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Callable, TypeAlias
+
 from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]
@@ -110,7 +113,8 @@ def _map_language(
     normalized = language.strip().lower()
     if normalized not in mapping:
         supported = ", ".join(sorted(mapping))
-        raise ValueError(f"Unsupported language code {language!r}. Supported codes include: {supported}")
+        msg = f"Unsupported language code {language!r}. Supported codes include: {supported}"
+        raise ValueError(msg)
     return mapping[normalized]
 
 
@@ -127,7 +131,8 @@ def _make_deep_translator(source: str, target: str) -> Translator:
         )
         result = translator.translate(text)
         if not isinstance(result, str):
-            raise TypeError("deep_translator returned a non-string result")
+            msg = "deep_translator returned a non-string result"
+            raise TypeError(msg)
         return result
 
     return translate
@@ -138,7 +143,8 @@ def _make_deepl(source: str, target: str) -> Translator:
 
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise RuntimeError(msg)
     mapped_source = _map_language(source, DEEPL_LANGUAGE_CODES)
     mapped_target = _map_language(target, DEEPL_LANGUAGE_CODES)
 
@@ -151,7 +157,8 @@ def _make_deepl(source: str, target: str) -> Translator:
         )
         translated = getattr(result, "text", result)
         if not isinstance(translated, str):
-            raise TypeError("deepl returned a non-string result")
+            msg = "deepl returned a non-string result"
+            raise TypeError(msg)
         return translated
 
     return translate
@@ -170,7 +177,8 @@ def _make_translate(source: str, target: str) -> Translator:
         )
         result = client.translate(text)
         if not isinstance(result, str):
-            raise TypeError("translate returned a non-string result")
+            msg = "translate returned a non-string result"
+            raise TypeError(msg)
         return result
 
     return translate
@@ -190,7 +198,8 @@ def _make_translators_bing(source: str, target: str) -> Translator:
             to_language=mapped_target,
         )
         if not isinstance(result, str):
-            raise TypeError("translators returned a non-string result")
+            msg = "translators returned a non-string result"
+            raise TypeError(msg)
         return result
 
     return translate
@@ -212,7 +221,8 @@ def _make_googletrans(source: str, target: str) -> Translator:
             )
         translated = getattr(result, "text", result)
         if not isinstance(translated, str):
-            raise TypeError("googletrans returned a non-string result")
+            msg = "googletrans returned a non-string result"
+            raise TypeError(msg)
         return translated
 
     return translate
@@ -236,7 +246,8 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
         if isinstance(result, dict):
             translated = result.get("translatedText") or result.get("translation") or result.get("text")
         if not isinstance(translated, str):
-            raise TypeError("pygoogletranslation returned an unsupported result")
+            msg = "pygoogletranslation returned an unsupported result"
+            raise TypeError(msg)
         return translated
 
     return translate
@@ -257,7 +268,8 @@ def _make_boto3(source: str, target: str) -> Translator:
         )
         translated = result.get("TranslatedText")
         if not isinstance(translated, str):
-            raise TypeError("boto3 returned no translated text")
+            msg = "boto3 returned no translated text"
+            raise TypeError(msg)
         return translated
 
     return translate
@@ -275,7 +287,8 @@ def _make_azure(source: str, target: str) -> Translator:
     api_key = os.environ.get("AZURE_TRANSLATOR_KEY", "").strip()
     region = os.environ.get("AZURE_TRANSLATOR_REGION", "").strip()
     if not api_key:
-        raise RuntimeError("AZURE_TRANSLATOR_KEY is not set")
+        msg = "AZURE_TRANSLATOR_KEY is not set"
+        raise RuntimeError(msg)
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
 
@@ -302,10 +315,12 @@ def _make_azure(source: str, target: str) -> Translator:
             with urllib.request.urlopen(request, timeout=60) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as exc:
-            raise RuntimeError(f"Azure request failed: {exc}") from exc
+            msg = f"Azure request failed: {exc}"
+            raise RuntimeError(msg) from exc
         translated = payload[0]["translations"][0]["text"]
         if not isinstance(translated, str):
-            raise TypeError("Azure returned no translated text")
+            msg = "Azure returned no translated text"
+            raise TypeError(msg)
         return translated
 
     return translate
@@ -320,7 +335,8 @@ def _make_baidu(source: str, target: str) -> Translator:
     app_id = os.environ.get("BAIDU_APP_ID", "").strip()
     secret_key = os.environ.get("BAIDU_SECRET_KEY", "").strip()
     if not app_id or not secret_key:
-        raise RuntimeError("BAIDU_APP_ID and BAIDU_SECRET_KEY must both be set")
+        msg = "BAIDU_APP_ID and BAIDU_SECRET_KEY must both be set"
+        raise RuntimeError(msg)
     mapped_source = _map_language(source, LANGUAGE_CODES)
     mapped_target = _map_language(target, LANGUAGE_CODES)
 
@@ -345,25 +361,25 @@ def _make_baidu(source: str, target: str) -> Translator:
         with urllib.request.urlopen(request, timeout=60) as response:
             result = json.loads(response.read().decode("utf-8"))
         if "error_code" in result:
-            raise RuntimeError(f"Baidu error {result['error_code']}: {result.get('error_msg', 'unknown error')}")
+            msg = f"Baidu error {result['error_code']}: {result.get('error_msg', 'unknown error')}"
+            raise RuntimeError(msg)
         translated = "\n".join(item["dst"] for item in result.get("trans_result", []))
         if not translated:
-            raise TypeError("Baidu returned no translated text")
+            msg = "Baidu returned no translated text"
+            raise TypeError(msg)
         return translated
 
     return translate
 
 
 def _make_alibaba(source: str, target: str) -> Translator:
-    raise RuntimeError(
-        "Alibaba backend requires a product-specific API integration and is not configured by this script"
-    )
+    msg = "Alibaba backend requires a product-specific API integration and is not configured by this script"
+    raise RuntimeError(msg)
 
 
 def _make_watson(source: str, target: str) -> Translator:
-    raise RuntimeError(
-        "Watson backend requires a product-specific API integration and is not configured by this script"
-    )
+    msg = "Watson backend requires a product-specific API integration and is not configured by this script"
+    raise RuntimeError(msg)
 
 
 BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
@@ -401,7 +417,8 @@ def _select_backend(
     if requested != "auto":
         if requested not in BACKEND_FACTORIES:
             choices = ", ".join(sorted(BACKEND_FACTORIES))
-            raise ValueError(f"Unknown backend {requested!r}. Available backends: {choices}")
+            msg = f"Unknown backend {requested!r}. Available backends: {choices}"
+            raise ValueError(msg)
         return requested, BACKEND_FACTORIES[requested](source, target)
     for backend in FALLBACK_ORDER:
         if (
@@ -437,7 +454,8 @@ def _select_backend(
 
 def _split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
-        raise ValueError("chunk_size must be greater than zero")
+        msg = "chunk_size must be greater than zero"
+        raise ValueError(msg)
     chunks: list[str] = []
     position = 0
     text_length = len(text)
@@ -467,9 +485,11 @@ def _load_output(path: Path) -> dict[str, str]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid JSON in {path}: {exc}") from exc
+        msg = f"Invalid JSON in {path}: {exc}"
+        raise ValueError(msg) from exc
     if not isinstance(payload, dict):
-        raise ValueError(f"{path} must contain a JSON object")
+        msg = f"{path} must contain a JSON object"
+        raise ValueError(msg)
     output: dict[str, str] = {}
     for key, value in payload.items():
         if isinstance(key, str) and isinstance(value, str):
@@ -533,7 +553,8 @@ def _translate_with_retry(
             limiter.wait()
             translated = translator(text).strip()
             if _is_identity_translation(text, translated):
-                raise RuntimeError("Translation result appears identical to the source")
+                msg = "Translation result appears identical to the source"
+                raise RuntimeError(msg)
             logger.debug(
                 "Chunk {} translated successfully on attempt {}",
                 index,
@@ -552,7 +573,8 @@ def _translate_with_retry(
                 time.sleep(2 ** (attempt - 1))
     if last_error is None:
         last_error = RuntimeError("Unknown translation failure")
-    raise RuntimeError(f"Chunk {index} failed after 3 attempts: {last_error}") from last_error
+    msg = f"Chunk {index} failed after 3 attempts: {last_error}"
+    raise RuntimeError(msg) from last_error
 
 
 def _append_failed(path: Path, index: int) -> None:
@@ -630,13 +652,17 @@ def _parse_args() -> argparse.Namespace:
 def main() -> int:
     args = _parse_args()
     if not 1 <= args.workers <= 2:
-        raise ValueError("--workers must be 1 or 2")
+        msg = "--workers must be 1 or 2"
+        raise ValueError(msg)
     if args.delay < 0:
-        raise ValueError("--delay cannot be negative")
+        msg = "--delay cannot be negative"
+        raise ValueError(msg)
     if args.save_every <= 0:
-        raise ValueError("--save-every must be greater than zero")
+        msg = "--save-every must be greater than zero"
+        raise ValueError(msg)
     if not args.input.exists():
-        raise FileNotFoundError(f"Input file does not exist: {args.input}")
+        msg = f"Input file does not exist: {args.input}"
+        raise FileNotFoundError(msg)
     text = args.input.read_text(encoding="utf-8")
     chunks = _split_chunks(text, args.chunk_size)
     translations: dict[str, str] = {}

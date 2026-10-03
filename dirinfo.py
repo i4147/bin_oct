@@ -4,11 +4,14 @@ The script should output a text summary (optionally written to a given file via 
 It should also use matplotlib to generate a chart visualizing the size distribution across file extensions.
 Handle inaccessible files gracefully by treating unreadable file sizes as zero rather than raising an exception."""
 
+from __future__ import annotations
+
 import argparse
 import operator
 import sys
 from collections import defaultdict
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 from dh import fsz
 

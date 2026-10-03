@@ -5,6 +5,8 @@ On failure, the URL stays in the input file.
 Per-URL timeout: 50 seconds.
 Usage: python download.py urls.txt"""
 
+from __future__ import annotations
+
 import multiprocessing as mp
 import sys
 from pathlib import Path

@@ -8,12 +8,15 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 IMPORT_RE: re.Pattern[str] = re.compile(
     r"""^(?P<indent>\s*)(?P<stmt>(?:import|from)\s+pkg_resources(?:\s+import\s+(?P<names>[^\n#]+))?)\s*(?P<comment>#.*)?$""",
@@ -329,11 +332,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     print(f"  fixed: {p}")
                     for n in notes:
                         print(f"      - {n}")
-                else:
-                    if notes:
-                        print(f"  no-op: {p}")
-                        for n in notes:
-                            print(f"      - {n}")
+                elif notes:
+                    print(f"  no-op: {p}")
+                    for n in notes:
+                        print(f"      - {n}")
         print(f"files autofixed    : {autofixed_files}")
 
     return 0 if total_findings == 0 or not args.autofix else 1

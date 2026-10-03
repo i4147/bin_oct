@@ -11,13 +11,16 @@ The generated script should: - Recursively discover .ipynb files from CLI-provid
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Sequence
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import nbformat
 from loguru import logger
 from nbformat import NotebookNode
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 POOL_SIZE: int = 8
 MAGIC_PREFIXES: tuple[str, ...] = ("%", "!", "%%")

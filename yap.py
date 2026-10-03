@@ -3,10 +3,13 @@
 It should use argparse to accept options such as target directory/files and formatting mode, read each file's original text, apply the chosen formatter's transformation function to produce new code, and write the result back to disk, while tracking each file's before/after size in bytes and processing time using perf_counter.
 It should leverage utility functions from the "dh" module (cprint for colored console output, format_time and fsz for human-readable time/size formatting, and mpf, presumably for multiprocessing/parallel file handling) to report progress and results, such as filenames, size changes, and elapsed time, for each processed file and likely a final summary across all files."""
 
+from __future__ import annotations
+
 import argparse
 from pathlib import Path
 from time import perf_counter as pff
 from typing import Any
+
 from dh import cprint, format_time, fsz, get_pyfiles, mpf
 
 MODE: str = "black"
@@ -31,9 +34,7 @@ def process_file(path: str | Path, mode: str = MODE):
 
                 code = fix_with_isort(original_code)
             case "black":
-                from black import Mode as _Mode
-                from black import TargetVersion as _tv
-                from black import format_str
+                from black import Mode as _Mode, TargetVersion as _tv, format_str
 
                 code = format_str(
                     original_code,
@@ -48,9 +49,7 @@ def process_file(path: str | Path, mode: str = MODE):
 
                 code, _ = fix_with_yapf(original_code)
             case _:
-                from black import Mode as _Mode
-                from black import TargetVersion as _tv
-                from black import format_str
+                from black import Mode as _Mode, TargetVersion as _tv, format_str
 
                 code = format_str(
                     original_code,

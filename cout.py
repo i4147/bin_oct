@@ -3,17 +3,23 @@
 It should accept one or more file/directory paths as input, recursively process files (using a chunked, multiprocessing pool for performance), and safely rewrite each file in place using a temporary file plus atomic replace, skipping unsupported extensions and files that already contain the marker.
 It should log progress and errors with loguru, support small-file and large-file handling differently for efficiency, and expose command-line arguments (e.g., via argparse) to control the desired shebang/comment text and target paths."""
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import sys
-from collections.abc import Iterator, Sequence
-from contextlib import ExitStack
+from contextlib import ExitStack, suppress
 from dataclasses import dataclass
 from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING
+
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 POOL_SIZE: int = 8
 CHUNK_SIZE: int = 10_000
@@ -171,13 +177,12 @@ def process_chunk(
             else:
                 out.append(line)
                 skipped += 1
+        elif stripped.startswith(comment_char):
+            out.append(line)
+            skipped += 1
         else:
-            if stripped.startswith(comment_char):
-                out.append(line)
-                skipped += 1
-            else:
-                out.append(f"{comment_char}{line}")
-                commented += 1
+            out.append(f"{comment_char}{line}")
+            commented += 1
     return ChunkResult(out, commented, uncommented, skipped, blanks, commented + uncommented)
 
 
@@ -367,13 +372,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     errors = "strict" if ns.strict else "surrogateescape"
     read_encoding = ns.encoding
     write_encoding = ns.encoding
-    if not is_stdin:
-        if _detect_bom(file_path) and ns.encoding.lower().replace("_", "-") in (
+    if (
+        not is_stdin
+        and _detect_bom(file_path)
+        and ns.encoding.lower().replace("_", "-")
+        in (
             "utf-8",
             "utf8",
-        ):
-            read_encoding = "utf-8-sig"
-            write_encoding = "utf-8-sig"
+        )
+    ):
+        read_encoding = "utf-8-sig"
+        write_encoding = "utf-8-sig"
     initial_stat = None if is_stdin else file_path.stat()
     file_size = initial_stat.st_size if initial_stat is not None else 0
     use_pool = file_size >= SMALL_FILE_BYTES
@@ -428,10 +437,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     tmp.writelines(res.lines)
         if mode == "atomic" and temp_path is not None:
             if total.changed == 0:
-                try:
+                with suppress(OSError):
                     temp_path.unlink()
-                except OSError:
-                    pass
                 temp_path = None
             else:
                 current_stat = file_path.stat()
@@ -448,10 +455,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         success = True
     finally:
         if not success and temp_path is not None and temp_path.exists():
-            try:
+            with suppress(OSError):
                 temp_path.unlink()
-            except OSError:
-                pass
     if ns.stats:
         action = "un-commented" if ns.remove else "commented"
         if mode == "dry-run":

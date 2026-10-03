@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -18,13 +20,7 @@ try:
     from rich import box
     from rich.console import Console
     from rich.panel import Panel
-    from rich.progress import (
-        BarColumn,
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        TimeElapsedColumn,
-    )
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
     from rich.table import Table
     from rich.text import Text
 
@@ -226,7 +222,8 @@ def stream_decompress(
             f_out.close()
 
     if not decompressor.is_finished() and not allow_truncated:
-        raise ValueError("Incomplete Brotli stream (missing end-of-stream marker)")
+        msg = "Incomplete Brotli stream (missing end-of-stream marker)"
+        raise ValueError(msg)
 
     return written, hasher.hexdigest() if hasher is not None else None
 
@@ -287,7 +284,8 @@ def compress_file_streaming(
         if verify:
             check_size, check_digest = stream_decompress(output_path, None, chunk_size, False, True)
             if check_size != original_size or check_digest != source_digest:
-                raise ValueError("Verification failed: round-trip does not match source")
+                msg = "Verification failed: round-trip does not match source"
+                raise ValueError(msg)
 
         original_deleted: bool = False
         if not keep_original and output_path.exists():
@@ -1115,7 +1113,7 @@ Examples:
         "--quality",
         type=int,
         default=11,
-        choices=range(0, 12),
+        choices=range(12),
         help="Brotli compression quality (0-11, default: 11). Only valid with -c/--compress.",
     )
 

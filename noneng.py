@@ -110,18 +110,21 @@ def create_detector(backend: str) -> Any:
 
         model_path_text = __import__("os").environ.get("FASTTEXT_MODEL")
         if not model_path_text:
-            raise RuntimeError(
+            msg = (
                 "The fasttext backend requires FASTTEXT_MODEL to point to a "
                 "valid fastText language-identification model."
             )
+            raise RuntimeError(msg)
 
         model_path = Path(model_path_text).expanduser()
         if not model_path.is_file():
-            raise RuntimeError(f"FASTTEXT_MODEL does not point to a readable file: {model_path}")
+            msg = f"FASTTEXT_MODEL does not point to a readable file: {model_path}"
+            raise RuntimeError(msg)
 
         return fasttext.load_model(str(model_path))
 
-    raise RuntimeError(f"Unsupported backend: {backend}")
+    msg = f"Unsupported backend: {backend}"
+    raise RuntimeError(msg)
 
 
 def validate_backend(backend: str) -> None:
@@ -170,7 +173,8 @@ def detect_language(text: str) -> str:
             return "unknown"
         return str(labels[0]).removeprefix("__label__").lower()
 
-    raise RuntimeError(f"Worker backend is not initialized: {_BACKEND}")
+    msg = f"Worker backend is not initialized: {_BACKEND}"
+    raise RuntimeError(msg)
 
 
 def is_english(language: str) -> bool:
@@ -229,7 +233,8 @@ def text_samples(path: Path) -> Iterator[str]:
     except UnicodeError:
         logger.error("Unable to decode file: {}", path)
     except OSError as error:
-        raise RuntimeError(f"{path}: {error}") from error
+        msg = f"{path}: {error}"
+        raise RuntimeError(msg) from error
 
 
 def scan_file(path: Path) -> ScanResult:
@@ -277,7 +282,8 @@ def collect_files(inputs: Iterable[Path]) -> list[Path]:
             continue
 
         if not candidate.exists():
-            raise FileNotFoundError(f"Input path does not exist: {candidate}")
+            msg = f"Input path does not exist: {candidate}"
+            raise FileNotFoundError(msg)
 
         if candidate.is_file():
             resolved = candidate.resolve()

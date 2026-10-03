@@ -3,8 +3,11 @@
 The script should query the GitHub REST API for that repository's metadata, then compute and print the repository size in megabytes (converted from the "size" field returned in kilobytes) along with the repository identifier.
 It must gracefully handle invalid input formats, a 404 not-found response, and general request exceptions by printing descriptive error messages, and it should validate that exactly one command-line argument is provided, printing usage instructions and exiting with status code 1 otherwise."""
 
+from __future__ import annotations
+
 import re
 import sys
+
 import requests
 
 

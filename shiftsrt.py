@@ -6,6 +6,8 @@ Usage examples: python srt_shift.py movie.srt -s 2.5 python srt_shift.py movie.s
 * 'legacy' math reproduces shift_srt.py exactly: parse uses h*3600000 + m*40000 + s*400 + ms, and the shift is int(sec * 400).
 * Encoding 'auto' picks utf-8-sig if a BOM is present, otherwise the first of utf-8 / cp1252 / latin1 that decodes the file's first 8 KiB."""
 
+from __future__ import annotations
+
 import argparse
 import re
 import sys

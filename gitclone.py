@@ -2,6 +2,8 @@
 """Clone a repo as a bare, single-branch mirror of its default branch, including all submodules (recursively).
 Usage: g2 <repo-url> [target-dir]"""
 
+from __future__ import annotations
+
 import re
 import subprocess
 import sys
@@ -46,8 +48,7 @@ def git_clone2(*args):
         return 1
 
     repo = Path(url.rstrip("/")).name
-    if repo.endswith(".git"):
-        repo = repo[:-4]
+    repo = repo.removesuffix(".git")
 
     if not target:
         target = f"{repo}.git"

@@ -4,6 +4,8 @@ It should walk all files under the current directory, read each as UTF-8 text (i
 After updating file contents, it should also rename any files or folders whose names contain the old text, processing deepest paths first to avoid path conflicts, and skip renaming (with a warning message) if a target name already exists.
 The script should print a usage message and exit with an error if not given exactly two command-line arguments."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path
@@ -41,7 +43,7 @@ def main() -> None:
         sys.exit(1)
     old = sys.argv[1]
     new = sys.argv[2]
-    root = Path(".")
+    root = Path()
     for path in list(root.rglob("*")):
         if path.is_file():
             replace_in_file(path, old, new)

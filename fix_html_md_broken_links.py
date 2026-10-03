@@ -4,6 +4,8 @@ For every extracted link that does not exist as a valid relative path, the scrip
 Before writing changes, it renames the original file to a ".bak" backup, then writes the updated content back to the original filename.
 The script should run as a standalone program invoked via a main function and exit with its return status."""
 
+from __future__ import annotations
+
 import os
 import re
 from pathlib import Path

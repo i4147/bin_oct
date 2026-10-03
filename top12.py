@@ -3,6 +3,8 @@
 It should walk the directory tree with os.walk, retrieve each file's size via Path.stat(), and gracefully skip files that raise OSError (e.g., broken symlinks or permission errors).
 The function should return the top 10 files sorted in descending order by size as (size, path) tuples, and when run as a script, print each file's size in bytes alongside its path."""
 
+from __future__ import annotations
+
 import heapq
 import os
 from pathlib import Path

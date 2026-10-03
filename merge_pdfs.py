@@ -4,9 +4,12 @@ It should accept command-line arguments specifying individual PDF file paths and
 Files must be sorted by a numeric index extracted from filenames matching a trailing "_<number>.pdf" pattern, placing files without that pattern at the end.
 The script should combine all pages from the sorted PDFs in order, write the result to "merged.pdf" in the current directory, print a message with the count of merged files and output path, and print a notice if no PDF files are found."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
+
 from pypdf import PdfReader, PdfWriter
 
 

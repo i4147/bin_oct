@@ -4,16 +4,20 @@ Detects each file's encoding with chardet, skips binary/unsupported files via ``
 Files are processed with a fixed multiprocessing.Pool of 8 workers.
 Logging via loguru."""
 
+from __future__ import annotations
+
 import argparse
-from collections.abc import Generator
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import chardet  # type: ignore[import-untyped]
 from dh import get_nobinary, is_binary  # type: ignore[import-untyped]
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from multiprocessing.pool import AsyncResult
 
 MAX_WORKERS: Final[int] = 8
 SAMPLE_SIZE: Final[int] = 100_000

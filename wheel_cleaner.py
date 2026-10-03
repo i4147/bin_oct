@@ -128,7 +128,8 @@ def resolve_detectors(raw: Optional[Iterable[str]]) -> list[str]:
                 if part not in chosen:
                     chosen.append(part)
             else:
-                raise SystemExit(f"Error: unknown detector {part!r}. Choose from: {', '.join(DETECTORS)} (or 'all')")
+                msg = f"Error: unknown detector {part!r}. Choose from: {', '.join(DETECTORS)} (or 'all')"
+                raise SystemExit(msg)
     return chosen or [DEFAULT_DETECTOR]
 
 

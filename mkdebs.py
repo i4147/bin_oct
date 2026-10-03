@@ -4,11 +4,14 @@ It should use apt and apt_pkg to enumerate installed packages, retrieve each pac
 Using this data, it should build a valid Debian package archive (control.tar + data.tar wrapped in an ar archive via unix_ar and tarfile) for each installed package, saving the resulting .deb files into a "debs" directory under the user's home folder, creating that directory if it doesn't exist.
 Include error handling so that failures for individual packages (missing files, missing metadata) are caught gracefully without stopping the whole process."""
 
+from __future__ import annotations
+
 import contextlib
 import os
 import shutil
 import tarfile
 from pathlib import Path
+
 import apt
 import apt_pkg
 import unix_ar
@@ -38,7 +41,8 @@ def get_package_files(pkg_name: str) -> list[str]:
 def get_package_metadata(pkg_name: str) -> dict[str, str]:
     cache = apt.Cache()
     if pkg_name not in cache:
-        raise ValueError(f"Package {pkg_name} not found")
+        msg = f"Package {pkg_name} not found"
+        raise ValueError(msg)
     pkg = cache[pkg_name]
     if pkg.is_installed:
         version = pkg.installed.version
@@ -175,7 +179,7 @@ def process_pkg(pkg_name: str) -> str | None:
         files = get_package_files(pkg_name)
         if not files:
             print(f"[!] No files found for {pkg_name}")
-            return
+            return None
         copy_pkg_files(files, files_dir)
         create_control_file(debian_dir, meta)
         output_deb = BASE_DIR / f"{pkg_name}.deb"
@@ -185,7 +189,7 @@ def process_pkg(pkg_name: str) -> str | None:
         return str(output_deb)
     except Exception as e:
         print(f"[✖] {pkg_name} FAILED: {e}")
-        return
+        return None
 
 
 def main() -> None:

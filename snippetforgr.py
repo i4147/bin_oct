@@ -230,9 +230,8 @@ def _collect_md_targets(roots: Sequence[Path], wide: bool) -> list[Path]:
             if wide:
                 if p.suffix.lower() in {".md", ".markdown", ".metadata"} or p.name in PKG_FILENAMES:
                     targets.append(p)
-            else:
-                if p.suffix.lower() == ".md":
-                    targets.append(p)
+            elif p.suffix.lower() == ".md":
+                targets.append(p)
     return sorted(set(targets))
 
 
@@ -835,7 +834,7 @@ def cmd_html(args: argparse.Namespace) -> int:
         total += _html_run_multi(files, output_dir, args.workers)
     else:
         print("Processing HTML files in current directory recursively")
-        files = _collect_html_files(Path("."))
+        files = _collect_html_files(Path())
         if not files:
             print("No HTML files found.")
             return 0

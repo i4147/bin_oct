@@ -5,10 +5,13 @@ It should accept file paths as command-line arguments, or if none are given, rec
 Using a multiprocessing Pool (spawn context, 8 workers, with a bounded pending queue of 16 tasks), it should process each file concurrently: read its content, check if the first line starts with "#!/", and if so, remove that line and rewrite the file, printing a confirmation message with the filename.
 Before and after processing, it should measure the total size of the current directory via a "gsz" helper, compute the difference, and print the space saved using a "fsz" formatting helper, with all directory-size and file-listing utilities imported from a local "dh" module."""
 
+from __future__ import annotations
+
 import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+
 from dh import fsz, get_files, gsz
 
 MAX_QUEUE = 16

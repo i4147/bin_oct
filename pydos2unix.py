@@ -3,12 +3,16 @@
 It should use argparse to accept target paths, skip binary files (via an is_binary check) and common non-source directories like .git, __pycache__, and .idea, and perform the actual line-ending conversion using a dos2unix helper function.
 To speed up processing of large file trees, it should parallelize the conversion work across multiple files using a multiprocessing Pool with a configurable worker count, and use loguru to log per-file results (converted, already Unix format, skipped, or errored) as well as an overall summary."""
 
+from __future__ import annotations
+
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
+
 from dh import is_binary
-from dos2unix import dos2unix
 from loguru import logger
+
+from dos2unix import dos2unix
 
 MAX_WORKERS = 8
 CHUNK_SIZE = 32768
@@ -95,7 +99,7 @@ def main():
         help="Show detailed output for each file",
     )
     args = parser.parse_args()
-    input_paths = get_input_paths(args.paths if args.paths else None)
+    input_paths = get_input_paths(args.paths or None)
     if not input_paths:
         logger.error("No valid paths provided")
         return 1

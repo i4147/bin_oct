@@ -3,10 +3,13 @@
 It should accept an optional filename argument to load an existing file's contents into a TextEditor widget on startup (reporting a "file not found" message if it doesn't exist), display a Header, Footer, and a status TextLog panel, and support keybindings for opening, saving, and quitting.
 It should also configure Python's readline/rlcompleter to enable tab-completion, presumably for use within the editor or an integrated console."""
 
+from __future__ import annotations
+
 import readline
 import rlcompleter
 import sys
 from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.log import TextLog

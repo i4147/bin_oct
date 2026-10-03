@@ -2,14 +2,19 @@
 """A parallelized CLI tool using tree-sitter to strip regular comments from Lua files in-place while preserving LDoc/LuaLS annotations (starting with '---').
 It accepts paths or directories, processes files concurrently with multiprocessing.Pool.imap, logs output using loguru, skips logging un-modified files, and reports summary stats upon completion."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
-from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tree_sitter_lua
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 LUA_LANGUAGE: Language = Language(tree_sitter_lua.language())
 LUA_EXTS: set[str] = {".lua"}
@@ -98,7 +103,7 @@ def main() -> int:
         help="Files or directories. Defaults to current directory recursively.",
     )
     args: argparse.Namespace = ap.parse_args()
-    inputs: list[Path] = list(args.paths) if args.paths else [Path(".")]
+    inputs: list[Path] = list(args.paths) if args.paths else [Path()]
     files: list[Path] = list(iter_lua_files(inputs))
     if not files:
         logger.error("No Lua files to process.")

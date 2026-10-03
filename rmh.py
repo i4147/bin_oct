@@ -3,11 +3,14 @@
 It should use a dataclass (ProcessResult) to track per-file statistics such as original/final line and byte counts, number of comments removed, space freed, and any errors encountered, and process files in parallel using multiprocessing.Pool with a progress bar (tqdm) and logging via loguru.
 The script should be runnable as a command-line tool that accepts a target path and options, then prints or logs a summary report of processed files, space savings, and failures at the end."""
 
+from __future__ import annotations
+
 import re
 import sys
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+
 from loguru import logger
 from tqdm import tqdm
 
@@ -303,7 +306,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dry-run", action="store_true", help="Preview changes without modifying files")
     args = parser.parse_args()
-    targets = args.targets if args.targets else None
+    targets = args.targets or None
     exit_code = main(
         targets=targets,
         num_workers=args.workers,

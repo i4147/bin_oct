@@ -210,7 +210,8 @@ def _download_urllib(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
     with urlopen(req, timeout=timeout) as resp:
         declared = resp.headers.get("Content-Length")
         if declared and int(declared) > max_bytes:
-            raise FileTooLarge(f"Content-Length {declared} > {max_bytes}")
+            msg = f"Content-Length {declared} > {max_bytes}"
+            raise FileTooLarge(msg)
         written = 0
         with open(tmp, "wb") as fh:
             while True:
@@ -219,7 +220,8 @@ def _download_urllib(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
                     break
                 written += len(chunk)
                 if written > max_bytes:
-                    raise FileTooLarge(f"exceeded {max_bytes} bytes")
+                    msg = f"exceeded {max_bytes} bytes"
+                    raise FileTooLarge(msg)
                 fh.write(chunk)
     return written
 
@@ -232,14 +234,16 @@ def _download_requests(url: str, tmp: Path, max_bytes: int, timeout: float) -> i
         resp.raise_for_status()
         declared = resp.headers.get("Content-Length")
         if declared and int(declared) > max_bytes:
-            raise FileTooLarge(f"Content-Length {declared} > {max_bytes}")
+            msg = f"Content-Length {declared} > {max_bytes}"
+            raise FileTooLarge(msg)
         with open(tmp, "wb") as fh:
             for chunk in resp.iter_content(chunk_size=CHUNK_SIZE):
                 if not chunk:
                     continue
                 written += len(chunk)
                 if written > max_bytes:
-                    raise FileTooLarge(f"exceeded {max_bytes} bytes")
+                    msg = f"exceeded {max_bytes} bytes"
+                    raise FileTooLarge(msg)
                 fh.write(chunk)
     return written
 
@@ -271,7 +275,8 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         status = curl.getinfo(pycurl.RESPONSE_CODE)
     except pycurl.error as exc:
         if aborted:
-            raise FileTooLarge(f"exceeded {max_bytes} bytes") from exc
+            msg = f"exceeded {max_bytes} bytes"
+            raise FileTooLarge(msg) from exc
         raise
     finally:
         curl.close()
@@ -310,7 +315,8 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
-        raise RuntimeError("aria2c timed out") from exc
+        msg = "aria2c timed out"
+        raise RuntimeError(msg) from exc
 
     stderr_text = result.stderr.decode("utf-8", "replace").strip()
 
@@ -318,12 +324,14 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         low = stderr_text.lower()
         if "max-filesize" in low or "too large" in low or "exceeds" in low:
             raise FileTooLarge(stderr_text or f"exceeded {max_bytes} bytes")
-        raise RuntimeError(f"aria2c failed (exit {result.returncode}): {stderr_text or '<no stderr>'}")
+        msg = f"aria2c failed (exit {result.returncode}): {stderr_text or '<no stderr>'}"
+        raise RuntimeError(msg)
 
     size = tmp.stat().st_size
     if size > max_bytes:
         tmp.unlink(missing_ok=True)
-        raise FileTooLarge(f"downloaded {size} bytes > {max_bytes}")
+        msg = f"downloaded {size} bytes > {max_bytes}"
+        raise FileTooLarge(msg)
 
     tmp.with_name(tmp.name + ".aria2").unlink(missing_ok=True)
     return size
@@ -348,7 +356,8 @@ async def _download_one_async(
 
                 declared = resp.headers.get("Content-Length")
                 if declared and int(declared) > max_bytes:
-                    raise FileTooLarge(f"Content-Length {declared} > {max_bytes}")
+                    msg = f"Content-Length {declared} > {max_bytes}"
+                    raise FileTooLarge(msg)
 
                 with open(tmp, "wb") as fh:
                     async for chunk in resp.aiter_bytes(CHUNK_SIZE):
@@ -356,7 +365,8 @@ async def _download_one_async(
                             continue
                         written += len(chunk)
                         if written > max_bytes:
-                            raise FileTooLarge(f"exceeded {max_bytes} bytes")
+                            msg = f"exceeded {max_bytes} bytes"
+                            raise FileTooLarge(msg)
                         fh.write(chunk)
 
             tmp.replace(dest)

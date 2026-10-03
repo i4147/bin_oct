@@ -13,6 +13,7 @@ External requirements: the ``fastwalk`` extension module and the ``svgo`` CLI (o
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import stat
 import subprocess
@@ -224,10 +225,8 @@ def process_file(
                 suffix=target.suffix + ".tmp",
                 dir=str(target.parent),
             )
-            try:
+            with contextlib.suppress(OSError):
                 os.close(fd)
-            except OSError:
-                pass
             tmp_path = Path(tmp_name)
         except OSError as exc:
             return ProcessResult(
@@ -447,10 +446,8 @@ def process_file(
 
     finally:
         if tmp_path is not None:
-            try:
+            with contextlib.suppress(OSError):
                 tmp_path.unlink()
-            except OSError:
-                pass
 
 
 def _classify(result: ProcessResult, dry_run: bool) -> str:
@@ -610,7 +607,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
 
-    roots = [Path(p) for p in args.paths] if args.paths else [Path(".")]
+    roots = [Path(p) for p in args.paths] if args.paths else [Path()]
 
     worker = partial(
         process_file,

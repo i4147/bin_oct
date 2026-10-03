@@ -3,8 +3,11 @@
 It should print usage instructions and exit if no argument is given, and print a message and exit cleanly if no matching files are found.
 Otherwise, it should sum up the sizes of all matched files and print both the total file count and the total size, formatting the size using a human-readable helper function called fsz imported from a local module named dh."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import fsz
 
 

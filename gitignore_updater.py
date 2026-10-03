@@ -3,6 +3,8 @@
 It should define a ProcessResult dataclass to capture per-file outcomes (path, success, whether it was modified, error message, and status message), validate and sanitize the input line (stripping whitespace and removing embedded newlines with a logged warning), and check for existing occurrences before writing.
 File updates should verify the parent directory is writable, and the workload should be parallelized across multiple .gitignore files using multiprocessing.Pool with cpu_count-based worker allocation, with progress and errors reported via the logging module."""
 
+from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -26,10 +28,12 @@ class ProcessResult:
 
 def validate_input_line(line: str) -> str:
     if not isinstance(line, str):
-        raise ValueError("Input line must be a string")
+        msg = "Input line must be a string"
+        raise ValueError(msg)
     normalized = line.strip()
     if not normalized:
-        raise ValueError("Input line cannot be empty")
+        msg = "Input line cannot be empty"
+        raise ValueError(msg)
     if "\n" in normalized or "\r" in normalized:
         normalized = normalized.replace("\n", "").replace("\r", "")
         logger.warning(f"Removed newline characters from input: {normalized!r}")

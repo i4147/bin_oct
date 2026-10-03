@@ -4,6 +4,8 @@ The input file contains multiple file contents concatenated together, each prece
 For each extracted file, it must create any necessary parent directories, and if a file already exists at that path, it should avoid overwriting it by generating a unique filename (appending an incrementing counter like "_1", "_2" before the extension).
 The script takes the merged file path as a single command-line argument, writes out each reconstructed file, and prints a status line for each ("Created" or "Renamed to") showing the final path used."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

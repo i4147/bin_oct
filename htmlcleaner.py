@@ -3,15 +3,20 @@
 This script processes HTML files to extract inline <style> and <script> tags, saves them as separate files in an assets directory, and updates the HTML to reference these external files.
 Usage: python extract_assets.py [files/dirs...] If no arguments provided, processes all HTML files in current directory recursively."""
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import html.parser
 import multiprocessing as mp
 import re
 import sys
-from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # Configuration
 NUM_WORKERS = 8
@@ -330,7 +335,7 @@ def main() -> int:
     global MIN_INLINE_SIZE
     MIN_INLINE_SIZE = args.min_size
 
-    paths = args.paths if args.paths else get_default_paths()
+    paths = args.paths or get_default_paths()
 
     if not args.quiet:
         print("Scanning for HTML files...", file=sys.stderr)

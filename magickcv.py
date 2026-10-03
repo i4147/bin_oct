@@ -3,20 +3,15 @@
 It should provide argparse-based utilities for parsing custom values like colors (via ImageColor), ImageMagick-style geometry strings (WxH with optional !%^<> flags for resizing behavior), and positional offsets, then apply operations such as resizing with configurable resampling filters (nearest, box, bilinear, hamming, bicubic, lanczos), color adjustments, filtering, and compositing.
 The script should accept input/output file paths and processing options as command-line arguments, validating and converting them through dedicated parser functions, and raise clear argparse errors for malformed inputs."""
 
+from __future__ import annotations
+
 import argparse
 import re
 from pathlib import Path
+
 import cv2
 import numpy as np
-from PIL import (
-    Image,
-    ImageColor,
-    ImageDraw,
-    ImageEnhance,
-    ImageFilter,
-    ImageFont,
-    ImageOps,
-)
+from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,
@@ -33,32 +28,37 @@ def parse_color(value: str) -> tuple[int, int, int, int]:
         rgb = ImageColor.getcolor(value, "RGBA")
         return rgb
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"invalid color: {value}") from exc
+        msg = f"invalid color: {value}"
+        raise argparse.ArgumentTypeError(msg) from exc
 
 
 def parse_geometry(value: str) -> tuple[int | None, int | None, str]:
     match = re.fullmatch(r"(?:(\d+)?x?(\d+)?)?([!%^<>]*)", value.strip())
     if not match or not match.group(0):
-        raise argparse.ArgumentTypeError(f"invalid geometry: {value}")
+        msg = f"invalid geometry: {value}"
+        raise argparse.ArgumentTypeError(msg)
     width = int(match.group(1)) if match.group(1) else None
     height = int(match.group(2)) if match.group(2) else None
     flags = match.group(3)
     if width is None and height is None:
-        raise argparse.ArgumentTypeError(f"invalid geometry: {value}")
+        msg = f"invalid geometry: {value}"
+        raise argparse.ArgumentTypeError(msg)
     return width, height, flags
 
 
 def parse_offset(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"([+-]?\d+)([+-]\d+)", value.replace(" ", ""))
     if not match:
-        raise argparse.ArgumentTypeError(f"invalid offset: {value}")
+        msg = f"invalid offset: {value}"
+        raise argparse.ArgumentTypeError(msg)
     return int(match.group(1)), int(match.group(2))
 
 
 def parse_crop(value: str) -> tuple[int, int, int, int]:
     match = re.fullmatch(r"(\d+)x(\d+)([+-]\d+)([+-]\d+)", value.replace(" ", ""))
     if not match:
-        raise argparse.ArgumentTypeError(f"invalid crop geometry: {value}")
+        msg = f"invalid crop geometry: {value}"
+        raise argparse.ArgumentTypeError(msg)
     return tuple(map(int, match.groups()))
 
 
@@ -68,28 +68,32 @@ def parse_sigma(value: str) -> tuple[float, float]:
         radius = float(parts[0])
         sigma = float(parts[1]) if len(parts) > 1 else radius
     except ValueError as exc:
-        raise argparse.ArgumentTypeError(f"invalid radius/sigma: {value}") from exc
+        msg = f"invalid radius/sigma: {value}"
+        raise argparse.ArgumentTypeError(msg) from exc
     return radius, sigma
 
 
 def parse_point(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"([+-]?\d+),([+-]?\d+)", value.replace(" ", ""))
     if not match:
-        raise argparse.ArgumentTypeError(f"invalid point: {value}")
+        msg = f"invalid point: {value}"
+        raise argparse.ArgumentTypeError(msg)
     return int(match.group(1)), int(match.group(2))
 
 
 def parse_size(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"(\d+)x(\d+)", value.strip())
     if not match:
-        raise argparse.ArgumentTypeError(f"invalid size: {value}")
+        msg = f"invalid size: {value}"
+        raise argparse.ArgumentTypeError(msg)
     return int(match.group(1)), int(match.group(2))
 
 
 def parse_quality(value: str) -> int:
     quality = int(value)
     if not 0 <= quality <= 100:
-        raise argparse.ArgumentTypeError("quality must be between 0 and 100")
+        msg = "quality must be between 0 and 100"
+        raise argparse.ArgumentTypeError(msg)
     return quality
 
 
@@ -125,7 +129,8 @@ def load_image(path: Path, page: int = 0) -> Image.Image:
             try:
                 source.seek(page)
             except EOFError:
-                raise ValueError(f"page {page} does not exist in {path}")
+                msg = f"page {page} does not exist in {path}"
+                raise ValueError(msg)
             return source.convert("RGBA")
     return Image.open(path).convert("RGBA")
 
@@ -178,11 +183,10 @@ def resize_image(
             max(1, round(source_width * factor)),
             max(1, round(source_height * factor)),
         )
+    elif target_ratio > source_ratio:
+        result_size = (max(1, round(height * source_ratio)), height)
     else:
-        if target_ratio > source_ratio:
-            result_size = (max(1, round(height * source_ratio)), height)
-        else:
-            result_size = (width, max(1, round(width / source_ratio)))
+        result_size = (width, max(1, round(width / source_ratio)))
     if "<" in flags and source_width < width and source_height < height:
         return image
     if ">" in flags and source_width > width and source_height > height:
@@ -369,7 +373,8 @@ def channel_image(image: Image.Image, channel: str) -> Image.Image:
     mapping = {"r": 0, "g": 1, "b": 2, "a": 3}
     channel = channel.lower()
     if channel not in mapping:
-        raise ValueError("channel must be one of r, g, b, a")
+        msg = "channel must be one of r, g, b, a"
+        raise ValueError(msg)
     return Image.fromarray(array[:, :, mapping[channel]], "L").convert("RGBA")
 
 
@@ -748,7 +753,8 @@ def apply_draw(
             width=stroke_width,
         )
     else:
-        raise ValueError(f"unsupported draw operation: {command}")
+        msg = f"unsupported draw operation: {command}"
+        raise ValueError(msg)
     return result
 
 

@@ -4,8 +4,11 @@ It should import helper functions get_pyfiles and runcmd from a local dh module,
 For each resolved file, it should build and execute a pylint command with persistent mode and reports disabled, parseable output format, and a custom message template showing category, line, column, object, message, and message ID, streaming the command's output live.
 Include a main() entry point invoked through SystemExit for proper exit code handling."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import get_pyfiles, runcmd
 
 CHUNK_SIZE = 1024 * 1024

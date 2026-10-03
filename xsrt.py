@@ -48,7 +48,8 @@ def require_ffmpeg() -> None:
     try:
         subprocess.run(["ffmpeg", "-version"], check=True, capture_output=True)
     except FileNotFoundError:
-        raise MissingToolError("ffmpeg is required but not installed.") from None
+        msg = "ffmpeg is required but not installed."
+        raise MissingToolError(msg) from None
 
 
 def probe_subtitles(video: Path) -> list[dict]:
@@ -67,7 +68,8 @@ def probe_subtitles(video: Path) -> list[dict]:
     try:
         proc: subprocess.CompletedProcess[str] = subprocess.run(cmd, capture_output=True, text=True)
     except FileNotFoundError:
-        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
+        msg = "ffmpeg/ffprobe is required but not installed."
+        raise MissingToolError(msg) from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or f"ffprobe failed on {video}")
     return json.loads(proc.stdout).get("streams", [])
@@ -90,7 +92,8 @@ def run_ffmpeg(args: list[str]) -> None:
     try:
         proc: subprocess.CompletedProcess[str] = subprocess.run(["ffmpeg", *args], capture_output=True, text=True)
     except FileNotFoundError:
-        raise MissingToolError("ffmpeg/ffprobe is required but not installed.") from None
+        msg = "ffmpeg/ffprobe is required but not installed."
+        raise MissingToolError(msg) from None
     if proc.returncode != 0:
         raise ToolError(proc.stderr.strip() or "ffmpeg failed")
 

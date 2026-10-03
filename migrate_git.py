@@ -7,6 +7,8 @@ Delete/revoke the OLD public key from GitHub account settings (search for it by 
 3.
 If you use HTTPS remotes with a PAT/credential manager, update stored credentials (Keychain / Windows Credential Manager / git-credential-store) manually — this script does not touch credential stores."""
 
+from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -15,7 +17,6 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-
 
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"
@@ -121,9 +122,7 @@ def is_probably_text_file(path: Path) -> bool:
     try:
         with open(path, "rb") as f:
             chunk = f.read(1024)
-        if b"\x00" in chunk:
-            return False
-        return True
+        return b"\x00" not in chunk
     except OSError:
         return False
 
@@ -135,9 +134,7 @@ def should_skip_dir(dirname: str) -> bool:
 def matches_target_file(path: Path) -> bool:
     if path.name in TEXT_FILENAMES:
         return True
-    if path.suffix in TEXT_EXTENSIONS:
-        return True
-    return False
+    return path.suffix in TEXT_EXTENSIONS
 
 
 def backup_file(path: Path) -> Path:

@@ -4,6 +4,8 @@ For each `RECORD` file found, it should parse each line as a CSV-style entry wit
 Skipped/removed entries should be printed to stdout with a message indicating the removed path, and after processing each RECORD file the script should overwrite it with the filtered lines and print a confirmation message naming the dist-info folder.
 The script should expose a `main()` entry point and exit via `SystemExit(main())` when run as a standalone program."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 ALLOWED_DIST_INFO_FILES = {
@@ -16,7 +18,7 @@ ALLOWED_DIST_INFO_FILES = {
 
 
 def clean_records():
-    for dist_info in Path(".").glob("*.dist-info"):
+    for dist_info in Path().glob("*.dist-info"):
         record_file = dist_info / "RECORD"
         if record_file.exists():
             lines = record_file.read_text().splitlines()

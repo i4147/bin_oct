@@ -4,6 +4,8 @@ It should also parse a shell aliases file (handling line continuations) using a 
 The script should skip inaccessible or non-existent directories gracefully and use pathlib/os utilities to safely check file executability.
 Overall, it serves as a diagnostic/reporting tool to help identify duplicate commands and catalog available aliases versus binaries on a Termux system."""
 
+from __future__ import annotations
+
 import os
 import re
 import sys

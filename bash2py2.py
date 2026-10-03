@@ -5,6 +5,8 @@ PY`) into standalone .py file(s), saved in the current working directory.
 Usage: python bash2py.py <path-to-bash-script> Example bash script content: python - <<PY print("hello") PY Running: python bash2py.py script.sh produces `script.py` in the current directory (or `script_1.py`, `script_2.py`, ...
 if the bash script contains several python heredocs)."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

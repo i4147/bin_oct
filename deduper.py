@@ -3,6 +3,8 @@
 It should support multiprocessing for parallel processing of many files/archives, skip common non-source directories (.git, __pycache__, venv, site-packages, etc.), and use loguru for logging progress and errors.
 The script should accept command-line arguments (via argparse) to configure input paths and output behavior, safely read/write text files with UTF-8 encoding and newline normalization, and handle malformed or unreadable files gracefully without crashing the whole run."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import bz2
@@ -18,6 +20,7 @@ import zipfile
 from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
 from collections import defaultdict
 from pathlib import Path
+
 from loguru import logger
 
 try:

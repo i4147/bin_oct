@@ -1,4 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+from __future__ import annotations
+
 import ast
 import re
 import tokenize
@@ -70,14 +72,13 @@ def process_file(path):
 
 
 def main():
-    for path in Path(".").rglob("*.py"):
-        if path.is_file():
-            if process_file(path):
-                try:
-                    rel = path.relative_to(Path.cwd())
-                except ValueError:
-                    rel = path
-                print(rel)
+    for path in Path().rglob("*.py"):
+        if path.is_file() and process_file(path):
+            try:
+                rel = path.relative_to(Path.cwd())
+            except ValueError:
+                rel = path
+            print(rel)
 
 
 if __name__ == "__main__":

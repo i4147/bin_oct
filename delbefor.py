@@ -3,8 +3,11 @@
 All processed lines are collected into a list, and if the list is non-empty, the original file is overwritten with the joined lines (newline-separated, UTF-8 encoding).
 The script also defines an unused constant THRESHOLD set to 1048576 (1MB)."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import read_lines
 
 THRESHOLD = 1048576

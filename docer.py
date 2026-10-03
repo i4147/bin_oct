@@ -4,6 +4,8 @@ The script should read the source file's bytes, write them to a new file of the 
 If a file with the same name already exists in the destination folder, it must not overwrite it; instead it should print a message stating the target file exists and instruct the user to remove it and try again, leaving the original file untouched.
 The file path should be accessed via sys.argv and handled using pathlib.Path."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

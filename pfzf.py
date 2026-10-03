@@ -3,6 +3,8 @@
 It should implement a fuzzy matching algorithm scoring candidates based on match completeness, consecutive character runs, matches at word/path boundaries or camelCase transitions, and proximity, while penalizing gaps and longer overall text length.
 The script must use termios/tty to put the terminal into raw mode and select for non-blocking keyboard input, dynamically re-render the filtered/sorted list with highlighted matched characters as the user types, support navigation (up/down) and selection, and finally print the chosen entry to stdout upon confirmation (e.g., Enter key), similar to tools like fzf."""
 
+from __future__ import annotations
+
 import os
 import select
 import sys
@@ -133,7 +135,7 @@ def read_key():
                     return f"ESC[{seq[1:].decode()}{extra.decode()}"
                 return f"ESC{seq.decode()}"
             return "ESC"
-        elif ch == b"\r" or ch == b"\n":
+        elif ch in {b"\r", b"\n"}:
             return "ENTER"
         elif ch == b"\t":
             return "TAB"
@@ -155,7 +157,7 @@ def read_key():
             return "CTRL_K"
         elif ch == b"\x1c":
             return "CTRL_SLASH"
-        elif ch == b"\x00" or ch == b"\xe0":
+        elif ch in {b"\x00", b"\xe0"}:
             return None
         else:
             try:
@@ -259,7 +261,7 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
             if key is None:
                 continue
             matches = get_matches(query)
-            if key == "CTRL_C" or key == "CTRL_D" or key == "ESC":
+            if key in {"CTRL_C", "CTRL_D", "ESC"}:
                 return [] if multi else None
             elif key == "ENTER":
                 if matches and selected_idx < len(matches):
@@ -287,9 +289,9 @@ def fzf(items, prompt="> ", multi=False, preview=None, preview_window="right:50%
                 selected_idx = max(0, selected_idx - 1)
             elif key == "DOWN":
                 selected_idx = min(len(matches) - 1, selected_idx + 1)
-            elif key == "HOME" or key == "CTRL_A":
+            elif key in {"HOME", "CTRL_A"}:
                 cursor_pos = 0
-            elif key == "END" or key == "CTRL_E":
+            elif key in {"END", "CTRL_E"}:
                 cursor_pos = len(query)
             elif key == "LEFT":
                 cursor_pos = max(0, cursor_pos - 1)

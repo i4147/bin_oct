@@ -5,6 +5,7 @@ Usage: dl https://example.com/file.iso dl -j 4 url1 url2 url3 dl -b requests -f 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import queue
 import re
 import shutil
@@ -15,7 +16,7 @@ import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Self
 
 __version__ = "2.0.0"
 
@@ -159,7 +160,7 @@ class Progress:
         with self.lock:
             self.bars.append(bar)
 
-    def __enter__(self) -> "Progress":
+    def __enter__(self) -> Self:
         if self.enabled:
             self._thread = threading.Thread(target=self._loop, daemon=True)
             self._thread.start()
@@ -255,10 +256,8 @@ class _UrllibStream(StreamResponse):
             yield data
 
     def close(self):
-        try:
+        with contextlib.suppress(Exception):
             self._resp.close()
-        except Exception:
-            pass
 
 
 class PureBackend(Backend):
@@ -288,10 +287,8 @@ class _RequestsStream(StreamResponse):
                 yield data
 
     def close(self):
-        try:
+        with contextlib.suppress(Exception):
             self._r.close()
-        except Exception:
-            pass
 
 
 class RequestsBackend(Backend):
@@ -328,9 +325,11 @@ class _PycurlStream(StreamResponse):
         self._thread.start()
         if not self._header_done.wait(timeout=timeout):
             self._cancel.set()
-            raise TimeoutError("pycurl: no response headers")
+            msg = "pycurl: no response headers"
+            raise TimeoutError(msg)
         if self.status is None:
-            raise IOError("pycurl: no HTTP status")
+            msg = "pycurl: no HTTP status"
+            raise IOError(msg)
 
     # -- callbacks
     def _write_cb(self, data: bytes) -> int:
@@ -397,10 +396,8 @@ class _PycurlStream(StreamResponse):
                 except Exception:
                     pass
             self._thread_done.set()
-            try:
+            with contextlib.suppress(Exception):
                 c.close()
-            except Exception:
-                pass
 
     def chunks(self) -> Iterator[bytes]:
         while True:
@@ -447,12 +444,13 @@ def make_backend(name: str) -> Backend:
         return RequestsBackend()
     if name == "pycurl":
         return PycurlBackend()
-    raise ValueError(f"unknown backend: {name}")
+    msg = f"unknown backend: {name}"
+    raise ValueError(msg)
 
 
-_CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.I)
-_CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.I)
-_CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.I)
+_CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.IGNORECASE)
+_CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.IGNORECASE)
+_CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.IGNORECASE)
 
 
 def _sanitize(name: str) -> str:
@@ -474,7 +472,7 @@ def guess_filename(url: str, headers: dict) -> str:
 
 
 class Probe:
-    __slots__ = ("size", "filename", "supports_range", "headers")
+    __slots__ = ("filename", "headers", "size", "supports_range")
 
     def __init__(self, size, filename, supports_range, headers):
         self.size = size
@@ -510,7 +508,7 @@ def probe(backend: Backend, url: str, timeout: float) -> Probe:
 
 
 def _simple_download(backend: Backend, url: str, part: Path, bar: Bar, timeout: float, offset: int = 0) -> None:
-    stream = backend.open(url, start=offset if offset else None, timeout=timeout)
+    stream = backend.open(url, start=offset or None, timeout=timeout)
     try:
         if offset and stream.status != 206:
             offset = 0
@@ -527,7 +525,8 @@ def _simple_download(backend: Backend, url: str, part: Path, bar: Bar, timeout: 
                 fh.write(chunk)
                 bar.add_progress(len(chunk))
         if total is not None and bar.done < total:
-            raise IOError(f"truncated download ({bar.done}/{total} bytes)")
+            msg = f"truncated download ({bar.done}/{total} bytes)"
+            raise IOError(msg)
     finally:
         stream.close()
 
@@ -560,7 +559,8 @@ def _chunked_download(
         stream = backend.open(url, start=start + have, end=end, timeout=timeout)
         try:
             if stream.status not in (200, 206):
-                raise IOError(f"chunk {idx}: unexpected status {stream.status}")
+                msg = f"chunk {idx}: unexpected status {stream.status}"
+                raise IOError(msg)
             mode = "ab" if have else "wb"
             with open(cp, mode) as fh:
                 for chunk in stream.chunks():
@@ -572,7 +572,8 @@ def _chunked_download(
             stream.close()
         got = cp.stat().st_size
         if got != expected:
-            raise IOError(f"chunk {idx}: size mismatch ({got}/{expected})")
+            msg = f"chunk {idx}: size mismatch ({got}/{expected})"
+            raise IOError(msg)
         return cp
 
     with ThreadPoolExecutor(max_workers=nchunks) as pool:

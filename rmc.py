@@ -1,13 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-#!/usr/bin/env python3
-"""Fast, conservative Python comment/docstring/type-annotation stripper.
+"""Python comment/docstring/type-annotation stripper.
 LibCST is used so formatting is retained and transformed files remain valid Python.
-The program intentionally parses every input file; it has no textual early-out based on '#', triple-single-quotes, or triple-double-quotes."""
+The program intentionally parses every input file; it has textual early-out based on '#', triple-single-quotes, or triple-double-quotes."""
 
 from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import functools
 import io
 import multiprocessing as mp
@@ -170,10 +170,8 @@ def strip_indented_block_docstring(
     if first.leading_lines:
         following = later_statements[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             later_statements[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     return block.with_changes(body=later_statements), True
 
 
@@ -213,10 +211,8 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
     if first.leading_lines and rest:
         following = rest[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             rest[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     elif first.leading_lines:
         return module.with_changes(body=[], header=[*module.header, *first.leading_lines])
     return module.with_changes(body=rest)
@@ -224,7 +220,7 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
 
 def _dehash(comment: str) -> str:
     text = comment[1:]
-    return text[1:] if text.startswith(" ") else text
+    return text.removeprefix(" ")
 
 
 def looks_like_commented_out_code(comment_lines: Sequence[str]) -> bool:
@@ -453,16 +449,12 @@ def atomic_replace(path: Path, data: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         if mode is not None:
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(temporary, mode)
-            except OSError:
-                pass
         os.replace(temporary, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             temporary.unlink()
-        except OSError:
-            pass
         raise
 
 
@@ -473,7 +465,8 @@ def backup_path_for(path: Path) -> Path:
 def write_backup(path: Path, data: bytes, overwrite: bool) -> None:
     backup = backup_path_for(path)
     if backup.exists() and not overwrite:
-        raise FileExistsError(f"backup already exists: {backup} (use --overwrite-backup)")
+        msg = f"backup already exists: {backup} (use --overwrite-backup)"
+        raise FileExistsError(msg)
     atomic_replace(backup, data)
 
 

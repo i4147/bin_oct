@@ -3,12 +3,15 @@
 It should walk all files recursively, compute a fuzzy hash for each file, then pairwise-compare the hashes against a given similarity threshold to cluster files into groups of near-duplicates, saving the pairwise match scores and file pairs to a "similars.json" file.
 Optionally use tabulate for formatted table output and colorama for colored console output if those libraries are available, falling back gracefully to plain output otherwise."""
 
+from __future__ import annotations
+
 import csv
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
+
 import ssdeep
 from ppdeep import compare, hash_from_file
 

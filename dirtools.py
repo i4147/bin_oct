@@ -5,6 +5,7 @@ Merges the following original scripts into one CLI: dirinfo.py -> info dirinfo2.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import math
 import os
 import shutil
@@ -56,10 +57,8 @@ def dir_size(path: Path, include_hidden: bool = False) -> int:
                 continue
             if not include_hidden and p.name.startswith("."):
                 continue
-            try:
+            with contextlib.suppress(OSError):
                 total += p.stat().st_size
-            except OSError:
-                pass
     except OSError:
         pass
     return total
@@ -135,7 +134,7 @@ def cmd_info(args: argparse.Namespace) -> int:
 
     if args.chart:
         try:
-            import matplotlib.pyplot as plt  # noqa: WPS433  (lazy)
+            import matplotlib.pyplot as plt
         except ImportError:
             print(
                 "matplotlib is required for --chart (pip install matplotlib)",
@@ -220,7 +219,7 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     print(f"  TOTAL: {human_size(total)}")
 
     try:
-        import matplotlib.pyplot as plt  # noqa: WPS433 (lazy)
+        import matplotlib.pyplot as plt
     except ImportError:
         print(
             "matplotlib is required for chart output (pip install matplotlib)",
@@ -299,9 +298,7 @@ def cmd_tree(args: argparse.Namespace) -> int:
             return False
         if ".git" in p.parts:
             return False
-        if args.dirs_only and not p.is_dir():
-            return False
-        return True
+        return not (args.dirs_only and not p.is_dir())
 
     def walk(d: Path, prefix: str = "") -> None:
         entries = sorted(d.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))

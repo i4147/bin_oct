@@ -2,6 +2,8 @@
 """Fast Duplicate File Finder -------------------------- Uses `xxhash` for high-throughput non-cryptographic hashing, parallel thread pool execution, and includes a benchmark mode (-b) to compare xxHash against hashlib.
 Requirements: pip install xxhash Usage: python finder.py # Auto-scans current dir in DRY-RUN mode python finder.py /path/to/dir # Scans custom directory (DRY-RUN) python finder.py -r # Actually removes duplicate files python finder.py -l # Lists duplicate groups in detail python finder.py -b # Runs xxHash vs hashlib benchmark comparison"""
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import os
@@ -259,7 +261,7 @@ class Finder:
         print(f"\n{status_label} Processing duplicate files...")
 
         removed_count = 0
-        for _, filenames in self.same_content.items():
+        for filenames in self.same_content.values():
             sorted_files = sorted(filenames)
             for target_file in sorted_files[1:]:
                 if dry_run:
@@ -340,7 +342,7 @@ def main():
         "path",
         type=Path,
         nargs="?",
-        default=Path("."),
+        default=Path(),
         help="Target directory path to search (defaults to current directory '.').",
     )
     parser.add_argument(

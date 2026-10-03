@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import difflib
 import multiprocessing as mp
 import os
@@ -76,12 +77,14 @@ def apply_type_annotations(
     try:
         source_cst = cst.parse_module(source_code)
     except Exception as e:
-        raise ValueError(f"Failed to parse source file with LibCST: {e}") from e
+        msg = f"Failed to parse source file with LibCST: {e}"
+        raise ValueError(msg) from e
 
     try:
         stub_cst = cst.parse_module(stub_code)
     except Exception as e:
-        raise ValueError(f"Failed to parse stub file with LibCST: {e}") from e
+        msg = f"Failed to parse stub file with LibCST: {e}"
+        raise ValueError(msg) from e
 
     stub_cst = sanitize_stub_cst(stub_cst)
 
@@ -106,21 +109,21 @@ def _ensure_tree_sitter() -> None:
     if _PY_LANGUAGE is not None:
         return
     try:
-        from tree_sitter import Parser  # noqa: WPS433 (runtime import)
+        from tree_sitter import Parser
     except Exception as exc:  # pragma: no cover
-        raise RuntimeError(
-            "tree-sitter is required for --remove mode. Install with: pip install tree_sitter tree_sitter_languages"
-        ) from exc
+        msg = "tree-sitter is required for --remove mode. Install with: pip install tree_sitter tree_sitter_languages"
+        raise RuntimeError(msg) from exc
 
     try:
-        from tree_sitter_languages import get_language  # noqa: WPS433
+        from tree_sitter_languages import get_language
 
         _PY_LANGUAGE = get_language("python")
     except Exception as exc:  # pragma: no cover
-        raise RuntimeError(
+        msg = (
             "Failed to load prebuilt Python grammar from tree_sitter_languages. "
             "Install with: pip install tree_sitter_languages"
-        ) from exc
+        )
+        raise RuntimeError(msg) from exc
 
     _TS_PARSER_FACTORY = Parser
 
@@ -249,7 +252,8 @@ def validate_python_code(code: str, filename: str) -> None:
     try:
         ast.parse(code, filename=filename)
     except SyntaxError as e:
-        raise SyntaxError(f"Invalid Python syntax at line {e.lineno}, col {e.offset}: {e.msg}") from e
+        msg = f"Invalid Python syntax at line {e.lineno}, col {e.offset}: {e.msg}"
+        raise SyntaxError(msg) from e
 
 
 def compute_diff(original: str, modified: str, filename: str) -> str:
@@ -455,10 +459,8 @@ def process_file(path_str: str, options: Options) -> Result:
 
         tmp_path.replace(path)
     except Exception as e:
-        try:
+        with contextlib.suppress(Exception):
             tmp_path.unlink(missing_ok=True)
-        except Exception:
-            pass
         result.error = f"write error: {e}"
         return result
 
@@ -483,10 +485,10 @@ def gather_py_files(paths: list[str]) -> list[Path]:
                 if f.is_file():
                     out.append(f.resolve())
         else:
-            for f in Path(".").glob(p):
+            for f in Path().glob(p):
                 if f.is_file() and f.suffix == ".py":
                     out.append(f.resolve())
-    return sorted({p for p in out})
+    return sorted(set(out))
 
 
 def build_parser() -> argparse.ArgumentParser:

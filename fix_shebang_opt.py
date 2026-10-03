@@ -2,9 +2,11 @@
 """fix_shebangs.py — Rewrite Python shebangs in ~/bin to point to the new custom Python 3.12 installation (via the wrapper in $PREFIX/bin).
 Uses pathlib only, edits files in place, and preserves everything except the shebang line."""
 
-from pathlib import Path
+from __future__ import annotations
+
 import os
 import stat
+from pathlib import Path
 
 HOME = Path.home()
 cwd = Path.cwd()

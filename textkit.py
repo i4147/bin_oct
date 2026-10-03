@@ -189,7 +189,8 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
 
     if mode == "nltk":
         if not _HAS_NLTK:
-            raise RuntimeError("nltk is not installed; use --tokenize regex|alnum instead")
+            msg = "nltk is not installed; use --tokenize regex|alnum instead"
+            raise RuntimeError(msg)
         try:
             nltk.data.find("tokenizers/punkt")
         except LookupError:
@@ -353,7 +354,7 @@ def cmd_words(args: argparse.Namespace) -> int:
             if err:
                 continue
             top = counter.most_common(args.top)
-            if args.format == "one-line" or args.format == "plain":
+            if args.format in {"one-line", "plain"}:
                 print(" ".join(w for w, _ in top))
             elif args.format == "table":
                 print(f"{path_str}:")
@@ -596,7 +597,7 @@ def build_parser() -> argparse.ArgumentParser:
         "directory",
         nargs="?",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="Directory to scan (default: current directory).",
     )
     p_cc.add_argument(

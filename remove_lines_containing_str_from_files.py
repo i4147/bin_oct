@@ -4,9 +4,12 @@ It should accept command-line arguments where the last argument is the search st
 The script must read each file as UTF-8 (ignoring decode errors), filter out lines containing the search string, and overwrite the file only if its content changed, tracking and reporting the number of removed lines per file.
 For a single file it should process it directly, but for multiple files it should use a multiprocessing Pool with 8 workers to clean them in parallel, and it should also compute the total size of files in the working directory before and/or after processing."""
 
+from __future__ import annotations
+
 import sys
 from multiprocessing import Pool
 from pathlib import Path
+
 from dh import fsz, get_nobinary, gsz
 
 
@@ -60,6 +63,7 @@ def main():
     esz = gsz(root)
     print(f"total lines removed : {total_removed}")
     print(f"space freed : {fsz(isz - esz)}")
+    return None
 
 
 if __name__ == "__main__":

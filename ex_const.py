@@ -4,10 +4,13 @@ The script should compute a fast content hash (via `xxhash.xxh64`) for each file
 Errors encountered during parsing or hashing should be logged to an `output/error.log` file rather than raised, and the collected constants should ultimately be written out to a generated `output/const.py` file.
 Include standard setup for creating the output directory and configuring the logging format with timestamps and severity levels."""
 
+from __future__ import annotations
+
 import ast
 import logging
 import operator
 from pathlib import Path
+
 from joblib import Parallel, delayed
 from xxhash import xxh64
 

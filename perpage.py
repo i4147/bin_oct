@@ -5,13 +5,15 @@ Regenerate this script: parse positional inputs plus -t/--text and --pool-method
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import TYPE_CHECKING, Final, TypeAlias
 
 from loguru import logger
 from pypdf import PdfReader, PdfWriter  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
@@ -91,7 +93,8 @@ def _run_pool(tasks: Sequence[SplitTask], method: str) -> list[SplitResult]:
             async_results: list[AsyncResult[SplitResult]] = [pool.apply_async(_process_pdf, (task,)) for task in tasks]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def collect_pdfs(input_paths: Sequence[str]) -> list[Path]:
@@ -170,7 +173,7 @@ def main() -> int:
     paths: list[str] = list(args.paths)
 
     process_pdfs(
-        input_paths=paths if paths else None,
+        input_paths=paths or None,
         output_dir=output_dir,
         pool_method=pool_method,
         text_mode=text_mode,

@@ -4,6 +4,8 @@ It should provide a function to load existing translations from a JSON file into
 It should also provide a function to load previously failed words from a plain text file (one word per line) into a set, stripping whitespace and skipping empty lines, while handling missing files or read errors via logging.
 Both functions should print/log informative messages about how many entries were loaded, and the module should configure basic logging with timestamps at INFO level."""
 
+from __future__ import annotations
+
 import json
 import logging
 import os

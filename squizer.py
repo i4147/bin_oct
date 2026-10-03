@@ -431,9 +431,7 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
 def _is_simple_line(line: str) -> bool:
     s = line.strip()
-    if not s or s.startswith("#") or s.endswith(":"):
-        return False
-    return True
+    return not (not s or s.startswith("#") or s.endswith(":"))
 
 
 def _leading_ws(line: str) -> str:
@@ -577,7 +575,7 @@ def compress_files(file_paths: Sequence[str]) -> None:
 
 
 def get_python_files() -> list[str]:
-    return [str(p) for p in Path(".").rglob("*.py") if p.is_file()]
+    return [str(p) for p in Path().rglob("*.py") if p.is_file()]
 
 
 def main(argv: list[str]) -> int:

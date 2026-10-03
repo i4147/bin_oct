@@ -4,6 +4,8 @@ The script should resolve filename collisions by appending an incrementing numer
 It should print each copy operation as it happens, catch and report per-file copy errors without stopping, and finally print a summary with the total number of files copied.
 If the extension argument is missing or the wrong number of arguments is supplied, it should print a usage message and exit with a non-zero status."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path

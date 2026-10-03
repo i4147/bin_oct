@@ -3,6 +3,8 @@
 It should skip the output file itself if encountered during scanning, silently ignore directories it lacks permission to read, and gracefully skip files that fail to decode as UTF-8 text.
 The script should print progress messages showing the number of files found, each file added, any skipped unreadable files, and a final completion message, and it should run as a standalone script starting the scan from the current directory (".") when executed."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 EXCLUDE_DIRS = {".git"}

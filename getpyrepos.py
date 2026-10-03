@@ -3,9 +3,12 @@
 For each matching repository, collect key metadata such as name, full name, description, URL, star count, fork count, language, creation date, last updated date, and privacy status into a list of dictionaries.
 The script should handle HTTP request errors gracefully using try/except around each API call, and it should import json, sys, and datetime/timedelta utilities, suggesting the results are intended to be output as JSON and possibly filtered or reported based on recent activity dates."""
 
+from __future__ import annotations
+
 import json
 import sys
 from datetime import datetime, timedelta
+
 import requests
 
 

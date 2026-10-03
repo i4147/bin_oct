@@ -385,7 +385,8 @@ _TS_PARSER = None
 def _ts_parser():
     global _TS_PARSER
     if not HAS_TS:
-        raise RuntimeError("tree-sitter / tree-sitter-python not installed")
+        msg = "tree-sitter / tree-sitter-python not installed"
+        raise RuntimeError(msg)
     if _TS_PARSER is None:
         lang = tree_sitter.Language(tspython.language())
         _TS_PARSER = tree_sitter.Parser(lang)
@@ -465,7 +466,8 @@ def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list
 
 def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]]:
     if not HAS_LIBCST:
-        raise RuntimeError("libcst not installed")
+        msg = "libcst not installed"
+        raise RuntimeError(msg)
     try:
         module = cst.parse_module(source)
     except Exception as exc:
@@ -535,7 +537,8 @@ def extract_entities(source: str, path: str, backend: str, scope: str) -> tuple[
         return extract_with_libcst(source, path)
     if backend == "tree-sitter":
         return extract_with_tree_sitter(source, path)
-    raise ValueError(f"unknown backend: {backend}")
+    msg = f"unknown backend: {backend}"
+    raise ValueError(msg)
 
 
 def find_python_files(

@@ -3,6 +3,8 @@
 For each package name found, it should print the name to the console and append it as a new line to a requirements.txt file.
 The script should read uv.lock encoding as UTF-8, process the file's content line by line, and run this logic automatically when executed as the main program via a main() entry point."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

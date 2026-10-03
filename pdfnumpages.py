@@ -3,8 +3,11 @@
 The script should use multiprocessing with a spawn-context pool of 8 workers to process files concurrently, printing progress messages for each rename, skip, or existing-file conflict.
 It should be structured as a standalone command-line utility with a main() entry point invoked via SystemExit."""
 
+from __future__ import annotations
+
 from multiprocessing import get_context
 from pathlib import Path
+
 import pdfplumber
 from fastwalk import walk_files
 

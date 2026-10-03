@@ -170,7 +170,7 @@ def is_ignored_text(
     if not stripped:
         return True
 
-    if stripped.startswith("#!") or stripped.startswith("#"):
+    if stripped.startswith(("#!", "#")):
         return True
 
     upper = stripped.upper()
@@ -180,11 +180,7 @@ def is_ignored_text(
     if not any(character.isalpha() for character in stripped):
         return True
 
-    if conservative:
-        if stripped.isascii() and (len(stripped.split()) <= 2 and len(stripped) < 30):
-            return True
-
-    return False
+    return bool(conservative and stripped.isascii() and (len(stripped.split()) <= 2 and len(stripped) < 30))
 
 
 def should_translate_pycld2(
@@ -291,7 +287,8 @@ def literal_parts(token_text: str) -> tuple[str, str, str]:
         token_text,
     )
     if not match:
-        raise ValueError(f"Unsupported string token: {token_text!r}")
+        msg = f"Unsupported string token: {token_text!r}"
+        raise ValueError(msg)
 
     prefix = match.group("prefix")
     quote = match.group("quote")
@@ -302,7 +299,8 @@ def encode_literal(value: str, original_token: str) -> str:
     prefix, quote, closing_quote = literal_parts(original_token)
 
     if "f" in prefix.lower():
-        raise ValueError("Formatted string literals are not rewritten")
+        msg = "Formatted string literals are not rewritten"
+        raise ValueError(msg)
 
     if "r" in prefix.lower():
         escaped = value.replace("\\", "\\\\")
@@ -322,11 +320,10 @@ def ast_string_locations(
     docstring_locations: set[tuple[int, int]] = set()
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == "print":
-                for argument in node.args:
-                    if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
-                        print_locations.add((argument.lineno, argument.col_offset))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "print":
+            for argument in node.args:
+                if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+                    print_locations.add((argument.lineno, argument.col_offset))
 
         if isinstance(
             node,

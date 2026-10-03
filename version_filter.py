@@ -11,7 +11,7 @@ import os
 import re
 from pathlib import Path
 
-WHL_DIRECTORY = Path(".")
+WHL_DIRECTORY = Path()
 
 WHL_PATTERN = re.compile(
     r"(?P<name>[\w\-]+)"

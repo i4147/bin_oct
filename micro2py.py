@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         "paths",
         nargs="*",
         type=Path,
-        default=[Path(".")],
+        default=[Path()],
         help="Files or directories to refactor (recursively). Defaults to '.' if omitted.",
     )
     ap.add_argument(
@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
-    roots = args.paths or [Path(".")]
+    roots = args.paths or [Path()]
 
     total = 0
     for root in roots:

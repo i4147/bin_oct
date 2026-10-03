@@ -5,6 +5,8 @@ Found URLs should be validated and categorized (e.g., git links vs.
 general repo links) and appended into separate output files (gitlinks.txt and repos.txt) using a helper module (dh) providing append_text and is_valid_url functions.
 The script should support command-line arguments (via argparse) to configure the scan path, size limits, and other options, and must handle archive extraction safely using temporary directories."""
 
+from __future__ import annotations
+
 import argparse
 import contextlib
 import io
@@ -18,6 +20,7 @@ from pathlib import Path
 from tarfile import TarFile
 from urllib.parse import urlparse
 from zipfile import ZipFile
+
 import zstd
 from dh import append_text, is_valid_url
 
@@ -351,7 +354,7 @@ def main() -> None:
     max_bytes = int(args.max_mb * 1024 * 1024)
     exts = {e.strip().lower() for e in args.extensions.split(",") if e.strip()} if args.extensions else None
     found = set()
-    for p in iter_files(Path(".")):
+    for p in iter_files(Path()):
         print(f"processing {p.name}")
         process_path(str(p), max_bytes, exts, found, recursion_limit=args.max_recursion)
     if not found:

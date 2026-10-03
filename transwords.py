@@ -3,15 +3,19 @@
 Text is split into ``CHUNK_SIZE``-character line-ranges, each chunk is translated via deep-translator's GoogleTranslator in a fixed multiprocessing.Pool of 8 workers, and the successful translations are sorted by starting line before serialization.
 Logging via loguru."""
 
+from __future__ import annotations
+
 import json
 import time
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final, TypedDict
+from typing import TYPE_CHECKING, Final, TypedDict
 
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from loguru import logger
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
 
 CHUNK_SIZE: Final[int] = 4500
 MAX_WORKERS: Final[int] = 8

@@ -4,6 +4,8 @@ By default this is a DRY RUN: it prints what would be moved but changes nothing.
 Pass -a / --apply to actually move the archives.
 Heuristics that flag an archive as useless: * invalid archive – cannot be opened / truncated / not a tarball/zip * no files – archive contains only dirs / symlinks * no .py files – nothing that could be a real package * only setup.py – a lone setup.py with no code next to it * all non-setup .py empty – every real .py file is 0 bytes / whitespace * only metadata – README/LICENSE/PKG-INFO/pyproject.toml … only * only compiled files – .pyc / __pycache__, no source * only docs/tests/examples – no production code shipped * imports-only – .py files parse but contain just imports, docstrings or `pass` * too small – total uncompressed size below a threshold"""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import multiprocessing as mp
@@ -63,7 +65,7 @@ NON_CODE_PREFIXES = (
 
 
 class _Member:
-    __slots__ = ("name", "size", "_read")
+    __slots__ = ("_read", "name", "size")
 
     def __init__(self, name, size, read):
         self.name = name
@@ -84,7 +86,8 @@ class Archive:
         elif lower.endswith((".zip", ".whl")):
             self.kind = "zip"
         else:
-            raise ValueError(f"unsupported archive: {path}")
+            msg = f"unsupported archive: {path}"
+            raise ValueError(msg)
         self._fh = None
 
     def __enter__(self):

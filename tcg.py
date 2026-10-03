@@ -4,6 +4,8 @@ The script should take a target filename as an argument, infer the scripting lan
 It should place the resulting file into the correct script directory (such as ~/bin, ~/bashbin, or ~/.cargo/bin depending on language), make it executable, and also keep an archived copy under ~/isaac/may/scripts.
 Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong."""
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 import sys
@@ -94,7 +96,7 @@ def main() -> None:
         print(f"Usage: {sys.argv[0]} [-a] <filename>", file=sys.stderr)
         sys.exit(1)
     filename = args[0]
-    if not "." in filename.strip():
+    if "." not in filename.strip():
         print("you didnt provide an extension,continue?")
         ans = input("y/n")
         if not ans == "y":

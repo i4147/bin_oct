@@ -4,6 +4,8 @@ It should accept an optional "-r/--recursive" flag to include files in subdirect
 For each file, read its text content with UTF-8 encoding (replacing invalid characters) and prepend a header showing the file's relative path surrounded by lines of equal signs, gracefully handling unreadable files by inserting an error message instead of crashing.
 If no files are found, print "No files found." and exit; otherwise combine all formatted sections into one string and display it through Python's built-in pydoc.pager."""
 
+from __future__ import annotations
+
 import argparse
 import pydoc
 from pathlib import Path

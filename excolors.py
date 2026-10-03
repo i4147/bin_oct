@@ -4,8 +4,11 @@
 For every file containing matches, it should print the filename along with the count of unique colors found, highlighted in cyan via the `cprint` helper from the `dh` module, and collect all discovered colors into a set for further use (e.g., writing to a "colors" output file in the current directory).
 Input is the directory to scan (defaults to the current working directory), and the notable behavior includes deduplication of colors per file, directory-skip logic to avoid infinite loops or unwanted paths, and binary-file filtering before scanning."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
+
 from dh import cprint, is_binary, should_skip
 
 

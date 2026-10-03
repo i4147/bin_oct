@@ -196,7 +196,7 @@ def _apt_list_all() -> list[str]:
     if rc == 0:
         names: list[str] = []
         for line in out.split("\n"):
-            if not line or line.startswith("Listing") or line.startswith("Packages"):
+            if not line or line.startswith(("Listing", "Packages")):
                 continue
             head = line.split("/")[0].split()
             if head:

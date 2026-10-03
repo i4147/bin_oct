@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -15,9 +14,12 @@ import tty
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    import os
 
 WORKERS: int = 8
 PDF_SUFFIXES: frozenset[str] = frozenset({".pdf"})
@@ -198,10 +200,11 @@ def resolve_backend(requested: str) -> str:
             return available[0]
         if usable_system_backend():
             return "system"
-        raise RuntimeError(
+        msg = (
             "No usable Python PDF library or system OCR tool was found. "
             "Install pdfminer.six, pypdf, or pymupdf; or install gs and tesseract."
         )
+        raise RuntimeError(msg)
 
     if requested == "pdfminer" and importable("pdfminer"):
         return requested
@@ -222,7 +225,8 @@ def resolve_backend(requested: str) -> str:
         )
         return "system"
 
-    raise RuntimeError(f"Backend '{requested}' is unavailable and no system OCR fallback exists.")
+    msg = f"Backend '{requested}' is unavailable and no system OCR fallback exists."
+    raise RuntimeError(msg)
 
 
 def page_count_pdfminer(path: Path) -> int:
@@ -252,7 +256,8 @@ def page_count_pymupdf(path: Path) -> int:
 
 def page_count_pdfinfo(path: Path) -> int:
     if not executable_exists("pdfinfo"):
-        raise RuntimeError("pdfinfo is required to count pages for system OCR.")
+        msg = "pdfinfo is required to count pages for system OCR."
+        raise RuntimeError(msg)
 
     completed: subprocess.CompletedProcess[str] = subprocess.run(
         ["pdfinfo", str(path)],
@@ -268,7 +273,8 @@ def page_count_pdfinfo(path: Path) -> int:
             if count > 0:
                 return count
 
-    raise RuntimeError(f"pdfinfo did not report a valid page count for {path}")
+    msg = f"pdfinfo did not report a valid page count for {path}"
+    raise RuntimeError(msg)
 
 
 def get_page_count(path: Path, backend: str) -> int:
@@ -280,7 +286,8 @@ def get_page_count(path: Path, backend: str) -> int:
         return page_count_pymupdf(path)
     if backend == "system":
         return page_count_pdfinfo(path)
-    raise RuntimeError(f"Unknown backend: {backend}")
+    msg = f"Unknown backend: {backend}"
+    raise RuntimeError(msg)
 
 
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
@@ -332,7 +339,8 @@ def extract_system_page(path: Path, page_number: int) -> str:
     required_tools: tuple[str, ...] = ("gs", "tesseract")
     missing: list[str] = [tool for tool in required_tools if not executable_exists(tool)]
     if missing:
-        raise RuntimeError(f"System OCR backend requires missing tools: {', '.join(missing)}")
+        msg = f"System OCR backend requires missing tools: {', '.join(missing)}"
+        raise RuntimeError(msg)
 
     with tempfile.TemporaryDirectory(prefix="pdf-screen-") as temporary_directory:
         image_path: Path = Path(temporary_directory) / "page.png"
@@ -390,7 +398,8 @@ def extract_page(task: tuple[str, int, str]) -> str:
     if backend == "system":
         return extract_system_page(path, page_number)
 
-    raise RuntimeError(f"Unknown backend: {backend}")
+    msg = f"Unknown backend: {backend}"
+    raise RuntimeError(msg)
 
 
 def terminal_size() -> tuple[int, int]:
@@ -579,7 +588,8 @@ def process_file(path: Path, requested_backend: str, workers: int) -> None:
             raise
 
     if len(page_text) == 0:
-        raise RuntimeError(f"No pages found in PDF: {path}")
+        msg = f"No pages found in PDF: {path}"
+        raise RuntimeError(msg)
 
     print(f"\n{path}\n")
     pager(make_screen_parts(page_text))
@@ -590,7 +600,8 @@ def main(argv: Sequence[str]) -> int:
     configure_logging(arguments.log_level)
 
     if arguments.workers < 1:
-        raise ValueError("--workers must be at least 1")
+        msg = "--workers must be at least 1"
+        raise ValueError(msg)
 
     paths: list[Path] = find_pdf_files(
         arguments.paths,
@@ -598,7 +609,8 @@ def main(argv: Sequence[str]) -> int:
     )
 
     if not paths:
-        raise FileNotFoundError("No PDF files were found.")
+        msg = "No PDF files were found."
+        raise FileNotFoundError(msg)
 
     for path in paths:
         process_file(

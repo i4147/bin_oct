@@ -4,8 +4,11 @@ The threshold defaults to 1MB but can be overridden by passing a number of megab
 The script should walk directories using `os.walk`, skip symlinked files/directories and any paths matched by a `should_skip` filter function, and avoid revisiting already-processed directories by tracking their resolved paths in a set.
 It should be structured with a generator function to yield candidate file paths and a separate function to check and report oversized files, executed via a `main()` entry point."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import fsz
 
 

@@ -4,8 +4,11 @@ The script should accept the notebook file path as the first command-line argume
 Markdown cells should be written directly as plain text, while code cells should be wrapped in triple-backtick Python code fences.
 The output should be saved to a new file with the same name as the input but with a ".md" extension, and the script should print a confirmation message showing the export destination once complete."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 import nbformat
 
 if __name__ == "__main__":

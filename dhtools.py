@@ -294,7 +294,8 @@ def cmd_reverse(args: argparse.Namespace) -> int:
 def _build_dh_export_map(dh_path: Path) -> dict[str, Path]:
     init = dh_path / "__init__.py"
     if not init.exists():
-        raise FileNotFoundError(f"Could not find __init__.py at {init}")
+        msg = f"Could not find __init__.py at {init}"
+        raise FileNotFoundError(msg)
     try:
         tree = ast.parse(init.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError):
@@ -311,9 +312,8 @@ def _build_dh_export_map(dh_path: Path) -> dict[str, Path]:
 def _collect_local_refs(node: ast.AST, names: set[str]) -> set[str]:
     refs: set[str] = set()
     for child in ast.walk(node):
-        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load):
-            if child.id in names:
-                refs.add(child.id)
+        if isinstance(child, ast.Name) and isinstance(child.ctx, ast.Load) and child.id in names:
+            refs.add(child.id)
     return refs
 
 
@@ -493,7 +493,7 @@ def cmd_inline(args: argparse.Namespace) -> int:
 
 
 def _scan_dh_references(py_file: Path, dh_name: str) -> list[str]:
-    source, tree = _read_and_parse(py_file)
+    _source, tree = _read_and_parse(py_file)
     if tree is None:
         print(f"   ⚠️  Skipping {py_file.name}: could not parse")
         return []
@@ -538,11 +538,10 @@ def _count_dh_calls(py_file: Path, names: set[str]) -> dict[str, int]:
     _, tree = _read_and_parse(py_file)
     if tree is None:
         return {}
-    counts: dict[str, int] = {n: 0 for n in names}
+    counts: dict[str, int] = dict.fromkeys(names, 0)
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            if node.func.id in counts:
-                counts[node.func.id] += 1
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in counts:
+            counts[node.func.id] += 1
     return counts
 
 

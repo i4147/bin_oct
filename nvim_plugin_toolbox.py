@@ -720,9 +720,8 @@ def _balanced_braces(code: str) -> bool:
             continue
         if ch in pairs:
             stack.append(ch)
-        elif ch in pairs.values():
-            if not stack or pairs[stack.pop()] != ch:
-                return False
+        elif ch in pairs.values() and (not stack or pairs[stack.pop()] != ch):
+            return False
     return not stack and not in_str
 
 
@@ -778,7 +777,7 @@ def cmd_split(args: argparse.Namespace) -> int:
     if args.output is not None:
         out_dir = Path(args.output)
     elif strict:
-        out_dir = Path(".")
+        out_dir = Path()
     else:
         out_dir = Path("plugins")
     out_dir.mkdir(parents=True, exist_ok=True)

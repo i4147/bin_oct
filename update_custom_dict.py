@@ -1,5 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+from __future__ import annotations
+
 import argparse
+import contextlib
 import json
 import multiprocessing as mp
 import os
@@ -99,10 +102,8 @@ def _ensure_punkt():
         try:
             nltk.data.find(res)
         except LookupError:
-            try:
+            with contextlib.suppress(Exception):
                 nltk.download(res.split("/")[-1], quiet=True)
-            except Exception:
-                pass
 
 
 def _make_regex():

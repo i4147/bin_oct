@@ -3,6 +3,8 @@
 The script should attempt to open and read the file as UTF-8 text, ignoring any decoding errors, and print the resulting text.
 If this text-mode read fails for any reason, it should fall back to opening the file in binary mode and printing the raw first 1024 bytes instead."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

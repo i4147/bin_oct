@@ -45,6 +45,8 @@ The script should be robust against unreadable or unusual files (permission erro
 It should run as a standalone script (`if __name__ == "__main__":` entry point) invoked from the command line.
 --- LiveDoc: https://felo.ai/zh-Hans/livedoc/k8jr7RBDD6NGPywohFwjnE"""
 
+from __future__ import annotations
+
 import argparse
 import fnmatch
 import logging
@@ -52,6 +54,7 @@ import mmap
 import os
 from multiprocessing import Pool
 from pathlib import Path
+
 from tqdm import tqdm
 
 
@@ -80,16 +83,15 @@ def needs_conversion(path: Path) -> bool:
 
 
 def convert_in_place(path: Path) -> None:
-    with path.open("r+b") as f:
-        with mmap.mmap(f.fileno(), 0) as mm:
-            data = mm[:]
-            new = data.replace(b"\r\n", b"\n")
-            if new == data:
-                return
-            mm.seek(0)
-            mm.write(new)
-            mm.flush()
-            f.truncate(len(new))
+    with path.open("r+b") as f, mmap.mmap(f.fileno(), 0) as mm:
+        data = mm[:]
+        new = data.replace(b"\r\n", b"\n")
+        if new == data:
+            return
+        mm.seek(0)
+        mm.write(new)
+        mm.flush()
+        f.truncate(len(new))
 
 
 def convert_with_temp(path: Path) -> None:
@@ -178,10 +180,9 @@ def main():
     files = scan_paths(args.paths, args.recursive, args.exclude)
     tasks = [(p, args.dry_run) for p in files]
     if args.parallel > 1:
-        with Pool(args.parallel) as pool:
-            with tqdm(total=len(tasks), unit="file") as bar:
-                for _ in pool.imap_unordered(worker, tasks, chunksize=args.chunksize):
-                    bar.update(1)
+        with Pool(args.parallel) as pool, tqdm(total=len(tasks), unit="file") as bar:
+            for _ in pool.imap_unordered(worker, tasks, chunksize=args.chunksize):
+                bar.update(1)
     else:
         for task in tqdm(tasks, unit="file"):
             worker(task)

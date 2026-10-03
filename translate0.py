@@ -3,6 +3,8 @@
 The script should read files line by line, split lines into size-limited chunks (max ~2000 characters) to respect translation API limits, and translate chunks concurrently using a ThreadPoolExecutor (up to 16 workers), with retry logic (several attempts with delay) for handling transient translation failures.
 It should log progress and errors via the logging module, accept command-line arguments (via argparse) such as the target directory and file patterns to process, optionally track processed/skipped files using an SQLite database to avoid reprocessing, and use threading utilities to safely coordinate shared state across worker threads."""
 
+from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -14,6 +16,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Final
+
 from deep_translator import GoogleTranslator
 
 MAX_WORKERS: Final[int] = 16
@@ -223,7 +226,7 @@ def main() -> None:
         to_translate_raw = [line for line in all_lines if contains_cyrillic(line)]
         skipped_lines = [line for line in all_lines if not contains_cyrillic(line)]
     else:
-        to_translate_raw = [line for line in all_lines]
+        to_translate_raw = list(all_lines)
         skipped_lines = []
     print(
         "Loaded %d lines: %d flagged for translation, %d skipped",

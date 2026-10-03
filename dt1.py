@@ -7,6 +7,7 @@ Example: pip install loguru deep_translator python translate_chunks.py --input i
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -121,7 +122,8 @@ def _make_deepl(source: str, target: str) -> Translator:
 
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
-        raise RuntimeError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise RuntimeError(msg)
 
     client = deepl.DeepLClient(api_key)
     target_code = _deepl_language(target)
@@ -234,7 +236,8 @@ def configure_logging() -> None:
 
 def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
-        raise ValueError("chunk size must be greater than zero")
+        msg = "chunk size must be greater than zero"
+        raise ValueError(msg)
 
     chunks: list[str] = []
     remaining = text
@@ -277,10 +280,12 @@ def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
         with path.open("r", encoding="utf-8") as file:
             data = json.load(file)
     except (OSError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"cannot read existing output {path}: {exc}") from exc
+        msg = f"cannot read existing output {path}: {exc}"
+        raise RuntimeError(msg) from exc
 
     if not isinstance(data, dict):
-        raise RuntimeError(f"existing output {path} must contain a JSON object")
+        msg = f"existing output {path} must contain a JSON object"
+        raise RuntimeError(msg)
 
     return {str(index): str(value) for index, value in data.items() if isinstance(value, str)}
 
@@ -315,10 +320,8 @@ def atomic_save(path: Path, translations: dict[str, str]) -> None:
         logger.debug("Saved {} translated chunks to {}", len(translations), path)
     finally:
         if temporary_name is not None:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 os.unlink(temporary_name)
-            except FileNotFoundError:
-                pass
 
 
 def append_failed(path: Path, chunk_index: int) -> None:
@@ -339,10 +342,12 @@ def choose_backend(requested: str | None) -> str:
         else:
             if requested not in BACKEND_FACTORIES:
                 valid = ", ".join(sorted(BACKEND_FACTORIES))
-                raise RuntimeError(f"unsupported backend {requested!r}; choose one of: {valid}")
+                msg = f"unsupported backend {requested!r}; choose one of: {valid}"
+                raise RuntimeError(msg)
 
             if requested == "deepl" and not os.environ.get("DEEPL_API_KEY"):
-                raise RuntimeError("backend 'deepl' requires the DEEPL_API_KEY environment variable")
+                msg = "backend 'deepl' requires the DEEPL_API_KEY environment variable"
+                raise RuntimeError(msg)
 
             return requested
 
@@ -370,7 +375,8 @@ def choose_backend(requested: str | None) -> str:
         return backend
 
     packages = ", ".join(FALLBACK_BACKENDS)
-    raise RuntimeError(f"no translation backend is installed; install one of: {packages}")
+    msg = f"no translation backend is installed; install one of: {packages}"
+    raise RuntimeError(msg)
 
 
 def translate_one(
@@ -388,10 +394,12 @@ def translate_one(
             translated = str(translator(text)).strip()
 
             if not translated:
-                raise TranslationError("backend returned an empty translation")
+                msg = "backend returned an empty translation"
+                raise TranslationError(msg)
 
             if is_identity_translation(text, translated):
-                raise TranslationError("backend returned the source text unchanged")
+                msg = "backend returned the source text unchanged"
+                raise TranslationError(msg)
 
             logger.debug(
                 "Chunk {} translated successfully on attempt {}",
@@ -413,7 +421,8 @@ def translate_one(
             if attempt < attempts:
                 time.sleep(2 ** (attempt - 1))
 
-    raise TranslationError(f"chunk {index} failed after {attempts} attempts: {last_error}")
+    msg = f"chunk {index} failed after {attempts} attempts: {last_error}"
+    raise TranslationError(msg)
 
 
 def parse_args() -> argparse.Namespace:
@@ -492,23 +501,28 @@ def parse_args() -> argparse.Namespace:
 
 def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
-        raise ValueError("--workers must be between 1 and 2")
+        msg = "--workers must be between 1 and 2"
+        raise ValueError(msg)
 
     if args.delay < 0:
-        raise ValueError("--delay cannot be negative")
+        msg = "--delay cannot be negative"
+        raise ValueError(msg)
 
     if args.chunk_size <= 0:
-        raise ValueError("--chunk-size must be greater than zero")
+        msg = "--chunk-size must be greater than zero"
+        raise ValueError(msg)
 
     if args.save_every <= 0:
-        raise ValueError("--save-every must be greater than zero")
+        msg = "--save-every must be greater than zero"
+        raise ValueError(msg)
 
 
 def read_input(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except OSError as exc:
-        raise RuntimeError(f"cannot read input file {path}: {exc}") from exc
+        msg = f"cannot read input file {path}: {exc}"
+        raise RuntimeError(msg) from exc
 
 
 def run(args: argparse.Namespace) -> int:

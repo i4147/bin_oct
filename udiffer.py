@@ -3,6 +3,8 @@
 It should accept two file path arguments via argparse, read each file's lines with a helper function that first tries default encoding and falls back to UTF-16 on a UnicodeDecodeError, then use difflib.unified_diff to compute the differences between the two files.
 If any differences are found, the script should write them to stdout and exit with status code 1; otherwise it exits normally with status 0."""
 
+from __future__ import annotations
+
 import argparse
 import difflib
 import sys

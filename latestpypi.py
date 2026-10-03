@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Fetch the latest packages added to PyPI and save their names to a file."""
 
+from __future__ import annotations
+
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path

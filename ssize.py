@@ -3,8 +3,11 @@
 It should collect each item's name and size into a list, sort the list ascending by size using `operator.itemgetter`, and accumulate a running total across all items via a global variable.
 When run as the main script, it should print each item's name alongside its formatted size in blinking cyan ANSI color codes, then print the total size in blinking blue ANSI color codes."""
 
+from __future__ import annotations
+
 import operator
 from pathlib import Path
+
 from dh import fsz, gsz
 
 total = 0

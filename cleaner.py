@@ -4,8 +4,11 @@ It should strip ANSI escape sequences, normalize CRLF/CR line endings to LF, rem
 The cleaned content should overwrite the original file, and the script should print a confirmation message showing the cleaned file path.
 If the script is run without exactly one argument, it should print a usage message and exit with status code 1."""
 
-import regex as re
+from __future__ import annotations
+
 import sys
+
+import regex as re
 
 
 def clean1(text: str) -> str:

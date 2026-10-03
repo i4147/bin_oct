@@ -82,7 +82,8 @@ def move_files_parallel(
 
 def reverse_move(moved_files_log: Path) -> tuple[dict[str, str], list[tuple[str, str]]]:
     if not moved_files_log.exists():
-        raise FileNotFoundError(f"Log file not found: {moved_files_log}")
+        msg = f"Log file not found: {moved_files_log}"
+        raise FileNotFoundError(msg)
 
     with open(moved_files_log) as f:
         file_mapping: dict[str, str] = json.load(f)

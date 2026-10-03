@@ -3,8 +3,11 @@
 The script should accept an input video path and an optional output path (defaulting to "out.mp4"), validating that the input file and cascade classifier exist before processing, and exiting with an error message if either is missing or the video cannot be opened.
 It should read the input video's frame width, height, and FPS to configure a VideoWriter using the MJPG codec, then loop through each frame performing face detection and writing the annotated frames to the output file, printing progress messages such as the input/output paths and a running frame count, until all frames are processed or reading fails."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 import cv2
 
 

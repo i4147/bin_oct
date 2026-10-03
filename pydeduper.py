@@ -3,6 +3,8 @@
 It should deduplicate these definitions across the entire codebase by computing content hashes (e.g., via hashlib), using multiprocessing for parallel file/archive processing to speed up scanning.
 The script should output the deduplicated, unique definitions into organized files grouped by kind (e.g., funcs.py, classes.py, const.py), while logging progress and issues using loguru if available, falling back to the standard logging module otherwise, and should be configurable via argparse command-line arguments (such as input path, output directory, and worker count)."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import bz2
@@ -270,12 +272,11 @@ def _collect_imports(tree: ast.Module, node: ast.AST) -> list[str]:
                 if stmt not in seen:
                     seen.add(stmt)
                     result.append(stmt)
-        elif isinstance(top, ast.ImportFrom):
-            if any((a.asname or a.name) in used for a in top.names):
-                stmt = ast.unparse(top)
-                if stmt not in seen:
-                    seen.add(stmt)
-                    result.append(stmt)
+        elif isinstance(top, ast.ImportFrom) and any((a.asname or a.name) in used for a in top.names):
+            stmt = ast.unparse(top)
+            if stmt not in seen:
+                seen.add(stmt)
+                result.append(stmt)
     return result
 
 
@@ -319,9 +320,8 @@ def _const_names(node: ast.AST, mode: str) -> list[str]:
         if not all(n.isupper() for n in names):
             if not (isinstance(node, ast.Assign) and _is_typevar_call(node)):
                 return []
-    elif mode == "literal":
-        if not (isinstance(node, ast.Assign) and _is_literal_value(node.value)):
-            return []
+    elif mode == "literal" and not (isinstance(node, ast.Assign) and _is_literal_value(node.value)):
+        return []
     return names
 
 
@@ -587,7 +587,7 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument(
         "--dir",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="root directory to scan (default: current directory)",
     )
     p.add_argument(

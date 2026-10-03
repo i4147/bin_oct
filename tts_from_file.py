@@ -4,6 +4,8 @@ Since text-to-speech engines typically have input length limits, the script shou
 It should validate that the file path exists, print the total number of chunks detected, then sequentially speak each chunk via subprocess calls while printing progress messages showing the chunk index and character count.
 Handle the missing-file and missing-argument cases by printing a usage message and exiting with a non-zero status."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path

@@ -5,6 +5,7 @@ Merges 11 original scripts into a single argparse CLI: fixsvg.py -> webassets.py
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -303,10 +304,8 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
         return Result(path, orig, orig, False, str(exc))
     finally:
         if tmp_cfg is not None and tmp_cfg.exists():
-            try:
+            with contextlib.suppress(OSError):
                 tmp_cfg.unlink()
-            except OSError:
-                pass
 
 
 def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
@@ -448,10 +447,8 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
         return Result(path, orig, orig, False, str(exc))
     finally:
         if tmp_path is not None and tmp_path.exists():
-            try:
+            with contextlib.suppress(OSError):
                 tmp_path.unlink()
-            except OSError:
-                pass
 
 
 DEFAULT_TRUNCATE_TAGS: tuple[str, ...] = (
@@ -825,7 +822,7 @@ def cmd_mixed(args: argparse.Namespace) -> int:
     results = parallel_map(minify_mixed, files, workers=args.processes)
     for _, msg in results:
         print(msg)
-    ok = sum(1 for _, m in results if m.startswith("OK") or m.startswith("SKIP"))
+    ok = sum(1 for _, m in results if m.startswith(("OK", "SKIP")))
     print(f"\n{ok}/{len(results)} file(s) processed successfully.")
     return 0 if ok == len(results) else 1
 

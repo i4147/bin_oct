@@ -3,11 +3,14 @@
 The script should handle missing fields gracefully by defaulting to empty strings, and export the collected package update records to CSV and/or JSON output formats.
 It should use standard libraries (csv, json, xml.etree.ElementTree, datetime) alongside the requests library, and include basic error handling for network failures during the fetch operation."""
 
+from __future__ import annotations
+
 import csv
 import json
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
 import requests
 
 

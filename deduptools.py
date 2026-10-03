@@ -509,7 +509,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ref.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="Directory to scan (default: .).",
     )
     p_ref.add_argument(

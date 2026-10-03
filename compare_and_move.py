@@ -4,6 +4,8 @@ It should verify both directories exist, then create (or reuse) a "common" folde
 The script must find filenames that exist in both source and target directories, report their count, and for each common file compare file sizes between the two locations (printing whether the sizes match), then move the common files from the source and/or target into the "common" folder.
 It should print clear status/progress messages throughout, including errors if either input directory is missing."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path

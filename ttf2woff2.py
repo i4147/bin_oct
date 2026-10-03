@@ -4,8 +4,11 @@ It should accept file paths as command-line arguments, or if none are given, aut
 For each font file, it compresses it to a .woff2 file (generating a unique filename if one already exists and is non-empty), deletes the original file on success, and prints a confirmation message, while printing a colored error message on failure without crashing.
 If multiple files are processed, it should use a multiprocessing helper to handle them in parallel; if only a single file is given, it should process it directly and exit with status code 1."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import woff2
 

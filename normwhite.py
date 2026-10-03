@@ -4,6 +4,8 @@ It should replace various Unicode space-like characters (such as non-breaking sp
 The cleaned text should then overwrite the original file in place, encoded as UTF-8.
 The script should be runnable directly, reading the target filename from the first command-line argument."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

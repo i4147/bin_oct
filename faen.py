@@ -4,6 +4,8 @@ The script should load the JSON mapping into two in-memory dictionaries (Persian
 It should also support saving updates back to the JSON file, and provide an interactive interface allowing the user to look up translations in either direction, add new word pairs, and persist changes.
 Include appropriate error handling with clear emoji-prefixed status messages throughout."""
 
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -199,7 +201,7 @@ def main():
                 if command in ["exit", "q", "quit"]:
                     print("👋 Goodbye!")
                     break
-                elif command == "help":
+                if command == "help":
                     print("\nCommands:")
                     print("  :add <fa> <en>    - Add a new Persian-English word pair")
                     print("  :del <word>       - Delete a word from dictionary")

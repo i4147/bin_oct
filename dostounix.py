@@ -4,9 +4,12 @@ It should traverse directories recursively, skipping binary files and files matc
 For each file, it should read the raw bytes, check for CRLF sequences, and if found, write the converted content to a temporary file before atomically replacing the original, while gracefully handling and collecting OSError/PermissionError failures.
 Finally, it should aggregate and report how many files were changed versus errored, using a defined chunk size constant for task distribution."""
 
+from __future__ import annotations
+
 import sys
 from multiprocessing import Pool
 from pathlib import Path
+
 from dh import is_binary, should_skip
 
 WORKERS = 8

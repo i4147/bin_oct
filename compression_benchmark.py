@@ -113,7 +113,8 @@ def compress_zip(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_brotli(src: Path, dst: Path, level: Optional[int]) -> None:
     if brotli is None:
-        raise RuntimeError("brotli not installed")
+        msg = "brotli not installed"
+        raise RuntimeError(msg)
     q = 11 if level is None else level
     with open(src, "rb") as fin, open(dst, "wb") as fout:
         comp = brotli.Compressor(quality=q)
@@ -127,7 +128,8 @@ def compress_brotli(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_zstd(src: Path, dst: Path, level: Optional[int]) -> None:
     if zstd is None:
-        raise RuntimeError("zstandard not installed")
+        msg = "zstandard not installed"
+        raise RuntimeError(msg)
     lv = 9 if level is None else level
     cctx = zstd.ZstdCompressor(level=lv)
     with open(src, "rb") as fin, open(dst, "wb") as fout:
@@ -136,7 +138,8 @@ def compress_zstd(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_lz4(src: Path, dst: Path, level: Optional[int]) -> None:
     if lz4frame is None:
-        raise RuntimeError("lz4 not installed")
+        msg = "lz4 not installed"
+        raise RuntimeError(msg)
     lv = 9 if level is None else level
     with open(src, "rb") as fin, lz4frame.open(dst, "wb", compression_level=lv) as fout:
         shutil.copyfileobj(fin, fout, 1024 * 1024)
@@ -144,7 +147,8 @@ def compress_lz4(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_7z(src: Path, dst: Path, level: Optional[int]) -> None:
     if py7zr is None:
-        raise RuntimeError("py7zr not installed")
+        msg = "py7zr not installed"
+        raise RuntimeError(msg)
     preset = 7 if level is None else level
     filters = [{"id": py7zr.FILTER_LZMA2, "preset": preset}]
     with py7zr.SevenZipFile(dst, "w", filters=filters) as zf:
@@ -153,7 +157,8 @@ def compress_7z(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_pylzma(src: Path, dst: Path, level: Optional[int]) -> None:
     if pylzma is None:
-        raise RuntimeError("pylzma not installed")
+        msg = "pylzma not installed"
+        raise RuntimeError(msg)
     lv = 9 if level is None else level
     data = _read_all(src)
     out = pylzma.compress(data, filters=[{"id": pylzma.FILTER_LZMA1, "preset": lv}])
@@ -162,7 +167,8 @@ def compress_pylzma(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_snappy(src: Path, dst: Path, _level: Optional[int]) -> None:
     if cramjam is None:
-        raise RuntimeError("cramjam not installed")
+        msg = "cramjam not installed"
+        raise RuntimeError(msg)
     data = _read_all(src)
     out = cramjam.snappy.compress(data)
     _write_all(dst, bytes(out))
@@ -170,7 +176,8 @@ def compress_snappy(src: Path, dst: Path, _level: Optional[int]) -> None:
 
 def compress_zopfli_gzip(src: Path, dst: Path, level: Optional[int]) -> None:
     if zopfli_gzip is None:
-        raise RuntimeError("zopfli not installed")
+        msg = "zopfli not installed"
+        raise RuntimeError(msg)
     iters = 15 if level is None else level
     data = _read_all(src)
     out = zopfli_gzip.compress(data, numiterations=iters)
@@ -179,7 +186,8 @@ def compress_zopfli_gzip(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_ppmd(src: Path, dst: Path, level: Optional[int]) -> None:
     if pyppmd is None:
-        raise RuntimeError("pyppmd not installed")
+        msg = "pyppmd not installed"
+        raise RuntimeError(msg)
     order = 6 if level is None else level
     data = _read_all(src)
     out = pyppmd.compress(data, max_order=order, mem_size=64 * 1024 * 1024)
@@ -188,7 +196,8 @@ def compress_ppmd(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_pyzstd(src: Path, dst: Path, level: Optional[int]) -> None:
     if pyzstd is None:
-        raise RuntimeError("pyzstd not installed")
+        msg = "pyzstd not installed"
+        raise RuntimeError(msg)
     lv = 9 if level is None else level
     data = _read_all(src)
     out = pyzstd.compress(data, level_or_option=lv)
@@ -197,21 +206,24 @@ def compress_pyzstd(src: Path, dst: Path, level: Optional[int]) -> None:
 
 def compress_zip_deflate64(src: Path, dst: Path, _level: Optional[int]) -> None:
     if zipfile_deflate64 is None:
-        raise RuntimeError("zipfile-deflate64 not installed")
+        msg = "zipfile-deflate64 not installed"
+        raise RuntimeError(msg)
     with zipfile_deflate64.ZipFile(dst, "w") as zf:
         zf.write(src, arcname=src.name)
 
 
 def compress_zip_lzma(src: Path, dst: Path, _level: Optional[int]) -> None:
     if pyzipper is None:
-        raise RuntimeError("pyzipper not installed")
+        msg = "pyzipper not installed"
+        raise RuntimeError(msg)
     with pyzipper.AESZipFile(dst, "w", compression=pyzipper.ZIP_LZMA) as zf:
         zf.write(src, arcname=src.name)
 
 
 def compress_zip_bzip2(src: Path, dst: Path, _level: Optional[int]) -> None:
     if pyzipper is None:
-        raise RuntimeError("pyzipper not installed")
+        msg = "pyzipper not installed"
+        raise RuntimeError(msg)
     with pyzipper.AESZipFile(dst, "w", compression=pyzipper.ZIP_BZIP2) as zf:
         zf.write(src, arcname=src.name)
 

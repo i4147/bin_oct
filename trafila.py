@@ -4,8 +4,11 @@ It should skip files that already have a corresponding .md file, save successful
 Input files can be passed as command-line arguments or discovered automatically in the current directory via a helper (get_files/mpf from the dh module), and the script supports an optional "-r" flag to delete the original HTML file after a successful conversion.
 Errors during processing should be caught and reported per-file without stopping the batch."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 import trafilatura
 from dh import get_files, mpf
 

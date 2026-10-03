@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from difflib import get_close_matches
 from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional, Self, Sequence
 
 try:
     from deep_translator import GoogleTranslator
@@ -43,10 +43,10 @@ except ImportError:  # pragma: no cover - optional dependency
         def close(self) -> None:
             pass
 
-        def __enter__(self) -> "_DummyTqdm":
+        def __enter__(self) -> Self:
             return self
 
-        def __exit__(self, *_: Any) -> None:
+        def __exit__(self, *_: object) -> None:
             return None
 
     def tqdm(iterable: Any = None, *_: Any, **__: Any) -> Any:  # type: ignore
@@ -84,7 +84,8 @@ def load_json_dict(path: Path) -> dict[str, str]:
     with path.open(encoding="utf-8") as fh:
         data = json.load(fh)
     if not isinstance(data, dict):
-        raise ValueError(f"{path} does not contain a JSON object")
+        msg = f"{path} does not contain a JSON object"
+        raise ValueError(msg)
     return {str(k).strip(): str(v).strip() for k, v in data.items()}
 
 
@@ -104,7 +105,8 @@ def translate_google(
     delay: float = 0.5,
 ) -> Optional[str]:
     if GoogleTranslator is None:
-        raise RuntimeError("deep-translator is not installed (pip install deep-translator)")
+        msg = "deep-translator is not installed (pip install deep-translator)"
+        raise RuntimeError(msg)
     translator = GoogleTranslator(source=source, target=target)
     for attempt in range(retries):
         try:
@@ -132,7 +134,8 @@ def translate_pypackage(
     delay: float = 0.5,
 ) -> Optional[str]:
     if PyTranslator is None:
-        raise RuntimeError("translate package is not installed (pip install translate)")
+        msg = "translate package is not installed (pip install translate)"
+        raise RuntimeError(msg)
     translator = PyTranslator(from_lang=source, to_lang=target)
     for attempt in range(retries):
         try:
@@ -187,7 +190,8 @@ def get_backend(name: str):
     try:
         return _BACKENDS[name]
     except KeyError:
-        raise ValueError(f"unknown backend: {name!r} (choose from {sorted(_BACKENDS)})") from None
+        msg = f"unknown backend: {name!r} (choose from {sorted(_BACKENDS)})"
+        raise ValueError(msg) from None
 
 
 def _translate_item(

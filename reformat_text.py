@@ -3,6 +3,8 @@
 It should take a file path as input, first save a backup copy with a ".bak" suffix, then overwrite the original file with the restructured text where each sentence or sentence-fragment appears on its own line and paragraphs remain separated by blank lines.
 The script reads the file using UTF-8 encoding with error tolerance and is intended to be run on a given file path, likely via command-line arguments using sys and pathlib."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

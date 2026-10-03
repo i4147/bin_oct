@@ -3,9 +3,12 @@
 It should include a search method that queries the OpenSubtitles REST API with a cleaned-up title (normalizing underscores and dots into spaces), filters results for English language, and returns the matched subtitle's id, title, url, and file list, plus a download method that fetches and saves the subtitle file content based on that search result.
 The script should handle request failures and unexpected API responses gracefully, printing error messages instead of crashing, and be structured for use as a command-line tool taking a movie/show title as input."""
 
+from __future__ import annotations
+
 import re
 import sys
 from urllib.parse import quote
+
 import requests
 
 

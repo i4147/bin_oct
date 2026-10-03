@@ -2,16 +2,20 @@
 """Generate a ``repeated.json`` manifest of duplicated top-level functions, classes, and constant assignments across every ``.py`` file under the current directory, then use that manifest to refactor each affected file: strip the named definitions and inject a single ``from dh import ...`` line so the shared versions come from ``dh`` instead.
 Analysis and refactoring both run on a fixed multiprocessing.Pool of 8 workers; logging via loguru."""
 
+from __future__ import annotations
+
 import ast
 import collections
 import json
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import astor  # type: ignore[import-untyped]
 from loguru import logger
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
 
 REPEATED_JSON_PATH: Final[Path] = Path("repeated.json")
 MAX_WORKERS: Final[int] = 8
@@ -130,7 +134,7 @@ class ASTStripper(ast.NodeTransformer):
         if node.name in self.target_names:
             self.removed_something = True
             return None
-        return cast(ast.FunctionDef, self.generic_visit(node))
+        return cast("ast.FunctionDef", self.generic_visit(node))
 
     def visit_AsyncFunctionDef(  # type: ignore[override]
         self, node: ast.AsyncFunctionDef
@@ -138,7 +142,7 @@ class ASTStripper(ast.NodeTransformer):
         if node.name in self.target_names:
             self.removed_something = True
             return None
-        return cast(ast.AsyncFunctionDef, self.generic_visit(node))
+        return cast("ast.AsyncFunctionDef", self.generic_visit(node))
 
     def visit_ClassDef(  # type: ignore[override]
         self, node: ast.ClassDef
@@ -146,7 +150,7 @@ class ASTStripper(ast.NodeTransformer):
         if node.name in self.target_names:
             self.removed_something = True
             return None
-        return cast(ast.ClassDef, self.generic_visit(node))
+        return cast("ast.ClassDef", self.generic_visit(node))
 
     def visit_Assign(  # type: ignore[override]
         self, node: ast.Assign
@@ -155,7 +159,7 @@ class ASTStripper(ast.NodeTransformer):
             if isinstance(target, ast.Name) and target.id in self.target_names:
                 self.removed_something = True
                 return None
-        return cast(ast.Assign, self.generic_visit(node))
+        return cast("ast.Assign", self.generic_visit(node))
 
 
 def refactor_single_file(file_path: Path, objects_to_remove: list[str]) -> bool:
@@ -214,7 +218,7 @@ def main() -> None:
     write_repeated_json(repeated)
 
     refactor_map: FileMap = load_refactoring_maps()
-    current_dir: Path = Path(".")
+    current_dir: Path = Path()
     local_files: dict[str, Path] = {f.name: f for f in current_dir.glob("*.py")}
 
     tasks: list[Task] = [

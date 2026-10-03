@@ -4,10 +4,13 @@ For each line, it should tokenize words with a regex, detect misspelled alphabet
 It should accept input via argparse (e.g., file path(s) and an autofix option), print or write corrected text and/or a summary of misspelled words with suggestions, and track counts of misspelled and fixed words.
 Include proper handling for command-line argument parsing and use sys for exit codes or error output."""
 
+from __future__ import annotations
+
 import argparse
 import re
 import sys
 from multiprocessing import Pool, cpu_count
+
 import hunspell
 
 
@@ -115,30 +118,28 @@ def process_file(
                             print(f"  ... and {len(no_suggestion_words) - 10} more")
             except Exception as e:
                 print(f"Error writing to file: {e}")
+        elif total_misspelled == 0:
+            print("✓ No misspelled words found to autofix.")
         else:
-            if total_misspelled == 0:
-                print("✓ No misspelled words found to autofix.")
-            else:
-                print("Found misspelled words, but no automatic corrections were available.")
-                print("\nWords and their suggestions:")
-                for word, suggs in all_suggestions.items():
-                    if suggs != ["No suggestions"]:
-                        print(f"  '{word}' → {', '.join(suggs[:5])}")
+            print("Found misspelled words, but no automatic corrections were available.")
+            print("\nWords and their suggestions:")
+            for word, suggs in all_suggestions.items():
+                if suggs != ["No suggestions"]:
+                    print(f"  '{word}' → {', '.join(suggs[:5])}")
+    elif total_misspelled == 0:
+        print("✓ No misspelled words found.")
     else:
-        if total_misspelled == 0:
-            print("✓ No misspelled words found.")
-        else:
-            print(f"\n✗ Found {total_misspelled} misspelled word(s):\n")
-            for word in sorted(all_suggestions.keys()):
-                suggestions = all_suggestions[word]
-                if suggestions == ["No suggestions"]:
-                    print(f"  '{word}' → No suggestions available")
-                else:
-                    sugg_str = ", ".join(suggestions[:5])
-                    if len(suggestions) > 5:
-                        sugg_str += f", ... (+{len(suggestions) - 5} more)"
-                    print(f"  '{word}' → {sugg_str}")
-            print(f"\nRun with -a to autofix {total_misspelled} word(s).")
+        print(f"\n✗ Found {total_misspelled} misspelled word(s):\n")
+        for word in sorted(all_suggestions.keys()):
+            suggestions = all_suggestions[word]
+            if suggestions == ["No suggestions"]:
+                print(f"  '{word}' → No suggestions available")
+            else:
+                sugg_str = ", ".join(suggestions[:5])
+                if len(suggestions) > 5:
+                    sugg_str += f", ... (+{len(suggestions) - 5} more)"
+                print(f"  '{word}' → {sugg_str}")
+        print(f"\nRun with -a to autofix {total_misspelled} word(s).")
 
 
 def find_hunspell_dicts():

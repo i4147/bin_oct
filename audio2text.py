@@ -3,11 +3,14 @@
 It takes an input WAV file path and writes recognized text incrementally to an output text file (default "out.txt"), printing progress information such as chunk count and durations as it works.
 The script gracefully handles Ctrl+C interruption via a SIGINT signal handler, saving already-transcribed progress before exiting, and it validates that the input file exists and warns if it lacks a .wav extension."""
 
+from __future__ import annotations
+
 import os
 import signal
 import sys
 import tempfile
 import time
+
 import speech_recognition as sr
 from pydub import AudioSegment
 

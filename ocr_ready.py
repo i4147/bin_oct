@@ -89,7 +89,8 @@ def save_processed_image(img: ImageType, img_path: Path) -> None:
     elif not HAS_CV2 and not isinstance(img, np.ndarray):
         img.save(str(img_path))
     else:
-        raise ValueError("Unsupported image format")
+        msg = "Unsupported image format"
+        raise ValueError(msg)
 
 
 def process_single_image(image_path: Path) -> dict[str, Any]:

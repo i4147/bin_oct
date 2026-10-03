@@ -3,6 +3,8 @@
 It should read each file as UTF-8 text, gracefully catch and print an error for any file that cannot be processed, and collect all unique matched variable names into a set.
 Finally, it must write the sorted, unique variable names line by line to an output file named env_vars.txt and print a summary message stating how many unique environment variable names were found and saved."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 

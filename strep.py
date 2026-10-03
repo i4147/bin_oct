@@ -3,11 +3,14 @@
 It should accept file paths as arguments, or if none are given, recursively discover .so files in the current working directory.
 The script must use the "rich" library to display a formatted summary showing the total count and total size (via a fsz helper) of the files processed, along with a progress bar during processing, and it should run external "strip" commands via a runcmd helper, showing their output."""
 
+from __future__ import annotations
+
 import re
 import sys
 import tempfile
 from pathlib import Path
 from zipfile import ZipFile
+
 from dh import fsz, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
@@ -51,7 +54,7 @@ if __name__ == "__main__":
     cwd = Path.cwd()
     args = sys.argv[1:]
     files = collect_files(cwd, args)
-    so_files = [f for f in files if f.suffix in (".so",) or SO_PATTERN.search(f.name)]
+    so_files = [f for f in files if f.suffix == ".so" or SO_PATTERN.search(f.name)]
     console.print("[bold green]Starting .so stripping process...[/]")
     show_summary(so_files)
     with Progress(

@@ -16,12 +16,14 @@ import argparse
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Final, Optional, Protocol
+from typing import TYPE_CHECKING, Final, Optional, Protocol
 
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
-from github.Repository import Repository
 from loguru import logger
+
+if TYPE_CHECKING:
+    from github.Repository import Repository
 
 LARGE_REPO_THRESHOLD_MB: Final[float] = 5.0
 DEFAULT_BRANCH_FALLBACK: Final[str] = "master"
@@ -101,7 +103,8 @@ class SubprocessBackend:
         depth: Optional[int],
     ) -> None:
         if target.exists() and any(target.iterdir()):
-            raise Exception(f"Target directory already exists and is not empty: {target}")
+            msg = f"Target directory already exists and is not empty: {target}"
+            raise Exception(msg)
 
         if self.prefer_gh:
             gh_cmd: list[str] = [
@@ -123,7 +126,8 @@ class SubprocessBackend:
                 logger.warning(f"gh clone failed, falling back to git: {e}")
 
         if not _git_available():
-            raise Exception("Neither 'gh' nor 'git' is available on PATH.")
+            msg = "Neither 'gh' nor 'git' is available on PATH."
+            raise Exception(msg)
 
         git_cmd: list[str] = ["git", "clone", clone_url, str(target)]
         git_cmd.extend(["--branch", branch])
@@ -133,7 +137,8 @@ class SubprocessBackend:
 
     def update_submodules(self, repo_root: Path) -> None:
         if not _git_available():
-            raise Exception("'git' is not available on PATH.")
+            msg = "'git' is not available on PATH."
+            raise Exception(msg)
         _run_subprocess(
             ["git", "submodule", "update", "--init", "--recursive"],
             cwd=repo_root,
@@ -202,13 +207,15 @@ class Libgit2Backend:
         depth: Optional[int],
     ) -> None:
         if depth is not None:
-            raise NotImplementedError("pygit2/libgit2 does not support shallow clones; falling back to subprocess git.")
+            msg = "pygit2/libgit2 does not support shallow clones; falling back to subprocess git."
+            raise NotImplementedError(msg)
         import pygit2
 
         pygit2.clone_repository(clone_url, str(target), checkout_branch=branch)
 
     def update_submodules(self, repo_root: Path) -> None:
-        raise NotImplementedError("pygit2 does not expose recursive submodule update; falling back to subprocess git.")
+        msg = "pygit2 does not expose recursive submodule update; falling back to subprocess git."
+        raise NotImplementedError(msg)
 
 
 class TyperBackend:
@@ -246,7 +253,8 @@ def create_backend(name: str) -> CloneBackend:
         return Libgit2Backend()
     if name == BACKEND_TYPER:
         return TyperBackend()
-    raise ValueError(f"Unknown backend: {name}")
+    msg = f"Unknown backend: {name}"
+    raise ValueError(msg)
 
 
 def get_github_client(token: Optional[str] = None) -> Github:
@@ -265,7 +273,8 @@ def parse_repo_url(txt: str) -> tuple[str, str]:
     parts = txt.split("/")
     if len(parts) >= 2:
         return parts[-2], parts[-1]
-    raise ValueError(f"Invalid repository format: {txt}")
+    msg = f"Invalid repository format: {txt}"
+    raise ValueError(msg)
 
 
 def get_repo(repo_url: str, github_client: Github) -> Repository:
@@ -277,9 +286,11 @@ def get_repo(repo_url: str, github_client: Github) -> Repository:
         print(f"Repository found: {repo.full_name}")
         return repo
     except UnknownObjectException:
-        raise ValueError(f"Repository not found: {repo_url}")
+        msg = f"Repository not found: {repo_url}"
+        raise ValueError(msg)
     except GithubException as e:
-        raise Exception(f"GitHub API error: {e.status} {e.data}")
+        msg = f"GitHub API error: {e.status} {e.data}"
+        raise Exception(msg)
 
 
 def get_repo_size(repo: Repository) -> float:
@@ -332,7 +343,8 @@ def clone_repo(
         logger.warning(f"Backend '{backend.name}' clone failed: {e}")
 
     if not _git_available():
-        raise Exception(f"Backend '{backend.name}' failed and 'git' is not available for fallback.")
+        msg = f"Backend '{backend.name}' failed and 'git' is not available for fallback."
+        raise Exception(msg)
     logger.info("Falling back to subprocess git for clone.")
     fallback = SubprocessBackend(prefer_gh=False)
     try:
@@ -340,7 +352,8 @@ def clone_repo(
         print(f"Clone completed via fallback git at {target_path}.")
         return target_path
     except Exception as e:
-        raise Exception(f"[ERROR] Clone failed: {e}")
+        msg = f"[ERROR] Clone failed: {e}"
+        raise Exception(msg)
 
 
 def has_submodules(repo_path: Path) -> bool:
@@ -357,14 +370,16 @@ def has_submodules(repo_path: Path) -> bool:
 
 def _subprocess_update_submodules(repo_root: Path) -> None:
     if not _git_available():
-        raise Exception("'git' is not available for submodule update.")
+        msg = "'git' is not available for submodule update."
+        raise Exception(msg)
     try:
         _run_subprocess(
             ["git", "submodule", "update", "--init", "--recursive"],
             cwd=repo_root,
         )
     except subprocess.CalledProcessError as e:
-        raise Exception(f"Submodule update failed in {repo_root}: {e.stderr or e}")
+        msg = f"Submodule update failed in {repo_root}: {e.stderr or e}"
+        raise Exception(msg)
 
 
 def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None:
@@ -394,7 +409,8 @@ def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None
                 _subprocess_update_submodules(current_root)
                 print(f"Submodules updated in {current_root} via fallback git.")
             except Exception as e2:
-                raise Exception(f"Submodule update failed in {current_root}: {e2}")
+                msg = f"Submodule update failed in {current_root}: {e2}"
+                raise Exception(msg)
 
         for sub in current_root.iterdir():
             if not sub.is_dir():
@@ -418,7 +434,8 @@ def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
     try:
         _update_submodules_recursive(repo_path, backend)
     except Exception as e:
-        raise Exception(f"Submodule update failed: {e}")
+        msg = f"Submodule update failed: {e}"
+        raise Exception(msg)
 
 
 def confirm_large_repo(size_mb: float) -> bool:

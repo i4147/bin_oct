@@ -3,9 +3,12 @@
 For each line, it should scan words (including handling apostrophes and preserving original casing such as title-case or all-caps) and either report misspelled words with suggested corrections to the console, or, if an autofix flag is enabled, automatically replace misspelled words with the best correction while preserving the original word's capitalization style.
 It should accept input via argparse (e.g., file path and an autofix option), track counts of misspelled and fixed words, and output the corrected text (if autofixing) or a report of misspellings and suggestions."""
 
+from __future__ import annotations
+
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
+
 from spellchecker import SpellChecker
 
 
@@ -87,16 +90,14 @@ def process_file(path: str, autofix: bool = False, num_processes: int | None = N
                     print(f"({skipped} misspelled word(s) had no suggestions and were skipped.)")
             except Exception as e:
                 print(f"Error writing to file: {e}")
+        elif total_misspelled == 0:
+            print("No misspelled words found to autofix.")
         else:
-            if total_misspelled == 0:
-                print("No misspelled words found to autofix.")
-            else:
-                print("Found misspelled words, but no automatic corrections were available.")
+            print("Found misspelled words, but no automatic corrections were available.")
+    elif total_misspelled == 0:
+        print("No misspelled words found.")
     else:
-        if total_misspelled == 0:
-            print("No misspelled words found.")
-        else:
-            print(f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix.")
+        print(f"\nFound {total_misspelled} misspelled word(s). Run with -a to autofix.")
 
 
 if __name__ == "__main__":

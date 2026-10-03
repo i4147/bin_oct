@@ -23,7 +23,8 @@ def parse_time(
     try:
         h, m, s = map(int, time_str.split(":"))
     except ValueError as exc:
-        raise ValueError(f"Invalid time format {time_str!r}; expected hh:mm:ss") from exc
+        msg = f"Invalid time format {time_str!r}; expected hh:mm:ss"
+        raise ValueError(msg) from exc
 
     return (h * hour_factor + m * minute_factor + s * second_factor) * time_scale
 

@@ -12,11 +12,13 @@ import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
 
 WORKER_COUNT: Final[int] = 8
 DEFAULT_TIMEOUT: Final[float] = 30.0

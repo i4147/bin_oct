@@ -4,6 +4,8 @@ For each given wheel path, it should open the .whl as a zip archive, parse the d
 It should then locate pip's cache directory via `pip cache dir`, construct the appropriate cache subdirectory/filename (mirroring pip's own cache key scheme), copy the wheel file there, and write a JSON metadata sidecar file describing its origin and attributes.
 The script should handle missing METADATA gracefully by raising a clear error, and should be usable for batch-processing multiple wheel files via a Path-based interface."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import shutil
@@ -18,7 +20,8 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
     with zipfile.ZipFile(wheel_path, "r") as wheel_zip:
         metadata_files = [f for f in wheel_zip.namelist() if f.endswith(".dist-info/METADATA")]
         if not metadata_files:
-            raise ValueError(f"No METADATA found in wheel {wheel_path}")
+            msg = f"No METADATA found in wheel {wheel_path}"
+            raise ValueError(msg)
         metadata_content = wheel_zip.read(metadata_files[0]).decode("utf-8")
         metadata = Parser(policy=policy.compat32).parsestr(metadata_content)
     wheel_metadata = {

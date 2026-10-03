@@ -4,6 +4,8 @@ It should take a file path as a command-line argument, where the file contains o
 For each package, it should run "apt install --reinstall -y" via subprocess, printing progress with an index counter and a short delay between installs, while logging any package names that fail (non-zero exit code) to a reset file named "reinstall_failed.txt" in the user's home directory.
 At the end, it should print a summary indicating completion and the location of the failure log."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 import time

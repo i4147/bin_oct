@@ -3,6 +3,8 @@
 It should expose a PatternLearner class that loads, updates, and persists learned correction frequencies and context-based rules in JSON form, and likely provide a CLI (via argparse) allowing users to scan file(s) or directories, apply or suggest corrections, and optionally back up originals (using shutil) before rewriting them.
 Inputs are Python source file paths or directories plus CLI flags controlling learning/correction behavior, and outputs include corrected source files, console reports of detected typos, and an updated JSON pattern database with timestamps."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -11,6 +13,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+
 from dh import PY_KEYWORDS
 
 COMMON_SUBSTITUTIONS = {

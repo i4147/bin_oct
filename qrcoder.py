@@ -4,8 +4,11 @@ It should open the image with Pillow, convert it to RGB if needed, and use pyzba
 The script must validate that exactly one argument is given and that the file exists, printing usage or error messages otherwise, and gracefully handle exceptions during decoding by printing an error to stderr and returning an empty list.
 Finally, it should print the number of QR codes found along with their decoded text content, or a message indicating none were found."""
 
+from __future__ import annotations
+
 import os
 import sys
+
 from PIL import Image
 from pyzbar import pyzbar
 

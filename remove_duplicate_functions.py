@@ -13,12 +13,14 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
-from collections.abc import Sequence
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 POOL_SIZE: int = 8
 
@@ -139,7 +141,7 @@ def process_target_file(
 def expand_input_paths(inputs: Sequence[str]) -> list[Path]:
     py_files: set[Path] = set()
     if not inputs:
-        py_files.update(Path(".").rglob("*.py"))
+        py_files.update(Path().rglob("*.py"))
     else:
         for item in inputs:
             path: Path = Path(item)

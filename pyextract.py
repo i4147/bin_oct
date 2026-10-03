@@ -183,7 +183,7 @@ def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
     start = node.lineno - 1
     decs = getattr(node, "decorator_list", None) or []
     if decs:
-        start = min(start, min(d.lineno - 1 for d in decs))
+        start = min(start, *(d.lineno - 1 for d in decs))
     end = getattr(node, "end_lineno", node.lineno) or node.lineno
     end = min(end, len(source_lines))
     if start >= end:
@@ -191,7 +191,7 @@ def _slice_ast_node(node: ast.AST, source_lines: list[str]) -> str:
     lines = source_lines[start:end]
     first_col = node.col_offset
     if decs:
-        first_col = min(first_col, min(d.col_offset for d in decs))
+        first_col = min(first_col, *(d.col_offset for d in decs))
     if first_col and len(lines[0]) > first_col:
         lines[0] = lines[0][first_col:]
     return "".join(lines)
@@ -532,7 +532,7 @@ def extract_treesitter(
                     imports.append(text(child))
                 continue
 
-            if t == "expression_statement" and (not class_stack and not func_stack or include_nested):
+            if t == "expression_statement" and ((not class_stack and not func_stack) or include_nested):
                 for sub in child.children:
                     if sub.type == "assignment":
                         left = sub.child_by_field_name("left")
@@ -568,7 +568,8 @@ def _extract(
         return extract_libcst(source, path, include_nested, constants_only)
     if parser_name == "treesitter":
         return extract_treesitter(source, path, include_nested, constants_only)
-    raise ValueError(f"unknown parser: {parser_name}")
+    msg = f"unknown parser: {parser_name}"
+    raise ValueError(msg)
 
 
 def _dedupe_entities(entities: list[Entity]) -> list[Entity]:

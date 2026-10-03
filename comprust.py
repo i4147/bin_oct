@@ -3,8 +3,11 @@
 The script should instantiate the Compressor, call its compress method with the file's text as input, and extract the compressed_text from the returned result.
 Finally, it should write the compressed output to a new file with the same name as the input but with a ".compressed" extension, placed alongside the original file."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from compression_prompt import Compressor
 
 if __name__ == "__main__":

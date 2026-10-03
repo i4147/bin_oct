@@ -9,14 +9,17 @@ The file does NOT need a ``.sh`` extension or a shebang -- it is treated as a sh
 from __future__ import annotations
 
 import argparse
+import contextlib
 import shutil
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import TYPE_CHECKING, Final, TypeAlias
 
 from dh import get_files, is_binary, runcmd  # type: ignore[import-untyped]
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 POOL_WORKERS: Final[int] = 8
 
@@ -89,7 +92,8 @@ def _run_pool(paths: Sequence[str], method: str) -> list[FormatResult]:
             ]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def collect_shell_files(cwd: Path) -> list[Path]:
@@ -183,10 +187,8 @@ def main() -> int:
 
         if not success:
             failed_path = Path(p_str)
-            try:
+            with contextlib.suppress(ValueError):
                 failed_path = failed_path.relative_to(cwd)
-            except ValueError:
-                pass
 
             if move_errors:
                 move_failed_files([failed_path], cwd)

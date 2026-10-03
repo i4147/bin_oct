@@ -110,7 +110,7 @@ def sha256_file(path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> Optional[st
 
 
 def ensure_parent(path: Path) -> None:
-    if path.parent and path.parent != Path("."):
+    if path.parent and path.parent != Path():
         path.parent.mkdir(parents=True, exist_ok=True)
 
 
@@ -228,7 +228,8 @@ def is_doc_path(path_str: str, mode: str) -> bool:
             f"/{item}/" in text or text.endswith(f"/{item}") for item in ("share/man", "share/info", "share/doc")
         )
 
-    raise ValueError(f"Unknown filter mode: {mode}")
+    msg = f"Unknown filter mode: {mode}"
+    raise ValueError(msg)
 
 
 def check_package_missing_full(pkg: str, filter_mode: str, timeout: float) -> dict[str, Any]:
@@ -357,7 +358,8 @@ def get_package_files(pkg: str) -> list[str]:
             return [line for line in result.stdout.strip().splitlines() if line]
         except (subprocess.CalledProcessError, FileNotFoundError):
             continue
-    raise SystemExit(f"Error: could not find package '{pkg}' via dpkg or rpm.")
+    msg = f"Error: could not find package '{pkg}' via dpkg or rpm."
+    raise SystemExit(msg)
 
 
 def cmd_copy_pkg_files(args: argparse.Namespace) -> int:
@@ -437,7 +439,8 @@ def parse_dpkg_status(status_text: str) -> dict[str, dict[str, list[str]]]:
 def cmd_orphan_libs_debian(args: argparse.Namespace) -> int:
     status_path = Path(args.status_file)
     if not status_path.exists():
-        raise SystemExit(f"Missing {status_path}. This script expects a Debian-style dpkg database.")
+        msg = f"Missing {status_path}. This script expects a Debian-style dpkg database."
+        raise SystemExit(msg)
 
     packages = parse_dpkg_status(status_path.read_text(errors="replace"))
 
@@ -487,7 +490,7 @@ def termux_get_deps(pkg: str, pkg_cmd: str) -> set[str]:
     deps: set[str] = set()
 
     for line in result.stdout.splitlines():
-        if line.startswith("Depends:") or line.startswith("Pre-Depends:"):
+        if line.startswith(("Depends:", "Pre-Depends:")):
             value = line.split(":", 1)[1].strip()
             for dep in value.split(","):
                 name = dep.strip().split()[0]
@@ -653,9 +656,10 @@ def cmd_make_deb(args: argparse.Namespace) -> int:
         import apt  # type: ignore
         from loguru import logger  # type: ignore
     except ImportError:
-        raise SystemExit(
+        msg = (
             "make-deb requires python-apt and loguru. Install with `apt install python3-apt` and `pip install loguru`."
         )
+        raise SystemExit(msg)
 
     out_dir = Path(args.output_dir).expanduser()
     log_path = Path(args.log).expanduser()

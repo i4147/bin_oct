@@ -3,12 +3,15 @@
 It should accept command-line arguments via argparse for the target directory, recursion toggle, and max display dimensions, then iterate through discovered image paths and print each one to the console.
 Include error handling for missing dependencies (like cairosvg for SVG support) and invalid or corrupted image files, using pathlib for filesystem operations and typing hints for clarity."""
 
+from __future__ import annotations
+
 import argparse
 import io
 import shutil
 import sys
 from pathlib import Path
 from typing import Iterator
+
 from PIL import Image
 
 IMAGE_EXTENSIONS = {
@@ -31,9 +34,11 @@ def load_image(file_path: Path) -> Image.Image:
             png_bytes = cairosvg.svg2png(url=str(file_path))
             return Image.open(io.BytesIO(png_bytes)).convert("RGBA")
         except ImportError:
-            raise RuntimeError("cairosvg is required to render SVG files. Run: pip install cairosvg")
+            msg = "cairosvg is required to render SVG files. Run: pip install cairosvg"
+            raise RuntimeError(msg)
         except Exception as err:
-            raise ValueError(f"Failed to render SVG file: {err}")
+            msg = f"Failed to render SVG file: {err}"
+            raise ValueError(msg)
     img = Image.open(file_path)
     return img.convert("RGBA")
 
@@ -103,11 +108,11 @@ def main() -> None:
     max_h = args.height or (term_rows - 2)
     targets: list[Path] = []
     if not args.inputs:
-        targets = sorted(list(find_images(Path.cwd(), recursive=True)))
+        targets = sorted(find_images(Path.cwd(), recursive=True))
     else:
         for path in args.inputs:
             if path.is_dir():
-                targets.extend(sorted(list(find_images(path, recursive=True))))
+                targets.extend(sorted(find_images(path, recursive=True)))
             elif path.is_file():
                 targets.append(path)
     if not targets:

@@ -4,6 +4,8 @@ It should read the PATH variable, iterate through each valid directory, and iden
 For any filename found in more than one directory, the script should print the duplicate name along with all its locations, marking the first occurrence as ACTIVE and the rest as SHADOWED to indicate which one would actually be executed by the shell.
 The script should handle permission errors gracefully by skipping inaccessible directories with a warning message, and print a final message if no duplicates are found."""
 
+from __future__ import annotations
+
 import os
 from collections import defaultdict
 from pathlib import Path

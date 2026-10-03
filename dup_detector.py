@@ -3,6 +3,8 @@
 The script should support multiprocessing to speed up file parsing and hashing, use rapidfuzz for similarity scoring between hashes, and group or report clusters of similar objects (.g., via a defaultdict keyed by hash or similarity threshold).
 It should accept command-line arguments (via argparse) for configuring the target directory and other options, gracefully handle missing dependencies by printing an install hint and exiting, and output results as structured data such as JSON."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import hashlib

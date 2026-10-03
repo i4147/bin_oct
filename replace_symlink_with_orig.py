@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Replace symlinks under the current directory with copies of their targets: scan for symlinks, resolve each in a multiprocessing pool of 8 workers, skip `bin/` siblings and `.so` targets, and log replaced and errored symlinks to `replaced.txt` and `errors.txt` via loguru."""
 
+from __future__ import annotations
+
 import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path

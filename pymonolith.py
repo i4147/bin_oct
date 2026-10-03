@@ -56,7 +56,8 @@ class Monolith:
         self.ignore_errors = ignore_errors
         self.no_images = no_images
         if css_mode not in ("inline", "data-uri"):
-            raise ValueError(f"Invalid css_mode: {css_mode!r}")
+            msg = f"Invalid css_mode: {css_mode!r}"
+            raise ValueError(msg)
         self.css_mode = css_mode
         self.prettify = prettify
         self.inject_meta_charset = inject_meta_charset

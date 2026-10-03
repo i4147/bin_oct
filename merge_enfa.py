@@ -4,6 +4,8 @@ The script should load and preserve any existing output dictionary (default "dic
 It should identify matching English/Farsi file pairs based on filename patterns (accounting for file extensions), then merge new translations into the existing dictionary while tracking entries that fail to pair or parse correctly.
 Print progress messages using emoji-prefixed status indicators (e.g., 📖, ⚠️) throughout the process to inform the user of loading and merging progress."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 

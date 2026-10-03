@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Universal command wrapper with: - Glob expansion for arguments - Colored output (auto-disables when not a TTY) - Logging to ~/tmp/log/apps/ - Exit code preservation - Optional timestamp prefix - Clipboard support via termux-clipboard-set (max 1MB) — ENABLED BY DEFAULT"""
 
+from __future__ import annotations
+
 import argparse
 import datetime
 import glob
@@ -126,7 +128,8 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
 
     if not rest:
         parser.print_usage(sys.stderr)
-        raise SystemExit("error: provide a command to wrap, e.g. wrapper.py ls -la *.py")
+        msg = "error: provide a command to wrap, e.g. wrapper.py ls -la *.py"
+        raise SystemExit(msg)
 
     return rest[0], rest[1:], known
 

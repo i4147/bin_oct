@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import importlib
 import sys
 from collections import Counter, defaultdict
@@ -151,7 +152,7 @@ def _collect_package_aliases(
         if isinstance(node, ast.Import):
             for alias in node.names:
                 if alias.name == package or alias.name.startswith(package + "."):
-                    aliases.add(alias.asname if alias.asname else alias.name)
+                    aliases.add(alias.asname or alias.name)
     return aliases
 
 
@@ -208,7 +209,7 @@ def count_calls(
                 if module == base or module.endswith("." + base):
                     counts[module][func.attr] += 1
 
-    return {k: v for k, v in counts.items()}
+    return dict(counts.items())
 
 
 def _extract_imports_full(
@@ -240,7 +241,8 @@ def analyze_directory(
 ]:
     files = sorted(directory.glob("*.py"))
     if not files:
-        raise FileNotFoundError(f"No .py files found in {directory}")
+        msg = f"No .py files found in {directory}"
+        raise FileNotFoundError(msg)
 
     per_file: list[tuple[str, dict[str, Counter[str]]]] = []
     for f in files:
@@ -400,16 +402,15 @@ def build_report(
 
 def _load_matplotlib():
     try:
-        import matplotlib
+        import matplotlib as mpl
 
-        matplotlib.use("Agg")
+        mpl.use("Agg")
         import matplotlib.pyplot as plt
 
         return plt
     except ImportError as exc:  # pragma: no cover
-        raise SystemExit(
-            "matplotlib is required for the 'charts' subcommand. Install it with: pip install matplotlib"
-        ) from exc
+        msg = "matplotlib is required for the 'charts' subcommand. Install it with: pip install matplotlib"
+        raise SystemExit(msg) from exc
 
 
 def generate_charts(
@@ -426,10 +427,8 @@ def generate_charts(
         return
 
     plt = _load_matplotlib()
-    try:
+    with contextlib.suppress(OSError):
         plt.style.use(style)
-    except OSError:
-        pass
 
     chart_dir.mkdir(parents=True, exist_ok=True)
     print("\n📊 Generating matplotlib charts...")

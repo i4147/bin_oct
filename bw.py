@@ -4,8 +4,11 @@ It should open the image with Pillow, convert it to RGB, compute the perceived b
 Based on configurable thresholds, it should label the image as "Mostly Dark", "Mostly Bright", or "Mixed", then print the image filename with its classification and the dark pixel ratio.
 If no image path argument is provided, the script should print a usage message and exit with a nonzero status code."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from PIL import Image
 
 

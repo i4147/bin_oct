@@ -3,6 +3,8 @@
 The script should read the file's entire text content as UTF-8, replace every actual newline character with the literal two-character sequence backslash-n, and then overwrite the same file with this modified content.
 Use pathlib.Path for file reading and writing, and structure the code with a main() function invoked via SystemExit under the standard __main__ guard."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

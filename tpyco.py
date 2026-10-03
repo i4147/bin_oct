@@ -62,20 +62,13 @@ _NON_ENGLISH_WORDS: Final[frozenset[str]] = frozenset(
         " pour ",
         " avec ",
         " est ",
-        " que ",
-        " les ",
-        " los ",
-        " las ",
         " de ",
         " en ",
         " un ",
         " uma ",
-        " uma ",
         " não ",
         " não",
         " são ",
-        " que ",
-        " para ",
         " com ",
         " هذا ",
         " هذه ",
@@ -165,7 +158,8 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
     for root in roots:
         path = root.expanduser()
         if not path.exists():
-            raise FileNotFoundError(f"Input path does not exist: {path}")
+            msg = f"Input path does not exist: {path}"
+            raise FileNotFoundError(msg)
 
         if path.is_file():
             if path.suffix == ".py":
@@ -173,7 +167,8 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
         elif path.is_dir():
             discovered.update(candidate.resolve() for candidate in path.rglob("*.py") if candidate.is_file())
         else:
-            raise OSError(f"Input path is neither a regular file nor directory: {path}")
+            msg = f"Input path is neither a regular file nor directory: {path}"
+            raise OSError(msg)
 
     return sorted(discovered)
 
@@ -191,7 +186,8 @@ def contains_probable_non_english(text: str) -> bool:
 
 def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
     if limit <= 0:
-        raise ValueError("chunk size must be greater than zero")
+        msg = "chunk size must be greater than zero"
+        raise ValueError(msg)
 
     chunks: list[tuple[int, int, str]] = []
     start = 0
@@ -350,11 +346,13 @@ def translate_google(text: str, timeout: float) -> str:
     payload = http_json_request(request, timeout)
 
     if not isinstance(payload, list) or not payload or not isinstance(payload[0], list):
-        raise ValueError("Google returned an unexpected response")
+        msg = "Google returned an unexpected response"
+        raise ValueError(msg)
 
     translated = "".join(item[0] for item in payload[0] if isinstance(item, list) and item and isinstance(item[0], str))
     if not translated:
-        raise ValueError("Google returned empty translation")
+        msg = "Google returned empty translation"
+        raise ValueError(msg)
 
     return translated
 
@@ -374,11 +372,13 @@ def translate_libretranslate(text: str, url: str, timeout: float) -> str:
     payload = http_json_request(request, timeout)
 
     if not isinstance(payload, dict) or not isinstance(payload.get("translatedText"), str):
-        raise ValueError("LibreTranslate returned an unexpected response")
+        msg = "LibreTranslate returned an unexpected response"
+        raise ValueError(msg)
 
     translated = payload["translatedText"]
     if not translated:
-        raise ValueError("LibreTranslate returned empty translation")
+        msg = "LibreTranslate returned empty translation"
+        raise ValueError(msg)
 
     return translated
 
@@ -404,7 +404,8 @@ def translate_with_retry(text: str) -> str:
             )
             time.sleep(wait)
 
-    raise RuntimeError(f"Translation failed after {MAX_RETRIES} attempts: {last_error}")
+    msg = f"Translation failed after {MAX_RETRIES} attempts: {last_error}"
+    raise RuntimeError(msg)
 
 
 def worker_initializer(
@@ -446,7 +447,8 @@ def apply_translations(
 
     for edit in edits:
         if edit.end > previous_start or edit.start < 0 or edit.end < edit.start:
-            raise ValueError("Overlapping or invalid translation edit detected")
+            msg = "Overlapping or invalid translation edit detected"
+            raise ValueError(msg)
         output = output[: edit.start] + edit.replacement + output[edit.end :]
         previous_start = edit.start
 
@@ -458,7 +460,8 @@ def validate_python(source: str, path: Path) -> None:
         ast.parse(source, filename=str(path))
         compile(source, str(path), "exec")
     except SyntaxError as error:
-        raise SyntaxError(f"Translated source is invalid for {path}: {error}") from error
+        msg = f"Translated source is invalid for {path}: {error}"
+        raise SyntaxError(msg) from error
 
 
 def atomic_write(path: Path, content: str, encoding: str) -> None:
@@ -524,11 +527,14 @@ def main() -> int:
     args = parse_arguments()
 
     if args.chunk_size <= 0:
-        raise ValueError("--chunk-size must be greater than zero")
+        msg = "--chunk-size must be greater than zero"
+        raise ValueError(msg)
     if args.delay < 0:
-        raise ValueError("--delay cannot be negative")
+        msg = "--delay cannot be negative"
+        raise ValueError(msg)
     if args.timeout <= 0:
-        raise ValueError("--timeout must be greater than zero")
+        msg = "--timeout must be greater than zero"
+        raise ValueError(msg)
 
     files = discover_python_files(args.paths)
     logger.info("Discovered {} Python file(s)", len(files))

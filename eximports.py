@@ -10,15 +10,17 @@ The generated script should: - Recursively discover "*.py" files under the curre
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable
 from importlib.metadata import distributions
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import tree_sitter_python as tsp
 from loguru import logger
 from tree_sitter import Language, Parser
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 POOL_SIZE: Final[int] = 8
 OUTPUT_FILE: Final[str] = "importz.txt"

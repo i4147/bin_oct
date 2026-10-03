@@ -3,6 +3,8 @@
 For each file it should report the file path, the count and line numbers of matches, and optionally support an auto-fix mode that rewrites "is not" token pairs into "!=" and writes the modified source back to disk.
 The script should use argparse to accept input paths and an auto-fix flag, process files concurrently with concurrent.futures for performance, and gracefully capture and report any read/tokenize/write errors per file without crashing the whole run."""
 
+from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import os
@@ -68,7 +70,7 @@ def main():
         help="Automatically replace 'is not' with '!=' across files.",
     )
     args = parser.parse_args()
-    current_dir = Path(".")
+    current_dir = Path()
     py_files = list(current_dir.rglob("*.py"))
     script_path = Path(__file__).resolve()
     py_files = [f for f in py_files if f.resolve() != script_path]

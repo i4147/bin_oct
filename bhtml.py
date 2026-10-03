@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import shutil
 import subprocess
@@ -91,13 +92,12 @@ def beautify(path: Path) -> Path:
             )
         if proc.returncode != 0:
             stderr = proc.stderr.decode("utf-8", "replace").strip()
-            raise RuntimeError(f"{BEAUTIFIER[0]} exited with {proc.returncode}: {stderr}")
+            msg = f"{BEAUTIFIER[0]} exited with {proc.returncode}: {stderr}"
+            raise RuntimeError(msg)
         os.replace(tmp, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             tmp.unlink(missing_ok=True)
-        except OSError:
-            pass
         raise
     return path
 

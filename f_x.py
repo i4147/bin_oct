@@ -3,6 +3,8 @@
 It should use a multiprocessing pool of 8 workers to check each file's modification time in parallel, gracefully skipping files that raise OSError or PermissionError.
 The script must validate that the argument is a non-negative integer, print the total number of files scanned, and finally output the matching files sorted by modification time in descending order (most recently modified first), showing each file's path and timestamp."""
 
+from __future__ import annotations
+
 import sys
 import time
 from datetime import datetime

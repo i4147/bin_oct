@@ -4,9 +4,11 @@ The script should read the input file line by line, correctly unfold folded line
 It must handle vCard property parameters such as ENCODING and CHARSET, decoding quoted-printable encoded values into readable text using the specified charset (falling back to UTF-8 if the charset is invalid).
 The final output should be a list of parsed contact cards saved or printed as JSON, suitable for further processing or inspection."""
 
-import sys
+from __future__ import annotations
+
 import json
 import quopri
+import sys
 from pathlib import Path
 
 
@@ -37,7 +39,7 @@ def parse_vcard(input_path):
     with input_path.open("r", encoding="utf-8") as f:
         for raw in f:
             line = raw.rstrip("\r\n")
-            if line.startswith(" ") or line.startswith("\t"):
+            if line.startswith((" ", "\t")):
                 if logical_lines:
                     logical_lines[-1] += line[1:]
             else:

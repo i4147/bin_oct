@@ -3,6 +3,8 @@
 For each URL, it should decode and sanitize the movie name into a safe filename, skip and report lines with invalid or malformed URLs (missing the "series" segment), and write each group's URLs into a separate text file named after the movie inside a "split_movies" subdirectory created next to the input file.
 The script should handle missing/invalid input file arguments by printing usage instructions and exiting with an error code."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

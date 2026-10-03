@@ -3,6 +3,8 @@
 Automatically selects optimal compression algorithms based on file types, sizes, and content analysis.
 Supports multiple compression formats including zstd, brotli, lz4, lzma, gzip, and bz2 with parallel processing capabilities."""
 
+from __future__ import annotations
+
 import argparse
 import bz2
 import gzip
@@ -148,7 +150,8 @@ def compress_data(data: bytes, algo: str, level: int, is_large: bool = False) ->
     elif algo == "lz4":
         return compress_lz4(data, level)
     else:
-        raise ValueError(f"Unknown algorithm: {algo}")
+        msg = f"Unknown algorithm: {algo}"
+        raise ValueError(msg)
 
 
 def is_already_compressed(data: bytes, sample_size: int = 4096) -> bool:
@@ -316,7 +319,7 @@ def create_tar_archive(
 
     tar_path = Path(str(output_path).replace(".gz", "").replace(".xz", "").replace(".zst", "").replace(".br", ""))
 
-    if compression != "none" and compression != "auto":
+    if compression not in {"none", "auto"}:
         tar_path = tar_path.with_suffix("")
 
     print(f"Creating archive from {source_dir}...")
@@ -346,7 +349,8 @@ def create_tar_archive(
             algo = compression
             level = level or (11 if algo == "brotli" else 19 if algo == "zstd" else 9)
         else:
-            raise ValueError(f"Unsupported compression: {compression}")
+            msg = f"Unsupported compression: {compression}"
+            raise ValueError(msg)
 
         print(f"Compressing with {algo.upper()} (level {level})...")
         is_large = len(tar_data) > 50 * 1024 * 1024
@@ -409,7 +413,8 @@ def decompress_file(
 
     algo = algo_map.get(ext)
     if not algo:
-        raise ValueError(f"Unknown compression format: {ext}")
+        msg = f"Unknown compression format: {ext}"
+        raise ValueError(msg)
 
     with open(compressed_path, "rb") as f:
         compressed_data = f.read()
@@ -429,13 +434,14 @@ def decompress_file(
     elif algo == "bz2":
         data = bz2.decompress(compressed_data)
     else:
-        raise ValueError(f"Decompression not implemented for {algo}")
+        msg = f"Decompression not implemented for {algo}"
+        raise ValueError(msg)
 
     if output_dir:
         output_path = Path(output_dir) / compressed_path.stem
     else:
         output_path = compressed_path.with_suffix("")
-        if output_path.suffix in [".tar"]:
+        if output_path.suffix == ".tar":
             output_path = output_path.with_suffix("")
 
     with open(output_path, "wb") as f:

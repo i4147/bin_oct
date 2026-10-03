@@ -4,6 +4,8 @@ It should include a static method to determine whether a given Persian year is a
 The core conversion method should take a Persian year, month, and day, validate that the month is between 1 and 12 and the day is valid for that month (accounting for the leap-year adjustment in Esfand), then compute the total number of elapsed days since the start of the Persian calendar by summing days from prior years and prior months before adding the remaining days, ultimately producing the corresponding Gregorian date.
 The script should raise descriptive ValueError exceptions for invalid month or day inputs and rely on Python's datetime and sys modules for supporting functionality."""
 
+from __future__ import annotations
+
 import datetime
 import sys
 
@@ -32,12 +34,14 @@ class PersianDateConverter:
     @staticmethod
     def persian_to_gregorian(persian_year, persian_month, persian_day):
         if persian_month < 1 or persian_month > 12:
-            raise ValueError(f"Month must be between 1 and 12, got {persian_month}")
+            msg = f"Month must be between 1 and 12, got {persian_month}"
+            raise ValueError(msg)
         max_day = PersianDateConverter.PERSIAN_MONTH_LENGTHS[persian_month - 1]
         if persian_month == 12 and PersianDateConverter.is_persian_leap_year(persian_year):
             max_day = 30
         if persian_day < 1 or persian_day > max_day:
-            raise ValueError(f"Day must be between 1 and {max_day} for month {persian_month}, got {persian_day}")
+            msg = f"Day must be between 1 and {max_day} for month {persian_month}, got {persian_day}"
+            raise ValueError(msg)
         days = 0
         for year in range(1, persian_year):
             if PersianDateConverter.is_persian_leap_year(year):

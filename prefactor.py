@@ -4,6 +4,8 @@ It takes a root directory path (and optional exclusion path, package mode/name s
 The output is a report identifying modules with the most dependencies or dependents, helping developers understand coupling and complexity within the codebase.
 Notable behaviors include skipping `__pycache__` directories, handling both package-style (`__init__.py`) and flat module layouts, and gracefully falling back to string-based path comparison when `Path.is_relative_to` is unavailable or fails."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import sys
@@ -45,11 +47,11 @@ def module_fullname_for_path(root: Path, path: Path, package_mode: bool, package
     if parts and parts[-1] == "__init__":
         parts = parts[:-1]
         if package_mode:
-            return package_name if package_name else root.name
+            return package_name or root.name
         else:
             return ".".join(parts) if parts else root.name
     elif package_mode:
-        prefix = package_name if package_name else root.name
+        prefix = package_name or root.name
         return ".".join([prefix] + parts)
     else:
         return ".".join(parts)
@@ -84,7 +86,7 @@ def analyze_file(args) -> ModuleInfo:
             for alias in node.names:
                 name = alias.name
                 if package_mode:
-                    prefix = package_name if package_name else root.name
+                    prefix = package_name or root.name
                     if name == prefix or name.startswith(prefix + "."):
                         deps.add(name)
                 else:
@@ -98,7 +100,7 @@ def analyze_file(args) -> ModuleInfo:
             if resolved:
                 deps.add(resolved)
             elif package_mode and mod:
-                prefix = package_name if package_name else root.name
+                prefix = package_name or root.name
                 if mod == prefix or mod.startswith(prefix + "."):
                     deps.add(mod)
     normalized: set[str] = set()
@@ -245,7 +247,7 @@ def main():
         print("No Python files found under input directory.", file=sys.stderr)
         sys.exit(2)
     package_mode = (root / "__init__.py").exists()
-    package_name = args.package_name if args.package_name else root.name if package_mode else None
+    package_name = args.package_name or (root.name if package_mode else None)
     if len(files) > args.max_files and not args.force:
         print(
             f"Found {len(files)} files which is > {args.max_files}. Use --force to override.",

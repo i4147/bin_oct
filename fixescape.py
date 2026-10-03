@@ -2,7 +2,10 @@
 """Write a Python command-line tool that scans one or more Python source files (optionally recursively) to detect string literals containing invalid escape sequences, which trigger SyntaxWarning or SyntaxError, using tokenize and compile checks.
 It should use multiprocessing to process files in parallel, print colored (red/cyan ANSI) diagnostic messages showing the file, line, and offending string, and optionally auto-fix the issues in place by converting problematic strings to raw strings or properly escaping backslashes when a "fix" flag is passed via argparse."""
 
+from __future__ import annotations
+
 import argparse
+import contextlib
 import io
 import multiprocessing as mp
 import pathlib
@@ -42,20 +45,16 @@ def check_and_fix_file(args):
         has_warning = any("invalid escape sequence" in str(warn.message) for warn in w)
     if not has_warning and not has_syntax_error:
         return filepath_str, False, [], None
-    try:
+    with contextlib.suppress(tokenize.TokenError):
         tokens = list(tokenize.generate_tokens(io.StringIO(source_text).readline))
-    except tokenize.TokenError:
-        pass
     issues = []
     replacements = []
     for tok in tokens:
         if tok.type == tokenize.STRING:
             with warnings.catch_warnings(record=True) as w2:
                 warnings.simplefilter("always", SyntaxWarning)
-                try:
+                with contextlib.suppress(Exception):
                     compile(tok.string, "<string>", "eval")
-                except Exception:
-                    pass
                 if any("invalid escape sequence" in str(warn.message) for warn in w2):
                     m = re.match(r'^([a-zA-Z_]*)(["\'].*)$', tok.string, re.DOTALL)
                     if m:
@@ -79,7 +78,7 @@ def check_and_fix_file(args):
     lines = source_text.splitlines(keepends=True)
     output = []
     output.append(f"{CYAN}File: {filepath}{RESET}")
-    issue_lines = sorted(list(set(line_num for line_num, _, _ in issues)))
+    issue_lines = sorted({line_num for line_num, _, _ in issues})
     for lineno in issue_lines:
         idx = lineno - 1
         if idx - 1 >= 0:

@@ -173,7 +173,8 @@ def _otf2ttf_worker(src: Path, keep_source: bool) -> dict:
                 del font[tag]
 
         if "glyf" not in font:
-            raise ValueError("Failed to create glyf table")
+            msg = "Failed to create glyf table"
+            raise ValueError(msg)
 
         font.sfVersion = "\x00\x01\x00\x00"
         font.reader = None
@@ -331,9 +332,8 @@ def cmd_tottf(args: argparse.Namespace) -> int:
 
     success = 0
     for src in files:
-        if src.suffix.lower() != ".ttf":
-            if _tottf_worker(src, args.remove_source):
-                success += 1
+        if src.suffix.lower() != ".ttf" and _tottf_worker(src, args.remove_source):
+            success += 1
 
     print(f"\nConverted {success}/{len(files)} files.")
     return 0

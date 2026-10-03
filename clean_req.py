@@ -5,6 +5,8 @@ It should remove empty lines and duplicate entries, then sort the resulting pack
 The script should overwrite the original file with the cleaned, sorted list (one package per line) and also print the cleaned list to stdout under a "=== Cleaned Requirements ===" header.
 Handle missing file errors and incorrect usage by printing a helpful message to stderr and exiting with status code 1."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

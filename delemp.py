@@ -4,11 +4,14 @@ It should use a custom is_binary/fsz helper module (dh) plus its own signature-b
 The script should support two cleanup modes: completely removing all blank lines, or collapsing consecutive blank lines down to a single blank line, and it should process multiple files concurrently using a ProcessPoolExecutor for speed.
 It should accept command-line arguments (via argparse) to specify target paths, choose the blank-line handling mode, and control other options like verbosity, then print colorized (ANSI-coded) progress and summary output showing which files were modified, skipped as binary, or left unchanged."""
 
+from __future__ import annotations
+
 import argparse
 import mmap
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+
 from dh import fsz, is_binary
 
 MMAP_THRESHOLD = 1024 * 1024

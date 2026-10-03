@@ -3,6 +3,8 @@
 For each file, it should check for pkg_resources imports, then use regex patterns to locate specific deprecated calls (e.g., resource_filename, resource_string, require, get_distribution, iter_entry_points, parse_version), recording the matched pattern and line number for each occurrence, while gracefully handling file read/encoding errors.
 The script should use argparse to accept command-line options (like target directory/files) and multiprocessing.Pool to scan multiple files in parallel for performance, ultimately outputting a report of files containing pkg_resources usage along with the detected patterns and their line numbers."""
 
+from __future__ import annotations
+
 import argparse
 import re
 from multiprocessing import Pool
@@ -164,7 +166,7 @@ Examples:
         help="Number of parallel processes (default: 4)",
     )
     args = parser.parse_args()
-    paths = args.paths if args.paths else ["."]
+    paths = args.paths or ["."]
     py_files = collect_python_files(paths)
     if not py_files:
         print("No .py files found.")

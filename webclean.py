@@ -73,7 +73,8 @@ def get_parser(lang: str, tsx: bool = False):
         fn = m.language_tsx if tsx else m.language_typescript
         lang_obj = Language(fn())
     else:
-        raise ValueError(f"unknown language: {lang}")
+        msg = f"unknown language: {lang}"
+        raise ValueError(msg)
 
     try:
         parser = Parser(lang_obj)
@@ -459,7 +460,7 @@ def discover_files(paths: list[str], extensions: set[str], follow_symlinks: bool
                 print(f"warning: path not found: {root}", file=sys.stderr)
         except OSError as exc:
             print(f"warning: cannot scan {root}: {exc}", file=sys.stderr)
-    out.sort(key=lambda p: str(p))
+    out.sort(key=str)
     return out
 
 

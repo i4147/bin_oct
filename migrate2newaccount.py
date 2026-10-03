@@ -3,6 +3,8 @@
 For each valid repository, it should stage and commit any uncommitted changes with a "migration sync" message, create a new private repository on GitHub using the "gh" CLI, update the repository's remote origin URL to point to the new account via SSH, and push all branches and tags to the new remote.
 The script should use "os" for directory traversal and "subprocess" to execute Git and GitHub CLI commands, suppressing their output, and should safely change directories in and out of each repository during processing."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 

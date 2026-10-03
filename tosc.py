@@ -4,10 +4,13 @@ It should accept file paths and/or glob patterns as command-line arguments, expa
 For each resolved file it should move it into the destination directory using shutil.move, relying on a helper function unique_path (imported from a module named dh) to rename the target if a file with the same name already exists there, and print a line showing the original filename and the final destination filename.
 If no arguments are provided, it should print a usage message to stderr and exit with status 1."""
 
+from __future__ import annotations
+
 import glob
 import shutil
 import sys
 from pathlib import Path
+
 from dh import unique_path
 
 dest = Path.home() / "isaac" / "may" / "scripts"

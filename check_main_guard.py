@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Inspect .py files in the current folder and report ones missing the main guard."""
 
+from __future__ import annotations
+
 import ast
 import sys
 from pathlib import Path
@@ -47,9 +49,8 @@ def main():
 
     cwd = Path.cwd()
     for p in walk_files(cwd):
-        if p.is_file() and p.suffix == ".py" and p.name != Path(__file__).name:
-            if not has_main_guard(p):
-                print(p.name)
+        if p.is_file() and p.suffix == ".py" and p.name != Path(__file__).name and not has_main_guard(p):
+            print(p.name)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,12 @@
 Parse the XML content with xml.etree.ElementTree to extract each item's title, link, description, publication date, and GUID, deriving the package name from the first token of the title, and handle malformed XML gracefully by catching parse errors and printing messages to stderr.
 Return the parsed entries as a list of dictionaries for further processing or display, such as printing a formatted summary of the most recently published packages on PyPI."""
 
+from __future__ import annotations
+
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
 import requests
 
 PYPI_RSS_URL = "https://pypi.org/rss/packages.xml"

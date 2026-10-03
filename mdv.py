@@ -3,15 +3,17 @@
 The script should build its argument parser with argparse, handle errors gracefully by printing readable messages to stderr for cases like missing files, permission errors, or invalid UTF-8 encoding, and return appropriate non-zero exit codes on failure.
 It should optionally use the readchar library, if available, to support paginated or key-driven navigation of the rendered content, falling back gracefully when readchar is not installed."""
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
+
 from rich.console import Console
 from rich.markdown import Markdown
 
 try:
-    from readchar import key as RKEY
-    from readchar import readkey
+    from readchar import key as RKEY, readkey
 
     HAVE_READCHAR = True
 except Exception:
@@ -21,7 +23,8 @@ except Exception:
 def read_markdown(path: str | Path) -> str:
     path = Path(path)
     if not path.is_file():
-        raise FileNotFoundError(f"File not found: {path}")
+        msg = f"File not found: {path}"
+        raise FileNotFoundError(msg)
     return path.read_text(encoding="utf-8")
 
 

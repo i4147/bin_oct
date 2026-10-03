@@ -4,6 +4,8 @@ It should take a single CSV file path as a command-line argument, read the first
 The script should validate that the input file exists and that the CSV has at least two columns, printing an error message and exiting with status 1 otherwise.
 Finally, it should write the resulting dictionary as indented, UTF-8-encoded JSON to a file with the same name as the input but with a .json extension, and print a confirmation message showing the source and destination file paths."""
 
+from __future__ import annotations
+
 import csv
 import json
 import sys

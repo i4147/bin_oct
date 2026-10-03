@@ -12,14 +12,16 @@ import argparse
 import io
 import re
 import tokenize
-from collections.abc import Callable
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from dh import fsz
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @dataclass

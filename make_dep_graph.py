@@ -4,6 +4,8 @@ For each package found, parse the "Requires-Dist" lines, strip version specifier
 If no site-packages directory can be located, return an error message string instead.
 When run as a script, compute this mapping and output it as formatted JSON (or print the error message if applicable)."""
 
+from __future__ import annotations
+
 import json
 import os
 import re

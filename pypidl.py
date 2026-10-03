@@ -94,7 +94,7 @@ def human_size(n: float) -> str:
 
 
 def _clean_spec(spec: str) -> str:
-    return spec.split("==")[0].split(">=")[0].split("<=")[0].strip()
+    return spec.split("==", maxsplit=1)[0].split(">=", maxsplit=1)[0].split("<=", maxsplit=1)[0].strip()
 
 
 def fetch_json_multi_mirror(pkg_name: str) -> dict:
@@ -108,13 +108,15 @@ def fetch_json_multi_mirror(pkg_name: str) -> dict:
                         return json.loads(resp.read().decode("utf-8"))
             except Exception:  # noqa: BLE001
                 continue
-    raise RuntimeError(f"Failed to fetch metadata for '{pkg_name}' from all mirrors.")
+    msg = f"Failed to fetch metadata for '{pkg_name}' from all mirrors."
+    raise RuntimeError(msg)
 
 
 def fetch_json_pypi(pkg_name: str) -> dict:
     r = requests.get(f"https://pypi.org/pypi/{pkg_name}/json")
     if r.status_code != 200:
-        raise ValueError(f"Failed to fetch package info for {pkg_name}")
+        msg = f"Failed to fetch package info for {pkg_name}"
+        raise ValueError(msg)
     return r.json()
 
 
@@ -159,7 +161,8 @@ def pick_mirror_file(files: list[dict], version: str) -> Optional[dict]:
             continue
         candidates.append(f)
     if not candidates:
-        raise RuntimeError(f"No suitable source or neutral wheel release files found for version {version}.")
+        msg = f"No suitable source or neutral wheel release files found for version {version}."
+        raise RuntimeError(msg)
     sdists = [f for f in candidates if f["filename"].endswith(".tar.gz")]
     if sdists:
         return sdists[0]
@@ -286,13 +289,15 @@ def cmd_basic(args: argparse.Namespace) -> int:
     meta = fetch_json_pypi(args.package)
     releases = meta.get("releases", {})
     if not releases:
-        raise ValueError(f"No releases for {args.package}")
+        msg = f"No releases for {args.package}"
+        raise ValueError(msg)
     latest = max(releases.keys())
     print(f"latest version : {latest}")
     files = releases[latest]
     chosen = pick_py3_any_wheel_or_sdist(files)
     if chosen is None:
-        raise ValueError(f"No suitable file for {args.package} {latest}")
+        msg = f"No suitable file for {args.package} {latest}"
+        raise ValueError(msg)
     url = chosen["url"]
     name = chosen["filename"]
     out_dir = Path(args.output).resolve()
@@ -309,16 +314,19 @@ def cmd_download(args: argparse.Namespace) -> int:
     meta = fetch_json_pypi(args.package)
     releases = meta.get("releases", {})
     if not releases:
-        raise ValueError(f"No releases found for {args.package}")
+        msg = f"No releases found for {args.package}"
+        raise ValueError(msg)
     if args.version:
         if args.version not in releases:
-            raise ValueError(f"Version {args.version} not found for {args.package}")
+            msg = f"Version {args.version} not found for {args.package}"
+            raise ValueError(msg)
         files = releases[args.version]
     else:
         latest = meta.get("info", {}).get("version")
         files = releases.get(latest, [])
     if not files:
-        raise ValueError("No downloadable files found")
+        msg = "No downloadable files found"
+        raise ValueError(msg)
     chosen = pick_wheel_then_sdist(files)
     assert chosen is not None
     url, filename = chosen["url"], chosen["filename"]
@@ -483,14 +491,17 @@ def _mirror_download(url: str, target: Path, total: int, backend: str) -> None:
     elif backend == "aria2c":
         _mirror_download_aria2c(url, target)
     else:
-        raise ValueError(f"Unsupported backend engine: {backend}")
+        msg = f"Unsupported backend engine: {backend}"
+        raise ValueError(msg)
 
 
 def _read_specs_from_file(path: Path) -> list[str]:
     if not path.exists():
-        raise FileNotFoundError(f"Package list file not found: {path}")
+        msg = f"Package list file not found: {path}"
+        raise FileNotFoundError(msg)
     if not path.is_file():
-        raise ValueError(f"Path is not a regular file: {path}")
+        msg = f"Path is not a regular file: {path}"
+        raise ValueError(msg)
     specs: list[str] = []
     with path.open("r", encoding="utf-8") as fh:
         for raw in fh:
@@ -515,7 +526,8 @@ def _mirror_process_spec(spec: str, backend: str, output_dir: Path) -> None:
     releases = meta.get("releases", {})
     resolved = version or meta.get("info", {}).get("version")
     if not resolved or resolved not in releases:
-        raise ValueError(f"Version '{resolved}' not found in package metadata.")
+        msg = f"Version '{resolved}' not found in package metadata."
+        raise ValueError(msg)
     file_info = pick_mirror_file(releases[resolved], resolved)
     url = file_info["url"]
     filename = file_info["filename"]
@@ -928,7 +940,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--output",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="Output directory (default: current directory)",
     )
     p.set_defaults(func=cmd_mirror)

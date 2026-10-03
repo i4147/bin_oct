@@ -3,8 +3,11 @@
 It should authenticate the request using the token, parse the JSON response, and write a formatted report to a local file named ghpy.txt containing each repository's full name, URL, last updated timestamp, and star count.
 Finally, it should print a confirmation message indicating the output file location."""
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
+
 import requests
 from dotenv import load_dotenv
 

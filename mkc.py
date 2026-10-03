@@ -4,6 +4,8 @@ The script should verify the file exists, choose clang for .c files and clang++ 
 It should compile the source into an output binary named after the file's stem, then run the strip command on the resulting binary to remove debug symbols, printing status messages for each successful step.
 If compilation fails, it should print the captured stderr output and exit with a non-zero status code, and it should also print a usage message and exit if no source file argument is provided."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path

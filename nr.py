@@ -2,6 +2,8 @@
 """Create and push a new GitHub repo from current folder contents.
 Features: - Auto-detect repo name from dirname or use -n/--name - Copy .gitignore from ~ (unless --no-gitignore) - Handle existing repos (owned vs unowned) - GitHub API integration via GITHUB_TOKEN (env or ~/.env) - Non-interactive mode via -y/--yes or non-TTY stdin - Robust error handling, logging, and retries"""
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -11,11 +13,10 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from loguru import logger
 import requests
+from loguru import logger
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-
 
 # ============================================================================
 # CONFIGURATION
@@ -82,14 +83,14 @@ def load_github_token() -> str:
         return env_token
 
     if not ENV_FILE.exists():
-        raise FileNotFoundError(
-            f"~/.env not found at {ENV_FILE}. Create it with GITHUB_TOKEN=<token>, or export GITHUB_TOKEN."
-        )
+        msg = f"~/.env not found at {ENV_FILE}. Create it with GITHUB_TOKEN=<token>, or export GITHUB_TOKEN."
+        raise FileNotFoundError(msg)
 
     try:
         content = ENV_FILE.read_text(encoding="utf-8")
     except OSError as e:
-        raise RuntimeError(f"Could not read {ENV_FILE}: {e}") from e
+        msg = f"Could not read {ENV_FILE}: {e}"
+        raise RuntimeError(msg) from e
 
     for raw in content.splitlines():
         line = raw.strip()
@@ -100,11 +101,13 @@ def load_github_token() -> str:
         if line.startswith("GITHUB_TOKEN="):
             token = line.split("=", 1)[1].strip().strip("\"'")
             if not token:
-                raise ValueError("GITHUB_TOKEN is empty in ~/.env")
+                msg = "GITHUB_TOKEN is empty in ~/.env"
+                raise ValueError(msg)
             logger.info("Loaded GITHUB_TOKEN from ~/.env")
             return token
 
-    raise ValueError("GITHUB_TOKEN not found in ~/.env")
+    msg = "GITHUB_TOKEN not found in ~/.env"
+    raise ValueError(msg)
 
 
 _CURRENT_USER_CACHE: Optional[str] = None
@@ -122,16 +125,20 @@ def get_current_user_login(token: str) -> str:
             timeout=HTTP_TIMEOUT,
         )
     except requests.RequestException as e:
-        raise RuntimeError(f"Could not reach GitHub API: {e}") from e
+        msg = f"Could not reach GitHub API: {e}"
+        raise RuntimeError(msg) from e
 
     if r.status_code == 401:
-        raise ValueError("GitHub token is invalid or expired (401).")
+        msg = "GitHub token is invalid or expired (401)."
+        raise ValueError(msg)
     if r.status_code != 200:
-        raise requests.RequestException(f"GitHub API error {r.status_code}: {r.text[:200]}")
+        msg = f"GitHub API error {r.status_code}: {r.text[:200]}"
+        raise requests.RequestException(msg)
 
     login = r.json().get("login")
     if not login:
-        raise ValueError("Could not determine GitHub login from /user")
+        msg = "Could not determine GitHub login from /user"
+        raise ValueError(msg)
     logger.info(f"Authenticated as GitHub user: {login}")
     _CURRENT_USER_CACHE = login
     return login
@@ -169,10 +176,13 @@ def create_github_repo(
         return f"git@github.com:{user_login}/{repo_name}.git"
 
     if r.status_code == 401:
-        raise ValueError("Invalid GitHub token (401 Unauthorized).")
+        msg = "Invalid GitHub token (401 Unauthorized)."
+        raise ValueError(msg)
     if r.status_code == 403:
-        raise ValueError(f"GitHub API forbidden (rate limit or insufficient scopes): {r.text[:200]}")
-    raise requests.RequestException(f"GitHub API error {r.status_code}: {r.text[:200]}")
+        msg = f"GitHub API forbidden (rate limit or insufficient scopes): {r.text[:200]}"
+        raise ValueError(msg)
+    msg = f"GitHub API error {r.status_code}: {r.text[:200]}"
+    raise requests.RequestException(msg)
 
 
 # ============================================================================
@@ -200,16 +210,19 @@ def run_git_command(
             timeout=timeout,
         )
     except FileNotFoundError as e:
-        raise RuntimeError(f"Command not found: {cmd[0]} (is git installed and on PATH?)") from e
+        msg = f"Command not found: {cmd[0]} (is git installed and on PATH?)"
+        raise RuntimeError(msg) from e
     except subprocess.TimeoutExpired as e:
-        raise RuntimeError(f"Command timed out after {timeout}s: {' '.join(cmd)}") from e
+        msg = f"Command timed out after {timeout}s: {' '.join(cmd)}"
+        raise RuntimeError(msg) from e
 
     stdout = (result.stdout or "").strip()
     stderr = (result.stderr or "").strip()
 
     if check and result.returncode != 0:
         detail = stderr or stdout or "(no output)"
-        raise RuntimeError(f"Command failed ({result.returncode}): {' '.join(cmd)}\n{detail}")
+        msg = f"Command failed ({result.returncode}): {' '.join(cmd)}\n{detail}"
+        raise RuntimeError(msg)
     return stdout, result.returncode
 
 
@@ -233,23 +246,30 @@ def parse_github_url(url: str) -> tuple[str, str]:
         m = rx.match(url)
         if m:
             return m.group(1), m.group(2)
-    raise ValueError(f"Not a GitHub remote URL: {url}")
+    msg = f"Not a GitHub remote URL: {url}"
+    raise ValueError(msg)
 
 
 def validate_repo_name(name: str) -> None:
     """Enforce GitHub's repo-name rules."""
     if not name:
-        raise ValueError("Repository name is empty")
+        msg = "Repository name is empty"
+        raise ValueError(msg)
     if len(name) > 100:
-        raise ValueError(f"Repository name too long ({len(name)} > 100)")
+        msg = f"Repository name too long ({len(name)} > 100)"
+        raise ValueError(msg)
     if name in (".", ".."):
-        raise ValueError("Repository name cannot be '.' or '..'")
+        msg = "Repository name cannot be '.' or '..'"
+        raise ValueError(msg)
     if name.startswith("."):
-        raise ValueError("Repository name cannot start with '.'")
+        msg = "Repository name cannot start with '.'"
+        raise ValueError(msg)
     if name.endswith(".git"):
-        raise ValueError("Repository name cannot end with '.git'")
+        msg = "Repository name cannot end with '.git'"
+        raise ValueError(msg)
     if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
-        raise ValueError(f"Invalid repo name '{name}': use only letters, digits, '.', '-', '_'")
+        msg = f"Invalid repo name '{name}': use only letters, digits, '.', '-', '_'"
+        raise ValueError(msg)
 
 
 # ============================================================================
@@ -272,7 +292,8 @@ def copy_gitignore(cwd: Path) -> None:
         shutil.copy2(source, target)
         logger.info(f"✓ Copied .gitignore from ~ → {cwd}")
     except OSError as e:
-        raise RuntimeError(f"Failed to copy .gitignore: {e}") from e
+        msg = f"Failed to copy .gitignore: {e}"
+        raise RuntimeError(msg) from e
 
 
 def _warn_if_missing_identity(cwd: Path) -> None:
@@ -332,7 +353,8 @@ def commit_and_push(cwd: Path, commit_message: str = DEFAULT_COMMIT_MSG) -> None
 
     _, has_head = run_git_command(["git", "rev-parse", "--verify", "HEAD"], cwd, check=False)
     if not status and has_head != 0:
-        raise RuntimeError("Nothing to commit and no prior commit exists (empty repository).")
+        msg = "Nothing to commit and no prior commit exists (empty repository)."
+        raise RuntimeError(msg)
 
     if status:
         logger.info("Creating commit...")

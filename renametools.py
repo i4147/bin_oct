@@ -194,7 +194,8 @@ def _image_dimensions(path: Path) -> Optional[tuple[int, int]]:
     try:
         import cv2  # type: ignore
     except ImportError:
-        raise RuntimeError("opencv-python (cv2) is required for the 'images' subcommand.")
+        msg = "opencv-python (cv2) is required for the 'images' subcommand."
+        raise RuntimeError(msg)
     img = cv2.imread(str(path))
     if img is None:
         return None
@@ -394,7 +395,8 @@ class SourceAnalyzer:
         except SyntaxError:
             self.tree = None
         except OSError as e:
-            raise RuntimeError(f"Failed to read {path}: {e}") from e
+            msg = f"Failed to read {path}: {e}"
+            raise RuntimeError(msg) from e
 
     def module_docstring(self) -> Optional[str]:
         return ast.get_docstring(self.tree) if self.tree else None
@@ -674,7 +676,7 @@ def build_parser() -> argparse.ArgumentParser:
     im.add_argument(
         "--root",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="Root directory to scan (default: current).",
     )
     im.add_argument(

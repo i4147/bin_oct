@@ -4,12 +4,15 @@ It should build a byte-level parse tree, locate all comment nodes (excluding she
 The script should process files in parallel using multiprocessing, log progress and errors with loguru (colored, timestamped output), and report per-file statistics such as removed/unremoved comment counts, whether the file was modified, and any errors encountered.
 It should accept command-line arguments (via argparse) for the target path and options like dry-run or worker count, and return a NamedTuple-based result summary for each processed file."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from typing import NamedTuple
+
 import tree_sitter_python as tspython
 from loguru import logger
 from tree_sitter import Language, Parser

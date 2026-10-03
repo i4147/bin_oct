@@ -4,10 +4,13 @@ It should accept file paths as command-line arguments, or if none are given, dis
 For each file, read its text and use a stack-based algorithm to verify matching of "()", "[]", and "{}", printing the filename when the file's brackets are fully balanced.
 When multiple files are provided, process them concurrently using a multiprocessing Pool (spawn context, 8 workers) with a bounded pending-task queue (max size 16) to limit memory usage, while single-file input is processed synchronously."""
 
+from __future__ import annotations
+
 import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+
 from dh import get_files
 
 MAX_QUEUE = 16

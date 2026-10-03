@@ -3,8 +3,11 @@
 It should read the requirements file (defaulting to "requirements.txt" or a path given as a command-line argument), normalize package names by lowercasing and replacing hyphens with underscores, filter out matches against installed packages and stdlib modules, then write the remaining unique package names back to the same file in sorted order, one per line.
 Finally, it should print how many packages were removed."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import STDLIB, get_installed_pkgs
 
 

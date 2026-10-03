@@ -273,7 +273,8 @@ def format_numbered_list(
 def collect_python_files(root: Path) -> list[Path]:
     if root.is_file():
         if root.suffix != ".py":
-            raise SystemExit(f"{root} is not a .py file")
+            msg = f"{root} is not a .py file"
+            raise SystemExit(msg)
         return [root]
     files = [
         p
@@ -281,7 +282,8 @@ def collect_python_files(root: Path) -> list[Path]:
         if "__pycache__" not in p.parts and not any(part.startswith(".") for part in p.parts)
     ]
     if not files:
-        raise SystemExit(f"No .py files found under {root}")
+        msg = f"No .py files found under {root}"
+        raise SystemExit(msg)
     return sorted(files)
 
 
@@ -291,14 +293,15 @@ def parse_file(path: Path, report: ParseReport) -> ast.Module:
         with _collect_parse_warnings(report):
             return ast.parse(src, filename=str(path))
     except SyntaxError as exc:
-        raise SystemExit(f"Syntax error in {path}: {exc}")
+        msg = f"Syntax error in {path}: {exc}"
+        raise SystemExit(msg)
 
 
 def parse_merged_file(path: Path, report: ParseReport) -> list[tuple[str, ast.Module]]:
     text = path.read_text(encoding="utf-8")
     matches = list(MERGED_FILE_HEADER_RE.finditer(text))
     if not matches:
-        raise SystemExit(
+        msg = (
             f"No '# File: <path>' headers found in {path}; "
             "expected a merged file such as:\n"
             "  # File: __init__.py\n"
@@ -307,6 +310,7 @@ def parse_merged_file(path: Path, report: ParseReport) -> list[tuple[str, ast.Mo
             "  ...\n"
             "Use directory mode instead if you have loose .py files."
         )
+        raise SystemExit(msg)
     modules: list[tuple[str, ast.Module]] = []
     for i, m in enumerate(matches):
         header_path = m.group(1)
@@ -321,7 +325,8 @@ def parse_merged_file(path: Path, report: ParseReport) -> list[tuple[str, ast.Mo
             with _collect_parse_warnings(report):
                 tree = ast.parse(body, filename=header_path)
         except SyntaxError as exc:
-            raise SystemExit(f"Syntax error in {path} section '{header_path}': {exc}")
+            msg = f"Syntax error in {path} section '{header_path}': {exc}"
+            raise SystemExit(msg)
         modules.append((header_path, tree))
     return modules
 
@@ -698,9 +703,8 @@ class LoggingTransformer(ast.NodeTransformer):
 
     def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
         self.generic_visit(node)
-        if isinstance(node.value, ast.Name) and node.value.id == "logging":
-            if node.attr.isupper():
-                return ast.Constant(value=node.attr)
+        if isinstance(node.value, ast.Name) and node.value.id == "logging" and node.attr.isupper():
+            return ast.Constant(value=node.attr)
         return node
 
     def visit_Expr(self, node: ast.Expr) -> ast.AST:
@@ -887,9 +891,8 @@ def refactor(
     except SyntaxError as exc:
         check_path = output.with_suffix(".check.py")
         check_path.write_text(src + "\n", encoding="utf-8")
-        raise SystemExit(
-            f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
-        )
+        msg = f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
+        raise SystemExit(msg)
 
     output.write_text(src + "\n", encoding="utf-8")
     out_bytes = output.stat().st_size
@@ -952,23 +955,27 @@ def main(argv: Optional[list[str]] = None) -> int:
     style = Style()
 
     if args.merged_file is not None and args.input is not None:
-        raise SystemExit("Provide either a positional INPUT or -f/--merged-file, not both")
+        msg = "Provide either a positional INPUT or -f/--merged-file, not both"
+        raise SystemExit(msg)
 
     parse_report = ParseReport()
 
     if args.merged_file is not None:
         merged_path: Path = args.merged_file
         if not merged_path.exists():
-            raise SystemExit(f"{merged_path} does not exist")
+            msg = f"{merged_path} does not exist"
+            raise SystemExit(msg)
         if not merged_path.is_file():
-            raise SystemExit(f"{merged_path} is not a file")
+            msg = f"{merged_path} is not a file"
+            raise SystemExit(msg)
         modules = parse_merged_file(merged_path, parse_report)
         source_label = str(merged_path)
         source_default = merged_path.stem
     else:
-        input_path: Path = args.input if args.input is not None else Path(".")
+        input_path: Path = args.input if args.input is not None else Path()
         if not input_path.exists():
-            raise SystemExit(f"{input_path} does not exist")
+            msg = f"{input_path} does not exist"
+            raise SystemExit(msg)
         files = collect_python_files(input_path)
         modules = [(str(p), parse_file(p, parse_report)) for p in files]
         source_label = str(input_path)
@@ -979,9 +986,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         output = Path.cwd() / f"{source_default}_single.py"
 
     if args.merged_file is not None and output.resolve() == args.merged_file.resolve():
-        raise SystemExit("Refusing to overwrite the input merged file")
+        msg = "Refusing to overwrite the input merged file"
+        raise SystemExit(msg)
     if args.input is not None and output.resolve() == args.input.resolve():
-        raise SystemExit("Refusing to overwrite the input path")
+        msg = "Refusing to overwrite the input path"
+        raise SystemExit(msg)
 
     refactor(
         modules,

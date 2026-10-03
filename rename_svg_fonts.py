@@ -4,6 +4,8 @@ For each given file path, it should read the SVG content, extract the value of t
 It should then rename the file to "{font_id}.svg" in the same directory, skipping non-files, files without a detectable font ID, and files that already have the correct name, while printing informative messages for skips, warnings about sanitization, successful renames, and errors such as a target filename already existing.
 The script should accept file paths as command-line arguments (via sys.argv) and process each one using pathlib.Path."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

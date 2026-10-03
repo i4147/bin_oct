@@ -3,6 +3,8 @@
 The script should locate safe byte-offset split points (avoiding breaking inside tags or raw-text elements like script/style/textarea) so an HTML file can be divided into roughly equal chunks and processed concurrently using multiprocessing, then merge the extracted text in the correct order, inserting appropriate line breaks for block-level elements (like div, p, li, table rows, etc.).
 It should handle command-line input/output file paths, use a custom HTMLParser subclass to track parsing state, and rely on temporary files for intermediate processing."""
 
+from __future__ import annotations
+
 import multiprocessing as mp
 import os
 import sys

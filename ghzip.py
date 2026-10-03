@@ -10,7 +10,9 @@ Usage: python gh_zip.py <repo> [-b BACKEND] Where <repo> is: - owner/repo - http
 from __future__ import annotations
 
 import argparse
+import functools
 import json
+import operator
 import os
 import shutil
 import subprocess
@@ -44,19 +46,20 @@ def load_env_token() -> Optional[str]:
 
 def normalize_repo(spec: str) -> tuple[str, str]:
     s = spec.strip().rstrip("/")
-    if s.endswith(".git"):
-        s = s[:-4]
+    s = s.removesuffix(".git")
 
-    if s.startswith("http://") or s.startswith("https://"):
+    if s.startswith(("http://", "https://")):
         p = urlparse(s)
         parts = [x for x in p.path.split("/") if x]
         if len(parts) < 2:
-            raise ValueError(f"Invalid GitHub repo URL: {spec}")
+            msg = f"Invalid GitHub repo URL: {spec}"
+            raise ValueError(msg)
         owner, repo = parts[0], parts[1]
     else:
         parts = [x for x in s.split("/") if x]
         if len(parts) != 2:
-            raise ValueError("Repo must be in owner/repo form or a GitHub URL")
+            msg = "Repo must be in owner/repo form or a GitHub URL"
+            raise ValueError(msg)
         owner, repo = parts
 
     return owner, repo
@@ -73,7 +76,7 @@ def github_api_headers(token: Optional[str]) -> list[str]:
     ]
     if token:
         headers.append(f"Authorization: Bearer {token}")
-    return sum((["-H", h] for h in headers), [])
+    return functools.reduce(operator.iadd, (["-H", h] for h in headers), [])
 
 
 def fetch_default_branch_subprocess(owner: str, repo: str, token: Optional[str]) -> str:
@@ -93,7 +96,8 @@ def fetch_default_branch_subprocess(owner: str, repo: str, token: Optional[str])
         out = subprocess.check_output(cmd, text=True)
         return json.loads(out)["default_branch"]
 
-    raise RuntimeError("Neither gh nor curl is available for branch lookup")
+    msg = "Neither gh nor curl is available for branch lookup"
+    raise RuntimeError(msg)
 
 
 def fetch_repo_size_subprocess(owner: str, repo: str, token: Optional[str]) -> Optional[int]:
@@ -173,7 +177,8 @@ def download_zip_subprocess(owner: str, repo: str, branch: str, out_path: Path, 
         subprocess.run(cmd, check=True, env=env)
         return
 
-    raise RuntimeError("No supported subprocess downloader found (gh/curl/wget)")
+    msg = "No supported subprocess downloader found (gh/curl/wget)"
+    raise RuntimeError(msg)
 
 
 def download_zip_pygithub(owner: str, repo: str, branch: str, out_path: Path, token: Optional[str]) -> bool:
@@ -235,7 +240,8 @@ def resolve_backend(name: str) -> str:
     name = (name or DEFAULT_BACKEND).lower()
     allowed = {"subprocess", "pygithub", "gitpython", "dulwich", "typer"}
     if name not in allowed:
-        raise ValueError(f"Unsupported backend: {name}")
+        msg = f"Unsupported backend: {name}"
+        raise ValueError(msg)
     return name
 
 

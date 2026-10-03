@@ -5,15 +5,21 @@ Transformed source is validated with :func:`compile` before being written, so a 
 Usage:: python strip_annotations.py [PATH ...] Each PATH may be a ``.py`` file or a directory (searched recursively).
 If no paths are supplied, the current working directory is processed recursively."""
 
+from __future__ import annotations
+
+import contextlib
 import io
 import multiprocessing as mp
 import os
 import sys
 import tokenize
-from collections.abc import Iterable, Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import libcst as cst
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
@@ -78,17 +84,13 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
         tmp.write_text(text, encoding=encoding)
-        try:
+        with contextlib.suppress(OSError):
             os.chmod(tmp, path.stat().st_mode)
-        except OSError:
-            pass
         os.replace(tmp, path)
     finally:
         if tmp.exists():
-            try:
+            with contextlib.suppress(OSError):
                 tmp.unlink()
-            except OSError:
-                pass
 
 
 def process_file(path_str: str) -> tuple[str, str | None, bool]:
@@ -163,7 +165,7 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
             seen.add(key)
             files.append(path)
 
-    files.sort(key=lambda p: str(p))
+    files.sort(key=str)
     return files
 
 

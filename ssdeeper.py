@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Recursively hash files with ssdeep and report similar pairs."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import operator
@@ -9,7 +11,6 @@ import sys
 from pathlib import Path
 
 import ssdeep
-
 from dh import get_files
 
 

@@ -178,7 +178,8 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
         with open(pdf_path, "rb") as fh:
             return sum(1 for _ in PDFPage.get_pages(fh, password=password or ""))
 
-    raise ValueError(f"Unknown backend: {backend}")
+    msg = f"Unknown backend: {backend}"
+    raise ValueError(msg)
 
 
 def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> list[Path]:
@@ -305,7 +306,8 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
                 for fut in as_completed(futures):
                     results.extend(fut.result())
         else:
-            raise ValueError(f"Unknown parallel mode: {parallel}")
+            msg = f"Unknown parallel mode: {parallel}"
+            raise ValueError(msg)
     except Exception as exc:  # noqa: BLE001
         print(f"Error processing {pdf}: {exc}", file=sys.stderr)
 

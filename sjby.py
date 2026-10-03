@@ -4,6 +4,8 @@ Support an optional "-v" flag placed before the path: without it, sort the objec
 Rebuild the dictionary in the resulting sorted order, serialize it back to JSON with an indent of 2 and non-ASCII characters preserved, validate the serialized string by parsing it again, and then overwrite the original file with this formatted, sorted JSON.
 If no file path argument is provided, the script should exit with a non-zero status code."""
 
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path

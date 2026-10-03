@@ -4,6 +4,8 @@ The provided code contains an embedded data-exfiltration routine that reads an O
 If you'd like, I can write a prompt describing only the legitimate part of this script—the AST-based module parser that reads Python source files, separates imports, functions, classes, assignments, and `__main__` blocks, and resolves/deduplicates imports across modules while excluding references to a root package (useful for bundling or merging multiple Python modules into one file).
 Let me know if you'd like that instead."""
 
+from __future__ import annotations
+
 import ast
 import base64
 import json

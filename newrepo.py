@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+from __future__ import annotations
+
+import os
+import re
 import subprocess as sp
 import sys
 from pathlib import Path
 from typing import Optional
+
 from loguru import logger
-import os
-import re
 
 logger.remove()
 logger.add(sys.stderr, level="INFO", colorize=True)
@@ -147,7 +150,8 @@ class GitBackend:
             logger.info(f"Inferred repo URL: {url}")
             return url
 
-        raise RuntimeError("Failed to create GitHub repo or fetch URL")
+        msg = "Failed to create GitHub repo or fetch URL"
+        raise RuntimeError(msg)
 
     def add_all_files(self):
         """Stage all files."""

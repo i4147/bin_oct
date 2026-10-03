@@ -3,8 +3,11 @@
 For each folder containing files with extracted class definitions, concatenate the extracted code from all files in that folder and write it into a corresponding "imports.py" file under an "output" directory, preserving the relative folder structure.
 Finally, print a summary message showing how many folders were processed."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
+
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

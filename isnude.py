@@ -3,8 +3,11 @@
 For each detected image, it should load it with OpenCV to check its dimensions, run the nudity detection, print the result, and if nudity is detected, move the file into a "nude" subdirectory (created if it doesn't exist), skipping files already inside that subdirectory.
 The script should process files concurrently using a multiprocessing/multithreading helper (mpf) and rely on shared utility functions (cprint, get_files, mpf) imported from a local "dh" module."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 import cv2
 import nude
 from dh import cprint, get_files, mpf

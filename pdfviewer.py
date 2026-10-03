@@ -66,7 +66,8 @@ class Viewer:
         self.path = path
         self.doc = fitz.open(path)
         if self.doc.page_count == 0:
-            raise ValueError("document contains no pages")
+            msg = "document contains no pages"
+            raise ValueError(msg)
 
         self.page_index = max(0, min(page - 1, self.doc.page_count - 1))
         self.zoom = max(self.MIN_ZOOM, min(self.MAX_ZOOM, zoom))
@@ -85,14 +86,14 @@ class Viewer:
 
     def render_width(self) -> int:
         cols, _ = self.term_size()
-        return max(1, int(round(cols * self.zoom)))
+        return max(1, round(cols * self.zoom))
 
     def page_px_size(self, index: int | None = None) -> tuple[int, int]:
         index = self.page_index if index is None else index
         width = self.render_width()
         rect = self.doc[index].rect
         scale = width / rect.width if rect.width else 1.0
-        return width, max(1, int(math.ceil(rect.height * scale)))
+        return width, max(1, math.ceil(rect.height * scale))
 
     def pixmap(self, index: int, width: int) -> tuple[int, int, bytes]:
         key = (index, width)
@@ -166,7 +167,7 @@ class Viewer:
         total = self.doc.page_count
         _, h = self.page_px_size()
         max_y = max(0, h - self.view_rows() * 2)
-        pct = 100 if max_y == 0 else int(round(100 * self.y / max_y))
+        pct = 100 if max_y == 0 else round(100 * self.y / max_y)
 
         left = f" {name}  {self.page_index + 1}/{total}  {pct:3d}%  {self.zoom:.2f}x "
         right = " q quit  n/p page  j/k scroll  +/- zoom "

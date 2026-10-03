@@ -14,13 +14,16 @@ import fnmatch
 import json
 import os
 import sys
-from collections.abc import Sequence
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import zstandard as zstd
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 try:
     import lzma_mt
@@ -31,7 +34,7 @@ try:
     from dh import fsz
 except ImportError:  # pragma: no cover - fallback for standalone use
 
-    def fsz(num: int | float) -> str:
+    def fsz(num: float) -> str:
         value = float(num)
         for unit in ("B", "KB", "MB", "GB", "TB"):
             if abs(value) < 1024.0:
@@ -434,13 +437,12 @@ def zstd_compress_file(
         compressor = zstd.ZstdCompressor(level=level, threads=threads)
 
         if use_writer:
-            with path.open("rb") as fin, out.open("wb") as fout:
-                with compressor.stream_writer(fout) as writer:
-                    while True:
-                        chunk = fin.read(chunk_size)
-                        if not chunk:
-                            break
-                        writer.write(chunk)
+            with path.open("rb") as fin, out.open("wb") as fout, compressor.stream_writer(fout) as writer:
+                while True:
+                    chunk = fin.read(chunk_size)
+                    if not chunk:
+                        break
+                    writer.write(chunk)
         else:
             with path.open("rb") as fin, out.open("wb") as fout:
                 reader = compressor.stream_reader(fin)
@@ -665,9 +667,8 @@ def collect_xz_tasks(
         if compress:
             if suffix in skip_extensions:
                 continue
-        else:
-            if suffix != ".xz":
-                continue
+        elif suffix != ".xz":
+            continue
 
         tasks.append(path)
 

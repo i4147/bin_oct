@@ -3,9 +3,12 @@
 It should recursively scan the target path, group files by extension while tracking counts and total sizes, then move each file into its corresponding extension-named subfolder, appending a numeric suffix to the filename if a collision occurs at the destination, silently ignoring any move errors.
 After moving files, it should clean up by removing any now-empty directories left behind, processing them from deepest to shallowest so nested empty folders are properly removed."""
 
+from __future__ import annotations
+
 import contextlib
 import shutil
 from pathlib import Path
+
 from dh import gsz
 
 
@@ -50,7 +53,7 @@ def folderize_by_extension(cwd: Path):
         stats = extension_stats[ext]
         total_files += stats["count"]
         total_size += stats["total_size"]
-        ext_display = ext if ext else "no_extension"
+        ext_display = ext or "no_extension"
         size_str = gsz(stats["total_size"])
         print(f"{ext_display:<15} : {stats['count']:4} file{'s' if stats['count'] != 1 else ' '}  {size_str:>8}")
     print("-" * 40)

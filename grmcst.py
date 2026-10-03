@@ -3,16 +3,20 @@
 Preserves shebang lines, `# type:` directives, and `# fmt:` pragmas while removing all other comments and module/function/class docstrings.
 Discovers targets from CLI path arguments (defaults to CWD), processes them in a fixed multiprocessing.Pool of 8 workers, validates the result with ast.parse, and reports per-file status via loguru."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import sys
-from collections.abc import Sequence
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import libcst as cst
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from multiprocessing.pool import AsyncResult
 
 MAX_WORKERS: Final[int] = 8
 PRESERVE_PREFIXES: Final[tuple[str, ...]] = ("#!", "# type:", "# fmt:")
@@ -113,7 +117,7 @@ def gather_files(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
 
     if not inputs:
-        files.update(Path(".").rglob("*.py"))
+        files.update(Path().rglob("*.py"))
         return sorted(files)
 
     for item in inputs:

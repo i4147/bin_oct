@@ -15,7 +15,8 @@ def get_pkgname() -> str:
 
     pkgname = re.sub(r"[^0-9A-Za-z_]", "_", raw)
     if not pkgname.isidentifier():
-        raise SystemExit(f"Invalid package name derived: {pkgname!r}")
+        msg = f"Invalid package name derived: {pkgname!r}"
+        raise SystemExit(msg)
     return pkgname
 
 
@@ -150,12 +151,13 @@ if __name__ == "__main__":
         check=False,
     )
     if result.returncode != 0:
-        raise SystemExit(
+        msg = (
             "\n`git commit` failed. Configure your identity first:\n"
             "    git config --global user.name  'Your Name'\n"
             "    git config --global user.email 'you@example.com'\n"
             "then re-run `git commit -m initial` in the project directory."
         )
+        raise SystemExit(msg)
 
     print(f"\nDone. Project '{pkgname}' initialized.")
 

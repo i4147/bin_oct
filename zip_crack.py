@@ -3,16 +3,20 @@
 It should accept the ZIP file path and wordlist path (plus options like batch size and progress update interval) via argparse, verify each candidate by attempting to open and read the first file inside the archive with that password, and stop as soon as a correct password is found.
 While running, it should periodically print live progress statistics (passwords tested, elapsed time formatted as h/m/s, and passwords-per-second rate), and finally report whether the password was found, printing the result along with total attempts and elapsed time."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing
 import sys
 import time
 import zipfile
-from collections.abc import Generator
 from dataclasses import dataclass, field
 from itertools import islice
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 DEFAULT_BATCH_SIZE: Final[int] = 2000
 DEFAULT_UPDATE_INTERVAL: Final[float] = 5.0

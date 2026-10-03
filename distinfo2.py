@@ -4,9 +4,12 @@ For each matching folder, it should delete a nested "licenses" subdirectory if p
 It should also detect the running Python version and remove the entire dist-info folder if it ends up empty (or nearly empty) after cleanup.
 The script uses only standard library modules (shutil, sys, pathlib) plus a custom "cprint" helper from a local "dh" module for colored console output."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path
+
 from dh import cprint
 
 major, minor, _, _, _ = sys.version_info

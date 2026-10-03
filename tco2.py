@@ -23,7 +23,8 @@ from typing import Callable
 try:
     from loguru import logger
 except ImportError as exc:
-    raise SystemExit("Missing dependency: install it with 'pip install loguru'") from exc
+    msg = "Missing dependency: install it with 'pip install loguru'"
+    raise SystemExit(msg) from exc
 
 
 class BackendError(Exception):
@@ -150,25 +151,30 @@ def _language(backend: str, code: str) -> str:
 
 def _require_python_and_platform() -> None:
     if sys.version_info[:2] != (3, 12):
-        raise SystemExit(f"Python 3.12 is required; detected {platform.python_version()}")
+        msg = f"Python 3.12 is required; detected {platform.python_version()}"
+        raise SystemExit(msg)
     machine = platform.machine().casefold()
     if machine not in {"armv8l", "armv7l", "armv7"}:
-        raise SystemExit(f"This script targets 32-bit ARM Termux; detected architecture '{machine}'")
+        msg = f"This script targets 32-bit ARM Termux; detected architecture '{machine}'"
+        raise SystemExit(msg)
     if sys.maxsize > 2**32:
-        raise SystemExit("This script requires a 32-bit Python process")
+        msg = "This script requires a 32-bit Python process"
+        raise SystemExit(msg)
 
 
 def _import(name: str):
     try:
         return importlib.import_module(name)
     except Exception as exc:
-        raise BackendError(f"cannot import {name}: {exc}") from exc
+        msg = f"cannot import {name}: {exc}"
+        raise BackendError(msg) from exc
 
 
 def _make_deepl(source: str, target: str, script_path: str) -> TranslatorCallable:
     key = os.getenv("DEEPL_API_KEY")
     if not key:
-        raise BackendError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise BackendError(msg)
     _import("deepl")
     source_code = _language("deepl", source)
     target_code = _language("deepl", target)
@@ -212,7 +218,8 @@ def _make_deep_translator(source: str, target: str, script_path: str) -> Transla
 def _make_libretranslate_remote(source: str, target: str, script_path: str) -> TranslatorCallable:
     url = os.getenv("LIBRETRANSLATE_URL")
     if not url:
-        raise BackendError("LIBRETRANSLATE_URL is not set")
+        msg = "LIBRETRANSLATE_URL is not set"
+        raise BackendError(msg)
     _import("deep_translator")
     source_code = _language("libretranslate_remote", source)
     target_code = _language("libretranslate_remote", target)
@@ -234,7 +241,8 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
 
 def _make_translate(source: str, target: str, script_path: str) -> TranslatorCallable:
     if Path(script_path).stem.casefold() == "translate":
-        raise BackendError("the local script name resolves to the translate package; rename it")
+        msg = "the local script name resolves to the translate package; rename it"
+        raise BackendError(msg)
     _import("translate")
 
     def translate(text: str) -> str:
@@ -291,7 +299,8 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
     module = _import("pygoogletranslation")
     client_class = getattr(module, "Translator", None)
     if client_class is None:
-        raise BackendError("pygoogletranslation.Translator is unavailable")
+        msg = "pygoogletranslation.Translator is unavailable"
+        raise BackendError(msg)
     client = client_class()
     lock = _SERIAL_LOCKS["pygoogletranslation"]
 
@@ -332,7 +341,8 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslatorCallabl
     api_key = os.getenv("BAIDU_API_KEY")
     secret_key = os.getenv("BAIDU_SECRET_KEY")
     if not all((app_id, api_key, secret_key)):
-        raise BackendError("BAIDU_APP_ID, BAIDU_API_KEY, and BAIDU_SECRET_KEY are required")
+        msg = "BAIDU_APP_ID, BAIDU_API_KEY, and BAIDU_SECRET_KEY are required"
+        raise BackendError(msg)
     _import("aip")
     source_code = _language("baidu", source)
     target_code = _language("baidu", target)
@@ -356,7 +366,8 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslatorCalla
     secret = os.getenv("ALIBABA_ACCESS_KEY_SECRET")
     region = os.getenv("ALIBABA_REGION", "cn-hangzhou")
     if not access_key or not secret:
-        raise BackendError("ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required")
+        msg = "ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required"
+        raise BackendError(msg)
     _import("aliyunsdkcore")
     _import("aliyunsdkalimt")
     source_code = _language("alibaba", source)
@@ -384,7 +395,8 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslatorCallab
     api_key = os.getenv("WATSON_API_KEY")
     url = os.getenv("WATSON_URL")
     if not api_key or not url:
-        raise BackendError("WATSON_API_KEY and WATSON_URL are required")
+        msg = "WATSON_API_KEY and WATSON_URL are required"
+        raise BackendError(msg)
     _import("ibm_watson")
 
     def translate(text: str) -> str:
@@ -417,7 +429,8 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslatorCallabl
         "https://api.cognitive.microsofttranslator.com",
     )
     if not key or not region:
-        raise BackendError("AZURE_TRANSLATOR_KEY and AZURE_TRANSLATOR_REGION are required")
+        msg = "AZURE_TRANSLATOR_KEY and AZURE_TRANSLATOR_REGION are required"
+        raise BackendError(msg)
     _import("requests")
     source_code = _language("azure", source)
     target_code = _language("azure", target)
@@ -500,17 +513,20 @@ def _select_backend(
             failures.append(name)
             logger.warning("Backend '{}' unavailable: {}", name, exc)
             if preferred:
-                raise SystemExit(
+                msg = (
                     f"Backend '{name}' is unavailable: {exc}. "
                     "Install its package and configure its environment variables."
-                ) from exc
+                )
+                raise SystemExit(msg) from exc
 
-    raise SystemExit("No usable backend was found. Install deep_translator or configure one of the supported backends.")
+    msg = "No usable backend was found. Install deep_translator or configure one of the supported backends."
+    raise SystemExit(msg)
 
 
 def _read_words(path: Path) -> list[str]:
     if not path.is_file():
-        raise SystemExit(f"Input file does not exist: {path}")
+        msg = f"Input file does not exist: {path}"
+        raise SystemExit(msg)
     words: list[str] = []
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -519,7 +535,8 @@ def _read_words(path: Path) -> list[str]:
                 if word:
                     words.append(word)
     except OSError as exc:
-        raise SystemExit(f"Cannot read input file '{path}': {exc}") from exc
+        msg = f"Cannot read input file '{path}': {exc}"
+        raise SystemExit(msg) from exc
     return words
 
 
@@ -530,10 +547,12 @@ def _load_results(path: Path, continue_run: bool) -> dict[str, str]:
         with path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
         if not isinstance(data, dict):
-            raise ValueError("JSON root must be an object")
+            msg = "JSON root must be an object"
+            raise ValueError(msg)
         return {str(key): str(value) for key, value in data.items()}
     except Exception as exc:
-        raise SystemExit(f"Cannot load existing output '{path}': {exc}") from exc
+        msg = f"Cannot load existing output '{path}': {exc}"
+        raise SystemExit(msg) from exc
 
 
 def _atomic_save(path: Path, results: dict[str, str]) -> None:
@@ -558,9 +577,8 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
 
 def _append_failed(path: Path, word: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with _FAILED_LOCK:
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"{word}\n")
+    with _FAILED_LOCK, path.open("a", encoding="utf-8") as handle:
+        handle.write(f"{word}\n")
 
 
 def _translate_one(
@@ -574,7 +592,8 @@ def _translate_one(
             time.sleep(delay)
             translated = str(translator(word)).strip()
             if not translated or translated.casefold() == word.casefold():
-                raise BackendError("empty or identity translation")
+                msg = "empty or identity translation"
+                raise BackendError(msg)
             return word, translated
         except Exception as exc:
             logger.warning(

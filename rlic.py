@@ -172,9 +172,8 @@ def collect_files(root: Path, *, block_mode: str, extensions: Optional[set[str]]
             continue
 
         if block_mode == "segment":
-            if wanted is None or p.suffix.lower() in wanted:
-                if not _is_binary(p):
-                    out.append(p)
+            if (wanted is None or p.suffix.lower() in wanted) and not _is_binary(p):
+                out.append(p)
             continue
 
         if p.suffix.lower() in wanted:
@@ -299,7 +298,8 @@ def extract_blocks(path: Path, block_mode: str, min_lines: int, min_chars: int) 
     elif block_mode == "segment":
         blocks = extract_segment_blocks(lines, min_lines)
     else:
-        raise ValueError(f"Unknown block-mode: {block_mode!r}")
+        msg = f"Unknown block-mode: {block_mode!r}"
+        raise ValueError(msg)
 
     for b in blocks:
         b.path = path

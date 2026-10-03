@@ -3,6 +3,8 @@
 By default: two folders are duplicates if their files have the same relative paths AND the same contents.
 With -s / --structure: two folders are duplicates if their tree structure is the same (same subfolders, same relative file paths) even if file contents differ."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import sys

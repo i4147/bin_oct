@@ -53,7 +53,8 @@ def read_text_any_encoding(path: Path) -> str:
             return Path(path).read_text(encoding=enc)
         except (OSError, UnicodeDecodeError):
             continue
-    raise OSError(f"Could not read file {path} with any encoding")
+    msg = f"Could not read file {path} with any encoding"
+    raise OSError(msg)
 
 
 def contains_farsi(text: str) -> bool:
@@ -76,7 +77,8 @@ def translate_with_retry(
         try:
             result = GoogleTranslator(source=source, target=target).translate(text)
             if result is None:
-                raise RuntimeError("Translator returned None")
+                msg = "Translator returned None"
+                raise RuntimeError(msg)
             return result
         except Exception as exc:  # noqa: BLE001
             last_error = exc
@@ -85,7 +87,8 @@ def translate_with_retry(
                 file=sys.stderr,
             )
             time.sleep(base_delay + attempt)
-    raise RuntimeError(f"Translation failed after {retries} attempts: {last_error}")
+    msg = f"Translation failed after {retries} attempts: {last_error}"
+    raise RuntimeError(msg)
 
 
 def chunk_by_markers(

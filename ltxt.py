@@ -6,13 +6,15 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from collections.abc import Sequence
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from dh import BIN_EXT  # type: ignore[import-untyped]
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 EXCLUDED_EXTENSIONS: frozenset[str] = frozenset(BIN_EXT)
 POOL_WORKERS: int = 8
@@ -64,7 +66,8 @@ def process_paths(paths: Sequence[Path], method: str) -> list[LineCounter]:
             async_results: list[AsyncResult[LineCounter]] = [pool.apply_async(process_file, (path,)) for path in paths]
             return [result.get() for result in async_results]
 
-    raise ValueError(f"Unsupported pool method: {method}")
+    msg = f"Unsupported pool method: {method}"
+    raise ValueError(msg)
 
 
 def collect_lines_for_extension(ext: str, files: Sequence[Path], pool_method: str) -> None:

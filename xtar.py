@@ -4,6 +4,8 @@ For each archive, it should first validate the underlying compression stream (us
 It should process multiple archives concurrently using a multiprocessing pool with a configurable worker limit (default 8) to speed up checking large sets of files, and report which archives passed or failed the integrity check.
 The script should be runnable from the command line, accepting a target path as an argument."""
 
+from __future__ import annotations
+
 import gzip
 import lzma
 import subprocess

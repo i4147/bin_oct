@@ -3,6 +3,8 @@
 It should support recursive directory scanning, multiprocessing for parallel file analysis, and colored terminal output that can be disabled, producing a report of unused imports per file along with file size and any errors encountered.
 The script should accept command-line arguments (via argparse) to configure input paths, output format, and processing options, and output results in a human-readable format for developers to clean up unused imports in their codebase."""
 
+from __future__ import annotations
+
 import ast
 import re
 import sys

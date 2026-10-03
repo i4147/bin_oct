@@ -3,6 +3,8 @@
 For each file, it should parse the JSON and extract the package name, checking either the "info.name" field or a top-level "name" field, then rename the file to "{package_name}.json" if it differs from the current filename.
 The script should print a status message for each file indicating whether it was renamed, already correctly named, or skipped due to a missing package name, and it must gracefully handle and report invalid JSON files or other exceptions without stopping execution on the remaining files."""
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path

@@ -4,8 +4,11 @@ For each input HTML file, the script should read its content, convert it to Mark
 It should accept command-line arguments that can be individual file paths or directory paths; for directories, it should recursively collect all `.html` files, and if no arguments are given it should default to scanning the current working directory.
 The discovered files should then be processed in parallel via the `mpf` utility."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import get_files, mpf
 from markdownify import markdownify
 

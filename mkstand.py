@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Standalone HTML/CSS bundler: inline local and remote CSS/JS/images into HTML files by base64-encoding assets and replacing <link>/<script>/<img>/url() references, processing files in parallel with a fixed 8-process pool via multiprocessing.Pool.apply_async, using pathlib for all paths and loguru for logging."""
 
+from __future__ import annotations
+
 import argparse
 import base64
 import mimetypes
@@ -103,7 +105,7 @@ def process_css_content(css_content: str, base_path: Path, base_url: str | None 
                 return f"url({quote}data:{mime};base64,{b64}{quote})"
             return match.group(0)
         else:
-            clean_url: str = url.split("?")[0].split("#")[0]
+            clean_url: str = url.split("?", maxsplit=1)[0].split("#", maxsplit=1)[0]
             local_file: Path = (base_path.parent / clean_url).resolve()
             if not local_file.exists():
                 logger.warning(f"Missing local CSS asset referenced: {local_file}")

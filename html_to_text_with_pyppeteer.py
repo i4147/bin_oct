@@ -3,9 +3,12 @@
 It should also extract the page's body text content and write it to a text file whose name is derived from the input URL (with a .txt suffix), then evaluate and print the viewport's width, height, and device pixel ratio as a dictionary.
 The script should run the entire flow within an asyncio event loop and close the browser when finished."""
 
+from __future__ import annotations
+
 import asyncio
 import sys
 from pathlib import Path
+
 from pyppeteer import launch
 
 

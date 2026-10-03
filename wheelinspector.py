@@ -3,6 +3,8 @@
 This script merges functionality from 5 separate scripts into one unified CLI tool.
 ## Usage Examples: # List empty wheels in current directory (basic method) python wheel_inspector.py check # Move empty wheels to custom directory (RECORD method) python wheel_inspector.py move --method record --dest quarantine # Scan site-packages for empty installed packages python wheel_inspector.py scan # Full workflow with installed package warnings python wheel_inspector.py all --auto-move-all # Recursive search with extended file extension check python wheel_inspector.py move --recursive --method ext ## Original Script Mappings: ewhl.py -> python wheel_inspector.py move --method basic ewhl2.py -> python wheel_inspector.py all emptypkg.py -> python wheel_inspector.py scan emptywhl.py -> python wheel_inspector.py check --method record find_empty_wheels.py -> python wheel_inspector.py move --recursive --method ext ## Detection Methods: basic - Check for .py files OR non-dist-info files (ewhl.py/ewhl2.py) record - Check RECORD file, all files must be in dist-info (emptypkg.py/emptywhl.py) ext - Check for .py, .so, .pyi files (find_empty_wheels.py)"""
 
+from __future__ import annotations
+
 import argparse
 import csv
 import shutil
@@ -95,7 +97,8 @@ def is_empty_wheel(wheel_path: Path, method: str = DEFAULT_METHOD) -> bool:
     elif method == "ext":
         return is_empty_wheel_ext(wheel_path)
     else:
-        raise ValueError(f"Unknown method: {method}")
+        msg = f"Unknown method: {method}"
+        raise ValueError(msg)
 
 
 def parse_wheel_name(wheel_path: Path) -> tuple[Optional[str], Optional[str]]:
@@ -171,7 +174,7 @@ def get_package_location(package_name: str) -> tuple[Optional[str], bool]:
 
 
 def check_installed_package(wheel_path: Path, installed_packages: dict[str, str]) -> Optional[WheelInfo]:
-    package_name, version = parse_wheel_name(wheel_path)
+    package_name, _version = parse_wheel_name(wheel_path)
     if not package_name:
         return None
 

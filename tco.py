@@ -56,7 +56,8 @@ def translate_text(translator: Translator, text: str) -> str:
             time.sleep(delay)
             delay *= BACKOFF_BASE
 
-    raise RuntimeError(f"Translation failed after {MAX_RETRIES} retries: {last_err}")
+    msg = f"Translation failed after {MAX_RETRIES} retries: {last_err}"
+    raise RuntimeError(msg)
 
 
 def split_long_line(line: str, max_chars: int = MAX_CHARS) -> list[str]:

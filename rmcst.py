@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import io
 import multiprocessing as mp
 import os
@@ -81,16 +82,12 @@ def _atomic_write(path: Path, data: bytes) -> None:
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
         if mode is not None:
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(tmp_path, mode)
-            except OSError:
-                pass
         os.replace(tmp_path, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             tmp_path.unlink()
-        except OSError:
-            pass
         raise
 
 

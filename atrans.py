@@ -16,6 +16,8 @@ If the preferred backend cannot be imported or initialized, the script automatic
 * Graceful Ctrl+C: saves progress before exiting.
 Usage ----- python translate_words.py -i words.txt -t en -b deep_translator python translate_words.py -i words.txt -o out.json -s fr -t es -w 8 -d 0.1 python translate_words.py -i words.txt --no-continue"""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -54,17 +56,18 @@ def _make_translate(source, target, script_path):
     try:
         import translate
     except ImportError as e:
-        raise BackendError(f"cannot import 'translate': {e}")
+        msg = f"cannot import 'translate': {e}"
+        raise BackendError(msg)
 
     mod_file = os.path.abspath(getattr(translate, "__file__", "") or "")
     if mod_file and mod_file == os.path.abspath(script_path):
-        raise BackendError(
-            "'translate' resolves to this script itself (rename the script to avoid shadowing the package)"
-        )
+        msg = "'translate' resolves to this script itself (rename the script to avoid shadowing the package)"
+        raise BackendError(msg)
 
     cls = getattr(translate, "Translator", None) or getattr(translate, "GoogleTranslator", None)
     if cls is None:
-        raise BackendError("'translate' module exposes neither 'Translator' nor 'GoogleTranslator'")
+        msg = "'translate' module exposes neither 'Translator' nor 'GoogleTranslator'"
+        raise BackendError(msg)
 
     if cls.__name__ == "Translator":
 
@@ -82,7 +85,8 @@ def _make_deep_translator(source, target, _script_path):
     try:
         from deep_translator import GoogleTranslator
     except ImportError as e:
-        raise BackendError(f"cannot import 'deep_translator': {e}")
+        msg = f"cannot import 'deep_translator': {e}"
+        raise BackendError(msg)
 
     def call(text, cls=GoogleTranslator, source=source, target=target):
 
@@ -95,7 +99,8 @@ def _make_googletrans(source, target, _script_path):
     try:
         from googletrans import Translator
     except ImportError as e:
-        raise BackendError(f"cannot import 'googletrans': {e}")
+        msg = f"cannot import 'googletrans': {e}"
+        raise BackendError(msg)
 
     lock = threading.Lock()
     inst = Translator()
@@ -178,9 +183,8 @@ def save_output(out_path, data, lock):
 
 
 def append_failed(failed_path, word, lock):
-    with lock:
-        with open(failed_path, "a", encoding="utf-8") as f:
-            f.write(word + "\n")
+    with lock, open(failed_path, "a", encoding="utf-8") as f:
+        f.write(word + "\n")
 
 
 def parse_args():
@@ -300,9 +304,11 @@ def main():
                 text = "" if raw is None else str(raw).strip()
 
                 if not text:
-                    raise ValueError("empty translation")
+                    msg = "empty translation"
+                    raise ValueError(msg)
                 if text.casefold() == word.casefold():
-                    raise ValueError(f"identity translation returned: {text!r}")
+                    msg = f"identity translation returned: {text!r}"
+                    raise ValueError(msg)
 
                 with print_lock:
                     print(f"  → {word!r} returned {text!r}")

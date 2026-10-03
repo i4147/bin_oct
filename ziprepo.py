@@ -3,11 +3,14 @@
 It should accept the target username, repository name, branch (default "main"), and optional output filename as arguments, then connect to the repo, fetch the zipball for the specified branch, save it to disk, and print progress messages including download size in MB and the final saved file path.
 The script must handle missing token and GitHub API errors gracefully by logging clear error messages and returning None instead of crashing, and should use argparse for command-line argument parsing and logging/print statements for user feedback with emoji indicators for success and failure states."""
 
+from __future__ import annotations
+
 import argparse
 import logging
 import os
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
 from github import Github, GithubException
 

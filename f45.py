@@ -3,6 +3,8 @@
 It should use argparse to accept a file path, an optional "-i/--inplace" flag to overwrite the original file instead of printing to stdout, and an optional "-w/--width" argument to override the wrap width, defaulting to the current terminal width when not specified.
 The wrapping logic should use textwrap.fill per line with break_long_words and break_on_hyphens disabled, then rejoin wrapped lines and paragraphs, and the script should handle file reading/writing and output appropriately based on the in-place flag."""
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import sys

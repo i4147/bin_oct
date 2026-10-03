@@ -4,9 +4,12 @@ It should accept the input .py path as the first command-line argument and an op
 The script should read the source file as UTF-8 text, build a new notebook object, write it out as indented JSON, and print a confirmation message showing the input and output filenames.
 If no input file argument is given, it should print a usage message and exit with a non-zero status."""
 
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
+
 import nbformat as nbf
 
 

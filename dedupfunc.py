@@ -3,6 +3,8 @@
 It should walk the AST via a NodeVisitor to collect FunctionInfo objects (name, normalized body, line number, node), group functions by matching normalized bodies across files, and report duplicates including their names, source files, and line numbers.
 The script should accept file or directory paths via argparse on the command line, recursively process .py files, and print a clear summary of duplicate function groups found, exiting with an appropriate status code based on whether duplicates were detected."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import re
@@ -147,8 +149,7 @@ def get_user_choices(groups: dict[str, list[FunctionInfo]]) -> dict[str, int]:
                 if 0 <= choice_num < len(funcs):
                     choices[body] = choice_num
                     break
-                else:
-                    print(f"Please enter a number between 0 and {len(funcs) - 1}")
+                print(f"Please enter a number between 0 and {len(funcs) - 1}")
             except ValueError:
                 print("Please enter a valid number")
     return choices

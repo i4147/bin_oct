@@ -15,11 +15,10 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from collections.abc import Iterable, Iterator
 from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Optional
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Optional
 
 import brotli
 import cramjam
@@ -27,6 +26,9 @@ import lz4.frame
 import py7zr
 import zstandard as zstd
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 CHUNK: int = 1024 * 1024
 """Read/write block size for streaming codecs (matches originals)."""
@@ -155,7 +157,8 @@ def open_decompressed(src: Path, codec: str) -> Iterator[BinaryIO]:
     elif codec == "sz":
         yield io.BytesIO(bytes(cramjam.snappy.decompress(src.read_bytes())))
     else:
-        raise ValueError(f"Unsupported source codec: {codec}")
+        msg = f"Unsupported source codec: {codec}"
+        raise ValueError(msg)
 
 
 @contextlib.contextmanager
@@ -185,7 +188,8 @@ def open_compressor(dst: Path, codec: str, level: int = DEFAULT_LEVEL) -> Iterat
         yield buf
         dst.write_bytes(bytes(cramjam.snappy.compress(buf.getvalue())))
     else:
-        raise ValueError(f"Unsupported target codec: {codec}")
+        msg = f"Unsupported target codec: {codec}"
+        raise ValueError(msg)
 
 
 def _parse_tar_codec_name(p: Path) -> Optional[tuple[str, str]]:
@@ -206,7 +210,8 @@ def _extract_7z_to_tar(src: Path, dst: Path) -> None:
         if inner is None:
             files = [p for p in tmp.rglob("*") if p.is_file()]
             if not files:
-                raise RuntimeError("No files extracted from .tar.7z")
+                msg = "No files extracted from .tar.7z"
+                raise RuntimeError(msg)
             inner = files[0]
         inner.replace(dst)
     finally:
@@ -334,7 +339,8 @@ def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
                                 continue
                             yield m.name, f.read()
                     return
-            raise ValueError(f"empty 7z archive: {src}")
+            msg = f"empty 7z archive: {src}"
+            raise ValueError(msg)
         else:
             with (
                 open_decompressed(src, codec) as stream,
@@ -348,7 +354,8 @@ def _iter_archive_members(src: Path, ext: str) -> Iterator[tuple[str, bytes]]:
                         continue
                     yield m.name, f.read()
         return
-    raise ValueError(f"unsupported input extension: {ext}")
+    msg = f"unsupported input extension: {ext}"
+    raise ValueError(msg)
 
 
 def _write_archive(
@@ -365,7 +372,8 @@ def _write_archive(
                 total += len(data)
         return total
     if ext not in TAR_FORMATS:
-        raise ValueError(f"unsupported output extension: {ext}")
+        msg = f"unsupported output extension: {ext}"
+        raise ValueError(msg)
 
     codec = ext[5:] if ext != ".tar" else "tar"
     if codec == "7z":
@@ -539,7 +547,8 @@ def _single_transcode(
         elif dst_codec == "gz":
             out = gzip.compress(raw, compresslevel=level)
         else:
-            raise ValueError(f"unsupported dst codec: {dst_codec}")
+            msg = f"unsupported dst codec: {dst_codec}"
+            raise ValueError(msg)
         dst.write_bytes(out)
         if dst.exists() and dst.stat().st_size > 0:
             src_size = src.stat().st_size
@@ -654,7 +663,7 @@ def _whl_name_for_tar_xz(src: Path) -> Path:
 
 def _is_tar_xz(p: Path) -> bool:
     n = p.name.lower()
-    return n.endswith(".tar.xz") or n.endswith(".txz")
+    return n.endswith((".tar.xz", ".txz"))
 
 
 def _copy_zipinfo_to_tarinfo(zinfo: zipfile.ZipInfo, tinfo: tarfile.TarInfo) -> tarfile.TarInfo:
@@ -826,9 +835,8 @@ def _collect_whl_txz_paths(paths: list[str], recursive: bool, to: str) -> list[P
                 if f.suffix.lower() == ".whl":
                     if to in ("auto", "tar.xz"):
                         found.append(f)
-                elif _is_tar_xz(f):
-                    if to in ("auto", "whl"):
-                        found.append(f)
+                elif _is_tar_xz(f) and to in ("auto", "whl"):
+                    found.append(f)
             out.extend(found)
             print(f"Found {len(found)} convertible files in {p}")
     return out

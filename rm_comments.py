@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Iterable
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from dh import is_binary
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 EXCLUDE_EXTENSIONS: Final[set[str]] = {
     ".pyc",
@@ -287,9 +289,8 @@ def _iter_results(
             )
             total_removed += removed
             files_changed += 1
-        else:
-            if verbose:
-                logger.debug("[{}/{}] No changes: {}", completed, total, rel)
+        elif verbose:
+            logger.debug("[{}/{}] No changes: {}", completed, total, rel)
 
     return total_removed, files_changed, files_with_errors, binary_files, completed
 

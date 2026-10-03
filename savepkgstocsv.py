@@ -3,6 +3,8 @@
 The script should run the dpkg-query subprocess, parse and validate each output line against the expected field count, sort the resulting rows by Installed-Size in descending order, and then save the data to both a TSV file and a CSV file inside /sdcard/backups (named installed.tsv and installed.csv).
 It should handle errors gracefully, exiting with an informative message if dpkg-query is missing (non-Debian system) or if the subprocess call fails."""
 
+from __future__ import annotations
+
 import csv
 import subprocess
 import sys

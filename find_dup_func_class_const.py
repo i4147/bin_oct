@@ -3,6 +3,8 @@
 For each set of duplicates found, the script should report the affected files and support automatically rewriting the duplicate files (via modify_affected_file, which reads and edits the source text) to remove or replace the redundant definitions, presumably consolidating them into a shared location.
 It should accept command-line arguments to configure input paths and behavior, and print a summary of duplicates detected and files modified."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import concurrent.futures
@@ -78,7 +80,7 @@ def main():
         help="Consolidate duplicate code blocks into dh.py and update files with required imports.",
     )
     args = parser.parse_args()
-    current_dir = Path(".")
+    current_dir = Path()
     dh_path = current_dir / "dh.py"
     script_path = Path(__file__).resolve()
     py_files = [f for f in current_dir.rglob("*.py") if f.resolve() != script_path and f.resolve() != dh_path.resolve()]

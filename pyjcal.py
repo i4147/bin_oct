@@ -4,6 +4,8 @@ It should store year, month, and day as attributes, and include class-level list
 Implement static/class methods such as today(), today_with_time(), and from_gregorian(year, month, day) that use Python's datetime module to get the current Gregorian date and convert it into a corresponding JalaliDate instance (with today_with_time() also returning the original datetime object alongside the JalaliDate).
 Ensure the conversion logic correctly maps Gregorian dates to their Jalali year, month, and day equivalents."""
 
+from __future__ import annotations
+
 from datetime import datetime
 
 

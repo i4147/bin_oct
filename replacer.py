@@ -3,11 +3,14 @@
 In dry-run mode it should report how many matches were found per file and print a short surrounding-context snippet for up to three matches, plus a count of any remaining matches.
 It should skip binary files using an external is_binary helper, gracefully handle unicode decoding and permission errors by printing a skip message to stderr, and use argparse to accept the target path, search text, optional replacement text, a remove flag, and a dry-run flag."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
+
 from dh import is_binary
 
 MAX_CONTEXT_DISPLAY = 3

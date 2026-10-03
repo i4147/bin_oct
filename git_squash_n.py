@@ -6,11 +6,13 @@
 Notes: - The script requires a clean working tree by default (use --force to proceed with uncommitted changes; the script will stash/restore).
 - It creates temporary backups and will attempt to restore the original HEAD on failure."""
 
+from __future__ import annotations
+
 import argparse
+import json
 import os
 import subprocess
 import sys
-import json
 from datetime import datetime
 
 
@@ -81,7 +83,8 @@ class SubprocessBackend(Backend):
         dirty = bool(st.stdout.strip())
         stash_made = False
         if dirty and not force:
-            raise RuntimeError("Working tree is dirty. Commit or use --force to stash changes before running.")
+            msg = "Working tree is dirty. Commit or use --force to stash changes before running."
+            raise RuntimeError(msg)
         if dirty and force:
             run(
                 [
@@ -115,7 +118,8 @@ class SubprocessBackend(Backend):
         )
         shas = [s.strip() for s in res.stdout.splitlines() if s.strip()]
         if len(shas) < n:
-            raise RuntimeError(f"Repository has fewer than {n} commits.")
+            msg = f"Repository has fewer than {n} commits."
+            raise RuntimeError(msg)
         return shas
 
     def write_combined_diff(self, base_rev, head_rev, out_patch_path):
@@ -201,7 +205,8 @@ class SubprocessBackend(Backend):
         if res2.returncode == 0:
             return True
 
-        raise RuntimeError(f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}")
+        msg = f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}"
+        raise RuntimeError(msg)
 
     def add_all(self):
         run(["git", "add", "-A"], cwd=self.repo_path)
@@ -229,7 +234,7 @@ class GenericBackend(Backend):
                 self._available["gitpython"] = True
             except Exception:
                 self._available["gitpython"] = False
-        elif name == "libgit2" or name == "pygit2":
+        elif name in {"libgit2", "pygit2"}:
             try:
                 import pygit2
 
@@ -282,7 +287,8 @@ class GenericBackend(Backend):
                 repo = self.gitpy.Repo(self.repo_path)
                 commits = list(repo.iter_commits("HEAD", max_count=n))
                 if len(commits) < n:
-                    raise RuntimeError(f"Repository has fewer than {n} commits.")
+                    msg = f"Repository has fewer than {n} commits."
+                    raise RuntimeError(msg)
                 return [c.hexsha for c in reversed(commits)]
             except Exception:
                 self._announce_fallback("get_last_n_commits")
@@ -358,7 +364,7 @@ def main():
     backend = create_backend(args.backend, repo_path)
 
     try:
-        was_clean, stash_made = backend.ensure_clean_worktree(force=args.force)
+        _was_clean, stash_made = backend.ensure_clean_worktree(force=args.force)
     except Exception as e:
         print("Error: working tree check failed:", e, file=sys.stderr)
         sys.exit(1)

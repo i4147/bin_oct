@@ -293,7 +293,8 @@ def extract_pep621_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
     bs = pyproject.get("build-system", {})
     tool = pyproject.get("tool", {}) or {}
     if not isinstance(v1, dict):
-        raise ValueError("[project] must be a table")
+        msg = "[project] must be a table"
+        raise ValueError(msg)
     readme_content, readme_ctype = _readme_content(v1.get("readme", ""), root)
     readme_file = (
         v1.get("readme", {}).get("file")
@@ -345,7 +346,8 @@ def extract_pep621_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
 def extract_poetry_meta(pyproject: dict[str, Any], root: Path) -> ProjectMeta:
     poetry = pyproject.get("tool", {}).get("poetry", {})
     if not isinstance(poetry, dict):
-        raise ValueError("[tool.poetry] missing or malformed")
+        msg = "[tool.poetry] missing or malformed"
+        raise ValueError(msg)
     authors = _authors_from_pep621(poetry.get("authors", []) or [])
     deps_dict = poetry.get("dependencies", {}) or {}
     deps: list[str] = []
@@ -392,7 +394,8 @@ def parse_setup_cfg(path: Path) -> configparser.ConfigParser:
         try:
             cfg.read(path, encoding="utf-8")
         except configparser.Error as exc:
-            raise ValueError(f"invalid setup.cfg: {exc}") from exc
+            msg = f"invalid setup.cfg: {exc}"
+            raise ValueError(msg) from exc
     return cfg
 
 
@@ -741,7 +744,7 @@ def parse_requirements(project_dir: Path) -> list[str]:
         deps: list[str] = []
         for line in (read_text(p) or "").splitlines():
             line = line.strip()
-            if not line or line.startswith("#") or line.startswith("-"):
+            if not line or line.startswith(("#", "-")):
                 continue
             if name == "Pipfile":
                 if "=" in line and not line.startswith("["):
@@ -796,7 +799,8 @@ def render_setup_py_for_dir(project_dir: Path, package_name: str) -> str:
 def _read_wheel_metadata(root: Path) -> dict[str, Any]:
     dist_info = next(root.glob("*.dist-info"), None)
     if dist_info is None:
-        raise RuntimeError("no .dist-info directory found")
+        msg = "no .dist-info directory found"
+        raise RuntimeError(msg)
     meta = Parser().parsestr((dist_info / "METADATA").read_text(encoding="utf-8"))
     return {
         "name": meta["Name"],

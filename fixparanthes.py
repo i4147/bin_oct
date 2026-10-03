@@ -8,6 +8,8 @@ Un-escape \( \) into ( ) (those are invalid JSON escapes anyway).
 Balance parentheses (add missing ones on the proper side).
 Then we validate by json.loads + re-dump so the file is valid JSON."""
 
+from __future__ import annotations
+
 import json
 import re
 import sys

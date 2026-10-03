@@ -3,8 +3,11 @@
 It should use a fixed-size hash table over 4-byte sequences to find matches within bounded offset ranges, encode literal runs and copy runs into compact variable-length tagged binary formats (including a varint encoder), and write out compressed representations while printing progress or size statistics to the console.
 The script should be runnable from the command line, accepting file or directory paths via sys.argv and using pathlib.Path for filesystem handling."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, fsz, get_files, gsz, mpf
 
 _HASH_TABLE_SIZE = 1 << 14

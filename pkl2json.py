@@ -3,9 +3,12 @@
 It should report each loaded file's shape, then concatenate all valid DataFrames into a single merged DataFrame, remove duplicate rows, and print progress messages including counts of files found, rows merged, and duplicates dropped.
 Handle the case where no `.pkl` files exist or none contain valid DataFrames by printing an appropriate message and exiting gracefully."""
 
+from __future__ import annotations
+
 import glob
 import json
 import pickle
+
 import pandas as pd
 
 

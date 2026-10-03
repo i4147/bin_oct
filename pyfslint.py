@@ -4,6 +4,8 @@ It should use argparse for options (e.g., target paths, checks to run, symlink-f
 Output should be organized into colorized (ANSI, TTY-aware), formatted console sections with helper functions for headers, findings, success, and warning/error messages, printing warnings to stderr.
 The tool is meant to help administrators quickly spot suspicious or insecure file configurations across a system."""
 
+from __future__ import annotations
+
 import argparse
 import contextlib
 import grp
@@ -15,8 +17,11 @@ import stat
 import subprocess
 import sys
 from collections import defaultdict
-from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 RESET = "\x1b[0m"
 BOLD = "\x1b[1m"

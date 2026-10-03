@@ -3,6 +3,8 @@
 It should include a LineProcessor base class with a verbose logging helper and a file-size lookup, plus an MmapReader subclass that memory-maps files larger than 1MB (falling back to normal reads for smaller files by one via a generator, decoding with a configurable encoding and optionally skipping empty lines.
 The script should accept command-line arguments (via argparse) for input file path(s), encoding, verbosity, and an option to skip empty lines, then aggregate results such as total line counts and timing using modules like json, time, datetime, Counter, and a custom fsz helper for human-readable file sizes, writing output to stdout or a specified location while using temporary files/directories as needed for intermediate processing."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import mmap
@@ -12,10 +14,14 @@ import sys
 import tempfile
 import time
 from collections import Counter
-from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from dh import fsz
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class LineProcessor:

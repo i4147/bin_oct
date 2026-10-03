@@ -3,11 +3,14 @@
 The script should use argparse to accept a target directory (defaulting to the current directory), print informative progress and error messages (e.g., file counts, skipped files, read errors), and use datetime/UTC timestamps in the backup metadata.
 It should skip files smaller than a minimum size threshold and only hash files that share the same size to optimize performance."""
 
+from __future__ import annotations
+
 import argparse
 import json
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
+
 from xxhash import xxh64
 
 BACKUP_FILE = ".symlink_backup.json"

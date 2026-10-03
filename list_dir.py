@@ -20,7 +20,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-
 DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".git", "__pycache__"})
 ICON_IMAGE_EXTS: frozenset[str] = frozenset({"png", "jpg", "jpeg", "gif", "webp"})
 ICON_CODE_EXTS: frozenset[str] = frozenset({"py", "sh"})
@@ -53,7 +52,7 @@ class LsOptions:
 
 
 class Entry:
-    __slots__ = ("path", "name", "st", "link_target", "git")
+    __slots__ = ("git", "link_target", "name", "path", "st")
 
     def __init__(
         self,
@@ -262,8 +261,8 @@ def render_long(entries: list[Entry], opts: LsOptions) -> None:
     pwd = None
     grp = None
     try:
-        import pwd as _pwd
         import grp as _grp
+        import pwd as _pwd
 
         pwd = _pwd
         grp = _grp

@@ -3,6 +3,8 @@
 It should define a custom PlaysoundException for error handling, and a playsound(sound, block=True) function that only supports blocking playback (raising NotImplementedError if block=False), builds a playbin element, sets its URI (converting local file paths to file:// URIs via pathname2url), starts playback, and blocks until an end-of-stream message is received on the bus before resetting the pipeline state.
 When run as a script, it should accept a sound file path or URL from the command line and play it."""
 
+from __future__ import annotations
+
 
 class PlaysoundException(Exception):
     pass
@@ -10,9 +12,11 @@ class PlaysoundException(Exception):
 
 def playsound(sound, block=True):
     if not block:
-        raise NotImplementedError("block=False cannot be used on this platform yet")
+        msg = "block=False cannot be used on this platform yet"
+        raise NotImplementedError(msg)
     import os
     from urllib.request import pathname2url
+
     import gi
 
     gi.require_version("Gst", "1.0")

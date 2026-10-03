@@ -6,15 +6,18 @@ from __future__ import annotations
 
 import argparse
 import ast
-from collections.abc import Iterator
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tree_sitter_python as tsp
 from dh import gsz, rrs
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from multiprocessing.pool import AsyncResult
 
 PY_EXTS: set[str] = {".py"}
 MAX_WORKERS: int = 8
@@ -209,7 +212,8 @@ def strip_comments_and_docstrings(content: bytes) -> tuple[bytes, int]:
     try:
         ast.parse(new_content)
     except SyntaxError as exc:
-        raise ValueError(f"Generated invalid Python source: {exc}") from exc
+        msg = f"Generated invalid Python source: {exc}"
+        raise ValueError(msg) from exc
     return new_content, len(actions)
 
 
@@ -278,7 +282,7 @@ def main() -> int:
         help="Files or directories. Defaults to the current directory recursively.",
     )
     args: argparse.Namespace = parser.parse_args()
-    inputs: list[Path] = args.paths or [Path(".")]
+    inputs: list[Path] = args.paths or [Path()]
     base: Path = Path.cwd()
     file_iterator: Iterator[Path] = iter_py_files(inputs)
     total_files: int = 0

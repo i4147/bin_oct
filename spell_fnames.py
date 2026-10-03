@@ -4,10 +4,13 @@ It should locate an available Hunspell dictionary from a predefined list of path
 For any misspelled words found, it should use Hunspell's suggestion feature to propose a corrected version of the filename stem, printing or returning the suggested fix.
 The script should be runnable via argparse from the command line, accepting a filename as input."""
 
+from __future__ import annotations
+
 import argparse
 import re
 import sys
 from pathlib import Path
+
 import hunspell
 
 DICT_PATHS = [

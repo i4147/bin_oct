@@ -161,7 +161,7 @@ def draw_interface(current_node: FSItem, selected_idx: int) -> None:
 
 
 def main() -> int:
-    target_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
+    target_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path()
     if not target_dir.is_dir():
         logger.error("{} is not a valid directory.", target_dir)
         return 1
@@ -177,7 +177,7 @@ def main() -> int:
         if key in ("q", "\x03"):
             clear_screen()
             break
-        elif key in (KEY_UP, "k"):
+        if key in (KEY_UP, "k"):
             if selected_idx > 0:
                 selected_idx -= 1
         elif key in (KEY_DOWN, "j"):
@@ -189,14 +189,13 @@ def main() -> int:
                 if target.is_dir and target.children:
                     current_node = target
                     selected_idx = 0
-        elif key in (KEY_LEFT, "h", KEY_ESC):
-            if current_node.parent is not None:
-                old_node = current_node
-                current_node = current_node.parent
-                try:
-                    selected_idx = current_node.children.index(old_node)
-                except ValueError:
-                    selected_idx = 0
+        elif key in (KEY_LEFT, "h", KEY_ESC) and current_node.parent is not None:
+            old_node = current_node
+            current_node = current_node.parent
+            try:
+                selected_idx = current_node.children.index(old_node)
+            except ValueError:
+                selected_idx = 0
     return 0
 
 

@@ -1,12 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """HTML Formatter using Tree-sitter Formats HTML files so every tag starts on a new line."""
 
+from __future__ import annotations
+
 import logging
 import multiprocessing as mp
 import sys
-from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 try:
     import tree_sitter_html as ts_html
@@ -107,7 +112,8 @@ class HTMLFormatter:
             self.HTML_LANGUAGE = Language(ts_html.language())
             self.parser = Parser(self.HTML_LANGUAGE)
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize Tree-sitter parser: {e}")
+            msg = f"Failed to initialize Tree-sitter parser: {e}"
+            raise RuntimeError(msg)
 
     def format_html(self, source_code: str) -> tuple[str, int]:
         if not source_code.strip():

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import hashlib
 import mimetypes
 import os
@@ -105,7 +106,7 @@ def is_image_url(url: str) -> bool:
 
 
 def strip_query_fragment(url: str) -> str:
-    return url.split("?")[0].split("#")[0]
+    return url.split("?", maxsplit=1)[0].split("#", maxsplit=1)[0]
 
 
 def safe_filename(name: str) -> str:
@@ -190,10 +191,8 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                     break
             return save_asset(buf.getvalue(), mime)
         except Exception as exc:
-            try:
+            with contextlib.suppress(Exception):
                 c.close()
-            except Exception:
-                pass
             logger.warning(f"curl failed for {url}: {exc}")
             return None
 
@@ -696,7 +695,7 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
 
     seen_css: set[str] = set()
     while css_queue:
-        ref, base = css_queue.pop()
+        ref, _base = css_queue.pop()
         if ref in seen_css:
             continue
         seen_css.add(ref)
@@ -783,7 +782,7 @@ def _rewrite_css(css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
         body, _ = got
         inner_base: Path | str = base
         if is_remote(_resolve_url(ref, base)):
-            inner_base = Path(".")
+            inner_base = Path()
         else:
             inner_base = Path(_resolve_url(ref, base)).parent
         return _rewrite_css(body.decode("utf-8", errors="replace"), inner_base, cache)

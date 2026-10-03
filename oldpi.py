@@ -3,12 +3,15 @@
 Additionally include helper functions that open a source file efficiently (using mmap for files larger than 1MB, otherwise a regular binary file handle), read a file's text content safely as UTF-8 with errors ignored, detect Python2-style print statements via a regex pattern, and check whether a given source text already imports Rich's print function.
 The script should rely on tokenize and an internal module `dh.mpf_joblib`, and is intended as part of a code-scanning or linting tool that inspects Python source files for legacy print usage."""
 
+from __future__ import annotations
+
 import mmap
 import re
 import tokenize
 from collections import deque
 from mmap import mmap
 from pathlib import Path
+
 from dh import mpf_joblib
 
 

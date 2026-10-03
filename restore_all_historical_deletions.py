@@ -3,6 +3,8 @@
 It should verify the current directory is a Git repository root, run "git log --diff-filter=D" to build a map of deleted file paths to the commit hash right before their deletion (keeping only the earliest/original deletion per path), and print progress messages with emoji indicators throughout.
 For each deleted file it should determine the appropriate commit to recover the content from and then check it out, restoring the files while handling and reporting any Git command errors gracefully."""
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
 
@@ -13,11 +15,11 @@ def run_git_command(args: list[str]) -> str:
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"❌ Git error executing {' '.join(e.cmd)}:\n{e.stderr.strip()}")
-        return
+        return None
 
 
 def main():
-    repo_root = Path(".")
+    repo_root = Path()
     if not (repo_root / ".git").exists() and not run_git_command(["rev-parse", "--is-inside-work-tree"]) == "true":
         print("❌ Error: Current directory is not a Git repository root.")
         return

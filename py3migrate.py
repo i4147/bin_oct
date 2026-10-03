@@ -127,7 +127,8 @@ def read_text(path: Path) -> str:
     except UnicodeDecodeError:
         return path.read_text(encoding="latin-1")
     except OSError as e:
-        raise OSError(f"cannot read {path}: {e}") from e
+        msg = f"cannot read {path}: {e}"
+        raise OSError(msg) from e
 
 
 def _make_backup(path: Path) -> None:
@@ -162,10 +163,11 @@ def _import_refactoring_tool():
     try:
         from lib2to3.refactor import RefactoringTool  # type: ignore
     except ImportError as e:  # pragma: no cover
-        raise RuntimeError(
+        msg = (
             "lib2to3 is not available in this Python (removed in 3.13). "
             "Use Python 3.12 or install `2to3` from PyPI for the CLI path."
-        ) from e
+        )
+        raise RuntimeError(msg) from e
     return RefactoringTool
 
 
@@ -552,7 +554,7 @@ def _strip_tag_from_text(text: str, tag: str) -> str:
 
 
 def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
-    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".zip")
+    _tmp_fd, tmp_name = tempfile.mkstemp(suffix=".zip")
     tmp = Path(tmp_name)
     try:
         changed = False

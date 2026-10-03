@@ -3,14 +3,20 @@
 It should process files in parallel using joblib, write changes safely via a temporary file before replacing the original, and track per-file statistics (success/failure, number of replacements, size before/after) in a FileStats dataclass, logging a formatted summary line for each processed file.
 Include argparse-based CLI input handling and logging configuration for reporting progress and errors."""
 
+from __future__ import annotations
+
 import argparse
 import logging
 import shutil
 import tempfile
-from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 from joblib import Parallel, delayed
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(message)s")
 logger = logging.getLogger(__name__)

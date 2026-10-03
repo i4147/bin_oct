@@ -3,6 +3,8 @@
 For each file it should identify standalone comment lines (ignoring shebang lines) and string literals that serve as module/class/function docstrings, reporting the line number and a truncated preview of each finding.
 It should support multiprocessing to check multiple files in parallel for performance, take input paths via argparse, and print a per-file list of issues (comments/docstrings found) to help enforce a "no comments/docstrings" coding style policy."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import multiprocessing as mp
@@ -53,7 +55,7 @@ def check_file(path: Path) -> tuple[Path, list[str]]:
 def collect_files(inputs: list[str]) -> list[Path]:
     files = set()
     if not inputs:
-        return list(Path(".").rglob("*.py"))
+        return list(Path().rglob("*.py"))
     for item in inputs:
         p = Path(item)
         if p.is_file() and p.suffix == ".py":

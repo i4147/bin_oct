@@ -3,7 +3,10 @@
 For each remaining text file, it reads the content with UTF-8 encoding and deletes the file if its total character length is below 100 or its line count is below 3, printing a removal message for each deleted file.
 It should be structured with a `process_file` function that validates the path exists before processing, and a `main` function that orchestrates iteration over the discovered files, exiting via `SystemExit` when run as a script."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from dh import get_files, is_binary
 
 SIZE_THRESHOLD = 100

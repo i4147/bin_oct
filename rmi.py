@@ -3,8 +3,11 @@
 It should accept a list of file paths as command-line arguments; if none are provided, it should fall back to scanning the current working directory for non-binary files using a helper function `get_nobinary` from a local module named `dh`.
 For each file, read its content as UTF-8 (ignoring decode errors), remove the invisible characters, and if any were removed, overwrite the file with the cleaned text and print the count of removed characters, otherwise print a message indicating none were found."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import get_nobinary
 
 INVISIBLE_CHARS = {

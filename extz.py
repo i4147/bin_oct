@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
-from pathlib import Path
-from collections import defaultdict
-from typing import Tuple, List, Generator
+from __future__ import annotations
+
+import argparse
 import os
 import shutil
 import sys
-import argparse
+from collections import defaultdict
+from pathlib import Path
+from typing import Generator, List, Tuple
 
 
 # ANSI color codes (no external dependency)
@@ -74,7 +76,7 @@ def format_size(bytes_val: int) -> str:
     return f"{bytes_val:.1f} PB"
 
 
-def walk_files(root: Path = None, skip_dirs: set = None) -> Generator[tuple[Path, int], None, None]:
+def walk_files(root: Path | None = None, skip_dirs: set | None = None) -> Generator[tuple[Path, int], None, None]:
     """
     Generator-based directory walker using os.scandir (efficient, lazy).
 
@@ -300,14 +302,13 @@ def main() -> None:
                     f"✓ Total files: {total_files}\n"
                     f"✓ Total size: {format_size(total_bytes)}"
                 )
+        elif use_color:
+            summary = (
+                f"\n{Colors.GRAY}✓ Total unique extensions: {total_exts}{Colors.RESET}\n"
+                f"{Colors.GRAY}✓ Total files: {total_files}{Colors.RESET}"
+            )
         else:
-            if use_color:
-                summary = (
-                    f"\n{Colors.GRAY}✓ Total unique extensions: {total_exts}{Colors.RESET}\n"
-                    f"{Colors.GRAY}✓ Total files: {total_files}{Colors.RESET}"
-                )
-            else:
-                summary = f"\n✓ Total unique extensions: {total_exts}\n✓ Total files: {total_files}"
+            summary = f"\n✓ Total unique extensions: {total_exts}\n✓ Total files: {total_files}"
 
         print(summary)
 

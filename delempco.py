@@ -4,17 +4,21 @@ This is a parallel file processing tool that recursively removes blank lines (an
 It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, and complete type annotations.
 The script detects binary files and skips them, reports progress, and provides a summary of modified files, removed lines, and errors."""
 
+from __future__ import annotations
+
 import argparse
 import sys
 import time
 from dataclasses import dataclass, field
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from dh import is_binary, should_skip
 from loguru import logger
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
 
 ANSI_RESET: Final[str] = "\x1b[0m"
 ANSI_BOLD: Final[str] = "\x1b[1m"
@@ -71,7 +75,8 @@ def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, in
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
     except OSError as e:
-        raise OSError(f"Failed to read file: {e}")
+        msg = f"Failed to read file: {e}"
+        raise OSError(msg)
 
     total_lines: int = len(lines)
 
@@ -87,7 +92,8 @@ def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, in
             with open(path, "w", encoding="utf-8") as f:
                 f.writelines(filtered)
         except OSError as e:
-            raise OSError(f"Failed to write file: {e}")
+            msg = f"Failed to write file: {e}"
+            raise OSError(msg)
 
     return (total_lines, removed_lines)
 

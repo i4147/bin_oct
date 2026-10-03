@@ -5,6 +5,8 @@ It should raise a ValueError with a descriptive message if the heredoc start pat
 The script also includes a function to reformat flattened, single-line-ish code by reinserting proper line breaks using Python's tokenize module, since heredocs are sometimes minified or joined onto fewer lines.
 This is useful for recovering readable, well-formatted Python source that was embedded inline within shell scripts or CI configuration files."""
 
+from __future__ import annotations
+
 import io
 import re
 import sys
@@ -31,7 +33,8 @@ HEREDOC_START = re.compile(
 def extract_heredoc(source: str) -> tuple[str, str]:
     match = HEREDOC_START.search(source)
     if match is None:
-        raise ValueError("No Python heredoc was found. Expected syntax like: python - <<'PY' ... PY")
+        msg = "No Python heredoc was found. Expected syntax like: python - <<'PY' ... PY"
+        raise ValueError(msg)
     tag = match.group("tag")
     content_start = match.end()
     normal_end = re.compile(rf"(?:^|\n)[ \t]*{re.escape(tag)}[ \t]*(?=\n|$)").search(source, content_start)
@@ -40,7 +43,8 @@ def extract_heredoc(source: str) -> tuple[str, str]:
         return python_code.strip(), tag
     flattened_end = list(re.finditer(rf"(?:^|\s){re.escape(tag)}(?:\s|$)", source[content_start:]))
     if not flattened_end:
-        raise ValueError(f"Closing heredoc delimiter {tag!r} was not found.")
+        msg = f"Closing heredoc delimiter {tag!r} was not found."
+        raise ValueError(msg)
     end_match = flattened_end[-1]
     python_code = source[content_start : content_start + end_match.start()]
     return python_code.strip(), tag

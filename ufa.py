@@ -3,8 +3,11 @@
 For each collected file, read it line by line, strip whitespace, prepend the string backslash u to each line to form a unicode escape sequence, decode it into the actual unicode character using UTF-8 bytes and the "unicode_escape" codec, and print both the raw escaped string and its decoded result to standard output.
 The script should be runnable as a module with `sys.exit`/`SystemExit` returning the result of a `main()` function."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import get_nobinary, is_binary
 
 

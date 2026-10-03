@@ -14,11 +14,13 @@ import sys
 import tarfile
 import zipfile
 from collections import defaultdict
-from collections.abc import Iterable
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import unquote, urlparse
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 try:
     from loguru import logger as _loguru_logger

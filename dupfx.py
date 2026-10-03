@@ -16,12 +16,15 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from xxhash import xxh64
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 QUICK_READ: int = 4096
 
@@ -53,7 +56,8 @@ def quick_hash(path: Path, n: int = QUICK_READ) -> str:
                 rest = f.read()
                 h.update(rest)
     except OSError as e:
-        raise OSError(f"quick_hash error {path}: {e}") from e
+        msg = f"quick_hash error {path}: {e}"
+        raise OSError(msg) from e
     return h.hexdigest()
 
 
@@ -99,7 +103,8 @@ def iter_files(
 
 def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
     if not files:
-        raise ValueError("Empty file list")
+        msg = "Empty file list"
+        raise ValueError(msg)
     if policy == "first":
         return min(files, key=str)
     elif policy == "oldest":

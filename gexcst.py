@@ -252,7 +252,7 @@ def main() -> int:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     files_to_process: list[str] = []
-    current_dir = Path(".")
+    current_dir = Path()
 
     for root, _, filenames in os.walk(current_dir):
         for name in filenames:

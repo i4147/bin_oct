@@ -105,9 +105,7 @@ class ChangeHandler(FileSystemEventHandler):
             return False
         if self.allowed_exts is not None and not path_matches_ext(src_path, self.allowed_exts):
             return False
-        if self.excluded_exts is not None and path_matches_ext(src_path, self.excluded_exts):
-            return False
-        return True
+        return not (self.excluded_exts is not None and path_matches_ext(src_path, self.excluded_exts))
 
     def _safe_copy(self, src: Path, rel: str) -> None:
         try:

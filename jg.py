@@ -3,6 +3,8 @@
 For each such repository found, it should delete all other files and subdirectories inside it (keeping only the ".git" folder itself), using shutil.rmtree for directories and unlink for files.
 After processing, the script should print the relative paths of all top-level items remaining in the current working directory."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 

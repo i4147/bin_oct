@@ -72,9 +72,7 @@ def is_movable(node: ast.stmt) -> bool:
         return False
     if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
         return False
-    if isinstance(node, ast.If) and is_main_guard_if(node):
-        return False
-    return True
+    return not (isinstance(node, ast.If) and is_main_guard_if(node))
 
 
 def indent_text(text: str, spaces: int = DEFAULT_INDENT) -> str:
@@ -198,7 +196,7 @@ def fix_with_template(path: Path, *, dry_run: bool = False) -> tuple[str, str]:
 
 
 def discover_files(paths: Sequence[str], excludes: frozenset[str]) -> list[Path]:
-    roots = [Path(p) for p in paths] if paths else [Path(".")]
+    roots = [Path(p) for p in paths] if paths else [Path()]
     found: list[Path] = []
     for root in roots:
         if root.is_dir():

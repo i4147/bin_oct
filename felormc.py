@@ -39,7 +39,6 @@ from libcst import (
 )
 from loguru import logger
 
-
 DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"
@@ -265,7 +264,7 @@ def process_file(path_str: str, dry_run: bool) -> ProcessResult:
 
 
 def run(paths: list[Path], workers: int, dry_run: bool) -> int:
-    search_roots = paths if paths else [Path.cwd()]
+    search_roots = paths or [Path.cwd()]
     targets = list(iter_target_files(search_roots))
 
     if not targets:

@@ -3,8 +3,11 @@
 For each folder containing such definitions, it concatenates the extracted function texts and writes them into a mirrored subfolder under an "output" directory as an "imports.py" file, preserving the original relative folder structure.
 At the end, it prints a summary message reporting how many folders were processed."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
+
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

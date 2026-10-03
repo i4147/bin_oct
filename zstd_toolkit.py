@@ -271,9 +271,8 @@ def compress_file(
             )
 
         cctx = zstd.ZstdCompressor(level=level, threads=threads)
-        with src.open("rb") as fin, tmp.open("wb") as fout:
-            with cctx.stream_writer(fout) as writer:
-                shutil.copyfileobj(fin, writer, length=1024 * 1024)
+        with src.open("rb") as fin, tmp.open("wb") as fout, cctx.stream_writer(fout) as writer:
+            shutil.copyfileobj(fin, writer, length=1024 * 1024)
 
         compressed = tmp.stat().st_size
 
@@ -343,9 +342,8 @@ def tar_compress_dir(
             tar.add(src_dir, arcname=src_dir.name)
 
         cctx = zstd.ZstdCompressor(level=level, threads=threads)
-        with tmp_tar.open("rb") as fin, dst.open("wb") as fout:
-            with cctx.stream_writer(fout) as writer:
-                shutil.copyfileobj(fin, writer, length=1024 * 1024)
+        with tmp_tar.open("rb") as fin, dst.open("wb") as fout, cctx.stream_writer(fout) as writer:
+            shutil.copyfileobj(fin, writer, length=1024 * 1024)
 
         tmp_tar.unlink(missing_ok=True)
         compressed = dst.stat().st_size
@@ -406,9 +404,8 @@ def decompress_file(
         original = _file_size(src)
 
         dctx = zstd.ZstdDecompressor()
-        with src.open("rb") as fin, tmp.open("wb") as fout:
-            with dctx.stream_reader(fin) as reader:
-                shutil.copyfileobj(reader, fout, length=1024 * 1024)
+        with src.open("rb") as fin, tmp.open("wb") as fout, dctx.stream_reader(fin) as reader:
+            shutil.copyfileobj(reader, fout, length=1024 * 1024)
         tmp.rename(dst)
 
         tar_extracted = False
@@ -482,9 +479,8 @@ def discover_targets(root: Path, args: argparse.Namespace) -> tuple[list[Path], 
             if whitelist is not None:
                 if p.suffix.lower() not in whitelist:
                     continue
-            else:
-                if p.suffix.lower() in SKIP_EXTENSIONS:
-                    continue
+            elif p.suffix.lower() in SKIP_EXTENSIONS:
+                continue
             if args.min_size and _file_size(p) < args.min_size:
                 continue
             files.append(p)
@@ -689,8 +685,7 @@ def cmd_split(args: argparse.Namespace) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     base = src.stem
-    if base.endswith(".tar"):
-        base = base[:-4]
+    base = base.removesuffix(".tar")
 
     print(f"Reading {src} …")
     dctx = zstd.ZstdDecompressor()

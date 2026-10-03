@@ -4,6 +4,8 @@ It should print the chosen index, total candidate count, and filename, then look
 Include a helper function using fontTools' woff2.decompress to convert a WOFF2 file to TTF, silently ignoring any conversion errors.
 The script should be runnable as a standalone module with a main entry point."""
 
+from __future__ import annotations
+
 import secrets
 from pathlib import Path
 

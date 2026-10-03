@@ -2,6 +2,8 @@
 """Remove files listed in a manifest file from the current (top-level) folder.
 Defaults to 'list.txt' if no argument is provided, and deletes the list file afterward."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

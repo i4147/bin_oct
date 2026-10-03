@@ -3,8 +3,11 @@
 For each file, it loads the font with TTFont, sets its flavor to "woff2", saves it with a ".woff2" extension (generating a unique filename if a non-empty target already exists), deletes the original ".woff" file, and prints a success or error message per file.
 If exactly one file is processed it runs synchronously and exits with status 1, otherwise it processes all files in parallel using a multiprocessing helper function."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 

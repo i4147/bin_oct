@@ -4,6 +4,8 @@ It should delete any "build", "dist", or "target" directories, any directories e
 Additionally, it should detect "setup.cfg" files whose content exactly matches a specific auto-generated template (an "[egg_info]" section with empty "tag_build" and "tag_date = 0") and delete only those matching files, leaving custom setup.cfg files untouched.
 The script should print a confirmation message naming each removed item as it processes the directory tree, and it should run automatically when executed as the main module."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 

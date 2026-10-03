@@ -4,8 +4,11 @@ It should accept one or more file or directory paths as input, using a helper "g
 For each convertible file, it should compare the file size before and after conversion, avoid overwriting existing JPG files by generating a unique output path when needed, and print colored console status messages summarizing the conversion (including size change).
 The script should prefer OpenCV (with NumPy) for image decoding and alpha blending if available, falling back to Pillow otherwise."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, fsz, get_files, gsz, mpf, rrs, unique_path
 
 try:

@@ -3,6 +3,8 @@
 The script should support command-line flags "-e" to empty matched files (truncate content instead of deleting) and "-r" to remove/delete them, using shutil.rmtree for directories and unlink for files, printing errors to stderr on failure.
 It should also track and report a count of removed items, and include helper functions to detect files with multiple suffixes and to check whether a path should be skipped based on the exclusion directories."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path
@@ -48,6 +50,8 @@ def main() -> None:
         loname = path.name.lower()
         rel_path = path.relative_to(cwd)
         if path.is_file() and loname in {
+            "license_gpl2.0.txt",
+            "license_lgpl_2.1.txt",
             "copyrightnotice.txt",
             "history.rst",
             ".dirinfo",

@@ -4,6 +4,8 @@ It should define a function that maps each Persian character to a corresponding 
 The function should split the input text on spaces, transliterate each word, and rejoin the resulting words using underscores instead of spaces.
 It should import unicodedata and pathlib.Path, even if they are not directly used in the core logic shown."""
 
+from __future__ import annotations
+
 import unicodedata
 from pathlib import Path
 

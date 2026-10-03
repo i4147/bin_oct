@@ -3,6 +3,8 @@
 It should support multiprocessing for scanning multiple files in parallel, accept command-line arguments (e.g., target paths, a dry-run/check-only mode, verbosity), and output a summary report listing which files were modified along with the line/column positions and counts of fixed escape sequences.
 The script must exclude itself (SELF_PATH) from processing and handle both regular strings and f-strings differently depending on whether the running Python version exposes FSTRING_START tokens."""
 
+from __future__ import annotations
+
 import argparse
 import io
 import multiprocessing as mp

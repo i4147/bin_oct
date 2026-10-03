@@ -4,6 +4,8 @@ Before moving, if a file with the same name already exists at the destination, t
 If the hashes match, it should print messages indicating the target exists and the hashes are equal, delete the source file, and exit with status code 1 instead of moving it.
 If the destination does not exist or the hashes differ, the script should rename/move the source file into the destination directory."""
 
+from __future__ import annotations
+
 import sys
 from hashlib import sha256
 from pathlib import Path

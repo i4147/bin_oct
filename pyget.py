@@ -25,10 +25,10 @@ import urllib.parse
 import urllib.request
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, Self
 
 __version__ = "2.0.0"
 
@@ -193,13 +193,13 @@ class Progress:
         with self.lock:
             self.bars.append(bar)
 
-    def __enter__(self) -> "Progress":
+    def __enter__(self) -> Self:
         if self.enabled:
             self._thread = threading.Thread(target=self._loop, daemon=True)
             self._thread.start()
         return self
 
-    def __exit__(self, *exc: Any) -> bool:
+    def __exit__(self, *exc: object) -> bool:
         self.close()
         return False
 
@@ -388,10 +388,8 @@ class PycurlBackend(Backend):
             if line.startswith("HTTP/"):
                 state["headers"] = {}
                 state["status"] = None
-                try:
+                with suppress(IndexError, ValueError):
                     state["status"] = int(line.split()[1])
-                except (IndexError, ValueError):
-                    pass
             elif line == "":
                 st = state["status"]
                 if st is not None and not (300 <= st < 400):
@@ -433,7 +431,8 @@ class PycurlBackend(Backend):
             raise state["error"]
         if state["status"] is None:
             stop_flag.set()
-            raise RuntimeError("no response received")
+            msg = "no response received"
+            raise RuntimeError(msg)
 
         hdrs = state["headers"]
         length_hdr = hdrs.get("content-length")
@@ -467,18 +466,21 @@ def get_backend(name: str) -> Backend:
         try:
             return RequestsBackend()
         except ImportError as exc:
-            raise SystemExit("backend 'requests' requires the requests package: pip install requests") from exc
+            msg = "backend 'requests' requires the requests package: pip install requests"
+            raise SystemExit(msg) from exc
     if name == "pycurl":
         try:
             return PycurlBackend()
         except ImportError as exc:
-            raise SystemExit("backend 'pycurl' requires the pycurl package: pip install pycurl") from exc
-    raise SystemExit(f"unknown backend: {name}")
+            msg = "backend 'pycurl' requires the pycurl package: pip install pycurl"
+            raise SystemExit(msg) from exc
+    msg = f"unknown backend: {name}"
+    raise SystemExit(msg)
 
 
-_CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.I)
-_CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.I)
-_CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.I)
+_CD_STAR = re.compile(r"filename\*\s*=\s*[^']*''([^;]+)", re.IGNORECASE)
+_CD_QUOTED = re.compile(r'filename\s*=\s*"([^"]*)"', re.IGNORECASE)
+_CD_BARE = re.compile(r"filename\s*=\s*([^;]+)", re.IGNORECASE)
 
 
 def _sanitize(name: str) -> str:
@@ -547,14 +549,13 @@ def download_one(
             info, chunks = response
 
             if not (200 <= info.status < 300):
-                raise RuntimeError(f"HTTP {info.status}")
+                msg = f"HTTP {info.status}"
+                raise RuntimeError(msg)
 
             if offset > 0 and info.status != 206:
                 offset = 0
-                try:
+                with suppress(FileNotFoundError):
                     part.unlink()
-                except FileNotFoundError:
-                    pass
 
             if dest_hint is not None:
                 final = dest_hint if dest_hint.is_absolute() else outdir / dest_hint
@@ -567,10 +568,8 @@ def download_one(
                 bar.skipped = True
 
                 if part.exists() and offset > 0:
-                    try:
+                    with suppress(FileNotFoundError):
                         part.unlink()
-                    except FileNotFoundError:
-                        pass
                 return final, True
 
             bar.label = final.name
@@ -595,7 +594,8 @@ def download_one(
                 os.fsync(fh.fileno())
 
             if total is not None and bar.done < total:
-                raise IOError(f"truncated download ({bar.done}/{total} bytes)")
+                msg = f"truncated download ({bar.done}/{total} bytes)"
+                raise IOError(msg)
 
         part.replace(final)
         bar.finished = True
@@ -710,7 +710,7 @@ def main(argv: list[str] | None = None) -> int:
         if dest_hint.is_absolute():
             if not dest_hint.parent.is_dir():
                 parser.error(f"output directory does not exist: {dest_hint.parent}")
-        elif dest_hint.parent != Path(".") and not (outdir / dest_hint.parent).is_dir():
+        elif dest_hint.parent != Path() and not (outdir / dest_hint.parent).is_dir():
             parser.error(f"output directory does not exist: {dest_hint.parent}")
 
     backend = get_backend(args.backend)
@@ -775,10 +775,8 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             downloaded += 1
             if path is not None:
-                try:
+                with suppress(OSError):
                     total_bytes += path.stat().st_size
-                except OSError:
-                    pass
 
         if interrupted:
             print("interrupted", file=sys.stderr)

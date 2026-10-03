@@ -3,6 +3,8 @@
 It should provide is_empty_package to check installed dist-info folders by parsing their RECORD file and verifying every listed path resolves within the dist-info directory, and is_empty_whl to perform an analogous check on .whl zip archives by inspecting their internal file listing, printing a warning and returning False if the zip is invalid.
 A find_empty_packages function should iterate over the site-packages directory, apply is_empty_package to each dist-info folder found, and collect/report the names of packages considered empty."""
 
+from __future__ import annotations
+
 import csv
 import sysconfig
 import zipfile

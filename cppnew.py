@@ -2,6 +2,8 @@
 """Create a new C++ file with a starter template and open it in an editor.
 Usage: cppnew <filename.cpp>"""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path

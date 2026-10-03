@@ -226,7 +226,7 @@ class DuplicateFinder:
                 except (OSError, PermissionError, IOError):
                     continue
 
-            for hash_val, files in hash_groups.items():
+            for files in hash_groups.values():
                 if len(files) > 1:
                     self.duplicates.append(DuplicateGroup(files=files, match_score=100.0, reason="contents"))
 

@@ -2,6 +2,8 @@
 """Write a Python script that reads a list of package names (one per line) from a file path giveninstalls each package via pip using the current Python interpreter with flags like --force-reinstall, --no-input, --disable-pip-version-check, and --root-user-action=ignore, setting a default CFLAGS=-O2 environment variable for the subprocess calls.
 It should validate that the input file exists, print progress for each package (index, total count, and success/failure status), pause briefly between installs, and record any packages that failed to reinstall into a "reinstall_pip_failed.txt" file in the user's home directory, printing a final summary message pointing to that log file."""
 
+from __future__ import annotations
+
 import os
 import subprocess
 import sys

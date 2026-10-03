@@ -808,10 +808,9 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
             print(d)
         report.append(f"File: {relpath}\n" + "\n".join(details))
 
-        if ns.autofix and ns.deep:
-            if _autofix_position(path, offenders):  # type: ignore[arg-type]
-                fixed += 1
-                print(f"  [FIXED] moved {len(offenders)} import(s)")
+        if ns.autofix and ns.deep and _autofix_position(path, offenders):  # type: ignore[arg-type]
+            fixed += 1
+            print(f"  [FIXED] moved {len(offenders)} import(s)")
 
     print("\n" + "=" * 40)
     print(f"Files with misplaced imports: {offenders_files}")

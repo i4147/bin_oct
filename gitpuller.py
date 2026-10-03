@@ -4,7 +4,10 @@ For every repository it should print progress information such as the relative p
 It should track and distinguish successfully pulled repositories from failed ones (capturing error messages, e.g.
 from GitCommandError or pull result flags indicating errors), and finally print a summary report listing which repositories were successfully updated and which ones failed along with their error reasons."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from git import GitCommandError, Repo
 
 

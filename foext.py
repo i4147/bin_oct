@@ -3,6 +3,8 @@
 It should iterate over all entries in the current directory, skip anything that isn't a regular file, create the destination folder if it doesn't already exist, and then move the file into that folder using shutil.move, preserving the original filename.
 The script should run as a standalone executable module via a main() function invoked through the standard __main__ guard."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 

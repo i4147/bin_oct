@@ -3,10 +3,10 @@
 For every file found that is a regular file named "README.pdf", the script should rename it to match its parent directory's name with a ".pdf" extension, placing it in the same directory.
 It should skip the rename if a file with the target name already exists, print a confirmation message showing the original and new file paths on success, and print the exception message if the rename operation fails due to an OSError."""
 
+from __future__ import annotations
+
 import os
-from os.path import dirname as dirn
-from os.path import isfile as isf
-from os.path import join as jn
+from os.path import dirname as dirn, isfile as isf, join as jn
 from pathlib import Path
 
 

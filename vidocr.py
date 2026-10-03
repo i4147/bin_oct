@@ -10,17 +10,20 @@ import multiprocessing as mp
 import re
 from functools import partial
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import cv2
-import numpy as np
 import pytesseract
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 def parse_hms(value: str) -> float:
     parts = value.strip().split(":")
     if len(parts) != 3:
-        raise ValueError(f"Invalid time format: {value}. Expected HH:MM:SS")
+        msg = f"Invalid time format: {value}. Expected HH:MM:SS"
+        raise ValueError(msg)
     h, m, s = parts
     return int(h) * 3600 + int(m) * 60 + float(s)
 
@@ -35,7 +38,7 @@ def format_srt_time(t: float) -> str:
     h = int(t // 3600)
     m = int(t % 3600 // 60)
     s = t % 60
-    ms = int(round((s - int(s)) * 1000))
+    ms = round((s - int(s)) * 1000)
     if ms == 1000:
         ms = 999
     return f"{h:02d}:{m:02d}:{int(s):02d},{ms:03d}"
@@ -76,7 +79,8 @@ def extract_frames(
 ) -> list[tuple[float, np.ndarray]]:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
-        raise OSError(f"Cannot open video: {video_path}")
+        msg = f"Cannot open video: {video_path}"
+        raise OSError(msg)
     fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
     step = max(1, int(fps / sample_fps))
     idx = 0

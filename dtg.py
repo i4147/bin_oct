@@ -4,6 +4,8 @@ The script should use the ast module combined with a NodeVisitor to precisely lo
 It should support concurrent translation requests via ThreadPoolExecutor for speed, persist progress in a local JSON state file (.translation_state.json) to allow resuming interrupted runs, and accept command-line arguments (via argparse) for specifying the input file and other options.
 Output should be the modified source file with translated text substituted in place, preserving original formatting and code structure as much as possible."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import json
@@ -76,7 +78,8 @@ def get_translator_func(backend_name):
 
             return lambda text: ts.translate_text(text, translator="google", to_language="en")
         else:
-            raise ValueError(f"Unknown backend: {backend_name}")
+            msg = f"Unknown backend: {backend_name}"
+            raise ValueError(msg)
     except ImportError:
         print(f"Error: Required package for backend '{backend_name}' is missing.")
         print(f"Please install it (e.g., `pip install {backend_name.replace('_', '-')}`)")
@@ -89,7 +92,7 @@ def safe_translate(text, translate_func, retries=3):
     for attempt in range(retries):
         try:
             res = translate_func(text)
-            return res if res else text
+            return res or text
         except Exception as e:
             time.sleep((attempt + 1) * 2)
     return text
@@ -239,7 +242,7 @@ def main():
             files_to_process.append(p)
         elif p.is_dir():
             files_to_process.extend(p.rglob("*.py"))
-    files_to_process = sorted(list(set(p.resolve() for p in files_to_process)))
+    files_to_process = sorted({p.resolve() for p in files_to_process})
     if not files_to_process:
         print("No Python files found to process.")
         return

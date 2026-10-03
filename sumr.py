@@ -39,7 +39,8 @@ class NLTKFrequencySummarizer:
 
     def __init__(self, language: str = "english", variant: str = "summa") -> None:
         if variant not in self.VARIANTS:
-            raise ValueError(f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}")
+            msg = f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}"
+            raise ValueError(msg)
 
         from nltk.corpus import stopwords  # type: ignore
 
@@ -51,7 +52,8 @@ class NLTKFrequencySummarizer:
         if not text or not isinstance(text, str):
             return ""
         if not 0 < ratio <= 1:
-            raise ValueError("Ratio must be between 0 and 1")
+            msg = "Ratio must be between 0 and 1"
+            raise ValueError(msg)
 
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
@@ -68,7 +70,8 @@ class NLTKFrequencySummarizer:
         if not text or not isinstance(text, str):
             return ""
         if count < 1:
-            raise ValueError("Number of sentences must be >= 1")
+            msg = "Number of sentences must be >= 1"
+            raise ValueError(msg)
 
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
@@ -163,7 +166,8 @@ def sumy_summarize(
     elif method == "textrank":
         summarizer = TextRankSummarizer(stemmer)
     else:
-        raise ValueError(f"Unknown summarization method: {method}")
+        msg = f"Unknown summarization method: {method}"
+        raise ValueError(msg)
 
     summarizer.stop_words = get_stop_words(language)
     sentences = summarizer(parser.document, count)

@@ -3,6 +3,8 @@
 It should implement a Gregorian-to-Jalali date conversion algorithm, then build a formatted string containing the Persian weekday name, day, month name, year, and current time (HH:MM), all expressed using Persian-Farsi numerals instead of Arabic digits.
 The output should combine these elements into a single human-readable string similar to how date/time is displayed in Persian locale contexts."""
 
+from __future__ import annotations
+
 import datetime
 import string
 

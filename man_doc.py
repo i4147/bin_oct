@@ -3,11 +3,14 @@
 It should decompress such .gz files to temporary files as needed, then run an external command (via runcmd) on each collected file—likely for linting, formatting, or processing man pages—printing colored status output (via cprint) and progress info (via mpf) for each processed file.
 The script is invoked from the command line with a target path and optional extension filters, and cleans up temporary files after processing."""
 
+from __future__ import annotations
+
 import gzip
 import sys
 from collections import deque
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+
 from dh import cprint, mpf, runcmd
 
 

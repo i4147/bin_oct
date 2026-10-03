@@ -3,15 +3,19 @@
 Accepts files or directories as positional arguments (defaults to the current directory), recursively discovering notebooks while skipping ``.ipynb_checkpoints``.
 Uses a fixed multiprocessing.Pool of 8 workers for parallelism and loguru for logging."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import sys
 from multiprocessing import Pool
-from multiprocessing.pool import AsyncResult
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
 
 MAX_WORKERS: Final[int] = 8
 

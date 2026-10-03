@@ -3,6 +3,8 @@
 For each Python file, capture the stdout/stderr output of every tool invocation, then append the results to the end of that same file as commented-out sections labeled with the tool name, handling missing tools or execution errors gracefully.
 The script should accept command-line arguments (via argparse) to control which root directory to scan and likely which tools to run, and it should efficiently distribute the checking work across multiple processes using a Pool."""
 
+from __future__ import annotations
+
 import argparse
 import subprocess
 from multiprocessing import Pool
@@ -136,7 +138,7 @@ Examples:
         help="Run mypy",
     )
     args = parser.parse_args()
-    paths = args.paths if args.paths else ["."]
+    paths = args.paths or ["."]
     enabled_tools = []
     if args.all:
         enabled_tools = ["ty", "pyright", "pylint", "pyrefly", "mypy"]

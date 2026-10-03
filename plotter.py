@@ -5,12 +5,15 @@ The script should parse the expression, safely evaluate it over a range of x val
 It should handle errors gracefully, such as missing arguments, malformed input without an "=" sign, or evaluation errors, printing usage instructions and examples when needed.
 The plot should clip the y-axis range based on the 1st and 99th percentiles of finite y-values to avoid distortion from asymptotes or outliers, filtering out non-finite values before plotting."""
 
+from __future__ import annotations
+
 import sys
-import matplotlib
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-matplotlib.use("Agg")
+mpl.use("Agg")
 if len(sys.argv) < 2:
     print("Usage: python script.py 'f(x)=expression'")
     print("Examples:")

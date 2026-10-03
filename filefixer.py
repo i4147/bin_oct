@@ -20,11 +20,13 @@ import sys
 import tarfile
 import tokenize
 import zipfile
-from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 try:
     import puremagic  # type: ignore
@@ -42,12 +44,14 @@ except Exception:  # pragma: no cover
     filetype = None  # type: ignore
 
 try:
-    from dh import BIN_EXT as DH_BIN_EXT  # type: ignore
-    from dh import MIME2EXT as DH_MIME2EXT
-    from dh import SHEBANG_MAP as DH_SHEBANG_MAP
-    from dh import TXT_EXT as DH_TXT_EXT
-    from dh import get_files as dh_get_files
-    from dh import is_binary as dh_is_binary
+    from dh import (
+        BIN_EXT as DH_BIN_EXT,  # type: ignore
+        MIME2EXT as DH_MIME2EXT,
+        SHEBANG_MAP as DH_SHEBANG_MAP,
+        TXT_EXT as DH_TXT_EXT,
+        get_files as dh_get_files,
+        is_binary as dh_is_binary,
+    )
 except Exception:  # pragma: no cover
     DH_BIN_EXT = None
     DH_MIME2EXT = None
@@ -409,7 +413,8 @@ def parse_engine_list(value: str | None) -> list[str]:
     }
     bad = [x for x in engines if x not in allowed]
     if bad:
-        raise argparse.ArgumentTypeError(f"Unknown engine(s): {', '.join(bad)}")
+        msg = f"Unknown engine(s): {', '.join(bad)}"
+        raise argparse.ArgumentTypeError(msg)
     return engines
 
 
@@ -1121,9 +1126,7 @@ def looks_like_python_line(line: str) -> bool:
         return True
     if re.search(r":\s*$", line):
         return True
-    if re.match(r"\s{4}", line):
-        return True
-    return False
+    return bool(re.match(r"\s{4}", line))
 
 
 def is_valid_python_token_stream(text: str) -> bool:

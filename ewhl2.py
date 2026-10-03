@@ -3,6 +3,8 @@
 It should parse package name and version from each wheel filename, cross-reference against the currently installed pip packages (obtained via "pip list --format=freeze" through subprocess) to determine version matches, and print diagnostic messages for unreadable or empty wheels.
 The script should use argparse to accept configurable input parameters (such as the wheel directory path) and leverage pathlib and shutil for file handling, ultimately helping the user identify and manage improperly built or empty wheel packages."""
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import subprocess

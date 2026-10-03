@@ -4,6 +4,8 @@ Usage: ./syntax_check.py [files_or_dirs ...] If no paths are given, scans the cu
 Reports only files that fail.
 Uses multiprocessing with 8 workers."""
 
+from __future__ import annotations
+
 import multiprocessing as mp
 import subprocess
 import sys

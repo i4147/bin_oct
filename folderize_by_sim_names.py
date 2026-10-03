@@ -3,6 +3,8 @@
 It should accept a "--root" argument for the directory to scan and an "--apply" flag, where omitting the flag only previews the planned file moves while including it actually moves the files into their grouped folders, using a helper to avoid overwriting existing files by appending an incrementing counter to duplicate destination filenames.
 The script must exclude itself from the collected Lua files when scanning."""
 
+from __future__ import annotations
+
 import argparse
 import re
 import shutil
@@ -53,14 +55,15 @@ def main() -> None:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path("."),
+        default=Path(),
         help="Directory to scan. Defaults to the current directory.",
     )
     args = parser.parse_args()
     root = args.root.expanduser().resolve()
     script_path = Path(__file__).resolve()
     if not root.is_dir():
-        raise SystemExit(f"Not a directory: {root}")
+        msg = f"Not a directory: {root}"
+        raise SystemExit(msg)
     groups: defaultdict[str, list[Path]] = defaultdict(list)
     for path in find_lua_files(root, script_path):
         group_name = normalize_name(path)

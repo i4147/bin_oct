@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Format JS/TS/CSS/HTML/JSON files with Prettier: discover matching files under the current directory, run `prettier --write` on each in a multiprocessing pool of 8 workers, move failures into a sibling `error/` folder, and log progress via loguru."""
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 from multiprocessing.pool import Pool

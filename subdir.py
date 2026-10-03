@@ -4,10 +4,13 @@ For each archive found, it should create a safely-named, non-colliding output fo
 The extraction functions should return a boolean success indicator and gracefully handle exceptions such as corrupted or unsupported archive files without crashing the script.
 Include necessary imports (shutil, tarfile, zipfile, pathlib.Path, py7zr) to support these file operations."""
 
+from __future__ import annotations
+
 import shutil
 import tarfile
 import zipfile
 from pathlib import Path
+
 import py7zr
 
 

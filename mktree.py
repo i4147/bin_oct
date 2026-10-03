@@ -4,6 +4,8 @@ It should intelligently infer nesting depth from indentation width (using a medi
 Provide command-line arguments for selecting the input source, the output root directory, and options such as dry-run preview or overwrite behavior, printing a summary of created paths or errors encountered.
 The script should be resilient to malformed or mixed-style tree text and skip or warn on unparseable lines rather than failing outright."""
 
+from __future__ import annotations
+
 import argparse
 import itertools
 import re
@@ -394,7 +396,7 @@ def create_tree(entries, base_dir: Path, dry_run=False):
                 already = not dry_run and target.exists()
                 if not dry_run and not already:
                     target.mkdir(parents=True, exist_ok=True)
-                rel = target.relative_to(base_dir) if target != base_dir else Path(".")
+                rel = target.relative_to(base_dir) if target != base_dir else Path()
                 if already:
                     print(f"EXIST {rel}/")
                     counts["existing"] += 1

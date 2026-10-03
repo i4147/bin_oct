@@ -3,9 +3,12 @@
 It should locate the repository (searching parent directories), copy a global ~/.gitignore into the project root if no local .gitignore exists, then stage all changes, create a timestamped commit message like "Auto-commit at YYYY-MM-DD HH:MM:SS", and push to the "origin" remote on the current active branch.
 The script should handle and report errors gracefully, such as not being inside a git repository, a detached HEAD state preventing branch detection, and Git command failures during push, exiting with a non-zero status and printing messages to stderr in these cases."""
 
+from __future__ import annotations
+
 import sys
 from datetime import datetime
 from pathlib import Path
+
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 

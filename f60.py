@@ -3,6 +3,8 @@
 It should accept an optional command-line argument specifying a time window in minutes (defaulting to 60 if not provided), skip Git-related paths and symlinks, and compute a cutoff timestamp based on that window.
 For each remaining entry meeting the age criteria, it should retrieve the creation timestamp, sort entries chronologically, and print each item's name alongside its formatted creation date and time using ANSI color codes for readability, aligning names in a fixed-width column."""
 
+from __future__ import annotations
+
 import operator
 import sys
 import time

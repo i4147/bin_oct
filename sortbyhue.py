@@ -3,6 +3,8 @@
 The script should then overwrite the same file with the sorted color codes, one per line, normalized to lowercase.
 If the script is run without exactly one argument, it should print a usage message and exit with status code 1."""
 
+from __future__ import annotations
+
 import colorsys
 import re
 import sys

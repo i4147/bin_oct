@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Generate a Python CLI script that compresses or decompresses files in a directory using Snappy via cramjam, with optional tarring of subdirectories, multiprocessing.Pool.apply_async concurrency using a fixed pool of 8 workers, loguru logging, pathlib path handling, full type hints, and docstrings."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing
 import shutil

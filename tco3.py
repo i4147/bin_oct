@@ -3,7 +3,10 @@
 The script should support concurrent translation via a thread pool with rate-limiting locks to avoid overwhelming translation APIs, read input chunk files from a directory, write translated output to corresponding files, and log progress/errors via loguru to both a rotating log file and stderr.
 It should be driven by command-line arguments (e.g., input/output paths, source/target languages, backend choice, concurrency level) parsed with argparse, and handle retries or failures gracefully for individual chunks without stopping the entire batch job."""
 
+from __future__ import annotations
+
 import argparse
+import contextlib
 import importlib
 import json
 import os
@@ -14,6 +17,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
+
 from loguru import logger
 
 Translator = Callable[[str], str]
@@ -140,7 +144,8 @@ def _make_deep_translator(source: str, target: str) -> Translator:
 def _make_deepl(source: str, target: str) -> Translator:
     api_key = os.environ.get("DEEPL_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise RuntimeError(msg)
     source_lang = backend_language(source, "deepl")
     target_lang = backend_language(target, "deepl")
 
@@ -216,7 +221,8 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
         with PYGOOGLETRANSLATION_LOCK:
             translator_class = getattr(module, "Translator", None)
             if translator_class is None:
-                raise RuntimeError("pygoogletranslation does not expose Translator")
+                msg = "pygoogletranslation does not expose Translator"
+                raise RuntimeError(msg)
             client = translator_class()
             result = client.translate(
                 text,
@@ -249,7 +255,8 @@ def _make_baidu(source: str, target: str) -> Translator:
         module = import_optional("baidu")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
-        raise RuntimeError("Unsupported baidu package API")
+        msg = "Unsupported baidu package API"
+        raise RuntimeError(msg)
 
     return translate
 
@@ -259,7 +266,8 @@ def _make_alibaba(source: str, target: str) -> Translator:
         module = import_optional("alibaba")
         if hasattr(module, "translate"):
             return str(module.translate(text, source, target))
-        raise RuntimeError("Unsupported alibaba package API")
+        msg = "Unsupported alibaba package API"
+        raise RuntimeError(msg)
 
     return translate
 
@@ -267,7 +275,8 @@ def _make_alibaba(source: str, target: str) -> Translator:
 def _make_watson(source: str, target: str) -> Translator:
     def translate(text: str) -> str:
         module = import_optional("ibm_watson")
-        raise RuntimeError(f"Unsupported watson package API: {module.__name__}")
+        msg = f"Unsupported watson package API: {module.__name__}"
+        raise RuntimeError(msg)
 
     return translate
 
@@ -279,7 +288,8 @@ def _make_azure(source: str, target: str) -> Translator:
         key = os.environ.get("AZURE_TRANSLATOR_KEY", "").strip()
         region = os.environ.get("AZURE_TRANSLATOR_REGION", "").strip()
         if not endpoint or not key:
-            raise RuntimeError("AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required")
+            msg = "AZURE_TRANSLATOR_ENDPOINT and AZURE_TRANSLATOR_KEY are required"
+            raise RuntimeError(msg)
         import requests
 
         response = requests.post(
@@ -357,7 +367,8 @@ def select_backend(
                     "",
                 ).strip()
             ):
-                raise RuntimeError("DEEPL_API_KEY is not set")
+                msg = "DEEPL_API_KEY is not set"
+                raise RuntimeError(msg)
             logger.info("Using translator backend: {}", backend)
             return backend, translator
         except Exception as exc:
@@ -366,12 +377,14 @@ def select_backend(
             if requested:
                 break
     details = "; ".join(failures)
-    raise RuntimeError(f"No usable translation backend found: {details}")
+    msg = f"No usable translation backend found: {details}"
+    raise RuntimeError(msg)
 
 
 def split_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
-        raise ValueError("chunk size must be greater than zero")
+        msg = "chunk size must be greater than zero"
+        raise ValueError(msg)
     chunks: list[str] = []
     position = 0
     length = len(text)
@@ -395,7 +408,8 @@ def load_results(path: Path, continue_mode: bool) -> dict[str, str]:
         with path.open("r", encoding="utf-8") as handle:
             payload = json.load(handle)
         if not isinstance(payload, dict):
-            raise ValueError("output JSON must contain an object")
+            msg = "output JSON must contain an object"
+            raise ValueError(msg)
         return {str(key): str(value) for key, value in payload.items() if isinstance(value, str)}
     except Exception as exc:
         logger.error("Could not load existing output {}: {}", path, exc)
@@ -424,10 +438,8 @@ def atomic_save(path: Path, results: dict[str, str]) -> None:
         os.replace(temporary_name, path)
         logger.debug("Saved {} translated chunks to {}", len(results), path)
     except Exception:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             os.unlink(temporary_name)
-        except FileNotFoundError:
-            pass
         raise
 
 
@@ -450,9 +462,11 @@ def translate_with_retry(
             wait_for_request_slot(delay)
             translated = translator(text).strip()
             if not translated:
-                raise RuntimeError("translator returned empty text")
+                msg = "translator returned empty text"
+                raise RuntimeError(msg)
             if translated.casefold() == text.casefold():
-                raise RuntimeError("translator returned identity output")
+                msg = "translator returned identity output"
+                raise RuntimeError(msg)
             logger.debug(
                 "Translated chunk {} on attempt {}",
                 index,
@@ -470,8 +484,10 @@ def translate_with_retry(
             if attempt < attempts:
                 time.sleep(2 ** (attempt - 1))
     if last_error is None:
-        raise RuntimeError("translation failed without an exception")
-    raise RuntimeError(f"chunk {index} failed after {attempts} attempts: {last_error}") from last_error
+        msg = "translation failed without an exception"
+        raise RuntimeError(msg)
+    msg = f"chunk {index} failed after {attempts} attempts: {last_error}"
+    raise RuntimeError(msg) from last_error
 
 
 def parse_args() -> argparse.Namespace:
@@ -550,13 +566,17 @@ def parse_args() -> argparse.Namespace:
 
 def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
-        raise ValueError("--workers must be between 1 and 2")
+        msg = "--workers must be between 1 and 2"
+        raise ValueError(msg)
     if args.delay < 0:
-        raise ValueError("--delay must not be negative")
+        msg = "--delay must not be negative"
+        raise ValueError(msg)
     if args.chunk_size <= 0:
-        raise ValueError("--chunk-size must be greater than zero")
+        msg = "--chunk-size must be greater than zero"
+        raise ValueError(msg)
     if args.save_every <= 0:
-        raise ValueError("--save-every must be greater than zero")
+        msg = "--save-every must be greater than zero"
+        raise ValueError(msg)
 
 
 def run(args: argparse.Namespace) -> int:
@@ -565,7 +585,8 @@ def run(args: argparse.Namespace) -> int:
     output_path = Path(args.output)
     failed_path = Path(args.failed)
     if not input_path.exists():
-        raise FileNotFoundError(f"Input file does not exist: {input_path}")
+        msg = f"Input file does not exist: {input_path}"
+        raise FileNotFoundError(msg)
     text = input_path.read_text(encoding="utf-8")
     chunks = split_chunks(text, args.chunk_size)
     results = load_results(output_path, not args.no_continue)

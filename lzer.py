@@ -4,8 +4,11 @@ It should skip directories, files already ending in ".lz4", and files with other
 For large files above a defined size threshold, it should compress in streaming chunks to limit memory usage, while smaller files are read and compressed all at once.
 The script must handle errors gracefully during compression by printing a failure message and cleaning up any partially written output file, without crashing the overall recursive process."""
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
+
 import lz4.frame
 
 CHUNK_SIZE = 1024 * 1024

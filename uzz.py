@@ -4,13 +4,15 @@
 * Delete the original .whl **only if extraction succeeded**.
 * Any error is logged via `loguru` and the original .whl is preserved."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 from loguru import logger
 
 
-def process_wheels(directory: Path = Path(".")) -> None:
+def process_wheels(directory: Path = Path()) -> None:
 
     wheel_files = list(directory.glob("*.whl"))
 
@@ -52,5 +54,5 @@ def process_wheels(directory: Path = Path(".")) -> None:
 if __name__ == "__main__":
     import sys
 
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
+    target = Path(sys.argv[1]) if len(sys.argv) > 1 else Path()
     process_wheels(target)

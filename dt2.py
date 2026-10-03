@@ -3,6 +3,8 @@
 The script should batch lines into size-limited chunks (max ~2000 characters) before sending them for translation to optimize API usage, periodically save progress (every 10 chunks) to avoid data loss, and gracefully handle Ctrl+C interruption via a signal handler that sets a global flag and saves partial progress before exiting.
 It should use argparse for CLI options (likely input/output file paths and worker count), loguru for structured logging of progress/warnings/errors, and JSON for reading/writing state or results, ultimately producing a translated version of the input file with the Cyrillic content replaced or supplemented by its translation."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing as mp
@@ -14,6 +16,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Final
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 
@@ -348,25 +351,24 @@ def main() -> None:
                             )
                             sample_tgt = results.get(original_lines[0] if original_lines else "", "")[:60]
                             print(f"Translated chunk {completed}/{total} (sample: '{sample_src}' → '{sample_tgt}')")
-                        else:
-                            if not interrupted:
-                                logger.error(
-                                    "Failed to translate chunk starting with: {}",
-                                    (chunk[0][:60] + "...") if chunk else "",
-                                )
-                                for line in chunk:
-                                    try:
-                                        t = GoogleTranslator(source=source_lang, target=target_lang).translate(line)
-                                        if t is None:
-                                            t = line
-                                        results[line] = t
-                                    except Exception as e:
-                                        logger.error(
-                                            "Per-line retry failed for '{}': {}",
-                                            line[:50],
-                                            e,
-                                        )
-                                        results[line] = line
+                        elif not interrupted:
+                            logger.error(
+                                "Failed to translate chunk starting with: {}",
+                                (chunk[0][:60] + "...") if chunk else "",
+                            )
+                            for line in chunk:
+                                try:
+                                    t = GoogleTranslator(source=source_lang, target=target_lang).translate(line)
+                                    if t is None:
+                                        t = line
+                                    results[line] = t
+                                except Exception as e:
+                                    logger.error(
+                                        "Per-line retry failed for '{}': {}",
+                                        line[:50],
+                                        e,
+                                    )
+                                    results[line] = line
                     except Exception as e:
                         if not interrupted:
                             logger.error(

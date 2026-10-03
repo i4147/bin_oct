@@ -3,8 +3,11 @@
 The execution should use helper functions "get_files", "mpf" (for parallel/multi-processing execution across the found setup.py files), and "runcmd" imported from a local module named "dh".
 After processing all setup.py files, the script should again scan the current directory for any resulting ".whl" files and print out the path of each one found."""
 
+from __future__ import annotations
+
 from os import chdir as os_chdir
 from pathlib import Path
+
 from dh import get_files, mpf, runcmd
 
 

@@ -19,16 +19,17 @@ from typing import Iterable, Iterator, Mapping, Sequence
 try:
     import ssdeep
 except ImportError as exc:
-    raise SystemExit("Missing dependency: ssdeep. Install it with: pip install ssdeep") from exc
+    msg = "Missing dependency: ssdeep. Install it with: pip install ssdeep"
+    raise SystemExit(msg) from exc
 
 try:
     import xxhash
 except ImportError as exc:
-    raise SystemExit("Missing dependency: xxhash. Install it with: pip install xxhash") from exc
+    msg = "Missing dependency: xxhash. Install it with: pip install xxhash"
+    raise SystemExit(msg) from exc
 
 try:
-    from colorama import Fore, Style
-    from colorama import init as colorama_init
+    from colorama import Fore, Style, init as colorama_init
 except ImportError:
     Fore = None
     Style = None
@@ -78,7 +79,8 @@ def iter_files(options: ScanOptions) -> Iterator[Path]:
     root = options.root.resolve()
 
     if not root.exists():
-        raise FileNotFoundError(f"Search path does not exist: {root}")
+        msg = f"Search path does not exist: {root}"
+        raise FileNotFoundError(msg)
 
     if root.is_file():
         if options.include_symlinks or not root.is_symlink():
@@ -353,7 +355,8 @@ def write_group_report(
         print(f"JSON report written to {report_path}")
         return
 
-    raise ValueError(f"Unsupported report format: {report_format}")
+    msg = f"Unsupported report format: {report_format}"
+    raise ValueError(msg)
 
 
 def score_text(score: int | str, threshold: int) -> str:
@@ -476,7 +479,8 @@ def make_scan_options(
 
 def run_scan(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
-        raise SystemExit("Threshold must be an integer from 0 through 100.")
+        msg = "Threshold must be an integer from 0 through 100."
+        raise SystemExit(msg)
 
     options = make_scan_options(args, profile=args.profile)
     paths = list(iter_files(options))
@@ -528,7 +532,8 @@ def run_scan(args: argparse.Namespace) -> int:
 
 def run_report(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
-        raise SystemExit("Threshold must be an integer from 0 through 100.")
+        msg = "Threshold must be an integer from 0 through 100."
+        raise SystemExit(msg)
 
     options = ScanOptions(
         root=Path(args.root),
@@ -567,7 +572,8 @@ def run_report(args: argparse.Namespace) -> int:
 
 def run_move(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
-        raise SystemExit("Threshold must be an integer from 0 through 100.")
+        msg = "Threshold must be an integer from 0 through 100."
+        raise SystemExit(msg)
 
     options = ScanOptions(
         root=Path(args.root),

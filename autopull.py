@@ -3,6 +3,8 @@
 The script should stop descending into a directory once a Git repo is found there, gracefully skip directories it lacks permission to read, and print a warning if any pull fails without halting the overall process.
 It takes no command-line inputs, operates on the current directory as the root, and outputs status messages to the console, finishing with a "Done." message."""
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
 

@@ -3,6 +3,8 @@
 It should accept a file path, an optional output path to save the successfully decoded text, and an optional preview chunk size, printing a clear error if the input file does not exist.
 The script is intended to help users identify the correct character encoding of an unknown text file by trying multiple candidates and displaying readable samples of each successful decode."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

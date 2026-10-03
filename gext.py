@@ -3,6 +3,8 @@
 Methods (functions directly inside a class body) are skipped.
 Each entity is written to its own file: - output/classes/<name>.py - output/functions/<name>.py - output/const/<name>.py Usage: script.py [file_or_dir ...] If no input is provided, the current directory is scanned recursively."""
 
+from __future__ import annotations
+
 import ast
 import multiprocessing as mp
 import os
@@ -45,7 +47,7 @@ def collect_files(inputs: list[str]) -> list[str]:
 
 def mark_parents(node: ast.AST, parent=None):
     for child in ast.iter_child_nodes(node):
-        setattr(child, "_parent", node)
+        child._parent = node
         mark_parents(child, node)
 
 

@@ -3,6 +3,8 @@
 It should accept a file path along with either a start/end line range or a list of specific line numbers (via a "-s" flag for selective mode) to extract, join the selected lines, and pipe them to the clipboard command through a subprocess.
 The script must handle and report errors gracefully, including missing files, out-of-range line numbers, the `termux-clipboard-set` binary not being found (e.g., Termux:API not installed), and any non-zero exit codes or exceptions from the clipboard subprocess, printing descriptive messages to stderr and exiting with a non-zero status on failure."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path

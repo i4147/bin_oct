@@ -129,7 +129,8 @@ def _make_deep_translator(source: str, target: str, script_path: str) -> Transla
     try:
         from deep_translator import GoogleTranslator
     except Exception as exc:
-        raise BackendError("install it with: pip install deep_translator") from exc
+        msg = "install it with: pip install deep_translator"
+        raise BackendError(msg) from exc
 
     mapped_source = _mapped_language("deep_translator", source)
     mapped_target = _mapped_language("deep_translator", target)
@@ -151,12 +152,14 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslationFuncti
     del script_path
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
-        raise BackendError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise BackendError(msg)
 
     try:
         import deepl
     except Exception as exc:
-        raise BackendError("install it with: pip install deepl") from exc
+        msg = "install it with: pip install deepl"
+        raise BackendError(msg) from exc
 
     mapped_source = _mapped_language("deepl", source)
     mapped_target = _mapped_language("deepl", target)
@@ -181,12 +184,14 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
     del script_path
     api_url = os.environ.get("LIBRETRANSLATE_URL")
     if not api_url:
-        raise BackendError("LIBRETRANSLATE_URL is not set")
+        msg = "LIBRETRANSLATE_URL is not set"
+        raise BackendError(msg)
 
     try:
         from deep_translator import LibreTranslateTranslator
     except Exception as exc:
-        raise BackendError("install it with: pip install deep_translator") from exc
+        msg = "install it with: pip install deep_translator"
+        raise BackendError(msg) from exc
 
     def translate(text: str) -> str:
         try:
@@ -206,12 +211,14 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
     try:
         module_path = Path(__import__("translate").__file__).resolve()
         if module_path == Path(script_path).resolve():
-            raise BackendError("import translate resolves to this script; rename this file")
+            msg = "import translate resolves to this script; rename this file"
+            raise BackendError(msg)
         import translate as translate_module
     except BackendError:
         raise
     except Exception as exc:
-        raise BackendError("install it with: pip install translate") from exc
+        msg = "install it with: pip install translate"
+        raise BackendError(msg) from exc
 
     translator_class = getattr(translate_module, "Translator", None)
     class_kwargs = {"from_lang": source, "to_lang": target}
@@ -221,7 +228,8 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
         class_kwargs = {"source": source, "target": target}
 
     if translator_class is None:
-        raise BackendError("installed translate package has neither Translator nor GoogleTranslator")
+        msg = "installed translate package has neither Translator nor GoogleTranslator"
+        raise BackendError(msg)
 
     def translate_text(text: str) -> str:
         try:
@@ -238,7 +246,8 @@ def _make_googletrans(source: str, target: str, script_path: str) -> Translation
     try:
         from googletrans import Translator
     except Exception as exc:
-        raise BackendError('install it with: pip install "googletrans==4.0.0rc1"') from exc
+        msg = 'install it with: pip install "googletrans==4.0.0rc1"'
+        raise BackendError(msg) from exc
 
     client = Translator()
     lock = threading.Lock()
@@ -259,7 +268,8 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
     try:
         from pygoogletranslation import Translator
     except Exception as exc:
-        raise BackendError("install it with: pip install pygoogletranslation") from exc
+        msg = "install it with: pip install pygoogletranslation"
+        raise BackendError(msg) from exc
 
     client = Translator()
     lock = threading.Lock()
@@ -280,7 +290,8 @@ def _make_translators_bing(source: str, target: str, script_path: str) -> Transl
     try:
         import translators
     except Exception as exc:
-        raise BackendError("install it with: pip install translators; pkg install nodejs") from exc
+        msg = "install it with: pip install translators; pkg install nodejs"
+        raise BackendError(msg) from exc
 
     logger.warning("translators_bing uses a JavaScript subprocess per request; throughput will be low on Termux")
     lock = threading.Lock()
@@ -307,7 +318,8 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslationFuncti
     try:
         import boto3
     except Exception as exc:
-        raise BackendError("install it with: pip install boto3") from exc
+        msg = "install it with: pip install boto3"
+        raise BackendError(msg) from exc
 
     region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     mapped_source = _mapped_language("boto3", source)
@@ -333,12 +345,14 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslationFuncti
     app_id = os.environ.get("BAIDU_APP_ID")
     app_key = os.environ.get("BAIDU_APP_KEY")
     if not app_id or not app_key:
-        raise BackendError("BAIDU_APP_ID and BAIDU_APP_KEY are required")
+        msg = "BAIDU_APP_ID and BAIDU_APP_KEY are required"
+        raise BackendError(msg)
 
     try:
         from aip import AipNlp
     except Exception as exc:
-        raise BackendError("install it with: pip install baidu-aip") from exc
+        msg = "install it with: pip install baidu-aip"
+        raise BackendError(msg) from exc
 
     mapped_source = _mapped_language("baidu", source)
     mapped_target = _mapped_language("baidu", target)
@@ -359,13 +373,15 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
     access_key = os.environ.get("ALIBABA_ACCESS_KEY_ID")
     access_secret = os.environ.get("ALIBABA_ACCESS_KEY_SECRET")
     if not access_key or not access_secret:
-        raise BackendError("ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required")
+        msg = "ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required"
+        raise BackendError(msg)
 
     try:
         from aliyunsdkalimt.request.v20181012 import TranslateGeneralRequest
         from aliyunsdkcore.client import AcsClient
     except Exception as exc:
-        raise BackendError("install it with: pip install aliyun-python-sdk-alimt") from exc
+        msg = "install it with: pip install aliyun-python-sdk-alimt"
+        raise BackendError(msg) from exc
 
     region = os.environ.get("ALIBABA_REGION", "cn-hangzhou")
 
@@ -391,13 +407,15 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslationFunct
     api_key = os.environ.get("WATSON_API_KEY")
     service_url = os.environ.get("WATSON_URL")
     if not api_key or not service_url:
-        raise BackendError("WATSON_API_KEY and WATSON_URL are required")
+        msg = "WATSON_API_KEY and WATSON_URL are required"
+        raise BackendError(msg)
 
     try:
         from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
         from ibm_watson import LanguageTranslatorV3
     except Exception as exc:
-        raise BackendError("install it with: pip install ibm-watson") from exc
+        msg = "install it with: pip install ibm-watson"
+        raise BackendError(msg) from exc
 
     def translate(text: str) -> str:
         try:
@@ -428,13 +446,15 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslationFuncti
     )
     region = os.environ.get("AZURE_TRANSLATOR_REGION")
     if not key:
-        raise BackendError("AZURE_TRANSLATOR_KEY is not set")
+        msg = "AZURE_TRANSLATOR_KEY is not set"
+        raise BackendError(msg)
 
     try:
         from azure.ai.translation.text import TextTranslationClient
         from azure.core.credentials import AzureKeyCredential
     except Exception as exc:
-        raise BackendError("install it with: pip install azure-ai-translation-text") from exc
+        msg = "install it with: pip install azure-ai-translation-text"
+        raise BackendError(msg) from exc
 
     def translate(text: str) -> str:
         try:
@@ -479,15 +499,17 @@ def _backend_chain(preferred: str) -> list[str]:
 
 def _select_backend(preferred: str, source: str, target: str, script_path: str) -> tuple[str, TranslationFunction]:
     if preferred in _FORBIDDEN_BACKENDS:
-        raise BackendError(
+        msg = (
             f"backend '{preferred}' is unavailable on Termux armv8l: "
             "it requires unsupported native, ML, Rust, or gRPC dependencies. "
             "Use deep_translator, deepl, or a LAN LibreTranslate server."
         )
+        raise BackendError(msg)
 
     if preferred != "default" and preferred not in _BACKEND_FACTORIES:
         valid = ", ".join(sorted(_BACKEND_FACTORIES))
-        raise BackendError(f"unknown backend '{preferred}'. Supported backends: {valid}")
+        msg = f"unknown backend '{preferred}'. Supported backends: {valid}"
+        raise BackendError(msg)
 
     last_error = "no backend was attempted"
     chain = _backend_chain(preferred)
@@ -511,7 +533,8 @@ def _select_backend(preferred: str, source: str, target: str, script_path: str) 
             last_error = str(exc)
             logger.warning("backend '{}' unavailable: {}", name, exc)
 
-    raise BackendError(f"no usable translation backend found: {last_error}")
+    msg = f"no usable translation backend found: {last_error}"
+    raise BackendError(msg)
 
 
 def _load_existing(path: Path) -> "OrderedDict[str, str]":
@@ -522,15 +545,18 @@ def _load_existing(path: Path) -> "OrderedDict[str, str]":
         with path.open("r", encoding="utf-8") as handle:
             loaded = json.load(handle, object_pairs_hook=OrderedDict)
         if not isinstance(loaded, dict):
-            raise ValueError("JSON root must be an object")
+            msg = "JSON root must be an object"
+            raise ValueError(msg)
         return OrderedDict((str(key), str(value)) for key, value in loaded.items())
     except Exception as exc:
-        raise BackendError(f"cannot load existing output '{path}': {exc}") from exc
+        msg = f"cannot load existing output '{path}': {exc}"
+        raise BackendError(msg) from exc
 
 
 def _read_pending(input_path: Path, existing: dict[str, str], continue_job: bool) -> tuple[list[str], int]:
     if not input_path.is_file():
-        raise BackendError(f"input file does not exist: {input_path}")
+        msg = f"input file does not exist: {input_path}"
+        raise BackendError(msg)
 
     pending: list[str] = []
     seen_pending = set()
@@ -574,9 +600,8 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
 
 
 def _append_failed(path: Path, word: str) -> None:
-    with _failed_lock:
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(word + "\n")
+    with _failed_lock, path.open("a", encoding="utf-8") as handle:
+        handle.write(word + "\n")
 
 
 def _is_valid_translation(source: str, translated: object) -> bool:

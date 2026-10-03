@@ -4,6 +4,8 @@ It should accept the search pattern as a command-line argument and support an op
 For each match printed, regular entries should be shown as " - name" while symlinks should be shown as " - name -> resolved_target_path".
 Use pathlib for filesystem operations and sys.argv for argument parsing."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

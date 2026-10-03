@@ -3,14 +3,20 @@
 It should use a custom HTMLParser subclass to check that tags are properly nested/closed before or after minification, collecting and reporting mismatched or unclosed tag errors per file.
 The script should process files in parallel using multiprocessing for speed, print a summary of successes, failures, and validation errors, and support command-line arguments (via argparse) to control input paths and behavior, exiting with a non-zero status code if any file fails validation or minification."""
 
+from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import sys
-from collections.abc import Callable, Generator, Iterable
 from functools import partial
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 import minify_html as mh
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable
 
 
 class _HTMLValidator(HTMLParser):
@@ -155,7 +161,8 @@ def run_pool(
         elif pool_method == "imap_unordered":
             yield from pool.imap_unordered(_starmap_adapter(backend), files)
         else:
-            raise ValueError(f"unknown pool method: {pool_method}")
+            msg = f"unknown pool method: {pool_method}"
+            raise ValueError(msg)
 
 
 def parse_args() -> argparse.Namespace:

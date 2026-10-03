@@ -3,6 +3,8 @@
 For each file it should read all lines with UTF-8 encoding (ignoring decode errors), apply the cleaning function line by line, and overwrite the original file with the cleaned content.
 It should print progress messages indicating how many log files were found, a checkmark confirmation for each successfully cleaned file, an error message with the exception for any file that fails to process, and a final summary of how many files were processed; if no log files are found it should print a message stating that and exit."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 

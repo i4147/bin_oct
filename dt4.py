@@ -2,6 +2,8 @@
 """Write a Python command-line tool that translates a large text file by splitting it into chunks (configurable chunk size) and translating each chunk via deep_translator (supporting multiple backend engines and language code mappings like Google, DeepL, MyMemory), using a thread pool with configurable worker count, retry-with-backoff logic, and inter-request delay to avoid rate limits.
 It should accept arguments for input/output/failed-chunk file paths, source/target languages, number of workers, delay, chunk size, and periodic save interval, writing successfully translated chunks incrementally to a JSON output file and logging failed chunks to a separate text file, while gracefully handling interrupts (e.g., SIGINT) to save progress before exiting, using loguru for logging throughout."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -12,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Optional
+
 import loguru
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
@@ -156,7 +159,7 @@ def save_json_atomic(data: dict[str, str], output_path: Path) -> None:
     except Exception as e:
         if temp_path.exists():
             temp_path.unlink()
-        raise e
+        raise
 
 
 def is_identity_translation(text: str, translated: str) -> bool:
@@ -187,7 +190,8 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         import deepl
     except ImportError:
-        raise ImportError("deepl package not installed")
+        msg = "deepl package not installed"
+        raise ImportError(msg)
     source_lang = LANG_MAPPING["deepl"].get(source, source)
     target_lang = LANG_MAPPING["deepl"].get(target, target)
 
@@ -195,7 +199,8 @@ def make_deepl_translator(source: str, target: str) -> Callable[[str], str]:
         try:
             auth_key = os.getenv("DEEPL_API_KEY")
             if not auth_key:
-                raise ValueError("DEEPL_API_KEY environment variable not set")
+                msg = "DEEPL_API_KEY environment variable not set"
+                raise ValueError(msg)
             translator = deepl.Translator(auth_key)
             result = translator.translate_text(text, target_lang=target_lang, source_lang=source_lang)
             return result.text
@@ -210,7 +215,8 @@ def make_translate_translator(source: str, target: str) -> Callable[[str], str]:
     try:
         from translate import Translator
     except ImportError:
-        raise ImportError("translate package not installed")
+        msg = "translate package not installed"
+        raise ImportError(msg)
     source_lang = LANG_MAPPING["translate"].get(source, source)
     target_lang = LANG_MAPPING["translate"].get(target, target)
 
@@ -229,7 +235,8 @@ def make_translators_bing_translator(source: str, target: str) -> Callable[[str]
     try:
         import translators as ts
     except ImportError:
-        raise ImportError("translators package not installed")
+        msg = "translators package not installed"
+        raise ImportError(msg)
     source_lang = LANG_MAPPING["translators_bing"].get(source, source)
     target_lang = LANG_MAPPING["translators_bing"].get(target, target)
 
@@ -252,7 +259,8 @@ def make_googletrans_translator(source: str, target: str) -> Callable[[str], str
     try:
         from googletrans import Translator
     except ImportError:
-        raise ImportError("googletrans package not installed")
+        msg = "googletrans package not installed"
+        raise ImportError(msg)
     source_lang = LANG_MAPPING["googletrans"].get(source, source)
     target_lang = LANG_MAPPING["googletrans"].get(target, target)
     lock = Lock()
@@ -274,7 +282,8 @@ def make_pygoogletranslation_translator(source: str, target: str) -> Callable[[s
     try:
         from pygoogletranslation import Translator
     except ImportError:
-        raise ImportError("pygoogletranslation package not installed")
+        msg = "pygoogletranslation package not installed"
+        raise ImportError(msg)
     source_lang = LANG_MAPPING["pygoogletranslation"].get(source, source)
     target_lang = LANG_MAPPING["pygoogletranslation"].get(target, target)
     lock = Lock()
@@ -308,14 +317,16 @@ def select_backend(source: str, target: str, backend: Optional[str] = None) -> C
                 except ImportError:
                     logger.warning(f"Backend {backend} not available")
                     break
-        raise ValueError(f"Specified backend {backend} not available")
+        msg = f"Specified backend {backend} not available"
+        raise ValueError(msg)
     for name, factory in backends:
         try:
             return factory(source, target)
         except ImportError:
             logger.debug(f"Backend {name} not available")
             continue
-    raise RuntimeError("No translation backend available")
+    msg = "No translation backend available"
+    raise RuntimeError(msg)
 
 
 def translate_chunk(
@@ -338,7 +349,8 @@ def translate_chunk(
             time.sleep(delay)
             if is_identity_translation(chunk, translated):
                 logger.warning(f"Identity translation detected for chunk {index}, retrying")
-                raise ValueError("Identity translation detected")
+                msg = "Identity translation detected"
+                raise ValueError(msg)
             return index, translated
         except Exception as e:
             logger.error(f"Attempt {attempt + 1} failed for chunk {index}: {e}")

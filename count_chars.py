@@ -4,6 +4,8 @@ The script should accept exactly one argument, the path to the input file, and p
 It should open the file using UTF-8 encoding, read its full contents, compute the character count, and print a message showing the filename and the count.
 If the specified file does not exist, it should catch the FileNotFoundError, print an appropriate error message, and exit with a non-zero status code."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

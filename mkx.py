@@ -5,6 +5,8 @@ Behaviors merged from two original scripts and applied in a single pass: * suffi
 Runs recursively from the current working directory, updates in place, skips .git and symlinks, uses a fixed 8-worker multiprocessing pool.
 Usage: python mkx.py"""
 
+from __future__ import annotations
+
 import multiprocessing as mp
 import os
 import re
@@ -56,9 +58,7 @@ def should_execute(p):
         return True
     if SO_RE.match(p.name):
         return True
-    if not p.suffix and is_binary(p):
-        return True
-    return False
+    return bool(not p.suffix and is_binary(p))
 
 
 def process(path_str):

@@ -24,33 +24,22 @@ import zipfile
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterable, Iterator, Self
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.tags import (
-    Tag,
-    compatible_tags,
-    cpython_tags,
-    generic_tags,
-    interpreter_name,
-    interpreter_version,
-)
-from packaging.utils import (
-    InvalidWheelFilename,
-    canonicalize_name,
-    parse_wheel_filename,
-)
+from packaging.tags import Tag, compatible_tags, cpython_tags, generic_tags, interpreter_name, interpreter_version
+from packaging.utils import InvalidWheelFilename, canonicalize_name, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
 
 __all__ = [
     "Link",
     "Package",
-    "TargetPython",
     "PackageFinder",
+    "TargetPython",
     "download",
     "main",
 ]
@@ -106,12 +95,8 @@ CHUNK_SIZE = 1024 * 1024
 PARALLEL_DOWNLOAD_THRESHOLD = 5 * 1024 * 1024
 DEFAULT_PARALLEL_WORKERS = min(8, max(2, os.cpu_count() or 2))
 
-SIMPLE_ACCEPT_HEADER = ", ".join(
-    (
-        "application/vnd.pypi.simple.v1+json",
-        "application/vnd.pypi.simple.v1+html; q=0.1",
-        "text/html; q=0.01",
-    )
+SIMPLE_ACCEPT_HEADER = (
+    "application/vnd.pypi.simple.v1+json, application/vnd.pypi.simple.v1+html; q=0.1, text/html; q=0.01"
 )
 
 JSON_SIMPLE_CONTENT_TYPES = frozenset(
@@ -177,7 +162,8 @@ class Link:
     @property
     def file_path(self) -> Path:
         if not self.is_file:
-            raise ValueError(f"not a file URL: {self.url}")
+            msg = f"not a file URL: {self.url}"
+            raise ValueError(msg)
 
         return Path(unquote(self.parsed_url.path))
 
@@ -313,7 +299,8 @@ def fetch_simple_page(client: httpx.Client, url: str) -> list[Link]:
     if content_type in HTML_SIMPLE_CONTENT_TYPES:
         return list(parse_html_simple_page(response))
 
-    raise ValueError(f"unsupported simple-index content type {content_type!r} from {url}")
+    msg = f"unsupported simple-index content type {content_type!r} from {url}"
+    raise ValueError(msg)
 
 
 def source_filename_without_extension(filename: str) -> str:
@@ -458,7 +445,7 @@ class PackageFinder:
             self._client.close()
             self._client = None
 
-    def __enter__(self) -> "PackageFinder":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -564,10 +551,10 @@ class PackageFinder:
 def source_artifact_priority(link: Link) -> int:
     filename = link.filename.lower()
 
-    if filename.endswith(".tar.gz") or filename.endswith(".tgz"):
+    if filename.endswith((".tar.gz", ".tgz")):
         return 30
 
-    if filename.endswith(".tar.bz2") or filename.endswith(".tar.bz"):
+    if filename.endswith((".tar.bz2", ".tar.bz")):
         return 29
 
     if filename.endswith(".zip"):
@@ -636,7 +623,7 @@ def verify_archive_integrity(path: Path) -> bool:
     filename = path.name.lower()
 
     try:
-        if filename.endswith(".whl") or filename.endswith(".zip"):
+        if filename.endswith((".whl", ".zip")):
             with zipfile.ZipFile(path) as archive:
                 corrupt_member = archive.testzip()
 
@@ -733,27 +720,31 @@ def download_httpx_parallel(
     def download_range(start: int, end: int, part_path: Path) -> None:
         headers = {"Range": f"bytes={start}-{end}"}
 
-        with httpx.Client(
-            follow_redirects=True,
-            timeout=httpx.Timeout(90.0, connect=15.0),
-        ) as client:
-            with client.stream("GET", url, headers=headers) as response:
-                if response.status_code != 206:
-                    raise httpx.HTTPStatusError(
-                        f"Server ignored byte range {start}-{end}",
-                        request=response.request,
-                        response=response,
-                    )
+        with (
+            httpx.Client(
+                follow_redirects=True,
+                timeout=httpx.Timeout(90.0, connect=15.0),
+            ) as client,
+            client.stream("GET", url, headers=headers) as response,
+        ):
+            if response.status_code != 206:
+                msg_0 = f"Server ignored byte range {start}-{end}"
+                raise httpx.HTTPStatusError(
+                    msg_0,
+                    request=response.request,
+                    response=response,
+                )
 
-                with part_path.open("wb") as file:
-                    for chunk in response.iter_bytes(CHUNK_SIZE):
-                        file.write(chunk)
+            with part_path.open("wb") as file:
+                for chunk in response.iter_bytes(CHUNK_SIZE):
+                    file.write(chunk)
 
         expected_size = end - start + 1
         actual_size = part_path.stat().st_size
 
         if actual_size != expected_size:
-            raise OSError(f"incomplete range {start}-{end}: expected {expected_size}, received {actual_size}")
+            msg = f"incomplete range {start}-{end}: expected {expected_size}, received {actual_size}"
+            raise OSError(msg)
 
     try:
         from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -770,7 +761,8 @@ def download_httpx_parallel(
                     shutil.copyfileobj(part, output, length=CHUNK_SIZE)
 
         if destination.stat().st_size != size:
-            raise OSError(f"download size mismatch: expected {size}, got {destination.stat().st_size}")
+            msg = f"download size mismatch: expected {size}, got {destination.stat().st_size}"
+            raise OSError(msg)
 
     finally:
         shutil.rmtree(part_dir, ignore_errors=True)
@@ -780,7 +772,8 @@ def download_requests(url: str, destination: Path) -> None:
     try:
         import requests
     except ImportError as exc:
-        raise RuntimeError("The requests backend requires: pip install requests") from exc
+        msg = "The requests backend requires: pip install requests"
+        raise RuntimeError(msg) from exc
 
     with requests.get(url, stream=True, timeout=(15, 90)) as response:
         response.raise_for_status()
@@ -795,7 +788,8 @@ def download_pycurl(url: str, destination: Path) -> None:
     try:
         import pycurl
     except ImportError as exc:
-        raise RuntimeError("The pycurl backend requires: pip install pycurl") from exc
+        msg = "The pycurl backend requires: pip install pycurl"
+        raise RuntimeError(msg) from exc
 
     curl = pycurl.Curl()
 
@@ -810,7 +804,8 @@ def download_pycurl(url: str, destination: Path) -> None:
 
             status = curl.getinfo(curl.RESPONSE_CODE)
             if status >= 400:
-                raise OSError(f"HTTP status {status} while downloading {url}")
+                msg = f"HTTP status {status} while downloading {url}"
+                raise OSError(msg)
     finally:
         curl.close()
 
@@ -819,7 +814,8 @@ def download_aria2c(url: str, destination: Path) -> None:
     aria2c = shutil.which("aria2c")
 
     if aria2c is None:
-        raise RuntimeError("aria2c backend selected, but aria2c is not installed or not in PATH")
+        msg = "aria2c backend selected, but aria2c is not installed or not in PATH"
+        raise RuntimeError(msg)
 
     command = [
         aria2c,
@@ -857,10 +853,12 @@ def download(
             raise FileNotFoundError(source_path)
 
         if not verify_hashes(source_path, link.hashes):
-            raise ValueError(f"hash mismatch for local artifact: {source_path}")
+            msg = f"hash mismatch for local artifact: {source_path}"
+            raise ValueError(msg)
 
         if not verify_archive_integrity(source_path):
-            raise ValueError(f"invalid archive: {source_path}")
+            msg = f"invalid archive: {source_path}"
+            raise ValueError(msg)
 
         return source_path
 
@@ -925,17 +923,20 @@ def download(
             download_aria2c(link.url_without_fragment, temporary_destination)
 
         else:
-            raise ValueError(f"unsupported backend: {backend}")
+            msg = f"unsupported backend: {backend}"
+            raise ValueError(msg)
 
         temporary_destination.replace(destination)
 
         if not verify_hashes(destination, link.hashes):
             destination.unlink(missing_ok=True)
-            raise ValueError(f"hash mismatch for {link.url_without_fragment}")
+            msg = f"hash mismatch for {link.url_without_fragment}"
+            raise ValueError(msg)
 
         if not verify_archive_integrity(destination):
             destination.unlink(missing_ok=True)
-            raise ValueError(f"archive integrity verification failed: {destination}")
+            msg = f"archive integrity verification failed: {destination}"
+            raise ValueError(msg)
 
         logger.success("Downloaded {}", destination)
         return destination
@@ -949,7 +950,8 @@ def parse_python_version(value: str) -> tuple[int, ...]:
     parts = value.split(".")
 
     if not parts or any(not part.isdigit() for part in parts):
-        raise argparse.ArgumentTypeError(f"invalid Python version: {value!r}; expected X.Y")
+        msg = f"invalid Python version: {value!r}; expected X.Y"
+        raise argparse.ArgumentTypeError(msg)
 
     return tuple(int(part) for part in parts)
 
@@ -988,7 +990,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-d",
         "--dest",
         type=Path,
-        default=Path("."),
+        default=Path(),
         metavar="DIR",
         help="Download destination directory, default: current directory.",
     )

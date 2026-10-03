@@ -6,6 +6,8 @@ This script merges the functionality of two different wordlist cleaning utilitie
 'repeats' mode: Rapidly streams a file to remove words with repeating characters.
 Mappings to original scripts: - original clean_wordlist.py -> python wordlist_cleaner.py similar wordlist.txt - original clean_wordlist_fast.py -> python wordlist_cleaner.py repeats wordlist.txt"""
 
+from __future__ import annotations
+
 import argparse
 import contextlib
 import mmap
@@ -23,10 +25,9 @@ def read_lines_dynamically(file_path: Path, mmap_threshold_mb: float) -> list[st
 
     if size_bytes > threshold_bytes:
         print(f"[Info] Large file detected ({size_bytes / (1024 * 1024):.2f} MB). Using mmap...")
-        with file_path.open("r+b") as f:
-            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                content = mm.read().decode("utf-8", errors="ignore")
-                return [line.strip() for line in content.splitlines() if line.strip()]
+        with file_path.open("r+b") as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            content = mm.read().decode("utf-8", errors="ignore")
+            return [line.strip() for line in content.splitlines() if line.strip()]
     else:
         print("[Info] Small file detected. Using standard read...")
         with file_path.open("r", encoding="utf-8") as f:

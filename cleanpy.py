@@ -17,15 +17,18 @@ from __future__ import annotations
 import argparse
 import ast
 import sys
-from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import libcst as cst
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__"})
 PRESERVED_COMMENT_MARKERS: tuple[str, ...] = ("# fmt", "# type")
@@ -231,7 +234,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args: argparse.Namespace = parse_args()
-    input_paths: list[Path] = args.paths or [Path(".")]
+    input_paths: list[Path] = args.paths or [Path()]
     files: list[Path] = list(iter_python_files(input_paths))
     if not files:
         print("No Python files found.")

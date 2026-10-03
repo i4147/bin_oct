@@ -204,7 +204,8 @@ def extract_feature(path: Path, method: str, hash_size: int) -> Optional[Any]:
         return hash_imagehash(path, method, hash_size)
     if method == "multihash":
         return hash_multihash(path, hash_size)
-    raise ValueError(f"Unknown method: {method!r}")
+    msg = f"Unknown method: {method!r}"
+    raise ValueError(msg)
 
 
 def hamming_str(a: Any, b: Any) -> int:
@@ -216,7 +217,7 @@ def hamming_str(a: Any, b: Any) -> int:
 def hamming_int(a: Any, b: Any) -> int:
     if a is None or b is None:
         return 10**9
-    return bin(int(a) ^ int(b)).count("1")
+    return (int(a) ^ int(b)).bit_count()
 
 
 def multihash_dist(a: Any, b: Any) -> float:
@@ -300,7 +301,8 @@ def group_items(
     if similarity_mode:
         max_bits = max_hamming_distance(method, hash_size)
         if max_bits is None:
-            raise ValueError(f"Similarity mode is not supported for method {method!r} (hashes are variable-length).")
+            msg = f"Similarity mode is not supported for method {method!r} (hashes are variable-length)."
+            raise ValueError(msg)
         dist_threshold = (1.0 - float(threshold)) * max_bits
     else:
         dist_threshold = float(threshold)

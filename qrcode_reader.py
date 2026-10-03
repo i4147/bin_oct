@@ -3,7 +3,10 @@
 For each QR code found, it should print the decoded data, code type, and bounding box position (left, top, width, height), then print the first decoded value separately as a summary.
 The script must handle missing arguments by printing usage instructions, and gracefully handle errors such as a missing image file or other processing exceptions by printing an error message and exiting with a non-zero status code."""
 
+from __future__ import annotations
+
 import sys
+
 from PIL import Image
 from pyzbar.pyzbar import decode
 

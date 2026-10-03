@@ -3,7 +3,10 @@
 For each size that has more than one associated file, it prints the size highlighted in cyan (via the "cprint" helper from "dh") followed by an indented list of the matching filenames, effectively helping identify potential duplicate files based on matching sizes.
 The script has no external inputs beyond the current directory contents and produces console output only, running via a "main" function invoked through the standard "if __name__ == '__main__'" entry point."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from dh import cprint, gsz
 
 

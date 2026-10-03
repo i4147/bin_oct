@@ -3,11 +3,14 @@
 It should parse an HTML/TOC file to extract nested section titles and their source file references (building a tree of Section objects with parent/child relationships and computed numbered paths), verify each referenced HTML file exists and that its title matches expectations (optionally auto-fixing titles), then merge the corresponding PDFs (using pypdf) into one output PDF while adding nested outline/bookmark entries reflecting the section hierarchy.
 It should use argparse for CLI options such as input/output paths and an overwrite flag, and use lxml.html for parsing HTML titles/content."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import urllib
 from pathlib import Path
+
 import lxml.html
 import pypdf
 

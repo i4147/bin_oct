@@ -3,6 +3,8 @@
 It should recursively scan for files, print progress messages including the total count found, and move each one to the root while skipping files already located there.
 If a filename collision occurs at the destination, it must automatically rename the incoming file by appending an incrementing numeric suffix (e.g., "_1", "_2") before the extension to avoid overwriting, logging each rename and move operation, and gracefully report any errors encountered during the move."""
 
+from __future__ import annotations
+
 import shutil
 import sys
 from pathlib import Path

@@ -4,8 +4,11 @@ Before removing each folder, it should calculate its size using a helper `gsz` f
 After processing, it should print a formatted summary showing the total size freed (using a helper `fsz` function to format bytes) and the number of directories removed, or print a message indicating nothing was found if no `__pycache__` directories exist.
 The size/formatting helper functions `gsz` and `fsz` should be imported from a local module named `dh`, and the script should run the cleanup on the current directory when executed as the main program."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
+
 from dh import fsz, gsz
 
 

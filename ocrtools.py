@@ -41,9 +41,7 @@ except ImportError:
     HAS_PIL = False
 
 try:
-    from skimage import color as skcolor
-    from skimage import filters as skfilters
-    from skimage import io as skiio
+    from skimage import color as skcolor, filters as skfilters, io as skiio
     from skimage.filters import threshold_local
     from skimage.util import img_as_ubyte
 
@@ -168,19 +166,24 @@ def _pick_backend(pref: str) -> str:
             return "skimage"
         if HAS_PIL:
             return "pillow"
-        raise AppError("no image backend available (need OpenCV, scikit-image or Pillow)")
+        msg = "no image backend available (need OpenCV, scikit-image or Pillow)"
+        raise AppError(msg)
     if pref == "cv" and not HAS_CV2:
-        raise AppError("OpenCV is not installed")
+        msg = "OpenCV is not installed"
+        raise AppError(msg)
     if pref == "skimage" and not HAS_SKIMAGE:
-        raise AppError("scikit-image is not installed")
+        msg = "scikit-image is not installed"
+        raise AppError(msg)
     if pref == "pillow" and not HAS_PIL:
-        raise AppError("Pillow is not installed")
+        msg = "Pillow is not installed"
+        raise AppError(msg)
     return pref
 
 
 def _require_tesseract() -> None:
     if not HAS_TESS:
-        raise AppError("pytesseract is required for this command")
+        msg = "pytesseract is required for this command"
+        raise AppError(msg)
 
 
 def _write_csv(rows: list[dict[str, Any]], path: Path) -> None:
@@ -229,12 +232,13 @@ def _enhance_one(path: Path, backend: str, suffix: str) -> bool:
         return _enhance_cv(path, suffix)
     if backend == "skimage":
         return _enhance_skimage(path, suffix)
-    raise AppError(f"unsupported backend for enhance: {backend}")
+    msg = f"unsupported backend for enhance: {backend}"
+    raise AppError(msg)
 
 
 def cmd_enhance(args: argparse.Namespace) -> int:
     backend = _pick_backend(args.backend)
-    inputs = args.paths if args.paths else [Path.cwd()]
+    inputs = args.paths or [Path.cwd()]
     files = find_images(inputs, recursive=False)
     if not files:
         print("no image files found to process")
@@ -299,7 +303,7 @@ def cmd_prepare(args: argparse.Namespace) -> int:
         logger.add(sys.stderr, level="DEBUG")
 
     backend = _pick_backend(args.backend)
-    inputs = args.paths if args.paths else [Path.cwd()]
+    inputs = args.paths or [Path.cwd()]
     if not args.paths:
         print(f"no input specified, processing current directory: {Path.cwd()}")
 
@@ -345,12 +349,14 @@ def _deskew_min_area_rect(bgr: "np.ndarray") -> "np.ndarray":
 
 def cmd_grid_variants(args: argparse.Namespace) -> int:
     if not (HAS_CV2 and HAS_NUMPY):
-        raise AppError("grid-variants requires OpenCV + numpy")
+        msg = "grid-variants requires OpenCV + numpy"
+        raise AppError(msg)
     _require_tesseract()
 
     fname: Path = args.image
     if not fname.is_file():
-        raise AppError(f"not a file: {fname}")
+        msg = f"not a file: {fname}"
+        raise AppError(msg)
 
     out_root: Path = args.out
     out_root.mkdir(parents=True, exist_ok=True)
@@ -411,7 +417,8 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
 def _grid_search_preprocess(path: Path) -> "np.ndarray":
     img = cv2.imread(str(path))
     if img is None:
-        raise AppError(f"could not read image: {path}")
+        msg = f"could not read image: {path}"
+        raise AppError(msg)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     denoised = cv2.fastNlMeansDenoising(gray, h=15)
     bw = cv2.adaptiveThreshold(denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
@@ -430,7 +437,8 @@ def _grid_search_preprocess(path: Path) -> "np.ndarray":
 
 def cmd_grid_search(args: argparse.Namespace) -> int:
     if not HAS_CV2:
-        raise AppError("grid-search requires OpenCV")
+        msg = "grid-search requires OpenCV"
+        raise AppError(msg)
     _require_tesseract()
 
     out_dir: Path = args.out
@@ -616,7 +624,8 @@ def cmd_translate(args: argparse.Namespace) -> int:
 
     p: Path = args.input_path
     if not p.exists():
-        raise AppError(f"file not found: {p}")
+        msg = f"file not found: {p}"
+        raise AppError(msg)
 
     suffix = p.suffix.lower()
     ocr_written: Path | None = None
@@ -625,14 +634,16 @@ def cmd_translate(args: argparse.Namespace) -> int:
         text = p.read_text(encoding="utf-8")
     elif suffix in PHOTO_EXTENSIONS:
         if not (HAS_PIL and HAS_TESS):
-            raise AppError("translate on images requires Pillow and pytesseract")
+            msg = "translate on images requires Pillow and pytesseract"
+            raise AppError(msg)
         with Image.open(p) as im:
             prepped = _translate_preprocess_pil(im)
             text = pytesseract.image_to_string(prepped)
         ocr_written = p.with_name(f"{p.stem}_ocr.txt")
         ocr_written.write_text(text, encoding="utf-8")
     else:
-        raise AppError(f"unsupported file type: {suffix}")
+        msg = f"unsupported file type: {suffix}"
+        raise AppError(msg)
 
     lang = args.lang if args.lang != "auto" else _detect_lang(text)
     translator = GoogleTranslator(source=lang, target="en")

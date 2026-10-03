@@ -4,6 +4,8 @@ The script should detect whether the current directory is a git repository, dete
 It should print clear status/error messages for failed git commands and prompt or perform deletion of the merged branches, ensuring the currently checked-out branch is excluded from deletion.
 Use Python's subprocess and shutil modules, with proper error handling for CalledProcessError."""
 
+from __future__ import annotations
+
 import shutil
 import subprocess
 import sys

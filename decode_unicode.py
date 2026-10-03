@@ -3,6 +3,8 @@
 The script should then overwrite the original file with the decoded text content using UTF-8 encoding, and finally print a confirmation message showing the file path followed by "updated".
 The path argument should have surrounding whitespace stripped before use."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 

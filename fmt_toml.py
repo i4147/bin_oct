@@ -1,12 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
-import sys
+from __future__ import annotations
+
 import argparse
-from pathlib import Path
-from multiprocessing import Pool, cpu_count
-from typing import List, Tuple, Optional, Dict, Any
+import sys
 from dataclasses import dataclass
 from io import StringIO
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import tree_sitter
 from tree_sitter import Language, Parser
 
@@ -32,7 +35,8 @@ def init_tree_sitter() -> None:
 
             TOML_LANGUAGE = tree_sitter_toml.language()
         except ImportError:
-            raise ImportError("tree-sitter-toml not found. Install with: pip install tree-sitter-toml")
+            msg = "tree-sitter-toml not found. Install with: pip install tree-sitter-toml"
+            raise ImportError(msg)
 
 
 class TomlVisitor:
@@ -248,7 +252,7 @@ def format_file(file_path: Path, config: FormatConfig) -> tuple[Path, bool, str]
         return file_path, True, "Formatted successfully"
 
     except Exception as e:
-        return file_path, False, f"Error: {str(e)}"
+        return file_path, False, f"Error: {e!s}"
 
 
 def find_toml_files(start_path: Path) -> list[Path]:

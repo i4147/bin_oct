@@ -4,6 +4,8 @@ The function should take a filename, first create a backup copy with a ".bak" ex
 After conversion, it should print a confirmation message stating the file was converted and where the backup was saved.
 Include a main block that runs this conversion on a file named "script.sh"."""
 
+from __future__ import annotations
+
 import codecs
 import shutil
 

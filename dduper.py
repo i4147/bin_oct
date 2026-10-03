@@ -4,6 +4,8 @@ It should use tree-sitter (with an ast-based fallback) to parse each file and pu
 line endings) and hash each extracted object with SHA-256 to detect and skip duplicates across files.
 The script should process files in parallel via multiprocessing, log progress and errors with loguru, accept input/output paths and options through argparse, and write the deduplicated, extracted code objects to the specified output location."""
 
+from __future__ import annotations
+
 import argparse
 import ast
 import bz2
@@ -17,6 +19,7 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from pathlib import Path
+
 import brotli
 import tree_sitter_python
 import zstandard as zstd

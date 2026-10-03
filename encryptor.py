@@ -1,10 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """(No content in stream)"""
 
+from __future__ import annotations
+
 import argparse
 import random
 import string
 from pathlib import Path
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes

@@ -3,6 +3,8 @@
 For each target file, it should invoke every configured tool as a subprocess, gracefully skip tools that are not installed (checking via shutil.which), and capture exit codes, combined stdout/stderr output, and error status into a structured dictionary.
 The script should write the collected results for each analyzed file into a report directory as JSON, and print progress messages while processing files."""
 
+from __future__ import annotations
+
 import json
 import shutil
 import subprocess
@@ -36,7 +38,7 @@ def execute_tool(cmd_base: list[str], target_file: Path) -> dict:
         return {
             "exit_code": proc.returncode,
             "has_errors": proc.returncode != 0,
-            "output": combined_output if combined_output else "No output.",
+            "output": combined_output or "No output.",
         }
     except Exception as exc:
         return {

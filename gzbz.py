@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import bz2
+import contextlib
 import gzip
 import mmap
 import shutil
@@ -15,7 +16,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Self, Sequence
 
 from loguru import logger
 
@@ -52,7 +53,8 @@ def compress_bytes(data: bytes, algo: str, level: int) -> bytes:
         return bz2.compress(data, compresslevel=level)
     if algo == "gz":
         return gzip.compress(data, compresslevel=level)
-    raise ValueError(f"unknown algorithm: {algo!r}")
+    msg = f"unknown algorithm: {algo!r}"
+    raise ValueError(msg)
 
 
 def decompress_bytes(data: bytes, algo: str) -> bytes:
@@ -60,7 +62,8 @@ def decompress_bytes(data: bytes, algo: str) -> bytes:
         return bz2.decompress(data)
     if algo == "gz":
         return gzip.decompress(data)
-    raise ValueError(f"unknown algorithm: {algo!r}")
+    msg = f"unknown algorithm: {algo!r}"
+    raise ValueError(msg)
 
 
 def _worker_compress_chunk(args: tuple[int, bytes, str, int]) -> tuple[int, bytes]:
@@ -81,10 +84,8 @@ def _worker_gzip_file(args: tuple[str, int, int]) -> tuple[str, bool, int, int, 
         return (path_str, True, size, csize, "")
     except Exception as exc:  # noqa: BLE001
         if dst.exists():
-            try:
+            with contextlib.suppress(OSError):
                 dst.unlink()
-            except OSError:
-                pass
         return (path_str, False, 0, 0, str(exc))
 
 
@@ -125,7 +126,7 @@ class Tool:
             self._pool.shutdown(wait=True)
             self._pool = None
 
-    def __enter__(self) -> "Tool":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc_info) -> None:  # noqa: D401
@@ -414,10 +415,8 @@ class Tool:
         total_in = total_out = ok = 0
         for i, f in enumerate(sorted(singles), 1):
             print(f"\n[{i}/{len(singles)}] {f.name}")
-            try:
+            with contextlib.suppress(OSError):
                 total_in += f.stat().st_size
-            except OSError:
-                pass
             if self.decompress_single_file(f):
                 ok += 1
                 dst = f.with_suffix("")
@@ -642,7 +641,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if args.command == "gzip-files":
             return run_gzip_files(
-                directories=args.directories or [Path(".")],
+                directories=args.directories or [Path()],
                 excludes=args.exclude,
                 workers=args.workers,
                 chunk_size=args.chunk_size,

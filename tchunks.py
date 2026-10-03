@@ -14,18 +14,16 @@ import signal
 import sys
 import threading
 import time
-from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
-from types import FrameType
+from typing import TYPE_CHECKING
 
 from loguru import logger
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import FrameType
 
 
 class TranslationFailedError(Exception):
@@ -79,7 +77,8 @@ def _make_deepl(source: str, target: str) -> Callable[[str], str]:
 
     api_key = os.environ.get("DEEPL_API_KEY")
     if not api_key:
-        raise NoBackendAvailableError("DEEPL_API_KEY is not set")
+        msg = "DEEPL_API_KEY is not set"
+        raise NoBackendAvailableError(msg)
     translator = deepl.Translator(api_key)
     src = _lang_for_deepl(source, is_target=False)
     tgt = _lang_for_deepl(target, is_target=True)
@@ -102,7 +101,8 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
         client = GoogleTranslator(source=src, target=tgt)
         result = client.translate(text)
         if result is None:
-            raise TranslationFailedError("deep_translator returned None")
+            msg = "deep_translator returned None"
+            raise TranslationFailedError(msg)
         return str(result)
 
     return translate
@@ -118,7 +118,8 @@ def _make_translate(source: str, target: str) -> Callable[[str], str]:
         client = TranslatePkgTranslator(from_lang=src, to_lang=tgt)
         result = client.translate(text)
         if not result:
-            raise TranslationFailedError("translate package returned empty result")
+            msg = "translate package returned empty result"
+            raise TranslationFailedError(msg)
         return str(result)
 
     return translate
@@ -133,7 +134,8 @@ def _make_translators_bing(source: str, target: str) -> Callable[[str], str]:
     def translate(text: str) -> str:
         result = ts.translate_text(text, translator="bing", from_language=src, to_language=tgt)
         if not result:
-            raise TranslationFailedError("translators (bing) returned empty result")
+            msg = "translators (bing) returned empty result"
+            raise TranslationFailedError(msg)
         return str(result)
 
     return translate
@@ -153,7 +155,8 @@ def _make_googletrans(source: str, target: str) -> Callable[[str], str]:
         with _googletrans_lock:
             result = client.translate(text, src=src, dest=tgt)
         if not result or not result.text:
-            raise TranslationFailedError("googletrans returned empty result")
+            msg = "googletrans returned empty result"
+            raise TranslationFailedError(msg)
         return str(result.text)
 
     return translate
@@ -173,7 +176,8 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable[[str], str]:
         with _pygoogletranslation_lock:
             result = client.translate(text, src=src, dest=tgt)
         if not result or not result.text:
-            raise TranslationFailedError("pygoogletranslation returned empty result")
+            msg = "pygoogletranslation returned empty result"
+            raise TranslationFailedError(msg)
         return str(result.text)
 
     return translate
@@ -202,7 +206,8 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
     if requested:
         if requested not in BACKEND_FACTORIES:
             valid = ", ".join(sorted(BACKEND_FACTORIES))
-            raise UnknownBackendError(f"unknown backend '{requested}'. Valid options: {valid}")
+            msg = f"unknown backend '{requested}'. Valid options: {valid}"
+            raise UnknownBackendError(msg)
         factory = BACKEND_FACTORIES[requested]
         translate_fn = factory(source, target)
         return requested, translate_fn
@@ -222,14 +227,14 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
             last_error = e
             continue
 
-    raise NoBackendAvailableError(
-        f"no backend could be constructed from fallback order {FALLBACK_ORDER}. Last error: {last_error}"
-    )
+    msg = f"no backend could be constructed from fallback order {FALLBACK_ORDER}. Last error: {last_error}"
+    raise NoBackendAvailableError(msg)
 
 
 def chunk_text(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
-        raise ValueError("chunk_size must be positive")
+        msg = "chunk_size must be positive"
+        raise ValueError(msg)
 
     chunks: list[str] = []
     pos = 0
@@ -242,8 +247,7 @@ def chunk_text(text: str, chunk_size: int) -> list[str]:
 
             for ws_char in ("\n", "\t"):
                 candidate = text.rfind(ws_char, pos, end)
-                if candidate > split_at:
-                    split_at = candidate
+                split_at = max(split_at, candidate)
             if split_at > pos:
                 end = split_at
 
@@ -289,13 +293,16 @@ def translate_with_retry(
         except TranslationFailedError:
             raise
         except Exception as e:  # noqa: BLE001 - normalize any backend error to our type
-            raise TranslationFailedError(f"backend call raised: {e}") from e
+            msg = f"backend call raised: {e}"
+            raise TranslationFailedError(msg) from e
 
         if not result or not result.strip():
-            raise TranslationFailedError("backend returned empty translation")
+            msg = "backend returned empty translation"
+            raise TranslationFailedError(msg)
 
         if looks_untranslated(text, result, source_lang, target_lang):
-            raise TranslationFailedError("translation looks identical to source (likely untranslated)")
+            msg = "translation looks identical to source (likely untranslated)"
+            raise TranslationFailedError(msg)
 
         return result
 
@@ -319,7 +326,7 @@ def load_existing_results(output_path: Path) -> dict[str, str]:
 
 def save_results_atomic(output_path: Path, results: dict[str, str]) -> None:
     tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
-    ordered = {str(k): results[str(k)] for k in sorted(results, key=lambda k: int(k))}
+    ordered = {str(k): results[str(k)] for k in sorted(results, key=int)}
     try:
         with tmp_path.open("w", encoding="utf-8") as f:
             json.dump(ordered, f, ensure_ascii=False, indent=2)

@@ -3,6 +3,8 @@
 The script should print a single line displaying the Celsius and Kelvin values, each formatted to two decimal places, labeled clearly as "celecius" and "kelvin".
 Assume the input argument is a valid integer and no error handling for invalid input is required."""
 
+from __future__ import annotations
+
 import sys
 
 if __name__ == "__main__":

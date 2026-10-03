@@ -1,7 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """git_sync_tool.py Usage: python git_sync_tool.py commit [options] python git_sync_tool.py push [options] python git_sync_tool.py sync [options] Mapping: agagc.py -> python git_sync_tool.py push --create-repo --auto-init --no-reuse-existing-repo --remote-name origin --description "new git repo" --token-auth persistent --token-url-format oauth2 --set-upstream --init-if-missing gagc.py -> python git_sync_tool.py commit --add-mode star --init-if-missing gitpush.py -> python git_sync_tool.py push --format-black --gitignore-mode copy --gitignore-source ~/.gitignore_global gp.py -> python git_sync_tool.py push --gitignore-mode copy --gitignore-source ~/.gitignore --message-prefix "Auto-commit at " --require-remote gp2.py -> python git_sync_tool.py push --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user i4147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote gp3.py -> python git_sync_tool.py push --create-repo --fork-origin --gitignore-mode symlink --gitignore-source ~/.gitignore --github-user i4147 --token-auth temporary --token-url-format user --token-env-vars GITHUB_TOKEN --no-search-parent --message-prefix "Auto-commit at " --require-remote pullforkpush.py -> python git_sync_tool.py sync --push-to-fork --fork-token-auth persistent --token-url-format user --token-env-vars GITHUB_TOKEN"""
 
+from __future__ import annotations
+
 import argparse
+import contextlib
 import os
 import re
 import shutil
@@ -10,6 +13,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
+
 from dotenv import load_dotenv
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 from github import Github, GithubException
@@ -435,10 +439,8 @@ def cmd_sync(args: argparse.Namespace) -> int:
         print("In detached HEAD state. Skipping sync.", file=sys.stderr)
         sys.exit(1)
     if not branch_obj.tracking_branch():
-        try:
+        with contextlib.suppress(Exception):
             branch_obj.set_tracking_branch(remote.refs[branch])
-        except Exception:
-            pass
     print(f"Pulling latest changes into '{branch}'...")
     remote.pull()
     github_user = args.github_user or github_login(token, None)
@@ -496,7 +498,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_common(p: argparse.ArgumentParser, push_to_fork_default: bool = False) -> None:
-        p.add_argument("--repo", type=Path, default=Path("."))
+        p.add_argument("--repo", type=Path, default=Path())
         p.add_argument("--search-parent", action=argparse.BooleanOptionalAction, default=True)
         p.add_argument("--init-if-missing", action="store_true")
         p.add_argument("--remote-name", default="origin")

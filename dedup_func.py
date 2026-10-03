@@ -78,14 +78,14 @@ def clean_source(lines: list[str]) -> str:
 
 
 def function_line_range(node: ast.AST) -> tuple[int, int]:
-    end = getattr(node, "end_lineno", None) or getattr(node, "lineno")
+    end = getattr(node, "end_lineno", None) or node.lineno
     decs = getattr(node, "decorator_list", None)
     start = decs[0].lineno if decs else node.lineno
     return start, end
 
 
 class FunctionRecord:
-    __slots__ = ("name", "body", "original_body", "lineno", "node")
+    __slots__ = ("body", "lineno", "name", "node", "original_body")
 
     def __init__(self, name: str, body: str, lineno: int, node: ast.AST) -> None:
         self.name = name
@@ -236,7 +236,7 @@ def cmd_single(args: argparse.Namespace) -> int:
 
 
 def extract_objects_from_file(path: Path) -> list[dict[str, Any]]:
-    src, tree = parse_file(path)
+    _src, tree = parse_file(path)
     if tree is None:
         return []
 
@@ -290,7 +290,7 @@ def save_scan_reports(groups: dict[str, list[dict[str, Any]]], output_dir: Path)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     flat: list[dict[str, Any]] = []
-    for h, objs in groups.items():
+    for objs in groups.values():
         count = len(objs)
         for obj in objs:
             rec = {
@@ -476,7 +476,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
 def extract_definitions(
     path: Path,
 ) -> dict[tuple[str, str, str], tuple[str, dict[str, Any]]]:
-    src, tree = parse_file(path)
+    _src, tree = parse_file(path)
     if tree is None:
         return {}
 
@@ -512,15 +512,18 @@ def strip_definition_from_source(source: str, name: str, kind: str, source_code:
             if node.name == name and ast.unparse(node) == source_code:
                 removed = True
                 continue
-        elif kind == "constant" and isinstance(node, ast.Assign):
-            if (
+        elif (
+            kind == "constant"
+            and isinstance(node, ast.Assign)
+            and (
                 len(node.targets) == 1
                 and isinstance(node.targets[0], ast.Name)
                 and node.targets[0].id == name
                 and ast.unparse(node) == source_code
-            ):
-                removed = True
-                continue
+            )
+        ):
+            removed = True
+            continue
         new_body.append(node)
 
     if not removed:
@@ -690,7 +693,7 @@ def _prune_worker(path_str: str, ref_hashes: dict[str, str], apply: bool) -> dic
 def _collect_prune_targets(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
     if not inputs:
-        files.update(Path(".").rglob("*.py"))
+        files.update(Path().rglob("*.py"))
     else:
         for item in inputs:
             p = Path(item)

@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Compress each non-hidden subdirectory as `<name>.tar.br` and each regular file as `<name>.br` in the current directory: build tar archives in memory, Brotli-compress with quality 11 in chunks of 64 KiB, run both job types through `multiprocessing.pool.starmap` on a fixed pool of 8 workers, and log with loguru."""
 
+from __future__ import annotations
+
 import io
 import tarfile
 from multiprocessing.pool import Pool
@@ -55,7 +57,7 @@ def _dispatch(job: tuple[Path, bool]) -> tuple[Path, bool, str | None]:
 
 
 def main() -> None:
-    current_dir: Path = Path(".")
+    current_dir: Path = Path()
     script_name: str = Path(__file__).name
 
     subdirs: list[Path] = [d for d in current_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]

@@ -3,8 +3,11 @@
 It should support single-file or batch/multiprocessing modes (using a worker pool), optional automatic backup creation (with a `.bak` suffix) and an undo mode to restore from backups, optional code formatting after refactoring, and a verbose flag for logging progress.
 The script should be driven by command-line arguments (parsed via argparse) mapped onto an immutable `Options` dataclass with sensible defaults, and it should locate `.py` files recursively or non-recursively while excluding existing backup files."""
 
+from __future__ import annotations
+
 import argparse
 import ast
+import contextlib
 import multiprocessing as mp
 import re
 import shutil
@@ -76,10 +79,8 @@ def overwrite_file(path: Path, content: str, dry_run: bool) -> None:
 
 
 def try_format(path: Path) -> None:
-    try:
+    with contextlib.suppress(Exception):
         subprocess.run(["ruff", "format", str(path)], check=False)
-    except Exception:
-        pass
 
 
 def parse_name_from_block(block: str) -> str | None:
@@ -111,7 +112,7 @@ def topological_sort(blocks: list[str], known_names: set[str]) -> list[str]:
     for name, block in name_to_block.items():
         refs = extract_referenced_names(block) & known_names - {name}
         dependencies[name] = refs
-    in_degree = {name: 0 for name in name_to_block}
+    in_degree = dict.fromkeys(name_to_block, 0)
     for name, refs in dependencies.items():
         for ref in refs:
             if ref in in_degree:
@@ -142,7 +143,7 @@ def _optimize_imports(import_lines: list[str]) -> str:
         line = line.strip()
         if not line or line in seen:
             continue
-        if line.startswith("from .") or line.startswith("import ."):
+        if line.startswith(("from .", "import .")):
             continue
         seen.add(line)
         if line.startswith("from "):
@@ -174,7 +175,7 @@ def _optimize_imports(import_lines: list[str]) -> str:
             if names is None:
                 rendered.append(f"import {module}")
                 continue
-            unique_names = sorted(set(n for n in names if n))
+            unique_names = sorted({n for n in names if n})
             if not unique_names:
                 rendered.append(f"import {module}")
                 continue
@@ -346,7 +347,7 @@ def build_subpkg_modules(root: str, file_map: dict[Path, dict]) -> dict[str, tup
             rel = path.relative_to(root_path)
         except ValueError:
             rel = path
-        subpkg = str(rel.parent) if rel.parent != Path(".") else ""
+        subpkg = str(rel.parent) if rel.parent != Path() else ""
         if subpkg not in grouped:
             grouped[subpkg] = {"funcs": [], "consts": [], "classes": []}
         grouped[subpkg]["funcs"].extend(entry["funcs"])
@@ -551,7 +552,7 @@ def run_subpkg_mode(opts: Options) -> None:
                 rel = path.relative_to(root_path)
             except ValueError:
                 rel = path
-            parent = str(rel.parent) if rel.parent != Path(".") else ""
+            parent = str(rel.parent) if rel.parent != Path() else ""
             if parent == subpkg_name:
                 grouped_names["funcs"].extend(entry["funcs"])
                 grouped_names["consts"].extend(entry["consts"])
@@ -608,7 +609,8 @@ def run(opts: Options) -> None:
         return
     handler = dispatch.get(opts.mode)
     if not handler:
-        raise ValueError(f"Unknown mode: {opts.mode}")
+        msg = f"Unknown mode: {opts.mode}"
+        raise ValueError(msg)
     handler(opts)
 
 

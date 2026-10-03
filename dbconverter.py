@@ -44,7 +44,8 @@ def detect_format(path: Path) -> str:
         return "parquet"
     if ext in (".xlsx", ".xls"):
         return "excel"
-    raise ValueError(f"Unsupported input extension: {ext!r}")
+    msg = f"Unsupported input extension: {ext!r}"
+    raise ValueError(msg)
 
 
 def parse_target(name: str) -> str:
@@ -61,7 +62,8 @@ def parse_target(name: str) -> str:
         return "excel"
     if n in ("json", "csv", "tsv"):
         return n
-    raise ValueError(f"Unsupported target format: {name!r}")
+    msg = f"Unsupported target format: {name!r}"
+    raise ValueError(msg)
 
 
 # ---------------------------------------------------------------- coercion
@@ -93,7 +95,8 @@ def read_json(path: Path) -> dict[str, pd.DataFrame]:
         if obj and all(isinstance(v, list) for v in obj.values()):
             return {k: pd.DataFrame(v) for k, v in obj.items()}
         return {"data": pd.DataFrame([obj])}
-    raise ValueError(f"Unsupported JSON root type: {type(obj).__name__}")
+    msg = f"Unsupported JSON root type: {type(obj).__name__}"
+    raise ValueError(msg)
 
 
 def read_jsonl(path: Path) -> dict[str, pd.DataFrame]:
@@ -138,7 +141,8 @@ def read_excel(path: Path) -> dict[str, pd.DataFrame]:
 
 def _single(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     if len(tables) != 1:
-        raise ValueError(f"this output format supports a single table, got {len(tables)}: {list(tables)}")
+        msg = f"this output format supports a single table, got {len(tables)}: {list(tables)}"
+        raise ValueError(msg)
     return next(iter(tables.values()))
 
 

@@ -580,9 +580,7 @@ def _wanted_movie(
         return False
     if qualities and not any(q in low for q in qualities):
         return False
-    if size_mb is None or size_mb >= max_mb:
-        return False
-    return True
+    return not (size_mb is None or size_mb >= max_mb)
 
 
 def _movie_basic(args: argparse.Namespace) -> int:

@@ -4,7 +4,10 @@ It should use helper functions from a module named "dh" (get_filez, is_binary, i
 The script defines a helper to check for a shebang by reading the first two bytes of a file, and a main function that collects matching extensionless Python scripts into a list.
 When run directly, it prints the relative paths (relative to the current directory) of all found scripts, or a message indicating none were found if the list is empty."""
 
+from __future__ import annotations
+
 from pathlib import Path
+
 from dh import get_filez, is_binary, is_python_file, should_skip
 
 

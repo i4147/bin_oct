@@ -3,18 +3,23 @@
 The script should support multiprocessing for parallel processing of files, use thread locks to safely print progress and accumulate results across workers, and output the collected detection results (e.g., as JSON) via a command-line interface built with argparse.
 It is intended for comparing or aggregating language-identification outcomes across a codebase or text corpus."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing as mp
 import sys
 import threading
-from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
 import gcld3
 import pycld2 as cld2
 from dh import is_binary
 from langdetect import DetectorFactory, detect_langs
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 DetectorFactory.seed = 0
 _print_lock = threading.Lock()
@@ -231,7 +236,7 @@ def main(argv=None) -> int:
         help="Parallelism mode: file (default) or line (inside each file).",
     )
     args = parser.parse_args(argv)
-    input_paths = [Path(p) for p in args.paths] if args.paths else [Path(".")]
+    input_paths = [Path(p) for p in args.paths] if args.paths else [Path()]
     files = list(iter_files(input_paths))
     if not files:
         print("No suitable text files found.", file=sys.stderr)

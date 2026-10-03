@@ -3,6 +3,8 @@
 The script should read the input shell script's path from the first command-line argument, generate shell variable assignment statements for each chunk (properly escaping single quotes), and finally output an `eval` statement that concatenates all the variable references to reconstruct and execute the original script.
 The obfuscated result is printed to stdout."""
 
+from __future__ import annotations
+
 import string
 import sys
 

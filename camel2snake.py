@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import contextlib
 import difflib
 import hashlib
 import io
@@ -137,10 +138,8 @@ def atomic_write(path: Path, data: bytes) -> None:
         except OSError:
             pass
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
 
 
@@ -294,10 +293,7 @@ class RenameTransformer(cst.CSTTransformer):
         self._in_import = 0
 
     def _in_all_assign(self, node: cst.Assign) -> bool:
-        for tgt in node.targets:
-            if isinstance(tgt.target, cst.Name) and tgt.target.value == "__all__":
-                return True
-        return False
+        return any(isinstance(tgt.target, cst.Name) and tgt.target.value == "__all__" for tgt in node.targets)
 
     def visit_Assign(self, node: cst.Assign) -> bool:
         if self._in_all_assign(node):
@@ -558,7 +554,8 @@ def parse_targets(value: str) -> set[str]:
     parts = {p.strip() for p in value.split(",") if p.strip()}
     invalid = parts - set(ALLOWED_TARGETS)
     if invalid:
-        raise argparse.ArgumentTypeError(f"invalid targets: {sorted(invalid)}")
+        msg = f"invalid targets: {sorted(invalid)}"
+        raise argparse.ArgumentTypeError(msg)
     return parts
 
 

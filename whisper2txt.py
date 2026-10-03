@@ -4,8 +4,11 @@ The script should accept the input audio file path as a command-line argument, v
 It should save the full transcribed text to an output file named "out.txt", and also print a preview of the transcription to the console, truncating it to the first 200 characters if the text is longer.
 Include appropriate status messages during loading and processing, and handle the case of missing or incorrect command-line arguments with a usage message and graceful exit."""
 
+from __future__ import annotations
+
 import os
 import sys
+
 import whisper
 
 

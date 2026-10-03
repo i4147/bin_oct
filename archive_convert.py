@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import bz2
+import contextlib
 import gzip
 import lzma
 import multiprocessing as mp
@@ -15,11 +16,14 @@ import sys
 import tarfile
 import tempfile
 import zipfile
-from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import brotli
 from loguru import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".tar.gz",
@@ -79,7 +83,8 @@ def target_path(src: Path) -> Path:
     for sfx in SUFFIXES_BY_LENGTH:
         if low.endswith(sfx):
             return src.with_name(src.name[: -len(sfx)] + ".tar.br")
-    raise ValueError(f"no known archive suffix: {src.name}")
+    msg = f"no known archive suffix: {src.name}"
+    raise ValueError(msg)
 
 
 def _zip_to_tar(src: Path, workdir: Path, tar_path: Path) -> None:
@@ -126,7 +131,8 @@ def _to_tar(src: Path, workdir: Path) -> Path:
         elif low.endswith(".tar.lz4"):
             subprocess.run(["lz4", "-dc", str(src)], stdout=fout, check=True)
         else:
-            raise ValueError(f"unsupported archive: {src.name}")
+            msg = f"unsupported archive: {src.name}"
+            raise ValueError(msg)
     return tar_path
 
 
@@ -174,21 +180,22 @@ def process(src: Path) -> ProcResult:
         src.unlink()
         return src, dst, src_size, dst_size, None
     except Exception as exc:
-        try:
+        with contextlib.suppress(OSError):
             dst.unlink(missing_ok=True)
-        except OSError:
-            pass
         return src, dst, src_size, 0, f"{type(exc).__name__}: {exc}"
 
 
 def decompress_one(src: Path) -> tuple[Path, int, int]:
     if not src.name.endswith(".tar.br"):
-        raise ValueError(f"not a .tar.br file: {src.name}")
+        msg = f"not a .tar.br file: {src.name}"
+        raise ValueError(msg)
     if src.is_symlink() or not src.is_file():
-        raise ValueError(f"not a regular file: {src.name}")
+        msg = f"not a regular file: {src.name}"
+        raise ValueError(msg)
     dst = src.with_name(src.name[: -len(".br")])
     if dst.exists():
-        raise FileExistsError(f"refusing to overwrite: {dst.name}")
+        msg = f"refusing to overwrite: {dst.name}"
+        raise FileExistsError(msg)
     src_size = src.stat().st_size
     tmp = dst.with_name(dst.name + ".partial")
     try:
@@ -235,13 +242,14 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def collect_targets(paths: list[Path]) -> list[Path]:
-    roots = paths if paths else [Path.cwd()]
+    roots = paths or [Path.cwd()]
     found: list[Path] = []
     for root in roots:
         try:
             rp = root.resolve(strict=True)
         except FileNotFoundError:
-            raise SystemExit(f"path not found: {root}")
+            msg = f"path not found: {root}"
+            raise SystemExit(msg)
         if rp.is_file():
             if not rp.is_symlink() and rp.name.lower().endswith(ARCHIVE_SUFFIXES):
                 found.append(rp)
@@ -258,7 +266,8 @@ def collect_targets(paths: list[Path]) -> list[Path]:
 
 def run_decompress(paths: list[Path], cwd: Path) -> int:
     if not paths:
-        raise SystemExit("no archive given for -d")
+        msg = "no archive given for -d"
+        raise SystemExit(msg)
     failures = 0
     for raw in paths:
         try:

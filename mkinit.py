@@ -4,6 +4,8 @@ It should provide helper functions to identify valid module files and valid subp
 It should also include a function that detects whether a module contains only a "main" entry-point function/definition, useful for filtering out script-only modules when building package documentation or export summaries.
 Inputs are filesystem Path objects; outputs are booleans or lists of names derived from static AST inspection."""
 
+from __future__ import annotations
+
 import ast
 from pathlib import Path
 
@@ -13,9 +15,7 @@ def is_valid_module_file(path: Path) -> bool:
         return False
     if path.suffix != ".py":
         return False
-    if path.name.startswith("_"):
-        return False
-    return True
+    return not path.name.startswith("_")
 
 
 def is_valid_subpackage(path: Path) -> bool:
@@ -52,9 +52,8 @@ def get_public_functions(tree: ast.Module) -> list[str]:
 def get_public_classes(tree: ast.Module) -> list[str]:
     names: list[str] = []
     for node in tree.body:
-        if isinstance(node, ast.ClassDef):
-            if not node.name.startswith("_"):
-                names.append(node.name)
+        if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
+            names.append(node.name)
     return names
 
 
@@ -136,7 +135,8 @@ def create_init_file(project_dir: Path | None = None) -> Path:
         project_dir = Path.cwd()
     project_dir = project_dir.resolve()
     if not project_dir.is_dir():
-        raise NotADirectoryError(f"{project_dir} is not a directory")
+        msg = f"{project_dir} is not a directory"
+        raise NotADirectoryError(msg)
     init_path = project_dir / "__init__.py"
     content = build_init_content(project_dir)
     content = clean_content(content)

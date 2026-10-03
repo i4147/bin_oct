@@ -21,10 +21,13 @@ import tarfile
 import textwrap
 import zipfile
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 try:
     import zstandard as zstd  # type: ignore
@@ -157,7 +160,7 @@ def _parse_import_names(node: ast.Import | ast.ImportFrom) -> list[tuple[str, st
     pairs: list[tuple[str, str]] = []
     for alias in node.names:
         full = alias.name
-        bound = alias.asname if alias.asname else full.split(".")[0]
+        bound = alias.asname or full.split(".")[0]
         pairs.append((full, bound))
     return pairs
 
@@ -694,7 +697,7 @@ def _filter_unused_global(scans: list[_DefScanResult], kind_filter: str) -> list
             continue
         if d.name == "main":
             continue
-        if kind_filter != "all" and d.kind != kind_filter:
+        if kind_filter not in ("all", d.kind):
             continue
         if d.name not in all_used:
             result.append(d)
@@ -708,7 +711,7 @@ def _filter_unused_per_file(scan: _DefScanResult, kind_filter: str) -> list[DefI
     for d in scan.defs:
         if d.name.startswith("_"):
             continue
-        if kind_filter != "all" and d.kind != kind_filter:
+        if kind_filter not in ("all", d.kind):
             continue
         if d.name not in scan.used_names:
             result.append(d)
@@ -920,7 +923,7 @@ def _apply_vulture_fixes(path: str, fixes: list[tuple[int, str, str]], mode: str
         if idx < 0 or idx >= len(lines) or idx in skip_indices:
             continue
 
-        if mode == "comment-vars" or mode == "skip-dirs":
+        if mode in {"comment-vars", "skip-dirs"}:
             lines[idx] = _comment_out(lines[idx])
         elif mode == "comment-all":
             lines[idx] = _comment_out(lines[idx], marker=True)
@@ -1023,7 +1026,7 @@ def _is_target_func(node: ast.AST, inspect_only: bool) -> bool:
 
 
 def _replace_func_in_file(path: Path, inspect_only: bool) -> tuple[Path, bool, str]:
-    if path.name in {"pycleaner.py"}:
+    if path.name == "pycleaner.py":
         return path, False, "Skipped by filename"
 
     try:
@@ -1131,9 +1134,8 @@ def _find_block(lines: list[str], block: list[str]) -> tuple[int, int] | None:
 
 def _already_has_import(tree: ast.Module, name: str) -> bool:
     for node in tree.body:
-        if isinstance(node, ast.ImportFrom) and node.module == "dh":
-            if any(a.name == name for a in node.names):
-                return True
+        if isinstance(node, ast.ImportFrom) and node.module == "dh" and any(a.name == name for a in node.names):
+            return True
         if isinstance(node, ast.Import) and any(a.name == name for a in node.names):
             return True
     return False

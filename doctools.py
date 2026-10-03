@@ -436,7 +436,8 @@ def _convert_one_to_html(
         except (subprocess.CalledProcessError, FileNotFoundError):
             helper = _find_rst2html_helper()
             if helper is None:
-                raise RuntimeError("No RST to HTML converter found")
+                msg = "No RST to HTML converter found"
+                raise RuntimeError(msg)
             cmd = [
                 sys.executable,
                 str(helper),

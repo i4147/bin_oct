@@ -1,11 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from pathlib import Path
-from typing import Any
+from __future__ import annotations
+
+import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
-import re
-from loguru import logger
 from io import StringIO
+from typing import TYPE_CHECKING, Any
+
+from loguru import logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger.enable("__main__")
 
@@ -272,7 +277,8 @@ class Parser:
 
     def expect(self, tt: TokenType) -> Token:
         if self.current().type != tt:
-            raise SyntaxError(f"Expected {tt}, got {self.current().type} at line {self.current().line}")
+            msg = f"Expected {tt}, got {self.current().type} at line {self.current().line}"
+            raise SyntaxError(msg)
         return self.advance()
 
     def parse_key(self) -> list[str]:
@@ -284,7 +290,8 @@ class Parser:
             elif self.current().type == TokenType.KEY:
                 keys.append(self.advance().value)
             else:
-                raise SyntaxError(f"Expected key at line {self.current().line}")
+                msg = f"Expected key at line {self.current().line}"
+                raise SyntaxError(msg)
 
             self.skip_whitespace_and_comments()
             if self.current().type == TokenType.DOT:
@@ -312,7 +319,8 @@ class Parser:
         elif token.type == TokenType.LBRACE:
             return self.parse_inline_table()
         else:
-            raise SyntaxError(f"Unexpected token {token.type} at line {token.line}")
+            msg = f"Unexpected token {token.type} at line {token.line}"
+            raise SyntaxError(msg)
 
     def parse_array(self) -> list[Any]:
         self.expect(TokenType.LSQUARE)
@@ -330,7 +338,8 @@ class Parser:
             if self.current().type == TokenType.COMMA:
                 self.advance()
             elif self.current().type != TokenType.RSQUARE:
-                raise SyntaxError(f"Expected ',' or ']' at line {self.current().line}")
+                msg = f"Expected ',' or ']' at line {self.current().line}"
+                raise SyntaxError(msg)
 
         return result
 
@@ -358,7 +367,8 @@ class Parser:
             if self.current().type == TokenType.COMMA:
                 self.advance()
             elif self.current().type != TokenType.RBRACE:
-                raise SyntaxError(f"Expected ',' or '}}' at line {self.current().line}")
+                msg = f"Expected ',' or '}}' at line {self.current().line}"
+                raise SyntaxError(msg)
 
         return result
 
@@ -522,10 +532,7 @@ class Formatter:
                 self._format_table(val, path + [key])
 
     def _is_inline_table(self, val: dict[str, Any]) -> bool:
-        for v in val.values():
-            if isinstance(v, (dict, list)):
-                return False
-        return True
+        return all(not isinstance(v, (dict, list)) for v in val.values())
 
     def _format_inline_table(self, table: dict[str, Any]) -> str:
         if not table:

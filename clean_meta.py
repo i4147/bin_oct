@@ -4,9 +4,12 @@ It should detect and blank lines starting with classifier fields, markdown badge
 image::, :target:, :alt:) using a case-insensitive regex.
 For each processed file it should print progress messages, gracefully skip files that fail to read (printing a warning), and track/report a count of replaced lines, relying on helper utilities imported from a local "dh" module (cprint, fsz, get_files, gsz, mpf) for file discovery and formatting support."""
 
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path
+
 from dh import cprint, fsz, get_files, gsz, mpf
 
 blank_line = "\n"

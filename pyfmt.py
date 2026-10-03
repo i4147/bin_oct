@@ -10,12 +10,14 @@ import logging
 import shutil
 import subprocess
 import sys
-from collections.abc import Callable, Iterable, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
 
 LOG = logging.getLogger("fmt")
 
@@ -155,14 +157,14 @@ class HtmlTagFormatter:
             import tree_sitter_html as ts_html
             from tree_sitter import Language, Parser
         except ImportError as exc:
-            raise RuntimeError(
-                "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
-            ) from exc
+            msg = "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
+            raise RuntimeError(msg) from exc
         try:
             self._language = Language(ts_html.language())
             self._parser = Parser(self._language)
         except Exception as exc:  # pragma: no cover - init errors are env-specific
-            raise RuntimeError(f"Failed to initialize Tree-sitter parser: {exc}") from exc
+            msg = f"Failed to initialize Tree-sitter parser: {exc}"
+            raise RuntimeError(msg) from exc
 
     def format(self, src: str) -> tuple[str, int]:
         if not src.strip():
@@ -483,7 +485,8 @@ def _make_worker(args: argparse.Namespace) -> Callable[[Path], FileResult]:
         )
     if tool == "prettify":
         return _beautify_prettify
-    raise ValueError(f"Unknown tool: {tool}")
+    msg = f"Unknown tool: {tool}"
+    raise ValueError(msg)
 
 
 def cmd_format(args: argparse.Namespace) -> int:

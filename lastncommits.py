@@ -4,6 +4,8 @@ It should accept N as a command-line argument, validate that it is a positive in
 Internally, it should run `git log` with `--diff-filter=A` and `--name-status` to detect added files, skip any that are symlinks, and return the results as a list of Path objects.
 The script should handle Git command failures and other exceptions gracefully by printing an error message prefixed with "✗" to stderr and exiting with a non-zero status code."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path

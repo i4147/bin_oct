@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Check Python files in current directory and report definitions that are not exported in __init__.py"""
 
+from __future__ import annotations
+
 import ast
 from pathlib import Path
 

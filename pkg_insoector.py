@@ -244,7 +244,7 @@ def cmd_duplicates(args: argparse.Namespace) -> int:
         sv = sys_pkgs.get(name, "?")
         uv = usr_pkgs.get(name, "?")
         note = ""
-        if sv != "?" and uv != "?" and sv != uv:
+        if sv != "?" and uv not in ("?", sv):
             note = "  [version mismatch]"
         print(f"  {name}: system={sv}, user={uv}{note}")
     return 0

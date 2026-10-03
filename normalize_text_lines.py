@@ -5,6 +5,8 @@ For every line, apply NFKC Unicode normalization, strip non-printable characters
 The normalized lines should be written to a temporary file in the same directory (preserving UTF-8 encoding with Unix-style newlines), which then atomically replaces the original file.
 The script should handle UnicodeDecodeError gracefully by printing an error message, and print usage/error messages to stderr with appropriate exit codes on invalid arguments or non-file paths."""
 
+from __future__ import annotations
+
 import sys
 import tempfile
 import unicodedata

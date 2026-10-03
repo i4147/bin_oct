@@ -3,6 +3,8 @@
 It should use helper functions get_files and unique_path from a local "dh" module to discover source files and generate non-conflicting output paths, and use multiprocessing (via get_context) to process files concurrently, presumably to safely import modules in isolated worker processes and handle import errors gracefully by falling back to AST-based extraction.
 The output Markdown for each module should include headings for the module name, its docstring, and sections listing documented functions and classes with their respective docstrings."""
 
+from __future__ import annotations
+
 import ast
 import importlib
 import inspect
@@ -11,6 +13,7 @@ from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
 from textwrap import dedent
+
 from dh import get_files, unique_path
 
 cwd = Path.cwd()

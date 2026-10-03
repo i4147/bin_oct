@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import contextlib
 import csv
 import email
 import hashlib
@@ -113,10 +114,7 @@ BINARY_SUFFIXES = {".so", ".pyd", ".dll", ".dylib", ".sl"}
 
 
 def _has_binary(root: Path) -> bool:
-    for p in root.rglob("*"):
-        if p.is_file() and p.suffix.lower() in BINARY_SUFFIXES:
-            return True
-    return False
+    return any(p.is_file() and p.suffix.lower() in BINARY_SUFFIXES for p in root.rglob("*"))
 
 
 def _read_metadata(dist_info: Path) -> dict[str, str]:
@@ -127,7 +125,7 @@ def _read_metadata(dist_info: Path) -> dict[str, str]:
         try:
             txt = p.read_text(encoding="utf-8", errors="ignore")
             msg = email.parser.Parser().parsestr(txt)
-            return {k: v for k, v in msg.items()}
+            return dict(msg.items())
         except Exception:
             log.debug("Could not parse %s", p, exc_info=True)
     return {}
@@ -203,7 +201,8 @@ def resolve_source(source: str, explicit: Optional[Path]) -> Path:
     if explicit is not None:
         p = explicit.expanduser().resolve()
         if not p.exists():
-            raise SystemExit(f"site-packages directory does not exist: {p}")
+            msg = f"site-packages directory does not exist: {p}"
+            raise SystemExit(msg)
         return p
 
     if source == "current":
@@ -225,7 +224,8 @@ def resolve_source(source: str, explicit: Optional[Path]) -> Path:
             if c.exists() and list(c.glob("*.dist-info")):
                 return c
         return Path.cwd()
-    raise SystemExit(f"unknown source: {source!r}")
+    msg = f"unknown source: {source!r}"
+    raise SystemExit(msg)
 
 
 def discover_packages(
@@ -413,10 +413,8 @@ def build_wheel_from_record(
         if on_missing == "copy" and missing_dir is not None:
             missing_dir.mkdir(parents=True, exist_ok=True)
             dest = missing_dir / pkg.dist_info.name
-            try:
+            with contextlib.suppress(Exception):
                 shutil.copytree(pkg.site_packages / pkg.top_level, dest)
-            except Exception:
-                pass
             return False, f"copied to {missing_dir}: {msg}", None
         if on_missing == "warn" and verbose:
             log.warning("  %s: %s", pkg.name, msg)
@@ -711,7 +709,7 @@ def pack_unpacked_dir_subprocess(src: Path, output_dir: Path, verbose: bool) -> 
 
 async def _pack_async(src: Path, output_dir: Path, queue: "asyncio.Queue[tuple[str, bool]]", verbose: bool) -> None:
     loop = asyncio.get_running_loop()
-    ok, msg, path = await loop.run_in_executor(None, pack_unpacked_dir_library, src, output_dir, verbose)
+    ok, msg, _path = await loop.run_in_executor(None, pack_unpacked_dir_library, src, output_dir, verbose)
     await queue.put((msg if ok else f"{src.name}: {msg}", ok))
 
 

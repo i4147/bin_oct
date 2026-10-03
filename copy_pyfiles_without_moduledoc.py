@@ -1,6 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Copy .py files without module docstrings to ~/tmp/notannotated."""
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 
@@ -9,13 +11,13 @@ def has_module_docstring(path: Path) -> bool:
     code = path.read_text(encoding="utf-8")
     if not code.startswith("#!"):
         s = code.lstrip()
-        return s.startswith('"""') or s.startswith("'''")
+        return s.startswith(('"""', "'''"))
     else:
         return False
 
 
 def main() -> None:
-    source_dir = Path(".")
+    source_dir = Path()
     dest_dir = Path.home() / "tmp" / "notannotated"
     dest_dir.mkdir(parents=True, exist_ok=True)
 

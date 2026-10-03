@@ -4,6 +4,8 @@ For each wheel,raises BadZipFile), print a warning and treat it as not empty.
 After scanning, print the total count of empty wheels found, create an `empty_wheels` subdirectory in the current directory if needed, print each empty wheel's relative path, and move it into that subdirectory; if none are found, print a message stating so.
 Structure the code with a helper function `is_empty_wheel` returning `bool | None` and a `main` function, and run `main` via `raise SystemExit(main())` in the `__main__` block."""
 
+from __future__ import annotations
+
 import zipfile
 from pathlib import Path
 

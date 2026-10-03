@@ -4,6 +4,8 @@ It should accept exactly two command-line arguments, the text to search for and 
 For each Python file found, it should read the content, check whether the old text is present, and if so replace all occurrences and write the file back, printing a checkmark and filename for each modified file while catching and reporting any read/write errors per file.
 It should also print usage instructions and exit gracefully if the wrong number of arguments is given or if no Python files are found, and print a summary of how many files were found and what replacement is being performed before processing."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
@@ -33,7 +35,7 @@ def main() -> None:
     new_text = sys.argv[2]
     old_text = old_text.encode().decode("unicode_escape")
     new_text = new_text.encode().decode("unicode_escape")
-    cwd = Path(".")
+    cwd = Path()
     py_files = list(cwd.glob("*.py"))
     if not py_files:
         print("No Python files found in current directory.")

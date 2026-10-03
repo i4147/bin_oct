@@ -9,6 +9,8 @@ s16.py -> split-chars --algorithm range --min-chars 0 --max-chars 15850 --bounda
 split5000.py -> split-chars --algorithm sentences --tokenizer nltk --max-chars 5000 --output-same-dir --pad-width 0 --strip none <file> pysplit.py -> split-lines <path> <n> splitby.py -> split-delimiter <path> <delim> --strip both --suffix-delimiter splitt.py -> split-delimiter <path> <delim> -o output --prefix-delimiter --strip none splitbyletter.py -> split-by-letter <path> -o output merge_parts.py -> merge-parts [paths ...] merger.py -> merge-text [-e ...] [-c] Optional third-party packages used by originals: loguru, binaryornot, nltk.
 This script falls back to stdlib behaviour if they are not installed."""
 
+from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import logging
@@ -89,9 +91,8 @@ def collect_files(
         elif p.is_dir():
             iterator = p.rglob("*") if recursive else p.glob("*")
             for f in iterator:
-                if f.is_file():
-                    if extensions is None or f.suffix.lower().lstrip(".") in extensions:
-                        result.append(f)
+                if f.is_file() and (extensions is None or f.suffix.lower().lstrip(".") in extensions):
+                    result.append(f)
     return list(dict.fromkeys(result))
 
 
@@ -134,7 +135,8 @@ def split_text_range(
     strip_mode: str,
 ) -> list[str]:
     if min_chars < 0 or max_chars <= 0:
-        raise ValueError("min_chars must be >= 0 and max_chars > 0")
+        msg = "min_chars must be >= 0 and max_chars > 0"
+        raise ValueError(msg)
     if min_chars > max_chars:
         min_chars, max_chars = max_chars, min_chars
     parts: list[str] = []
@@ -190,8 +192,7 @@ def split_text_target_window(
                 if text[i] in " \n\t":
                     cut = i + 1
                     break
-        if cut > pos + max_chars:
-            cut = pos + max_chars
+        cut = min(cut, pos + max_chars)
         if cut <= pos:
             cut = min(pos + target, n)
         part = _apply_strip(text[pos:cut], strip_mode)
@@ -293,7 +294,8 @@ def process_split_chars_file(path: Path, config: SplitCharsConfig) -> tuple[Path
     elif config.algorithm == "sentences":
         parts = split_text_sentences(text, config.max_chars, config.tokenizer, config.strip_mode)
     else:
-        raise ValueError(f"Unknown algorithm: {config.algorithm}")
+        msg = f"Unknown algorithm: {config.algorithm}"
+        raise ValueError(msg)
     if not parts:
         print(f"No parts generated for: {path}")
         return path, 0

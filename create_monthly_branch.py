@@ -3,6 +3,8 @@
 It should derive a branch name from the current month and year (e.g., "september_2026"), check both local and remote branches to see if it already exists, and skip creation if so.
 If the branch doesn't exist, it should fetch all remotes, checkout and pull the main branch, then create and push the new monthly branch, printing status messages throughout using subprocess calls to git commands."""
 
+from __future__ import annotations
+
 import subprocess
 import sys
 from datetime import datetime

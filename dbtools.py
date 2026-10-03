@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import base64
 import codecs
+import contextlib
 import io
 import json
 import logging
@@ -18,14 +19,16 @@ import sqlite3
 import sys
 import tempfile
 import traceback
-from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
 from multiprocessing import Pool, freeze_support
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 try:
     import py7zr  # type: ignore
@@ -70,7 +73,8 @@ def _init_files_table(cursor: sqlite3.Cursor, table: str) -> None:
 
 def _compress_blob(data: bytes) -> str | None:
     if py7zr is None:
-        raise RuntimeError("py7zr is required for --compress. Install with: pip install py7zr")
+        msg = "py7zr is required for --compress. Install with: pip install py7zr"
+        raise RuntimeError(msg)
     try:
         buf = io.BytesIO()
         with py7zr.SevenZipFile(buf, "w") as zf:
@@ -293,7 +297,7 @@ def _dump_single(
         result: dict[str, list[dict[str, Any]]] = {}
         for tbl in tables:
             rows = conn.execute(f'SELECT * FROM "{tbl}"').fetchall()
-            result[tbl] = [{k: _serialize_value(row[k], blob_format) for k in row.keys()} for row in rows]
+            result[tbl] = [{k: _serialize_value(row[k], blob_format) for k in row} for row in rows]
     output.write_text(
         json.dumps(result, indent=indent, ensure_ascii=False),
         encoding="utf-8",
@@ -316,7 +320,7 @@ def _dump_per_table(
         for tbl in tables:
             try:
                 rows = conn.execute(f'SELECT * FROM "{tbl}"').fetchall()
-                data = [{k: _serialize_value(row[k], blob_format) for k in row.keys()} for row in rows]
+                data = [{k: _serialize_value(row[k], blob_format) for k in row} for row in rows]
                 out = outdir / f"{tbl}.json"
                 out.write_text(
                     json.dumps(data, indent=indent, ensure_ascii=False, default=str),
@@ -482,7 +486,8 @@ def _mdb_serialize(v: Any) -> Any:
 
 def _mdb_connect(path: Path):
     if pyodbc is None:
-        raise RuntimeError("pyodbc is required for mdb-to-json. Install with: pip install pyodbc")
+        msg = "pyodbc is required for mdb-to-json. Install with: pip install pyodbc"
+        raise RuntimeError(msg)
     src = str(path.resolve())
     drivers = [
         "Microsoft Access Driver (*.mdb, *.accdb)",
@@ -495,7 +500,8 @@ def _mdb_connect(path: Path):
             return pyodbc.connect(f"DRIVER={{{drv}}};DBQ={src};", autocommit=True, timeout=30)
         except pyodbc.Error as exc:
             last = exc
-    raise RuntimeError(f"Could not connect to {path} with any known ODBC driver. Last error: {last}")
+    msg = f"Could not connect to {path} with any known ODBC driver. Last error: {last}"
+    raise RuntimeError(msg)
 
 
 def _mdb_convert(
@@ -558,10 +564,8 @@ def _mdb_convert(
             kb = out.stat().st_size / 1024
             return str(src_path), True, f"Wrote {out} ({kb:.1f} KB)"
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 conn.close()
-            except Exception:
-                pass
     except Exception as exc:
         log.debug("Failure on %s:\n%s", src_path, traceback.format_exc(limit=3))
         return str(src_path), False, f"{type(exc).__name__}: {exc}"
