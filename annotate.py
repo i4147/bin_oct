@@ -272,7 +272,6 @@ def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
 
 @dataclass
 class Options:
-    # shared
     dry_run: bool = False
     backup: bool = False
     show_diff: bool = False
@@ -283,7 +282,7 @@ class Options:
     overwrite_existing: bool = True
     use_future_annotations: bool = False
     stub_file: Optional[str] = None
-    # mode
+
     remove: bool = False
 
 
@@ -426,7 +425,6 @@ def process_file(path_str: str, options: Options) -> Result:
     if result.error or not result.changed or options.dry_run:
         return result
 
-    # Backup
     if options.backup:
         try:
             backup_path = path.with_suffix(path.suffix + ".bak")

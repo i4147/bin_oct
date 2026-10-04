@@ -104,7 +104,7 @@ ALL_EXTENSIONS: tuple[str, ...] = tuple(
 @dataclass
 class ExtractResult:
     archive_path: Path
-    status: str = "failed"  # 'success' | 'failed' | 'skipped'
+    status: str = "failed"
     output_dir: Optional[Path] = None
     extracted_files: int = 0
     extracted_size: int = 0
@@ -530,7 +530,7 @@ def extract_one(
     engine: str = "auto",
     keep: bool = False,
     dry_run: bool = False,
-    organize: str = "flat",  # 'flat' | 'stem' | 'versioned'
+    organize: str = "flat",
     out_dir: Optional[Path] = None,
     single_file_subdir: bool = False,
     subdir_truncate: int = 0,

@@ -621,7 +621,6 @@ def run_translation(
         with state_lock:
             save_state(output_path, state)
 
-    # Summary
     ok = len(state.translations)
     bad = len(state.failed)
     logger.info(f"Done. Translated: {ok}/{total}, Failed: {bad}")

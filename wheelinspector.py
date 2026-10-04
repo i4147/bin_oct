@@ -18,7 +18,6 @@ from typing import List, Optional
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]
 
-# Constants
 DEFAULT_DEST = "empty_wheels"
 DEFAULT_METHOD = "basic"
 VALID_METHODS = {"basic", "record", "ext"}

@@ -107,7 +107,7 @@ def fuzzy_match_score(words1: list[str], words2: list[str], similarity_threshold
 class DuplicateFinder:
     def __init__(
         self,
-        scan_mode: str = "contents",  # "filename" or "contents"
+        scan_mode: str = "contents",
         min_size: int = 0,
         fuzzy_threshold: float = 80.0,
     ) -> None:

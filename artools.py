@@ -60,9 +60,9 @@ ARCHIVE_FORMATS: frozenset[str] = TAR_FORMATS | ZIP_FORMATS
 _ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(sorted(ARCHIVE_FORMATS, key=len, reverse=True))
 
 WHEEL_SCRIPT_SUFFIXES: tuple[str, ...] = (".sh", ".py", ".exe")
-TAR_DEFAULT_MODE: int = 0o644  # r4 = 420
-TAR_SCRIPT_MODE: int = 0o755  # s4 = 493
-TAR_MODE_MASK: int = 0o7777  # t4 = 4095
+TAR_DEFAULT_MODE: int = 0o644
+TAR_SCRIPT_MODE: int = 0o755
+TAR_MODE_MASK: int = 0o7777
 TAR_UID: int = 0
 TAR_GID: int = 0
 TAR_UNAME: str = "root"
@@ -761,7 +761,7 @@ def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optiona
         return False, f"Tar error: {e}", None
     except Exception as e:  # noqa: BLE001
         return False, f"Conversion error: {e}", None
-    # Verify
+
     if not (dst.exists() and dst.stat().st_size > 0):
         return False, "Output file is empty or missing", None
     try:

@@ -44,7 +44,6 @@ PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "
 SHEBANG_PREFIX: Final[str] = "#!"
 PY_EXTENSIONS: Final[frozenset[str]] = frozenset({".py", ".pyi", ".pyw"})
 
-
 PY_SHEBANG_HINTS: Final[tuple[str, ...]] = ("python",)
 
 
@@ -350,7 +349,6 @@ def main(argv: Optional[list[str]] = None) -> int:
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=False)
     sys.exit(main())
-
 
 """
 

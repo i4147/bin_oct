@@ -45,7 +45,7 @@ class Monolith:
         encoding: str = "utf-8",
         ignore_errors: bool = False,
         no_images: bool = False,
-        css_mode: str = "inline",  # "inline" | "data-uri"
+        css_mode: str = "inline",
         prettify: bool = False,
         inject_meta_charset: bool = True,
         user_agent: str = DEFAULT_USER_AGENT,
@@ -143,7 +143,7 @@ class Monolith:
                     style["type"] = "text/css"
                     style.string = css
                     link.replace_with(style)
-                else:  # data-uri
+                else:
                     uri = self.to_data_uri(data, "text/css")
                     if uri:
                         link["href"] = uri

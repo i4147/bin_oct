@@ -22,7 +22,7 @@ def main():
         sys.exit(1)
     pkgs = [line.strip() for line in pkg_file.read_text().splitlines() if line.strip()]
     failed_file = Path.home() / "reinstall_failed.txt"
-    failed_file.write_text("")  # reset
+    failed_file.write_text("")
     print(f"Total packages to reinstall: {len(pkgs)}\n")
     for i, pkg in enumerate(pkgs, 1):
         print(f"[{i}/{len(pkgs)}] Reinstalling {pkg} ...", flush=True)

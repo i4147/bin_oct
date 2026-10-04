@@ -184,7 +184,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
                         edits.append(Edit(node.start_byte, node.end_byte, b""))
                     n_docstrings += 1
 
-        # DFS
         if walker.goto_first_child():
             continue
         if walker.goto_next_sibling():

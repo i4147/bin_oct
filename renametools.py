@@ -174,7 +174,7 @@ def cmd_lowercase(args: argparse.Namespace) -> int:
             dry_run=args.dry_run,
             verbose=True,
         )
-    else:  # name
+    else:
         n = _lowercase_name(
             args.paths,
             recursive=args.recursive,
@@ -608,7 +608,7 @@ def cmd_pnr(args: argparse.Namespace) -> int:
     elif args.replace is not None:
         old, new = args.replace
         n = _pnr_replace(root, old, new, dry_run=args.dry_run, recursive=args.recursive)
-    else:  # template
+    else:
         n = _pnr_template(root, args.template, dry_run=args.dry_run, recursive=args.recursive)
     print(f"\nOperation complete. {n} item(s) affected.")
     return 0

@@ -24,14 +24,10 @@ except ImportError:
     )
     sys.exit(1)
 
-# -----------------------------------------------------------------------------
-# Configuration & Performance Tuning Constants
-# -----------------------------------------------------------------------------
-CHUNK_SIZE = 128 * 1024  # 128 KB buffer for reading large files
-PARTIAL_SIZE = 8 * 1024  # 8 KB header sample for rapid candidate filtering
-MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)  # Thread pool worker cap
+CHUNK_SIZE = 128 * 1024
+PARTIAL_SIZE = 8 * 1024
+MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)
 
-# Common directory names to skip automatically during traversal
 DEFAULT_SKIP_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -50,11 +46,7 @@ DEFAULT_SKIP_DIRS: set[str] = {
 }
 
 
-# -----------------------------------------------------------------------------
-# Helper Functions
-# -----------------------------------------------------------------------------
 def format_size(size_bytes: int) -> str:
-    """Formats bytes into human-readable representation."""
     if size_bytes == 0:
         return "0 B"
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -67,7 +59,6 @@ def format_size(size_bytes: int) -> str:
 
 
 def get_partial_hash(filepath: str) -> tuple[str, Optional[str]]:
-    """Reads only the first PARTIAL_SIZE bytes to generate an xxHash header digest."""
     try:
         with open(filepath, "rb") as f:
             header_chunk = f.read(PARTIAL_SIZE)
@@ -77,7 +68,6 @@ def get_partial_hash(filepath: str) -> tuple[str, Optional[str]]:
 
 
 def get_full_hash(filepath: str) -> tuple[str, Optional[str]]:
-    """Computes full xxHash digest of a file in 128KB chunks."""
     try:
         hasher = xxhash.xxh64()
         with open(filepath, "rb") as f:
@@ -89,7 +79,6 @@ def get_full_hash(filepath: str) -> tuple[str, Optional[str]]:
 
 
 def get_full_hashlib_md5(filepath: str) -> tuple[str, Optional[str]]:
-    """Computes full MD5 digest using hashlib for benchmarking comparison."""
     try:
         with open(filepath, "rb") as f:
             if hasattr(hashlib, "file_digest"):
@@ -103,30 +92,20 @@ def get_full_hashlib_md5(filepath: str) -> tuple[str, Optional[str]]:
         return filepath, None
 
 
-# -----------------------------------------------------------------------------
-# Core Finder Engine
-# -----------------------------------------------------------------------------
 @dataclass
 class Finder:
     path: Path
     same_content: dict[str, list[str]] = field(default_factory=dict)
-    all_files: list[tuple[str, int]] = field(default_factory=list)  # (path, size)
+    all_files: list[tuple[str, int]] = field(default_factory=list)
     total_files_count: int = 0
     total_files_size: int = 0
     dup_count: int = 0
     dup_size: int = 0
 
     def scan_and_find_duplicates(self) -> list[str]:
-        """
-        Runs a 3-pass pipeline using xxHash to locate duplicate files efficiently.
-        Returns candidate file paths evaluated during Pass 3 (useful for benchmark).
-        """
         target_path = self.path.expanduser().resolve()
         file_sizes: dict[int, list[str]] = defaultdict(list)
 
-        # ---------------------------------------------------------------------
-        # Pass 1: Traversal using os.scandir (Skips symlinks & ignored dirs)
-        # ---------------------------------------------------------------------
         print(f"Scanning '{target_path}'...", end="", flush=True)
         dirs = [str(target_path)]
 
@@ -136,7 +115,6 @@ class Finder:
                 with os.scandir(curr_dir) as entries:
                     for entry in entries:
                         try:
-                            # Skip all symlinks (files or directories)
                             if entry.is_symlink():
                                 continue
 
@@ -163,9 +141,6 @@ class Finder:
             self.print_summary()
             return []
 
-        # ---------------------------------------------------------------------
-        # Pass 2: Parallel Partial xxHash Check (8 KB Headers)
-        # ---------------------------------------------------------------------
         all_candidate_paths = [p for _, paths in candidate_groups for p in paths]
         path_to_size = {path: size for size, paths in candidate_groups for path in paths}
 
@@ -192,9 +167,6 @@ class Finder:
             (size, paths) for (size, _), paths in partial_hash_groups.items() if len(paths) > 1
         ]
 
-        # ---------------------------------------------------------------------
-        # Pass 3: Parallel Full xxHash Verification
-        # ---------------------------------------------------------------------
         all_full_candidates = [p for _, paths in full_hash_queue for p in paths]
 
         if all_full_candidates:
@@ -228,13 +200,11 @@ class Finder:
         return all_full_candidates
 
     def print_summary(self) -> None:
-        """Prints a high-level summary of total files and duplicate space."""
         print("\n=== Scan Complete ===")
         print(f"Total files scanned: {self.total_files_count} ({format_size(self.total_files_size)})")
         print(f"Duplicates found:    {self.dup_count} file(s) wasting {format_size(self.dup_size)}")
 
     def list_duplicates(self) -> None:
-        """Lists each set of identical files."""
         if not self.same_content:
             print("\nNo duplicates found to list.")
             return
@@ -248,10 +218,6 @@ class Finder:
                 print(f"  Duplicate (Target): {dup}")
 
     def process_deletions(self, remove: bool = False) -> None:
-        """
-        Removes duplicate files ONLY if `remove` is True.
-        Default execution runs in DRY-RUN mode.
-        """
         if not self.same_content:
             print("\nNo duplicates found to process.")
             return
@@ -280,10 +246,8 @@ class Finder:
             print(f"\n[REMOVAL COMPLETE] Successfully deleted {removed_count} duplicate file(s).")
 
     def run_benchmark(self, candidate_files: list[str]) -> None:
-        """Compares xxHash vs hashlib (MD5) hashing throughput on discovered files."""
         sample_files = candidate_files
         if not sample_files:
-            # Fall back to up to 100 sample files from all discovered files
             sample_files = [p for p, s in self.all_files if s > 0][:100]
 
         if not sample_files:
@@ -307,14 +271,12 @@ class Finder:
         print("\n=== BENCHMARK COMPARISON ===")
         print(f"Testing on {len(valid_files)} file(s) ({format_size(total_bytes)} total data)...")
 
-        # 1. Benchmark xxHash (xxh64)
         t0 = time.perf_counter()
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             list(executor.map(get_full_hash, valid_files))
         t_xxhash = time.perf_counter() - t0
         mb_xxhash = (total_bytes / (1024 * 1024)) / (t_xxhash or 0.00001)
 
-        # 2. Benchmark hashlib (MD5)
         t0 = time.perf_counter()
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             list(executor.map(get_full_hashlib_md5, valid_files))
@@ -331,9 +293,6 @@ class Finder:
         print(f"  Result: xxHash was {speedup:.2f}x faster than hashlib MD5\n")
 
 
-# -----------------------------------------------------------------------------
-# CLI Entry Point via argparse
-# -----------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
         description="Fast duplicate file finder powered by xxHash (Parallel I/O, Dry-Run default)."
@@ -376,7 +335,6 @@ def main():
     if args.list:
         finder.list_duplicates()
 
-    # Default is dry-run unless -r is specified
     finder.process_deletions(remove=args.remove)
 
     if args.benchmark:

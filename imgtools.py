@@ -947,7 +947,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_auto_enhance)
 
-    # downscale
     p = sub.add_parser("downscale", help="Downscale images in-place by a scale factor")
     p.add_argument(
         "scale_factor",
@@ -1040,7 +1039,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd_pil_enhance)
 
-    # resize
     p = sub.add_parser("resize", help="PIL in-place downscale by scale factor")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument("--scale", type=float, default=0.75, help="Scale factor. Default: 0.75.")
@@ -1091,7 +1089,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-j", "--workers", type=int, default=8, help="Worker processes. Default: 8.")
     p.set_defaults(func=cmd_strip_exif)
 
-    # upscale
     p = sub.add_parser("upscale", help="Upscale small images by width-based factors")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument(

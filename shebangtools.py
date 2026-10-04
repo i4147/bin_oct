@@ -151,7 +151,6 @@ _PY_INDICATOR = [
 
 
 def _gather(paths: Sequence[str], exts: Optional[Sequence[str]] = None) -> list[Path]:
-    """Return files matched under paths (optionally filtered by extension)."""
     ext_set = None
     if exts:
         ext_set = {e.lower() if e.startswith(".") else "." + e.lower() for e in exts}
@@ -700,7 +699,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Entry point."""
     parser = _build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args) or 0)

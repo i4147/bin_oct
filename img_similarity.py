@@ -38,7 +38,7 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
     "whash-db4": 8,
     "colorhash": 8,
     "crop-resistant": 8,
-    "multihash": 10.0,  # folderimg.py
+    "multihash": 10.0,
 }
 
 METHODS = tuple(DEFAULT_THRESHOLDS.keys())

@@ -450,7 +450,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
             print(n)
         return 0
 
-    # classify
     print(f"Pure packages, no entry_points:      {len(pure_noep)}")
     print(f"Non-pure packages, no entry_points:  {len(nonpure_noep)}")
     print(f"Pure packages, with entry_points:    {len(pure_ep)}")
@@ -856,7 +855,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    # duplicates
     sp = sub.add_parser("duplicates", help="Packages in both system and user site-packages.")
     sp.add_argument(
         "--method",
@@ -875,7 +873,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--report", metavar="FILE", help="Optional path to write a report.")
     sp.set_defaults(func=cmd_missing_scripts)
 
-    # entrypoints
     sp = sub.add_parser("entrypoints", help="Analyze entry_points.txt / console-script presence.")
     sp.add_argument(
         "--mode",
@@ -900,7 +897,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_entrypoints)
 
-    # binary
     sp = sub.add_parser("binary", help="List non-pure (compiled-extension) packages.")
     grp = sp.add_mutually_exclusive_group()
     grp.add_argument("--user-only", action="store_true")
@@ -923,7 +919,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_binary)
 
-    # orphans
     sp = sub.add_parser("orphans", help="Detect unowned files in system site-packages.")
     sp.add_argument("-v", "--verbose", action="store_true", help="Show file sizes.")
     sp.add_argument("-e", "--export", action="store_true", help="Write results as JSON.")
@@ -935,7 +930,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(func=cmd_orphans)
 
-    # small
     sp = sub.add_parser("small", help="List packages smaller than a threshold.")
     sp.add_argument(
         "--threshold",

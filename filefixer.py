@@ -1185,7 +1185,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command")
 
-    # fix
     fix = sub.add_parser("fix", help="Detect and optionally fix extension mismatches.")
     fix.add_argument(
         "paths",
@@ -1259,7 +1258,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fix.add_argument("--verbose", "-v", action="store_true", help="Verbose output.")
 
-    # validate
     val = sub.add_parser("validate", help="Validate binary or text extensions.")
     val.add_argument("kind", choices=("binary", "text"), help="Which extension set to validate.")
     val.add_argument("path", nargs="?", default="/data/data/com.termux", help="Root path to scan.")

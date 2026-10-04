@@ -40,7 +40,6 @@ try:
 except ImportError:
     _log = None
 
-
 _BASIC_SKIP_SUFFIXES = {".7z", ".xz", ".br", ".zst", ".gz", ".zip", ".whl", ".log"}
 _NAMED_SKIP_SUFFIXES = {".tar", ".7z", ".br", ".gz", ".xz", ".zip", ".whl"}
 _FULL_SKIP_SUFFIXES = (".7z", ".xz", ".gz", ".bz2", ".br", ".zst", ".zip", ".rar")
@@ -93,11 +92,6 @@ def _sevenzip_write(
     if filters is None:
         filters = [{"id": py7zr.FILTER_LZMA2, "preset": preset}]
     return py7zr.SevenZipFile(dst, mode="w", filters=filters, **kwargs)
-
-
-# ---------------------------------------------------------------------------
-# basic mode (7zer.py)
-# ---------------------------------------------------------------------------
 
 
 def _basic_setup_logging(log_file: Path) -> None:
@@ -202,11 +196,6 @@ def run_basic(args: argparse.Namespace) -> int:
 
     logging.info("Done.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# named mode (7zer2.py)
-# ---------------------------------------------------------------------------
 
 
 class NamedResult:
@@ -323,11 +312,6 @@ def run_named(args: argparse.Namespace) -> int:
         if not r.ok:
             logging.error("FAILED: %s -> %s | %s", r.src, r.dst, r.error)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# full mode (7zr.py)
-# ---------------------------------------------------------------------------
 
 
 def _full_is_compressible(path: Path, min_size: int) -> bool:
@@ -615,11 +599,6 @@ def run_full(args: argparse.Namespace) -> int:
     else:
         _full_decompress(base, args)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

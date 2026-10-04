@@ -101,7 +101,7 @@ def looks_english(
             return detect(stripped) == "en"
         except Exception:
             return True
-    # default: ascii-ratio
+
     letters = [c for c in stripped if c.isalpha()]
     if not letters:
         return True

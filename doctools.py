@@ -249,7 +249,7 @@ def cmd_man_to_md(args: argparse.Namespace) -> int:
 
 
 def _apply_tailwind_classes(html: str) -> str:
-    from bs4 import BeautifulSoup  # lazy
+    from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
     class_map = {

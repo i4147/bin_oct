@@ -39,7 +39,7 @@ PURE_OUTPUT: Final[Path] = Path("pure_python.txt")
 NATIVE_OUTPUT: Final[Path] = Path("native_extensions.txt")
 MISSING_OUTPUT: Final[Path] = Path("not_found.txt")
 
-PackageResult: TypeAlias = tuple[str, str]  # (name, "pure" | "native" | "not_found")
+PackageResult: TypeAlias = tuple[str, str]
 
 
 def has_native_wheels(info: dict[str, Any]) -> bool:

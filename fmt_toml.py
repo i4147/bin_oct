@@ -25,7 +25,6 @@ TOML_LANGUAGE: Language = None
 
 
 def init_tree_sitter() -> None:
-    """→ None: Initializes tree-sitter with TOML language"""
     global TOML_LANGUAGE
     try:
         TOML_LANGUAGE = Language("build/my-languages.so", "toml")
@@ -40,8 +39,6 @@ def init_tree_sitter() -> None:
 
 
 class TomlVisitor:
-    """→ None: Traverses and reconstructs TOML AST with formatting"""
-
     def __init__(self, source: bytes, tree: Any, config: FormatConfig) -> None:
         self.source: bytes = source
         self.tree: Any = tree
@@ -52,13 +49,11 @@ class TomlVisitor:
         self.in_table: bool = False
 
     def visit(self, node: Any) -> str:
-        """→ str: Main visitor entry point, returns formatted output"""
         self._visit_node(node)
         result: str = self.output.getvalue()
         return self._finalize_output(result)
 
     def _visit_node(self, node: Any) -> None:
-        """→ None: Recursively visits and formats AST nodes"""
         if node.type == "document":
             self._visit_document(node)
         elif node.type == "table":
@@ -78,7 +73,6 @@ class TomlVisitor:
                 self._visit_node(child)
 
     def _visit_document(self, node: Any) -> None:
-        """→ None: Processes document root node"""
         prev_line: int = 0
         for child in node.children:
             if child.type in ("table", "array_of_tables", "pair", "comment"):
@@ -90,19 +84,16 @@ class TomlVisitor:
                 prev_line = child.end_point[0]
 
     def _visit_table(self, node: Any) -> None:
-        """→ None: Formats table header with proper indentation"""
         indent: str = " " * (self.indent_level * self.config.indent_size)
         header_text: str = self.source[node.start_byte : node.end_byte].decode("utf-8")
         self.output.write(f"{indent}{header_text}\n")
 
     def _visit_array_of_tables(self, node: Any) -> None:
-        """→ None: Formats array of tables header"""
         indent: str = " " * (self.indent_level * self.config.indent_size)
         header_text: str = self.source[node.start_byte : node.end_byte].decode("utf-8")
         self.output.write(f"{indent}{header_text}\n")
 
     def _visit_pair(self, node: Any) -> None:
-        """→ None: Formats key-value pairs with proper spacing"""
         indent: str = " " * (self.indent_level * self.config.indent_size)
         key_node: Any = None
         value_node: Any = None
@@ -138,7 +129,6 @@ class TomlVisitor:
             self.output.write("\n")
 
     def _format_value(self, node: Any) -> str:
-        """→ str: Formats value nodes with type-specific handling"""
         if node.type == "array":
             return self._format_array(node)
         elif node.type == "inline_table":
@@ -147,7 +137,6 @@ class TomlVisitor:
             return self.source[node.start_byte : node.end_byte].decode("utf-8")
 
     def _format_array(self, node: Any) -> str:
-        """→ str: Formats arrays with proper whitespace"""
         elements: list[str] = []
         for child in node.children:
             if child.type not in ("[", "]", ",", "comment"):
@@ -171,7 +160,6 @@ class TomlVisitor:
             return "[ " + ", ".join(elements) + " ]"
 
     def _format_inline_table(self, node: Any) -> str:
-        """→ str: Formats inline tables with proper spacing"""
         pairs: list[str] = []
         for child in node.children:
             if child.type == "pair":
@@ -184,13 +172,11 @@ class TomlVisitor:
         return "{ " + ", ".join(pairs) + " }"
 
     def _visit_comment(self, node: Any) -> None:
-        """→ None: Preserves comment text"""
         indent: str = " " * (self.indent_level * self.config.indent_size)
         comment_text: str = self.source[node.start_byte : node.end_byte].decode("utf-8")
         self.output.write(f"{indent}{comment_text}\n")
 
     def _finalize_output(self, output: str) -> str:
-        """→ str: Cleans up output formatting"""
         lines: list[str] = output.split("\n")
         cleaned: list[str] = [line.rstrip() for line in lines]
         result: str = "\n".join(cleaned)
@@ -202,15 +188,12 @@ class TomlVisitor:
 
 
 class TomlFormatter:
-    """→ None: High-level TOML formatting interface"""
-
     def __init__(self, config: FormatConfig = None) -> None:
         self.config: FormatConfig = config or FormatConfig()
         self.parser: Parser = Parser()
         self.parser.set_language(TOML_LANGUAGE)
 
     def format(self, content: str) -> str:
-        """→ str: Formats TOML content and returns formatted string"""
         source_bytes: bytes = content.encode("utf-8")
         tree: Any = self.parser.parse(source_bytes)
 
@@ -219,7 +202,6 @@ class TomlFormatter:
 
 
 def validate_toml(content: str) -> tuple[bool, Optional[str]]:
-    """→ Tuple[bool, Optional[str]]: Validates TOML syntax and returns validation result"""
     try:
         parser: Parser = Parser()
         parser.set_language(TOML_LANGUAGE)
@@ -236,7 +218,6 @@ def validate_toml(content: str) -> tuple[bool, Optional[str]]:
 
 
 def format_file(file_path: Path, config: FormatConfig) -> tuple[Path, bool, str]:
-    """→ Tuple[Path, bool, str]: Formats single TOML file, returns (path, success, message)"""
     try:
         content: str = file_path.read_text(encoding="utf-8")
         formatter: TomlFormatter = TomlFormatter(config)
@@ -256,12 +237,10 @@ def format_file(file_path: Path, config: FormatConfig) -> tuple[Path, bool, str]
 
 
 def find_toml_files(start_path: Path) -> list[Path]:
-    """→ List[Path]: Recursively finds all .toml files"""
     return list(start_path.rglob("*.toml"))
 
 
 def main() -> int:
-    """→ int: Entry point, returns exit code"""
     parser_obj: argparse.ArgumentParser = argparse.ArgumentParser(
         description="Format TOML files recursively using tree-sitter",
         formatter_class=argparse.RawDescriptionHelpFormatter,

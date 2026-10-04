@@ -75,10 +75,9 @@ SKIP_DIRS = {
     ".cache",
 }
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_FILE_SIZE = 5 * 1024 * 1024
 
 LOG_FILE = "github_identity_migrate.log"
-
 
 logger = logging.getLogger("gh_migrate")
 logger.setLevel(logging.DEBUG)
@@ -96,8 +95,6 @@ logger.addHandler(_file_handler)
 
 
 class C:
-    """Minimal ANSI color codes for console output."""
-
     RESET = "\033[0m"
     RED = "\033[91m"
     GREEN = "\033[92m"
@@ -112,13 +109,7 @@ def color(text, c):
     return f"{c}{text}{C.RESET}"
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def is_probably_text_file(path: Path) -> bool:
-    """Heuristic check: read a chunk and reject if it contains null bytes."""
     try:
         with open(path, "rb") as f:
             chunk = f.read(1024)
@@ -157,11 +148,6 @@ def run_cmd(cmd, input_text=None, check=False):
     return result
 
 
-# ---------------------------------------------------------------------------
-# Step 1: Git config update
-# ---------------------------------------------------------------------------
-
-
 def update_global_git_config(new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 1: Global git config ===", C.BOLD))
 
@@ -185,7 +171,6 @@ def update_global_git_config(new_username, new_email, apply_changes):
 
 
 def find_local_git_configs(home_dir: Path):
-    """Find .git/config files under home dir (repo-level configs)."""
     configs = []
     for root, dirs, files in os.walk(home_dir):
         dirs[:] = [d for d in dirs if not should_skip_dir(d)]
@@ -230,11 +215,6 @@ def update_local_git_configs(home_dir, old_username, old_email, new_username, ne
         )
 
 
-# ---------------------------------------------------------------------------
-# Step 2: Search & replace in files across home folder
-# ---------------------------------------------------------------------------
-
-
 def scan_files(home_dir: Path):
     matches = []
     for root, dirs, files in os.walk(home_dir):
@@ -275,7 +255,6 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
 
         new_content = content.replace(old_username, new_username).replace(old_email, new_email)
 
-        # Build a small diff preview (only changed lines)
         old_lines = content.splitlines()
         new_lines = new_content.splitlines()
         diff_preview = []
@@ -292,7 +271,7 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
     logger.info(color(f"\nFound {len(to_change)} file(s) that would change:", C.YELLOW))
     for fpath, _, _, diff_preview in to_change:
         logger.info(color(f"\n  {fpath}", C.BLUE))
-        for lineno, old_l, new_l in diff_preview[:5]:  # show max 5 changed lines
+        for lineno, old_l, new_l in diff_preview[:5]:
             logger.info(f"    line {lineno}:")
             logger.info(color(f"      - {old_l.strip()}", C.RED))
             logger.info(color(f"      + {new_l.strip()}", C.GREEN))
@@ -327,11 +306,6 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
         backup_path = backup_file(fpath)
         fpath.write_text(new_content, encoding="utf-8")
         logger.info(color(f"[APPLIED] Updated {fpath} (backup: {backup_path})", C.GREEN))
-
-
-# ---------------------------------------------------------------------------
-# Step 3: SSH key creation
-# ---------------------------------------------------------------------------
 
 
 def create_new_ssh_key(new_email, key_path: Path, apply_changes):
@@ -394,13 +368,7 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
     return pub_path
 
 
-# ---------------------------------------------------------------------------
-# Step 4: Remove old SSH keys
-# ---------------------------------------------------------------------------
-
-
 def find_old_ssh_keys(ssh_dir: Path, old_username, old_email):
-    """Return a list of .pub files that contain the old username or email."""
     matches = []
     if not ssh_dir.exists():
         return matches
@@ -441,17 +409,14 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
         logger.info("Aborted by user. No keys removed.")
         return
 
-    # Create backup directory
     backup_dir = ssh_dir / f"old_keys_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     backup_dir.mkdir(exist_ok=True)
 
     for pub_path in old_keys:
-        # Backup public key
         shutil.copy2(pub_path, backup_dir / pub_path.name)
         pub_path.unlink()
         logger.info(f"Removed {pub_path} (backed up)")
 
-        # Corresponding private key
         priv_path = pub_path.with_suffix("")
         if priv_path.exists():
             shutil.copy2(priv_path, backup_dir / priv_path.name)
@@ -459,11 +424,6 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
             logger.info(f"Removed {priv_path} (backed up)")
 
     logger.info(color(f"[APPLIED] Old SSH keys removed. Backups in {backup_dir}", C.GREEN))
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main():
@@ -498,10 +458,8 @@ def main():
     if not args.apply:
         logger.info(color("Running in DRY-RUN mode. No changes will be made.", C.YELLOW))
 
-    # Step 1: Global git config
     update_global_git_config(args.new_username, args.new_email, args.apply)
 
-    # Step 1b: Local git configs
     update_local_git_configs(
         args.home_dir,
         args.old_username,
@@ -511,7 +469,6 @@ def main():
         args.apply,
     )
 
-    # Step 2: Search & replace in files
     preview_and_replace(
         args.home_dir,
         args.old_username,
@@ -521,10 +478,8 @@ def main():
         args.apply,
     )
 
-    # Step 3: Create new SSH key
     create_new_ssh_key(args.new_email, args.key_path, args.apply)
 
-    # Step 4: Remove old SSH keys
     remove_old_ssh_keys(args.ssh_dir, args.old_username, args.old_email, args.apply)
 
     logger.info(color("\nMigration complete. Remember manual steps:", C.BOLD))

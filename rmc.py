@@ -1,38 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""Python comment/docstring/type-annotation stripper.
-LibCST is used so formatting is retained and transformed files remain valid Python.
-The program intentionally parses every input file; it has textual early-out based on '#', triple-single-quotes, or triple-double-quotes."""
-
-from __future__ import annotations
 
 import argparse
 import ast
 import contextlib
-import functools
+import dataclasses
 import io
 import multiprocessing as mp
-import os  # only used by atomic_replace()
+import os
 import re
+import signal
 import sys
 import tempfile
+import textwrap
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Callable, Iterable, Iterator, Sequence
 
 import libcst as cst
 
 PROGRAM = "strip_comments"
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 DEFAULT_MAX_PROCESSES = 8
 DEFAULT_CHUNK_SIZE = 8
-PY_SUFFIXES = (".py", ".pyi")
+PARALLEL_MIN_FILES = 4
+PY_SUFFIXES = (".py", ".pyi", ".pyw")
 BACKUP_SUFFIX = ".pystripbak"
 GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
 
-# Directory names, not globs.  __pycache__ fixes the **pycache** typo in the
-# original program, which did not actually match normal cache directories.
 DEFAULT_SKIP_DIR_NAMES = frozenset(
     {
         ".git",
@@ -54,37 +50,37 @@ DEFAULT_SKIP_DIR_NAMES = frozenset(
     }
 )
 
-# These comments can affect interpreters, formatters, linters, and type checkers.
-# --all removes them; ordinary/default comment removal does not.
 PROTECTED_COMMENT_RE = re.compile(
-    r"^#(?:!|\s*(?:-\*-.*coding|coding[:=]|fmt\b|type\b|noqa\b|pylint\b|"
-    r"ruff\b|isort\b|mypy\b|pyright\b|pragma\b))",
+    r"#(?:!|\s*(?:-\*-.*coding|coding[:=]|noqa\b|nosec\b|pragma\b|"
+    r"(?:type|fmt|isort|mypy|pyright|pytype|pylint|ruff|flake8|yapf):))",
     re.IGNORECASE,
 )
+
+TYPE_COMMENT_RE = re.compile(r"#\s*type:\s*(?!ignore\b)", re.IGNORECASE)
+
+CODING_RE = re.compile(r"[ \t\f]*#.*?coding[:=][ \t]*[-\w.]+")
+
+BLANK_RUN_RE = re.compile(r"(?:\A|\n)[ \t\r]*\n[ \t\r]*\n")
+
+_STRING_STARTS = frozenset(getattr(tokenize, n) for n in ("FSTRING_START", "TSTRING_START") if hasattr(tokenize, n))
+_STRING_ENDS = frozenset(getattr(tokenize, n) for n in ("FSTRING_END", "TSTRING_END") if hasattr(tokenize, n))
+_NO_LINES: frozenset[int] = frozenset()
 
 
 @dataclass(frozen=True, slots=True)
 class TransformOptions:
-    """Pickle-friendly options passed to worker processes.
-
-    ``remove_all`` implies both comment and docstring removal even when this
-    class is used directly (rather than through the CLI argument normalizer).
-    """
-
     remove_all: bool
     remove_all_comments: bool
     remove_docstrings: bool
+    remove_module_docstring: bool
     remove_type_annotations: bool
+    strip_class_annotations: bool
     remove_commented_code: bool
     collapse_blank_lines: bool
     make_backup: bool
     overwrite_backup: bool
+    fsync: bool
     dry_run: bool
-
-    def __post_init__(self) -> None:
-        if self.remove_all:
-            object.__setattr__(self, "remove_all_comments", True)
-            object.__setattr__(self, "remove_docstrings", True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,8 +96,17 @@ class FileResult:
         return self.old_size - self.new_size
 
 
+def _safe_cwd() -> str:
+    try:
+        return os.getcwd()
+    except OSError:
+        return "."
+
+
+_CWD = _safe_cwd()
+
+
 def format_size(num_bytes: int) -> str:
-    """Format a signed byte count compactly."""
     sign = "-" if num_bytes < 0 else ""
     value = abs(num_bytes)
     if value < 1024:
@@ -113,20 +118,29 @@ def format_size(num_bytes: int) -> str:
     return f"{sign}{value} B"
 
 
-def display_path(path: Path) -> str:
-    """Return ``path`` relative to the current working directory when possible.
+def display_path(path: Path | str) -> str:
 
-    Uses ``PurePath.relative_to(walk_up=True)`` (Python 3.12+) so paths outside
-    the working directory yield ``..`` components, matching ``os.path.relpath``.
-    """
     try:
-        return str(path.relative_to(Path.cwd(), walk_up=True))
+        return os.path.relpath(path, _CWD)
     except ValueError:
         return str(path)
 
 
+def emit(*parts: str, file=None) -> None:
+
+    try:
+        print(*parts, file=file)
+    except BrokenPipeError:
+        with contextlib.suppress(Exception):
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+
+
+def warn(message: str) -> None:
+    emit(f"warning: {message}", file=sys.stderr)
+
+
 def is_docstring_literal(expr: cst.BaseExpression) -> bool:
-    """Return true for non-bytes strings, including adjacent strings."""
+
     if isinstance(expr, cst.SimpleString):
         return "b" not in expr.prefix.lower()
     if isinstance(expr, cst.ConcatenatedString):
@@ -141,51 +155,41 @@ def starts_with_docstring(line: cst.SimpleStatementLine) -> bool:
     return isinstance(first, cst.Expr) and is_docstring_literal(first.value)
 
 
-def has_trailing_comment(node: cst.CSTNode) -> bool:
-    whitespace = getattr(node, "trailing_whitespace", None)
-    return whitespace is not None and getattr(whitespace, "comment", None) is not None
+def _with_leading(node: cst.CSTNode, extra: Sequence[cst.EmptyLine]) -> cst.CSTNode:
+
+    existing = getattr(node, "leading_lines", None)
+    if existing is None:
+        return node
+    return node.with_changes(leading_lines=[*extra, *existing])
 
 
-def strip_indented_block_docstring(
-    block: cst.IndentedBlock,
-) -> tuple[cst.IndentedBlock, bool]:
-    """Remove a block's initial docstring while retaining attached comments."""
-    if not block.body or not isinstance(block.body[0], cst.SimpleStatementLine):
+def strip_indented_block_docstring(block: cst.IndentedBlock) -> tuple[cst.IndentedBlock, bool]:
+    if not block.body:
         return block, False
     first = block.body[0]
-    if not starts_with_docstring(first):
+    if not (isinstance(first, cst.SimpleStatementLine) and starts_with_docstring(first)):
         return block, False
 
-    same_line_tail = list(first.body[1:])
-    later_statements = list(block.body[1:])
-    if same_line_tail:
-        return block.with_changes(body=[first.with_changes(body=same_line_tail), *later_statements]), True
+    tail = list(first.body[1:])
+    later = list(block.body[1:])
+    if tail:
+        return block.with_changes(body=[first.with_changes(body=tail), *later]), True
 
-    # An empty suite needs pass.  Keeping the original line is also the safest
-    # place for a trailing comment such as: "doc"  # important.
-    if not later_statements or has_trailing_comment(first):
-        return block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later_statements]), True
-
-    # Leading empty/comment lines belong visually before the following statement.
+    if not later or first.trailing_whitespace.comment is not None:
+        return block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later]), True
     if first.leading_lines:
-        following = later_statements[0]
-        existing = list(getattr(following, "leading_lines", ()) or ())
-        with contextlib.suppress(AttributeError):
-            later_statements[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-    return block.with_changes(body=later_statements), True
+        later[0] = _with_leading(later[0], first.leading_lines)
+    return block.with_changes(body=later), True
 
 
-def strip_simple_suite_docstring(
-    suite: cst.SimpleStatementSuite,
-) -> tuple[cst.SimpleStatementSuite, bool]:
-    """Handle one-line suites such as `def f(): "doc"; return 1`."""
+def strip_simple_suite_docstring(suite: cst.SimpleStatementSuite) -> tuple[cst.SimpleStatementSuite, bool]:
+
     if not suite.body:
         return suite, False
     first = suite.body[0]
     if not (isinstance(first, cst.Expr) and is_docstring_literal(first.value)):
         return suite, False
-    remaining = list(suite.body[1:]) or [cst.Pass()]
-    return suite.with_changes(body=remaining), True
+    return suite.with_changes(body=list(suite.body[1:]) or [cst.Pass()]), True
 
 
 def strip_suite_docstring(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bool]:
@@ -197,264 +201,247 @@ def strip_suite_docstring(suite: cst.BaseSuite) -> tuple[cst.BaseSuite, bool]:
 
 
 def strip_module_docstring(module: cst.Module) -> cst.Module:
-    """Remove the module docstring; called only for --all."""
-    if not module.body or not isinstance(module.body[0], cst.SimpleStatementLine):
+    if not module.body:
         return module
     first = module.body[0]
-    if not starts_with_docstring(first):
+    if not (isinstance(first, cst.SimpleStatementLine) and starts_with_docstring(first)):
         return module
-
-    same_line_tail = list(first.body[1:])
+    tail = list(first.body[1:])
     rest = list(module.body[1:])
-    if same_line_tail:
-        return module.with_changes(body=[first.with_changes(body=same_line_tail), *rest])
-    if first.leading_lines and rest:
-        following = rest[0]
-        existing = list(getattr(following, "leading_lines", ()) or ())
-        with contextlib.suppress(AttributeError):
-            rest[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-    elif first.leading_lines:
-        return module.with_changes(body=[], header=[*module.header, *first.leading_lines])
+    if tail:
+        return module.with_changes(body=[first.with_changes(body=tail), *rest])
+    if first.leading_lines:
+        if rest:
+            rest[0] = _with_leading(rest[0], first.leading_lines)
+        else:
+            return module.with_changes(body=[], header=[*module.header, *first.leading_lines])
     return module.with_changes(body=rest)
 
 
-def _dehash(comment: str) -> str:
-    text = comment[1:]
-    return text.removeprefix(" ")
-
-
-def looks_like_commented_out_code(comment_lines: Sequence[str]) -> bool:
-    """Conservatively identify a consecutive block that parses as Python.
-
-    This deliberately inherits one ambiguity: a comment containing only a bare
-    identifier is valid Python.  Use --remove-commented-code to disable this
-    protection when maximum removal is preferred.
-    """
-    candidate = "\n".join(_dehash(line) for line in comment_lines)
-    if not candidate.strip():
-        return False
-    try:
-        tree = ast.parse(candidate)
-    except (SyntaxError, ValueError, MemoryError):
-        return False
-
-    # Prose such as ``# note`` and ``# "heading"`` also parses as Python.  Do
-    # not protect a group made entirely of bare names/constants; require at
-    # least one statement with stronger code intent (assignment, call, import,
-    # control flow, definition, and so on).
-    def has_code_intent(statement: ast.stmt) -> bool:
-        if not isinstance(statement, ast.Expr):
-            return True
-        return not isinstance(statement.value, (ast.Name, ast.Constant))
-
-    return any(has_code_intent(statement) for statement in tree.body)
-
-
-def find_commented_out_code_lines(source: str) -> frozenset[int]:
-    """Return line numbers of consecutive full-line comments that parse as code."""
-    try:
-        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
-        comments = [tok for tok in tokens if tok.type == tokenize.COMMENT]
-    except (IndentationError, tokenize.TokenError, SyntaxError):
-        return frozenset()
-
-    protected: set[int] = set()
-    lines: list[int] = []
-    texts: list[str] = []
-    previous: int | None = None
-
-    def flush() -> None:
-        if texts and looks_like_commented_out_code(texts):
-            protected.update(lines)
-
-    for token in comments:
-        line_number, column = token.start
-        # Inline comments are not commented-out statements.  Flush around them
-        # so unrelated full-line blocks cannot accidentally become one group.
-        prefix = token.line[:column]
-        is_full_line = not prefix.strip()
-        # Tool directives are protected independently by the transformer and
-        # must not make neighboring prose look like one parsable code block.
-        is_directive = PROTECTED_COMMENT_RE.match(token.string) is not None
-        if not is_full_line or is_directive:
-            flush()
-            lines.clear()
-            texts.clear()
-            previous = None
-            continue
-        if previous is not None and line_number != previous + 1:
-            flush()
-            lines.clear()
-            texts.clear()
-        lines.append(line_number)
-        texts.append(token.string)
-        previous = line_number
-    flush()
-    return frozenset(protected)
-
-
-class CommentDocstringStripper(cst.CSTTransformer):
-    """Core transformer without metadata overhead in the common case."""
-
-    def __init__(self, options: TransformOptions, protected_code_lines: frozenset[int]):
+class StructureStripper(cst.CSTTransformer):
+    def __init__(self, options: TransformOptions) -> None:
         super().__init__()
-        self.options = options
-        self.protected_code_lines = protected_code_lines
+        self.strip_docs = options.remove_docstrings
+        self.strip_types = options.remove_type_annotations
+        self.keep_class_annotations = not options.strip_class_annotations
+        self.scopes: list[bool] = []
 
-    @staticmethod
-    def _is_protected_directive(text: str) -> bool:
-        return PROTECTED_COMMENT_RE.match(text) is not None
+    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+        self.scopes.append(True)
 
-    def _is_on_protected_line(self, node: cst.CSTNode) -> bool:
-        # Overridden by PositionAwareStripper.  This base transformer is selected
-        # when there are no protected lines, avoiding PositionProvider entirely.
-        return False
-
-    def _should_remove_comment(self, comment: cst.Comment) -> bool:
-        if self.protected_code_lines and self._is_on_protected_line(comment):
-            return False
-        if self.options.remove_all:
-            return True
-        return not self._is_protected_directive(comment.value)
-
-    def leave_TrailingWhitespace(self, original_node, updated_node):
-        del original_node
-        comment = updated_node.comment
-        if comment is None or not self._should_remove_comment(comment):
-            return updated_node
-        return updated_node.with_changes(whitespace=cst.SimpleWhitespace(""), comment=None)
-
-    def leave_EmptyLine(self, original_node, updated_node):
-        del original_node
-        comment = updated_node.comment
-        if not self.options.remove_all_comments or comment is None or not self._should_remove_comment(comment):
-            return updated_node
-        return updated_node.with_changes(comment=None)
-
-    def leave_FunctionDef(self, original_node, updated_node):
-        del original_node
-        if self.options.remove_docstrings:
-            body, changed = strip_suite_docstring(updated_node.body)
-            if changed:
-                updated_node = updated_node.with_changes(body=body)
-        if self.options.remove_type_annotations:
-            changes: dict[str, object] = {"returns": None}
-            if getattr(updated_node, "type_comment", None) is not None:
-                changes["type_comment"] = None
-            updated_node = updated_node.with_changes(**changes)
-        return updated_node
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self.scopes.append(False)
 
     def leave_ClassDef(self, original_node, updated_node):
-        del original_node
-        if not self.options.remove_docstrings:
+        self.scopes.pop()
+        if not self.strip_docs:
             return updated_node
         body, changed = strip_suite_docstring(updated_node.body)
         return updated_node.with_changes(body=body) if changed else updated_node
 
+    def leave_FunctionDef(self, original_node, updated_node):
+        self.scopes.pop()
+        if self.strip_docs:
+            body, changed = strip_suite_docstring(updated_node.body)
+            if changed:
+                updated_node = updated_node.with_changes(body=body)
+        if self.strip_types and updated_node.returns is not None:
+            updated_node = updated_node.with_changes(returns=None, whitespace_before_colon=cst.SimpleWhitespace(""))
+        return updated_node
+
     def leave_Param(self, original_node, updated_node):
-        del original_node
-        if self.options.remove_type_annotations and updated_node.annotation is not None:
+        if self.strip_types and updated_node.annotation is not None:
             return updated_node.with_changes(annotation=None)
         return updated_node
 
     def leave_AnnAssign(self, original_node, updated_node):
-        del original_node
-        if not self.options.remove_type_annotations:
+        if not self.strip_types:
+            return updated_node
+
+        if self.keep_class_annotations and self.scopes and self.scopes[-1]:
             return updated_node
         if updated_node.value is None:
-            return cst.Pass()
+            return cst.Pass(semicolon=updated_node.semicolon)
         return cst.Assign(
             targets=[cst.AssignTarget(target=updated_node.target)],
             value=updated_node.value,
+            semicolon=updated_node.semicolon,
         )
 
-    def leave_Assign(self, original_node, updated_node):
-        del original_node
-        if self.options.remove_type_annotations and getattr(updated_node, "type_comment", None) is not None:
-            return updated_node.with_changes(type_comment=None)
-        return updated_node
 
-    def leave_For(self, original_node, updated_node):
-        del original_node
-        if self.options.remove_type_annotations and getattr(updated_node, "type_comment", None) is not None:
-            return updated_node.with_changes(type_comment=None)
-        return updated_node
-
-    def leave_With(self, original_node, updated_node):
-        del original_node
-        if self.options.remove_type_annotations and getattr(updated_node, "type_comment", None) is not None:
-            return updated_node.with_changes(type_comment=None)
-        return updated_node
+def _has_code_intent(statement: ast.stmt) -> bool:
+    if isinstance(statement, ast.AnnAssign) and statement.value is None:
+        return False
+    if isinstance(statement, ast.Expr):
+        return not isinstance(statement.value, (ast.Name, ast.Constant))
+    return True
 
 
-class PositionAwareStripper(CommentDocstringStripper):
-    """Metadata-enabled variant, used only when commented code was detected."""
+def looks_like_commented_out_code(comment_texts: Sequence[str]) -> bool:
 
-    METADATA_DEPENDENCIES = (cst.metadata.PositionProvider,)
-
-    def _is_on_protected_line(self, node: cst.CSTNode) -> bool:
-        position = self.get_metadata(cst.metadata.PositionProvider, node, None)
-        return position is not None and position.start.line in self.protected_code_lines
-
-
-def run_transform(
-    module: cst.Module,
-    options: TransformOptions,
-    protected_code_lines: frozenset[int],
-) -> cst.Module:
-    transformer_type = PositionAwareStripper if protected_code_lines else CommentDocstringStripper
-    transformer = transformer_type(options, protected_code_lines)
-    if protected_code_lines:
-        return cst.metadata.MetadataWrapper(module).visit(transformer)
-    return module.visit(transformer)
+    candidate = textwrap.dedent("\n".join(text[1:].removeprefix(" ") for text in comment_texts))
+    if not candidate.strip():
+        return False
+    attempts = [candidate]
+    if candidate.rstrip().endswith(":"):
+        attempts.append(candidate + "\n    pass\n")
+    for text in attempts:
+        try:
+            tree = ast.parse(text)
+        except (SyntaxError, ValueError, MemoryError, RecursionError):
+            continue
+        if any(_has_code_intent(statement) for statement in tree.body):
+            return True
+    return False
 
 
-def string_token_lines(source: str) -> set[int]:
-    """Find lines occupied by strings so blank lines inside them are untouched."""
+def commented_code_rows(comments: Sequence[tokenize.TokenInfo], lines: Sequence[str]) -> frozenset[int]:
+
+    protected: set[int] = set()
+    rows: list[int] = []
+    texts: list[str] = []
+    last = -2
+
+    def flush() -> None:
+        if texts and looks_like_commented_out_code(texts):
+            protected.update(rows)
+        rows.clear()
+        texts.clear()
+
+    for token in comments:
+        row, col = token.start
+        standalone = not lines[row - 1][:col].strip()
+        if not standalone or PROTECTED_COMMENT_RE.match(token.string):
+            flush()
+            last = -2
+            continue
+        if row != last + 1:
+            flush()
+        rows.append(row)
+        texts.append(token.string)
+        last = row
+    flush()
+    return frozenset(protected)
+
+
+def strip_comments(source: str, options: TransformOptions) -> str | None:
+
+    if "#" not in source:
+        return source
+    try:
+        comments = [
+            token for token in tokenize.generate_tokens(io.StringIO(source).readline) if token.type == tokenize.COMMENT
+        ]
+    except (SyntaxError, tokenize.TokenError, ValueError):
+        return None
+    if not comments:
+        return source
+
+    lines = source.split("\n")
+    protected_rows = _NO_LINES
+    if options.remove_all_comments and not options.remove_all and not options.remove_commented_code:
+        protected_rows = commented_code_rows(comments, lines)
+
+    drop_type_comments = options.remove_type_annotations
+    changed = False
+    for token in comments:
+        row, col = token.start
+        text = token.string
+        line = lines[row - 1]
+        if not line.startswith(text, col):
+            return None
+        prefix = line[:col]
+        standalone = not prefix.strip()
+
+        if standalone and ((row == 1 and text.startswith("#!")) or (row <= 2 and CODING_RE.match(line))):
+            continue
+
+        if drop_type_comments and TYPE_COMMENT_RE.match(text):
+            remove = True
+        elif options.remove_all:
+            remove = True
+        elif PROTECTED_COMMENT_RE.match(text):
+            remove = False
+        elif standalone:
+            remove = options.remove_all_comments and row not in protected_rows
+        else:
+            remove = True
+        if not remove:
+            continue
+
+        carriage_return = "\r" if line.endswith("\r") else ""
+        lines[row - 1] = carriage_return if standalone else prefix.rstrip(" \t\f") + carriage_return
+        changed = True
+    return "\n".join(lines) if changed else source
+
+
+def multiline_string_lines(source: str) -> frozenset[int] | None:
+
     occupied: set[int] = set()
+    depth = 0
+    start_line = 0
     try:
         for token in tokenize.generate_tokens(io.StringIO(source).readline):
-            if token.type == tokenize.STRING:
-                occupied.update(range(token.start[0], token.end[0] + 1))
-    except (IndentationError, tokenize.TokenError):
-        return set()
-    return occupied
+            kind = token.type
+            if kind == tokenize.STRING:
+                if token.end[0] > token.start[0]:
+                    occupied.update(range(token.start[0], token.end[0] + 1))
+            elif kind in _STRING_STARTS:
+                if depth == 0:
+                    start_line = token.start[0]
+                depth += 1
+            elif kind in _STRING_ENDS:
+                depth -= 1
+                if depth == 0 and token.end[0] > start_line:
+                    occupied.update(range(start_line, token.end[0] + 1))
+    except (SyntaxError, tokenize.TokenError, ValueError):
+        return None
+    return frozenset(occupied)
 
 
 def collapse_repeated_blank_lines(source: str) -> str:
-    lines = source.splitlines(keepends=True)
-    strings = string_token_lines(source)
-    result: list[str] = []
+    if BLANK_RUN_RE.search(source) is None:
+        return source
+    if '"""' in source or "'''" in source:
+        protected = multiline_string_lines(source)
+        if protected is None:
+            return source
+    else:
+        protected = _NO_LINES
+
+    parts = source.split("\n")
+    tail = parts.pop()
+    kept: list[str] = []
     previous_blank = False
-    for line_number, line in enumerate(lines, 1):
-        blank = not line.strip() and line_number not in strings
+    for number, part in enumerate(parts, 1):
+        blank = number not in protected and not part.strip(" \t\r")
         if blank and previous_blank:
             continue
-        result.append(line)
+        kept.append(part)
         previous_blank = blank
-    return "".join(result)
+    kept.append(tail)
+    return "\n".join(kept)
 
 
-def atomic_replace(path: Path, data: bytes) -> None:
-    """Durably write in the destination directory, then atomically rename."""
+def atomic_replace(path: Path, data: bytes, fsync: bool, mode_source: Path | None = None) -> None:
     try:
-        mode = path.stat().st_mode
+        mode = os.stat(mode_source or path).st_mode & 0o7777
     except OSError:
         mode = None
     descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    temporary = Path(temporary_name)
     try:
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
+            if fsync:
+                stream.flush()
+                os.fsync(stream.fileno())
         if mode is not None:
             with contextlib.suppress(OSError):
-                os.chmod(temporary, mode)
-        os.replace(temporary, path)
+                os.chmod(temporary_name, mode)
+        os.replace(temporary_name, path)
     except BaseException:
         with contextlib.suppress(OSError):
-            temporary.unlink()
+            os.unlink(temporary_name)
         raise
 
 
@@ -462,189 +449,239 @@ def backup_path_for(path: Path) -> Path:
     return path.with_name(path.name + BACKUP_SUFFIX)
 
 
-def write_backup(path: Path, data: bytes, overwrite: bool) -> None:
+def write_backup(path: Path, data: bytes, overwrite: bool, fsync: bool) -> None:
     backup = backup_path_for(path)
     if backup.exists() and not overwrite:
-        msg = f"backup already exists: {backup} (use --overwrite-backup)"
-        raise FileExistsError(msg)
-    atomic_replace(backup, data)
+        raise FileExistsError(f"backup already exists: {backup} (use --overwrite-backup)")
+    atomic_replace(backup, data, fsync, mode_source=path)
 
 
-def restore_from_backup(path: Path, dry_run: bool = False) -> tuple[bool, str | None]:
+def restore_from_backup(path: Path, dry_run: bool, fsync: bool) -> tuple[bool, str | None]:
     backup = backup_path_for(path)
     if not backup.exists():
         return False, None
     if dry_run:
         return True, None
     try:
-        data = backup.read_bytes()
-        atomic_replace(path, data)
+        atomic_replace(path, backup.read_bytes(), fsync)
         backup.unlink(missing_ok=True)
     except OSError as exc:
         return False, f"restore error: {exc}"
     return True, None
 
 
-def process_file(path: Path, options: TransformOptions) -> FileResult:
-    """Read, transform, validate, and optionally replace one file."""
+def _process_file(path: Path, options: TransformOptions) -> FileResult:
     try:
-        original_bytes = path.read_bytes()
+        with open(path, "rb") as stream:
+            before = os.fstat(stream.fileno())
+            original = stream.read()
     except OSError as exc:
         return FileResult(path, error=f"read error: {exc}")
+    size = len(original)
+    if not size:
+        return FileResult(path)
 
     try:
-        encoding, _ = tokenize.detect_encoding(io.BytesIO(original_bytes).readline)
-        source = original_bytes.decode(encoding)
-    except (SyntaxError, UnicodeDecodeError) as exc:
-        return FileResult(path, len(original_bytes), error=f"encoding error: {exc}")
+        encoding, _ = tokenize.detect_encoding(io.BytesIO(original).readline)
+        source = original.decode(encoding)
+    except (SyntaxError, UnicodeDecodeError, LookupError) as exc:
+        return FileResult(path, size, error=f"encoding error: {exc}")
 
-    # Deliberately no quick textual check here: every file is parsed as requested.
-    try:
-        module = cst.parse_module(source)
-    except cst.ParserSyntaxError as exc:
-        return FileResult(path, len(original_bytes), error=f"LibCST parse error: {exc}")
-    except Exception as exc:
-        return FileResult(path, len(original_bytes), error=f"parse error: {type(exc).__name__}: {exc}")
+    new_source = strip_comments(source, options)
+    if new_source is None:
+        return FileResult(path, size, error="tokenize error: cannot locate comments safely")
 
-    protected_lines = frozenset() if options.remove_commented_code else find_commented_out_code_lines(source)
+    effective = options
+    if "__doc__" in source and (options.remove_docstrings or options.remove_module_docstring):
+        effective = dataclasses.replace(options, remove_docstrings=False, remove_module_docstring=False)
+    docs_wanted = (effective.remove_docstrings or effective.remove_module_docstring) and (
+        '"' in new_source or "'" in new_source
+    )
+    if docs_wanted or effective.remove_type_annotations:
+        try:
+            module = cst.parse_module(new_source)
+        except cst.ParserSyntaxError as exc:
+            return FileResult(path, size, error=f"LibCST parse error: {exc}")
+        except Exception as exc:
+            return FileResult(path, size, error=f"parse error: {type(exc).__name__}: {exc}")
+        try:
+            module = module.visit(StructureStripper(effective))
+            if effective.remove_module_docstring:
+                module = strip_module_docstring(module)
+            new_source = module.code
+        except Exception as exc:
+            return FileResult(path, size, error=f"transform error: {type(exc).__name__}: {exc}")
+
+    if options.collapse_blank_lines:
+        new_source = collapse_repeated_blank_lines(new_source)
+
+    if new_source == source:
+        return FileResult(path, size, size)
     try:
-        transformed = run_transform(module, options, protected_lines)
-        if options.remove_all:
-            transformed = strip_module_docstring(transformed)
-        new_source = transformed.code
-        if options.collapse_blank_lines:
-            new_source = collapse_repeated_blank_lines(new_source)
         new_bytes = new_source.encode(encoding)
-    except Exception as exc:
-        return FileResult(path, len(original_bytes), error=f"transform error: {type(exc).__name__}: {exc}")
-
-    if new_bytes == original_bytes:
-        return FileResult(path, len(original_bytes), len(original_bytes))
+    except UnicodeEncodeError as exc:
+        return FileResult(path, size, error=f"encoding error: {exc}")
 
     try:
         ast.parse(new_source, filename=str(path), type_comments=True)
-    except (SyntaxError, ValueError) as exc:
-        return FileResult(path, len(original_bytes), len(new_bytes), error=f"post-transform validation failed: {exc}")
+    except (SyntaxError, ValueError, MemoryError, RecursionError) as exc:
+        return FileResult(path, size, len(new_bytes), error=f"post-transform validation failed: {exc}")
 
     if not options.dry_run:
+        try:
+            after = os.stat(path)
+        except OSError as exc:
+            return FileResult(path, size, len(new_bytes), error=f"write error: {exc}")
+        if (after.st_mtime_ns, after.st_size) != (before.st_mtime_ns, before.st_size):
+            return FileResult(path, size, len(new_bytes), error="file changed while processing; left untouched")
         if options.make_backup:
             try:
-                write_backup(path, original_bytes, options.overwrite_backup)
+                write_backup(path, original, options.overwrite_backup, options.fsync)
             except OSError as exc:
-                return FileResult(path, len(original_bytes), len(new_bytes), error=f"backup error: {exc}")
+                return FileResult(path, size, len(new_bytes), error=f"backup error: {exc}")
         try:
-            atomic_replace(path, new_bytes)
-        except (OSError, UnicodeEncodeError) as exc:
-            return FileResult(path, len(original_bytes), len(new_bytes), error=f"write error: {exc}")
+            atomic_replace(path, new_bytes, options.fsync)
+        except OSError as exc:
+            return FileResult(path, size, len(new_bytes), error=f"write error: {exc}")
 
-    return FileResult(path, len(original_bytes), len(new_bytes), changed=True)
+    return FileResult(path, size, len(new_bytes), changed=True)
 
 
-def _walk_python_files(root: Path, skip_names: frozenset[str]) -> Iterator[Path]:
-    """Iterative directory traversal; symlinks are not followed."""
+def process_file(path: Path, options: TransformOptions) -> FileResult:
+
+    try:
+        return _process_file(path, options)
+    except Exception as exc:
+        return FileResult(path, error=f"unexpected error: {type(exc).__name__}: {exc}")
+
+
+# ----------------------------------------------------------------------------- discovery
+
+
+def has_python_shebang(path: str) -> bool:
+    try:
+        with open(path, "rb") as stream:
+            head = stream.readline(256)
+    except OSError:
+        return False
+    return head.startswith(b"#!") and b"python" in head
+
+
+def _accept_python(name: str, path: str) -> bool:
+    if name.endswith(PY_SUFFIXES):
+        return True
+
+    return not os.path.splitext(name)[1] and has_python_shebang(path)
+
+
+def _accept_backup(name: str, path: str) -> bool:
+    return name.endswith(BACKUP_SUFFIX)
+
+
+def _walk(root: str, skip_names: frozenset[str] | set[str], accept: Callable[[str, str], bool]) -> Iterator[str]:
+
     stack = [root]
     while stack:
         directory = stack.pop()
         try:
-            entries = list(directory.iterdir())
+            with os.scandir(directory) as iterator:
+                entries = list(iterator)
         except OSError as exc:
-            print(f"warning: cannot scan {directory}: {exc}", file=sys.stderr)
+            warn(f"cannot scan {directory}: {exc}")
             continue
         for entry in entries:
             try:
-                # Mirror scandir(follow_symlinks=False): skip any symlink.
                 if entry.is_symlink():
                     continue
-                if entry.is_dir():
-                    if entry.name not in skip_names:
-                        stack.append(entry)
-                elif entry.is_file() and entry.name.endswith(PY_SUFFIXES):
-                    yield entry
+                name = entry.name
+                if entry.is_dir(follow_symlinks=False):
+                    if name not in skip_names and not name.endswith(".egg-info"):
+                        stack.append(entry.path)
+                elif entry.is_file(follow_symlinks=False) and accept(name, entry.path):
+                    yield entry.path
             except OSError as exc:
-                print(f"warning: cannot inspect {entry}: {exc}", file=sys.stderr)
+                warn(f"cannot inspect {entry.path}: {exc}")
 
 
 def iter_python_files(paths: Iterable[Path], extra_excludes: Sequence[str]) -> Iterator[Path]:
-    seen: set[Path] = set()
+    seen: set[str] = set()
     skip_names = DEFAULT_SKIP_DIR_NAMES.union(extra_excludes)
     for given in paths:
         try:
-            if given.is_file():
-                candidates: Iterable[Path] = (given,) if given.name.endswith(PY_SUFFIXES) else ()
-            elif given.is_dir():
-                candidates = _walk_python_files(given, skip_names)
+            if os.path.isdir(given):
+                candidates: Iterable[str] = _walk(os.path.realpath(given), skip_names, _accept_python)
+            elif os.path.isfile(given):
+                if not (given.name.endswith(PY_SUFFIXES) or not given.suffix):
+                    warn(f"skipping non-Python file: {given}")
+                    continue
+                candidates = (os.path.realpath(given),)
             else:
-                print(f"warning: skipping non-existent path: {given}", file=sys.stderr)
+                warn(f"skipping non-existent path: {given}")
                 continue
             for candidate in candidates:
-                try:
-                    resolved = candidate.resolve()
-                except OSError:
-                    continue
-                if resolved not in seen:
-                    seen.add(resolved)
-                    yield candidate
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield Path(candidate)
         except OSError as exc:
-            print(f"warning: cannot access {given}: {exc}", file=sys.stderr)
+            warn(f"cannot access {given}: {exc}")
 
 
 def iter_backup_targets(paths: Iterable[Path], extra_excludes: Sequence[str]) -> Iterator[Path]:
-    seen: set[Path] = set()
+    seen: set[str] = set()
     skip_names = DEFAULT_SKIP_DIR_NAMES.union(extra_excludes)
     for given in paths:
-        if given.is_file():
-            candidates = [given] if given.name.endswith(BACKUP_SUFFIX) else []
-        elif given.is_dir():
-            candidates = []
-            stack = [given]
-            while stack:
-                directory = stack.pop()
-                try:
-                    entries = list(directory.iterdir())
-                except OSError as exc:
-                    print(f"warning: cannot scan {directory}: {exc}", file=sys.stderr)
-                    continue
-                for entry in entries:
-                    try:
-                        if entry.is_symlink():
-                            continue
-                        if entry.is_dir() and entry.name not in skip_names:
-                            stack.append(entry)
-                        elif entry.is_file() and entry.name.endswith(BACKUP_SUFFIX):
-                            candidates.append(entry)
-                    except OSError:
-                        pass
-        else:
-            print(f"warning: skipping non-existent path: {given}", file=sys.stderr)
-            continue
-        for backup in candidates:
-            original = backup.with_name(backup.name[: -len(BACKUP_SUFFIX)])
-            try:
-                key = original.resolve()
-            except OSError:
-                key = original.absolute()
-            if key not in seen:
-                seen.add(key)
-                yield original
+        try:
+            if os.path.isdir(given):
+                originals = (
+                    p[: -len(BACKUP_SUFFIX)] for p in _walk(os.path.realpath(given), skip_names, _accept_backup)
+                )
+            elif os.path.isfile(given):
+                real = os.path.realpath(given)
+                if real.endswith(BACKUP_SUFFIX):
+                    originals = (real[: -len(BACKUP_SUFFIX)],)
+                elif os.path.exists(real + BACKUP_SUFFIX):
+                    originals = (real,)
+                else:
+                    originals = ()
+            else:
+                warn(f"skipping non-existent path: {given}")
+                continue
+            for original in originals:
+                if original not in seen:
+                    seen.add(original)
+                    yield Path(original)
+        except OSError as exc:
+            warn(f"cannot access {given}: {exc}")
+
+
+# ----------------------------------------------------------------------------- CLI
+
+
+def default_jobs() -> int:
+    try:
+        count = len(os.sched_getaffinity(0))
+    except AttributeError:
+        count = os.cpu_count() or 1
+    return max(1, min(DEFAULT_MAX_PROCESSES, count))
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROGRAM,
-        description="Safely strip Python comments, docstrings, annotations, and repeated blank lines with LibCST.",
+        description="Safely strip Python comments, docstrings, annotations, and repeated blank lines.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     parser.add_argument(
         "-a",
         "--all",
         action="store_true",
-        help="remove all comments and all docstrings; combine with -t for annotations",
+        help="remove all comments (except shebang/encoding cookie) and all docstrings; combine with -t for annotations",
     )
     parser.add_argument(
         "-c",
         "--remove-all-comments",
         action="store_true",
-        help="also remove standalone comments; protected directives remain unless --all",
+        help="also remove standalone comments; directives and commented-out code remain unless --all / --remove-commented-code",
     )
     parser.add_argument(
         "-d",
@@ -657,7 +694,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--type",
         dest="remove_type_annotations",
         action="store_true",
-        help="remove parameter, return, variable, and supported type-comment annotations",
+        help="remove parameter, return, variable annotations and '# type:' comments (class-body annotations are kept)",
+    )
+    parser.add_argument(
+        "--strip-class-annotations",
+        action="store_true",
+        help="with -t, also strip class-body annotations (breaks dataclass/NamedTuple/TypedDict/pydantic)",
     )
     parser.add_argument(
         "--remove-commented-code",
@@ -674,20 +716,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--check", action="store_true", help="like --dry-run, but return status 3 if any file would change"
     )
+    parser.add_argument("--fsync", action="store_true", help="fsync every written file (durable but much slower)")
     parser.add_argument(
         "-j",
         "--jobs",
         type=int,
-        default=min(DEFAULT_MAX_PROCESSES, mp.cpu_count() or 1),
+        default=default_jobs(),
         metavar="N",
-        help="worker processes (default: min(8, CPU count); 1 disables multiprocessing)",
+        help="worker processes (default: min(8, usable CPUs); 1 disables multiprocessing)",
     )
     parser.add_argument(
         "--chunk-size",
         type=int,
         default=DEFAULT_CHUNK_SIZE,
         metavar="N",
-        help=f"multiprocessing task chunk size (default: {DEFAULT_CHUNK_SIZE})",
+        help=f"maximum multiprocessing chunk size (default: {DEFAULT_CHUNK_SIZE})",
     )
     parser.add_argument(
         "--exclude-dir",
@@ -696,7 +739,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         metavar="NAME",
         help="additional directory basename to skip; repeatable",
     )
-    parser.add_argument("--no-color", action="store_true", help="disable ANSI color")
+    parser.add_argument("--no-color", action="store_true", help="disable ANSI color (NO_COLOR is also honored)")
     parser.add_argument("-q", "--quiet", action="store_true", help="print only errors and the final summary")
     parser.add_argument(
         "paths", nargs="*", type=Path, metavar="PATH", help="files/directories; default: current directory"
@@ -715,68 +758,95 @@ def validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> 
         parser.error("--reverse cannot be combined with --backup")
 
 
+# ----------------------------------------------------------------------------- execution
+
+_WORKER_OPTIONS: TransformOptions | None = None
+
+
+def _init_worker(options: TransformOptions) -> None:
+    global _WORKER_OPTIONS
+    _WORKER_OPTIONS = options
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+def _worker(path: Path) -> FileResult:
+    return process_file(path, _WORKER_OPTIONS)  # type: ignore[arg-type]
+
+
+def _file_size(path: Path) -> int:
+    try:
+        return os.stat(path).st_size
+    except OSError:
+        return 0
+
+
+def iter_results(files: list[Path], options: TransformOptions, jobs: int, chunk_size: int) -> Iterator[FileResult]:
+    if jobs == 1 or len(files) < PARALLEL_MIN_FILES:
+        for path in files:
+            yield process_file(path, options)
+        return
+    files.sort(key=_file_size, reverse=True)
+    chunk = max(1, min(chunk_size, len(files) // (jobs * 4)))
+
+    with mp.Pool(processes=jobs, initializer=_init_worker, initargs=(options,), maxtasksperchild=500) as pool:
+        yield from pool.imap_unordered(_worker, files, chunksize=chunk)
+
+
 def run_reverse(paths: Sequence[Path], args: argparse.Namespace) -> int:
     targets = list(iter_backup_targets(paths, args.exclude_dir))
     if not targets:
-        print("No backup files found to restore.", file=sys.stderr)
+        emit("No backup files found to restore.", file=sys.stderr)
         return 1
+    dry = args.dry_run or args.check
     restored = errors = 0
     for path in targets:
-        changed, error = restore_from_backup(path, args.dry_run or args.check)
+        changed, error = restore_from_backup(path, dry, args.fsync)
         if error:
             errors += 1
-            print(f"{display_path(path)}: {error}", file=sys.stderr)
+            emit(f"{display_path(path)}: {error}", file=sys.stderr)
         elif changed:
             restored += 1
             if not args.quiet:
-                action = "would restore" if args.dry_run or args.check else "restored"
-                print(f"{display_path(path)}  {action}")
-    print(f"\n{'Would restore' if args.dry_run or args.check else 'Restored'} {restored} file(s), {errors} error(s).")
+                emit(f"{display_path(path)}  {'would restore' if dry else 'restored'}")
+    emit(f"\n{'Would restore' if dry else 'Restored'} {restored} file(s), {errors} error(s).")
     if errors:
         return 2
     return 3 if args.check and restored else 0
 
 
-def _result_iterator(
-    files: Iterable[Path], options: TransformOptions, jobs: int, chunk_size: int
-) -> Iterator[FileResult]:
-    worker = functools.partial(process_file, options=options)
-    if jobs == 1:
-        yield from map(worker, files)
-        return
-    # maxtasksperchild limits memory growth during very large LibCST runs.
-    with mp.Pool(processes=jobs, maxtasksperchild=500) as pool:
-        yield from pool.imap_unordered(worker, files, chunksize=chunk_size)
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = build_arg_parser()
-    args = parser.parse_args(argv)
-    validate_args(parser, args)
-    paths = args.paths or [Path.cwd()]
-    if args.reverse:
-        return run_reverse(paths, args)
-
+def run_strip(paths: Sequence[Path], args: argparse.Namespace) -> int:
     dry_run = args.dry_run or args.check
     options = TransformOptions(
         remove_all=args.all,
         remove_all_comments=args.all or args.remove_all_comments,
         remove_docstrings=args.all or args.remove_docstrings,
+        remove_module_docstring=args.all,
         remove_type_annotations=args.remove_type_annotations,
+        strip_class_annotations=args.strip_class_annotations,
         remove_commented_code=args.remove_commented_code,
         collapse_blank_lines=not args.keep_blank_lines,
         make_backup=args.backup,
         overwrite_backup=args.overwrite_backup,
+        fsync=args.fsync,
         dry_run=dry_run,
     )
 
+    files = list(iter_python_files(paths, args.exclude_dir))
+    if not files:
+        emit("No Python files found.", file=sys.stderr)
+        return 1
+    jobs = min(args.jobs, len(files))
+
+    use_color = not args.no_color and not os.environ.get("NO_COLOR") and sys.stdout.isatty()
+    color, reset = (GREEN, RESET) if use_color else ("", "")
+    action = "would reduce" if dry_run else "reduced"
+
     total = changed = errors = old_total = new_total = 0
-    files = iter_python_files(paths, args.exclude_dir)
-    for result in _result_iterator(files, options, args.jobs, args.chunk_size):
+    for result in iter_results(files, options, jobs, args.chunk_size):
         total += 1
         if result.error:
             errors += 1
-            print(f"{display_path(result.path)}: {result.error}", file=sys.stderr)
+            emit(f"{display_path(result.path)}: {result.error}", file=sys.stderr)
             continue
         if not result.changed:
             continue
@@ -784,26 +854,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         old_total += result.old_size
         new_total += result.new_size
         if not args.quiet:
-            delta = result.bytes_reduced
-            color = "" if args.no_color or not sys.stdout.isatty() else GREEN
-            reset = "" if not color else RESET
-            action = "would reduce" if dry_run else " "
-            print(f"{display_path(result.path)}  {action} {color}{format_size(delta)}{reset}")
+            emit(f"{display_path(result.path)}  {action} {color}{format_size(result.bytes_reduced)}{reset}")
 
-    if total == 0:
-        print("No Python files found.", file=sys.stderr)
-        return 1
-    reduction = old_total - new_total
-    color = "" if args.no_color or not sys.stdout.isatty() else GREEN
-    reset = "" if not color else RESET
-    verb = "Would change" if dry_run else "Changed"
-    summary = f"\nProcessed {total} file(s): {verb.lower()} {changed}, {color}{format_size(reduction)}{reset} reduced, {errors} error(s)."
-    print(summary, file=sys.stderr if errors else sys.stdout)
+    verb = "would change" if dry_run else "changed"
+    summary = (
+        f"\nProcessed {total} file(s): {verb} {changed}, "
+        f"{color}{format_size(old_total - new_total)}{reset} reduced, {errors} error(s)."
+    )
+    emit(summary, file=sys.stderr if errors else None)
     if errors:
         return 2
-    if args.check and changed:
-        return 3
-    return 0
+    return 3 if args.check and changed else 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_arg_parser()
+    args = parser.parse_args(argv)
+    validate_args(parser, args)
+    paths = args.paths or [Path.cwd()]
+    try:
+        return run_reverse(paths, args) if args.reverse else run_strip(paths, args)
+    except KeyboardInterrupt:
+        emit("\ninterrupted", file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":

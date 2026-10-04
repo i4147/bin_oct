@@ -516,7 +516,7 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     elif tag == "SKIP":
         growth = new - orig
         print(f"[SKIP]    {path}  {format_bytes(orig)} -> {format_bytes(new)}  (larger by {format_bytes(growth)})")
-    else:  # ERROR
+    else:
         print(f"[ERROR]   {path}  {result.error}", file=sys.stderr)
 
 

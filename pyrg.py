@@ -637,7 +637,7 @@ def _replace_spans(
 def worker(job: dict[str, Any]) -> FileResult:
     path_str: str = job["path"]
     cwd_str: str = job["cwd"]
-    regex_pattern = job["regex"]  # str | None
+    regex_pattern = job["regex"]
     fixed: str = job["fixed"]
     ignore_case: bool = job["ignore_case"]
     invert: bool = job["invert"]
@@ -646,7 +646,7 @@ def worker(job: dict[str, Any]) -> FileResult:
     max_count: int = job["max_count"]
     multiline: bool = job["multiline"]
     encoding: str = job["encoding"]
-    replace = job["replace"]  # str | None
+    replace = job["replace"]
     only_matching: bool = job["only_matching"]
 
     path = Path(path_str)

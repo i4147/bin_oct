@@ -114,7 +114,7 @@ class Archive:
                     m.size,
                     lambda m=m, fh=fh: fh.extractfile(m).read(),
                 )
-        else:  # zip / whl
+        else:
             for info in fh.infolist():
                 if info.is_dir():
                     continue

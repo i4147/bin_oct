@@ -68,7 +68,6 @@ def main() -> None:
             print(f"[{status}] {name}: {msg if not ok else 'built'}")
             results.append((name, ok))
 
-    # Summary
     success = sum(1 for _, ok in results if ok)
     failed = len(results) - success
     print(f"\nDone. Success: {success}, Failed: {failed}")

@@ -230,7 +230,6 @@ class APKFontExtractor:
             if font_info is not None:
                 font_info.original_path = original_path
 
-                # types are emitted with their correct suffixes.
                 font_info.extension = extension
                 filename = self._generate_font_filename(font_info)
             else:

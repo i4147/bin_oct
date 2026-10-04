@@ -46,10 +46,6 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
 
-# ---------------------------------------------------------------------------
-# custom2json
-# ---------------------------------------------------------------------------
-
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
 
 
@@ -120,11 +116,6 @@ def cmd_custom2json(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# freeze2json
-# ---------------------------------------------------------------------------
-
-
 def cmd_freeze2json(args: argparse.Namespace) -> int:
     src = Path(args.input)
     dst = Path(args.output)
@@ -139,11 +130,6 @@ def cmd_freeze2json(args: argparse.Namespace) -> int:
         json.dump(result, f, indent=4)
     print(f"Saved {len(result)} packages to {dst}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# jsonl2dict
-# ---------------------------------------------------------------------------
 
 
 def _jsonl_load_list(path: Path) -> list[Any]:
@@ -187,10 +173,6 @@ def cmd_jsonl2dict(args: argparse.Namespace) -> int:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return 0
 
-
-# ---------------------------------------------------------------------------
-# jsonl2json
-# ---------------------------------------------------------------------------
 
 _JSONL_SUFFIXES = {".jsonl", ".ndjson"}
 
@@ -399,11 +381,6 @@ def cmd_jsonl2json(args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
-# ---------------------------------------------------------------------------
-# lowerkeys
-# ---------------------------------------------------------------------------
-
-
 def cmd_lowerkeys(args: argparse.Namespace) -> int:
     path = Path(args.file)
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -414,11 +391,6 @@ def cmd_lowerkeys(args: argparse.Namespace) -> int:
     )
     print(f"Successfully updated {path}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# merge-json (list concat)
-# ---------------------------------------------------------------------------
 
 
 def _unique_path(path: Path) -> Path:
@@ -486,11 +458,6 @@ def cmd_merge_json(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# mergejson (deep merge)
-# ---------------------------------------------------------------------------
-
-
 def _deep_merge(left: Any, right: Any) -> Any:
     if left is None:
         return right
@@ -550,11 +517,6 @@ def cmd_mergejson(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# mime2json
-# ---------------------------------------------------------------------------
-
-
 def _mime_extract(node: Any) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     if isinstance(node, dict):
@@ -605,11 +567,6 @@ def cmd_mime2json(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# sortdict
-# ---------------------------------------------------------------------------
-
-
 def _sortdict_key(line: str) -> str:
     if ":" in line:
         value = line.split(":", 1)[1].strip()
@@ -633,13 +590,8 @@ def cmd_sortdict(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# ss2json
-# ---------------------------------------------------------------------------
-
-
 def cmd_ss2json(args: argparse.Namespace) -> int:
-    import pandas as pd  # local import keeps pandas optional for other subcommands
+    import pandas as pd
 
     src = Path(args.csv)
     df = pd.read_csv(str(src))
@@ -647,11 +599,6 @@ def cmd_ss2json(args: argparse.Namespace) -> int:
     dst = src.with_suffix(".json")
     sorted_df.to_json(str(dst))
     return 0
-
-
-# ---------------------------------------------------------------------------
-# tojson
-# ---------------------------------------------------------------------------
 
 
 def _tojson_parse(path: Path, delimiter: str) -> dict[str, int]:
@@ -664,7 +611,6 @@ def _tojson_parse(path: Path, delimiter: str) -> dict[str, int]:
             if not line or line.startswith("#"):
                 continue
             if delimiter not in line:
-                # Original forced interactive input here; we skip silently
                 print(
                     f"Warning: Line {lineno} doesn't contain delimiter '{delimiter}': {line!r}",
                     file=sys.stderr,
@@ -706,11 +652,6 @@ def cmd_tojson(args: argparse.Namespace) -> int:
     with dst.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=True)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

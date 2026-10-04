@@ -21,7 +21,6 @@ except ImportError:
     print("Install with: pip install tree-sitter tree-sitter-html", file=sys.stderr)
     sys.exit(1)
 
-# Configuration
 HTML_EXTENSIONS = {".html", ".htm", ".xhtml"}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 WORKERS = 8

@@ -253,7 +253,6 @@ class GenericBackend(Backend):
         elif name == "pygithub":
             self._available["pygithub"] = False
         elif name == "typer":
-            # typer is a CLI helper, not a git backend
             self._available["typer"] = False
 
     def _announce_fallback(self, op):

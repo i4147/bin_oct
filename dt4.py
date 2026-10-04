@@ -20,7 +20,6 @@ from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound
 from loguru import logger
 
-# Constants
 DEFAULT_INPUT = "input.txt"
 DEFAULT_OUTPUT = "chunks.json"
 DEFAULT_FAILED = "failed.txt"

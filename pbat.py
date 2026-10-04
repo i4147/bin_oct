@@ -48,9 +48,9 @@ class BatConfig:
     plain: bool = False
     line_range: tuple | None = None
     highlight_lines: set = field(default_factory=set)
-    paging: str = "auto"  # auto | always | never
+    paging: str = "auto"
     tab_width: int = 4
-    color: str = "auto"  # auto | always | never
+    color: str = "auto"
 
     def apply_plain(self):
         if self.plain:

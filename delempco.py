@@ -28,7 +28,6 @@ ANSI_GREEN: Final[str] = "\x1b[32m"
 ANSI_YELLOW: Final[str] = "\x1b[33m"
 ANSI_RED: Final[str] = "\x1b[31m"
 
-# Configuration
 NUM_WORKERS: Final[int] = 8
 MAX_PREVIEW_FILES: Final[int] = 5
 

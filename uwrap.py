@@ -158,7 +158,7 @@ def main() -> None:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1,  # Line-buffered
+                bufsize=1,
             )
 
             for line in process.stdout:

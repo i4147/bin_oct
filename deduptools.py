@@ -44,7 +44,7 @@ def slice_lines(lines: Sequence[str], start: int, end: int) -> str:
 
 @dataclass
 class Declaration:
-    kind: str  # 'assign' | 'function' | 'class' | 'const'
+    kind: str
     name: str
     lineno: int
     end_lineno: int
@@ -169,8 +169,8 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
 
     decls = collect_ast_declarations(tree, lines)
 
-    seen_keys: set[tuple[str, str]] = set()  # (kind, name)
-    seen_hashes: set[tuple[str, str]] = set()  # (kind, content_hash)
+    seen_keys: set[tuple[str, str]] = set()
+    seen_hashes: set[tuple[str, str]] = set()
     dup_ranges: list[tuple[int, int]] = []
     dup_records: list[tuple[Declaration, str]] = []
     ranges_seen: set[tuple[int, int]] = set()

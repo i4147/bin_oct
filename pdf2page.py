@@ -382,14 +382,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not descend into subdirectories.",
     )
 
-    # fitz
     p.add_argument(
         "--sort",
         action="store_true",
         help="Sort text blocks top-to-bottom/left-to-right (fitz backend only).",
     )
 
-    # pdfminer
     p.add_argument(
         "--password",
         default=None,

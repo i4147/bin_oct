@@ -18,19 +18,12 @@ from typing import Any, Iterator
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
 
-# --------------------------------------------------------------------------- #
-#  Hard requirement from the spec: a *fixed* pool of 8 workers.
-# --------------------------------------------------------------------------- #
 WORKERS: int = 8
 
 LOG = logging.getLogger("ncdu2")
 
 
-# =========================================================================== #
-#  Logging
-# =========================================================================== #
 def setup_logging(verbosity: int, logfile: Path | None) -> None:
-    """Configure the root logger. Verbosity: 0=WARNING 1=INFO 2=DEBUG 3=DEBUG+trace."""
     level = {0: logging.WARNING, 1: logging.INFO}.get(verbosity, logging.DEBUG)
     fmt = "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s"
     handlers: list[logging.Handler] = []
@@ -51,7 +44,6 @@ def setup_logging(verbosity: int, logfile: Path | None) -> None:
 
 
 def redirect_logging_to_file(path: Path) -> None:
-    """Move all logging to a file – curses must own the terminal."""
     root = logging.getLogger()
     for h in list(root.handlers):
         root.removeHandler(h)
@@ -66,11 +58,7 @@ def redirect_logging_to_file(path: Path) -> None:
     LOG.info("--- logging redirected to %s (curses UI active) ---", path)
 
 
-# =========================================================================== #
-#  Human-readable helpers
-# =========================================================================== #
 def fmt_size(n: int, si: bool = False) -> str:
-    """Format a byte count the way ncdu does: '  1.2 MiB'."""
     base = 1000.0 if si else 1024.0
     units = (
         ("  B", " kB", " MB", " GB", " TB", " PB", " EB") if si else ("  B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB")
@@ -87,14 +75,6 @@ def fmt_size(n: int, si: bool = False) -> str:
 
 def fmt_count(n: int) -> str:
     return f"{n:,}"
-
-
-# =========================================================================== #
-#  The scan worker (runs in the child processes)
-# =========================================================================== #
-# A scanned node is a plain dict so it pickles fast and small:
-#   {"n": name, "d": is_dir, "s": apparent, "b": disk, "e": err,
-#    "dev": int, "ino": int, "l": nlink, "m": mtime, "c": [children...]}
 
 
 def _stat_to_node(p: Path, st: os.stat_result, is_dir: bool) -> dict[str, Any]:
@@ -115,12 +95,6 @@ def _stat_to_node(p: Path, st: os.stat_result, is_dir: bool) -> dict[str, Any]:
 def scan_subtree(
     path_str: str, root_dev: int, one_filesystem: bool, follow_symlinks: bool, exclude: tuple[str, ...], verbosity: int
 ) -> dict[str, Any]:
-    """
-    Recursively scan *path_str*.  Executed inside a pool worker.
-
-    Returns the node dict for the given path (dir or file).  Never raises:
-    unreadable entries are flagged with ``"e": True``.
-    """
     log = logging.getLogger("ncdu2.worker")
     log.setLevel(logging.DEBUG if verbosity >= 2 else logging.INFO)
     root = Path(path_str)
@@ -170,7 +144,7 @@ def scan_subtree(
             if child.name in exclude:
                 log.debug("excluded by name: %s", child)
                 continue
-            if stat.S_ISLNK(child.lstat().st_mode) if False else False:  # placeholder
+            if stat.S_ISLNK(child.lstat().st_mode) if False else False:
                 continue
             children.append(walk(child))
         node["c"] = children
@@ -190,16 +164,13 @@ def scan_subtree(
     return result
 
 
-# =========================================================================== #
-#  In-memory tree
-# =========================================================================== #
 @dataclass(slots=True)
 class Node:
     name: str
     is_dir: bool
-    size: int = 0  # apparent size, aggregated
-    dsize: int = 0  # disk usage, aggregated
-    own_size: int = 0  # this entry alone
+    size: int = 0
+    dsize: int = 0
+    own_size: int = 0
     own_dsize: int = 0
     items: int = 1
     children: list["Node"] = field(default_factory=list)
@@ -208,10 +179,9 @@ class Node:
     dev: int = 0
     ino: int = 0
     nlink: int = 1
-    dup: bool = False  # hard link already counted elsewhere
+    dup: bool = False
     mtime: float = 0.0
 
-    # ---------------------------------------------------------------- #
     @property
     def path(self) -> Path:
         parts: list[str] = []
@@ -231,7 +201,6 @@ class Node:
 
 
 def build_tree(d: dict[str, Any], parent: Node | None = None) -> Node:
-    """Turn the pickled dict tree from the workers into Node objects."""
     n = Node(
         name=d["n"],
         is_dir=bool(d["d"]),
@@ -250,7 +219,6 @@ def build_tree(d: dict[str, Any], parent: Node | None = None) -> Node:
 
 
 def dedup_hardlinks(root: Node) -> int:
-    """Mark every additional occurrence of a (dev, ino) pair as a duplicate."""
     seen: set[tuple[int, int]] = set()
     dups = 0
     for n in root.iter_all():
@@ -267,7 +235,6 @@ def dedup_hardlinks(root: Node) -> int:
 
 
 def aggregate(node: Node) -> tuple[int, int, int]:
-    """Bottom-up size/item aggregation. Returns (size, dsize, items)."""
     if node.is_dir:
         s = d = 0
         it = 1
@@ -286,16 +253,9 @@ def aggregate(node: Node) -> tuple[int, int, int]:
     return node.size, node.dsize, node.items
 
 
-# =========================================================================== #
-#  Parallel scan driver (8 workers, apply_async)
-# =========================================================================== #
 def parallel_scan(
     root: Path, *, one_filesystem: bool, follow_symlinks: bool, exclude: tuple[str, ...], verbosity: int
 ) -> Node:
-    """
-    Scan *root*: the immediate children are distributed over a Pool of exactly
-    ``WORKERS`` (8) processes with ``apply_async``.
-    """
     root = root.resolve()
     LOG.info("scan root      : %s", root)
     LOG.info("worker processes: %d (fixed)", WORKERS)
@@ -400,11 +360,7 @@ def parallel_scan(
     return root_node
 
 
-# =========================================================================== #
-#  ncdu JSON v2 export / import
-# =========================================================================== #
 def export_json(root: Node, out: Path) -> None:
-    """Write an ncdu-compatible dump: [1, 2, {metadata}, [tree]]."""
     LOG.info("exporting JSON v2 to %s", out)
 
     def enc(n: Node) -> Any:
@@ -431,7 +387,6 @@ def export_json(root: Node, out: Path) -> None:
 
 
 def import_json(path: Path) -> Node:
-    """Read an ncdu v1/v2 export back into a Node tree."""
     LOG.info("importing JSON from %s", path)
     data = json.loads(path.read_text(encoding="utf-8"))
     if not (isinstance(data, list) and len(data) >= 4):
@@ -469,15 +424,10 @@ def import_json(path: Path) -> Node:
     return root
 
 
-# =========================================================================== #
-#  Curses browser
-# =========================================================================== #
 SORT_MODES = ("size", "name", "items", "mtime")
 
 
 class Browser:
-    """The interactive ncdu-style UI."""
-
     def __init__(self, root: Node, *, apparent: bool = False, si: bool = False):
         self.root = root
         self.cur = root
@@ -493,7 +443,6 @@ class Browser:
         self.stack: list[tuple[Node, int, int]] = []
         LOG.info("browser initialised at %s", root.path)
 
-    # ------------------------------------------------------------------ #
     def val(self, n: Node) -> int:
         return n.size if self.apparent else n.dsize
 
@@ -507,18 +456,17 @@ class Browser:
         rev = self.reverse if self.sort != "name" else not self.reverse
         return sorted(self.cur.children, key=key, reverse=rev)
 
-    # ------------------------------------------------------------------ #
     def run(self, scr: "curses._CursesWindow") -> None:
         curses.curs_set(0)
         scr.keypad(True)
         if curses.has_colors():
             curses.start_color()
             curses.use_default_colors()
-            curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)  # header
-            curses.init_pair(2, curses.COLOR_CYAN, -1)  # dirs
-            curses.init_pair(3, curses.COLOR_YELLOW, -1)  # graph
-            curses.init_pair(4, curses.COLOR_RED, -1)  # errors
-            curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)  # selection
+            curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
+            curses.init_pair(2, curses.COLOR_CYAN, -1)
+            curses.init_pair(3, curses.COLOR_YELLOW, -1)
+            curses.init_pair(4, curses.COLOR_RED, -1)
+            curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_WHITE)
         while True:
             items = self.listing()
             self.draw(scr, items)
@@ -528,7 +476,6 @@ class Browser:
                 LOG.info("quitting browser")
                 return
 
-    # ------------------------------------------------------------------ #
     def draw(self, scr, items: list[Node]) -> None:
         scr.erase()
         h, w = scr.getmaxyx()
@@ -589,78 +536,76 @@ class Browser:
         self.message = ""
         scr.refresh()
 
-    # ------------------------------------------------------------------ #
     def handle(self, scr, ch: int, items: list[Node]) -> bool:
         h, _ = scr.getmaxyx()
         body = max(h - 3, 1)
         sel = items[self.cursor] if items else None
 
         match ch:
-            case curses.KEY_UP | 107:  # k
+            case curses.KEY_UP | 107:
                 self.cursor = max(0, self.cursor - 1)
-            case curses.KEY_DOWN | 106:  # j
+            case curses.KEY_DOWN | 106:
                 self.cursor = min(len(items) - 1, self.cursor + 1) if items else 0
             case curses.KEY_NPAGE | 4:
                 self.cursor = min(len(items) - 1, self.cursor + body) if items else 0
             case curses.KEY_PPAGE | 21:
                 self.cursor = max(0, self.cursor - body)
-            case curses.KEY_HOME | 103:  # g
+            case curses.KEY_HOME | 103:
                 self.cursor = 0
-            case curses.KEY_END | 71:  # G
+            case curses.KEY_END | 71:
                 self.cursor = max(len(items) - 1, 0)
             case curses.KEY_RIGHT | 10 | 13 | curses.KEY_ENTER:
                 if sel is not None and sel.is_dir:
                     LOG.info("entering %s", sel.path)
                     self.stack.append((self.cur, self.cursor, self.offset))
                     self.cur, self.cursor, self.offset = sel, 0, 0
-            case curses.KEY_LEFT | 127 | curses.KEY_BACKSPACE | 104:  # h
+            case curses.KEY_LEFT | 127 | curses.KEY_BACKSPACE | 104:
                 if self.stack:
                     self.cur, self.cursor, self.offset = self.stack.pop()
                     LOG.info("back to %s", self.cur.path)
-            case 110:  # n
+            case 110:
                 self.sort = "name"
                 LOG.info("sort by name")
-            case 115:  # s
+            case 115:
                 self.sort = "size"
                 LOG.info("sort by size")
-            case 67:  # C
+            case 67:
                 self.sort = "items"
                 LOG.info("sort by item count")
-            case 77:  # M
+            case 77:
                 self.sort = "mtime"
                 LOG.info("sort by mtime")
-            case 101:  # e
+            case 101:
                 self.do_export(scr)
-            case 105:  # i
+            case 105:
                 if sel:
                     self.info_popup(scr, sel)
-            case 97:  # a
+            case 97:
                 self.apparent = not self.apparent
                 LOG.info("size mode -> %s", "apparent" if self.apparent else "disk")
             case 103 if False:
                 pass
             case 71 if False:
                 pass
-            case 100:  # d
+            case 100:
                 if sel:
                     self.do_delete(scr, sel)
-            case 111:  # o -- toggle order
+            case 111:
                 self.reverse = not self.reverse
-            case 112:  # p
+            case 112:
                 self.show_percent = not self.show_percent
-            case 63:  # ?
+            case 63:
                 self.help_popup(scr)
-            case 114:  # r  (rescan current dir)
+            case 114:
                 self.rescan(scr)
-            case 113 | 27:  # q / ESC
+            case 113 | 27:
                 return False
             case _:
                 pass
-        if ch == ord("g") and self.sort:  # 'g' doubles as graph toggle w/ shift-free
+        if ch == ord("g") and self.sort:
             pass
         return True
 
-    # ------------------------------------------------------------------ #
     def popup(self, scr, title: str, lines: list[str]) -> None:
         h, w = scr.getmaxyx()
         ph = min(len(lines) + 4, h - 2)
@@ -714,7 +659,6 @@ class Browser:
             ],
         )
 
-    # ------------------------------------------------------------------ #
     def confirm(self, scr, question: str) -> bool:
         h, w = scr.getmaxyx()
         scr.addnstr(h - 1, 0, (question + "  [y/N] ").ljust(w)[:w], w, curses.color_pair(4) | curses.A_BOLD)
@@ -737,7 +681,7 @@ class Browser:
             LOG.error("delete failed: %s", exc)
             self.message = f" error: {exc.strerror or exc} "
             return
-        # update the tree: subtract from every ancestor
+
         s, d, it = n.size, n.dsize, n.items
         p = n.parent
         while p is not None:
@@ -760,7 +704,6 @@ class Browser:
             self.message = f" export failed: {exc} "
 
     def rescan(self, scr) -> None:
-        """Re-run the parallel scan for the current directory."""
         target = self.cur.path
         h, w = scr.getmaxyx()
         scr.addnstr(h - 1, 0, f" rescanning {target} with {WORKERS} workers ... ".ljust(w)[:w], w, curses.color_pair(1))
@@ -780,14 +723,11 @@ class Browser:
             self.root = new
         self.cur = new
         self.cursor = self.offset = 0
-        # refresh ancestor aggregates
+
         aggregate(self.root)
         self.message = " rescan complete "
 
 
-# =========================================================================== #
-#  CLI
-# =========================================================================== #
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         prog=PROGNAME, description="ncdu2 - NCurses Disk Usage v2 (Python 3.12, pathlib, 8 workers)"

@@ -388,7 +388,7 @@ class _PycurlStream(StreamResponse):
         finally:
             self._header_done.set()
             try:
-                self._queue.put_nowait(None)  # sentinel
+                self._queue.put_nowait(None)
             except queue.Full:
                 try:
                     self._queue.get_nowait()

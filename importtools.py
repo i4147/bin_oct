@@ -1120,7 +1120,6 @@ def build_parser() -> argparse.ArgumentParser:
     fp.add_argument("--no-color", action="store_true")
     fp.set_defaults(func=cmd_find_py2)
 
-    # transform
     tr = sub.add_parser("transform", help="Rewrite 'import m; m.x' -> 'from m import x'.")
     tr.add_argument("file")
     tr.set_defaults(func=cmd_transform)

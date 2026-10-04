@@ -31,7 +31,7 @@ def get_added_files_per_commit(repo_path: str) -> dict:
                 for item in t.iteritems():
                     name = item.path.decode() if isinstance(item.path, bytes) else item.path
                     full = f"{prefix}{name}"
-                    if item.mode & 0o170000 == 0o040000:  # directory
+                    if item.mode & 0o170000 == 0o040000:
                         stack.append((full + "/", repo[item.sha]))
                     else:
                         files.add(full)

@@ -26,9 +26,6 @@ from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_le
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
 
-# --------------------------------------------------------------------------
-# ANSI / box-drawing constants
-# --------------------------------------------------------------------------
 RESET = "\x1b[0m"
 GRID_COLOR = "\x1b[38;5;238m"
 HEADER_COLOR = "\x1b[38;5;81m"
@@ -42,9 +39,6 @@ BOX_TL, BOX_TR, BOX_BL, BOX_BR = "╭", "╮", "╰", "╯"
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
-# --------------------------------------------------------------------------
-# Configuration
-# --------------------------------------------------------------------------
 @dataclass
 class BatConfig:
     files: list = field(default_factory=list)
@@ -57,9 +51,9 @@ class BatConfig:
     plain: bool = False
     line_range: Optional[tuple] = None
     highlight_lines: set = field(default_factory=set)
-    paging: str = "auto"  # auto | always | never
+    paging: str = "auto"
     tab_width: int = 4
-    color: str = "auto"  # auto | always | never
+    color: str = "auto"
 
     def apply_plain(self):
         if self.plain:
@@ -69,13 +63,7 @@ class BatConfig:
             self.show_changes = False
 
 
-# --------------------------------------------------------------------------
-# Git integration (approximation of bat's libgit2-based diff markers)
-# --------------------------------------------------------------------------
 class GitDiffCalculator:
-    """Determine per-line git status (added / modified / removed) for a file
-    by shelling out to `git diff`."""
-
     def __init__(self, filepath: Path):
         self.filepath = filepath
         self.added: set = set()
@@ -119,7 +107,7 @@ class GitDiffCalculator:
             if result.stdout:
                 self._parse_hunks(result.stdout)
         except Exception:
-            pass  # git integration disabled silently on failure
+            pass
 
     def _parse_hunks(self, diff_text: str):
         for line in diff_text.splitlines():
@@ -156,9 +144,6 @@ class GitDiffCalculator:
         return self.removed_before.get(line_no, 0)
 
 
-# --------------------------------------------------------------------------
-# Printer
-# --------------------------------------------------------------------------
 class Printer:
     def __init__(self, config: BatConfig):
         self.config = config
@@ -185,7 +170,6 @@ class Printer:
             out.write(f"{GRID_COLOR}{BOX_H * width}{RESET}\n")
         return out.getvalue()
 
-    # -- highlighting -----------------------------------------------------
     def _get_lexer(self, filepath, content):
         if self.config.language:
             try:
@@ -229,7 +213,6 @@ class Printer:
             return max(1, s), min(total, e)
         return 1, total
 
-    # -- rendering ----------------------------------------------------------
     def _print_header(self, out, filepath, width):
         name = str(filepath) if filepath else "STDIN"
         title = f" {name} "
@@ -260,9 +243,6 @@ class Printer:
         out.write(f"{prefix} {line_out}\n" if prefix else f"{line_out}\n")
 
 
-# --------------------------------------------------------------------------
-# CLI helpers
-# --------------------------------------------------------------------------
 def parse_line_range(s: str):
     if ":" in s:
         a, b = s.split(":", 1)

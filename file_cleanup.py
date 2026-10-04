@@ -305,7 +305,6 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
         print("✓ No sequential duplicates found.")
         return 0
 
-    # Report
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}📄 {path.name}")
     for lineno, content in dupes:
         print(f"  Line {lineno}: {content}")

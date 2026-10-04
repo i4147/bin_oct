@@ -76,7 +76,7 @@ DEFAULT_SKIP_TESTS = {"test", "tests", "examples"}
 class Entity:
     name: str
     full_name: str
-    type: str  # 'function' | 'class' | 'constant'
+    type: str
     source: str
     path: str
     imports: list[str] = field(default_factory=list)

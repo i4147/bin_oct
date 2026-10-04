@@ -60,7 +60,6 @@ try:
 except ImportError:
     pyzipper = None
 
-
 Compressor = Callable[[Path, Path, Optional[int]], None]
 
 

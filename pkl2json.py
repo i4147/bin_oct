@@ -46,7 +46,7 @@ def main():
     print(f"\nMerging {len(dataframes)} DataFrames...")
     merged_df = pd.concat(dataframes, ignore_index=True)
     print(f"Merged shape: {merged_df.shape}")
-    # Deduplicate
+
     initial_count = len(merged_df)
     merged_df = merged_df.drop_duplicates()
     final_count = len(merged_df)

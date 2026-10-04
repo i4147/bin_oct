@@ -301,10 +301,8 @@ class Simplifier(ast.NodeTransformer):
         node.body = self._simplify_block(node.body)
         node.orelse = self._simplify_block(node.orelse)
 
-        # #8: if True -> if 1, if False -> if 0
         node.test = self._shorten_boolean_constant(node.test)
 
-        # #2: if x: return True; return False -> return bool(x)
         bool_return = self._convert_boolean_return_pattern(node)
         if bool_return is not None:
             return ast.copy_location(bool_return, node)
@@ -354,7 +352,6 @@ class Simplifier(ast.NodeTransformer):
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
         self.generic_visit(node)
 
-        # #1: x = x + y -> x += y
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
@@ -389,7 +386,6 @@ class Simplifier(ast.NodeTransformer):
             if terminated:
                 continue
 
-            # #3: if body terminates, "else:" is unnecessary.
             if isinstance(statement, ast.If) and statement.orelse and block_terminates(statement.body):
                 else_body = statement.orelse
                 statement.orelse = []
@@ -401,7 +397,6 @@ class Simplifier(ast.NodeTransformer):
 
                 continue
 
-            # #4: Merge "if a: if b: body" into "if a and b: body".
             if (
                 isinstance(statement, ast.If)
                 and not statement.orelse
@@ -419,7 +414,6 @@ class Simplifier(ast.NodeTransformer):
 
             output.append(statement)
 
-            # #5: Remove unreachable statements after terminating statements.
             if is_terminating_statement(statement):
                 terminated = True
 

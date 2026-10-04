@@ -11,15 +11,10 @@ from pathlib import Path
 HOME = Path.home()
 cwd = Path.cwd()
 
-# Termux prefix — adjust if you ever change it
 PREFIX = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
 
-# New target for the shebang
 NEW_SHEBANG = f"#!{PREFIX}/bin/python3.12"
 
-# Prefixes we consider "old Python" and want to replace.
-# Anything whose shebang starts with one of these and mentions python
-# will be rewritten.
 OLD_PREFIXES = (
     str(HOME / ".local/bin"),
     str(PREFIX / "bin"),
@@ -32,31 +27,21 @@ OLD_PREFIXES = (
 
 
 def looks_like_python_interpreter(interp: str) -> bool:
-    """True if the interpreter path/command contains 'python'."""
     name = Path(interp).name
     return "python" in name
 
 
 def should_rewrite(interp: str) -> bool:
-    """Decide if we should replace this shebang."""
     if not looks_like_python_interpreter(interp):
         return False
 
-    # If it already points at the new wrapper, skip.
     if interp.strip() == str(PREFIX / "bin/python3.12"):
         return False
 
-    # If it's `python3.12` specifically, we still rewrite to the wrapper
-    # so PYTHONHOME/LD_LIBRARY_PATH get set.
     return True
 
 
 def parse_shebang(first_line: str):
-    """
-    Return interpreter string (without '#!') or None if not a shebang.
-    Handles `#!/usr/bin/env python3` -> 'python3'
-    and `#!/path/to/python3.12 -O` -> '/path/to/python3.12 -O'
-    """
     if not first_line.startswith("#!"):
         return None
     body = first_line[2:].strip()
@@ -68,25 +53,22 @@ def parse_shebang(first_line: str):
         return None
 
     exe = parts[0]
-    # Special case: `env pythonX` → interpreter is the second token
+
     if Path(exe).name == "env" and len(parts) >= 2:
         return parts[1]
     return exe
 
 
 def rewrite_file(path: Path) -> bool:
-    """Rewrite a single file's shebang. Returns True if modified."""
     try:
         data = path.read_bytes()
     except (OSError, PermissionError) as e:
         print(f"  ! cannot read {path}: {e}")
         return False
 
-    # Skip binary files
     if b"\x00" in data[:1024]:
         return False
 
-    # Read first line
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
@@ -106,7 +88,6 @@ def rewrite_file(path: Path) -> bool:
 
     new_content = NEW_SHEBANG + rest
 
-    # Preserve mode; write atomically-ish
     try:
         mode = path.stat().st_mode
         tmp = path.with_suffix(path.suffix + ".shebang.tmp")
@@ -133,7 +114,7 @@ def main():
     for path in sorted(cwd.iterdir()):
         if not path.is_file():
             continue
-        # Only executable files
+
         if not os.access(path, os.X_OK):
             continue
         scanned += 1

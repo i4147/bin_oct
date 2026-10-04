@@ -1033,7 +1033,6 @@ def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
 
 
 EXT_TO_FMT: dict[str, str] = {
-    # core
     ".csv": "csv",
     ".tsv": "csv",
     ".json": "json",
@@ -1049,14 +1048,12 @@ EXT_TO_FMT: dict[str, str] = {
     ".xls": "xls",
     ".xlsb": "xlsb",
     ".ods": "ods",
-    # columnar
     ".parquet": "parquet",
     ".pq": "parquet",
     ".feather": "feather",
     ".orc": "orc",
     ".arrow": "arrow",
     ".ipc": "arrow",
-    # serialization
     ".yaml": "yaml",
     ".yml": "yaml",
     ".toml": "toml",
@@ -1067,7 +1064,6 @@ EXT_TO_FMT: dict[str, str] = {
     ".mp": "msgpack",
     ".avro": "avro",
     ".bson": "bson",
-    # scientific
     ".h5": "hdf5",
     ".hdf5": "hdf5",
     ".nc": "netcdf",
@@ -1078,12 +1074,9 @@ EXT_TO_FMT: dict[str, str] = {
     ".dta": "dta",
     ".sav": "sav",
     ".sas7bdat": "sas7bdat",
-    # dbase
     ".dbf": "dbf",
-    # geo
     ".geojson": "geojson",
     ".shp": "shapefile",
-    # misc
     ".ini": "ini",
     ".fw": "fixedwidth",
     ".fixed": "fixedwidth",
@@ -1125,23 +1118,19 @@ FMT_TO_EXT: dict[str, str] = {
 }
 
 LOADERS: dict[str, Callable[[Path], Tables]] = {
-    # core
     "csv": load_csv,
     "json": load_json,
     "jsonl": load_jsonl,
     "db": load_db,
     "sql": load_sql,
-    # excel
     "xlsx": load_xlsx,
     "xls": load_xls,
     "xlsb": load_xlsb,
     "ods": load_ods,
-    # columnar
     "parquet": load_parquet,
     "feather": load_feather,
     "orc": load_orc,
     "arrow": load_arrow,
-    # serialization
     "yaml": load_yaml,
     "toml": load_toml,
     "xml": load_xml,
@@ -1149,7 +1138,6 @@ LOADERS: dict[str, Callable[[Path], Tables]] = {
     "msgpack": load_msgpack,
     "avro": load_avro,
     "bson": load_bson,
-    # scientific
     "hdf5": load_hdf5,
     "netcdf": load_netcdf,
     "zarr": load_zarr,
@@ -1157,32 +1145,25 @@ LOADERS: dict[str, Callable[[Path], Tables]] = {
     "dta": load_dta,
     "sav": load_sav,
     "sas7bdat": load_sas7bdat,
-    # dbase
     "dbf": load_dbf,
-    # geo
     "geojson": load_geojson,
     "shapefile": load_shapefile,
-    # misc
     "ini": load_ini,
     "fixedwidth": load_fixed_width,
 }
 
 WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
-    # core
     "csv": write_csv,
     "json": write_json,
     "jsonl": write_jsonl,
     "db": write_db,
     "sql": write_sql,
-    # excel
     "xlsx": write_xlsx,
     "ods": write_ods,
-    # columnar
     "parquet": write_parquet,
     "feather": write_feather,
     "orc": write_orc,
     "arrow": write_arrow,
-    # serialization
     "yaml": write_yaml,
     "toml": write_toml,
     "xml": write_xml,
@@ -1190,18 +1171,14 @@ WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
     "msgpack": write_msgpack,
     "avro": write_avro,
     "bson": write_bson,
-    # scientific
     "hdf5": write_hdf5,
     "netcdf": write_netcdf,
     "zarr": write_zarr,
     "rds": write_rds,
     "dta": write_dta,
-    # dbase
     "dbf": write_dbf,
-    # geo
     "geojson": write_geojson,
     "shapefile": write_shapefile,
-    # misc
     "ini": write_ini,
     "fixedwidth": write_fixed_width,
 }

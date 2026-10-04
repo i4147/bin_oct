@@ -703,7 +703,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     filename: Optional[str] = safe_filename(args.output) if args.output else None
     expected_hash = args.sha256
 
-    # probe
     try:
         r = requests.head(url, allow_redirects=True, timeout=15)
         r.raise_for_status()

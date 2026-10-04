@@ -37,7 +37,6 @@ except ImportError:
     REGEX_AVAILABLE = False
     regex = re
 
-# Constants
 SUPPORTED_EXTENSIONS: set[str] = {".html", ".htm"}
 WORKERS: int = 8
 CHUNK_SIZE: int = 8192

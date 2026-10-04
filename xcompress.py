@@ -479,7 +479,6 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if src.is_file():
         return 0 if _compress_one_file(src, codec, level, args.keep, args.verify, out_dir) else 1
 
-    # Directory
     if args.recursive:
         targets = [p for p in sorted(src.rglob("*")) if p.is_file() and not is_archive(p)]
         if not targets:
@@ -611,7 +610,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
             return 1
         return 0 if _decompress_one_file(src, codec, args.keep, out_dir) else 1
 
-    # Directory
     if args.recursive:
         candidates = [p for p in sorted(src.rglob("*")) if p.is_file() and is_archive(p)]
     else:
@@ -706,7 +704,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
         print(f"Compressed {sum(results)}/{len(dirs)}")
         return 0
 
-    # decompress
     archives = [
         a for p in paths if p.is_dir() for a in p.iterdir() if a.is_file() and a.name.endswith(f".tar{codec.ext}")
     ]

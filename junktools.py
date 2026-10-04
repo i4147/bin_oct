@@ -117,11 +117,6 @@ def _remove_path(path: Path) -> tuple[str, int]:
     return str(path), 0
 
 
-# ---------------------------------------------------------------------------
-# os-junk
-# ---------------------------------------------------------------------------
-
-
 def cmd_os_junk(args: argparse.Namespace) -> int:
     base = Path.cwd()
     print(f"Scanning directory: {base}\n")
@@ -156,11 +151,6 @@ def cmd_os_junk(args: argparse.Namespace) -> int:
                 print(f"Error deleting {p}: {exc}")
         print(f"\nDeleted {count} of {len(found)} files.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# darwin
-# ---------------------------------------------------------------------------
 
 
 def _darwin_match(path: Path, patterns: Sequence[str]) -> bool:
@@ -211,11 +201,6 @@ def cmd_darwin(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# caches
-# ---------------------------------------------------------------------------
-
-
 def _cache_candidates(root: Path) -> Iterator[Path]:
     try:
         for entry in root.iterdir():
@@ -223,8 +208,6 @@ def _cache_candidates(root: Path) -> Iterator[Path]:
                 yield entry
             elif entry.is_dir() and not entry.is_symlink():
                 if entry.name in _CACHE_DIRS:
-                    # Note: original refused to delete cache dirs living directly
-                    # inside site-packages; preserved behind --allow-site-packages.
                     if entry.parent.name == "site-packages":
                         print(f"not allowed: {entry}")
                         continue
@@ -255,11 +238,6 @@ def cmd_caches(_args: argparse.Namespace) -> int:
     with multiprocessing.Pool() as pool:
         pool.map(_remove_one, targets)
     return 0
-
-
-# ---------------------------------------------------------------------------
-# empty-files
-# ---------------------------------------------------------------------------
 
 
 def _iter_empty_files(root: Path, exclude: set[str]) -> Iterator[Path]:
@@ -323,11 +301,6 @@ def cmd_empty_files(args: argparse.Namespace) -> int:
             print(f"Failed to remove {p}: {exc}", file=sys.stderr)
     print(f"Deleted: {removed}, Failed: {failed}")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# empty-dirs
-# ---------------------------------------------------------------------------
 
 
 def _is_excluded_dir(path: Path, root: Path, name_ex: set[str], part_ex: set[str]) -> bool:
@@ -408,11 +381,6 @@ def cmd_empty_dirs(args: argparse.Namespace) -> int:
     return 0
 
 
-# ---------------------------------------------------------------------------
-# twins
-# ---------------------------------------------------------------------------
-
-
 def cmd_twins(args: argparse.Namespace) -> int:
     root = Path.cwd()
     ext1 = args.ext1 if args.ext1.startswith(".") else "." + args.ext1
@@ -464,11 +432,6 @@ def cmd_twins(args: argparse.Namespace) -> int:
     else:
         print("Dry run only. No files removed.")
     return 0
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_parser() -> argparse.ArgumentParser:

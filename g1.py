@@ -223,7 +223,6 @@ class TyperBackend:
 
     def __init__(self) -> None:
 
-        # typer-based code path for environments where it is installed.
         self._fallback = SubprocessBackend(prefer_gh=False)
 
     def clone(

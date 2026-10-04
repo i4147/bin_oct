@@ -393,7 +393,6 @@ def make_backend(name: str, repo: Path) -> GitBackend:
     if name == "gh":
         return GhBackend(repo)
     if name == "typer":
-        # typer is a CLI framework, not a git backend -> alias to subprocess.
         return GitBackend(repo)
     msg = f"Unknown backend: {name!r}"
     raise ValueError(msg)
@@ -823,7 +822,6 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
         sys.stdout.buffer.write(r.stdout)
         return 0
 
-    # smudge
     data = sys.stdin.buffer.read()
     if not data.lstrip().startswith(b"-----BEGIN AGE ENCRYPTED FILE-----"):
         sys.stdout.buffer.write(data)

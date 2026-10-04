@@ -110,7 +110,7 @@ def process_file(path_str: str) -> tuple[str, str | None, bool]:
 
     try:
         new_code = module.visit(TypeAnnotationRemover()).code
-    except Exception as exc:  # defensive
+    except Exception as exc:
         return path_str, f"transform failed: {exc!r}", False
 
     if new_code == source:

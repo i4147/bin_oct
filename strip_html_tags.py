@@ -79,7 +79,6 @@ def _find_safe_splits(path: Path, n: int) -> list[int]:
             pos += 1
             if raw_until_close is not None:
                 if b == ord("<"):
-                    # peek
                     end = buf_start + len(buf)
                     window = buf[pos - 1 - buf_start : pos - 1 - buf_start + 16]
                     if window.lower().startswith(raw_until_close):

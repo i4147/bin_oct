@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-# Configuration
 NUM_WORKERS = 8
 ASSETS_DIR_NAME = "assets"
 CSS_SUBDIR = "css"
@@ -40,7 +39,7 @@ class HTMLExtractor(html.parser.HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=False)
         self.reset_state()
-        self.extractions: list[tuple[str, str, dict]] = []  # (type, content, attrs)
+        self.extractions: list[tuple[str, str, dict]] = []
 
     def reset_state(self):
         self.current_tag = None
@@ -155,7 +154,7 @@ def extract_assets_from_html(html_content: str, html_path: Path, assets_base_dir
             rel_path = rel_assets_path / CSS_SUBDIR
             css_count += 1
 
-        else:  # js
+        else:
             target_dir = js_dir
             extension = ".js"
             base_name = f"{html_stem}_{content_hash}"

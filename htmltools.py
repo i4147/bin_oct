@@ -844,7 +844,6 @@ def _process_standalone_html(html_str: str) -> bool:
         if got:
             img["src"] = to_data_uri(got[0], got[1])
 
-    # srcset
     for tag in soup.find_all(srcset=True):
         parts = []
         for entry in tag["srcset"].split(","):
@@ -1130,7 +1129,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    # bundle
     b = sub.add_parser("bundle", help="Extract all assets and build single_page_local.html")
     b.add_argument("--output-dir", default="output")
     b.add_argument("--assets-dir", default="assets")
@@ -1152,21 +1150,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     b.set_defaults(func=cmd_bundle)
 
-    # inline
     i = sub.add_parser("inline", help="Inline local/remote assets into HTML/CSS files in place")
     i.add_argument("paths", nargs="*", default=["."])
     i.add_argument("--timeout", type=int, default=15)
     i.add_argument("--workers", type=int, default=8)
     i.set_defaults(func=cmd_inline)
 
-    # isolate
     s = sub.add_parser("isolate", help="Produce a <name>_standalone.html with local assets embedded")
     s.add_argument("input")
     s.add_argument("-o", "--output")
     s.add_argument("-v", "--verbose", action="store_true")
     s.set_defaults(func=cmd_isolate)
 
-    # standalone
     st = sub.add_parser("standalone", help="Multi-process standalone builder with remote cache")
     st.add_argument("paths", nargs="*")
     st.add_argument("--workers", type=int, default=8)
@@ -1179,14 +1174,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     st.set_defaults(func=cmd_standalone)
 
-    # mhtml
     m = sub.add_parser("mhtml", help="Convert .mhtml to .html + <stem>_files/ directory")
     m.add_argument("inputs", nargs="*", help="One or more .mhtml files (default: *.mhtml in cwd)")
     m.add_argument("-o", "--output", help="Output HTML path (single input only)")
     m.add_argument("--files-dir", help="Output directory for extracted resources")
     m.set_defaults(func=cmd_mhtml)
 
-    # css
     c = sub.add_parser("css", help="Inline @import and url() fonts in a CSS file")
     c.add_argument("input")
     c.add_argument("-o", "--output")

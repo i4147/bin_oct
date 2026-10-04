@@ -595,7 +595,7 @@ def _cmd_imports_autoflake(args: argparse.Namespace) -> int:
 @dataclass
 class DefItem:
     name: str
-    kind: str  # 'func' | 'class' | 'const'
+    kind: str
     file: Path
     lineno: int
     end_lineno: int

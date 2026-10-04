@@ -441,7 +441,6 @@ def _translate_python_source(text: str, translator: GoogleTranslator, chunk_size
                 out.append(_translate_long_text(line, translator, chunk_size))
             continue
 
-        # Inline # comment.
         if "#" in line:
             code, comment = line.split("#", 1)
             translated = _translate_long_text(comment, translator, chunk_size)

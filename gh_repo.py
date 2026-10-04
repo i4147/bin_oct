@@ -1110,7 +1110,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # api
     p = sub.add_parser("api", help="Create a repo via API (mkghrepo.py).")
     p.add_argument("repo_name", help="Name of the new repository.")
     p.add_argument(

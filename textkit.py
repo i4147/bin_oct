@@ -201,7 +201,6 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
     if mode == "alnum":
         return [t for t in _ALNUM_RE.findall(text) if len(t) >= min_length]
 
-    # default: "regex"
     return [t for t in _WORD_RE.findall(text) if len(t) >= min_length]
 
 
@@ -458,7 +457,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
                 fh.write(f"{ch}\n")
     print(f"\u2713 Saved to {out_path.resolve()}")
 
-    # Statistics
     ascii_count = sum(1 for c in unique_chars if ord(c) < 128)
     ctrl_count = sum(1 for c in unique_chars if ord(c) < 32)
     ws_count = sum(1 for c in unique_chars if c.isspace())

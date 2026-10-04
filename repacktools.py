@@ -393,7 +393,7 @@ def build_wheel_from_record(
 
     sp = pkg.site_packages
     missing: list[str] = []
-    resolved: list[tuple[Path, str]] = []  # (src, relpath in wheel)
+    resolved: list[tuple[Path, str]] = []
 
     for rel, _h, _sz in rows:
         if not rel or rel.endswith("RECORD") or rel.startswith(("../", "/")):

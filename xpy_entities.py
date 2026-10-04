@@ -227,7 +227,7 @@ class ASTExtractor(ast.NodeVisitor):
         self.source = source
         self.lines = source.splitlines(keepends=True)
         self.path = path
-        self.scope = scope  # "all" | "top-level"
+        self.scope = scope
         self.entities: list[Entity] = []
         self.imports: list[str] = []
         self._class_stack: list[str] = []

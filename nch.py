@@ -210,7 +210,7 @@ def walk_items(cfg: Config, include_dirs: bool = True, include_files: bool = Tru
 
 @dataclass
 class Decision:
-    kind: str  # 'skip_exec' | 'skip_correct' | 'change' | 'error'
+    kind: str
     path: Path
     current: Optional[int]
     target: Optional[int]
@@ -226,7 +226,6 @@ def decide(cfg: Config, kind: str, path: Path) -> Decision:
             return Decision("skip_correct", path, cur, cfg.dir_mode)
         return Decision("change", path, cur, cfg.dir_mode)
 
-    # Files
     if is_executable(path):
         if cfg.preserve_existing_exec:
             return Decision("skip_exec", path, mode_of(path), None, "already executable")
@@ -269,7 +268,7 @@ class Stats:
             "files_changed",
             "files_made_exec",
             "files_deexeced",
-            "files_kept_exec",  # NEW
+            "files_kept_exec",
             "skipped",
             "errors",
             "permission_errors",
@@ -353,7 +352,6 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
                     s.errors += 1
             continue
 
-        # file
         if is_executable(path):
             s.skipped += 1
             continue
@@ -484,7 +482,7 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
             "[FILE]": [],
             "[DEEXEC]": [],
             "[DEEXEC*]": [],
-            "[KEEP]": [],  # NEW
+            "[KEEP]": [],
             "[PERM]": [],
             "[ERR]": [],
         }
@@ -500,7 +498,7 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
             ("[FILE]", "Files normalized"),
             ("[DEEXEC]", "Files de-execed"),
             ("[DEEXEC*]", "Files to de-exec (dry-run)"),
-            ("[KEEP]", "Files kept executable (bin/sbin)"),  # NEW
+            ("[KEEP]", "Files kept executable (bin/sbin)"),
             ("[PERM]", "Permission errors"),
             ("[ERR]", "Errors"),
         ):
@@ -696,7 +694,7 @@ def build_config(args: argparse.Namespace) -> Config:
         file_mode=args.file_mode,
         exec_mode=args.exec_mode,
         deexec_patterns=patterns,
-        keep_exec_parents=keep,  # NEW
+        keep_exec_parents=keep,
     )
 
 

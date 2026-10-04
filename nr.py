@@ -18,20 +18,15 @@ from loguru import logger
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
 ENV_FILE = Path.home() / ".env"
 GITHUB_API_BASE = "https://api.github.com"
 
-GIT_LOCAL_TIMEOUT = 30  # git commands that don't touch the network
-GIT_NETWORK_TIMEOUT = 600  # pushes / fetches can be slow
+GIT_LOCAL_TIMEOUT = 30
+GIT_NETWORK_TIMEOUT = 600
 HTTP_TIMEOUT = 15
 
 DEFAULT_BRANCH = "main"
 DEFAULT_COMMIT_MSG = "Initial commit"
-
 
 logger.remove()
 logger.add(
@@ -39,11 +34,6 @@ logger.add(
     format="<level>{level: <8}</level> | <level>{message}</level>",
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
 )
-
-
-# ============================================================================
-# HTTP SESSION (with retries for transient failures)
-# ============================================================================
 
 
 def _build_session() -> requests.Session:
@@ -70,13 +60,7 @@ def _gh_headers(token: str) -> dict:
     }
 
 
-# ============================================================================
-# TOKEN / API
-# ============================================================================
-
-
 def load_github_token() -> str:
-    """Load GITHUB_TOKEN from env var (preferred) or ~/.env."""
     env_token = os.environ.get("GITHUB_TOKEN", "").strip()
     if env_token:
         logger.info("Using GITHUB_TOKEN from environment")
@@ -151,9 +135,6 @@ def create_github_repo(
     private: bool = False,
     description: Optional[str] = None,
 ) -> str:
-    """
-    Create (or reuse) a GitHub repo. Returns an SSH clone URL.
-    """
     payload: dict = {"name": repo_name, "private": private}
     if description:
         payload["description"] = description
@@ -171,7 +152,6 @@ def create_github_repo(
         return data.get("ssh_url") or data["clone_url"]
 
     if r.status_code == 422:
-        # Most commonly: repo already exists. Reuse it rather than aborting.
         logger.warning(f"Repo '{user_login}/{repo_name}' already exists on GitHub — reusing it.")
         return f"git@github.com:{user_login}/{repo_name}.git"
 
@@ -185,21 +165,12 @@ def create_github_repo(
     raise requests.RequestException(msg)
 
 
-# ============================================================================
-# GIT HELPERS
-# ============================================================================
-
-
 def run_git_command(
     cmd: list,
     cwd: Optional[Path] = None,
     check: bool = True,
     timeout: Optional[int] = None,
 ) -> tuple[str, int]:
-    """
-    Run a git command. Returns (stdout, returncode). If check=True (default),
-    raises RuntimeError on any non-zero exit.
-    """
     timeout = timeout or GIT_LOCAL_TIMEOUT
     try:
         result = subprocess.run(
@@ -227,7 +198,7 @@ def run_git_command(
 
 
 def is_git_repo(cwd: Path) -> bool:
-    # `.git` can be a directory (normal) or a file (worktree / submodule).
+
     return (cwd / ".git").exists()
 
 
@@ -241,7 +212,6 @@ _GH_HTTPS_RE = re.compile(r"^https?://(?:[^@/]+@)?github\.com/([^/]+)/(.+?)(?:\.
 
 
 def parse_github_url(url: str) -> tuple[str, str]:
-    """Return (owner, repo) for a GitHub URL; raise ValueError otherwise."""
     for rx in (_GH_SSH_RE, _GH_HTTPS_RE):
         m = rx.match(url)
         if m:
@@ -251,7 +221,6 @@ def parse_github_url(url: str) -> tuple[str, str]:
 
 
 def validate_repo_name(name: str) -> None:
-    """Enforce GitHub's repo-name rules."""
     if not name:
         msg = "Repository name is empty"
         raise ValueError(msg)
@@ -270,11 +239,6 @@ def validate_repo_name(name: str) -> None:
     if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
         msg = f"Invalid repo name '{name}': use only letters, digits, '.', '-', '_'"
         raise ValueError(msg)
-
-
-# ============================================================================
-# FILES / REPO SETUP
-# ============================================================================
 
 
 def copy_gitignore(cwd: Path) -> None:
@@ -309,10 +273,9 @@ def _warn_if_missing_identity(cwd: Path) -> None:
 
 
 def initialize_git_repo(cwd: Path, remote_url: str) -> None:
-    """Init the local repo (if needed) and set origin remote."""
     if not is_git_repo(cwd):
         logger.info("Initializing git repository...")
-        # Modern git: `init -b main`. Fall back for older versions.
+
         _, rc = run_git_command(["git", "init", "-b", DEFAULT_BRANCH], cwd, check=False)
         if rc != 0:
             run_git_command(["git", "init"], cwd)
@@ -336,8 +299,7 @@ def initialize_git_repo(cwd: Path, remote_url: str) -> None:
 
 
 def commit_and_push(cwd: Path, commit_message: str = DEFAULT_COMMIT_MSG) -> None:
-    """Stage, commit (if needed), and push to origin/main."""
-    # Ensure symbolic HEAD points at the target branch before first commit.
+
     _, has_head = run_git_command(["git", "rev-parse", "--verify", "HEAD"], cwd, check=False)
     if has_head != 0:
         run_git_command(
@@ -362,7 +324,6 @@ def commit_and_push(cwd: Path, commit_message: str = DEFAULT_COMMIT_MSG) -> None
     else:
         logger.info("No changes to commit (working tree clean)")
 
-    # Make sure we're on the intended branch.
     current, _ = run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd)
     if current != DEFAULT_BRANCH:
         logger.info(f"Renaming branch '{current}' → '{DEFAULT_BRANCH}'")
@@ -381,11 +342,6 @@ def commit_and_push(cwd: Path, commit_message: str = DEFAULT_COMMIT_MSG) -> None
         raise
 
     logger.info(f"✓ Pushed to origin/{DEFAULT_BRANCH}")
-
-
-# ============================================================================
-# MAIN
-# ============================================================================
 
 
 def _sanity_check_environment(cwd: Path) -> Optional[int]:
@@ -479,7 +435,6 @@ Examples:
         if not args.no_gitignore:
             copy_gitignore(cwd)
 
-        # ---------- Existing repo handling ----------
         remote_url: Optional[str] = None
 
         if is_git_repo(cwd):
@@ -510,7 +465,6 @@ Examples:
             else:
                 logger.info("Git repo exists but no remote configured")
 
-        # ---------- Create / reuse GitHub repo ----------
         if not remote_url:
             logger.info(f"Creating GitHub repo: {current_user}/{repo_name}")
             remote_url = create_github_repo(
@@ -522,7 +476,6 @@ Examples:
             )
             initialize_git_repo(cwd, remote_url)
 
-        # ---------- Commit & push ----------
         commit_and_push(cwd, args.message)
 
         try:
@@ -545,7 +498,7 @@ Examples:
     except RuntimeError as e:
         logger.error(str(e))
         return 1
-    except Exception as e:  # last-resort safety net
+    except Exception as e:
         logger.error(f"Unexpected error: {type(e).__name__}: {e}")
         return 1
 

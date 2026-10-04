@@ -167,7 +167,7 @@ class TaskResult:
     original_size: int = 0
     processed_size: int = 0
     success: bool = False
-    operation: str = "compress"  # 'compress' | 'decompress'
+    operation: str = "compress"
     duration: float = 0.0
     error: Optional[str] = None
     output: Optional[Path] = None

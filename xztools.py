@@ -78,7 +78,6 @@ DEFAULT_SKIP_DIRS: set[str] = {
 }
 
 DEFAULT_SKIP_EXTS: set[str] = {
-    # archives
     ".zip",
     ".br",
     ".xz",
@@ -893,7 +892,6 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
             archive.unlink()
         return 1
 
-    # Verify
     try:
         with tarfile.open(archive, "r:xz") as tar:
             names = tar.getnames()

@@ -71,7 +71,7 @@ def load_toml(path: Path) -> dict[str, Any]:
         die(f"file not found: {path}")
     except Exception as exc:  # noqa: BLE001
         die(f"invalid TOML in {path}: {exc}")
-    return {}  # unreachable
+    return {}
 
 
 def py_repr(value: Any) -> str:
@@ -1407,7 +1407,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
         else:
             (d / "__init__.py").touch(exist_ok=True)
 
-    # pyproject
     pyproject = project / "pyproject.toml"
     if pyproject.exists():
         info("  pyproject.toml already exists")
@@ -1415,7 +1414,6 @@ def cmd_dev(args: argparse.Namespace) -> int:
         pyproject.write_text(DEV_PYPROJECT.format(name=project.name), encoding="utf-8")
         info("  Created: pyproject.toml")
 
-    # requirements
     (project / "requirements.txt").touch(exist_ok=True)
     (project / "requirements-dev.txt").write_text(
         "# Development dependencies\n" + "\n".join(DEV_PACKAGES) + "\n",
@@ -1514,7 +1512,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # init
     p_init = sub.add_parser("init", help="Scaffold a new Python project.")
     p_init.add_argument("name", help="Project / package directory name.")
     p_init.add_argument(
@@ -1562,7 +1559,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_ct.add_argument("--preview", action="store_true")
     p_ct.set_defaults(func=cmd_cargo_toml)
 
-    # dev
     p_dev = sub.add_parser("dev", help="Bootstrap dev environment.")
     p_dev.add_argument("path", nargs="?", default=".")
     p_dev.add_argument(
