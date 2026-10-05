@@ -71,6 +71,8 @@ def main() -> None:
             "license-third-party",
             "llvm-exception.txt",
             "mit.txt",
+            "license.md.pre",
+            "license.python",
             "ncsa.txt",
             "ofl-1.1.txt",
             "author",

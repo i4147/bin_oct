@@ -1,7 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -12,7 +10,7 @@ import time
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Optional, Sequence
+from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 import brotli
 
@@ -20,7 +18,13 @@ try:
     from rich import box
     from rich.console import Console
     from rich.panel import Panel
-    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
     from rich.table import Table
     from rich.text import Text
 
@@ -29,10 +33,11 @@ except ImportError:
     RICH_AVAILABLE = False
     print("💡 Tip: Install 'rich' for prettier output: pip install rich")
 
+
 DEFAULT_CHUNK_SIZE: int = 1024 * 1024
 MIN_CHUNK_SIZE: int = 4096
 
-EXCLUDED_EXTENSIONS: set[str] = {
+EXCLUDED_EXTENSIONS: Set[str] = {
     ".br",
     ".xz",
     ".zst",
@@ -112,7 +117,7 @@ EXCLUDED_EXTENSIONS: set[str] = {
     ".qcow2",
 }
 
-EXCLUDED_DIRS: set[str] = {".git", ".svn", ".hg", "__pycache__", "node_modules", ".venv", "venv", ".env"}
+EXCLUDED_DIRS: Set[str] = {".git", ".svn", ".hg", "__pycache__", "node_modules", ".venv", "venv", ".env"}
 
 
 @dataclass
@@ -156,27 +161,17 @@ def decompressed_output_path(path: Path) -> Path:
     return path.with_name(path.name + ".out")
 
 
-def roots_display(roots: Sequence[Path]) -> str:
-    if len(roots) == 1:
-        return str(roots[0])
-    head: str = ", ".join(str(r) for r in roots[:3])
-    tail: str = f" (+{len(roots) - 3} more)" if len(roots) > 3 else ""
-    return f"{len(roots)} paths: {head}{tail}"
-
-
-def relative_display(path: Path, roots: Sequence[Path]) -> str:
-    for root in roots:
-        try:
-            return str(path.relative_to(root))
-        except ValueError:
-            continue
-    return str(path)
+def relative_display(path: Path, directory: Path) -> str:
+    try:
+        return str(path.relative_to(directory))
+    except ValueError:
+        return str(path)
 
 
 def stream_compress(
     input_path: Path, output_path: Path, quality: int, chunk_size: int, flush_each_chunk: bool, hash_input: bool
-) -> tuple[int, Optional[str]]:
-    compressor = brotlicffi.Compressor(quality=quality)
+) -> Tuple[int, Optional[str]]:
+    compressor = brotli.Compressor(quality=quality)
     hasher = hashlib.sha256() if hash_input else None
     written: int = 0
 
@@ -189,7 +184,7 @@ def stream_compress(
             if hasher is not None:
                 hasher.update(chunk)
 
-            payload: bytes = compressor.compress(chunk)
+            payload: bytes = compressor.process(chunk)
             if flush_each_chunk:
                 payload += compressor.flush()
             if payload:
@@ -206,8 +201,8 @@ def stream_compress(
 
 def stream_decompress(
     input_path: Path, output_path: Optional[Path], chunk_size: int, allow_truncated: bool, hash_output: bool
-) -> tuple[int, Optional[str]]:
-    decompressor = brotlicffi.Decompressor()
+) -> Tuple[int, Optional[str]]:
+    decompressor = brotli.Decompressor()
     hasher = hashlib.sha256() if hash_output else None
     written: int = 0
     f_out = open(output_path, "wb") if output_path is not None else None
@@ -219,7 +214,7 @@ def stream_decompress(
                 if not chunk:
                     break
 
-                payload: bytes = decompressor.decompress(chunk)
+                payload: bytes = decompressor.process(chunk)
                 if payload:
                     if f_out is not None:
                         f_out.write(payload)
@@ -231,13 +226,12 @@ def stream_decompress(
             f_out.close()
 
     if not decompressor.is_finished() and not allow_truncated:
-        msg = "Incomplete Brotli stream (missing end-of-stream marker)"
-        raise ValueError(msg)
+        raise ValueError("Incomplete Brotli stream (missing end-of-stream marker)")
 
     return written, hasher.hexdigest() if hasher is not None else None
 
 
-def tar_directory(directory: Path, output_path: Path, delete_original: bool = False) -> tuple[int, bool]:
+def tar_directory(directory: Path, output_path: Path, delete_original: bool = False) -> Tuple[int, bool]:
     try:
         with tarfile.open(output_path, "w") as tar:
             tar.add(directory, arcname=directory.name)
@@ -293,8 +287,7 @@ def compress_file_streaming(
         if verify:
             check_size, check_digest = stream_decompress(output_path, None, chunk_size, False, True)
             if check_size != original_size or check_digest != source_digest:
-                msg = "Verification failed: round-trip does not match source"
-                raise ValueError(msg)
+                raise ValueError("Verification failed: round-trip does not match source")
 
         original_deleted: bool = False
         if not keep_original and output_path.exists():
@@ -401,19 +394,20 @@ def untar_file(tar_path: Path, extract_dir: Path, delete_tar: bool = False) -> b
         return False
 
 
-def find_subdirs_to_tar(roots: Sequence[Path], exclude_patterns: Optional[list[str]] = None) -> list[Path]:
-    patterns: list[str] = exclude_patterns or []
-    subdirs: list[Path] = []
-    for root in roots:
-        if not root.is_dir():
+def find_subdirs_to_tar(directories: Sequence[Path], exclude_patterns: Optional[List[str]] = None) -> List[Path]:
+    patterns: List[str] = exclude_patterns or []
+    subdirs: List[Path] = []
+    for directory in directories:
+        if not directory.is_dir():
             continue
-        for d in root.iterdir():
-            if d.is_dir() and not d.is_symlink():
-                if any(pattern in str(d) for pattern in patterns):
-                    continue
-                if d.name in EXCLUDED_DIRS:
-                    continue
-                subdirs.append(d)
+        for d in directory.iterdir():
+            if not d.is_dir() or d.is_symlink():
+                continue
+            if d.name in EXCLUDED_DIRS:
+                continue
+            if patterns and any(pattern in str(d) for pattern in patterns):
+                continue
+            subdirs.append(d)
     return sorted(set(subdirs))
 
 
@@ -430,16 +424,14 @@ def report_tar_result(result: CompressionResult, index: int, total: int) -> None
 
 
 def process_subdirs_with_tar(
-    roots: Sequence[Path],
+    subdirs: List[Path],
     quality: int = 11,
     workers: int = 4,
     keep_original: bool = False,
-    exclude_patterns: Optional[list[str]] = None,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     verify: bool = False,
-) -> list[CompressionResult]:
-    results: list[CompressionResult] = []
-    subdirs: list[Path] = find_subdirs_to_tar(roots, exclude_patterns)
+) -> List[CompressionResult]:
+    results: List[CompressionResult] = []
 
     if not subdirs:
         print("📁 No subdirectories found to tar")
@@ -448,8 +440,8 @@ def process_subdirs_with_tar(
     print(f"📁 Found {len(subdirs)} subdirectories to tar first")
     print("🗜️  Step 1: Creating tar archives of subdirectories...")
 
-    tar_files: list[Path] = []
-    tar_errors: list[tuple[Path, str]] = []
+    tar_files: List[Path] = []
+    tar_errors: List[Tuple[Path, str]] = []
 
     for i, subdir in enumerate(subdirs, 1):
         try:
@@ -476,7 +468,7 @@ def process_subdirs_with_tar(
             print(f"  ❌ [{i}/{len(subdirs)}] Error tarring {subdir.name}: {e}")
             tar_errors.append((subdir, str(e)))
 
-    jobs: list[tuple[Path, Path]] = []
+    jobs: List[Tuple[Path, Path]] = []
     for tar_path in tar_files:
         output_path: Path = compressed_output_path(tar_path)
         if output_path.exists():
@@ -489,7 +481,7 @@ def process_subdirs_with_tar(
 
         if workers > 1 and len(jobs) > 1:
             with ProcessPoolExecutor(max_workers=workers) as executor:
-                futures: dict[Future, Path] = {}
+                futures: Dict[Future, Path] = {}
                 for tar_path, output_path in jobs:
                     future = executor.submit(
                         compress_file_streaming,
@@ -529,7 +521,7 @@ def process_subdirs_with_tar(
     return results
 
 
-def should_compress_file(file_path: Path, exclude_extensions: set[str], exclude_patterns: list[str]) -> bool:
+def should_compress_file(file_path: Path, exclude_extensions: Set[str], exclude_patterns: List[str]) -> bool:
     if file_path.is_symlink():
         return False
 
@@ -554,76 +546,99 @@ def should_compress_file(file_path: Path, exclude_extensions: set[str], exclude_
 
 
 def find_files_to_compress(
-    roots: Sequence[Path],
-    exclude_extensions: Optional[set[str]] = None,
-    exclude_patterns: Optional[list[str]] = None,
+    directory: Path,
+    exclude_extensions: Optional[Set[str]] = None,
+    exclude_patterns: Optional[List[str]] = None,
     extensions_filter: Optional[Sequence[str]] = None,
     skip_subdirs: bool = False,
-) -> list[Path]:
-    extensions: set[str] = EXCLUDED_EXTENSIONS if exclude_extensions is None else exclude_extensions
-    patterns: list[str] = exclude_patterns or []
-    files: list[Path] = []
+) -> List[Path]:
+    extensions: Set[str] = EXCLUDED_EXTENSIONS if exclude_extensions is None else exclude_extensions
+    patterns: List[str] = exclude_patterns or []
+    files: List[Path] = []
 
-    for root in roots:
-        if root.is_file():
-            if should_compress_file(root, extensions, patterns):
-                files.append(root)
-            continue
-
-        if not root.is_dir():
-            continue
-
-        if extensions_filter:
-            for raw_ext in extensions_filter:
-                ext: str = raw_ext if raw_ext.startswith(".") else f".{raw_ext}"
-                for file_path in root.rglob(f"*{ext}"):
-                    if should_compress_file(file_path, extensions, patterns):
-                        if skip_subdirs and file_path.parent != root:
-                            continue
-                        files.append(file_path)
-        else:
-            for file_path in root.rglob("*"):
+    if extensions_filter:
+        for raw_ext in extensions_filter:
+            ext: str = raw_ext if raw_ext.startswith(".") else f".{raw_ext}"
+            for file_path in directory.rglob(f"*{ext}"):
                 if should_compress_file(file_path, extensions, patterns):
-                    if skip_subdirs and file_path.parent != root:
+                    if skip_subdirs and file_path.parent != directory:
                         continue
                     files.append(file_path)
+    else:
+        for file_path in directory.rglob("*"):
+            if should_compress_file(file_path, extensions, patterns):
+                if skip_subdirs and file_path.parent != directory:
+                    continue
+                files.append(file_path)
 
     return sorted(set(files))
 
 
-def find_files_to_decompress(roots: Sequence[Path], exclude_patterns: Optional[list[str]] = None) -> list[Path]:
-    patterns: list[str] = exclude_patterns or []
-    files: list[Path] = []
+def find_files_to_decompress(directory: Path, exclude_patterns: Optional[List[str]] = None) -> List[Path]:
+    patterns: List[str] = exclude_patterns or []
+    files: List[Path] = []
 
-    for root in roots:
-        candidates: Iterator[Path]
-        if root.is_file():
-            candidates = iter([root])
-        elif root.is_dir():
-            candidates = root.rglob("*.br")
-        else:
+    for file_path in directory.rglob("*.br"):
+        if file_path.is_symlink():
             continue
 
-        for file_path in candidates:
-            if file_path.is_symlink():
-                continue
+        if not file_path.is_file():
+            continue
 
-            if not file_path.is_file():
-                continue
+        if patterns and any(pattern in str(file_path) for pattern in patterns):
+            continue
 
-            if not file_path.name.endswith(".br"):
-                continue
-
-            if patterns and any(pattern in str(file_path) for pattern in patterns):
-                continue
-
-            files.append(file_path)
+        files.append(file_path)
 
     return sorted(set(files))
 
 
-def get_file_type_stats(files: list[Path]) -> dict[str, int]:
-    type_stats: dict[str, int] = {}
+def collect_compress_targets(
+    input_paths: Sequence[Path],
+    exclude_extensions: Set[str],
+    exclude_patterns: List[str],
+    extensions_filter: Optional[Sequence[str]],
+    tar_subdirs_first: bool,
+) -> Tuple[List[Path], List[Path]]:
+    files: List[Path] = []
+    subdirs: List[Path] = []
+
+    for p in input_paths:
+        if p.is_file():
+            if should_compress_file(p, exclude_extensions, exclude_patterns):
+                files.append(p)
+        elif p.is_dir():
+            if tar_subdirs_first:
+                subdirs.extend(find_subdirs_to_tar([p], exclude_patterns))
+                files.extend(
+                    find_files_to_compress(
+                        p, exclude_extensions, exclude_patterns, extensions_filter, skip_subdirs=True
+                    )
+                )
+            else:
+                files.extend(
+                    find_files_to_compress(
+                        p, exclude_extensions, exclude_patterns, extensions_filter, skip_subdirs=False
+                    )
+                )
+
+    return sorted(set(files)), sorted(set(subdirs))
+
+
+def collect_decompress_targets(input_paths: Sequence[Path], exclude_patterns: List[str]) -> List[Path]:
+    files: List[Path] = []
+    for p in input_paths:
+        if p.is_file():
+            if p.name.endswith(".br") and p.is_file() and not p.is_symlink():
+                if not exclude_patterns or not any(pattern in str(p) for pattern in exclude_patterns):
+                    files.append(p)
+        elif p.is_dir():
+            files.extend(find_files_to_decompress(p, exclude_patterns))
+    return sorted(set(files))
+
+
+def get_file_type_stats(files: List[Path]) -> Dict[str, int]:
+    type_stats: Dict[str, int] = {}
     for file_path in files:
         ext: str = file_path.suffix.lower() or "[no extension]"
         type_stats[ext] = type_stats.get(ext, 0) + 1
@@ -631,7 +646,7 @@ def get_file_type_stats(files: list[Path]) -> dict[str, int]:
 
 
 def run_jobs(
-    jobs: list[tuple[Path, Path]],
+    jobs: List[Tuple[Path, Path]],
     operation: str,
     quality: int,
     chunk_size: int,
@@ -642,7 +657,7 @@ def run_jobs(
 ) -> Iterator[CompressionResult]:
     if workers > 1 and len(jobs) > 1:
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            futures: list[Future] = []
+            futures: List[Future] = []
             for input_path, output_path in jobs:
                 if operation == "compress":
                     futures.append(
@@ -694,18 +709,18 @@ def run_jobs(
 
 
 def process_files(
-    files: list[Path],
-    roots: Sequence[Path],
+    files: List[Path],
+    base_dir: Path,
     operation: str,
     quality: int = 11,
-    workers: int = 8,
+    workers: int = 4,
     keep_original: bool = False,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     verify: bool = False,
     allow_truncated: bool = False,
-) -> list[CompressionResult]:
-    results: list[CompressionResult] = []
-    jobs: list[tuple[Path, Path]] = []
+) -> List[CompressionResult]:
+    results: List[CompressionResult] = []
+    jobs: List[Tuple[Path, Path]] = []
 
     for file_path in files:
         output_path: Path = (
@@ -756,22 +771,28 @@ def process_files(
                 if result.success
                 else str(result.error)
             )
-            print(f"  {status} [{i}/{len(jobs)}] {relative_display(result.file_path, roots)}: {detail}")
+            print(f"  {status} [{i}/{len(jobs)}] {relative_display(result.file_path, base_dir)}: {detail}")
 
     return results
 
 
-def extract_decompressed_tars(results: list[CompressionResult], keep_tar: bool) -> tuple[int, int]:
+def extract_decompressed_tars(results: List[CompressionResult], keep_tar: bool) -> Tuple[int, int, int]:
     extracted: int = 0
     failed: int = 0
+    processed: int = 0
 
     for result in results:
         if not result.success:
             continue
 
+        if not result.file_path.name.endswith(".tar.br"):
+            continue
+
         tar_path: Path = decompressed_output_path(result.file_path)
         if tar_path.suffix != ".tar" or not tar_path.exists():
             continue
+
+        processed += 1
 
         if untar_file(tar_path, tar_path.parent, delete_tar=not keep_tar):
             extracted += 1
@@ -779,14 +800,14 @@ def extract_decompressed_tars(results: list[CompressionResult], keep_tar: bool) 
         else:
             failed += 1
 
-    return extracted, failed
+    return extracted, failed, processed
 
 
-def print_results_rich(results: list[CompressionResult], roots: Sequence[Path], operation: str) -> None:
+def print_results_rich(results: List[CompressionResult], base_dir: Path, operation: str) -> None:
     console = Console()
 
-    successful: list[CompressionResult] = [r for r in results if r.success]
-    failed: list[CompressionResult] = [r for r in results if not r.success]
+    successful: List[CompressionResult] = [r for r in results if r.success]
+    failed: List[CompressionResult] = [r for r in results if not r.success]
 
     total_original: int = sum(r.original_size for r in successful)
     total_processed: int = sum(r.processed_size for r in successful)
@@ -843,7 +864,7 @@ def print_results_rich(results: list[CompressionResult], roots: Sequence[Path], 
         file_type: str = "📦 tar" if result.was_tarred else "📄 file"
 
         table.add_row(
-            relative_display(result.file_path, roots),
+            relative_display(result.file_path, base_dir),
             format_size(result.original_size),
             format_size(result.processed_size),
             f"{ratio:.1f}%",
@@ -863,7 +884,7 @@ def print_results_rich(results: list[CompressionResult], roots: Sequence[Path], 
         fail_table.add_column("Error", style="dim")
 
         for result in failed[:10]:
-            fail_table.add_row(relative_display(result.file_path, roots), result.error or "Unknown error")
+            fail_table.add_row(relative_display(result.file_path, base_dir), result.error or "Unknown error")
 
         if len(failed) > 10:
             fail_table.add_row(f"... and {len(failed) - 10} more failures", "")
@@ -872,8 +893,8 @@ def print_results_rich(results: list[CompressionResult], roots: Sequence[Path], 
 
     summary_text = Text()
     summary_text.append(f"📊 {operation_name} Summary\n\n", style="bold cyan")
-    summary_text.append("📁 Target: ", style="dim")
-    summary_text.append(f"{roots_display(roots)}\n", style="bold white")
+    summary_text.append("📁 Base: ", style="dim")
+    summary_text.append(f"{base_dir}\n", style="bold white")
     summary_text.append("Total files processed: ", style="dim")
     summary_text.append(f"{len(results)}\n", style="bold white")
     summary_text.append("✅ Successful: ", style="dim")
@@ -919,9 +940,9 @@ def print_results_rich(results: list[CompressionResult], roots: Sequence[Path], 
     console.print(Panel(summary_text, border_style="cyan"))
 
 
-def print_results_basic(results: list[CompressionResult], roots: Sequence[Path], operation: str) -> None:
-    successful: list[CompressionResult] = [r for r in results if r.success]
-    failed: list[CompressionResult] = [r for r in results if not r.success]
+def print_results_basic(results: List[CompressionResult], base_dir: Path, operation: str) -> None:
+    successful: List[CompressionResult] = [r for r in results if r.success]
+    failed: List[CompressionResult] = [r for r in results if not r.success]
 
     total_original: int = sum(r.original_size for r in successful)
     total_processed: int = sum(r.processed_size for r in successful)
@@ -951,7 +972,7 @@ def print_results_basic(results: list[CompressionResult], roots: Sequence[Path],
 
     print("\n" + "=" * 80)
     print(f"📦 Brotli {operation_name} Results")
-    print(f"📁 Target: {roots_display(roots)}")
+    print(f"📁 Base: {base_dir}")
     print("=" * 80)
 
     print(f"\n{'File':<40} {'Original':>12} {size_label:>12} {'Ratio':>8} {'Time':>8}")
@@ -977,7 +998,7 @@ def print_results_basic(results: list[CompressionResult], roots: Sequence[Path],
     if failed:
         print(f"\n❌ Failed files ({len(failed)}):")
         for result in failed[:10]:
-            print(f"  • {relative_display(result.file_path, roots)}: {result.error}")
+            print(f"  • {relative_display(result.file_path, base_dir)}: {result.error}")
         if len(failed) > 10:
             print(f"  ... and {len(failed) - 10} more failures")
 
@@ -1010,9 +1031,7 @@ def print_results_basic(results: list[CompressionResult], roots: Sequence[Path],
     print("=" * 80 + "\n")
 
 
-def print_dry_run(
-    files: list[Path], roots: Sequence[Path], operation: str, subdirs: Optional[list[Path]] = None
-) -> None:
+def print_dry_run(files: List[Path], base_dir: Path, operation: str, subdirs: Optional[List[Path]] = None) -> None:
     total_size: int = 0
     for file_path in files:
         try:
@@ -1024,7 +1043,7 @@ def print_dry_run(
 
     print("\n" + "=" * 80)
     print(f"🔍 DRY RUN — nothing will be modified ({operation})")
-    print(f"📁 Target: {roots_display(roots)}")
+    print(f"📁 Base: {base_dir}")
     print("=" * 80)
 
     if subdirs:
@@ -1046,7 +1065,7 @@ def print_dry_run(
         print("\nLargest files:")
         for file_path in sorted(files, key=lambda p: p.stat().st_size if p.exists() else 0, reverse=True)[:20]:
             size: int = file_path.stat().st_size if file_path.exists() else 0
-            print(f"  {relative_display(file_path, roots):<60} {format_size(size):>12}")
+            print(f"  {relative_display(file_path, base_dir):<60} {format_size(size):>12}")
         if len(files) > 20:
             print(f"  ... and {len(files) - 20} more files")
 
@@ -1055,7 +1074,7 @@ def print_dry_run(
 
 def print_header(
     operation: str,
-    roots: Sequence[Path],
+    input_paths: Sequence[Path],
     quality: int,
     workers: int,
     keep_original: bool,
@@ -1073,7 +1092,8 @@ def print_header(
         if verify:
             details += " | verify round-trip"
 
-    header: str = f"{emoji} Brotli {action} — {roots_display(roots)}"
+    paths_str: str = ", ".join(str(p) for p in input_paths)
+    header: str = f"{emoji} Brotli {action} — {paths_str}"
 
     if RICH_AVAILABLE:
         Console().print(Panel(f"[bold cyan]{header}[/bold cyan]\n[dim]{details}[/dim]", border_style="cyan"))
@@ -1092,10 +1112,40 @@ def confirm(prompt: str) -> bool:
     return input(f"⚠️  {prompt} [y/N] ").strip().lower() in ("y", "yes")
 
 
+def swallowed_directory(args: argparse.Namespace) -> Optional[str]:
+    if args.paths:
+        return None
+
+    for values in (args.exclude, args.extensions):
+        if not values:
+            continue
+        candidate: str = values[-1]
+        if ("/" in candidate or candidate in (".", "..")) and Path(candidate).expanduser().is_dir():
+            return candidate
+
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="📦 Recursively compress/decompress files using Brotli with parallel processing (deletes originals by default)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                          # Compress all files in current dir (tars subdirs first)
+  %(prog)s -c                       # Compress all files (explicit)
+  %(prog)s -c file1 file2 dir/      # Compress multiple inputs
+  %(prog)s -d                       # Decompress all .br files (auto-untar .tar.br)
+  %(prog)s -d archive.tar.br        # Decompress and untar archive.tar.br
+  %(prog)s -c -t /path/to/dir       # Tar subdirs first, then compress
+  %(prog)s -c -e txt log csv        # Compress only specific extensions
+  %(prog)s -c -q 11 -w 8            # Custom quality and workers
+  %(prog)s -c --verify              # Verify round-trip before deleting originals
+  %(prog)s -c --keep-originals      # Keep original files when compressing
+  %(prog)s -d --keep-originals      # Keep compressed files when decompressing
+  %(prog)s -c --dry-run             # Preview compression without modifying
+  %(prog)s --exclude .git -- .      # Exclude patterns, use '.' as target
+        """,
     )
 
     operation_group = parser.add_mutually_exclusive_group()
@@ -1112,7 +1162,9 @@ def main() -> int:
     parser.add_argument(
         "paths",
         nargs="*",
-        help="One or more files/directories to process (default: current directory)",
+        default=[],
+        type=str,
+        help="Files and/or directories to process. If omitted, uses current directory and tars subdirs first.",
     )
 
     parser.add_argument(
@@ -1127,7 +1179,7 @@ def main() -> int:
         "--quality",
         type=int,
         default=11,
-        choices=range(12),
+        choices=range(0, 12),
         help="Brotli compression quality (0-11, default: 11). Only valid with -c/--compress.",
     )
 
@@ -1135,7 +1187,7 @@ def main() -> int:
         "-w",
         "--workers",
         type=int,
-        default=8,
+        default=mp.cpu_count(),
         help=f"Number of parallel workers (default: {mp.cpu_count()})",
     )
 
@@ -1157,12 +1209,6 @@ def main() -> int:
     )
 
     parser.add_argument(
-        "--untar",
-        action="store_true",
-        help="Extract .tar files produced by decompression (only valid with -d/--decompress)",
-    )
-
-    parser.add_argument(
         "--allow-truncated",
         action="store_true",
         help="Accept Brotli streams without an end-of-stream marker (only valid with -d/--decompress)",
@@ -1172,7 +1218,7 @@ def main() -> int:
         "--exclude",
         nargs="+",
         default=[],
-        help="Directory/file patterns to exclude from processing (e.g., node_modules .git).",
+        help="Directory/file patterns to exclude from processing (e.g., node_modules .git)",
     )
 
     parser.add_argument("--no-parallel", action="store_true", help="Disable parallel processing")
@@ -1193,6 +1239,12 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    stolen: Optional[str] = swallowed_directory(args)
+    if stolen is not None:
+        print(f"❌ Error: '{stolen}' was consumed by -e/--extensions or --exclude, so no target path was provided.")
+        print(f"   Separate the target with --:  {parser.prog} -c --exclude ... -- {stolen}")
+        return 2
+
     operation: str = "decompress" if args.decompress else "compress"
 
     if operation == "decompress":
@@ -1208,102 +1260,106 @@ def main() -> int:
         if args.verify:
             print("❌ Error: --verify is only valid with -c/--compress")
             return 1
-    else:
-        if args.untar:
-            print("❌ Error: --untar is only valid with -d/--decompress")
-            return 1
-        if args.allow_truncated:
-            print("❌ Error: --allow-truncated is only valid with -d/--decompress")
-            return 1
 
     if args.chunk_size < MIN_CHUNK_SIZE:
         print(f"❌ Error: --chunk-size must be at least {MIN_CHUNK_SIZE} bytes")
         return 1
 
-    raw_paths: list[str] = args.paths if args.paths else ["."]
-    roots: list[Path] = [Path(p).expanduser().resolve() for p in raw_paths]
+    auto_tar: bool = False
+    if not args.paths:
+        args.paths = ["."]
+        if operation == "compress":
+            args.tar_subdirs_first = True
+            auto_tar = True
 
-    for root in roots:
-        if not root.exists():
-            print(f"❌ Error: path does not exist: {root}")
+    input_paths: List[Path] = []
+    for raw in args.paths:
+        p: Path = Path(raw).expanduser().resolve()
+        if not p.exists():
+            print(f"❌ Error: path does not exist: {p}")
             return 1
-        if root == Path(root.anchor) and not args.keep_originals and not args.dry_run:
-            print(f"❌ Error: refusing to run destructively on the filesystem root: {root}")
+        input_paths.append(p)
+
+    if not input_paths:
+        input_paths = [Path.cwd().resolve()]
+
+    base_dir: Path = Path.cwd().resolve()
+
+    for p in input_paths:
+        if p.is_dir() and p == Path(p.anchor) and not args.keep_originals and not args.dry_run:
+            print(f"❌ Error: refusing to run destructively on the filesystem root: {p}")
             return 1
 
     workers: int = 1 if args.no_parallel else max(1, args.workers)
     keep_original: bool = args.keep_originals
-    exclude_patterns: list[str] = list(args.exclude)
-    exclude_extensions: set[str] = set() if args.no_skip_compressed else set(EXCLUDED_EXTENSIONS)
+    exclude_patterns: List[str] = list(args.exclude)
+    exclude_extensions: Set[str] = set() if args.no_skip_compressed else set(EXCLUDED_EXTENSIONS)
     chunk_size: int = args.chunk_size
 
-    results: list[CompressionResult] = []
+    results: List[CompressionResult] = []
     wall_start: float = time.time()
 
     try:
         if operation == "compress":
-            subdirs: list[Path] = find_subdirs_to_tar(roots, exclude_patterns) if args.tar_subdirs_first else []
-            files: list[Path] = find_files_to_compress(
-                roots, exclude_extensions, exclude_patterns, args.extensions, skip_subdirs=args.tar_subdirs_first
+            files, subdirs = collect_compress_targets(
+                input_paths, exclude_extensions, exclude_patterns, args.extensions, args.tar_subdirs_first
             )
 
             if args.dry_run:
-                print_dry_run(files, roots, operation, subdirs)
+                print_dry_run(files, base_dir, operation, subdirs)
                 return 0
 
             if not files and not subdirs:
                 print("✨ Nothing to compress")
                 return 0
 
-            print_header(operation, roots, args.quality, workers, keep_original, args.tar_subdirs_first, args.verify)
+            print_header(
+                operation, input_paths, args.quality, workers, keep_original, args.tar_subdirs_first, args.verify
+            )
 
             if not keep_original and not args.yes:
                 targets: str = f"{len(files)} files"
                 if subdirs:
                     targets += f" and {len(subdirs)} directories"
-                if not confirm(f"Originals will be DELETED in {roots_display(roots)} ({targets}). Continue?"):
+                if not confirm(f"Originals will be DELETED ({targets}). Continue?"):
                     print("🚫 Aborted")
                     return 130
 
-            if args.tar_subdirs_first:
+            if args.tar_subdirs_first and subdirs:
                 results.extend(
-                    process_subdirs_with_tar(
-                        roots, args.quality, workers, keep_original, exclude_patterns, chunk_size, args.verify
-                    )
+                    process_subdirs_with_tar(subdirs, args.quality, workers, keep_original, chunk_size, args.verify)
                 )
 
             if files:
                 print(f"\n🗜️  Compressing {len(files)} files with Brotli (quality: {args.quality})...")
                 results.extend(
                     process_files(
-                        files, roots, operation, args.quality, workers, keep_original, chunk_size, args.verify
+                        files, base_dir, operation, args.quality, workers, keep_original, chunk_size, args.verify
                     )
                 )
 
         else:
-            files = find_files_to_decompress(roots, exclude_patterns)
+            files = collect_decompress_targets(input_paths, exclude_patterns)
 
             if args.dry_run:
-                print_dry_run(files, roots, operation)
+                print_dry_run(files, base_dir, operation)
                 return 0
 
             if not files:
                 print("✨ No .br files found to decompress")
                 return 0
 
-            print_header(operation, roots, args.quality, workers, keep_original, False, False)
+            print_header(operation, input_paths, args.quality, workers, keep_original, False, False)
 
             if not keep_original and not args.yes:
-                if not confirm(
-                    f"Compressed originals will be DELETED in {roots_display(roots)} ({len(files)} files). Continue?"
-                ):
+                if not confirm(f"Compressed originals will be DELETED ({len(files)} files). Continue?"):
                     print("🚫 Aborted")
                     return 130
 
             print(f"\n📂 Decompressing {len(files)} files...")
             results = process_files(
                 files,
-                roots,
+                base_dir,
                 operation,
                 args.quality,
                 workers,
@@ -1313,10 +1369,12 @@ def main() -> int:
                 args.allow_truncated,
             )
 
-            if args.untar:
-                print("\n📦 Extracting decompressed tar archives...")
-                extracted, extract_failed = extract_decompressed_tars(results, keep_original)
-                print(f"  ✅ Extracted: {extracted} | ❌ Failed: {extract_failed}")
+            extracted, extract_failed, tar_processed = extract_decompressed_tars(results, keep_original)
+            if tar_processed > 0:
+                print(
+                    f"\n📦 Extracted {extracted} tar archive(s)"
+                    + (f", {extract_failed} failed" if extract_failed else "")
+                )
 
     except KeyboardInterrupt:
         print("\n⚠️  Interrupted by user")
@@ -1330,9 +1388,9 @@ def main() -> int:
         return 0
 
     if RICH_AVAILABLE:
-        print_results_rich(results, roots, operation)
+        print_results_rich(results, base_dir, operation)
     else:
-        print_results_basic(results, roots, operation)
+        print_results_basic(results, base_dir, operation)
 
     print(f"⏲️  Wall clock: {time.time() - wall_start:.2f}s")
 

@@ -1,3 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/python3.12
 from __future__ import annotations
 
 import sys
@@ -5,6 +6,7 @@ from pathlib import Path
 
 from dh import get_files, mpf
 from docutils.core import publish_parts
+from markdownify import markdownify
 
 
 def rst_to_html(content: str) -> str:
