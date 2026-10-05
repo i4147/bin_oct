@@ -3,7 +3,6 @@
 The script recursively discovers Python files, extracts non-English text from comments and ordinary string literals, splits it into approximately 2500-character chunks, translates chunks through a selectable backend using eight multiprocessing workers, validates the result with compile(), and atomically replaces the original files."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import json
@@ -19,7 +18,6 @@ from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
-
 from loguru import logger
 
 WORKER_COUNT: Final[int] = 8
@@ -27,57 +25,52 @@ DEFAULT_CHUNK_SIZE: Final[int] = 2500
 DEFAULT_DELAY: Final[float] = 1.5
 DEFAULT_TIMEOUT: Final[float] = 60.0
 MAX_RETRIES: Final[int] = 5
-
 _NON_LATIN_RE: Final[re.Pattern[str]] = re.compile(
     r"[^\x00-\x7f]|[\u0400-\u04ff\u0600-\u06ff\u0900-\u097f"
     r"\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]"
 )
-
-_NON_ENGLISH_WORDS: Final[frozenset[str]] = frozenset(
-    {
-        " el ",
-        " la ",
-        " los ",
-        " las ",
-        " una ",
-        " uno ",
-        " que ",
-        " para ",
-        " con ",
-        " por ",
-        " como ",
-        " del ",
-        " der ",
-        " die ",
-        " das ",
-        " und ",
-        " nicht ",
-        " ist ",
-        " ein ",
-        " eine ",
-        " des ",
-        " les ",
-        " une ",
-        " dans ",
-        " pour ",
-        " avec ",
-        " est ",
-        " de ",
-        " en ",
-        " un ",
-        " uma ",
-        " não ",
-        " não",
-        " são ",
-        " com ",
-        " هذا ",
-        " هذه ",
-        " من ",
-        " إلى ",
-        " و ",
-    }
-)
-
+_NON_ENGLISH_WORDS: Final[frozenset[str]] = frozenset({
+    " el ",
+    " la ",
+    " los ",
+    " las ",
+    " una ",
+    " uno ",
+    " que ",
+    " para ",
+    " con ",
+    " por ",
+    " como ",
+    " del ",
+    " der ",
+    " die ",
+    " das ",
+    " und ",
+    " nicht ",
+    " ist ",
+    " ein ",
+    " eine ",
+    " des ",
+    " les ",
+    " une ",
+    " dans ",
+    " pour ",
+    " avec ",
+    " est ",
+    " de ",
+    " en ",
+    " un ",
+    " uma ",
+    " não ",
+    " não",
+    " são ",
+    " com ",
+    " هذا ",
+    " هذه ",
+    " من ",
+    " إلى ",
+    " و ",
+})
 _WORKER_BACKEND: str
 _WORKER_LIBRE_URL: str
 _WORKER_TIMEOUT: float
@@ -154,13 +147,11 @@ def parse_arguments() -> argparse.Namespace:
 def discover_python_files(inputs: list[Path]) -> list[Path]:
     roots = inputs or [Path.cwd()]
     discovered: set[Path] = set()
-
     for root in roots:
         path = root.expanduser()
         if not path.exists():
             msg = f"Input path does not exist: {path}"
             raise FileNotFoundError(msg)
-
         if path.is_file():
             if path.suffix == ".py":
                 discovered.add(path.resolve())
@@ -169,17 +160,14 @@ def discover_python_files(inputs: list[Path]) -> list[Path]:
         else:
             msg = f"Input path is neither a regular file nor directory: {path}"
             raise OSError(msg)
-
     return sorted(discovered)
 
 
 def contains_probable_non_english(text: str) -> bool:
     if not text.strip():
         return False
-
     if _NON_LATIN_RE.search(text):
         return True
-
     normalized = f" {text.casefold()} "
     return any(marker in normalized for marker in _NON_ENGLISH_WORDS)
 
@@ -188,22 +176,18 @@ def split_text(text: str, limit: int) -> list[tuple[int, int, str]]:
     if limit <= 0:
         msg = "chunk size must be greater than zero"
         raise ValueError(msg)
-
     chunks: list[tuple[int, int, str]] = []
     start = 0
-
     while start < len(text):
         end = min(start + limit, len(text))
         if end < len(text):
             boundary = max(text.rfind(" ", start, end), text.rfind("\n", start, end))
             if boundary > start:
                 end = boundary
-
         piece = text[start:end]
         if piece:
             chunks.append((start, end, piece))
         start = end
-
     return chunks
 
 
@@ -215,19 +199,15 @@ def token_payload_bounds(token_text: str, token_start: int) -> tuple[int, int] |
     match = re.match(r"(?is)^([rubf]*)(\"\"\"|'''|\"|')", token_text)
     if match is None:
         return None
-
     prefix_end = match.end(1)
     quote = match.group(2)
     payload_start = prefix_end + len(quote)
-
     if token_text.endswith(quote):
         payload_end = len(token_text) - len(quote)
     else:
         payload_end = len(token_text)
-
     if payload_end < payload_start:
         return None
-
     return token_start + payload_start, token_start + payload_end
 
 
@@ -238,24 +218,19 @@ def extract_jobs(
     lines = source.splitlines(keepends=True)
     line_offsets: list[int] = []
     offset = 0
-
     for line in lines:
         line_offsets.append(offset)
         offset += len(line)
-
     if not lines:
         line_offsets.append(0)
-
     jobs: list[TranslationJob] = []
     tokens = tokenize.generate_tokens(iter(source.splitlines(keepends=True)).__next__)
-
     for token in tokens:
         if token.type == tokenize.COMMENT:
             absolute_start = position_to_offset(line_offsets, token.start[0], token.start[1])
             marker_end = absolute_start + 1
             text_start = marker_end
             text = source[text_start : position_to_offset(line_offsets, token.end[0], token.end[1])]
-
             if contains_probable_non_english(text):
                 for relative_start, relative_end, piece in split_text(text, chunk_size):
                     jobs.append(
@@ -265,36 +240,29 @@ def extract_jobs(
                             text_start + relative_end,
                         )
                     )
-
         elif token.type == tokenize.STRING:
             token_start = position_to_offset(line_offsets, token.start[0], token.start[1])
             token_end = position_to_offset(line_offsets, token.end[0], token.end[1])
             token_text = source[token_start:token_end]
-
             prefix_match = re.match(r"(?i)^([rubf]*)", token_text)
             prefix = prefix_match.group(1) if prefix_match else ""
-
             if "f" in prefix.casefold():
                 logger.warning(
                     "Skipping f-string at line {} because translating it safely requires parsing embedded expressions.",
                     token.start[0],
                 )
                 continue
-
             if "b" in prefix.casefold():
                 logger.warning(
                     "Skipping bytes literal at line {} because its content is not text.",
                     token.start[0],
                 )
                 continue
-
             bounds = token_payload_bounds(token_text, token_start)
             if bounds is None:
                 continue
-
             payload_start, payload_end = bounds
             payload = source[payload_start:payload_end]
-
             if contains_probable_non_english(payload):
                 for relative_start, relative_end, piece in split_text(payload, chunk_size):
                     jobs.append(
@@ -304,7 +272,6 @@ def extract_jobs(
                             payload_start + relative_end,
                         )
                     )
-
     return jobs
 
 
@@ -313,11 +280,9 @@ def acquire_rate_slot() -> None:
         with _WORKER_RATE_LOCK:
             now = time.monotonic()
             wait_for = _WORKER_NEXT_REQUEST.value - now
-
             if wait_for <= 0:
                 _WORKER_NEXT_REQUEST.value = now + _WORKER_DELAY
                 return
-
         time.sleep(min(wait_for, 0.25))
 
 
@@ -330,30 +295,25 @@ def http_json_request(
 
 
 def translate_google(text: str, timeout: float) -> str:
-    query = urlencode(
-        {
-            "client": "gtx",
-            "sl": "auto",
-            "tl": "en",
-            "dt": "t",
-            "q": text,
-        }
-    )
+    query = urlencode({
+        "client": "gtx",
+        "sl": "auto",
+        "tl": "en",
+        "dt": "t",
+        "q": text,
+    })
     request = Request(
         f"https://translate.googleapis.com/translate_a/single?{query}",
         headers={"User-Agent": "python-translation-script/1.0"},
     )
     payload = http_json_request(request, timeout)
-
     if not isinstance(payload, list) or not payload or not isinstance(payload[0], list):
         msg = "Google returned an unexpected response"
         raise ValueError(msg)
-
     translated = "".join(item[0] for item in payload[0] if isinstance(item, list) and item and isinstance(item[0], str))
     if not translated:
         msg = "Google returned empty translation"
         raise ValueError(msg)
-
     return translated
 
 
@@ -370,22 +330,18 @@ def translate_libretranslate(text: str, url: str, timeout: float) -> str:
         },
     )
     payload = http_json_request(request, timeout)
-
     if not isinstance(payload, dict) or not isinstance(payload.get("translatedText"), str):
         msg = "LibreTranslate returned an unexpected response"
         raise ValueError(msg)
-
     translated = payload["translatedText"]
     if not translated:
         msg = "LibreTranslate returned empty translation"
         raise ValueError(msg)
-
     return translated
 
 
 def translate_with_retry(text: str) -> str:
     last_error: Exception | None = None
-
     for attempt in range(MAX_RETRIES):
         try:
             acquire_rate_slot()
@@ -403,7 +359,6 @@ def translate_with_retry(text: str) -> str:
                 wait,
             )
             time.sleep(wait)
-
     msg = f"Translation failed after {MAX_RETRIES} attempts: {last_error}"
     raise RuntimeError(msg)
 
@@ -422,7 +377,6 @@ def worker_initializer(
     global _WORKER_DELAY
     global _WORKER_NEXT_REQUEST
     global _WORKER_RATE_LOCK
-
     _WORKER_BACKEND = backend
     _WORKER_LIBRE_URL = libre_url
     _WORKER_TIMEOUT = timeout
@@ -441,17 +395,14 @@ def apply_translations(
 ) -> str:
     edits = [TextEdit(job.start, job.end, translated) for job, translated in results]
     edits.sort(key=lambda edit: edit.start, reverse=True)
-
     previous_start = len(source) + 1
     output = source
-
     for edit in edits:
         if edit.end > previous_start or edit.start < 0 or edit.end < edit.start:
             msg = "Overlapping or invalid translation edit detected"
             raise ValueError(msg)
         output = output[: edit.start] + edit.replacement + output[edit.end :]
         previous_start = edit.start
-
     return output
 
 
@@ -466,7 +417,6 @@ def validate_python(source: str, path: Path) -> None:
 
 def atomic_write(path: Path, content: str, encoding: str) -> None:
     original_mode = path.stat().st_mode
-
     with NamedTemporaryFile(
         mode="w",
         encoding=encoding,
@@ -479,7 +429,6 @@ def atomic_write(path: Path, content: str, encoding: str) -> None:
         temporary_path = Path(temporary.name)
         temporary.write(content)
         temporary.flush()
-
     try:
         temporary_path.chmod(original_mode)
         temporary_path.replace(path)
@@ -498,34 +447,27 @@ def process_file(
     logger.info("Reading {}", path)
     source = path.read_text(encoding=encoding)
     jobs = extract_jobs(source, chunk_size)
-
     if not jobs:
         logger.info("No probable non-English text found in {}", path)
         return False
-
     logger.info("Translating {} chunks in {}", len(jobs), path)
     async_results = [pool.apply_async(translate_job, (job,)) for job in jobs]
     results = [result.get() for result in async_results]
     translated_source = apply_translations(source, results)
-
     validate_python(translated_source, path)
-
     if translated_source == source:
         logger.info("No changes required for {}", path)
         return False
-
     if dry_run:
         logger.info("Validated changes for {} (dry run; not written)", path)
     else:
         atomic_write(path, translated_source, encoding)
         logger.success("Updated {}", path)
-
     return True
 
 
 def main() -> int:
     args = parse_arguments()
-
     if args.chunk_size <= 0:
         msg = "--chunk-size must be greater than zero"
         raise ValueError(msg)
@@ -535,21 +477,16 @@ def main() -> int:
     if args.timeout <= 0:
         msg = "--timeout must be greater than zero"
         raise ValueError(msg)
-
     files = discover_python_files(args.paths)
     logger.info("Discovered {} Python file(s)", len(files))
-
     if not files:
         logger.warning("No Python files found")
         return 0
-
     manager = multiprocessing.Manager()
     next_request = manager.Value("d", 0.0)
     rate_lock = manager.Lock()
-
     changed = 0
     failed = 0
-
     try:
         with Pool(
             processes=WORKER_COUNT,
@@ -578,17 +515,14 @@ def main() -> int:
                     logger.exception("Failed to process {}", path)
     finally:
         manager.shutdown()
-
     logger.info(
         "Finished: {} file(s) changed, {} file(s) failed",
         changed,
         failed,
     )
-
     if failed:
         logger.error("One or more files failed; no failure was silently ignored")
         return 1
-
     return 0
 
 

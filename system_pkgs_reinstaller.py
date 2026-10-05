@@ -5,19 +5,16 @@ Use --reset to start over.
 Cached .deb files under the apt archives dir are deleted after each package to save disk space."""
 
 from __future__ import annotations
-
 import glob
 import json
 import os
 import sys
 from pathlib import Path
 from typing import Any
-
 from dh import runcmd
 
 PROGRESS_SUFFIX: str = ".progress"
 APT_ARCHIVES: Path = Path("/data/data/com.termux/cache/apt/archives")
-
 APT_ENV: dict[str, str] = {**os.environ, "APT_CONFIG": os.environ.get("APT_CONFIG", "")}
 
 
@@ -89,41 +86,32 @@ def reinstall(pkg: str) -> None:
 def main() -> None:
     args: list[str] = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags: set[str] = {a for a in sys.argv[1:] if a.startswith("--")}
-
     if not args:
         print("Usage: python reinstall_pkgs.py <pkg_file> [--reset]")
         sys.exit(1)
-
     pkg_file: Path = Path(args[0])
     progress_file: Path = pkg_file.with_name(pkg_file.name + PROGRESS_SUFFIX)
-
     if "--reset" in flags and progress_file.exists():
         progress_file.unlink()
         print("Progress reset.")
-
     pkgs: list[str] = read_packages(pkg_file)
     if not pkgs:
         print(f"No packages found in {pkg_file}")
         sys.exit(0)
-
     progress: dict[str, Any] = load_progress(progress_file)
     done: set[str] = set(progress["completed"]) | set(progress["failed"])
     pending: list[str] = [p for p in pkgs if p not in done]
-
     if not pending:
         print("All packages already processed.")
         if progress["failed"]:
             print(f"Previously failed: {', '.join(progress['failed'])}")
         sys.exit(0)
-
     if done:
         print(f"Resuming: {len(done)}/{len(pkgs)} already processed, {len(pending)} remaining.")
-
     try:
         for i, pkg in enumerate(pending, 1):
             progress["current"] = pkg
             save_progress(progress_file, progress)
-
             print(f"\n[{i}/{len(pending)}] Reinstalling {pkg} ...")
             try:
                 reinstall(pkg)
@@ -132,13 +120,11 @@ def main() -> None:
             except Exception as e:
                 print(f"Failed to install {pkg}: {e}")
                 progress["failed"].append(pkg)
-
             progress["current"] = None
             save_progress(progress_file, progress)
     except KeyboardInterrupt:
         print("\nInterrupted. Progress saved — re-run to continue.")
         sys.exit(130)
-
     print("\nDone.")
     print(f"  Completed: {len(progress['completed'])}")
     print(f"  Failed:    {len(progress['failed'])}")

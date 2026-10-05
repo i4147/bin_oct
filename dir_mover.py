@@ -5,7 +5,6 @@ It should print summary header information showing resolved source and destinati
 The script should handle edge cases gracefully, such as an empty source directory, and report progress and results to standard output throughout execution."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 from shutil import move

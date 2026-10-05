@@ -4,7 +4,6 @@ The script scans directories for Python files, parses them with ast, groups Func
 It uses multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for all path handling, loguru for logging, and complete type annotations."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 from collections import defaultdict
@@ -56,33 +55,27 @@ def analyze_files(target_dirs: list[Path] | None = None) -> list[RepeatedItem]:
     for target_dir in resolved_dirs:
         py_files.extend(target_dir.rglob("*.py"))
     py_files = [f for f in py_files if ".git" not in f.parts]
-
     definitions: defaultdict[DefinitionKey, list[str]] = defaultdict(list)
     source_map: SourceMap = {}
-
     with Pool(processes=POOL_SIZE) as pool:
         async_results = [pool.apply_async(analyze_file, (f,)) for f in py_files]
         results: list[dict[str, Any]] = [r.get() for r in async_results]
-
     for result in results:
         result_defs: DefinitionMap = result["definitions"]
         result_sources: SourceMap = result["source_map"]
         for key, paths in result_defs.items():
             definitions[key].extend(paths)
         source_map.update(result_sources)
-
     repeated: list[RepeatedItem] = []
     for key, paths in definitions.items():
         unique_paths: list[str] = list(set(paths))
         if len(unique_paths) >= 2:
-            repeated.append(
-                {
-                    "name": key[0],
-                    "source": source_map.get(key, ""),
-                    "count": len(unique_paths),
-                    "files": unique_paths,
-                }
-            )
+            repeated.append({
+                "name": key[0],
+                "source": source_map.get(key, ""),
+                "count": len(unique_paths),
+                "files": unique_paths,
+            })
     repeated.sort(key=lambda x: x["count"], reverse=True)
     return repeated
 
@@ -105,11 +98,9 @@ def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
         tree: ast.Module = ast.parse(content)
     except Exception:
         return
-
     imports_to_add: set[str] = set()
     lines: list[str] = content.splitlines(keepends=True)
     nodes_to_remove: list[ast.FunctionDef] = []
-
     for node in tree.body:
         if isinstance(node, ast.FunctionDef):
             for item in repeated:
@@ -118,10 +109,8 @@ def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
                     if normalize_source(source) == normalize_source(item["source"]):
                         imports_to_add.add(item["name"])
                         nodes_to_remove.append(node)
-
     if not imports_to_add:
         return
-
     lines_to_keep: list[str] = []
     for i, line in enumerate(lines):
         skip: bool = False
@@ -131,7 +120,6 @@ def refactor_file(path: Path, repeated: list[RepeatedItem]) -> None:
                 break
         if not skip:
             lines_to_keep.append(line)
-
     import_stmt: str = f"from {IMPORT_MODULE_NAME} import " + ", ".join(sorted(imports_to_add)) + "\n"
     insert_pos: int = 0
     for i, line in enumerate(lines_to_keep):
@@ -151,7 +139,6 @@ def apply_refactoring(
     for target_dir in resolved_dirs:
         py_files.extend(target_dir.rglob("*.py"))
     py_files = [f for f in py_files if ".git" not in f.parts and f.name != DEFAULT_OUTPUT_NAME]
-
     with Pool(processes=POOL_SIZE) as pool:
         async_results = [pool.apply_async(refactor_file, (f, repeated)) for f in py_files]
         for r in async_results:
@@ -172,11 +159,9 @@ def main() -> None:
         help="Directories or files to process (default: current directory)",
     )
     args = parser.parse_args()
-
     target_dirs: list[Path] | None = [Path(p) for p in args.paths] if args.paths else None
     repeated: list[RepeatedItem] = analyze_files(target_dirs)
     save_dh_module(repeated)
-
     if args.apply:
         apply_refactoring(repeated, target_dirs)
         print(f"Saved {len(repeated)} functions to {DEFAULT_OUTPUT_NAME}")

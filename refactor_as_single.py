@@ -3,7 +3,6 @@
 Usage: script.py # scan current directory recursively script.py -f merged_input.py # read from a merged-file with # "# filename: relpath" sentinels script.py -o mypkg.py # choose output filename"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import re
@@ -12,9 +11,7 @@ from pathlib import Path
 from typing import Iterable
 
 WORKERS: int = 6
-
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
-
 SIX_MOVES_MAP = {
     "six.moves.copyreg": "copyreg",
     "six.moves.urllib": "urllib",
@@ -25,7 +22,6 @@ SIX_MOVES_MAP = {
     "six.moves.map": "map",
     "six.moves.range": "range",
 }
-
 SIMPLE_TEXT_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bfrom __future__ import [^\n]+\n"), ""),
     (re.compile(r"\bunicode\b(?!\s*=)"), "str"),
@@ -39,7 +35,6 @@ SIMPLE_TEXT_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bsuper\(\s*\w+\s*,\s*self\s*\)"), "super()"),
     (re.compile(r"\bdef __unicode__\b"), "def __str__"),
 ]
-
 OS_PATH_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bos\.path\.exists\(([^()]*)\)"), r"Path(\1).exists()"),
     (re.compile(r"\bos\.path\.isdir\(([^()]*)\)"), r"Path(\1).is_dir()"),
@@ -51,7 +46,6 @@ OS_PATH_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bos\.remove\(([^()]*)\)"), r"Path(\1).unlink()"),
     (re.compile(r"\bos\.listdir\(([^()]*)\)"), r"list(Path(\1).iterdir())"),
 ]
-
 AMBIGUOUS_PATH_MARKERS = [
     re.compile(r"\bos\.path\.join\("),
     re.compile(r"\bos\.path\.split\("),
@@ -85,7 +79,6 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
         if not sources:
             sys.exit("error: no '# filename: ...' sentinels found in -f input")
         return sources
-
     root = Path.cwd()
     py_files = find_source_files(root)
     if not py_files:
@@ -215,7 +208,6 @@ def collect_and_dedup_imports(tree: ast.Module) -> tuple[list[str], list[ast.stm
 def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, needs_loguru: bool) -> str:
     import_lines, _ = collect_and_dedup_imports(tree)
     body_src = ast.unparse(tree)
-
     header_imports = ["import argparse", "import sys"]
     if needs_pathlib:
         header_imports.append("from pathlib import Path")
@@ -223,9 +215,7 @@ def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, ne
         header_imports.append("import multiprocessing as mp")
     if needs_loguru:
         header_imports.append("from loguru import logger")
-
     all_imports = sorted(set(header_imports) | set(import_lines))
-
     module_doc = (
         '"""\n'
         "TODO(manual-review): replace this placeholder with a single prompt describing,\n"
@@ -233,9 +223,7 @@ def build_output(tree: ast.Module, workers_needed: bool, needs_pathlib: bool, ne
         "instruction originally given to an AI agent to generate this exact code.\n"
         '"""\n'
     )
-
     workers_const = "\nWORKERS: int = 6\n" if workers_needed else ""
-
     return module_doc + "\n" + "\n".join(all_imports) + "\n" + workers_const + "\n\n" + body_src + "\n"
 
 
@@ -260,27 +248,20 @@ def main(argv: Iterable[str] | None = None) -> None:
     parser.add_argument("-f", "--file", help="merged input file with '# filename: relpath' sentinels")
     parser.add_argument("-o", "--output", help="output .py filename (default: out.py)")
     args = parser.parse_args(list(argv) if argv is not None else None)
-
     sources = load_sources(args)
     merged_text = merge_sources(sources)
-
     try:
         tree = ast.parse(merged_text)
     except SyntaxError as exc:
         sys.exit(f"error: merged source failed to parse ({exc}); manual fixup needed before AST pass")
-
     tree = strip_comments_and_docstrings(tree)
-
     workers_needed = "mp.Pool" in merged_text or "WORKERS" in merged_text
     needs_pathlib = "Path(" in merged_text
     needs_loguru = "logger" in merged_text
-
     output_src = build_output(tree, workers_needed, needs_pathlib, needs_loguru)
-
     out_path = determine_output_path(args.output)
     out_path.write_text(output_src, encoding="utf-8")
     print(f"wrote {out_path} ({len(sources)} source files merged)")
-
     if "TODO(manual-review)" in output_src:
         print(
             "note: manual-review TODOs were inserted for ambiguous os.path usages and the module docstring",

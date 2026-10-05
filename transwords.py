@@ -4,19 +4,16 @@ Text is split into ``CHUNK_SIZE``-character line-ranges, each chunk is translate
 Logging via loguru."""
 
 from __future__ import annotations
-
 import json
 import time
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypedDict
-
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from loguru import logger
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
-
 CHUNK_SIZE: Final[int] = 4500
 MAX_WORKERS: Final[int] = 8
 INPUT_FILE: Final[Path] = Path("words.txt")
@@ -40,7 +37,6 @@ def chunk_file(file_path: Path, chunk_size: int = CHUNK_SIZE) -> list[Chunk]:
     current_size: int = 0
     start_line: int = 0
     line_num: int = 0
-
     try:
         with file_path.open("r", encoding="utf-8") as f:
             for line_num, line in enumerate(f):
@@ -56,16 +52,13 @@ def chunk_file(file_path: Path, chunk_size: int = CHUNK_SIZE) -> list[Chunk]:
                 chunks.append((start_line, line_num, "".join(current_chunk)))
     except Exception as exc:
         logger.error(f"Error reading file {file_path}: {exc}")
-
     return chunks
 
 
 def translate_chunk(chunk_data: Chunk, chunk_index: int, total_chunks: int) -> TranslationResult | None:
     start_line, end_line, text = chunk_data
-
     if chunk_index > 0:
         time.sleep(2)
-
     try:
         translator: GoogleTranslator = GoogleTranslator(source="fa", target="en")
         translated: str | None = translator.translate(text)
@@ -87,34 +80,27 @@ def main() -> None:
     if not INPUT_FILE.exists():
         logger.error(f"Input file {INPUT_FILE} not found.")
         return
-
     print("Extracting chunks...")
     chunks: list[Chunk] = chunk_file(INPUT_FILE)
     print(f"Total chunks: {len(chunks)}")
-
     if not chunks:
         logger.warning("No text found to translate.")
         return
-
     print("Translating chunks...")
     translations: list[TranslationResult] = []
     total_chunks: int = len(chunks)
-
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[TranslationResult | None]] = [
             pool.apply_async(translate_chunk, (chunk, idx, total_chunks)) for idx, chunk in enumerate(chunks)
         ]
-
         for i, async_res in enumerate(async_results, 1):
             result: TranslationResult | None = async_res.get()
             if result is not None:
                 translations.append(result)
             print(f"Progress: {i}/{total_chunks}")
-
     if not translations:
         logger.warning("No translations were successful.")
         return
-
     print(f"Writing results to {OUTPUT_FILE}...")
     try:
         final_data: dict[str, list[TranslationResult]] = {

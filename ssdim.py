@@ -5,14 +5,12 @@ It should also provide a function to copy each group of similar files into separ
 The script is intended to run as a command-line tool for detecting and organizing near-duplicate files based on content similarity rather than exact hash matches."""
 
 from __future__ import annotations
-
 import csv
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
-
 import ssdeep
 
 try:

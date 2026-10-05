@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """shebang_tool.py - unified shebang inspection and editing.
-
 Usage examples
 --------------
     python shebang_tool.py check-double
@@ -12,7 +11,6 @@ Usage examples
     python shebang_tool.py rm --workers 8
     python shebang_tool.py add
     python shebang_tool.py to-cloud --workers 8
-
 Original-script mapping
 -----------------------
     check_double_shebang.py  ->  python shebang_tool.py check-double
@@ -27,7 +25,6 @@ Original-script mapping
 """
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import os
@@ -42,7 +39,6 @@ DEFAULT_SHEBANG_FIX = "#!/data/data/com.termux/usr"
 DEFAULT_SHEBANG_ADD = f"#!{TERMUX_PREFIX}/bin/env python"
 DEFAULT_SHEBANG_SH = f"#!{TERMUX_PREFIX}/bin/bash"
 DEFAULT_WORKERS = 8
-
 _TERMUX_PY_SHEBANGS = {
     f"#!{TERMUX_PREFIX}/bin/python",
     f"#!{TERMUX_PREFIX}/bin/python3.12",
@@ -52,7 +48,6 @@ _TERMUX_PY_SHEBANGS = {
     f"#!{TERMUX_PREFIX}/bin/env python",
     f"#!{TERMUX_PREFIX}/bin/env python3",
 }
-
 _SHEBANG_TO_EXT = {
     "python": ".py",
     "python3": ".py",
@@ -63,7 +58,6 @@ _SHEBANG_TO_EXT = {
     "ksh": ".sh",
     "dash": ".sh",
 }
-
 _RENAME_PATTERNS = [
     (r"#!/data/data/com.termux/files/usr/bin/python3?", ".py"),
     (r"#!/data/data/com.termux/files/usr/bin/python3.12?", ".py"),
@@ -109,7 +103,6 @@ _RENAME_PATTERNS = [
     (r"#!/usr/bin/env awk", ".awk"),
     (r"#!/usr/bin/sed", ".sed"),
 ]
-
 _PY_SKIP_EXT = [
     re.compile(p, re.IGNORECASE)
     for p in (
@@ -123,7 +116,6 @@ _PY_SKIP_EXT = [
         r"\.(pyc|pyo|pyd)$",
     )
 ]
-
 _PY_SPECIAL_STEMS = {
     "setup",
     "manage",
@@ -137,7 +129,6 @@ _PY_SPECIAL_STEMS = {
     "cli",
     "run",
 }
-
 _PY_INDICATOR = [
     re.compile(p, re.MULTILINE)
     for p in (
@@ -646,55 +637,45 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Unified shebang inspection and editing tool.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-
     sp = sub.add_parser("check-double", help="print files with >1 shebang")
     sp.add_argument("paths", nargs="*")
     sp.set_defaults(func=_cmd_check_double)
-
     sp = sub.add_parser("check", help="count and report files with >1 shebang")
     sp.add_argument("paths", nargs="*")
     sp.set_defaults(func=_cmd_check)
-
     sp = sub.add_parser("fix-sh", help="rewrite .sh shebangs")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_SH)
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_fix_sh)
-
     sp = sub.add_parser("fix-ext", help="rename files to match shebang extension")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--dry-run", action="store_true")
     sp.add_argument("--verbose", action="store_true")
     sp.set_defaults(func=_cmd_fix_ext)
-
     sp = sub.add_parser("fix", help="add/update Termux python shebangs")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_FIX)
     sp.add_argument("--cv2-shebang", default=DEFAULT_SHEBANG_FIX)
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_fix)
-
     sp = sub.add_parser("rename", help="rename by broad shebang map")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--dry-run", action="store_true")
     sp.set_defaults(func=_cmd_rename)
-
     sp = sub.add_parser("rm", help="remove shebang from .py files")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_rm)
-
     sp = sub.add_parser("add", help="add Termux python shebang")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--shebang", default=DEFAULT_SHEBANG_ADD)
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_add)
-
     sp = sub.add_parser("to-cloud", help="convert Termux shebang -> env")
     sp.add_argument("paths", nargs="*")
     sp.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     sp.set_defaults(func=_cmd_to_cloud)
-
     return p
 
 

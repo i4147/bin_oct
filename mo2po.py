@@ -5,7 +5,6 @@ Given one or more .mo file paths (via argparse), it should run msgunfmt on each,
 The script should support a verbose flag for detailed progress messages and handle errors gracefully, such as missing files, non-.mo extensions, failed subprocess calls, and empty output, printing clear error or warning messages for each case."""
 
 from __future__ import annotations
-
 import argparse
 import subprocess
 import sys

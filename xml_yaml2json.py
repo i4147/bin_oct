@@ -4,7 +4,6 @@ This script consolidates four distinct conversion utilities into a single interf
 Mappings to original scripts: - original toml2json.py -> python merged.py toml <file> - original xml2json.py -> python merged.py xml [files...] --engine xmltodict --delete-source --workers 16 - original xmltojson.py -> python merged.py xml <file> --engine defusedxml - original yaml2json.py -> python merged.py yaml <file> [options...]"""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import json
@@ -16,17 +15,14 @@ try:
     import toml
 except ImportError:
     toml = None
-
 try:
     import xmltodict
 except ImportError:
     xmltodict = None
-
 try:
     from defusedxml.ElementTree import parse as defused_parse
 except ImportError:
     defused_parse = None
-
 try:
     import yaml
 except ImportError:
@@ -55,15 +51,12 @@ def process_toml(filepath: Path) -> None:
     if toml is None:
         print("Error: 'toml' package is required. Run 'pip install toml'", file=sys.stderr)
         sys.exit(1)
-
     try:
         with open(filepath, encoding="utf-8") as f:
             data = toml.load(f)
-
         out_path = filepath.with_suffix(".json")
         write_json_file(data, out_path)
         print(f"{filepath} -> {out_path}")
-
     except FileNotFoundError:
         print(f"Error: The file '{filepath}' was not found.", file=sys.stderr)
     except Exception as e:
@@ -73,7 +66,6 @@ def process_toml(filepath: Path) -> None:
 def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
     node_dict: dict[str, Any] = {element.tag: {} if element.attrib else None}
     children = list(element)
-
     if children:
         child_accumulator: dict[str, Any] = {}
         for child in children:
@@ -86,24 +78,20 @@ def _element_to_dict_recursive(element: Any) -> dict[str, Any]:
                 else:
                     child_accumulator[k] = v
         node_dict = {element.tag: child_accumulator}
-
     if element.attrib:
         if node_dict[element.tag] is None:
             node_dict[element.tag] = {}
         node_dict[element.tag].update({"@attributes": element.attrib})
-
     if element.text and element.text.strip():
         if node_dict[element.tag] is None:
             node_dict[element.tag] = element.text.strip()
         elif isinstance(node_dict[element.tag], dict):
             node_dict[element.tag]["#text"] = element.text.strip()
-
     return node_dict
 
 
 def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
     out_path = filepath.with_suffix(".json")
-
     try:
         if engine == "xmltodict":
             if xmltodict is None:
@@ -113,10 +101,8 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
             data = xmltodict.parse(xml_text)
             write_json_file(data, out_path)
             print(f"{out_path} created.", file=sys.stdout)
-
             if delete_source and filepath.suffix.lower() == ".xml":
                 filepath.unlink()
-
         elif engine == "defusedxml":
             if defused_parse is None:
                 msg = "defusedxml is not installed."
@@ -126,7 +112,6 @@ def process_xml_file(filepath: Path, engine: str, delete_source: bool) -> None:
             data = _element_to_dict_recursive(root)
             write_json_file(data, out_path)
             print(f"Successfully converted '{filepath}' to '{out_path}'", file=sys.stdout)
-
     except OSError as e:
         print(f"error {e}", file=sys.stderr)
     except Exception as e:
@@ -150,16 +135,13 @@ def convert_yaml_to_json_str(
     except yaml.YAMLError as e:
         msg = f"YAML parsing error: {e}"
         raise yaml.YAMLError(msg) from e
-
     try:
         json.dumps(data, ensure_ascii=ensure_ascii, allow_nan=False)
     except (TypeError, ValueError) as e:
         msg = f"Data cannot be serialized to JSON: {e}"
         raise ValueError(msg) from e
-
     separators = (",", ":") if compact else None
     actual_indent = None if compact else indent
-
     try:
         return json.dumps(
             data,
@@ -180,10 +162,8 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     toml_parser = subparsers.add_parser("toml", help="Convert TOML files to JSON")
     toml_parser.add_argument("inputs", nargs="+", type=Path, help="Input TOML file(s)")
-
     xml_parser = subparsers.add_parser("xml", help="Convert XML files to JSON")
     xml_parser.add_argument("inputs", nargs="*", type=Path, help="Input XML file(s) or directories")
     xml_parser.add_argument(
@@ -209,7 +189,6 @@ def main() -> int:
         default=[".xml", ".svg"],
         help="Extensions to process if scanning a directory (default: .xml .svg)",
     )
-
     yaml_parser = subparsers.add_parser("yaml", help="Convert YAML files/streams to JSON")
     yaml_in_out = yaml_parser.add_argument_group("Input/Output")
     yaml_in_out.add_argument(
@@ -271,17 +250,13 @@ def main() -> int:
         action="store_true",
         help="Only validate YAML, don't output JSON",
     )
-
     args = parser.parse_args()
-
     if args.command == "toml":
         for filepath in args.inputs:
             process_toml(filepath)
         return 0
-
     elif args.command == "xml":
         target_files: list[Path] = []
-
         if args.inputs:
             for p in args.inputs:
                 if p.is_dir():
@@ -290,16 +265,13 @@ def main() -> int:
                     target_files.append(p)
         else:
             target_files = get_files_in_dir(Path.cwd(), args.exts)
-
         if not target_files:
             print("No XML files found to process.", file=sys.stderr)
             return 1
-
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
             futures = [executor.submit(process_xml_file, f, args.engine, args.delete_source) for f in target_files]
             concurrent.futures.wait(futures)
         return 0
-
     elif args.command == "yaml":
         if yaml is None:
             print(
@@ -307,10 +279,8 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
-
         if args.allow_unicode:
             args.ensure_ascii = False
-
         try:
             if args.input is sys.stdin and sys.stdin.isatty():
                 print("Enter YAML content (Ctrl+D to finish):", file=sys.stderr)
@@ -318,11 +288,9 @@ def main() -> int:
         except Exception as e:
             print(f"Error reading input: {e}", file=sys.stderr)
             return 1
-
         if not yaml_content.strip():
             print("Error: Empty YAML input", file=sys.stderr)
             return 1
-
         try:
             json_str = convert_yaml_to_json_str(
                 yaml_content,
@@ -338,7 +306,6 @@ def main() -> int:
         except ValueError as e:
             print(f"Conversion Error: {e}", file=sys.stderr)
             return 1
-
         if not args.validate_only:
             try:
                 args.output.write(json_str)
@@ -350,9 +317,7 @@ def main() -> int:
                 return 1
         else:
             print("✓ YAML is valid", file=sys.stderr)
-
         return 0
-
     return 1
 
 

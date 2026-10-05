@@ -14,7 +14,6 @@ Input existence is always checked up front.
 Probe format (CSV vs JSON) is not user-visible; JSON is used."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import subprocess
@@ -258,7 +257,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="omit -y so ffmpeg prompts before overwriting existing files (exsrt.py behaviour)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_extract = sub.add_parser("extract", parents=[common], help="extract all subtitle streams")
     p_extract.add_argument("video", help="video file containing subtitle streams")
     p_extract.add_argument(
@@ -286,7 +284,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also print raw and parsed stream details (exsrt3.py behaviour)",
     )
-
     p_first = sub.add_parser("first", parents=[common], help="extract one subtitle stream to <video>.srt")
     p_first.add_argument("video", help="video file containing subtitle streams")
     p_first.add_argument("-o", "--output", default=None, help="output .srt path (default: <video>.srt)")
@@ -297,7 +294,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="subtitle stream to map, as 0:s:N (default: 0)",
     )
-
     p_list = sub.add_parser("list", help="list subtitle streams without extracting")
     p_list.add_argument("video", help="video file containing subtitle streams")
     p_list.add_argument("--verbose", action="store_true", help="also print raw ffprobe stream records")

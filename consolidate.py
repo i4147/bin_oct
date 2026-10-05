@@ -1,6 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""Create a Python 3.12 command-line utility (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that analyzes and reports on "merged" Python source files — i.e., files that were produced by concatenating multiple original Python modules together, where each original file's content is preceded by a header comment line in the form `# File: <original_relative_path>`.
 
+The script's purpose is to:
+
+1. **Parse command-line arguments** (using `argparse`) to accept at least:
+   - One or more input paths (files and/or directories to scan, recursively finding merged Python files).
+   - Options to control behavior such as verbosity/logging level, number of worker threads/processes (default should be 8, matching a `WORKERS` constant), output format or destination, and possibly a flag to actually split/restore the merged file back into separate files on disk (vs. just reporting/analyzing).
+
+2. **Detect and split merged files** by scanning file content line-by-line (or via regex) for the header marker pattern `# File: <path>` (matched with a case-sensitive regex anchored per line, allowing trailing whitespace to be trimmed), and partitioning the rest of the content into per-original-file chunks.
+
+3. **Parse each resulting chunk as Python source using the `ast` module** to validate syntax, extract structural information (e.g., detect syntax errors, count definitions/imports, or otherwise analyze each embedded file), and report any parsing failures gracefully without crashing the whole run.
+
+4. **Process multiple files concurrently** using a thread/process pool sized by the `WORKERS` constant (or a user-supplied override) to speed up scanning of many files/directories.
+
+5. **Write out results**, which may include:
+   - Reconstructing each embedded original file at its proper relative path under an output directory (creating parent directories as needed, using `shutil`/`pathlib`/`os` for file system operations), optionally backing up or overwriting existing files.
+   - Printing a human-readable, richly formatted report to the terminal.
+
+6. **Produce colorized, styled terminal output** via an internal `Style` helper class that:
+   - Detects whether ANSI colors should be enabled (respecting `NO_COLOR` and `FORCE_COLOR` environment variables, and falling back to checking `sys.stdout.isatty()`).
+   - Detects whether the terminal supports Unicode (by inspecting `sys.stdout.encoding`), to decide between Unicode symbols/box-drawing characters and plain ASCII fallbacks.
+   - Provides helper methods (e.g., `bold`, and color helpers for red/green/yellow/blue/magenta/cyan/white, plus 256-color support via a `_fg256` helper) to wrap text in ANSI escape codes, and a `visible_len` utility that strips ANSI codes (via a precompiled regex) to correctly compute the visible/display width of styled strings for alignment purposes (e.g., in tables or progress indicators).
+
+7. **Use `loguru`-style logging** with a custom log format constant (`LOGURU_LOGFORMAT`) showing timestamp with milliseconds, log level, source filename, line number, and message — for diagnostic/debug output controllable via a verbosity flag.
+
+8. **Handle warnings and errors defensively**, using `warnings` suppression where appropriate and `contextlib` (e.g., context managers for suppressing exceptions or redirecting output) so that malformed input files or individual failures don't abort the entire batch run.
+
+9. Be structured with a `Style` class and likely one or more `@dataclass` definitions (using `field` for mutable defaults) to represent discovered files, split results, or report entries in a clean, typed way.
+
+The main input is one or more file/directory paths pointing to merged Python source file(s) (plus CLI flags for options like worker count, verbosity, output directory, color/unicode preferences). The main output is either: (a) the set of individual Python files reconstructed from the merged file(s) and written to disk, and/or (b) a colorized terminal report summarizing what files were found inside each merged file, their validity (parseable as Python), and any errors encountered — depending on the mode selected via CLI flags. The tool should run entirely offline, be dependency-light (standard library plus `loguru`), and be robust to large numbers of files via concurrent processing.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/QR7iVcNCpet2pVCmbmn7Cw"""
+
+from __future__ import annotations
 import argparse
 import ast
 import contextlib
@@ -16,15 +48,12 @@ from typing import Optional
 
 WORKERS = 8
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
-
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
-
 RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 ITALIC = "\033[3m"
 UNDERLINE = "\033[4m"
-
 FG_BLACK = "\033[30m"
 FG_RED = "\033[31m"
 FG_GREEN = "\033[32m"
@@ -33,7 +62,6 @@ FG_BLUE = "\033[34m"
 FG_MAGENTA = "\033[35m"
 FG_CYAN = "\033[36m"
 FG_WHITE = "\033[37m"
-
 _ANSI_RE = re.compile(r"\033\[[0-9;]*m")
 
 
@@ -243,20 +271,16 @@ def format_numbered_list(
     items = [str(x) for x in items]
     if not items:
         return ""
-
     term = get_terminal_width()
     num_width = len(str(len(items)))
     prefix_w = indent + num_width + 2
     longest = max(len(s) for s in items)
-
     desired_gap = term - prefix_w - longest
     gap = max(min_gap, min(desired_gap, max_gap))
-
     avail = term - prefix_w - gap
     if avail < min_fname:
         avail = max(min_fname, term - prefix_w - min_gap)
         gap = max(min_gap, term - prefix_w - avail)
-
     total = len(items)
     lines: list[str] = []
     for i, s in enumerate(items):
@@ -417,7 +441,6 @@ SIX_ATTR_MAP: dict[str, str] = {
     "integer_types": "int",
     "string_types": "str",
 }
-
 SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.urllib.request": "urllib.request",
     "six.moves.urllib.error": "urllib.error",
@@ -499,7 +522,6 @@ OSPATH_PROPERTY_MAP: dict[str, str] = {
     "dirname": "parent",
     "basename": "name",
 }
-
 OSPATH_METHOD_MAP: dict[str, str] = {
     "abspath": "resolve",
     "realpath": "resolve",
@@ -509,7 +531,6 @@ OSPATH_METHOD_MAP: dict[str, str] = {
     "stat": "stat",
     "mkdir": "mkdir",
 }
-
 OSPATH_MAKEDIRS = "makedirs"
 OSPATH_GETSIZE = "getsize"
 
@@ -538,7 +559,6 @@ class OsPathTransformer(ast.NodeTransformer):
             return node
         method = func.attr
         args = node.args
-
         if method == "join" and len(args) >= 1:
             base = _wrap_path(args[0])
             if len(args) == 1:
@@ -548,14 +568,12 @@ class OsPathTransformer(ast.NodeTransformer):
                 args=list(args[1:]),
                 keywords=[],
             )
-
         if method in OSPATH_PROPERTY_MAP and len(args) == 1:
             return ast.Attribute(
                 value=_wrap_path(args[0]),
                 attr=OSPATH_PROPERTY_MAP[method],
                 ctx=ast.Load(),
             )
-
         if method in OSPATH_METHOD_MAP and len(args) == 1:
             return ast.Call(
                 func=ast.Attribute(
@@ -566,14 +584,12 @@ class OsPathTransformer(ast.NodeTransformer):
                 args=[],
                 keywords=[],
             )
-
         if method == OSPATH_MAKEDIRS and len(args) == 1:
             return ast.Call(
                 func=ast.Attribute(value=_wrap_path(args[0]), attr="mkdir", ctx=ast.Load()),
                 args=[],
                 keywords=[ast.keyword(arg="parents", value=ast.Constant(value=True))],
             )
-
         if method == OSPATH_GETSIZE and len(args) == 1:
             stat_call = ast.Call(
                 func=ast.Attribute(value=_wrap_path(args[0]), attr="stat", ctx=ast.Load()),
@@ -581,7 +597,6 @@ class OsPathTransformer(ast.NodeTransformer):
                 keywords=[],
             )
             return ast.Attribute(value=stat_call, attr="st_size", ctx=ast.Load())
-
         return node
 
     def visit_Subscript(self, node: ast.Subscript) -> ast.AST:
@@ -645,7 +660,6 @@ class ExecutorTransformer(ast.NodeTransformer):
         var = item.optional_vars
         if not isinstance(var, ast.Name):
             return node
-
         pool_assign = ast.Assign(
             targets=[ast.Name(id="_pool", ctx=ast.Store())],
             value=ast.Call(
@@ -654,10 +668,8 @@ class ExecutorTransformer(ast.NodeTransformer):
                 keywords=[],
             ),
         )
-
         renamer = _ExecutorMethodRenamer(var.id)
         new_body = [renamer.visit(stmt) for stmt in node.body]
-
         cleanup = [
             ast.Expr(
                 ast.Call(
@@ -682,7 +694,6 @@ class ExecutorTransformer(ast.NodeTransformer):
                 )
             ),
         ]
-
         try_node = ast.Try(body=new_body, handlers=[], orelse=[], finalbody=cleanup)
         return [pool_assign, try_node]
 
@@ -713,7 +724,6 @@ class LoggingTransformer(ast.NodeTransformer):
         if not isinstance(call, ast.Call):
             return node
         f = call.func
-
         if (
             isinstance(f, ast.Attribute)
             and isinstance(f.value, ast.Name)
@@ -755,7 +765,6 @@ class LoggingTransformer(ast.NodeTransformer):
                     )
                 ),
             ]
-
         if (
             isinstance(f, ast.Attribute)
             and isinstance(f.value, ast.Name)
@@ -780,7 +789,6 @@ class LoggingTransformer(ast.NodeTransformer):
                     keywords=[ast.keyword(arg="level", value=call.args[0])],
                 )
             )
-
         return node
 
 
@@ -850,7 +858,6 @@ def refactor(
     parse_report: Optional[ParseReport] = None,
 ) -> None:
     t0 = time.perf_counter()
-
     if not quiet:
         print(banner(source_label, output, len(modules), style))
         print()
@@ -862,30 +869,21 @@ def refactor(
         if parse_report:
             print(warning_box(parse_report.items, style, verbose))
             print()
-
     in_bytes = _sum_input_bytes(modules)
-
     merged = merge_modules(modules)
     module = ast.Module(body=merged, type_ignores=[])
-
     bare_path = _module_imports_path_bare(module)
-
     for T in (SixImportRewriter, SixTransformer, LoggingTransformer):
         module = T().visit(module)
     module = OsPathTransformer(bare_path=bare_path).visit(module)
     module = ExecutorTransformer().visit(module)
-
     module.body = [n for n in module.body if not _is_named_assign(n, "WORKERS")]
     module.body.insert(0, _make_assign("WORKERS", ast.Constant(value=WORKERS)))
-
     module = inject_standard_imports(module)
-
     strip_docstrings(module)
     ast.fix_missing_locations(module)
-
     src = ast.unparse(module)
     src = re.sub(r"\n{3,}", "\n\n\n", src)
-
     try:
         ast.parse(src)
     except SyntaxError as exc:
@@ -893,11 +891,9 @@ def refactor(
         check_path.write_text(src + "\n", encoding="utf-8")
         msg = f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
         raise SystemExit(msg)
-
     output.write_text(src + "\n", encoding="utf-8")
     out_bytes = output.stat().st_size
     elapsed = time.perf_counter() - t0
-
     if not quiet:
         print(success_box(output, in_bytes, out_bytes, elapsed, style))
         print()
@@ -948,18 +944,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="disable ANSI colors (also honors NO_COLOR env var)",
     )
     args = parser.parse_args(argv)
-
     if args.no_color:
         os.environ["NO_COLOR"] = "1"
-
     style = Style()
-
     if args.merged_file is not None and args.input is not None:
         msg = "Provide either a positional INPUT or -f/--merged-file, not both"
         raise SystemExit(msg)
-
     parse_report = ParseReport()
-
     if args.merged_file is not None:
         merged_path: Path = args.merged_file
         if not merged_path.exists():
@@ -980,18 +971,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         modules = [(str(p), parse_file(p, parse_report)) for p in files]
         source_label = str(input_path)
         source_default = input_path.stem if input_path.is_file() else input_path.name
-
     output: Optional[Path] = args.output
     if output is None:
         output = Path.cwd() / f"{source_default}_single.py"
-
     if args.merged_file is not None and output.resolve() == args.merged_file.resolve():
         msg = "Refusing to overwrite the input merged file"
         raise SystemExit(msg)
     if args.input is not None and output.resolve() == args.input.resolve():
         msg = "Refusing to overwrite the input path"
         raise SystemExit(msg)
-
     refactor(
         modules,
         output,

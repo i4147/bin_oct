@@ -4,13 +4,11 @@ It should load a GitHub personal access token from a ~/.env file (falling back t
 The script should print progress and status messages with emoji indicators (✅, ⚠️, ⏰, 📂) throughout the process, and likely shell out via subprocess for git-related operations (e.g., cloning or inspecting repos) as part of gathering size data."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import requests
 from dotenv import load_dotenv
 

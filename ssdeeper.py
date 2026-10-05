@@ -2,14 +2,12 @@
 """Recursively hash files with ssdeep and report similar pairs."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import operator
 import shutil
 import sys
 from pathlib import Path
-
 import ssdeep
 from dh import get_files
 
@@ -49,13 +47,11 @@ def compare_hashes(hashes, threshold, base):
             except Exception:
                 continue
             if score >= threshold:
-                results.append(
-                    {
-                        "file1": relative(path_a, base),
-                        "file2": relative(path_b, base),
-                        "score": score,
-                    }
-                )
+                results.append({
+                    "file1": relative(path_a, base),
+                    "file2": relative(path_b, base),
+                    "score": score,
+                })
     results.sort(key=operator.itemgetter("score"), reverse=True)
     return results
 
@@ -85,21 +81,17 @@ def main(argv=None):
     parser.add_argument("-g", "--group-similar", action="store_true")
     parser.add_argument("-o", "--output", default="simz.json")
     args = parser.parse_args(argv)
-
     base = Path.cwd()
     files = get_files(args.path)
     hashes = compute_hashes(files, args.min_size)
     results = compare_hashes(hashes, args.threshold, base)
-
     if args.group_similar:
         group_files(results, base)
-
     text = json.dumps(results, indent=2)
     if args.output == "-":
         print(text)
     else:
         Path(args.output).write_text(text)
-
     return 0
 
 

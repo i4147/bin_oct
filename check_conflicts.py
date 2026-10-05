@@ -3,14 +3,12 @@
 - stdlib names come from `dh.STDLIB` (a frozenset) - PyPI names come from /sdcard/data/pip.json, a list of [package_name, download_count] records Usage: python check_conflicts.py # report only python check_conflicts.py -a # rename to fix python check_conflicts.py -a -o report.json # custom report path python check_conflicts.py -i # only installed PyPI pkgs Exit codes: 0 = no conflicts 1 = conflicts found (fixed or not) 2 = error"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import re
 import sys
 import time
 from pathlib import Path
-
 from dh import STDLIB
 
 PIP_JSON = Path("/sdcard/data/pip.json")
@@ -39,9 +37,8 @@ def load_pypi_names(path: Path) -> set[str]:
 def installed_distributions() -> set[str]:
     try:
         from importlib.metadata import distributions
-    except ImportError:  # pragma: no cover - very old Python
+    except ImportError:
         from importlib_metadata import distributions  # type: ignore
-
     names: set[str] = set()
     for dist in distributions():
         try:
@@ -110,49 +107,38 @@ def main() -> int:
     if not root.is_dir():
         print(f"error: {root} is not a directory", file=sys.stderr)
         return 2
-
     stdlib_lookup: dict[str, str] = {}
     for n in STDLIB:
         stdlib_lookup.setdefault(normalize(n), n)
-
     pypi = load_pypi_names(PIP_JSON)
     if args.installed_only:
         installed = installed_distributions()
         pypi &= installed
-
     conflicts: list[dict] = []
     checked = 0
-
     for path, import_name, kind in collect_targets(root):
         checked += 1
         key = normalize(import_name)
-
         real = stdlib_lookup.get(key)
         if real is not None:
-            conflicts.append(
-                {
-                    "type": "stdlib",
-                    "path": str(path),
-                    "filename": path.name,
-                    "import_name": import_name,
-                    "shadows": real,
-                    "kind": kind,
-                }
-            )
+            conflicts.append({
+                "type": "stdlib",
+                "path": str(path),
+                "filename": path.name,
+                "import_name": import_name,
+                "shadows": real,
+                "kind": kind,
+            })
             continue
-
         if key in pypi:
-            conflicts.append(
-                {
-                    "type": "pypi",
-                    "path": str(path),
-                    "filename": path.name,
-                    "import_name": import_name,
-                    "shadows": import_name,
-                    "kind": kind,
-                }
-            )
-
+            conflicts.append({
+                "type": "pypi",
+                "path": str(path),
+                "filename": path.name,
+                "import_name": import_name,
+                "shadows": import_name,
+                "kind": kind,
+            })
     renamed = 0
     if args.autofix:
         for c in conflicts:
@@ -174,7 +160,6 @@ def main() -> int:
     else:
         for c in conflicts:
             c["fixed"] = False
-
     report = {
         "scanned_dir": str(root),
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -185,11 +170,9 @@ def main() -> int:
         "renamed": renamed,
         "conflicts": conflicts,
     }
-
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
-
     print(f"Scanned {checked} importable item(s) in {root}")
     if args.installed_only:
         print("PyPI filter: installed-only")
@@ -197,7 +180,6 @@ def main() -> int:
     if not conflicts:
         print("OK: no filename conflicts detected.")
         return 0
-
     print(f"\nFound {len(conflicts)} conflict(s):")
     for c in conflicts:
         tag = f"[{c['type']}]"
@@ -207,12 +189,10 @@ def main() -> int:
         elif args.autofix and not c.get("fixed"):
             line += f"  (fix failed: {c.get('fix_error', '?')})"
         print(line)
-
     if args.autofix:
         print(f"\nRenamed {renamed}/{len(conflicts)} item(s).")
     else:
         print("\nRun with -a / --autofix to rename them.")
-
     return 1
 
 

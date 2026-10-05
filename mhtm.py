@@ -4,7 +4,6 @@ It should use a custom HTMLParser subclass to check that tags are properly neste
 The script should process files in parallel using multiprocessing for speed, print a summary of successes, failures, and validation errors, and support command-line arguments (via argparse) to control input paths and behavior, exiting with a non-zero status code if any file fails validation or minification."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import sys
@@ -12,7 +11,6 @@ from functools import partial
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import minify_html as mh
 
 if TYPE_CHECKING:

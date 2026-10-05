@@ -6,13 +6,11 @@ Pass -g/--group-similar to move paired files, into subdirs group001, group002, .
 in the current directory."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import operator
 from collections import defaultdict
 from pathlib import Path
-
 import ssdeep
 from dh import get_files
 
@@ -55,13 +53,11 @@ def compare_files(paths: list[Path], similarity_threshold: int = 70):
             try:
                 score = ssdeep.compare(hash1, hash2)
                 if score >= similarity_threshold:
-                    similarities.append(
-                        {
-                            "file1": str(Path(path1_str).relative_to(cwd)),
-                            "file2": str(Path(path2_str).relative_to(cwd)),
-                            "similarity_score": score,
-                        }
-                    )
+                    similarities.append({
+                        "file1": str(Path(path1_str).relative_to(cwd)),
+                        "file2": str(Path(path2_str).relative_to(cwd)),
+                        "similarity_score": score,
+                    })
             except ssdeep.error as e:
                 print(f"Error comparing hashes for {path1_str} and {path2_str}: {e}")
             except Exception as e:

@@ -5,7 +5,6 @@ Pass -a / --apply to actually move the archives.
 Heuristics that flag an archive as useless: * invalid archive – cannot be opened / truncated / not a tarball/zip * no files – archive contains only dirs / symlinks * no .py files – nothing that could be a real package * only setup.py – a lone setup.py with no code next to it * all non-setup .py empty – every real .py file is 0 bytes / whitespace * only metadata – README/LICENSE/PKG-INFO/pyproject.toml … only * only compiled files – .pyc / __pycache__, no source * only docs/tests/examples – no production code shipped * imports-only – .py files parse but contain just imports, docstrings or `pass` * too small – total uncompressed size below a threshold"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp
@@ -16,9 +15,7 @@ from pathlib import Path
 
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300
-
 TARGET_GLOBS = ("*.tar.gz", "*.whl", "*.zip")
-
 METADATA_NAMES = {
     "PKG-INFO",
     "METADATA",
@@ -50,7 +47,6 @@ METADATA_NAMES = {
     "RECORD",
     "WHEEL",
 }
-
 NON_CODE_PREFIXES = (
     "docs/",
     "doc/",
@@ -108,7 +104,6 @@ class Archive:
             for m in fh.getmembers():
                 if not m.isfile():
                     continue
-
                 yield _Member(
                     m.name,
                     m.size,
@@ -304,34 +299,26 @@ def parse_args():
 
 def main():
     args = parse_args()
-
     cwd = Path.cwd()
     empty_dir = cwd / "empty"
-
     if args.apply:
         empty_dir.mkdir(exist_ok=True)
-
-    targets = sorted(
-        {p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents}
-    )
-
+    targets = sorted({
+        p for pattern in TARGET_GLOBS for p in cwd.rglob(pattern) if p.is_file() and empty_dir not in p.parents
+    })
     mode = "APPLY" if args.apply else "DRY-RUN"
     print(f"[{mode}] scanning {len(targets)} archive(s) with {WORKERS} workers\n")
-
     matched = 0
     moved = 0
-
     with mp.Pool(WORKERS) as pool:
         for path, reason in pool.imap_unordered(analyze, targets, chunksize=1):
             if reason is None:
                 continue
             matched += 1
-
             rel = path.relative_to(cwd)
             if not args.apply:
                 print(f"WOULD MOVE  [{reason}]  {rel}")
                 continue
-
             dest = _unique_dest(empty_dir, path.name)
             try:
                 shutil.move(str(path), str(dest))
@@ -340,7 +327,6 @@ def main():
                 continue
             moved += 1
             print(f"MOVED  [{reason}]  {rel}  ->  empty/{dest.name}")
-
     print()
     if args.apply:
         print(f"Moved {moved} of {len(targets)} archives into {empty_dir}")

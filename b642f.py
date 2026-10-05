@@ -5,11 +5,9 @@ The script should gracefully handle decoding failures (including a fallback retr
 It relies on a helper "cprint" from a local module "dh" for colored console output and uses "pathlib.Path" for file operations."""
 
 from __future__ import annotations
-
 import base64
 import sys
 from pathlib import Path
-
 from dh import cprint
 
 

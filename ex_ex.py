@@ -5,10 +5,8 @@ After processing, print a summary message showing how many folders were processe
 Use tree_sitter's Parser and Language APIs for parsing, and pathlib for filesystem operations."""
 
 from __future__ import annotations
-
 from collections import defaultdict
 from pathlib import Path
-
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

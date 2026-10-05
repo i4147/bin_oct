@@ -4,14 +4,11 @@ It should use argparse to accept target paths, skip binary files (via an is_bina
 To speed up processing of large file trees, it should parallelize the conversion work across multiple files using a multiprocessing Pool with a configurable worker count, and use loguru to log per-file results (converted, already Unix format, skipped, or errored) as well as an overall summary."""
 
 from __future__ import annotations
-
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
-
 from dh import is_binary
 from loguru import logger
-
 from dos2unix import dos2unix
 
 MAX_WORKERS = 8

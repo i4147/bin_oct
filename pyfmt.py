@@ -3,7 +3,6 @@
 Merges the behaviors of the following scripts into one CLI: bightml.py -> python fmt.py list-large --min-size-mb 1 htmlformat.py -> python fmt.py format --tool treesitter [paths...] pret3.py -> python fmt.py format --tool jsbeautifier --ext .js .css .html pret4.py -> python fmt.py format --tool prettier --move-errors-to error pretp.py -> python fmt.py format --tool prettier --npx --progress --executor thread pretret.py -> python fmt.py format --tool prettier --translate-path prettify.py -> python fmt.py format --tool prettify pypret.py -> python fmt.py format --tool jsbeautifier --ext .js .html .css .json Third-party packages (installed on demand, only when the matching backend is used): tree-sitter, tree-sitter-html (--tool treesitter) jsbeautifier (--tool jsbeautifier) beautifulsoup4, cssbeautifier, yapf (--tool prettify) tqdm (optional, enables --progress) prettier / npx prettier (external CLI, --tool prettier) Examples -------- python fmt.py list-large --min-size-mb 2 python fmt.py format --tool treesitter src/ --jobs 4 python fmt.py format --tool jsbeautifier --ext .js .css .html python fmt.py format --tool prettier --npx --progress python fmt.py format --tool prettier --move-errors-to error --skip-dir error python fmt.py format --tool prettify ."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import logging
@@ -18,9 +17,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-
 LOG = logging.getLogger("fmt")
-
 HTML_EXTS: set[str] = {".html", ".htm", ".xhtml"}
 JSBEAUTIFIER_EXTS: set[str] = {".js", ".css", ".html", ".htm", ".json"}
 PRETTIER_EXTS: set[str] = {
@@ -35,7 +32,6 @@ PRETTIER_EXTS: set[str] = {
     ".tsx",
 }
 PRETTIFY_EXTS: set[str] = {".html", ".htm", ".css", ".js"}
-
 DEFAULT_EXTS_BY_TOOL: dict[str, set[str]] = {
     "treesitter": HTML_EXTS,
     "jsbeautifier": JSBEAUTIFIER_EXTS,
@@ -138,19 +134,17 @@ def _move_to_error(path: Path, dest_dir: str) -> None:
 
 
 class HtmlTagFormatter:
-    INLINE_TAGS: frozenset[str] = frozenset(
-        {
-            "b",
-            "i",
-            "u",
-            "em",
-            "strong",
-            "code",
-            "small",
-            "sub",
-            "sup",
-        }
-    )
+    INLINE_TAGS: frozenset[str] = frozenset({
+        "b",
+        "i",
+        "u",
+        "em",
+        "strong",
+        "code",
+        "small",
+        "sub",
+        "sup",
+    })
 
     def __init__(self) -> None:
         try:
@@ -192,12 +186,10 @@ class HtmlTagFormatter:
                 tag = self._tag_name(node, src)
                 if tag and tag not in self.INLINE_TAGS:
                     start, end = node.start_byte, node.end_byte
-
                     line_start = src.rfind("\n", 0, start) + 1
                     prefix = src[line_start:start]
                     if prefix.strip() and not prefix.strip().endswith("\n"):
                         edits.append((start, "\n", 0))
-
                     nl = src.find("\n", end)
                     if nl == -1:
                         nl = len(src)
@@ -272,7 +264,6 @@ def _beautify_jsbeautifier(
     src = read_text(path)
     if src is None:
         return FileResult(path, success=False, error="Failed to read file")
-
     ext = path.suffix.lower()
     try:
         if ext == ".json":
@@ -296,7 +287,6 @@ def _beautify_jsbeautifier(
         return FileResult(path, success=False, error=f"Missing dependency: {exc}")
     except Exception as exc:
         return FileResult(path, success=False, error=str(exc))
-
     modified = out != src
     if modified and not atomic_write(path, out):
         return FileResult(path, success=False, error="Failed to write file")
@@ -313,14 +303,11 @@ def _beautify_prettier(
     target = str(path)
     if translate_path:
         target = target.replace("/storage/emulated/0", "/sdcard")
-
     cmd = (["npx", "prettier", "--write"] if use_npx else ["prettier", "--write"]) + [target]
-
     try:
         before = path.stat().st_mtime_ns
     except OSError:
         before = 0
-
     try:
         proc = subprocess.run(
             cmd,
@@ -334,11 +321,9 @@ def _beautify_prettier(
         return FileResult(path, success=False, error="Timeout")
     except Exception as exc:
         return FileResult(path, success=False, error=str(exc))
-
     if proc.returncode != 0:
         err = (proc.stderr or proc.stdout or "Unknown error").strip()
         return FileResult(path, success=False, error=err)
-
     try:
         after = path.stat().st_mtime_ns
     except OSError:
@@ -350,7 +335,6 @@ def _beautify_prettify(path: Path) -> FileResult:
     src = read_text(path)
     if src is None:
         return FileResult(path, success=False, error="Failed to read file")
-
     ext = path.suffix.lower()
     try:
         if ext in (".html", ".htm"):
@@ -371,7 +355,6 @@ def _beautify_prettify(path: Path) -> FileResult:
         return FileResult(path, success=False, error=f"Missing dependency: {exc}")
     except Exception as exc:
         return FileResult(path, success=False, error=str(exc))
-
     modified = out != src
     if modified and not atomic_write(path, out):
         return FileResult(path, success=False, error="Failed to write file")
@@ -388,7 +371,6 @@ def run_batch(
     move_errors_dir: Optional[str] = None,
 ) -> dict[str, int]:
     stats = {"ok": 0, "fail": 0, "modified": 0, "bytes": 0, "detail": 0}
-
     pbar = None
     if progress:
         try:
@@ -433,7 +415,6 @@ def run_batch(
     finally:
         if pbar is not None:
             pbar.close()
-
     return stats
 
 
@@ -491,29 +472,22 @@ def _make_worker(args: argparse.Namespace) -> Callable[[Path], FileResult]:
 
 def cmd_format(args: argparse.Namespace) -> int:
     exts = _normalise_exts(args.ext, args.tool)
-
     skip_dirs = list(args.skip_dir or [])
     if args.move_errors_to and args.move_errors_to not in skip_dirs:
         skip_dirs.append(args.move_errors_to)
-
     targets = discover(args.paths or [Path.cwd()], exts, skip_dir_names=skip_dirs)
     if not targets:
         LOG.warning("No matching files found")
         return 0
-
     print(f"Found {len(targets)} file(s)")
-
     if args.dry_run:
         for p in targets:
             print(f"Would process: {p}")
         return 0
-
     worker = _make_worker(args)
-
     executor = args.executor
     if executor == "auto":
         executor = "thread" if args.tool == "prettier" else "process"
-
     try:
         stats = run_batch(
             targets,
@@ -526,7 +500,6 @@ def cmd_format(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         LOG.warning("Interrupted by user")
         return 130
-
     total = stats["ok"] + stats["fail"]
     print("\n" + "=" * 60)
     print("SUMMARY")
@@ -560,9 +533,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
-
     sub = parser.add_subparsers(dest="command", required=True)
-
     ll = sub.add_parser(
         "list-large",
         help="List HTML files larger than a size threshold (bightml.py).",
@@ -580,7 +551,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Minimum size in MiB (default: 1.0).",
     )
-
     fmt = sub.add_parser(
         "format",
         help="Beautify / reformat files using the selected backend.",
@@ -641,7 +611,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="NAME",
         help="Directory names to skip while scanning.",
     )
-
     # treesitter-only
     fmt.add_argument(
         "--max-bytes",
@@ -649,7 +618,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=50 * 1024 * 1024,
         help="tree-sitter: skip files larger than this (default: 50 MiB).",
     )
-
     # jsbeautifier-only
     fmt.add_argument(
         "--indent-size",
@@ -663,7 +631,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=4,
         help="jsbeautifier: indent for JSON re-serialization (default: 4).",
     )
-
     # prettier-only
     fmt.add_argument(
         "--npx",
@@ -681,25 +648,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=300,
         help="prettier: per-file subprocess timeout in seconds (default: 300).",
     )
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-
     if args.command == "list-large":
         return cmd_list_large(args)
     if args.command == "format":
         return cmd_format(args)
-
     parser.print_help()
     return 1
 

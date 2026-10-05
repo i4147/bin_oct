@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merged requirements.txt generator (imp1 + imp2 + pipreqs + pr2).
-
 Modes
 -----
 offline   Use a local PyPI package list (no network). Mirrors imp1.py / imp2.py.
 online    Resolve imports via PyPI JSON API. Mirrors pipreqs.py / pr2.py.
-
 Examples
 --------
 python merged.py offline -p ./project -l /sdcard/data/pip.txt
@@ -15,15 +13,12 @@ python merged.py online  -p ./project --mode compat
 python merged.py online  -p ./project --print --scan-notebooks
 python merged.py online  -p ./project --use-local
 python merged.py online  -p ./project --pypi-server https://mirrors.tuna.tsinghua.edu.cn/pypi/
-
 Only the Python standard library is used.
-
 Original-script mappings:
     imp1.py     -> python merged.py offline -p . -l /sdcard/data/pip.txt
     imp2.py     -> python merged.py offline -p . --detect-local
     pipreqs.py  -> python merged.py online -p .
     pr2.py      -> python merged.py online -p . --pypi-server https://mirrors.tuna.tsinghua.edu.cn/pypi/
-
 Assumption: imp1/imp2 parse imports line-by-line; pipreqs/pr2 use AST.
 Pass --ast to offline to switch to AST parsing.
 """
@@ -38,7 +33,6 @@ import sys
 import urllib.error
 import urllib.request
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple
-
 
 try:
     STDLIB: Set[str] = set(sys.stdlib_module_names)
@@ -250,8 +244,6 @@ except AttributeError:
         "zipimport",
         "zlib",
     }
-
-
 IMPORT_MAPPING: Dict[str, str] = {
     "bs4": "beautifulsoup4",
     "cv2": "opencv-python",
@@ -269,8 +261,6 @@ IMPORT_MAPPING: Dict[str, str] = {
     "numpy": "numpy",
     "pandas": "pandas",
 }
-
-
 IGNORES_ONLINE: Set[str] = {
     ".hg",
     ".svn",
@@ -281,7 +271,6 @@ IGNORES_ONLINE: Set[str] = {
     "venv",
     ".ipynb_checkpoints",
 }
-
 IGNORES_OFFLINE_FULL: Set[str] = {
     "__pycache__",
     "venv",
@@ -299,12 +288,10 @@ IGNORES_OFFLINE_FULL: Set[str] = {
 
 
 def _norm(name: str) -> str:
-    """Return a normalized (lowercase, underscore->dash) package name."""
     return name.lower().replace("_", "-")
 
 
 def parse_imports_lines(lines: Iterable[str]) -> Iterator[str]:
-    """Yield top-level import names from a source file, line by line."""
     for raw in lines:
         line = raw.strip()
         if not line or line.startswith("#"):
@@ -326,7 +313,6 @@ def parse_imports_lines(lines: Iterable[str]) -> Iterator[str]:
 
 
 def parse_imports_ast(source: str) -> Set[str]:
-    """Return the set of top-level import names parsed from `source` via AST."""
     result: Set[str] = set()
     try:
         tree = ast.parse(source)
@@ -343,7 +329,6 @@ def parse_imports_ast(source: str) -> Set[str]:
 
 
 def read_notebook(path: str, encoding: str = "utf-8") -> str:
-    """Flatten a Jupyter notebook's cell sources into a single source string."""
     with open(path, "r", encoding=encoding) as f:
         nb = json.load(f)
     chunks: List[str] = []
@@ -366,7 +351,6 @@ def scan_project(
     use_ast: bool = False,
     ignore_set: Optional[Set[str]] = None,
 ) -> List[str]:
-    """Walk `root` and return a de-duplicated list of imported top-level names."""
     ignores: Set[str] = set(ignore_set or ())
     if ignore:
         for item in ignore:
@@ -403,7 +387,6 @@ def scan_project(
 
 
 def load_offline_list(path: str) -> Set[str]:
-    """Load and normalize the local PyPI package list."""
     result: Set[str] = set()
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -415,7 +398,6 @@ def load_offline_list(path: str) -> Set[str]:
 
 
 def get_installed(pip_cmd: str = "pip3") -> Tuple[List[str], Set[str]]:
-    """Run `pip freeze` and return (raw lines, normalized names)."""
     try:
         proc = subprocess.Popen(
             [pip_cmd, "freeze"],
@@ -439,7 +421,6 @@ def get_installed(pip_cmd: str = "pip3") -> Tuple[List[str], Set[str]]:
 
 
 def detect_local_modules(root: str) -> Set[str]:
-    """imp2-style local module detection (dirs with __init__.py + .py stems)."""
     local: Set[str] = set()
     root_abs = os.path.realpath(root)
     for dirpath, dirnames, filenames in os.walk(root_abs):
@@ -464,7 +445,6 @@ def detect_local_modules(root: str) -> Set[str]:
 
 
 def detect_local_names(root: str) -> Set[str]:
-    """pipreqs-style local name set: dir basenames + .py file stems."""
     names: Set[str] = set()
     for dirpath, _dirnames, filenames in os.walk(root):
         names.add(os.path.basename(dirpath))
@@ -475,7 +455,6 @@ def detect_local_names(root: str) -> Set[str]:
 
 
 def map_imports_to_pypi(names: Iterable[str]) -> List[str]:
-    """Apply the static import->PyPI mapping."""
     mapped: Set[str] = set()
     for name in names:
         mapped.add(IMPORT_MAPPING.get(name, name))
@@ -483,7 +462,6 @@ def map_imports_to_pypi(names: Iterable[str]) -> List[str]:
 
 
 def get_local_packages(encoding: str = "utf-8") -> Dict[str, Dict[str, Optional[str]]]:
-    """Scan sys.path for top_level.txt files and build name -> {name, version}."""
     result: Dict[str, Dict[str, Optional[str]]] = {}
     skip = {"tests", "_tests", "egg", "EGG", "info"}
     for p in sys.path:
@@ -513,7 +491,6 @@ def match_local(
     pkgs: Iterable[str],
     local: Dict[str, Dict[str, Optional[str]]],
 ) -> List[Dict[str, Optional[str]]]:
-    """Match mapped package names against the locally installed table."""
     out: List[Dict[str, Optional[str]]] = []
     for p in pkgs:
         entry = local.get(p.lower())
@@ -534,7 +511,6 @@ def resolve_from_pypi(
     server: str = "https://pypi.python.org/pypi/",
     proxy: Optional[str] = None,
 ) -> List[Dict[str, Optional[str]]]:
-    """Resolve package versions from a PyPI JSON endpoint."""
     results: List[Dict[str, Optional[str]]] = []
     opener = urllib.request.build_opener()
     if proxy:
@@ -556,7 +532,6 @@ def resolve_from_pypi(
 
 
 def parse_requirements_file(path: str) -> List[Dict[str, Optional[str]]]:
-    """Parse an existing requirements.txt into name/version dicts."""
     try:
         with open(path, "r") as f:
             lines = [line.strip() for line in f.readlines() if line.strip()]
@@ -585,7 +560,6 @@ def parse_requirements_file(path: str) -> List[Dict[str, Optional[str]]]:
 
 
 def show_diff(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
-    """Print requirements in `req_file` that are not imported by the project."""
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
     diff = existing - imported
@@ -593,7 +567,6 @@ def show_diff(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
 
 
 def clean_file(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
-    """Remove unused entries from `req_file`."""
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
     to_remove = existing - imported
@@ -618,7 +591,6 @@ def write_requirements(
     pkgs: List[Dict[str, Optional[str]]],
     delimiter: str,
 ) -> None:
-    """Write requirements to `out_path`, or to stdout if `out_path` == '-'."""
     lines: List[str] = []
     for entry in pkgs:
         if entry["version"]:
@@ -634,16 +606,13 @@ def write_requirements(
 
 
 def run_offline(args: argparse.Namespace) -> int:
-    """Run the offline (imp1/imp2) pipeline."""
     path = args.path or os.curdir
     known = load_offline_list(args.pypi_list)
     print(f"[i] Loaded {len(known)} packages from {args.pypi_list}")
-
     local: Set[str] = set()
     if args.detect_local:
         local = detect_local_modules(path)
         print(f"[i] Detected {len(local)} local modules/packages")
-
     imports = scan_project(
         root=path,
         encoding=args.encoding,
@@ -654,10 +623,8 @@ def run_offline(args: argparse.Namespace) -> int:
         ignore_set=IGNORES_OFFLINE_FULL if args.detect_local else None,
     )
     print(f"[i] Found {len(imports)} unique imports in source")
-
     _raw, installed = get_installed(args.pip_cmd)
     print(f"[i] {len(installed)} packages installed locally")
-
     stdlib = {_norm(m) for m in STDLIB}
     skip_std: List[str] = []
     skip_inst: List[str] = []
@@ -679,7 +646,6 @@ def run_offline(args: argparse.Namespace) -> int:
             keep.append(name)
         else:
             unknown.append(name)
-
     print(f"[i] Skipped {len(skip_std)} stdlib modules")
     if args.detect_local:
         print(f"[i] Skipped {len(skip_local)} local modules:{','.join(sorted(skip_local)) or '-'}")
@@ -687,7 +653,6 @@ def run_offline(args: argparse.Namespace) -> int:
     if unknown:
         label = "unknown" if args.detect_local else "local/unknown"
         print(f"[i] Skipped {len(unknown)} {label} modules:{','.join(unknown)}")
-
     out_path = os.path.join(path, "requirements.txt")
     final = sorted(set(keep))
     with open(out_path, "w", encoding="utf-8") as f:
@@ -698,7 +663,6 @@ def run_offline(args: argparse.Namespace) -> int:
 
 
 def run_online(args: argparse.Namespace) -> int:
-    """Run the online (pipreqs/pr2) pipeline."""
     path = os.path.abspath(args.path or os.curdir)
     imports = scan_project(
         root=path,
@@ -715,7 +679,6 @@ def run_online(args: argparse.Namespace) -> int:
     mapped = map_imports_to_pypi(imports)
     if args.debug:
         print(f"[debug] Mapped imports: {mapped}")
-
     local_pkgs = get_local_packages(args.encoding)
     local_resolved = match_local(mapped, local_pkgs)
     if args.use_local:
@@ -729,16 +692,12 @@ def run_online(args: argparse.Namespace) -> int:
             proxy=args.proxy,
         )
     resolved = sorted(resolved, key=lambda x: x["name"].lower())
-
     if args.diff:
         show_diff(args.diff, resolved)
         return 0
     if args.clean:
         clean_file(args.clean, resolved)
         return 0
-
-    # pr2 lacked --mode entirely and only supported the default `==` pin;
-    # pipreqs added --mode {compat,gt,no-pin} -> we expose both here.
     if args.mode == "no-pin":
         for r in resolved:
             r["version"] = ""
@@ -749,12 +708,10 @@ def run_online(args: argparse.Namespace) -> int:
         delim = "~="
     else:
         delim = "=="
-
     out_path = args.savepath or os.path.join(path, "requirements.txt")
     if not args.print_only and not args.savepath and not args.force and os.path.exists(out_path):
         print("[!] requirements.txt already exists, use --force to overwrite it")
         return 1
-
     if args.print_only:
         write_requirements("-", resolved, delim)
         print("[i] Successfully output requirements")
@@ -765,14 +722,12 @@ def run_online(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the argparse CLI for the merged script."""
     parser = argparse.ArgumentParser(
         prog="merged.py",
         description="Merged requirements.txt generator (imp1+imp2+pipreqs+pr2).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="mode", required=True)
-
     off = sub.add_parser(
         "offline",
         help="use a local PyPI package list (no network); mirrors imp1/imp2",
@@ -787,7 +742,6 @@ def build_parser() -> argparse.ArgumentParser:
     off.add_argument("--no-follow-links", action="store_true")
     off.add_argument("--scan-notebooks", action="store_true")
     off.set_defaults(func=run_offline)
-
     on = sub.add_parser(
         "online",
         help="resolve via PyPI JSON API; mirrors pipreqs/pr2",
@@ -817,12 +771,10 @@ def build_parser() -> argparse.ArgumentParser:
     on.add_argument("--scan-notebooks", action="store_true")
     on.add_argument("--debug", action="store_true")
     on.set_defaults(func=run_online)
-
     return parser
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """Entry point: parse CLI and dispatch to the selected mode."""
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

@@ -15,7 +15,6 @@
 #              Japanese so kanji get Japanese readings; Han-only names are treated as Chinese.
 #   Anything else non-ASCII (accents, Greek, emoji...): unidecode if installed, else accents are
 #   stripped and the remaining characters become "_".
-
 import argparse
 import re
 import sys
@@ -36,16 +35,13 @@ try:
     from unidecode import unidecode
 except ImportError:
     unidecode = None
-
 # VCS metadata is never touched: renaming inside it can corrupt a repository.
 SKIP_DIRS = frozenset({".git", ".hg", ".svn"})
 MAX_NAME = 255  # most filesystems cap a single name at 255 bytes (output is ASCII, so chars == bytes)
-
 # Script detectors (run after NFKC, so half-width kana are already full-width).
 KANA = re.compile(r"[\u3040-\u30ff\u31f0-\u31ff]")
 HAN = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\U00020000-\U0002ebef]+")
 FA_MARKS = re.compile(r"[\u064b-\u065f\u0670\u06d6-\u06ed]")  # harakat / Quranic marks
-
 _RU = {
     "а": "a",
     "б": "b",
@@ -91,7 +87,6 @@ RU_TABLE = {}
 for _k, _v in _RU.items():
     RU_TABLE[ord(_k)] = _v
     RU_TABLE[ord(_k.upper())] = _v.capitalize()
-
 _FA = {
     "ا": "a",
     "آ": "a",
@@ -146,7 +141,6 @@ for _i in range(10):
     _FA[chr(0x06F0 + _i)] = str(_i)  # Persian digits
     _FA[chr(0x0660 + _i)] = str(_i)  # Arabic-Indic digits
 FA_TABLE = {ord(k): v for k, v in _FA.items()}
-
 # Characters illegal on at least one major filesystem, plus control characters.
 BAD_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 # Windows device names are invalid as file names (with or without extension).
@@ -232,24 +226,19 @@ def main() -> int:
     parser.add_argument("root", nargs="?", default=".", type=Path)
     parser.add_argument("-n", "--dry-run", action="store_true", help="show renames without doing them")
     args = parser.parse_args()
-
     if hasattr(sys.stdout, "reconfigure"):  # non-UTF-8 consoles must not crash on printing old names
         sys.stdout.reconfigure(errors="backslashreplace")
         sys.stderr.reconfigure(errors="backslashreplace")
-
     for lib, label in ((lazy_pinyin, "pypinyin (Chinese)"), (_KAKASI, "pykakasi (Japanese)")):
         if lib is None:
             print(f"warning: {label} not installed; falling back to a rougher conversion", file=sys.stderr)
-
     root = args.root.resolve()
     if not root.is_dir():
         print(f"error: not a directory: {root}", file=sys.stderr)
         return 1
-
     entries = [p for p in root.rglob("*") if not SKIP_DIRS.intersection(p.relative_to(root).parts)]
     # Deepest first: children are renamed before their parents, so every collected path stays valid.
     entries.sort(key=lambda p: len(p.parts), reverse=True)
-
     claimed: set = set()  # targets already taken (matters for dry runs and collisions)
     renamed = failed = 0
     for old in entries:
@@ -270,7 +259,6 @@ def main() -> int:
         except OSError as exc:  # permissions, in-use files, etc.: report and continue
             failed += 1
             print(f"  error: {exc}", file=sys.stderr)
-
     verb = "would rename" if args.dry_run else "renamed"
     print(f"\n{verb} {renamed} item(s), {failed} error(s).")
     return 2 if failed else 0

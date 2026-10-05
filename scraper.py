@@ -3,7 +3,6 @@
 Original-script equivalents --------------------------- cforyou.py -> pkg-updates checksite.py -> import-check coc_link.py -> coc-links coclink.py -> coc-youtube crawler.py -> movie-crawl --engine basic scrap_site.py -> movie-crawl --engine simple scrapr.py -> movie-crawl --engine parallel download_images.py -> image-hunt saveimages.py -> image-save ex_video_link.py -> video-info findlinks.py -> link-crawl --mode ext findpdflinks.py -> link-crawl --mode pdf search_site.py -> link-crawl --mode keyword gcli.py -> google-search get_websize.py -> web-size Usage examples -------------- python merged_tools.py pkg-updates python merged_tools.py import-check python merged_tools.py coc-links -l links.txt -o th18_bases.html python merged_tools.py coc-youtube --api-key KEY python merged_tools.py movie-crawl --engine parallel -u URL python merged_tools.py image-hunt https://example.com -p -d python merged_tools.py image-save https://example.com out/ python merged_tools.py link-crawl https://example.com --mode pdf python merged_tools.py video-info URL1 URL2 python merged_tools.py google-search "python argparse" python merged_tools.py web-size https://example.com --crawl Third-party dependencies (same as originals): requests, beautifulsoup4, packaging, loguru, python-dotenv, google-api-python-client, Pillow, googlesearch-python"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import hashlib
@@ -24,7 +23,6 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -149,7 +147,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
     start = time.time()
     installed = get_installed_packages()
     cprint(f"Found {len(installed)} installed packages.", "blue")
-
     state_path = Path(args.state)
     prev: dict[str, dict] = {}
     if state_path.exists():
@@ -160,7 +157,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
                 f"Warning: Corrupted results file '{state_path}'. Starting fresh.",
                 "red",
             )
-
     results: dict[str, dict] = {}
     to_check: list[tuple[str, str]] = []
     for name, ver in installed.items():
@@ -172,7 +168,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
             results[name] = cached
             continue
         to_check.append((name, ver))
-
     cprint(f"Will check {len(to_check)} packages.", "blue")
     updatable: list[tuple[str, str, str]] = []
     for i, (name, ver) in enumerate(to_check, 1):
@@ -202,7 +197,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
         if i % 10 == 0 or i == len(to_check):
             state_path.write_text(json.dumps(results, indent=4), encoding="utf-8")
             cprint("Results saved periodically.", "blue")
-
     cprint("\n--- Summary of Updatable Packages ---", "blue")
     if updatable:
         for name, old, new in updatable:
@@ -219,7 +213,6 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
-
     from loguru import logger
 
     logger.remove()
@@ -272,7 +265,6 @@ def cmd_import_check(args: argparse.Namespace) -> int:
             return 2
         print(f"Site-packages roots: {[str(r) for r in roots]}")
         files = list(_iter_py(roots))
-
     print(f"Checking {len(files)} file(s)...")
     ok = fail = 0
     for f in files:
@@ -442,13 +434,11 @@ def _yt_recent_videos(yt, channel_id: str, days: int = 30, max_videos: int = 100
             vid = item["id"]["videoId"]
             info = yt.videos().list(part="snippet", id=vid).execute()
             snip = info["items"][0]["snippet"]
-            out.append(
-                {
-                    "title": snip["title"],
-                    "description": snip["description"],
-                    "url": f"https://www.youtube.com/watch?v={vid}",
-                }
-            )
+            out.append({
+                "title": snip["title"],
+                "description": snip["description"],
+                "url": f"https://www.youtube.com/watch?v={vid}",
+            })
         req = yt.search().list_next(req, resp)
         if len(out) > max_videos:
             break
@@ -502,22 +492,18 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
         from dotenv import load_dotenv
 
         load_dotenv()
-
     api_key = args.api_key or os.getenv("YOUTUBE_API_KEY")
     if not api_key:
         print("Error: YouTube API key not provided (use --api-key or YOUTUBE_API_KEY env).")
         return 1
-
     channels = dict(_DEFAULT_CHANNELS)
     if args.channels:
         for pair in args.channels.split(","):
             if "=" in pair:
                 k, v = pair.split("=", 1)
                 channels[k.strip()] = v.strip()
-
     yt = build("youtube", "v3", developerKey=api_key)
     out_dir = Path(args.output_dir)
-
     for name, cid in channels.items():
         print(f"Processing {name}...")
         vids = _yt_recent_videos(yt, cid, days=args.days)
@@ -525,13 +511,11 @@ def cmd_coc_youtube(args: argparse.Namespace) -> int:
         for v in vids:
             links = _extract_th18_links(v["description"])
             if links:
-                collected.append(
-                    {
-                        "title": v["title"],
-                        "video_url": v["url"],
-                        "links": list(set(links)),
-                    }
-                )
+                collected.append({
+                    "title": v["title"],
+                    "video_url": v["url"],
+                    "links": list(set(links)),
+                })
         if collected:
             _write_coc_youtube_report(name, collected, out_dir)
         else:
@@ -590,10 +574,8 @@ def _movie_basic(args: argparse.Namespace) -> int:
     max_mb = args.size
     extensions = tuple(args.extensions)
     qualities = tuple(args.qualities)
-
     visited: set[str] = set()
     found: list[str] = []
-
     if state_file.exists():
         try:
             st = json.loads(state_file.read_text(encoding="utf-8"))
@@ -602,7 +584,6 @@ def _movie_basic(args: argparse.Namespace) -> int:
             print(f"📂 Loaded state: {len(visited)} visited, {len(found)} movies found")
         except Exception as e:
             print(f"⚠️ Error loading state: {e}")
-
     if not found and movies_file.exists():
         found = read_lines(movies_file)
         print(f"📂 Loaded {len(found)} movies from {movies_file}")
@@ -731,7 +712,6 @@ def _movie_simple(args: argparse.Namespace) -> int:
     print(f"📁 Base URL: {base}")
     print(f"📊 Max size: {max_mb} MB")
     _crawl(base)
-
     unique = list(dict.fromkeys(results))
     with movies_file.open("w", encoding="utf-8") as f:
         f.writelines(u + "\n" for u in unique)
@@ -794,7 +774,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
     global _STOP
     _STOP = False
     signal.signal(signal.SIGINT, _sigint)
-
     base = args.url or "https://sr.moviesho.com/Series/"
     if not base.endswith("/"):
         base += "/"
@@ -803,7 +782,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
     state_file = Path(args.state_file)
     movies_file = Path(args.movies_file)
     json_out = Path(args.json_out)
-
     visited: set[str] = set()
     queue: list[str] = []
     if state_file.exists():
@@ -829,7 +807,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
     mgr = Manager()
     shared_visited = mgr.list(visited)
     shared_queue = mgr.list(queue)
-
     print(f"🚀 Parallel movie crawler using {processes} processes")
     with Pool(processes=processes) as pool:
         while shared_queue and not _STOP:
@@ -854,7 +831,6 @@ def _movie_parallel(args: argparse.Namespace) -> int:
                 for s in subs:
                     if s not in shared_visited:
                         shared_queue.append(s)
-
     save_state(list(shared_queue), set(shared_visited))
     if _STOP:
         print("💾 Progress saved. Run again to continue.")
@@ -958,7 +934,6 @@ def _hunt_images(
     seen_imgs: set[str] = set()
     matches: list[tuple[str, int, int]] = []
     workers = max(1, mp.cpu_count() - 1)
-
     with mp.Pool(workers) as pool:
         while queue and len(seen_pages) < max_pages:
             page = queue.popleft()
@@ -983,7 +958,6 @@ def _hunt_images(
             for link in _same_host_links(soup, page, host):
                 if link not in seen_pages:
                     queue.append(link)
-
         if print_urls:
             with urls_file.open("w", encoding="utf-8") as f:
                 for url, w, h in matches:
@@ -994,7 +968,6 @@ def _hunt_images(
             results = pool.map(_download_image, matches)
             count = sum(1 for r in results if r is not None)
             print(f"Downloaded {count} image(s) to images/")
-
     print(
         f"Scanned {len(seen_pages)} page(s), checked {len(seen_imgs)} image(s), found {len(matches)} matching image(s)."
     )
@@ -1055,12 +1028,10 @@ def _crawl_site(
     if not start_url.startswith(("http://", "https://")):
         start_url = "https://" + start_url
     host = urlparse(start_url).netloc.lower().split(":")[0]
-
     if mode in ("ext", "pdf"):
         rp = build_robots(requests.Session(), start_url)
     else:
         rp = None
-
     session = make_session()
 
     def allowed(url: str) -> bool:
@@ -1079,7 +1050,6 @@ def _crawl_site(
     visited: set[str] = set()
     results: set[str] = set()
     skip_exts = (".jpg", ".jpeg", ".png", ".gif", ".css", ".js")
-
     while queue and len(visited) < max_pages:
         url = strip_fragment(queue.popleft())
         if url in visited:
@@ -1089,16 +1059,13 @@ def _crawl_site(
             continue
         visited.add(url)
         print(f"🔍 Checking: {url}")
-
         try:
             r = session.get(url, timeout=timeout)
             r.raise_for_status()
         except requests.RequestException as e:
             print(f"  ⚠️  Request error: {e}")
             continue
-
         ctype = r.headers.get("Content-Type", "").lower()
-
         if mode == "pdf" and "pdf" in ctype:
             results.add(url)
             print(f"  📄 PDF (via Content-Type): {url}")
@@ -1109,10 +1076,8 @@ def _crawl_site(
             continue
         if mode == "keyword" and keyword and keyword in url.lower():
             results.add(url)
-
         if "html" not in ctype and not url.lower().endswith((".html", ".htm")):
             continue
-
         soup = BeautifulSoup(r.content, "html.parser")
         for a in soup.find_all("a", href=True):
             href = a["href"].strip()
@@ -1135,7 +1100,6 @@ def _crawl_site(
             if full not in visited and not low.endswith(skip_exts):
                 queue.append(full)
         time.sleep(delay)
-
     return sorted(results)
 
 
@@ -1146,7 +1110,6 @@ def cmd_link_crawl(args: argparse.Namespace) -> int:
     if args.mode == "keyword" and not args.keyword:
         print("Error: --keyword is required with --mode keyword.")
         return 2
-
     out = _crawl_site(
         args.url,
         mode=args.mode,
@@ -1173,13 +1136,11 @@ def _inspect_video_page(url: str, timeout: float) -> dict:
         )
     except requests.RequestException as e:
         return {"error": f"Failed to fetch URL: {e}"}
-
     soup = BeautifulSoup(r.content, "html.parser")
     video_id = None
     m = _ZZZ_ID_RE.search(url)
     if m:
         video_id = m.group(1)
-
     og_video = soup.find("meta", {"property": "og:video"})
     if og_video:
         content = og_video.get("content", "")
@@ -1187,15 +1148,12 @@ def _inspect_video_page(url: str, timeout: float) -> dict:
             m2 = re.search(r"/(\d+)", content)
             if m2:
                 video_id = m2.group(1)
-
     title = None
     og_title = soup.find("meta", {"property": "og:title"})
     if og_title:
         title = og_title.get("content")
-
     iframe = soup.find("iframe", {"src": re.compile("zzztube")})
     iframe_src = iframe.get("src") if iframe else None
-
     return {
         "video_id": video_id,
         "title": title,
@@ -1278,7 +1236,6 @@ def cmd_web_size(args: argparse.Namespace) -> int:
     html_total = 0
     by_type: dict[str, int] = defaultdict(int)
     sub_count = 0
-
     while queue:
         page = queue.pop(0)
         if page in visited_pages:
@@ -1298,7 +1255,6 @@ def cmd_web_size(args: argparse.Namespace) -> int:
         html_total += html_len
         by_type["text/html"] += html_len
         print(f"   HTML: {fmt_bytes(html_len)}")
-
         soup = BeautifulSoup(r.text, "html.parser")
         for tag_name, attrs in _WEBSIZE_TAGS.items():
             for tag in soup.find_all(tag_name):
@@ -1326,7 +1282,6 @@ def cmd_web_size(args: argparse.Namespace) -> int:
                     stripped = p._replace(fragment="").geturl()
                     if stripped not in visited_pages:
                         queue.append(stripped)
-
     print("\n" + "=" * 60)
     print(f"Pages visited:      {len(visited_pages)}")
     print(f"Sub-resources:      {sub_count}")
@@ -1346,19 +1301,16 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-
     # pkg-updates
     sp = sub.add_parser("pkg-updates", help="Check installed packages against a mirror.")
     sp.add_argument("--mirror", default="https://mirror-pypi.runflare.com/")
     sp.add_argument("--timeout", type=int, default=15)
     sp.add_argument("--state", default="/sdcard/c4u.json")
     sp.set_defaults(func=cmd_pkg_updates)
-
     sp = sub.add_parser("import-check", help="Try importing every .py in site-packages.")
     sp.add_argument("paths", nargs="*", help="Optional explicit .py files to test.")
     sp.add_argument("--log", default="check_modules.log")
     sp.set_defaults(func=cmd_import_check)
-
     # coc-links
     sp = sub.add_parser("coc-links", help="Scrape CoC TH18 base links from a list of sites.")
     sp.add_argument("-l", "--links", default="links.txt")
@@ -1366,7 +1318,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--timeout", type=float, default=10)
     sp.add_argument("--delay", type=float, default=1)
     sp.set_defaults(func=cmd_coc_links)
-
     # coc-youtube
     sp = sub.add_parser("coc-youtube", help="Extract CoC TH18 links from YouTube channels.")
     sp.add_argument("--api-key", default=None)
@@ -1374,7 +1325,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--days", type=int, default=30)
     sp.add_argument("--output-dir", default="output")
     sp.set_defaults(func=cmd_coc_youtube)
-
     # movie-crawl
     sp = sub.add_parser("movie-crawl", help="Movie index crawler with three engines.")
     sp.add_argument("--engine", choices=("basic", "simple", "parallel"), default="basic")
@@ -1393,7 +1343,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--extensions", nargs="+", default=[".mkv", ".mp4"])
     sp.add_argument("--qualities", nargs="+", default=["480p", "720p"])
     sp.set_defaults(func=cmd_movie_crawl)
-
     # image-hunt
     sp = sub.add_parser("image-hunt", help="Find/download large images from a site.")
     sp.add_argument("url")
@@ -1404,14 +1353,12 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--min-height", type=int, default=400)
     sp.add_argument("--urls-file", default="img_urls.txt")
     sp.set_defaults(func=cmd_image_hunt)
-
     # image-save
     sp = sub.add_parser("image-save", help="Save every <img> from one page.")
     sp.add_argument("url")
     sp.add_argument("output_dir", nargs="?", default="output")
     sp.add_argument("--timeout", type=float, default=5)
     sp.set_defaults(func=cmd_image_save)
-
     # link-crawl
     sp = sub.add_parser("link-crawl", help="Crawl a site, collect links by mode.")
     sp.add_argument("url")
@@ -1423,20 +1370,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--timeout", type=float, default=10)
     sp.add_argument("-o", "--output", default="urls.txt")
     sp.set_defaults(func=cmd_link_crawl)
-
     # video-info
     sp = sub.add_parser("video-info", help="Inspect zzztube video URLs.")
     sp.add_argument("urls", nargs="+")
     sp.add_argument("-o", "--output", default="zzztube_links.json")
     sp.add_argument("--timeout", type=float, default=10)
     sp.set_defaults(func=cmd_video_info)
-
     # google-search
     sp = sub.add_parser("google-search", help="DuckDuckGo/Google search wrapper.")
     sp.add_argument("query")
     sp.add_argument("-n", "--num-results", type=int, default=10)
     sp.set_defaults(func=cmd_google_search)
-
     # web-size
     sp = sub.add_parser("web-size", help="Measure total download size of a page.")
     sp.add_argument("url")
@@ -1444,7 +1388,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--max-pages", type=int, default=50)
     sp.add_argument("--user-agent", default="Mozilla/5.0 (size-checker)")
     sp.set_defaults(func=cmd_web_size)
-
     return p
 
 

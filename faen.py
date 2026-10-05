@@ -5,7 +5,6 @@ It should also support saving updates back to the JSON file, and provide an inte
 Include appropriate error handling with clear emoji-prefixed status messages throughout."""
 
 from __future__ import annotations
-
 import json
 import os
 import sys

@@ -3,7 +3,6 @@
 Merges 10 original scripts into one argparse CLI: cairosvg2pdf.py -> pdfkit.py svg <input.svg> chm2pdf.py -> pdfkit.py chm <input.chm> -b weasyprint chm2pdf_reportlab.py -> pdfkit.py chm <input.chm> -b reportlab compile_precise.py -> pdfkit.py compile-css print-style.css dic2pdf.py -> pdfkit.py dict dictionary.txt --font custom.ttf html2pdf.py -> pdfkit.py html <input.html> --css <css> md2pdf.py -> pdfkit.py md <input.md> md2pdf2.py -> pdfkit.py md <input.md> --pygments --toc --css /sdcard/_static/css/book.css md_to_pdf.py -> pdfkit.py md <input.md> --converter markdown --inline-css default md_to_pdf2.py -> pdfkit.py md <input.md> --converter markdown --inline-css local-fonts Third-party packages (install only the ones you need): cairosvg # svg subcommand weasyprint, markdown2, markdown # chm/html/md/dict subcommands pygments # md --pygments pychm (import chm.chm) # chm --backend weasyprint chm # chm --backend reportlab reportlab # chm --backend reportlab Examples -------- pdfkit.py svg logo.svg pdfkit.py chm manual.chm -b weasyprint -o manual.pdf pdfkit.py chm manual.chm -b reportlab pdfkit.py html page.html --css /sdcard/_static/css/markdown.css pdfkit.py md notes.md pdfkit.py md notes.md --pygments --toc --css book.css pdfkit.py md notes.md --converter markdown --inline-css local-fonts pdfkit.py dict dictionary.txt --font custom.ttf pdfkit.py compile-css print-style.css --font-dir ./fonts"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import re
@@ -58,7 +57,6 @@ def render_pdf_from_html(
         sheets.append(CSS(filename=str(f)))
     for s in css_strings:
         sheets.append(CSS(string=s))
-
     doc = HTML(string=html_text, base_url=base_url)
     doc.write_pdf(str(output), stylesheets=sheets)
 
@@ -78,7 +76,6 @@ h1,h2,h3,h4,h5,h6 { page-break-after: avoid; break-after: avoid; }
 blockquote,pre,table,figure { page-break-inside: avoid; break-inside: avoid; }
 ul,ol { page-break-inside: auto; }
 li { page-break-inside: avoid; break-inside: avoid; }
-
 html,body {
     font-family: {font_sans};
     font-size: 11pt;
@@ -91,7 +88,6 @@ h1 { font-size: 24pt; margin: 0 0 15pt 0; color: #111;
 h2 { font-size: 18pt; margin: 24pt 0 12pt 0; color: #222;
      border-bottom: 1px solid #eee; padding-bottom: 3pt; }
 h3 { font-size: 14pt; margin: 18pt 0 8pt 0; color: #333; }
-
 a { color: #0066cc; text-decoration: none; }
 a[href^="http"]:after {
     content: " (" attr(href) ")"; font-size: 9pt; color: #888;
@@ -134,7 +130,6 @@ li { margin-bottom: 0.4em; }
 img { max-width: 100%; height: auto; display: block;
       margin: 20px auto; border-radius: 4px; }
 """
-
 _LOCAL_FONT_FACES = """\
 @font-face {
     font-family: "LocalInter";
@@ -254,12 +249,10 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
         import chm.chm as pychm  # type: ignore
     except ImportError:
         die("pychm is required (pip install pychm); provides chm.chm")
-
     cf = pychm.CHMFile()
     if not cf.LoadCHM(str(chm_path)):
         msg = f"failed to load CHM file: {chm_path}"
         raise RuntimeError(msg)
-
     try:
         tree = cf.GetTopicsTree()
         if not tree:
@@ -272,7 +265,6 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
                 return _render_multiple_topics(cf, htmls)
             msg = "no HTML content found in CHM file"
             raise RuntimeError(msg)
-
         parts = [_CHM_STYLE_HEADER]
 
         def walk(node: Any, depth: int = 0) -> None:
@@ -365,7 +357,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
         import chm  # type: ignore
     except ImportError:
         die("the 'chm' package is required for --backend reportlab")
-
     try:
         from reportlab.lib.enums import TA_CENTER  # type: ignore
         from reportlab.lib.pagesizes import letter  # type: ignore
@@ -382,7 +373,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
         )
     except ImportError:
         die("reportlab is required for --backend reportlab")
-
     chm_obj = chm.CHMFile(str(chm_path))
     topics: list[str] = []
     if hasattr(chm_obj, "get_toc"):
@@ -399,7 +389,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
             warn(f"list failed: {exc}")
     if not topics:
         die("no HTML topics found in CHM")
-
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         "CHMTitle",
@@ -413,7 +402,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
         Paragraph(f"<b>{chm_path.stem}</b>", title_style),
         Spacer(1, 0.25 * inch),
     ]
-
     processed = 0
     for i, topic in enumerate(topics):
         try:
@@ -446,7 +434,6 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
                 story.append(Paragraph(chunk[:1000], styles["Normal"]))
             story.append(Spacer(1, 0.05 * inch))
         processed += 1
-
     if processed == 0:
         die("no content could be extracted from the CHM file")
     doc = SimpleDocTemplate(
@@ -478,18 +465,15 @@ def _flatten_toc(toc: Any) -> list[str]:
 def cmd_chm(args: argparse.Namespace) -> int:
     inp = require_input(args.input, check_suffix=".chm")
     out = resolve_output(inp, args.output)
-
     if args.backend == "reportlab":
         _chm_reportlab_convert(inp, out)
         return 0
-
     try:
         html_text = _chm_weasyprint_extract(inp)
     except Exception as exc:  # noqa: BLE001
         die(f"CHM extraction failed: {exc}")
     if not html_text:
         die("no content extracted from CHM file")
-
     wrapped = (
         '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n'
         "<style>\n"
@@ -516,7 +500,6 @@ def cmd_chm(args: argparse.Namespace) -> int:
         "</style>\n</head>\n<body>\n"
         f"{html_text}\n</body>\n</html>"
     )
-
     try:
         render_pdf_from_html(wrapped, out)
     except Exception as exc:  # noqa: BLE001
@@ -568,7 +551,6 @@ def _convert_markdown2(
 
     extras = _MARKDOWN2_FULL_EXTRAS if full_extras else _MARKDOWN2_SIMPLE_EXTRAS
     html_text = markdown(text, extras=extras)
-
     if pygments:
         try:
             from pygments import highlight  # type: ignore
@@ -580,7 +562,6 @@ def _convert_markdown2(
         except ImportError:
             warn("pygments not installed — skipping code highlighting")
             pygments = False
-
     if pygments:
         formatter = HtmlFormatter(cssclass="highlight")
 
@@ -594,7 +575,6 @@ def _convert_markdown2(
             return highlight(code, lexer, formatter)
 
         html_text = _PYGMENTS_RE.sub(repl, html_text)
-
     if toc:
         html_text = _TOC_NAV + html_text
     return html_text
@@ -620,7 +600,6 @@ def cmd_markdown(args: argparse.Namespace) -> int:
     inp = require_input(args.input)
     out = resolve_output(inp, args.output)
     text = inp.read_text(encoding="utf-8")
-
     if args.converter == "markdown":
         body_html = _convert_markdown(text)
         inline = args.inline_css or "default"
@@ -636,10 +615,8 @@ def cmd_markdown(args: argparse.Namespace) -> int:
         )
         css_files = list(args.css)
         css_strings = [inline_css(args.inline_css)] if args.inline_css and args.inline_css != "none" else []
-
     if not body_html.strip():
         die("converted markdown produced empty HTML")
-
     html_text = _wrap_md_html(body_html, inp.stem)
     try:
         render_pdf_from_html(
@@ -684,16 +661,13 @@ def cmd_dict(args: argparse.Namespace) -> int:
     font = Path(args.font)
     if not font.exists():
         warn(f"font '{font}' not found — PDF may use fallback typography")
-
     entries: list[str] = []
     for line in inp.read_text(encoding="utf-8").splitlines():
         block = _format_dictionary_entry(line)
         if block:
             entries.append(block)
-
     if not entries:
         die("no valid dictionary entries found")
-
     css = (
         "<style>\n"
         f"@font-face {{ font-family:'CustomFont'; src:url('{font}'); }}\n"
@@ -777,7 +751,6 @@ p code { background-color: #f0f0f0; padding: 2pt 4pt; border-radius:3px; color:#
 em, i { font-style: italic; font-weight: 400; }
 strong, b { font-weight: 700; font-style: normal; }
 strong em, em strong, b i, i b { font-weight: 700; font-style: italic; }
-
 @page {
     size: A4 portrait; margin: 25mm 20mm 20mm 20mm;
     @top-left { content: "Official Document Title";
@@ -836,12 +809,10 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
     a = sub.add_parser("svg", help="SVG -> PDF (cairosvg).")
     a.add_argument("input", help="Input .svg file.")
     a.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     a.set_defaults(func=cmd_svg)
-
     b = sub.add_parser("chm", help="CHM -> PDF.")
     b.add_argument("input", help="Input .chm file.")
     b.add_argument(
@@ -853,13 +824,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     b.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     b.set_defaults(func=cmd_chm)
-
     c = sub.add_parser("html", help="HTML -> PDF (WeasyPrint).")
     c.add_argument("input", help="Input .html file.")
     c.add_argument("--css", action="append", default=[], help="Extra CSS file (repeatable).")
     c.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     c.set_defaults(func=cmd_html)
-
     d = sub.add_parser("md", help="Markdown -> PDF.")
     d.add_argument("input", help="Input .md file.")
     d.add_argument(
@@ -887,7 +856,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     d.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     d.set_defaults(func=cmd_markdown)
-
     e = sub.add_parser("dict", help="Dictionary .txt -> PDF (WeasyPrint).")
     e.add_argument(
         "input",
@@ -898,7 +866,6 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--font", default="custom.ttf", help="Font file to embed (default: custom.ttf).")
     e.add_argument("-o", "--output", help="Output PDF (default: <stem>.pdf).")
     e.set_defaults(func=cmd_dict)
-
     f = sub.add_parser("compile-css", help="Write a print-style CSS with embedded fonts.")
     f.add_argument(
         "output",
@@ -908,7 +875,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     f.add_argument("--font-dir", default=".", help="Directory holding the TTF files (default: .).")
     f.set_defaults(func=cmd_compile_css)
-
     return p
 
 

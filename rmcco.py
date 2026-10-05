@@ -15,7 +15,6 @@ Optionally remove module-level docstrings via a flag.
 The implementation should include dataclasses for FileResult and ProcessingStats, a CommentRemover class, a DocstringRemover AST transformer, functions for processing single files, wheel files, discovering files, printing results and summaries, and a main entry point with argparse."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import re
@@ -26,24 +25,20 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
-
 from loguru import logger
 
-SKIP_DIRS: Final[frozenset[str]] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".venv",
-        "venv",
-        "lazy",
-        ".env",
-        "node_modules",
-    }
-)
-
+SKIP_DIRS: Final[frozenset[str]] = frozenset({
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "lazy",
+    ".env",
+    "node_modules",
+})
 POOL_SIZE: Final[int] = 8
 
 
@@ -231,7 +226,6 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
         tree = ast.parse(source)
     except SyntaxError:
         return source, 0
-
     docstring_lines: set[int] = set()
 
     def _collect_docstring_lines(node: ast.AST) -> None:
@@ -247,16 +241,12 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
 
     if remove_module_docstring:
         _collect_docstring_lines(tree)
-
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             _collect_docstring_lines(node)
-
     if not docstring_lines:
         return source, 0
-
     lines = source.split("\n")
-
     removed_count = 0
     keep_lines: list[str] = []
     skip_until: int = -1
@@ -268,13 +258,11 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
             removed_count += 1
             continue
         keep_lines.append(line)
-
     result = "\n".join(keep_lines)
     try:
         new_tree = ast.parse(result)
     except SyntaxError:
         return result, removed_count
-
     needs_pass = False
     for node in ast.walk(new_tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and not node.body:
@@ -283,10 +271,8 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
         if isinstance(node, ast.Module) and not node.body:
             needs_pass = True
             break
-
     if not needs_pass:
         return result, removed_count
-
     lines = result.split("\n")
     insertions: list[tuple[int, str]] = []
     for node in ast.walk(new_tree):
@@ -296,10 +282,8 @@ def _remove_docstrings_from_source(source: str, remove_module_docstring: bool) -
             insertions.append((insert_at, f"{indent}    pass"))
         if isinstance(node, ast.Module) and not node.body:
             insertions.append((0, "pass"))
-
     for line_no, text in sorted(insertions, reverse=True):
         lines.insert(line_no, text)
-
     return "\n".join(lines), removed_count
 
 
@@ -477,15 +461,12 @@ def main() -> int:
         help="Show what would be changed without modifying files",
     )
     args = parser.parse_args()
-
     python_files, wheel_files = discover_files(args.path)
     if not python_files and (not wheel_files):
         logger.error("No Python files found")
         return 1
-
     print_header(len(python_files), len(wheel_files))
     stats = ProcessingStats(total_files=len(python_files) + len(wheel_files))
-
     for wheel_file in wheel_files:
         results = process_wheel_file(
             wheel_file,
@@ -494,7 +475,6 @@ def main() -> int:
         )
         for result in results:
             _accumulate_result(stats, result)
-
     if python_files:
         tasks: list[tuple[Path, bool, bool]] = [
             (path, args.remove_module_docstring, args.dry_run) for path in python_files
@@ -509,7 +489,6 @@ def main() -> int:
                 if processed % 10 == 0:
                     print(f"  Processed: {processed}/{len(python_files)}")
         print(f"  Processed: {len(python_files)}/{len(python_files)}")
-
     base_dir = Path(args.path).resolve()
     print_results(stats, base_dir)
     print_summary(stats)

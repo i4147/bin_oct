@@ -4,11 +4,9 @@ It should include a search method that queries the OpenSubtitles REST API with a
 The script should handle request failures and unexpected API responses gracefully, printing error messages instead of crashing, and be structured for use as a command-line tool taking a movie/show title as input."""
 
 from __future__ import annotations
-
 import re
 import sys
 from urllib.parse import quote
-
 import requests
 
 

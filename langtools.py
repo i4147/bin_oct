@@ -7,7 +7,6 @@ find-lines Find non-English lines across many files, save to TSV.
 Mapping of original scripts --------------------------- fchin.py -> python langtool.py move-chinese [DIR] filter_noneng.py -> python langtool.py filter-lines FILE -m strict_filter_noneng.py -> python langtool.py filter-lines FILE -m --strict find_non_eng.py -> python langtool.py find-files DIR find_nonenglish_files.py -> python langtool.py find-files DIR --detailed find_noneng.py -> python langtool.py find-lines Third-party dependencies (install only what you need) ----------------------------------------------------- pycld2 -> find-files, find-lines gcld3 -> filter-lines nltk -> filter-lines --strict (also: python -m nltk.downloader words)"""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import os
@@ -22,12 +21,10 @@ try:
     import pycld2  # type: ignore
 except ImportError:
     pycld2 = None  # type: ignore
-
 try:
     import gcld3  # type: ignore
 except ImportError:
     gcld3 = None  # type: ignore
-
 CHINESE_RANGES = (
     (0x3400, 0x4DBF),
     (0x4E00, 0x9FFF),
@@ -38,9 +35,7 @@ CHINESE_RANGES = (
     (0x2B820, 0x2CEAF),
     (0x2CEB0, 0x2EBEF),
 )
-
 ENCODINGS = ("utf-8", "utf-8-sig", "gb18030", "gbk", "cp1252")
-
 TXT_EXT = {
     ".txt",
     ".md",
@@ -83,7 +78,6 @@ TXT_EXT = {
     ".lua",
     ".sql",
 }
-
 DEFAULT_MOVE_TARGET = "chinese_files"
 DEFAULT_NONENG_FILE = "noneng.txt"
 PROGRESS = True
@@ -265,7 +259,6 @@ def _filter_simple(path: Path, move: bool, out_name: str) -> int:
     except Exception as e:
         print(f"❌ Error reading file: {e}")
         return 1
-
     kept, removed = [], []
     print(f"🔍 Analyzing {len(lines)} lines from '{path.name}'...")
     print("-" * 40)
@@ -299,17 +292,14 @@ def _filter_strict(path: Path, move: bool, threshold: float, out_name: str) -> i
             file=sys.stderr,
         )
         return 1
-
     ident = gcld3_mod.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
     print("🧠 Loading NLTK English vocabulary corpus...")
     vocab = {w.lower() for w in nltk_words.words()}
-
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except Exception as e:
         print(f"❌ Error reading file: {e}")
         return 1
-
     kept, removed = [], []
     print(f"🔍 Strictly scanning {len(lines)} lines from '{path.name}'...")
     print("-" * 40)
@@ -351,7 +341,6 @@ def cmd_find_files(args: argparse.Namespace) -> int:
     if not root.exists():
         print(f"Error: Directory '{root}' does not exist")
         return 1
-
     if args.detailed:
         stats = _scan_detailed(root, args.min_bytes, args.max_bytes)
         _report_detailed(stats, show_files=args.verbose or args.list_languages)
@@ -394,15 +383,13 @@ def _scan_simple(root: Path, min_bytes: int, max_bytes: int, show_progress: bool
             continue
         stats["languages"][name] += 1
         if code != "en":
-            stats["non_english"].append(
-                {
-                    "file": f,
-                    "language": name,
-                    "code": code,
-                    "reliable": conf >= 70,
-                    "confidence": conf,
-                }
-            )
+            stats["non_english"].append({
+                "file": f,
+                "language": name,
+                "code": code,
+                "reliable": conf >= 70,
+                "confidence": conf,
+            })
     if show_progress:
         print()
     return stats
@@ -556,7 +543,6 @@ def cmd_find_lines(args: argparse.Namespace) -> int:
     root = Path(args.root)
     exts = {e.strip().lower().lstrip(".") for e in args.ext.split(",") if e.strip()} if args.ext else None
     out_path = Path(args.out)
-
     scanned = 0
     hits = 0
     with out_path.open("w", encoding="utf-8", newline="") as fh:
@@ -600,7 +586,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     mc = sub.add_parser("move-chinese", help="Move files containing Chinese characters.")
     mc.add_argument(
         "directory",
@@ -614,7 +599,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Target folder name (default: {DEFAULT_MOVE_TARGET}).",
     )
     mc.set_defaults(func=cmd_move_chinese)
-
     fl = sub.add_parser("filter-lines", help="Filter non-English lines out of one file.")
     fl.add_argument("file", help="File to inspect line-by-line.")
     fl.add_argument(
@@ -638,7 +622,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Output filename for extracted lines (default {DEFAULT_NONENG_FILE}).",
     )
     fl.set_defaults(func=cmd_filter_lines)
-
     ff = sub.add_parser("find-files", help="Recursively find non-English files (pycld2).")
     ff.add_argument(
         "directory",
@@ -689,7 +672,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Detailed mode: same as --verbose (list all detected files).",
     )
     ff.set_defaults(func=cmd_find_files)
-
     fnd = sub.add_parser("find-lines", help="Find non-English lines across many files, save TSV.")
     fnd.add_argument("-r", "--root", default=".", help="Root directory to scan (default: .).")
     fnd.add_argument(
@@ -736,17 +718,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum bytes read from each file (default 2 MiB).",
     )
     fnd.set_defaults(func=cmd_find_lines)
-
     return p
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.command == "find-lines":
         args.no_skip_hidden = not args.skip_hidden
-
     try:
         return args.func(args)
     except KeyboardInterrupt:

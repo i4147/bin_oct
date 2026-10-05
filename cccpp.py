@@ -7,13 +7,11 @@ CLI: script.py [paths ...] [-i|--interactive] Behavior: - Non-interactive: every
 Dependencies: tree_sitter, tree_sitter_c, tree_sitter_cpp, loguru."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import tree_sitter_c
 import tree_sitter_cpp
 from loguru import logger
@@ -21,25 +19,20 @@ from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-
-CPP_EXTS: frozenset[str] = frozenset(
-    {
-        ".cc",
-        ".cpp",
-        ".cxx",
-        ".c++",
-        ".hpp",
-        ".hh",
-        ".hxx",
-        ".h++",
-        ".inl",
-    }
-)
+CPP_EXTS: frozenset[str] = frozenset({
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".c++",
+    ".hpp",
+    ".hh",
+    ".hxx",
+    ".h++",
+    ".inl",
+})
 C_EXTS: frozenset[str] = frozenset({".c", ".h"})
 ALL_EXTS: frozenset[str] = C_EXTS | CPP_EXTS
-
 WORKERS: int = 8
-
 _PARSERS: dict[str, Parser] = {}
 
 
@@ -92,16 +85,14 @@ def get_comment_info(content: bytes, ext: str) -> list[dict[str, object]]:
             if next_newline != -1:
                 context_end = next_newline + 1
         context: str = content[context_start:context_end].decode("utf-8", errors="replace")
-        comment_info.append(
-            {
-                "start": start,
-                "end": end,
-                "start_line": start_line,
-                "end_line": end_line,
-                "text": comment_text,
-                "context": context,
-            }
-        )
+        comment_info.append({
+            "start": start,
+            "end": end,
+            "start_line": start_line,
+            "end_line": end_line,
+            "text": comment_text,
+            "context": context,
+        })
     return comment_info
 
 
@@ -179,7 +170,7 @@ def process_file_interactive(path: Path, base: Path) -> tuple[str, int, str]:
                 path.write_bytes(new_content)
             return rel, count, ""
         return rel, 0, ""
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return str(path), 0, str(exc)
 
 
@@ -195,7 +186,7 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
         except ValueError:
             rel = str(path)
         return rel, count, ""
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return str(path), 0, str(exc)
 
 

@@ -4,7 +4,6 @@ For each entry, it computes the total size in bytes—recursively summing file s
 The script sorts these entries in descending order by size and, when run directly, applies this to the current working directory, then writes the sorted list as indented JSON to a file named after the current directory (e.g., "foldername.json") in the current working directory."""
 
 from __future__ import annotations
-
 import json
 import operator
 from pathlib import Path

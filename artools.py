@@ -3,7 +3,6 @@
 Merges the following original scripts into one CLI with subcommands: original -> merged equivalent --------------------------- -------------------------------------- archive_convert.py -> tar-codec <codec> archive_converter.py -> archive-convert -t <fmt> [inputs] br2zst.py -> br2zst gz2xz.py -> gz2xz [--legacy-percent] xz2gz.py -> xz2gz [--legacy-percent] txz2whl.py -> whl-txz --to whl whl2txz.py -> whl-txz (auto-detects direction) Usage examples -------------- # Change every *.tar.gz under cwd to *.tar.xz python merged_archive_tools.py tar-codec xz # Convert a whl and a tar.zst to tar.7z python merged_archive_tools.py archive-convert -t .tar.7z a.whl b.tar.zst # Convert all .json.br under cwd to .json.zst python merged_archive_tools.py br2zst # .gz -> .xz in cwd python merged_archive_tools.py gz2xz # Bidirectional whl <-> tar.xz (default: in current directory) python merged_archive_tools.py whl-txz --recursive --remove-original Third-party dependencies (already required by the originals): brotli, cramjam, lz4, py7zr, zstandard, loguru"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -19,7 +18,6 @@ from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Optional
-
 import brotli
 import cramjam
 import lz4.frame
@@ -29,36 +27,27 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
 CHUNK: int = 1024 * 1024
 """Read/write block size for streaming codecs (matches originals)."""
-
 DEFAULT_WORKERS: int = 8
 """Default worker count (matches the originals' `c` / `q4`)."""
-
 DEFAULT_LEVEL: int = 9
 """Default compression level for codecs that accept one."""
-
 TAR_CODECS: frozenset[str] = frozenset({"gz", "zst", "xz", "bz2", "lz4", "br", "7z"})
-
-TAR_FORMATS: frozenset[str] = frozenset(
-    {
-        ".tar",
-        ".tar.gz",
-        ".tar.bz2",
-        ".tar.xz",
-        ".tar.zst",
-        ".tar.br",
-        ".tar.lz4",
-        ".tar.7z",
-        ".tar.sz",
-    }
-)
+TAR_FORMATS: frozenset[str] = frozenset({
+    ".tar",
+    ".tar.gz",
+    ".tar.bz2",
+    ".tar.xz",
+    ".tar.zst",
+    ".tar.br",
+    ".tar.lz4",
+    ".tar.7z",
+    ".tar.sz",
+})
 ZIP_FORMATS: frozenset[str] = frozenset({".zip", ".whl"})
 ARCHIVE_FORMATS: frozenset[str] = TAR_FORMATS | ZIP_FORMATS
-
 _ARCHIVE_SUFFIXES: tuple[str, ...] = tuple(sorted(ARCHIVE_FORMATS, key=len, reverse=True))
-
 WHEEL_SCRIPT_SUFFIXES: tuple[str, ...] = (".sh", ".py", ".exe")
 TAR_DEFAULT_MODE: int = 0o644
 TAR_SCRIPT_MODE: int = 0o755
@@ -235,7 +224,6 @@ def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
     dst = src.with_name(f"{stem}.tar.{target}")
     if dst.exists():
         return src.name, True, f"Skipped (exists): {dst.name}"
-
     tmp = src.with_name(f".__tmp_tar_conv_{os.getpid()}_{stem}.tar")
     try:
         if src_codec == "7z":
@@ -243,7 +231,6 @@ def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
         else:
             with open_decompressed(src, src_codec) as i, tmp.open("wb") as o:
                 _copy_stream(i, o)
-
         if target == "7z":
             with py7zr.SevenZipFile(dst, mode="w") as z:
                 z.write(tmp, arcname=tmp.name)
@@ -252,7 +239,7 @@ def _tar_codec_job(job: tuple[str, str, int]) -> tuple[str, bool, str]:
                 _copy_stream(i, o)
         src.unlink()
         return src.name, True, f"converted -> {dst.name} (removed original)"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         with contextlib.suppress(Exception):
             if dst.exists():
                 dst.unlink()
@@ -277,7 +264,6 @@ def run_tar_codec(args: argparse.Namespace) -> int:
     if not files:
         print("No *.tar.<codec> files found recursively in current directory.")
         return 0
-
     initial = dir_total_size(root)
     results = parallel_imap(_tar_codec_job, [(str(p), target, args.level) for p in files], args.workers)
     final = dir_total_size(root)
@@ -374,7 +360,6 @@ def _write_archive(
     if ext not in TAR_FORMATS:
         msg = f"unsupported output extension: {ext}"
         raise ValueError(msg)
-
     codec = ext[5:] if ext != ".tar" else "tar"
     if codec == "7z":
         tmp_tar: Optional[Path] = None
@@ -389,11 +374,9 @@ def _write_archive(
         finally:
             if tmp_tar is not None:
                 tmp_tar.unlink(missing_ok=True)
-
     if codec == "tar":
         with dst.open("wb") as raw, tarfile.open(fileobj=raw, mode="w|") as tf:
             return _tar_add_members(tf, members)
-
     with (
         open_compressor(dst, codec, level) as stream,
         tarfile.open(fileobj=stream, mode="w|") as tf,
@@ -438,7 +421,7 @@ def _archive_convert_job(job: tuple[str, str, int]) -> tuple[str, int, bool, str
             True,
             f"converted -> {dst.name}, removed original",
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         with contextlib.suppress(Exception):
             if dst.exists():
                 dst.unlink()
@@ -503,7 +486,7 @@ def run_br2zst(args: argparse.Namespace) -> int:
             zst_bytes = comp.compress(raw)
             dst.write_bytes(zst_bytes)
             src.unlink()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"ERROR {src}: {e}")
             continue
         in_size = len(raw_bytes)
@@ -561,7 +544,7 @@ def _single_transcode(
                 f"Converted to {dst.name} ({src_size} -> {dst_size} bytes, {pct:.1f}%)",
             )
         return (str(src), False, "Output file is empty or missing")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         with contextlib.suppress(Exception):
             if dst.exists():
                 dst.unlink()
@@ -622,7 +605,6 @@ def run_xz2gz(args: argparse.Namespace) -> int:
     if not files:
         print("No .xz files found to convert.")
         return 0
-
     good_files = []
     for p in files:
         if p.is_symlink():
@@ -759,9 +741,8 @@ def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optiona
                 count += 1
     except tarfile.TarError as e:
         return False, f"Tar error: {e}", None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, f"Conversion error: {e}", None
-
     if not (dst.exists() and dst.stat().st_size > 0):
         return False, "Output file is empty or missing", None
     try:
@@ -769,7 +750,7 @@ def _tar_xz_to_whl(src: Path, remove_original: bool) -> tuple[bool, str, Optiona
             bad = zf.testzip()
             if bad:
                 return False, f"Created corrupt zip file: {bad}", None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, f"Verification failed: {e}", None
     if remove_original:
         try:
@@ -856,7 +837,6 @@ def run_whl_txz(args: argparse.Namespace) -> int:
         print("Original files will be removed after successful conversion")
     jobs = [(str(p), args.remove_original) for p in files]
     results = parallel_imap(_whl_txz_job, jobs, args.workers) if args.workers > 1 else [_whl_txz_job(j) for j in jobs]
-
     ok = fail = 0
     lines = ["", "=" * 40, "CONVERSION RESULTS", "-" * 40]
     for src, good, msg, out in results:
@@ -887,7 +867,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Unified archive/compression converter (see module docstring for original→merged mapping).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("tar-codec", help="Change the codec of *.tar.<codec> files (recursive).")
     p.add_argument("target", choices=sorted(TAR_CODECS), help="Target codec, e.g. xz, zst, br, 7z.")
     p.add_argument(
@@ -899,7 +878,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_tar_codec)
-
     p = sub.add_parser("archive-convert", help="Convert archives between tar/zip/whl formats.")
     p.add_argument(
         "inputs",
@@ -917,12 +895,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_archive_convert)
-
     p = sub.add_parser("br2zst", help="Recursively convert *.json.br -> *.json.zst.")
     p.add_argument("--root", type=Path, default=Path.cwd())
     p.add_argument("--level", type=int, default=DEFAULT_LEVEL)
     p.set_defaults(func=run_br2zst)
-
     for name, fn in (("gz2xz", run_gz2xz), ("xz2gz", run_xz2gz)):
         p = sub.add_parser(name, help=f"Convert *.{name[:2]} -> *.{name[3:]} in --root.")
         p.add_argument("--root", type=Path, default=Path.cwd())
@@ -934,7 +910,6 @@ def build_parser() -> argparse.ArgumentParser:
             help="Reproduce the original buggy '*40' percent display.",
         )
         p.set_defaults(func=fn)
-
     p = sub.add_parser("whl-txz", help="Bidirectional .whl <-> .tar.xz converter.")
     p.add_argument(
         "paths",
@@ -958,7 +933,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.add_argument("-q", "--quiet", action="store_true")
     p.set_defaults(func=run_whl_txz)
-
     return parser
 
 
@@ -972,7 +946,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted by user")
         return 130
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.error(f"Fatal error: {e}")
         return 1
 

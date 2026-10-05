@@ -4,12 +4,10 @@ It should take an input file path and an optional bitrate (default "64k"), valid
 After conversion it should print the input and output file sizes in MB along with the compression ratio, and it must handle missing ffmpeg or subprocess errors gracefully by printing an error message and exiting with a non-zero status."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 import sys
 from pathlib import Path
-
 from dh import runcmd
 
 

@@ -4,7 +4,6 @@ Methods (functions directly inside a class body) are skipped.
 Each entity is written to its own file: - output/classes/<name>.py - output/functions/<name>.py - output/const/<name>.py Usage: script.py [file_or_dir ...] If no input is provided, the current directory is scanned recursively."""
 
 from __future__ import annotations
-
 import ast
 import multiprocessing as mp
 import os
@@ -59,49 +58,39 @@ def extract_from_file(path: str):
     classes: dict[str, str] = {}
     funcs: dict[str, str] = {}
     consts: dict[str, str] = {}
-
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
             source = f.read()
         tree = ast.parse(source)
     except Exception:
         return path, classes, funcs, consts
-
     mark_parents(tree)
-
     for node in ast.walk(tree):
         parent = getattr(node, "_parent", None)
-
         if isinstance(node, ast.ClassDef):
             src = ast.get_source_segment(source, node)
             if src:
                 classes[node.name] = src
-
         elif isinstance(node, ast.FunctionDef):
             if isinstance(parent, ast.ClassDef):
                 continue
             src = ast.get_source_segment(source, node)
             if src:
                 funcs[node.name] = src
-
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             if not isinstance(parent, ast.Module):
                 continue
-
             if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                 name = node.targets[0].id
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 name = node.target.id
             else:
                 continue
-
             if not is_constant_name(name):
                 continue
-
             src = ast.get_source_segment(source, node)
             if src:
                 consts[name] = src
-
     return path, classes, funcs, consts
 
 
@@ -116,33 +105,27 @@ def main():
     inputs = sys.argv[1:]
     if not inputs:
         inputs = ["."]
-
     files = collect_files(inputs)
     if not files:
         print("No Python files found.")
         return
-
     os.makedirs(CLASSES_DIR, exist_ok=True)
     os.makedirs(FUNCTIONS_DIR, exist_ok=True)
     os.makedirs(CONST_DIR, exist_ok=True)
-
     all_classes: dict[str, str] = {}
     all_funcs: dict[str, str] = {}
     all_consts: dict[str, str] = {}
-
     with mp.Pool(WORKERS) as pool:
         for _path, classes, funcs, consts in pool.imap_unordered(extract_from_file, files):
             all_classes.update(classes)
             all_funcs.update(funcs)
             all_consts.update(consts)
-
     for name, src in all_classes.items():
         write_entity(CLASSES_DIR, name, src)
     for name, src in all_funcs.items():
         write_entity(FUNCTIONS_DIR, name, src)
     for name, src in all_consts.items():
         write_entity(CONST_DIR, name, src)
-
     print(f"Scanned files : {len(files)}")
     print(f"Classes       : {len(all_classes)}")
     print(f"Functions     : {len(all_funcs)}")

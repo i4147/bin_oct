@@ -4,7 +4,6 @@ It should write these English strings, one per line, into a new text file that s
 After writing, the script should print a confirmation message indicating where the output was saved."""
 
 from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path

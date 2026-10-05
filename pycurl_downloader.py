@@ -6,12 +6,10 @@ Per-URL timeout: 50 seconds.
 Usage: python download.py urls.txt"""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
-
 import pycurl
 
 WORKERS = 8
@@ -25,11 +23,9 @@ def filename_from_url(url: str) -> str:
     parsed = urlparse(url)
     path = unquote(parsed.path)
     name = Path(path).name or "index"
-
     if parsed.query:
         safe_query = "".join(c if c.isalnum() or c in "-_." else "_" for c in parsed.query)
         name = f"{name}_{safe_query}"
-
     name = "".join(c if c.isalnum() or c in "-_." else "_" for c in name)
     return name or "index"
 
@@ -51,13 +47,10 @@ def download_one(url: str) -> tuple[str, bool, str]:
     url = url.strip()
     if not url:
         return (url, False, "empty url")
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     name = filename_from_url(url)
     out_path = unique_path(OUTPUT_DIR, name)
     tmp_path = out_path.with_suffix(out_path.suffix + ".part")
-
     try:
         with tmp_path.open("wb") as fp:
             c = pycurl.Curl()
@@ -72,7 +65,6 @@ def download_one(url: str) -> tuple[str, bool, str]:
             c.setopt(pycurl.FAILONERROR, False)
             c.setopt(pycurl.SSL_VERIFYPEER, False)
             c.setopt(pycurl.SSL_VERIFYHOST, False)
-
             try:
                 c.perform()
                 status = c.getinfo(pycurl.RESPONSE_CODE)
@@ -81,15 +73,12 @@ def download_one(url: str) -> tuple[str, bool, str]:
                 c.close()
                 tmp_path.unlink(missing_ok=True)
                 return (url, False, f"curl error: {e}")
-
         if status >= 400:
             tmp_path.unlink(missing_ok=True)
             return (url, False, f"HTTP {status}")
-
         tmp_path.replace(out_path)
         size = out_path.stat().st_size
         return (url, True, f"{out_path.name} ({size} bytes)")
-
     except Exception as e:
         tmp_path.unlink(missing_ok=True)
         return (url, False, f"exception: {e}")
@@ -120,32 +109,24 @@ def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <urls_file>")
         sys.exit(1)
-
     input_path = Path(sys.argv[1])
     if not input_path.exists():
         print(f"Input file not found: {input_path}")
         sys.exit(1)
-
     urls = load_urls(input_path)
     if not urls:
         print("No URLs found in input file.")
         sys.exit(0)
-
     print(f"Downloading {len(urls)} URLs with {WORKERS} workers (timeout {TIMEOUT}s each)...")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     original_order = {}
     for i, u in enumerate(urls):
         original_order.setdefault(u, i)
-
     failed_urls: set[str] = set()
-
     processed_ok: set[str] = set()
-
     try:
         with mp.Pool(processes=WORKERS, initializer=worker_init) as pool:
             async_results = [(url, pool.apply_async(download_one, (url,))) for url in urls]
-
             total = len(async_results)
             done = 0
             for url, ar in async_results:
@@ -155,27 +136,21 @@ def main():
                     result = (url, False, "timeout waiting for worker")
                 except Exception as e:
                     result = (url, False, f"pool error: {e}")
-
                 done += 1
                 u, ok, msg = result
                 if ok:
                     processed_ok.add(u)
                 else:
                     failed_urls.add(u)
-
                 status = "OK " if ok else "ERR"
                 print(f"[{done}/{total}] {status} {u} -> {msg}")
-
     except KeyboardInterrupt:
         print("\nInterrupted by user. Any unprocessed URLs remain in the file.")
-
         for u in urls:
             if u not in processed_ok:
                 failed_urls.add(u)
-
     kept_in_order = sorted(failed_urls, key=lambda u: original_order.get(u, 1 << 30))
     save_failed(input_path, kept_in_order)
-
     ok_count = len(processed_ok)
     fail_count = len(kept_in_order)
     print(f"\nDone. Success: {ok_count}, Failed: {fail_count}")

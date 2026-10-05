@@ -4,7 +4,6 @@ It should read the file's full content, split it into individual lines, append f
 The script should accept the target file path as the first command-line argument and perform this transformation in place with no console output."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

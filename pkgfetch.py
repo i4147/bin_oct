@@ -11,7 +11,6 @@ Features: - Resolves PEP 508 requirements from PyPI-compatible simple indexes.
 - Uses loguru for logging."""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -26,7 +25,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Self
 from urllib.parse import parse_qs, unquote, urljoin, urlparse
-
 import httpx
 from loguru import logger
 from packaging.requirements import Requirement
@@ -43,28 +41,22 @@ __all__ = [
     "download",
     "main",
 ]
-
 PYPI_SIMPLE_URL = "https://pypi.org/simple/"
 TSINGHUA_SIMPLE_URL = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 YANDEX_SIMPLE_URL = "https://pypi.yandex.ru/simple/"
-
 DEFAULT_INDEXES = (
     PYPI_SIMPLE_URL,
     TSINGHUA_SIMPLE_URL,
     YANDEX_SIMPLE_URL,
 )
-
-HASH_ALGORITHMS = frozenset(
-    {
-        "sha256",
-        "sha512",
-        "sha384",
-        "sha224",
-        "sha1",
-        "md5",
-    }
-)
-
+HASH_ALGORITHMS = frozenset({
+    "sha256",
+    "sha512",
+    "sha384",
+    "sha224",
+    "sha1",
+    "md5",
+})
 SOURCE_SUFFIXES = (
     ".tar.gz",
     ".tar.bz2",
@@ -81,7 +73,6 @@ SOURCE_SUFFIXES = (
     ".zip",
     ".tar",
 )
-
 HASH_PREFERENCE = {
     "sha512": 6,
     "sha384": 5,
@@ -90,27 +81,19 @@ HASH_PREFERENCE = {
     "sha1": 2,
     "md5": 1,
 }
-
 CHUNK_SIZE = 1024 * 1024
 PARALLEL_DOWNLOAD_THRESHOLD = 5 * 1024 * 1024
 DEFAULT_PARALLEL_WORKERS = min(8, max(2, os.cpu_count() or 2))
-
 SIMPLE_ACCEPT_HEADER = (
     "application/vnd.pypi.simple.v1+json, application/vnd.pypi.simple.v1+html; q=0.1, text/html; q=0.01"
 )
-
-JSON_SIMPLE_CONTENT_TYPES = frozenset(
-    {
-        "application/vnd.pypi.simple.v1+json",
-    }
-)
-
-HTML_SIMPLE_CONTENT_TYPES = frozenset(
-    {
-        "application/vnd.pypi.simple.v1+html",
-        "text/html",
-    }
-)
+JSON_SIMPLE_CONTENT_TYPES = frozenset({
+    "application/vnd.pypi.simple.v1+json",
+})
+HTML_SIMPLE_CONTENT_TYPES = frozenset({
+    "application/vnd.pypi.simple.v1+html",
+    "text/html",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,13 +108,10 @@ class Link:
         fragment = urlparse(self.url).fragment
         if not fragment:
             return
-
         hashes = dict(self.hashes)
-
         for algorithm, values in parse_qs(fragment).items():
             if algorithm in HASH_ALGORITHMS and values:
                 hashes.setdefault(algorithm, values[0])
-
         if hashes != self.hashes:
             object.__setattr__(self, "hashes", hashes)
 
@@ -164,7 +144,6 @@ class Link:
         if not self.is_file:
             msg = f"not a file URL: {self.url}"
             raise ValueError(msg)
-
         return Path(unquote(self.parsed_url.path))
 
     def __repr__(self) -> str:
@@ -213,17 +192,13 @@ class TargetPython:
     def _compute_tags(self) -> list[Tag]:
         implementation = self.implementation or interpreter_name()
         python_version = self.py_version[:2] if self.py_version else None
-
         version_digits = "".join(map(str, python_version)) if python_version else interpreter_version()
-
         interpreter = f"{implementation}{version_digits}"
         tags: list[Tag] = []
-
         if implementation == "cp":
             tags.extend(cpython_tags(python_version, self.abis, self.platforms))
         else:
             tags.extend(generic_tags(interpreter, self.abis, self.platforms))
-
         tags.extend(compatible_tags(python_version, interpreter, self.platforms))
         return tags
 
@@ -248,16 +223,12 @@ class SimpleHTMLParser(HTMLParser):
 def parse_html_simple_page(response: httpx.Response) -> Iterator[Link]:
     parser = SimpleHTMLParser()
     parser.feed(response.text)
-
     base_url = parser.base_url or str(response.url)
-
     for attrs in parser.anchors:
         href = attrs.get("href")
         if not href:
             continue
-
         yanked = attrs.get("data-yanked")
-
         yield Link(
             url=urljoin(base_url, href),
             comes_from=base_url,
@@ -269,14 +240,11 @@ def parse_html_simple_page(response: httpx.Response) -> Iterator[Link]:
 def parse_json_simple_page(response: httpx.Response) -> Iterator[Link]:
     data = response.json()
     base_url = str(response.url)
-
     for file_data in data.get("files", ()):
         artifact_url = file_data.get("url")
         if not artifact_url:
             continue
-
         yanked = file_data.get("yanked")
-
         yield Link(
             url=urljoin(base_url, artifact_url),
             comes_from=base_url,
@@ -289,27 +257,21 @@ def parse_json_simple_page(response: httpx.Response) -> Iterator[Link]:
 def fetch_simple_page(client: httpx.Client, url: str) -> list[Link]:
     response = client.get(url, headers={"Accept": SIMPLE_ACCEPT_HEADER})
     response.raise_for_status()
-
     content_type = response.headers.get("content-type", "")
     content_type = content_type.split(";", 1)[0].strip().lower()
-
     if content_type in JSON_SIMPLE_CONTENT_TYPES:
         return list(parse_json_simple_page(response))
-
     if content_type in HTML_SIMPLE_CONTENT_TYPES:
         return list(parse_html_simple_page(response))
-
     msg = f"unsupported simple-index content type {content_type!r} from {url}"
     raise ValueError(msg)
 
 
 def source_filename_without_extension(filename: str) -> str:
     lower_filename = filename.lower()
-
     for suffix in sorted(SOURCE_SUFFIXES, key=len, reverse=True):
         if lower_filename.endswith(suffix):
             return filename[: -len(suffix)]
-
     return filename
 
 
@@ -322,7 +284,6 @@ def requires_python_matches(
     except InvalidSpecifier:
         logger.warning("Ignoring invalid Requires-Python specifier: {}", requires_python)
         return True
-
     return specifier.contains(
         target_python.python_version_str(),
         prereleases=True,
@@ -331,15 +292,12 @@ def requires_python_matches(
 
 def wheel_tag_priority(link: Link, priorities: dict[Tag, int]) -> int:
     unsupported = len(priorities) + 1
-
     if not link.is_wheel:
         return unsupported
-
     try:
         _, _, _, wheel_tags = parse_wheel_filename(link.filename)
     except (InvalidWheelFilename, InvalidVersion):
         return unsupported
-
     return min(
         (priorities.get(tag, unsupported) for tag in wheel_tags),
         default=unsupported,
@@ -359,48 +317,36 @@ def candidate_from_link(
     if link.is_wheel:
         if no_binary:
             return None
-
         try:
             project_name, version, _, wheel_tags = parse_wheel_filename(link.filename)
         except (InvalidWheelFilename, InvalidVersion):
             return None
-
         if canonicalize_name(project_name) != canonicalize_name(requirement.name):
             return None
-
         if not requirement.specifier.contains(version, prereleases=allow_prereleases):
             return None
-
         if not any(tag in tag_priorities for tag in wheel_tags):
             return None
-
     else:
         if only_binary or not link.is_source_archive:
             return None
-
         source_name = source_filename_without_extension(link.filename)
         project_name, separator, version_string = source_name.rpartition("-")
-
         if not separator or not project_name or not version_string:
             return None
-
         if canonicalize_name(project_name) != canonicalize_name(requirement.name):
             return None
-
         try:
             version = Version(version_string)
         except InvalidVersion:
             return None
-
         if not requirement.specifier.contains(version, prereleases=allow_prereleases):
             return None
-
     if link.requires_python and not requires_python_matches(
         link.requires_python,
         target_python,
     ):
         return None
-
     return Package(
         name=requirement.name,
         version=str(version),
@@ -417,17 +363,13 @@ class PackageFinder:
         client: httpx.Client | None = None,
     ) -> None:
         self.sources: list[tuple[str, str]] = []
-
         indexes = list(index_urls)
         if not indexes:
             indexes = list(DEFAULT_INDEXES)
-
         self.sources.extend(("index", url) for url in indexes)
         self.sources.extend(("find_links", url) for url in find_links)
-
         self.target_python = target_python or TargetPython()
         self._client = client
-
         self._tag_priorities = {tag: priority for priority, tag in enumerate(self.target_python.supported_tags())}
 
     @property
@@ -437,7 +379,6 @@ class PackageFinder:
                 follow_redirects=True,
                 timeout=httpx.Timeout(30.0, connect=10.0),
             )
-
         return self._client
 
     def close(self) -> None:
@@ -461,7 +402,6 @@ class PackageFinder:
     ) -> list[Package]:
         candidates: list[Package] = []
         seen_urls: set[str] = set()
-
         for source_type, source_url in self.sources:
             try:
                 links = self._collect_links(source_type, source_url, requirement)
@@ -473,7 +413,6 @@ class PackageFinder:
                     exc,
                 )
                 continue
-
             for link in links:
                 package = candidate_from_link(
                     link,
@@ -484,17 +423,13 @@ class PackageFinder:
                     no_binary=no_binary,
                     only_binary=only_binary,
                 )
-
                 if package is None:
                     continue
-
                 normalized_url = package.link.url_without_fragment
                 if normalized_url in seen_urls:
                     continue
-
                 seen_urls.add(normalized_url)
                 candidates.append(package)
-
         candidates.sort(key=self._sort_key, reverse=True)
         return candidates
 
@@ -511,34 +446,26 @@ class PackageFinder:
             )
         else:
             package_url = source_url
-
             if not package_url.startswith(("http://", "https://", "file://")):
                 package_url = Path(package_url).expanduser().resolve().as_uri()
-
         if package_url.startswith("file://"):
             return self._collect_file_links(package_url)
-
         return fetch_simple_page(self.client, package_url)
 
     @staticmethod
     def _collect_file_links(url: str) -> list[Link]:
         path = Path(unquote(urlparse(url).path))
-
         if path.is_file():
             return [Link(url=path.resolve().as_uri())]
-
         if not path.is_dir():
             raise FileNotFoundError(path)
-
         return [Link(url=item.resolve().as_uri()) for item in path.iterdir() if item.is_file()]
 
     def _sort_key(self, package: Package) -> tuple[int, Version, int, int, str]:
         link = package.link
         is_yanked = link.yanked is not None
-
         artifact_preference = source_artifact_priority(link)
         tag_priority = wheel_tag_priority(link, self._tag_priorities)
-
         return (
             -int(is_yanked),
             package.parsed_version,
@@ -550,19 +477,14 @@ class PackageFinder:
 
 def source_artifact_priority(link: Link) -> int:
     filename = link.filename.lower()
-
     if filename.endswith((".tar.gz", ".tgz")):
         return 30
-
     if filename.endswith((".tar.bz2", ".tar.bz")):
         return 29
-
     if filename.endswith(".zip"):
         return 28
-
     if link.is_source_archive:
         return 27
-
     return 0
 
 
@@ -572,10 +494,8 @@ def choose_hash(hashes: dict[str, str]) -> tuple[str, str] | None:
         for algorithm, digest in hashes.items()
         if algorithm.lower() in HASH_ALGORITHMS
     ]
-
     if not valid_hashes:
         return None
-
     return max(
         valid_hashes,
         key=lambda item: HASH_PREFERENCE.get(item[0], 0),
@@ -584,27 +504,22 @@ def choose_hash(hashes: dict[str, str]) -> tuple[str, str] | None:
 
 def calculate_file_hash(path: Path, algorithm: str) -> str:
     digest = hashlib.new(algorithm)
-
     with path.open("rb") as file:
         for chunk in iter(lambda: file.read(CHUNK_SIZE), b""):
             digest.update(chunk)
-
     return digest.hexdigest()
 
 
 def verify_hashes(path: Path, hashes: dict[str, str]) -> bool:
     selected_hash = choose_hash(hashes)
-
     if selected_hash is None:
         logger.warning(
             "No published hash for {}; only archive readability will be checked",
             path.name,
         )
         return True
-
     algorithm, expected = selected_hash
     actual = calculate_file_hash(path, algorithm)
-
     if actual.lower() != expected.lower():
         logger.error(
             "Hash mismatch for {} using {}: expected {}, got {}",
@@ -614,19 +529,16 @@ def verify_hashes(path: Path, hashes: dict[str, str]) -> bool:
             actual,
         )
         return False
-
     logger.debug("Verified {} checksum for {}", algorithm, path.name)
     return True
 
 
 def verify_archive_integrity(path: Path) -> bool:
     filename = path.name.lower()
-
     try:
         if filename.endswith((".whl", ".zip")):
             with zipfile.ZipFile(path) as archive:
                 corrupt_member = archive.testzip()
-
             if corrupt_member is not None:
                 logger.error(
                     "Corrupt ZIP member {} in {}",
@@ -634,9 +546,7 @@ def verify_archive_integrity(path: Path) -> bool:
                     path,
                 )
                 return False
-
             return True
-
         if any(filename.endswith(suffix) for suffix in SOURCE_SUFFIXES):
             try:
                 with tarfile.open(path, mode="r:*") as archive:
@@ -649,11 +559,9 @@ def verify_archive_integrity(path: Path) -> bool:
                     path.name,
                 )
                 return True
-
     except (OSError, tarfile.TarError, zipfile.BadZipFile) as exc:
         logger.error("Archive integrity check failed for {}: {}", path, exc)
         return False
-
     return True
 
 
@@ -661,7 +569,6 @@ def remote_file_size(client: httpx.Client, url: str) -> int | None:
     try:
         response = client.head(url, follow_redirects=True)
         response.raise_for_status()
-
         value = response.headers.get("content-length")
         return int(value) if value and value.isdigit() else None
     except (httpx.HTTPError, ValueError):
@@ -672,7 +579,6 @@ def server_supports_ranges(client: httpx.Client, url: str) -> bool:
     try:
         response = client.head(url, follow_redirects=True)
         response.raise_for_status()
-
         return response.headers.get("accept-ranges", "").lower() == "bytes"
     except httpx.HTTPError:
         return False
@@ -685,7 +591,6 @@ def download_httpx_single(
 ) -> None:
     with client.stream("GET", url) as response:
         response.raise_for_status()
-
         with destination.open("wb") as file:
             for chunk in response.iter_bytes(CHUNK_SIZE):
                 file.write(chunk)
@@ -699,27 +604,20 @@ def download_httpx_parallel(
 ) -> None:
     workers = min(workers, max(2, (size + CHUNK_SIZE - 1) // CHUNK_SIZE))
     part_dir = destination.with_name(destination.name + ".parts")
-
     if part_dir.exists():
         shutil.rmtree(part_dir)
-
     part_dir.mkdir(parents=True, exist_ok=True)
-
     chunk_span = (size + workers - 1) // workers
     ranges: list[tuple[int, int, Path]] = []
-
     for index in range(workers):
         start = index * chunk_span
         end = min(size - 1, start + chunk_span - 1)
-
         if start > end:
             continue
-
         ranges.append((start, end, part_dir / f"{index:03d}.part"))
 
     def download_range(start: int, end: int, part_path: Path) -> None:
         headers = {"Range": f"bytes={start}-{end}"}
-
         with (
             httpx.Client(
                 follow_redirects=True,
@@ -734,14 +632,11 @@ def download_httpx_parallel(
                     request=response.request,
                     response=response,
                 )
-
             with part_path.open("wb") as file:
                 for chunk in response.iter_bytes(CHUNK_SIZE):
                     file.write(chunk)
-
         expected_size = end - start + 1
         actual_size = part_path.stat().st_size
-
         if actual_size != expected_size:
             msg = f"incomplete range {start}-{end}: expected {expected_size}, received {actual_size}"
             raise OSError(msg)
@@ -751,19 +646,15 @@ def download_httpx_parallel(
 
         with ThreadPoolExecutor(max_workers=len(ranges)) as executor:
             futures = [executor.submit(download_range, start, end, part_path) for start, end, part_path in ranges]
-
             for future in as_completed(futures):
                 future.result()
-
         with destination.open("wb") as output:
             for _, _, part_path in ranges:
                 with part_path.open("rb") as part:
                     shutil.copyfileobj(part, output, length=CHUNK_SIZE)
-
         if destination.stat().st_size != size:
             msg = f"download size mismatch: expected {size}, got {destination.stat().st_size}"
             raise OSError(msg)
-
     finally:
         shutil.rmtree(part_dir, ignore_errors=True)
 
@@ -774,10 +665,8 @@ def download_requests(url: str, destination: Path) -> None:
     except ImportError as exc:
         msg = "The requests backend requires: pip install requests"
         raise RuntimeError(msg) from exc
-
     with requests.get(url, stream=True, timeout=(15, 90)) as response:
         response.raise_for_status()
-
         with destination.open("wb") as file:
             for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 if chunk:
@@ -790,9 +679,7 @@ def download_pycurl(url: str, destination: Path) -> None:
     except ImportError as exc:
         msg = "The pycurl backend requires: pip install pycurl"
         raise RuntimeError(msg) from exc
-
     curl = pycurl.Curl()
-
     try:
         with destination.open("wb") as file:
             curl.setopt(curl.URL, url)
@@ -801,7 +688,6 @@ def download_pycurl(url: str, destination: Path) -> None:
             curl.setopt(curl.TIMEOUT, 120)
             curl.setopt(curl.WRITEDATA, file)
             curl.perform()
-
             status = curl.getinfo(curl.RESPONSE_CODE)
             if status >= 400:
                 msg = f"HTTP status {status} while downloading {url}"
@@ -812,11 +698,9 @@ def download_pycurl(url: str, destination: Path) -> None:
 
 def download_aria2c(url: str, destination: Path) -> None:
     aria2c = shutil.which("aria2c")
-
     if aria2c is None:
         msg = "aria2c backend selected, but aria2c is not installed or not in PATH"
         raise RuntimeError(msg)
-
     command = [
         aria2c,
         "--allow-overwrite=true",
@@ -833,7 +717,6 @@ def download_aria2c(url: str, destination: Path) -> None:
         destination.name,
         url,
     ]
-
     subprocess.run(command, check=True)
 
 
@@ -845,39 +728,28 @@ def download(
     client: httpx.Client | None = None,
 ) -> Path:
     destination_dir.mkdir(parents=True, exist_ok=True)
-
     if link.is_file:
         source_path = link.file_path
-
         if not source_path.is_file():
             raise FileNotFoundError(source_path)
-
         if not verify_hashes(source_path, link.hashes):
             msg = f"hash mismatch for local artifact: {source_path}"
             raise ValueError(msg)
-
         if not verify_archive_integrity(source_path):
             msg = f"invalid archive: {source_path}"
             raise ValueError(msg)
-
         return source_path
-
     filename = link.filename or "download.bin"
     destination = destination_dir / filename
-
     if destination.exists():
         if verify_hashes(destination, link.hashes) and verify_archive_integrity(destination):
             logger.info("Using cached artifact: {}", destination)
             return destination
-
         logger.warning("Removing invalid cached artifact: {}", destination)
         destination.unlink(missing_ok=True)
-
     temporary_destination = destination.with_name(destination.name + ".part")
     temporary_destination.unlink(missing_ok=True)
-
     logger.info("Downloading {} via {}", link.url_without_fragment, backend)
-
     try:
         if backend == "httpx":
             owns_client = client is None
@@ -885,14 +757,12 @@ def download(
                 follow_redirects=True,
                 timeout=httpx.Timeout(90.0, connect=15.0),
             )
-
             try:
                 file_size = remote_file_size(active_client, link.url_without_fragment)
                 range_supported = server_supports_ranges(
                     active_client,
                     link.url_without_fragment,
                 )
-
                 if file_size is not None and file_size > PARALLEL_DOWNLOAD_THRESHOLD and range_supported:
                     logger.info(
                         "Using parallel ranged download ({} MiB)",
@@ -912,35 +782,26 @@ def download(
             finally:
                 if owns_client:
                     active_client.close()
-
         elif backend == "requests":
             download_requests(link.url_without_fragment, temporary_destination)
-
         elif backend == "pycurl":
             download_pycurl(link.url_without_fragment, temporary_destination)
-
         elif backend == "aria2c":
             download_aria2c(link.url_without_fragment, temporary_destination)
-
         else:
             msg = f"unsupported backend: {backend}"
             raise ValueError(msg)
-
         temporary_destination.replace(destination)
-
         if not verify_hashes(destination, link.hashes):
             destination.unlink(missing_ok=True)
             msg = f"hash mismatch for {link.url_without_fragment}"
             raise ValueError(msg)
-
         if not verify_archive_integrity(destination):
             destination.unlink(missing_ok=True)
             msg = f"archive integrity verification failed: {destination}"
             raise ValueError(msg)
-
         logger.success("Downloaded {}", destination)
         return destination
-
     except Exception:
         temporary_destination.unlink(missing_ok=True)
         raise
@@ -948,11 +809,9 @@ def download(
 
 def parse_python_version(value: str) -> tuple[int, ...]:
     parts = value.split(".")
-
     if not parts or any(not part.isdigit() for part in parts):
         msg = f"invalid Python version: {value!r}; expected X.Y"
         raise argparse.ArgumentTypeError(msg)
-
     return tuple(int(part) for part in parts)
 
 
@@ -961,13 +820,11 @@ def build_parser() -> argparse.ArgumentParser:
         prog="pkgfetch",
         description=("Find and download Python distributions from PEP 503/691 indexes."),
     )
-
     parser.add_argument(
         "requirement",
         type=Requirement,
         help="PEP 508 requirement, for example: requests>=2.28",
     )
-
     parser.add_argument(
         "-i",
         "--index-url",
@@ -976,7 +833,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="URL",
         help=("Simple index URL, repeatable. If omitted: PyPI, Tsinghua, and Yandex are tried in order."),
     )
-
     parser.add_argument(
         "-f",
         "--find-link",
@@ -985,7 +841,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR_OR_URL",
         help="Additional find-links source, repeatable.",
     )
-
     parser.add_argument(
         "-d",
         "--dest",
@@ -994,7 +849,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="DIR",
         help="Download destination directory, default: current directory.",
     )
-
     parser.add_argument(
         "-b",
         "--backend",
@@ -1005,7 +859,6 @@ def build_parser() -> argparse.ArgumentParser:
             "aria2c uses external parallel downloading."
         ),
     )
-
     parser.add_argument(
         "--py-version",
         type=parse_python_version,
@@ -1013,7 +866,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="X.Y",
         help="Override target Python version.",
     )
-
     parser.add_argument(
         "--platform",
         action="append",
@@ -1021,7 +873,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="TAG",
         help="Override target platform tag, repeatable.",
     )
-
     parser.add_argument(
         "--abi",
         action="append",
@@ -1029,61 +880,51 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="TAG",
         help="Override ABI tag, repeatable.",
     )
-
     parser.add_argument(
         "--impl",
         default=None,
         metavar="IMPL",
         help="Override Python implementation, for example cp or pp.",
     )
-
     binary_group = parser.add_mutually_exclusive_group()
-
     binary_group.add_argument(
         "--no-binary",
         action="store_true",
         help="Exclude wheels and select source archives only.",
     )
-
     binary_group.add_argument(
         "--only-binary",
         action="store_true",
         help="Select wheels only.",
     )
-
     parser.add_argument(
         "--pre",
         action="store_true",
         help="Allow pre-release versions.",
     )
-
     parser.add_argument(
         "-a",
         "--all",
         action="store_true",
         help="Download every matching candidate, rather than only the best.",
     )
-
     parser.add_argument(
         "-j",
         "--json",
         action="store_true",
         help="Print JSON metadata.",
     )
-
     parser.add_argument(
         "--no-download",
         action="store_true",
         help="Resolve candidates and print metadata without downloading.",
     )
-
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
         help="Enable debug logging.",
     )
-
     return parser
 
 
@@ -1099,14 +940,12 @@ def configure_logging(verbose: bool) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     configure_logging(args.verbose)
-
     target_python = TargetPython(
         py_version=args.py_version,
         abis=args.abi or None,
         implementation=args.impl,
         platforms=args.platform or None,
     )
-
     with PackageFinder(
         index_urls=args.index_url,
         find_links=args.find_link,
@@ -1118,22 +957,17 @@ def main(argv: list[str] | None = None) -> int:
             no_binary=args.no_binary,
             only_binary=args.only_binary,
         )
-
         if not matches:
             logger.error(
                 "No matching distributions found for {}",
                 args.requirement,
             )
             return 1
-
         if not args.all:
             matches = matches[:1]
-
         results: list[dict[str, Any]] = []
-
         for package in matches:
             metadata = package.as_json()
-
             if not args.no_download:
                 try:
                     local_path = download(
@@ -1155,11 +989,8 @@ def main(argv: list[str] | None = None) -> int:
                         exc,
                     )
                     return 2
-
                 metadata["local_path"] = str(local_path)
-
             results.append(metadata)
-
     if args.json or args.no_download:
         output: dict[str, Any] | list[dict[str, Any]]
         output = results[0] if len(results) == 1 else results
@@ -1167,7 +998,6 @@ def main(argv: list[str] | None = None) -> int:
     else:
         for result in results:
             print(result["local_path"])
-
     return 0
 
 

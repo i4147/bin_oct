@@ -4,7 +4,6 @@ The script should stop descending into a directory once a Git repo is found ther
 It takes no command-line inputs, operates on the current directory as the root, and outputs status messages to the console, finishing with a "Done." message."""
 
 from __future__ import annotations
-
 import subprocess
 from pathlib import Path
 

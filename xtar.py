@@ -5,7 +5,6 @@ It should process multiple archives concurrently using a multiprocessing pool wi
 The script should be runnable from the command line, accepting a target path as an argument."""
 
 from __future__ import annotations
-
 import gzip
 import lzma
 import subprocess

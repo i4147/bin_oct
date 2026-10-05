@@ -3,11 +3,9 @@
 It should accept arguments for the target string, a dry-run flag to preview changes without applying them, a recursive flag to descend into subdirectories, and an optional starting path, use a helper "unique_path" function (from a module named "dh") to avoid collisions when the new name already exists, print each rename (or would-be rename) and any warnings/errors, and return/print the total count of items renamed."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
-
 from dh import unique_path
 
 SKIP_DIRS = {".git"}

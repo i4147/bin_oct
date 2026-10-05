@@ -4,9 +4,7 @@ It should include helper functions for the Gregorian-to-Jalali date algorithm, c
 The script relies on a custom "faprint" module for output display and is structured as reusable functions rather than a single monolithic script."""
 
 from __future__ import annotations
-
 import datetime
-
 from faprint import faprint
 
 

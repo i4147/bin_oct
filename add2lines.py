@@ -4,7 +4,6 @@ The script should validate that exactly two arguments are provided and that the 
 It should read the file's lines preserving line endings, modify them in place by rewriting the file with the added prefix, and finally print a confirmation message indicating the file was updated."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

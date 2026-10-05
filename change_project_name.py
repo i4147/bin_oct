@@ -5,7 +5,6 @@ After updating file contents, it should also rename any files or folders whose n
 The script should print a usage message and exit with an error if not given exactly two command-line arguments."""
 
 from __future__ import annotations
-
 import shutil
 import sys
 from pathlib import Path

@@ -13,23 +13,18 @@ Symlinks are always skipped.
 - Deletes duplicates via Path.unlink() and prints a summary including bytes freed."""
 
 from __future__ import annotations
-
 import argparse
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from xxhash import xxh64
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
 QUICK_READ: int = 4096
-
 CHUNK_SIZE: int = 65536
-
 POOL_WORKERS: int = 8
 
 
@@ -95,7 +90,6 @@ def iter_files(
             continue
         if not p.is_file():
             continue
-
         if p.is_symlink() and not follow_symlinks:
             continue
         yield p
@@ -159,9 +153,7 @@ def main() -> None:
         help="Which file to keep within duplicates.",
     )
     args = p.parse_args()
-
     root = Path.cwd()
-
     print("Phase 1: Scanning files and grouping by size...")
     size_groups: defaultdict[int, list[Path]] = defaultdict(list)
     total_files = 0
@@ -177,18 +169,14 @@ def main() -> None:
             size_groups[size].append(f)
         except OSError:
             continue
-
     candidates: dict[int, list[Path]] = {s: lst for s, lst in size_groups.items() if len(lst) > 1}
     if not candidates:
         print(f"Scanned {total_files} files. No potential duplicates found.")
         return
-
     candidate_count = sum(len(v) for v in candidates.values())
     print(f"Phase 1 complete: {candidate_count} files in {len(candidates)} size-groups to examine.")
-
     print("Phase 2: Quick hash comparison...")
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
-
     with Pool(processes=POOL_WORKERS) as pool:
         futures: list[tuple[Path, object]] = []
         for files in candidates.values():
@@ -199,20 +187,16 @@ def main() -> None:
                 h: str = fut.get()
                 key = (fpath.stat().st_size, h)
                 quick_groups[key].append(fpath)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-
     need_full: list[list[Path]] = [group for group in quick_groups.values() if len(group) > 1]
     if not need_full:
         print("No duplicates found after quick hash comparison.")
         return
-
     full_candidates = sum(len(g) for g in need_full)
     print(f"Phase 2 complete: {full_candidates} files in {len(need_full)} groups need full hash.")
-
     print("Phase 3: Full hash comparison...")
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
-
     with Pool(processes=POOL_WORKERS) as pool:
         futures2: list[tuple[Path, tuple[int, int] | None, object]] = []
         for group in need_full:
@@ -224,9 +208,8 @@ def main() -> None:
                 h, _ = fut.get()
                 if h:
                     full_groups[h].append((fpath, st_key))
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-
     print("Phase 4: Processing results...")
     to_delete: list[Path] = []
     for entries in full_groups.values():
@@ -242,11 +225,9 @@ def main() -> None:
         for rep in group_reps:
             if rep != keep_file:
                 to_delete.append(rep)
-
     if not to_delete:
         print("No duplicate files found.")
         return
-
     print(f"\nFound {len(to_delete)} duplicate files.")
     for p_del in to_delete:
         try:
@@ -254,18 +235,15 @@ def main() -> None:
         except ValueError:
             rel_path = p_del
         print(f"  {rel_path}")
-
     if not args.remove:
         print(
             f"\nReport-only mode. {len(to_delete)} files would be deleted.\n"
             "Run with -r/--remove to actually delete them."
         )
         return
-
     if args.dry_run:
         print(f"\nDry-run complete. {len(to_delete)} files would be deleted.")
         return
-
     removed = 0
     failed = 0
     freed_space = 0
@@ -285,7 +263,6 @@ def main() -> None:
                 logger.error(f"Failed: {p_del.relative_to(cwd)} - {e}")
             except ValueError:
                 logger.error(f"Failed: {p_del} - {e}")
-
     print("\nSummary:")
     print(f"  Files scanned: {total_files}")
     print(f"  Duplicates found: {len(to_delete)}")

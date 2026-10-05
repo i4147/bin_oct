@@ -4,7 +4,6 @@ Original script mapping ----------------------- auto_enhance.py -> python imgtoo
 Where the originals differed only by defaults, the defaults are preserved in the matching subcommand and can be overridden by flags."""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import contextlib
@@ -19,15 +18,13 @@ from typing import Any, Callable, Iterable, Sequence
 
 try:
     from tqdm import tqdm
-except ImportError:  # pragma: no cover - optional progress display
+except ImportError:
     tqdm = None
-
 DEFAULT_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".tif"}
 DEFAULT_PNG_EXTS = {".png"}
 DEFAULT_EMBED_EXTS = {".css", ".html", ".htm", ".js"}
 DEFAULT_RESIZE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
 DEFAULT_UPSCALE_EXTS = {".webp", ".jpg", ".jpeg", ".png"}
-
 EMBED_MIME_EXT = {
     "image/png": ".png",
     "image/jpeg": ".jpg",
@@ -38,7 +35,6 @@ EMBED_MIME_EXT = {
     "application/javascript": ".js",
     "text/javascript": ".js",
 }
-
 EMBED_EXT_KIND = {
     ".png": "png",
     ".jpg": "jpg",
@@ -48,7 +44,6 @@ EMBED_EXT_KIND = {
     ".css": "css",
     ".js": "js",
 }
-
 EMBED_KIND_MIME = {
     "png": "image/png",
     "jpg": "image/jpeg",
@@ -56,7 +51,6 @@ EMBED_KIND_MIME = {
     "css": "text/css",
     "js": "application/javascript",
 }
-
 EMBED_DATA_RE = re.compile(
     r"data:(?P<mime>image/(?:png|jpe?g|webp|svg\+xml)|text/css|(?:application|text)/javascript);base64,(?P<data>[A-Za-z0-9+/=]+)"
 )
@@ -97,7 +91,6 @@ def iter_files(
 ) -> list[Path]:
     exts = {e.lower() for e in extensions}
     found: list[Path] = []
-
     for raw in paths:
         p = Path(raw)
         if p.is_file():
@@ -110,7 +103,6 @@ def iter_files(
                     found.append(f)
         else:
             print(f"[WARNING] Skipping invalid path: {p}")
-
     seen: set[Path] = set()
     out: list[Path] = []
     for f in found:
@@ -144,17 +136,14 @@ def parallel_map(
 ) -> list[Any]:
     if not items:
         return []
-
     workers = workers or os.cpu_count() or 1
     Executor = ThreadPoolExecutor if use_threads else ProcessPoolExecutor
     results: list[Any] = []
-
     with Executor(max_workers=workers) as executor:
         futures = [executor.submit(func, item) for item in items]
         iterator: Iterable[Any] = as_completed(futures)
         if tqdm is not None:
             iterator = tqdm(iterator, total=len(futures), desc=desc, unit="item", ncols=80)
-
         for fut in iterator:
             try:
                 results.append(fut.result())
@@ -169,7 +158,7 @@ def _import_cv2():
         import numpy as np
 
         return cv2, np
-    except ImportError as exc:  # pragma: no cover
+    except ImportError as exc:
         msg = "opencv-python and numpy are required for this command"
         raise SystemExit(msg) from exc
 
@@ -179,7 +168,7 @@ def _import_pil():
         from PIL import Image, ImageEnhance
 
         return Image, ImageEnhance
-    except ImportError as exc:  # pragma: no cover
+    except ImportError as exc:
         msg = "Pillow is required for this command"
         raise SystemExit(msg) from exc
 
@@ -187,32 +176,25 @@ def _import_pil():
 def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
     path, verbose = task
     cv2, np = _import_cv2()
-
     try:
         img = cv2.imread(str(path))
         if img is None:
             print(f"[ERROR] Could not read: {path}")
             return False
-
         denoised = cv2.fastNlMeansDenoisingColored(img, None, 3, 3, 7, 21)
         lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
         l_chan, a_chan, b_chan = cv2.split(lab)
-
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         l_eq = clahe.apply(l_chan)
-
         merged = cv2.merge((l_eq, a_chan, b_chan))
         bgr = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
-
         hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
         h_chan, s_chan, v_chan = cv2.split(hsv)
         s_chan = np.clip(s_chan * 1.1, 0, 255).astype(np.uint8)
         hsv2 = cv2.merge((h_chan, s_chan, v_chan))
         bgr2 = cv2.cvtColor(hsv2, cv2.COLOR_HSV2BGR)
-
         blur = cv2.GaussianBlur(bgr2, (0, 0), 2.0)
         sharp = cv2.addWeighted(bgr2, 1.5, blur, -0.5, 0)
-
         cv2.imwrite(str(path), sharp)
         if verbose:
             print(f"[SUCCESS] Enhanced and replaced: {path.name}")
@@ -225,16 +207,12 @@ def _auto_enhance_one(task: tuple[Path, bool]) -> bool:
 def cmd_auto_enhance(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path()]
     files = iter_files(inputs, DEFAULT_IMAGE_EXTS, recursive=True)
-
     if not files:
         print("[INFO] No supported images found to enhance. Exiting.")
         return 0
-
     print(f"\n[START] Found {len(files)} target images.")
     print("[WARNING] Images will be ENHANCED IN-PLACE (originals will be overwritten)!")
-
     tasks = [(f, args.verbose) for f in files]
-
     if args.parallel:
         workers = args.jobs or os.cpu_count() or 1
         print(f"[SYSTEM] Utilizing {workers} parallel CPU threads.")
@@ -247,7 +225,6 @@ def cmd_auto_enhance(args: argparse.Namespace) -> int:
             if verbose:
                 print(f"[{i}/{len(tasks)}] {path.name}")
             results.append(_auto_enhance_one(task))
-
     ok = sum(1 for r in results if r is True)
     print(f"[FINISHED] Done. Success: {ok}/{len(files)}")
     return 0
@@ -256,18 +233,15 @@ def cmd_auto_enhance(args: argparse.Namespace) -> int:
 def _downscale_one(task: tuple[Path, float]) -> tuple[Path, bool, str]:
     path, scale = task
     cv2, _ = _import_cv2()
-
     try:
         img = cv2.imread(str(path))
         if img is None:
             return path, False, "Failed to read image"
-
         h, w = img.shape[:2]
         new_w = int(w * scale)
         new_h = int(h * scale)
         if new_w < 1 or new_h < 1:
             return path, False, f"New size too small ({new_w}x{new_h})"
-
         resized = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
         ok = cv2.imwrite(str(path), resized)
         if not ok:
@@ -283,7 +257,6 @@ def cmd_downscale(args: argparse.Namespace) -> int:
         return 1
     if args.scale_factor == 1.0:
         print("[WARN] Scale factor is 1.0 - no downscaling will occur")
-
     root = Path(args.root)
     print("-" * 40)
     print("IMAGE DOWNSCALER")
@@ -291,20 +264,16 @@ def cmd_downscale(args: argparse.Namespace) -> int:
     print(f"[INIT] Root directory: {root.resolve()}")
     print(f"[INIT] Scale factor: {args.scale_factor} (new size = original x {args.scale_factor})")
     print(f"[INIT] CPU cores available: {os.cpu_count()}")
-
     exts = DEFAULT_IMAGE_EXTS | {".gif"}
     files = iter_files([root], exts, recursive=True)
     print(f"[SCAN] Found {len(files)} image file(s)")
     if not files:
         print("[WARN] No images to process!")
         return 0
-
     workers = args.workers or os.cpu_count() or 1
     print(f"\n[PROCESS] Downscaling {len(files)} image(s) with {workers} process(es)...")
-
     tasks = [(f, args.scale_factor) for f in files]
     results = parallel_map(_downscale_one, tasks, workers=workers, desc="Downscaling")
-
     ok = 0
     fail = 0
     print("\n[RESULTS]")
@@ -321,7 +290,6 @@ def cmd_downscale(args: argparse.Namespace) -> int:
         else:
             fail += 1
             print(f"✗ FAIL  {path.name:<50} {message}")
-
     print("-" * 40)
     print(f"[SUMMARY] Successful: {ok} | Failed: {fail} | Total: {len(files)}")
     print("\n" + "=" * 40)
@@ -356,20 +324,16 @@ def _optimize_embedded_resource(
     if ext is None:
         print(f"[WARNING] Unsupported MIME type: {mime}")
         return None, None
-
     kind = EMBED_EXT_KIND.get(ext)
     if kind is None:
         return None, None
-
     fd, tmp_name = tempfile.mkstemp(suffix=ext)
     os.close(fd)
     src = Path(tmp_name)
     src.write_bytes(data)
-
     temp_paths: list[Path] = [src]
     result_path = src
     result_mime = mime
-
     try:
         if kind == "png":
             if not _run_embed_tool([args.png_command, str(src)], "pngq", args.timeout):
@@ -405,7 +369,6 @@ def _optimize_embedded_resource(
                 return None, None
         elif kind == "js" and not _run_embed_tool([args.js_command, str(src)], "ter_ser", args.timeout):
             return None, None
-
         if not result_path.exists():
             print(f"Result file missing after optimization: {result_path}")
             return None, None
@@ -426,28 +389,22 @@ def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
         "space_freed": 0,
         "error": None,
     }
-
     try:
         raw = path.read_bytes()
         original_size = len(raw)
         stats["original_size"] = original_size
-
         text = raw.decode("utf-8", errors="replace")
         matches = list(EMBED_DATA_RE.finditer(text))
         stats["resources_found"] = len(matches)
-
         if not matches:
             return stats
-
         parts: list[str] = []
         last = 0
         optimized = 0
-
         for match in matches:
             parts.append(text[last : match.start()])
             mime = match.group("mime")
             b64 = match.group("data")
-
             try:
                 data = base64.b64decode(b64)
             except Exception as exc:
@@ -455,10 +412,8 @@ def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
                 parts.append(match.group(0))
                 last = match.end()
                 continue
-
             is_webp = EMBED_MIME_EXT.get(mime) == ".webp"
             new_data, new_mime = _optimize_embedded_resource(mime, data, args)
-
             if new_data is not None and (is_webp or len(new_data) < len(data)):
                 new_b64 = base64.b64encode(new_data).decode("ascii")
                 parts.append(f"data:{new_mime};base64,{new_b64}")
@@ -468,9 +423,7 @@ def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
                 if new_data is not None and not is_webp:
                     print(f"[DEBUG] No size improvement for {mime} in {path.name} ({len(new_data)} >= {len(data)})")
             last = match.end()
-
         parts.append(text[last:])
-
         if optimized > 0:
             new_text = "".join(parts)
             new_bytes = new_text.encode("utf-8")
@@ -480,11 +433,9 @@ def _process_embed_file(path: Path, args: argparse.Namespace) -> dict[str, Any]:
             stats["space_freed"] = original_size - len(new_bytes)
         else:
             stats["new_size"] = original_size
-
     except Exception as exc:
         print(f"[ERROR] Error processing {path}: {exc}")
         stats["error"] = str(exc)
-
     return stats
 
 
@@ -505,7 +456,6 @@ def collect_embed_files(paths: Sequence[Path]) -> list[Path]:
                 found.extend(p.rglob(f"*{ext.upper()}"))
         else:
             print(f"[WARNING] Path not found or unsupported: {p}")
-
     seen: set[Path] = set()
     out: list[Path] = []
     for f in found:
@@ -521,11 +471,9 @@ def _print_embed_result(stats: dict[str, Any]) -> None:
     if stats["error"]:
         print(f"  ✗ {name} — ERROR: {stats['error']}")
         return
-
     found = stats["resources_found"]
     optimized = stats["resources_optimized"]
     freed = stats["space_freed"]
-
     if found == 0:
         print(f"  · {name} — no embedded resources")
     elif optimized == 0:
@@ -537,36 +485,29 @@ def _print_embed_result(stats: dict[str, Any]) -> None:
 def cmd_embed_optimize(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     files = collect_embed_files(inputs)
-
     if not files:
         print("No CSS/HTML/JS files found.")
         return 0
-
     print(f"Found {len(files)} file(s) to process.\n")
     if args.dry_run:
         for f in files:
             print(f"  {f}")
         return 0
-
     tasks = [(f, args) for f in files]
     results: list[dict[str, Any]] = []
-
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(_process_embed_file_task, task) for task in tasks]
         iterator: Iterable[Any] = as_completed(futures)
         if tqdm is not None:
             iterator = tqdm(iterator, total=len(futures), desc="Embed", unit="file", ncols=80)
-
         for fut in iterator:
             stats = fut.result()
             results.append(stats)
             _print_embed_result(stats)
-
     errors = sum(1 for s in results if s["error"])
     found = sum(s["resources_found"] for s in results)
     optimized = sum(s["resources_optimized"] for s in results)
     freed = sum(s["space_freed"] for s in results)
-
     print("\n" + "=" * 40)
     print("Summary")
     print("-" * 40)
@@ -583,10 +524,8 @@ def _optimize_png_one(
     task: tuple[Path, str, str, str, bool],
 ) -> tuple[Path, bool, str | int]:
     path, tool, optipng_args, oxipng_args, show_output = task
-
     try:
         original_size = path.stat().st_size
-
         if tool == "optipng":
             cmd = ["optipng", *optipng_args.split(), str(path)]
             try:
@@ -600,7 +539,6 @@ def _optimize_png_one(
                 return path, False, "skipped"
             if show_output:
                 print(output.strip())
-
         else:
             cmd = ["oxipng", *oxipng_args.split(), str(path)]
             try:
@@ -614,10 +552,8 @@ def _optimize_png_one(
                 return path, False, "oxipng not found"
             except subprocess.CalledProcessError:
                 return path, False, "oxipng failed"
-
         new_size = path.stat().st_size
         return path, True, original_size - new_size
-
     except Exception as exc:
         return path, False, str(exc)
 
@@ -625,21 +561,16 @@ def _optimize_png_one(
 def cmd_optimize_png(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     files = iter_files(inputs, DEFAULT_PNG_EXTS, recursive=args.recursive)
-
     if not files:
         print("No PNG files found.")
         return 0
-
     print(f"Found {len(files)} PNG files to optimize.")
     tasks = [(f, args.tool, args.optipng_args, args.oxipng_args, args.show_output) for f in files]
-
     workers = args.workers or os.cpu_count() or 1
     results = parallel_map(_optimize_png_one, tasks, workers=workers, desc="Optimizing PNGs")
-
     ok = 0
     fail = 0
     total_freed = 0
-
     for result in results:
         if isinstance(result, Exception):
             fail += 1
@@ -654,7 +585,6 @@ def cmd_optimize_png(args: argparse.Namespace) -> int:
         else:
             fail += 1
             print(f"✗ {path.name} — {info}")
-
     print(f"\nOptimization complete. Success: {ok}/{len(files)} files.")
     print(f"Total space freed: {total_freed / 1048576:.2f} MB")
     return 0
@@ -665,7 +595,6 @@ def _pil_enhance_one(
 ) -> bool:
     path, contrast, brightness, sharpness, color = task
     Image, ImageEnhance = _import_pil()
-
     try:
         with Image.open(path) as img:
             img = ImageEnhance.Contrast(img).enhance(contrast)
@@ -684,11 +613,9 @@ def cmd_pil_enhance(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
     files = iter_files(inputs, exts, recursive=args.recursive)
-
     if not files:
         print("No image files found.")
         return 0
-
     print(f"Found {len(files)} image file(s) to process...")
     tasks = [(f, args.contrast, args.brightness, args.sharpness, args.color) for f in files]
     workers = args.workers or os.cpu_count() or 1
@@ -700,7 +627,6 @@ def cmd_pil_enhance(args: argparse.Namespace) -> int:
 def _resize_one(task: tuple[Path, float, int]) -> bool:
     path, scale, quality = task
     Image, _ = _import_pil()
-
     try:
         with Image.open(path) as img:
             new_w = int(img.width * scale)
@@ -718,11 +644,9 @@ def cmd_resize(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
     files = iter_files(inputs, exts, recursive=args.recursive)
-
     if not files:
         print("No image files found in current directory.")
         return 0
-
     print(f"Found {len(files)} image file(s) to process...")
     tasks = [(f, args.scale, args.quality) for f in files]
     workers = args.workers or os.cpu_count() or 1
@@ -734,7 +658,6 @@ def cmd_resize(args: argparse.Namespace) -> int:
 def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
     path, backup, verbose = task
     Image, _ = _import_pil()
-
     stats: dict[str, Any] = {
         "path": path,
         "success": False,
@@ -743,53 +666,43 @@ def _strip_exif_one(task: tuple[Path, bool, bool]) -> dict[str, Any]:
         "message": "",
         "backup_created": False,
     }
-
     try:
         original_size = path.stat().st_size
         stats["original_size"] = original_size
-
         if backup:
             backup_path = path.with_suffix(path.suffix + ".backup")
             backup_path.write_bytes(path.read_bytes())
             stats["backup_created"] = True
             if verbose:
                 print(f"📋 Backup: {backup_path.name}")
-
         with Image.open(path) as img:
             clean = Image.new(img.mode, img.size)
             clean.putdata(list(img.getdata()))
-
             buf = io.BytesIO()
             save_kwargs: dict[str, Any] = {}
             if img.format == "JPEG":
                 save_kwargs.update(quality=95, optimize=True)
             elif img.format == "PNG":
                 save_kwargs.update(optimize=True)
-
             try:
                 clean.save(buf, format=img.format, exif=None, **save_kwargs)
             except TypeError:
                 clean.save(buf, format=img.format, **save_kwargs)
-
             new_bytes = buf.getvalue()
             path.write_bytes(new_bytes)
             stats["new_size"] = len(new_bytes)
             stats["success"] = True
-
             delta = len(new_bytes) - original_size
             pct = delta / original_size * 100 if original_size else 0.0
             stats["message"] = f"Stripped EXIF: {delta:+.0f}B ({pct:+.1f}%)"
-
             if verbose:
                 print(f"✅ {path.name}")
                 print(f"   {human_size(original_size)} -> {human_size(len(new_bytes))} ({pct:+.1f}%)")
-
     except Exception as exc:
         stats["success"] = False
         stats["message"] = f"Error: {exc}"
         if verbose:
             print(f"❌ {path.name}: {exc}")
-
     return stats
 
 
@@ -798,40 +711,32 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
     extensions = parse_extensions(args.extensions)
     recursive = not args.no_recursive
     files = iter_files(paths, extensions, recursive=recursive)
-
     if not files:
         print("ℹ️  No image files found.")
         return 0
-
     size_before: dict[Path, int] = {}
     if not args.no_size_report:
         parents = {f.parent for f in files}
         for parent in parents:
             size_before[parent] = dir_size(parent)
-
     print(f"📸 Found {len(files)} image file(s)")
     print(f"🔧 Using {args.workers} parallel worker(s)")
     print(f"💾 Backup: {'Yes' if args.backup else 'No'}")
     print(f"📁 Recursive: {'Yes' if recursive else 'No'}")
     print("-" * 40)
-
     tasks = [(f, args.backup, args.verbose) for f in files]
     results = parallel_map(_strip_exif_one, tasks, workers=args.workers, desc="Stripping EXIF")
-
     ok = 0
     fail = 0
     total_original = 0
     total_new = 0
-
     for i, result in enumerate(results, 1):
         if isinstance(result, Exception):
             fail += 1
             print(f"❌ unexpected error: {result}")
             continue
-
         total_original += result["original_size"]
         total_new += result["new_size"]
-
         if result["success"]:
             ok += 1
             if not args.verbose:
@@ -840,7 +745,6 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
             fail += 1
             if not args.verbose:
                 print(f"  [{i}/{len(files)}] ❌ {result['path'].name}: {result['message']}")
-
     print("-" * 40)
     delta = total_new - total_original
     print("📊 Summary:")
@@ -853,7 +757,6 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
         print(f"   💰 Change: {human_size(delta)} ({delta / total_original * 100:+.1f}%)")
     else:
         print(f"   💰 Change: {human_size(delta)} (N/A)")
-
     if not args.no_size_report and size_before:
         print("📁 Folder size changes:")
         for parent in sorted(size_before):
@@ -864,22 +767,18 @@ def cmd_strip_exif(args: argparse.Namespace) -> int:
                 pct = change / before * 100 if before > 0 else 0.0
                 print(f"   {parent}:")
                 print(f"      {human_size(before)} -> {human_size(after)} ({pct:+.1f}%)")
-
     backups = [r for r in results if isinstance(r, dict) and r.get("backup_created")]
     if backups:
         print(f"💾 Backups created for {len(backups)} file(s)")
-
     return 0
 
 
 def _upscale_one(path: Path) -> bool:
     cv2, _ = _import_cv2()
-
     try:
         img = cv2.imread(str(path))
         if img is None or not img.any():
             return False
-
         h, w = img.shape[:2]
         factor = 0
         if 1 < w < 200:
@@ -892,10 +791,8 @@ def _upscale_one(path: Path) -> bool:
             factor = 2
         elif w > 2000:
             return False
-
         if factor == 0:
             return False
-
         print(f"[✓] {path.name}: {h}x{w} -> {h * factor}x{w * factor}")
         resized = cv2.resize(
             img,
@@ -913,11 +810,9 @@ def cmd_upscale(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     exts = parse_extensions(args.extensions)
     files = iter_files(inputs, exts, recursive=args.recursive)
-
     if not files:
         print("No image files found.")
         return 0
-
     for i, f in enumerate(files, 1):
         print(f"{i}/{len(files)}")
         _upscale_one(f)
@@ -932,8 +827,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
-    # auto-enhance
     p = sub.add_parser("auto-enhance", help="Google-Photos-style in-place image enhancement")
     p.add_argument("inputs", nargs="*", help="Files or folders. Defaults to recursive '.'.")
     p.add_argument("-v", "--verbose", action="store_true", help="Print per-image details.")
@@ -946,7 +839,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Parallel jobs. Default: CPU count.",
     )
     p.set_defaults(func=cmd_auto_enhance)
-
     p = sub.add_parser("downscale", help="Downscale images in-place by a scale factor")
     p.add_argument(
         "scale_factor",
@@ -968,8 +860,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Worker processes. Default: CPU count.",
     )
     p.set_defaults(func=cmd_downscale)
-
-    # embed-optimize
     p = sub.add_parser("embed-optimize", help="Optimize base64 resources inside CSS/HTML/JS")
     p.add_argument(
         "inputs",
@@ -988,8 +878,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--js-command", default="ter_ser", help="JS optimizer command.")
     p.add_argument("--css-command", default="ccss", help="CSS optimizer command.")
     p.set_defaults(func=cmd_embed_optimize)
-
-    # optimize-png
     p = sub.add_parser("optimize-png", help="Optimize PNG files with optipng or oxipng")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument(
@@ -1014,8 +902,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-recursive", dest="recursive", action="store_false", help="Do not recurse.")
     p.add_argument("--show-output", action="store_true", help="Show tool output.")
     p.set_defaults(func=cmd_optimize_png)
-
-    # pil-enhance
     p = sub.add_parser("pil-enhance", help="PIL ImageEnhance in-place enhancement")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument("--contrast", type=float, default=1.1, help="Contrast factor.")
@@ -1038,7 +924,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Worker processes. Default: CPU count.",
     )
     p.set_defaults(func=cmd_pil_enhance)
-
     p = sub.add_parser("resize", help="PIL in-place downscale by scale factor")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument("--scale", type=float, default=0.75, help="Scale factor. Default: 0.75.")
@@ -1062,8 +947,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Worker processes. Default: CPU count.",
     )
     p.set_defaults(func=cmd_resize)
-
-    # strip-exif
     p = sub.add_parser("strip-exif", help="Strip EXIF data from images")
     p.add_argument(
         "paths",
@@ -1088,7 +971,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-size-report", action="store_true", help="Skip folder size change report.")
     p.add_argument("-j", "--workers", type=int, default=8, help="Worker processes. Default: 8.")
     p.set_defaults(func=cmd_strip_exif)
-
     p = sub.add_parser("upscale", help="Upscale small images by width-based factors")
     p.add_argument("inputs", nargs="*", help="Files or directories. Default: current directory.")
     p.add_argument(
@@ -1104,7 +986,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--no-recursive", dest="recursive", action="store_false", help="Do not recurse.")
     p.set_defaults(func=cmd_upscale)
-
     return parser
 
 

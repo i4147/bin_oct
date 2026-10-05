@@ -4,14 +4,12 @@ It should use multiprocessing.Pool with a worker count based on cpu_count for pa
 The script should exit gracefully with an informative error if OpenCV is not installed or the cascade classifier fails to load."""
 
 from __future__ import annotations
-
 import logging
 import shutil
 import sys
 import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 from tqdm import tqdm
 
 logging.basicConfig(

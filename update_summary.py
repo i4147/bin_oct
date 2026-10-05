@@ -4,7 +4,6 @@ It should preserve the existing header lines at the top of SUMMARY.md (everythin
 After writing the updated file, it should print a message stating how many chapters were added."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 

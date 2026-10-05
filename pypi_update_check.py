@@ -1,12 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Unified PyPI package update checker.
-
 Third-party dependencies:
   requests
   packaging
   pycurl (optional; required only for --backend pycurl)
-
 Usage examples:
   python merged.py c4u
   python merged.py c4u2
@@ -14,7 +12,6 @@ Usage examples:
   python merged.py checkforupdate
   python merged.py check --backend requests --workers 8 --normalize pypi \
       --output requirements.txt --output-format requirements
-
 Mapping:
   c4u.py             -> python merged.py c4u
   c4u2.py            -> python merged.py c4u2
@@ -24,7 +21,6 @@ Mapping:
 """
 
 from __future__ import annotations
-
 import argparse
 import importlib.metadata
 import io
@@ -39,7 +35,6 @@ import sysconfig
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
-
 import requests
 from packaging import version
 
@@ -380,7 +375,6 @@ def add_common_args(parser: argparse.ArgumentParser, defaults: dict[str, Any]) -
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Unified PyPI package update checker")
     sub = parser.add_subparsers(dest="command", required=True)
-
     c4u_defaults = {
         "backend": "requests",
         "workers": min(os.cpu_count() or 1, 8),
@@ -402,7 +396,6 @@ def build_parser() -> argparse.ArgumentParser:
     }
     p_c4u = sub.add_parser("c4u")
     add_common_args(p_c4u, c4u_defaults)
-
     c4u2_defaults = {
         "backend": "pycurl",
         "workers": 1,
@@ -424,7 +417,6 @@ def build_parser() -> argparse.ArgumentParser:
     }
     p_c4u2 = sub.add_parser("c4u2")
     add_common_args(p_c4u2, c4u2_defaults)
-
     check4update_defaults = {
         "backend": "pycurl",
         "workers": 8,
@@ -446,7 +438,6 @@ def build_parser() -> argparse.ArgumentParser:
     }
     p_check4update = sub.add_parser("check4update")
     add_common_args(p_check4update, check4update_defaults)
-
     checkforupdate_defaults = {
         "backend": "requests",
         "workers": 1,
@@ -468,7 +459,6 @@ def build_parser() -> argparse.ArgumentParser:
     }
     p_checkforupdate = sub.add_parser("checkforupdate")
     add_common_args(p_checkforupdate, checkforupdate_defaults)
-
     check_defaults = {
         "backend": "requests",
         "workers": 1,
@@ -490,17 +480,14 @@ def build_parser() -> argparse.ArgumentParser:
     }
     p_check = sub.add_parser("check")
     add_common_args(p_check, check_defaults)
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.log_file:
         setup_logging(args.log_file, args.log_level)
-
     if args.interrupt_handler:
 
         def _handler(signum: int, frame: Any) -> None:
@@ -508,14 +495,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             sys.exit(0)
 
         signal.signal(signal.SIGINT, _handler)
-
     installed = get_installed_packages(args.normalize)
     print(f"Found {len(installed)} installed packages.")
-
     state = load_state(args.state_file) if args.resume and args.state_file else {}
     pending = filter_pending(installed, state, args.resume, args.resume_mode)
     print(f"Will check {len(pending)} packages.")
-
     if pending:
         new_results = process_packages(pending, args)
         if args.state_file:
@@ -527,10 +511,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             results = new_results
     else:
         results = state
-
     if args.output:
         write_output(args.output, results, args.output_format)
-
     print_summary(results)
     return 0
 

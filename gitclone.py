@@ -3,7 +3,6 @@
 Usage: g2 <repo-url> [target-dir]"""
 
 from __future__ import annotations
-
 import re
 import subprocess
 import sys
@@ -18,7 +17,6 @@ def _default_branch(url: str) -> str | None:
     )
     if result.returncode != 0:
         return None
-
     for line in result.stdout.splitlines():
         m = re.match(r"^ref:\s+refs/heads/(\S+)\s+HEAD", line)
         if m:
@@ -38,48 +36,37 @@ def git_clone2(*args):
     if not args:
         print("Usage: g2 <repo-url> [target-dir]")
         return 1
-
     url = args[0]
     target = args[1] if len(args) > 1 else ""
-
     branch = _default_branch(url)
     if not branch:
         print(f"❌ Could not determine default branch for {url}", file=sys.stderr)
         return 1
-
     repo = Path(url.rstrip("/")).name
     repo = repo.removesuffix(".git")
-
     if not target:
         target = f"{repo}.git"
-
     print(f"🔍 Default branch: {branch}")
     print(f"📦 Cloning only '{branch}' (with submodules) from {url} into {target} ...")
-
-    rc = subprocess.run(
-        [
-            "git",
-            "clone",
-            "--single-branch",
-            "--branch",
-            branch,
-            "--bare",
-            "--recurse-submodules",
-            url,
-            target,
-        ]
-    ).returncode
+    rc = subprocess.run([
+        "git",
+        "clone",
+        "--single-branch",
+        "--branch",
+        branch,
+        "--bare",
+        "--recurse-submodules",
+        url,
+        target,
+    ]).returncode
     if rc != 0:
         return rc
-
     target_path = Path(target)
     has_subs = _has_submodules(target_path)
-
     print("✅ Done!")
     print(f"   To update later: cd {target} && git fetch origin {branch}")
     if has_subs:
         print(f"   Update submodules: git submodule update --init --recursive --remote")
-
     return 0
 
 

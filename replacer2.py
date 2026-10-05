@@ -5,7 +5,6 @@ For each Python file found, it should read the content, check whether the old te
 It should also print usage instructions and exit gracefully if the wrong number of arguments is given or if no Python files are found, and print a summary of how many files were found and what replacement is being performed before processing."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

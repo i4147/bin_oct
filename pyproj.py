@@ -4,7 +4,6 @@ It should generate standard project files (pyproject.toml, setup.py, .gitignore,
 The script should accept command-line arguments (via argparse) to specify the package name and any relevant options, and should handle errors such as missing tokens, failed API requests, or git command failures by printing informative messages and exiting appropriately."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -14,7 +13,6 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Final
-
 from dotenv import load_dotenv
 
 ENV_PATH: Final[Path] = Path.home() / ".env"

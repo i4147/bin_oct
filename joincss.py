@@ -4,7 +4,6 @@ It should use regular expressions for detecting the import statements and font U
 Invalid paths passed as arguments should be reported as skipped via stderr, and duplicate files should be avoided when building the final list of CSS files to process."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

@@ -4,14 +4,12 @@ The script should use argparse for CLI options, asyncio with a worker pool (MAX_
 It should support selecting which compressor(s) to use, process input paths recursively, and report or output compression results (such as output archive files and/or size comparisons) to standard output."""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import bz2
 import gzip
 import sys
 from pathlib import Path
-
 import brotlicffi as brotli
 import lz4.frame
 import py7zr

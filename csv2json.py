@@ -5,7 +5,6 @@ The script should validate that the input file exists and that the CSV has at le
 Finally, it should write the resulting dictionary as indented, UTF-8-encoded JSON to a file with the same name as the input but with a .json extension, and print a confirmation message showing the source and destination file paths."""
 
 from __future__ import annotations
-
 import csv
 import json
 import sys

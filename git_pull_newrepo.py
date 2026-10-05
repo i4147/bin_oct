@@ -7,10 +7,8 @@ The script should handle the case where a GitHub repository with the same name a
 It should use recursive directory traversal to locate repos, and use requests for HTTP calls and GitPython (git.Repo) to interact with local repositories, presumably to add the new GitHub remote and push the code, printing progress and status messages with emoji indicators along the way."""
 
 from __future__ import annotations
-
 import os
 from pathlib import Path
-
 import requests
 from dotenv import load_dotenv
 from git import GitCommandError, Repo

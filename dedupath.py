@@ -4,7 +4,6 @@ It should report the count of original entries, unique entries, and how many dup
 If duplicates existed, the script should locate the user's ~/.bashrc file, read its contents, and update or append an "export PATH=" line with the deduplicated PATH string, replacing an existing export line if found or appending a new one otherwise."""
 
 from __future__ import annotations
-
 import os
 from pathlib import Path
 

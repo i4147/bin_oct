@@ -4,13 +4,11 @@ It should accept the archive path and the target file path inside the archive, d
 The script should print progress messages, handle the case where the target file isn't found in the archive by warning and copying the original archive unchanged, and exit with an error if the input archive doesn't exist."""
 
 from __future__ import annotations
-
 import os
 import shutil
 import sys
 import tarfile
 import tempfile
-
 import zstandard as zstd
 
 

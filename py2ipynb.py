@@ -4,11 +4,9 @@ It should read the input file's text, split it into logical code cells by heuris
 The script should accept the input file path and an optional output file path via argparse, print an error and return False if the input file doesn't exist, and otherwise write the resulting notebook as JSON to the output path (defaulting to the input filename with a .ipynb extension) and report success."""
 
 from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
-
 import nbformat as nbf
 
 

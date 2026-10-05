@@ -3,18 +3,15 @@
 Regenerate this script: parse --reverse (and optional --pool-method), recursively find *.py files under CWD with pathlib, replace the first matching import line in each file using a regex pattern, run the update with a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), and log modified/errored files with loguru."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
     "map",
@@ -22,10 +19,8 @@ POOL_METHODS: Final[tuple[str, ...]] = (
     "imap_unordered",
     "apply_async",
 )
-
 NORMAL_IMPORT: Final[str] = r"^import re\b"
 REGEX_IMPORT: Final[str] = r"^import regex as re\b"
-
 FileResult: TypeAlias = str | None
 UpdateTask: TypeAlias = tuple[Path, bool]
 
@@ -39,27 +34,22 @@ def update_file(file_path: Path, reverse: bool = False) -> FileResult:
         lines = file_path.read_text(encoding="utf-8").splitlines(keepends=True)
     except OSError as exc:
         return f"Error processing {file_path}: {exc}"
-
     new_lines: list[str] = []
     changed = False
     search_pat = REGEX_IMPORT if reverse else NORMAL_IMPORT
     replacement = "import re" if reverse else "import regex as re"
-
     for line in lines:
         if not changed and re.match(search_pat, line):
             new_lines.append(re.sub(search_pat, replacement, line))
             changed = True
         else:
             new_lines.append(line)
-
     if not changed:
         return None
-
     try:
         file_path.write_text("".join(new_lines), encoding="utf-8")
     except OSError as exc:
         return f"Error processing {file_path}: {exc}"
-
     return f"Updated: {file_path}"
 
 
@@ -72,19 +62,15 @@ def _run_pool(tasks: Sequence[UpdateTask], method: str) -> list[FileResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_update_file_tuple, tasks)
-
         if method == "starmap":
             return pool.starmap(update_file, tasks)
-
         if method == "imap_unordered":
             return list(pool.imap_unordered(_update_file_tuple, tasks))
-
         if method == "apply_async":
             async_results: list[AsyncResult[FileResult]] = [
                 pool.apply_async(_update_file_tuple, (task,)) for task in tasks
             ]
             return [result.get() for result in async_results]
-
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
 
@@ -110,21 +96,17 @@ def main() -> int:
     args: argparse.Namespace = parse_args()
     reverse: bool = bool(args.reverse)
     pool_method: str = args.pool_method
-
     cwd = Path.cwd()
     py_files = get_pyfiles(cwd)
     logger.info(f"Scanning {len(py_files)} files...")
-
     tasks: list[UpdateTask] = [(path, reverse) for path in py_files]
     if not tasks:
         logger.info("Task complete. Files modified: 0")
         return 0
-
     results = _run_pool(tasks, pool_method)
     updates: list[str] = [r for r in results if r is not None]
     for msg in updates:
         logger.info(msg)
-
     logger.info(f"Task complete. Files modified: {len(updates)}")
     return 0
 

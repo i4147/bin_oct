@@ -13,7 +13,6 @@ Lines that do not parse on their own (e.g.
 continuations of a multi-line import) are skipped, which is why archive-member pseudo-paths (``archive::member``) are never autofixed by the AST engine."""
 
 from __future__ import annotations
-
 import ast
 import difflib
 import re
@@ -34,7 +33,6 @@ try:
     HAS_ZSTD = True
 except ImportError:
     HAS_ZSTD = False
-
 WORKERS = 8
 
 
@@ -95,14 +93,12 @@ class ImportVisitor(ast.NodeVisitor):
         is_tc = (isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING") or (
             isinstance(node.test, ast.Attribute) and node.test.attr == "TYPE_CHECKING"
         )
-
         if is_tc:
             previous = self._in_type_checking
             self._in_type_checking = True
             for child in node.body:
                 self.visit(child)
             self._in_type_checking = previous
-
             for child in node.orelse:
                 self.visit(child)
         else:
@@ -114,12 +110,10 @@ class ImportVisitor(ast.NodeVisitor):
                 self.future_imports.add(alias.asname or alias.name)
             self.generic_visit(node)
             return
-
         if node.names and node.names[0].name == "*":
             self.star_imports.add(node.module or "")
             self.generic_visit(node)
             return
-
         statement = self._build_import_statement(node)
         for alias in node.names:
             name = alias.asname or alias.name
@@ -184,19 +178,15 @@ def analyze_imports(source: str, path: str = "") -> tuple[list[UnusedImport], st
         tree = ast.parse(source)
     except SyntaxError as exc:
         return ([], f"Syntax error: {exc}")
-    except Exception as exc:  # pragma: no cover — defensive
+    except Exception as exc:
         return ([], f"Parse error: {exc}")
-
     import_visitor = ImportVisitor()
     import_visitor.visit(tree)
-
     name_visitor = NameVisitor()
     name_visitor.visit(tree)
     used_names = name_visitor.used_names
-
     unused: list[UnusedImport] = []
     seen_lines: set[int] = set()
-
     for imported_name, (
         lineno,
         col_offset,
@@ -212,7 +202,6 @@ def analyze_imports(source: str, path: str = "") -> tuple[list[UnusedImport], st
             continue
         if imported_name in used_names:
             continue
-
         if lineno not in seen_lines:
             unused.append(
                 UnusedImport(
@@ -229,7 +218,6 @@ def analyze_imports(source: str, path: str = "") -> tuple[list[UnusedImport], st
                 if entry.lineno == lineno:
                     entry.unused_names.append(imported_name)
                     break
-
     return (unused, None)
 
 
@@ -243,7 +231,6 @@ def process_py_file(path: str) -> FileReport:
         return FileReport(str(path_obj), error="Permission denied")
     except Exception as exc:
         return FileReport(str(path_obj), error=f"Read error: {exc}")
-
     unused, error = analyze_imports(source, str(path_obj))
     return FileReport(
         path=str(path_obj),
@@ -273,7 +260,6 @@ def extract_py_files_from_wheel(wheel_path: str) -> dict[str, str]:
 def extract_py_files_from_tar_zst(archive_path: str) -> dict[str, str]:
     result: dict[str, str] = {}
     prefix = Path(archive_path).name
-
     try:
         if HAS_ZSTD:
             with open(archive_path, "rb") as fh:
@@ -338,7 +324,6 @@ def autoflake_process_path(path: str) -> AutoflakeReport:
         original = Path(path).read_text(encoding="utf-8", errors="replace")
     except Exception as exc:
         return AutoflakeReport(path=path, error=f"Read error: {exc}")
-
     try:
         result = subprocess.run(
             [*_AUTOFLACE_BASE, path],
@@ -347,15 +332,12 @@ def autoflake_process_path(path: str) -> AutoflakeReport:
         )
     except FileNotFoundError:
         return AutoflakeReport(path=path, error="autoflake not installed")
-
     if result.returncode != 0:
         msg = (result.stderr or result.stdout).strip()
         return AutoflakeReport(path=path, error=msg or f"autoflake exited {result.returncode}")
-
     fixed = result.stdout
     if fixed == original:
         return AutoflakeReport(path=path)
-
     return AutoflakeReport(
         path=path,
         diff=_autoflake_build_diff(original, fixed, path),
@@ -373,15 +355,12 @@ def autoflake_process_source(virtual_path: str, source: str) -> AutoflakeReport:
         )
     except FileNotFoundError:
         return AutoflakeReport(path=virtual_path, error="autoflake not installed")
-
     if result.returncode != 0:
         msg = (result.stderr or result.stdout).strip()
         return AutoflakeReport(path=virtual_path, error=msg or f"autoflake exited {result.returncode}")
-
     fixed = result.stdout
     if fixed == source:
         return AutoflakeReport(path=virtual_path)
-
     return AutoflakeReport(
         path=virtual_path,
         diff=_autoflake_build_diff(source, fixed, virtual_path),
@@ -420,7 +399,6 @@ def discover_files(paths: list[str], exclude_patterns: list[str]) -> tuple[list[
         if not path.exists():
             print(f"⚠ Path not found: {path_str}", file=sys.stderr)
             continue
-
         if path.is_file():
             _collect_from_file(path, should_exclude, py_files, archive_members)
         elif path.is_dir():
@@ -435,7 +413,6 @@ def discover_files(paths: list[str], exclude_patterns: list[str]) -> tuple[list[
                 for vpath, source in extract_py_files_from_tar_zst(str(tar_file)).items():
                     if not should_exclude(vpath):
                         archive_members.append((vpath, source))
-
     return (py_files, archive_members)
 
 
@@ -461,33 +438,26 @@ def _collect_from_file(
 def remove_unused_imports(source: str, unused: list[UnusedImport]) -> tuple[str, bool]:
     lines = source.split("\n")
     unused_by_line: dict[int, set[str]] = {}
-
     for entry in unused:
         unused_by_line.setdefault(entry.lineno, set()).update(entry.unused_names)
-
     for lineno in sorted(unused_by_line.keys(), reverse=True):
         idx = lineno - 1
         if idx < 0 or idx >= len(lines):
             continue
-
         line = lines[idx]
         unused_names = unused_by_line[lineno]
-
         try:
             tree = ast.parse(line)
             node = tree.body[0] if tree.body else None
         except Exception:
             continue
-
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
-
         new_line = _reconstruct_import_line(node, unused_names, line)
         if new_line is None:
             del lines[idx]
         else:
             lines[idx] = new_line
-
     result = "\n".join(lines)
     try:
         ast.parse(result)
@@ -502,14 +472,12 @@ def _reconstruct_import_line(
     original_line: str,
 ) -> str | None:
     indent = original_line[: len(original_line) - len(original_line.lstrip())]
-
     if isinstance(node, ast.Import):
         kept = [alias for alias in node.names if (alias.asname or alias.name.split(".")[0]) not in unused_names]
         if not kept:
             return None
         parts = [f"{alias.name} as {alias.asname}" if alias.asname else alias.name for alias in kept]
         return f"{indent}import {', '.join(parts)}"
-
     if isinstance(node, ast.ImportFrom):
         kept = [alias for alias in node.names if (alias.asname or alias.name) not in unused_names]
         if not kept:
@@ -518,33 +486,27 @@ def _reconstruct_import_line(
         level = "." * node.level if node.level else ""
         parts = [f"{alias.name} as {alias.asname}" if alias.asname else alias.name for alias in kept]
         return f"{indent}from {level}{module} import {', '.join(parts)}"
-
     return original_line
 
 
 def autofix_file(path: str, unused: list[UnusedImport], dry_run: bool = False) -> tuple[bool, str | None]:
     if "::" in path:
         return (False, "Cannot autofix inside packed archives")
-
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as fh:
             source = fh.read()
     except Exception as exc:
         return (False, f"Read error: {exc}")
-
     modified, success = remove_unused_imports(source, unused)
     if not success:
         return (False, "Result failed to parse")
-
     if dry_run:
         return (True, None)
-
     try:
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(modified)
     except Exception as exc:
         return (False, f"Write error: {exc}")
-
     return (True, None)
 
 
@@ -557,25 +519,20 @@ def print_report(
 ) -> None:
     if not use_color:
         Colors.disable()
-
     total_unused = 0
     files_with_issues = 0
     fixed_count = 0
     skipped_count = 0
-
     for report in reports:
         if report.error:
             print(f"{Colors.RED}✗ {report.path} — {report.error}{Colors.RESET}")
             continue
-
         if not report.unused_imports:
             if verbose:
                 print(f"{Colors.GREEN}✓{Colors.RESET} {report.path}")
             continue
-
         files_with_issues += 1
         print(f"\n{Colors.BOLD}{report.path}{Colors.RESET}")
-
         for unused in report.unused_imports:
             total_unused += 1
             print(
@@ -583,7 +540,6 @@ def print_report(
             )
             names_str = ", ".join(unused.unused_names)
             print(f"{'':20}[unused: {names_str}]")
-
         if autofix:
             if dry_run:
                 print(f"  [dry-run] would fix {report.path}")
@@ -595,7 +551,6 @@ def print_report(
                 else:
                     print(f"  {Colors.RED}SKIP{Colors.RESET} autofix on {report.path} — {error}")
                     skipped_count += 1
-
     print()
     print(f"Found {total_unused} unused import(s) across {files_with_issues} file(s).")
     if autofix:
@@ -614,29 +569,23 @@ def print_autoflake_report(
 ) -> None:
     if not use_color:
         Colors.disable()
-
     total_changed = 0
     fixed_count = 0
     skipped_count = 0
-
     for report in reports:
         if report.error:
             print(f"{Colors.RED}✗ {report.path} — {report.error}{Colors.RESET}")
             continue
-
         if not report.has_unused:
             if verbose:
                 print(f"{Colors.GREEN}✓{Colors.RESET} {report.path}")
             continue
-
         total_changed += 1
         print(f"\n{Colors.BOLD}{report.path}{Colors.RESET}")
-
         if show_diff:
             print(report.diff, end="" if report.diff.endswith("\n") else "\n")
         else:
             print(f"  {Colors.YELLOW}unused import(s) detected{Colors.RESET}")
-
         if autofix:
             if "::" in report.path:
                 print(f"  {Colors.RED}SKIP{Colors.RESET} cannot autofix archive member")
@@ -652,7 +601,6 @@ def print_autoflake_report(
             except Exception as exc:
                 print(f"  {Colors.RED}SKIP{Colors.RESET} write error: {exc}")
                 skipped_count += 1
-
     print()
     print(f"Found {total_changed} file(s) with unused import(s).")
     if autofix:
@@ -738,7 +686,6 @@ def _run_ast_mode(
             reports.extend(pool.map(_process_py_file_worker, py_files))
         if archive_members:
             reports.extend(pool.map(_process_archive_worker, archive_members))
-
     print_report(
         reports,
         use_color=not args.no_color,
@@ -760,14 +707,12 @@ def _run_autoflake_mode(
             file=sys.stderr,
         )
         return 1
-
     reports: list[AutoflakeReport] = []
     with Pool(processes=WORKERS) as pool:
         if py_files:
             reports.extend(pool.map(_process_py_file_autoflake_worker, py_files))
         if archive_members:
             reports.extend(pool.map(_process_archive_autoflake_worker, archive_members))
-
     print_autoflake_report(
         reports,
         use_color=not args.no_color,
@@ -782,20 +727,16 @@ def _run_autoflake_mode(
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
-
     if args.dry_run:
         args.autofix = True
-
     py_files, archive_members = discover_files(args.paths, args.exclude)
     if not py_files and not archive_members:
         print("No Python files found to analyze.", file=sys.stderr)
         return 1
-
     if args.verbose:
         engine = "autoflake" if args.autoflake else "built-in AST analyzer"
         print(f"Scanning {len(args.paths)} path(s) with {WORKERS} worker(s) using {engine} …\n")
         print(f"  {len(py_files)} .py file(s), {len(archive_members)} archive member(s) queued.\n")
-
     if args.autoflake:
         return _run_autoflake_mode(py_files, archive_members, args)
     return _run_ast_mode(py_files, archive_members, args)

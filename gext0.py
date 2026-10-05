@@ -4,7 +4,6 @@ It should recursively walk through nested archives if needed, filter files by al
 The script should handle file I/O robustly with shutil for temporary extraction and cleanup, and use regex where needed for auxiliary text parsing."""
 
 from __future__ import annotations
-
 import ast
 import os
 import re
@@ -49,18 +48,16 @@ class EntityExtractor(ast.NodeVisitor):
 
     def _extract_and_save(self, node: ast.AST, entity_type: str, name: str):
         entity_code = self._get_source_slice(node)
-        self.entities.append(
-            {
-                "name": name,
-                "full_name": name,
-                "type": entity_type,
-                "code": entity_code,
-                "path": str(self.original_path),
-                "is_constant": entity_type == "constant",
-                "is_class": entity_type == "class",
-                "is_function": entity_type == "function",
-            }
-        )
+        self.entities.append({
+            "name": name,
+            "full_name": name,
+            "type": entity_type,
+            "code": entity_code,
+            "path": str(self.original_path),
+            "is_constant": entity_type == "constant",
+            "is_class": entity_type == "class",
+            "is_function": entity_type == "function",
+        })
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         if self.scope_depth == 0:

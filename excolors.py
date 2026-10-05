@@ -5,10 +5,8 @@ For every file containing matches, it should print the filename along with the c
 Input is the directory to scan (defaults to the current working directory), and the notable behavior includes deduplication of colors per file, directory-skip logic to avoid infinite loops or unwanted paths, and binary-file filtering before scanning."""
 
 from __future__ import annotations
-
 import re
 from pathlib import Path
-
 from dh import cprint, is_binary, should_skip
 
 

@@ -2,14 +2,12 @@
 """Word frequency counter: scan text files in a directory, count lowercase words in parallel using multiprocessing.Pool with 8 workers, and save sorted results to counter.json with loguru logging."""
 
 from __future__ import annotations
-
 import json
 import re
 from collections import Counter
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 from dh import get_nobinary
 from loguru import logger
 
@@ -77,25 +75,19 @@ def save_results_json(counter: Counter[str], output_file: Path) -> None:
 def main() -> int:
     directory: Path = Path.cwd()
     print(f"Starting word frequency analysis in {directory}")
-
     text_files: list[Path] = collect_text_files(directory)
     if not text_files:
         logger.warning("No text files found in the current directory!")
         save_results_json(Counter(), OUTPUT_FILE)
         return 0
-
     print(f"Processing {len(text_files)} files using parallel processing...")
     total_counter: Counter[str] = process_files_parallel(text_files)
-
     unique_words: int = len(total_counter)
     total_words: int = sum(total_counter.values())
-
     save_results_json(total_counter, OUTPUT_FILE)
-
     print("Analysis complete!")
     print(f"Total words found: {total_words}")
     print(f"Unique words found: {unique_words}")
-
     print("=" * 40)
     print("Top 10 Most Common Words:")
     print("-" * 40)
@@ -103,7 +95,6 @@ def main() -> int:
         print(f"{word:<20} {count:>8}")
     print("-" * 40)
     print(f"Full results saved to: {OUTPUT_FILE.absolute()}")
-
     return 0
 
 

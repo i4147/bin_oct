@@ -3,19 +3,16 @@
 It accepts paths or directories, processes files concurrently with multiprocessing.Pool.imap, logs output using loguru, skips logging un-modified files, and reports summary stats upon completion."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import tree_sitter_lua
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
 LUA_LANGUAGE: Language = Language(tree_sitter_lua.language())
 LUA_EXTS: set[str] = {".lua"}
 _PARSER: Parser | None = None
@@ -35,7 +32,6 @@ def collect_comment_ranges(root: Node, content: bytes) -> list[tuple[int, int]]:
         node: Node = stack.pop()
         if node.type == "comment":
             text: bytes = content[node.start_byte : node.end_byte]
-
             if not text.startswith(b"---"):
                 ranges.append((node.start_byte, node.end_byte))
             continue
@@ -108,12 +104,10 @@ def main() -> int:
     if not files:
         logger.error("No Lua files to process.")
         return 1
-
     base: Path = Path.cwd()
     total_comments: int = 0
     files_changed: int = 0
     errors: int = 0
-
     tasks: list[tuple[Path, Path]] = [(p, base) for p in files]
     with mp.Pool(processes=8) as pool:
         for rel, count, err in pool.imap(process_file_worker, tasks):
@@ -125,7 +119,6 @@ def main() -> int:
             if count > 0:
                 files_changed += 1
                 print(f"{rel}: {count} comment(s) removed")
-
     print(
         f"Summary: {files_changed}/{len(files)} file(s) changed, "
         f"{total_comments} comment(s) removed, {errors} error(s)."

@@ -4,7 +4,6 @@ It should read all lines from the first file into a set for lookup, then iterate
 The script must validate that both files exist before processing, printing an error and exiting if either is missing, and it should also display a usage message and exit if the required command-line arguments are not provided."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

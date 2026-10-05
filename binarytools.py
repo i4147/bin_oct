@@ -5,7 +5,6 @@ Merges four scripts that each manipulate binary / shared-object files: binortxt.
 Optional external binaries: * ``nm`` (binutils) — richer symbol reporting in ``verify-so`` * ``strip`` (binutils) — required by ``strip`` subcommand"""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures as _futures
 import ctypes
@@ -32,7 +31,6 @@ SKIP_DIR_NAMES = {
     "dist",
     "build",
 }
-
 MISSING_LIB_PATTERNS = (
     "error while loading shared libraries",
     "cannot open shared object file",
@@ -40,9 +38,7 @@ MISSING_LIB_PATTERNS = (
     "not found",
     "failed to load",
 )
-
 PROBE_ARGS = ("--help", "-h", "--version", "-v", "--info")
-
 _ANSI = {
     "red": "\033[31m",
     "green": "\033[32m",
@@ -78,13 +74,10 @@ def iter_files(root: Path, ext: Optional[Sequence[str]] = None, recursive: bool 
     if root.is_file():
         yield root
         return
-
     if not root.is_dir():
         return
-
     if recursive:
         for dirpath, dirnames, filenames in os.walk(root):
-            # prune in-place
             dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
             base = Path(dirpath)
             for name in filenames:
@@ -137,11 +130,9 @@ def setup_logger(log_path: Path, verbose: bool = False) -> logging.Logger:
     logger = logging.getLogger("binarytoolkit")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
     logger.handlers.clear()
-
     fh = logging.FileHandler(log_path, mode="w", encoding="utf-8")
     fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
     logger.addHandler(fh)
-
     if verbose:
         sh = logging.StreamHandler(sys.stderr)
         sh.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
@@ -160,7 +151,7 @@ def verify_so_load(path: Path) -> tuple[bool, str]:
         return True, f"ok (errno={errno})" if errno else "ok"
     except OSError as e:
         return False, f"OSError: {e}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, f"{type(e).__name__}: {e}"
 
 
@@ -171,7 +162,7 @@ def count_symbols(path: Path, timeout: float = 10.0) -> tuple[bool, int, str]:
         return False, 0, "'nm' not found — install binutils for symbol analysis"
     except subprocess.TimeoutExpired:
         return False, 0, "nm timed out"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return False, 0, f"nm error: {e}"
     if res.returncode != 0:
         return False, 0, res.stderr.strip()[:200]
@@ -185,7 +176,6 @@ def cmd_sort(args: argparse.Namespace) -> int:
     if not dst.is_absolute():
         dst = src / dst
     dst.mkdir(parents=True, exist_ok=True)
-
     moved = 0
     scanned = 0
     for f in iter_files(src, recursive=args.recursive):
@@ -201,7 +191,6 @@ def cmd_sort(args: argparse.Namespace) -> int:
                     print(f"  → {f.name}")
             except OSError as e:
                 cprint(f"  ! failed to move {f}: {e}", "red")
-
     print(f"Scanned {scanned} file(s); moved {moved} binary file(s) to {dst}")
     return 0
 
@@ -226,7 +215,6 @@ def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
             if "exec format error" in str(e).lower():
                 return path, "Exec format error (wrong architecture)"
             return path, str(e)
-
     try:
         res = subprocess.run([str(path)], capture_output=True, text=True, timeout=1.0)
         if res.stderr:
@@ -236,7 +224,7 @@ def _test_executable(path: Path, timeout: float) -> tuple[Path, Optional[str]]:
         return path, None
     except subprocess.TimeoutExpired:
         return path, None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return path, str(e)[:200]
 
 
@@ -266,37 +254,31 @@ def cmd_sanity(args: argparse.Namespace) -> int:
     err_dir = Path(args.err_dir)
     if not err_dir.is_absolute():
         err_dir = root / err_dir
-
     report = Path(args.report).expanduser()
     report.parent.mkdir(parents=True, exist_ok=True)
-
     candidates = _collect_testable_executables(root)
     if not candidates:
         msg = f"No executable binaries found in {root}"
         print(msg)
         report.write_text(msg + "\n", encoding="utf-8")
         return 0
-
     print(f"Found {len(candidates)} binaries to test")
     print("Testing binaries in parallel...")
-
     workers = args.workers or (os.cpu_count() or 4)
     failures: list[tuple[Path, str]] = []
-
     with _futures.ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(_test_executable, p, args.timeout): p for p in candidates}
         for i, fut in enumerate(_futures.as_completed(futs), 1):
             src = futs[fut]
             try:
                 path, err = fut.result()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 path, err = src, f"Test exception: {str(e)[:100]}"
             if err:
                 failures.append((path, err))
                 print(f"  [{i}/{len(candidates)}] FAIL {path.name}")
             else:
                 print(f"  [{i}/{len(candidates)}] OK   {path.name}")
-
     if failures:
         err_dir.mkdir(parents=True, exist_ok=True)
         for path, _ in failures:
@@ -305,7 +287,6 @@ def cmd_sanity(args: argparse.Namespace) -> int:
                 path.rename(target)
             except OSError as e:
                 cprint(f"  ! could not move {path}: {e}", "red")
-
     lines = [
         "Binary Analysis Results",
         f"Directory: {root}",
@@ -319,7 +300,6 @@ def cmd_sanity(args: argparse.Namespace) -> int:
     else:
         lines.append("All binaries tested successfully!")
     report.write_text("\n".join(lines), encoding="utf-8")
-
     print("\n" + "=" * 35)
     print(f"Failed:  {len(failures)}")
     print(f"Success: {len(candidates) - len(failures)}")
@@ -352,16 +332,13 @@ def _collect_so_files(inputs: Sequence[str]) -> list[Path]:
 def cmd_verify_so(args: argparse.Namespace) -> int:
     log_path = Path(args.log_file).expanduser()
     logger = setup_logger(log_path, verbose=args.verbose)
-
     files = _collect_so_files(args.paths)
     if not files:
         cprint("No .so files found to verify", "yellow")
         return 0
-
     print(f"\nVerifying {len(files)} shared object file(s)...\n")
     valid = 0
     bad: list[Path] = []
-
     for so in files:
         ok, msg = verify_so_load(so)
         if ok:
@@ -376,7 +353,6 @@ def cmd_verify_so(args: argparse.Namespace) -> int:
             bad.append(so)
             print(f"  ✗ {so}: {msg}")
             logger.error(f"{so}: {msg}")
-
     print("\n" + "=" * 40)
     print("VERIFICATION SUMMARY")
     print("=" * 40)
@@ -416,19 +392,16 @@ class SoStripper:
     def process_file(self, path: Path) -> dict:
         self.stats["total"] += 1
         result: dict = {"path": path, "success": False, "reason": ""}
-
         if not path.is_file():
             self.stats["skipped"] += 1
             result["reason"] = "not a regular file"
             return result
-
         try:
             before = path.stat().st_size
         except OSError as e:
             self.stats["failed"] += 1
             result["reason"] = str(e)
             return result
-
         backup = path.with_name(path.name + ".bak")
         try:
             shutil.copy2(path, backup)
@@ -436,7 +409,6 @@ class SoStripper:
             self.stats["failed"] += 1
             result["reason"] = f"backup failed: {e}"
             return result
-
         try:
             proc = subprocess.run(
                 [self.strip_cmd, "--strip-unneeded", str(path)],
@@ -464,7 +436,6 @@ class SoStripper:
             self.stats["failed"] += 1
             result["reason"] = str(e)
             return result
-
         if self.verify_ctypes:
             ok, msg = verify_so_load(path)
             if not ok:
@@ -473,16 +444,13 @@ class SoStripper:
                 result["reason"] = f"ctypes verify failed: {msg}"
                 return result
             self.stats["verified"] += 1
-
         try:
             after = path.stat().st_size
         except OSError:
             after = before
-
         backup.unlink(missing_ok=True)
         self.stats["success"] += 1
         self.stats["bytes_saved"] += max(0, before - after)
-
         result.update(success=True, before=before, after=after)
         if self.verbose:
             pct = (before - after) / before * 100 if before else 0.0
@@ -581,7 +549,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
         verify_ctypes=not args.no_verify,
         verbose=args.verbose,
     )
-
     if args.strip_mode == "size":
         stripper.strip_by_size(root, args.min_mb)
     elif args.strip_mode == "ext":
@@ -593,7 +560,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
     else:
         cprint("Unknown strip mode", "red")
         return 2
-
     return 1 if stripper.stats["failed"] else 0
 
 
@@ -603,14 +569,12 @@ def build_parser() -> argparse.ArgumentParser:
         description="Unified toolkit: move, sanity-check, verify and strip binaries.",
     )
     sub = parser.add_subparsers(dest="command", required=False)
-
     p_sort = sub.add_parser("sort", help="Move binary files into a subfolder")
     p_sort.add_argument("directory", nargs="?", default=".", help="Directory to scan (default: cwd)")
     p_sort.add_argument("--dest", default="binary", help="Destination subfolder (default: binary)")
     p_sort.add_argument("--recursive", action="store_true", help="Descend into subdirectories")
     p_sort.add_argument("-v", "--verbose", action="store_true")
     p_sort.set_defaults(func=cmd_sort)
-
     p_sanity = sub.add_parser("sanity", help="Test executables and move broken ones aside")
     p_sanity.add_argument("directory", nargs="?", default=".", help="Directory to scan (default: cwd)")
     p_sanity.add_argument("--err-dir", default="err", help="Folder for failed binaries (default: err)")
@@ -627,7 +591,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Per-probe timeout in seconds (default: 2.0)",
     )
     p_sanity.set_defaults(func=cmd_sanity)
-
     p_ver = sub.add_parser("verify-so", help="Verify .so files load via ctypes")
     p_ver.add_argument("paths", nargs="*", help="Files or directories (default: cwd, *.so only)")
     p_ver.add_argument(
@@ -644,14 +607,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ver.add_argument("-v", "--verbose", action="store_true")
     p_ver.set_defaults(func=cmd_verify_so)
-
     p_strip = sub.add_parser("strip", help="Batch-strip .so files")
     strip_sub = p_strip.add_subparsers(dest="strip_mode", required=True)
-
     p_size = strip_sub.add_parser("size", help="Strip by minimum size")
     p_size.add_argument("--min-mb", type=float, default=1.0, help="Minimum size in MB (default: 1.0)")
     _strip_common_args(p_size)
-
     p_ext = strip_sub.add_parser("ext", help="Strip by extension list")
     p_ext.add_argument(
         "--extensions",
@@ -660,7 +620,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extensions to match",
     )
     _strip_common_args(p_ext)
-
     p_exc = strip_sub.add_parser("exclude", help="Strip, excluding patterns")
     p_exc.add_argument(
         "--patterns",
@@ -669,7 +628,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Filename substrings to exclude",
     )
     _strip_common_args(p_exc)
-
     p_ret = strip_sub.add_parser("retry", help="Strip with retry on failure")
     p_ret.add_argument(
         "--max-retries",
@@ -678,7 +636,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum attempts per file (default: 3)",
     )
     _strip_common_args(p_ret)
-
     p_strip.set_defaults(func=cmd_strip)
     return parser
 

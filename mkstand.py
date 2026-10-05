@@ -2,7 +2,6 @@
 """Standalone HTML/CSS bundler: inline local and remote CSS/JS/images into HTML files by base64-encoding assets and replacing <link>/<script>/<img>/url() references, processing files in parallel with a fixed 8-process pool via multiprocessing.Pool.apply_async, using pathlib for all paths and loguru for logging."""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import mimetypes
@@ -13,14 +12,12 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
-
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 
 logger.remove()
 logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")
-
 IMAGE_EXTENSIONS: set[str] = {
     ".png",
     ".jpg",

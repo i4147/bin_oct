@@ -4,7 +4,6 @@ Merges the behaviour of seven scripts: image2text.py -> python ocr_toolkit.py en
 -l rus+eng -w N [-j rep.json] transocr.py -> python ocr_toolkit.py translate INPUT [--lang auto] Third-party packages used by the originals (install only what you need): pip install opencv-python scikit-image Pillow numpy pytesseract loguru deep-translator langdetect Every original behaviour remains reachable; the exact invocation for each original script is listed above and in `--help`."""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import json
@@ -23,7 +22,6 @@ try:
 except ImportError:
     cv2 = None  # type: ignore[assignment]
     HAS_CV2 = False
-
 try:
     import numpy as np
 
@@ -31,7 +29,6 @@ try:
 except ImportError:
     np = None  # type: ignore[assignment]
     HAS_NUMPY = False
-
 try:
     from PIL import Image, ImageEnhance, ImageFilter
 
@@ -39,7 +36,6 @@ try:
 except ImportError:
     Image = None  # type: ignore[assignment]
     HAS_PIL = False
-
 try:
     from skimage import color as skcolor, filters as skfilters, io as skiio
     from skimage.filters import threshold_local
@@ -48,7 +44,6 @@ try:
     HAS_SKIMAGE = True
 except ImportError:
     HAS_SKIMAGE = False
-
 try:
     import pytesseract
 
@@ -56,7 +51,6 @@ try:
 except ImportError:
     pytesseract = None  # type: ignore[assignment]
     HAS_TESS = False
-
 try:
     from loguru import logger
 
@@ -84,7 +78,6 @@ except ImportError:
             pass
 
     logger = _FallbackLogger()  # type: ignore[assignment]
-
 IMAGE_EXTENSIONS: set[str] = {
     ".png",
     ".jpg",
@@ -97,7 +90,6 @@ IMAGE_EXTENSIONS: set[str] = {
 }
 TEXT_EXTENSIONS: set[str] = {".txt", ".md", ".csv", ".json", ".py"}
 PHOTO_EXTENSIONS: set[str] = {".jpg", ".jpeg", ".png"}
-
 DEFAULT_PREPARE_WORKERS = 8
 DEFAULT_GRID_VARIANTS_PSM = [3, 4, 6, 11]
 DEFAULT_GRID_VARIANTS_OEM = [1, 3]
@@ -243,11 +235,9 @@ def cmd_enhance(args: argparse.Namespace) -> int:
     if not files:
         print("no image files found to process")
         return 0
-
     variants = args.variants
     if variants == "auto":
         variants = "pil" if len(files) == 1 else "both"
-
     before = _dir_size(Path.cwd())
 
     def work(f: Path) -> bool:
@@ -301,18 +291,15 @@ def cmd_prepare(args: argparse.Namespace) -> int:
     if args.verbose and HAS_LOGURU:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
-
     backend = _pick_backend(args.backend)
     inputs = args.paths or [Path.cwd()]
     if not args.paths:
         print(f"no input specified, processing current directory: {Path.cwd()}")
-
     files = find_images(inputs, recursive=args.recursive)
     if not files:
         logger.error("no supported image files found")
         print(f"supported extensions: {', '.join(sorted(IMAGE_EXTENSIONS))}")
         return 1
-
     print(f"found {len(files)} image(s) to process")
     worker = _prepare_cv if backend == "cv" else _prepare_pillow
     results = _pmap(worker, files, args.workers)
@@ -352,19 +339,15 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
         msg = "grid-variants requires OpenCV + numpy"
         raise AppError(msg)
     _require_tesseract()
-
     fname: Path = args.image
     if not fname.is_file():
         msg = f"not a file: {fname}"
         raise AppError(msg)
-
     out_root: Path = args.out
     out_root.mkdir(parents=True, exist_ok=True)
-
     pil_img = Image.open(fname).convert("RGB")
     bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-
     variants: dict[str, "Image.Image"] = {
         "original": pil_img,
         "grayscale": Image.fromarray(gray),
@@ -372,7 +355,6 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
         "deskewed": Image.fromarray(cv2.cvtColor(_deskew_min_area_rect(bgr), cv2.COLOR_BGR2RGB)),
         "rotated_90": Image.fromarray(cv2.cvtColor(_rotate_center(bgr, 90), cv2.COLOR_BGR2RGB)),
     }
-
     index: list[dict[str, Any]] = []
     for name, img in variants.items():
         d = out_root / name
@@ -399,16 +381,13 @@ def cmd_grid_variants(args: argparse.Namespace) -> int:
                 ),
                 encoding="utf-8",
             )
-            index.append(
-                {
-                    "variant": name,
-                    "psm": psm,
-                    "oem": oem,
-                    "dpi": dpi,
-                    "text_file": str(d / f"{tag}.txt"),
-                }
-            )
-
+            index.append({
+                "variant": name,
+                "psm": psm,
+                "oem": oem,
+                "dpi": dpi,
+                "text_file": str(d / f"{tag}.txt"),
+            })
     (out_root / "index.json").write_text(json.dumps(index, indent=2), encoding="utf-8")
     print(f"done: {len(index)} runs -> {out_root}")
     return 0
@@ -422,7 +401,6 @@ def _grid_search_preprocess(path: Path) -> "np.ndarray":
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     denoised = cv2.fastNlMeansDenoising(gray, h=15)
     bw = cv2.adaptiveThreshold(denoised, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
-
     coords = cv2.findNonZero(bw)
     if coords is not None:
         rect = cv2.minAreaRect(coords)
@@ -440,16 +418,13 @@ def cmd_grid_search(args: argparse.Namespace) -> int:
         msg = "grid-search requires OpenCV"
         raise AppError(msg)
     _require_tesseract()
-
     out_dir: Path = args.out
     out_dir.mkdir(parents=True, exist_ok=True)
-
     inputs = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     files = find_images(inputs, recursive=False)
     if not files:
         print("no images found")
         return 0
-
     rows: list[dict[str, Any]] = []
     for w2 in files:
         print(f"processing: {w2}")
@@ -469,18 +444,15 @@ def cmd_grid_search(args: argparse.Namespace) -> int:
                 err = str(e)
             elapsed = time.time() - t0
             (out_dir / f"{w2.stem}__oem{oem}_psm{psm}.txt").write_text(text, encoding="utf-8")
-            rows.append(
-                {
-                    "image": w2.name,
-                    "config": config,
-                    "oem": oem,
-                    "psm": psm,
-                    "duration_sec": elapsed,
-                    "error": err,
-                    "text": text,
-                }
-            )
-
+            rows.append({
+                "image": w2.name,
+                "config": config,
+                "oem": oem,
+                "psm": psm,
+                "duration_sec": elapsed,
+                "error": err,
+                "text": text,
+            })
     _write_csv(rows, out_dir / "ocr_summary.csv")
     print(f"\ndone. all results saved in: {out_dir}")
     return 0
@@ -545,37 +517,30 @@ def cmd_ocr(args: argparse.Namespace) -> int:
     _require_tesseract()
     if args.verbose if hasattr(args, "verbose") else False:
         pass
-
     inputs = [Path(p) for p in args.paths] if args.paths else [Path.cwd()]
     files = find_images(inputs, recursive=args.recursive)
     if not files:
         print("no images found")
         return 1
-
     if len(files) == 1:
         return 0 if _ocr_single(files[0], args.lang) else 1
-
     workers = args.workers or cpu_count()
     print(f"processing {len(files)} image(s) with {workers} worker(s)")
     results = _pmap(lambda f: _ocr_file(f, args.lang), files, workers)
-
     ok = sum(1 for r in results if r["success"])
     fail = len(results) - ok
-
     if not args.silent:
         for r in results:
             if r["success"]:
                 print(f"✓ {r['file']}  chars={r['char_count']} lines={r['line_count']}")
             else:
                 print(f"✗ {r['file']}  error={r['error']}")
-
     print("=" * 40)
     print("summary:")
     print(f"  ✓ successful: {ok}/{len(results)}")
     print(f"  ✗ failed:     {fail}/{len(results)}")
     print(f"  chars total:  {sum(r['char_count'] for r in results):,}")
     print(f"  lines total:  {sum(r['line_count'] for r in results):,}")
-
     if args.json:
         args.json.write_text(
             json.dumps(
@@ -592,7 +557,6 @@ def cmd_ocr(args: argparse.Namespace) -> int:
             encoding="utf-8",
         )
         print(f"detailed report saved to: {args.json}")
-
     return 0 if fail == 0 else 1
 
 
@@ -626,10 +590,8 @@ def cmd_translate(args: argparse.Namespace) -> int:
     if not p.exists():
         msg = f"file not found: {p}"
         raise AppError(msg)
-
     suffix = p.suffix.lower()
     ocr_written: Path | None = None
-
     if suffix in TEXT_EXTENSIONS:
         text = p.read_text(encoding="utf-8")
     elif suffix in PHOTO_EXTENSIONS:
@@ -644,11 +606,9 @@ def cmd_translate(args: argparse.Namespace) -> int:
     else:
         msg = f"unsupported file type: {suffix}"
         raise AppError(msg)
-
     lang = args.lang if args.lang != "auto" else _detect_lang(text)
     translator = GoogleTranslator(source=lang, target="en")
     translated = "".join(translator.translate(c) for c in _chunks(text, args.chunk_size))
-
     if suffix in PHOTO_EXTENSIONS:
         out = p.with_name(f"{p.stem}_eng.txt")
     else:
@@ -678,7 +638,6 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     pe = sub.add_parser(
         "enhance",
         help="Binarise/enhance images, saving alongside originals (image2text.py).",
@@ -693,7 +652,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     pe.add_argument("--workers", type=int, default=None)
     pe.set_defaults(func=cmd_enhance)
-
     pp = sub.add_parser("prepare", help="Prepare images for Tesseract OCR, in-place (ocr_prepare.py).")
     pp.add_argument("paths", nargs="*", type=Path)
     pp.add_argument(
@@ -711,7 +669,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pp.add_argument("--backend", choices=["auto", "cv", "pillow"], default="auto")
     pp.add_argument("--workers", type=int, default=DEFAULT_PREPARE_WORKERS)
     pp.set_defaults(func=cmd_prepare)
-
     pv = sub.add_parser("grid-variants", help="Tesseract grid over 5 image variants (ocrgrid.py).")
     pv.add_argument("image", type=Path)
     pv.add_argument("-o", "--out", type=Path, default=Path("ocr_output"))
@@ -719,7 +676,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pv.add_argument("--oem", type=int, nargs="+", default=list(DEFAULT_GRID_VARIANTS_OEM))
     pv.add_argument("--dpi", type=int, nargs="+", default=list(DEFAULT_GRID_VARIANTS_DPI))
     pv.set_defaults(func=cmd_grid_variants)
-
     ps = sub.add_parser(
         "grid-search",
         help="Tesseract grid over oem/psm on preprocessed images (ocrgrid2.py).",
@@ -730,7 +686,6 @@ def _build_parser() -> argparse.ArgumentParser:
     ps.add_argument("--psm", type=int, nargs="+", default=list(DEFAULT_GRID_SEARCH_PSM))
     ps.add_argument("--lang", default="eng", help="Tesseract language(s) (default: eng).")
     ps.set_defaults(func=cmd_grid_search)
-
     po = sub.add_parser("ocr", help="Extract text from image(s) (pyocr.py / ruimg.py).")
     po.add_argument("paths", nargs="*", type=Path)
     po.add_argument(
@@ -755,7 +710,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     po.add_argument("-r", "--recursive", action="store_true", help="Walk directories recursively.")
     po.set_defaults(func=cmd_ocr)
-
     pt = sub.add_parser(
         "translate",
         help="OCR a text/image file and translate it to English (transocr.py).",
@@ -769,7 +723,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Characters per translation chunk.",
     )
     pt.set_defaults(func=cmd_translate)
-
     return parser
 
 

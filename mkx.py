@@ -6,7 +6,6 @@ Runs recursively from the current working directory, updates in place, skips .gi
 Usage: python mkx.py"""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import os
 import re
@@ -50,10 +49,8 @@ def chmod_x(p):
 
 
 def should_execute(p):
-
     if has_shebang(p):
         return True
-
     if p.parent.name in BIN_DIRS:
         return True
     if SO_RE.match(p.name):
@@ -82,7 +79,6 @@ def process(path_str):
 def main():
     root = Path.cwd()
     self_path = Path(__file__).resolve()
-
     files = []
     for p in root.rglob("*"):
         if ".git" in p.parts:
@@ -96,11 +92,9 @@ def main():
             pass
         if p.is_file():
             files.append(str(p))
-
     if not files:
         print("No files found.")
         return 0
-
     changed = errors = 0
     with mp.Pool(processes=WORKERS) as pool:
         results = [pool.apply_async(process, (f,)) for f in files]
@@ -113,7 +107,6 @@ def main():
             if did_change:
                 changed += 1
                 print(f"[+] Made executable: {path_str}")
-
     print(f"Done. changed={changed} errors={errors}")
     if os.name != "posix":
         print("Note: non-POSIX system — executable bits not applied.")

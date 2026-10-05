@@ -4,10 +4,8 @@ The script should use multiprocessing with a spawn-context pool of 8 workers to 
 It should be structured as a standalone command-line utility with a main() entry point invoked via SystemExit."""
 
 from __future__ import annotations
-
 from multiprocessing import get_context
 from pathlib import Path
-
 import pdfplumber
 from fastwalk import walk_files
 

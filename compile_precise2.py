@@ -4,7 +4,6 @@ It should read TrueType font files (Inter Regular, Bold, Italic, BoldItalic, and
 The main output is an assembled CSS string containing only the @font-face blocks for fonts that were successfully found and encoded, with helper functions handling file reading, base64 conversion, and console status/warning messages throughout the process."""
 
 from __future__ import annotations
-
 import base64
 from pathlib import Path
 

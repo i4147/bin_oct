@@ -3,7 +3,6 @@
 Merges these originals into one CLI: dupf.py -> report findupy.py -> report --algorithm sha256 --json out.json xordup.py -> report --algorithm xorhash (or delete --algorithm xorhash) dupefix.py -> delete dupfx.py -> delete --keep newest --quick-hash fsimz.py -> delete --algorithm ppdeep dedupsym.py -> symlink --stash-dir ~/dups symdups.py -> symlink (and restore ) Usage examples -------------- python dupe_tool.py report -d ./photos python dupe_tool.py report --algorithm sha256 --json dups.json python dupe_tool.py delete -d ./downloads --dry-run python dupe_tool.py delete -d ./downloads --keep newest --quick-hash --trash python dupe_tool.py symlink -d ./data --stash-dir ~/dups python dupe_tool.py restore --manifest ~/.symlink_backup.json Third-party packages (all optional — fall back to stdlib): xxhash, tqdm, ppdeep, xorhash, loguru"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import hashlib
@@ -24,26 +23,22 @@ try:
     _HAS_XXHASH = True
 except ImportError:
     _HAS_XXHASH = False
-
 try:
     from tqdm import tqdm  # type: ignore
 except ImportError:
     tqdm = None  # type: ignore
-
 try:
     import ppdeep  # type: ignore
 
     _HAS_PPDEEP = True
 except ImportError:
     _HAS_PPDEEP = False
-
 try:
     from xorhash import get_xorhash  # type: ignore
 
     _HAS_XORHASH = True
 except ImportError:
     _HAS_XORHASH = False
-
 CHUNK_SIZE = 8192
 BIG_CHUNK_SIZE = 32768
 QUICK_HEAD = 4096
@@ -129,13 +124,11 @@ def hash_file(path: Path, algorithm: str = "xxhash", chunk_size: int = BIG_CHUNK
         except Exception as e:
             warn(f"ppdeep failed on {path}: {e}")
             return None
-
     try:
         if not path.stat().st_size:
             return ""
     except OSError:
         return None
-
     h = _new_hasher(algorithm)
     try:
         with path.open("rb") as f:
@@ -209,7 +202,6 @@ def find_duplicates(
     quick_first: bool,
     chunk_size: int,
 ) -> dict[str, list[Path]]:
-
     by_size: dict[int, list[Path]] = defaultdict(list)
     for p in files:
         try:
@@ -217,10 +209,8 @@ def find_duplicates(
         except OSError:
             continue
     candidates = [p for group in by_size.values() if len(group) > 1 for p in group]
-
     if not candidates:
         return {}
-
     if quick_first:
         by_quick: dict[str, list[Path]] = defaultdict(list)
         with ThreadPoolExecutor(max_workers=workers) as ex:
@@ -230,7 +220,6 @@ def find_duplicates(
         candidates = [p for g in by_quick.values() if len(g) > 1 for p in g]
         if not candidates:
             return {}
-
     by_hash: dict[str, list[Path]] = defaultdict(list)
     jobs = [(p, algorithm, chunk_size) for p in candidates]
     if workers <= 1:
@@ -247,7 +236,6 @@ def find_duplicates(
     finally:
         if workers > 1:
             pool.shutdown(wait=True)
-
     return {h: g for h, g in by_hash.items() if len(g) > 1}
 
 
@@ -287,7 +275,6 @@ def cmd_report(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"{root} is not a directory")
         return 1
-
     files = collect_files(
         root,
         recursive=args.recursive,
@@ -303,11 +290,9 @@ def cmd_report(args: argparse.Namespace) -> int:
         quick_first=args.quick_hash,
         chunk_size=args.chunk_size,
     )
-
     if not groups:
         print("No duplicates found.")
         return 0
-
     wasted = 0
     print(f"\nFound {len(groups)} duplicate group(s):")
     for i, (h, group) in enumerate(sorted(groups.items()), 1):
@@ -324,7 +309,6 @@ def cmd_report(args: argparse.Namespace) -> int:
                 rel = p
             print(f"  • {rel}")
     print(f"\nTotal recoverable space: {wasted:,} bytes ({wasted / 1024 / 1024:.2f} MB)")
-
     if args.json:
         out = {h: [str(p) for p in group] for h, group in groups.items()}
         try:
@@ -344,7 +328,6 @@ def cmd_delete(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"{root} is not a directory")
         return 1
-
     files = collect_files(
         root,
         recursive=args.recursive,
@@ -363,13 +346,10 @@ def cmd_delete(args: argparse.Namespace) -> int:
     if not groups:
         print("No duplicates found.")
         return 0
-
     total_groups = len(groups)
     total_dups = sum(len(g) - 1 for g in groups.values())
     info(f"{total_groups} group(s), {total_dups} duplicate file(s) to remove")
-
     use_trash = args.trash if args.trash is not None else _trash_available()
-
     deleted = 0
     freed = 0
     for group in groups.values():
@@ -390,7 +370,6 @@ def cmd_delete(args: argparse.Namespace) -> int:
                 deleted += 1
                 freed += size
                 print(f"Deleted: {p}")
-
     print(
         f"\n{'[DRY RUN] ' if args.dry_run else ''}"
         f"Removed {deleted} file(s), freed {freed:,} bytes "
@@ -411,10 +390,8 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"{root} is not a directory")
         return 1
-
     stash = Path(args.stash_dir).expanduser().resolve()
     manifest_path = Path(args.manifest).expanduser()
-
     files = collect_files(
         root,
         recursive=args.recursive,
@@ -433,10 +410,8 @@ def cmd_symlink(args: argparse.Namespace) -> int:
     if not groups:
         print("No duplicates found.")
         return 0
-
     if not args.dry_run:
         stash.mkdir(parents=True, exist_ok=True)
-
     manifest: dict = {}
     if manifest_path.exists():
         try:
@@ -445,7 +420,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
             manifest = {}
     operations: list[dict] = manifest.get("operations", [])
     stash_map: dict[str, dict] = manifest.get("stash", {})
-
     info(f"{len(groups)} duplicate group(s)")
     for h, group in groups.items():
         keeper = select_keeper(group, args.prefer)
@@ -455,7 +429,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
             continue
         stashed_name = f"{h[:16]}__{keeper.name}"
         stashed_path = stash / stashed_name
-
         if args.dry_run:
             print(f"[DRY RUN] move {keeper} -> {stashed_path}")
         elif not stashed_path.exists():
@@ -471,7 +444,6 @@ def cmd_symlink(args: argparse.Namespace) -> int:
                 print(f"removed original file: {keeper}")
             except OSError as e:
                 warn(f"could not remove {keeper}: {e}")
-
         for p in group:
             if p == keeper:
                 continue
@@ -490,23 +462,18 @@ def cmd_symlink(args: argparse.Namespace) -> int:
             except OSError as e:
                 warn(f"could not symlink {p}: {e}")
                 continue
-            operations.append(
-                {
-                    "symlink": str(p),
-                    "target": str(target_resolved),
-                    "size": size,
-                }
-            )
-
+            operations.append({
+                "symlink": str(p),
+                "target": str(target_resolved),
+                "size": size,
+            })
         stash_map[str(stashed_path)] = {
             "hash": h,
             "originals": [str(p) for p in group],
         }
-
     if args.dry_run:
         print("dry-run complete; no changes written.")
         return 0
-
     manifest["operations"] = operations
     manifest["stash"] = stash_map
     manifest["updated"] = time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -528,16 +495,13 @@ def cmd_restore(args: argparse.Namespace) -> int:
     if not manifest_path.exists():
         err(f"manifest not found: {manifest_path}")
         return 1
-
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except Exception as e:
         err(f"could not read manifest: {e}")
         return 1
-
     stash_map: dict = manifest.get("stash", {})
     operations: list[dict] = manifest.get("operations", [])
-
     restored = 0
     for op in operations:
         link = Path(op["symlink"])
@@ -556,7 +520,6 @@ def cmd_restore(args: argparse.Namespace) -> int:
                 restored += 1
             except OSError as e:
                 warn(f"could not restore {link}: {e}")
-
     if not args.dry_run:
         for stash_path in stash_map:
             with contextlib.suppress(OSError):
@@ -642,12 +605,10 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("report", help="Show duplicate groups (no changes)")
     _add_scan_args(p, recursive_default=True)
     p.add_argument("--json", metavar="PATH", help="Export the found groups to a JSON file")
     p.set_defaults(func=cmd_report)
-
     p = sub.add_parser("delete", help="Delete duplicates, keep one per group")
     _add_scan_args(p, recursive_default=True)
     p.add_argument(
@@ -675,7 +636,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Always unlink (never use gio trash)",
     )
     p.set_defaults(func=cmd_delete)
-
     p = sub.add_parser("symlink", help="Move master copies to a stash and symlink the rest")
     _add_scan_args(p, recursive_default=True)
     p.add_argument(
@@ -700,7 +660,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Which file becomes the master (default: shortest-name)",
     )
     p.set_defaults(func=cmd_symlink)
-
     p = sub.add_parser("restore", help="Reverse the symlink operation from a manifest")
     p.add_argument(
         "--manifest",
@@ -713,7 +672,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print what would be done without making changes",
     )
     p.set_defaults(func=cmd_restore)
-
     return parser
 
 

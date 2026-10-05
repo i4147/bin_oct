@@ -1,345 +1,294 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""Write a command-line Python utility that recursively scans a directory (or a given list of files) and strips unwanted blank lines from text files, while safely skipping binary files.
-It should use a custom is_binary/fsz helper module (dh) plus its own signature-based and heuristic binary-detection logic (checking common magic bytes and non-text byte ratios in the first 8KB, using mmap for large files above a 1MB threshold for efficiency).
-The script should support two cleanup modes: completely removing all blank lines, or collapsing consecutive blank lines down to a single blank line, and it should process multiple files concurrently using a ProcessPoolExecutor for speed.
-It should accept command-line arguments (via argparse) to specify target paths, choose the blank-line handling mode, and control other options like verbosity, then print colorized (ANSI-coded) progress and summary output showing which files were modified, skipped as binary, or left unchanged."""
+"""Refactored blank line remover script.
+This is a parallel file processing tool that recursively removes blank lines (and optionally whitespace-only lines) from text files.
+It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, and complete type annotations.
+The script detects binary files and skips them, reports progress, and provides a summary of modified files, removed lines, and errors."""
 
 from __future__ import annotations
-
 import argparse
-import mmap
-import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import sys
+import time
+from dataclasses import dataclass, field
+from multiprocessing import Pool
 from pathlib import Path
+from typing import TYPE_CHECKING, Final
+from dh import is_binary, should_skip
+from loguru import logger
 
-from dh import fsz, is_binary
-
-MMAP_THRESHOLD = 1024 * 1024
-BOLD = "\x1b[1m"
-GREEN = "\x1b[32m"
-YELLOW = "\x1b[33m"
-CYAN = "\x1b[36m"
-RED = "\x1b[31m"
-RESET = "\x1b[0m"
-DIM = "\x1b[2m"
-BINARY_SIGNATURES = (
-    b"\x00",
-    b"\xff\xd8\xff",
-    b"\x89PNG",
-    b"GIF8",
-    b"BM",
-    b"\x00\x00\x01\x00",
-    b"PK\x03\x04",
-    b"\x1f\x8b",
-    b"\x7fELF",
-    b"MZ",
-    b"\xca\xfe\xba\xbe",
-    b"%PDF",
-    b"\xd0\xcf\x11\xe0",
-    b"SQLite format 3",
-    b"RIFF",
-    b"\x1aE\xdf\xa3",
-    b"\x00\x00\x00\x18ftyp",
-    b"\x00\x00\x00\x1cftyp",
-    b"ID3",
-    b"OggS",
-    b"fLaC",
-    b"FWS",
-    b"CWS",
-    b"%!PS",
-    b"\x1f\x9d",
-    b"\x1f\xa0",
-    b"BZh",
-    b"\xfd7zXZ\x00",
-    b"7z\xbc\xaf'\x1c",
-    b"Rar!\x1a\x07",
-    b"\xed\xab\xee\xdb",
-    b"\xd4\xc3\xb2\xa1",
-    b"\xa1\xb2\xc3\xd4",
-)
-_TEXT_CHARS = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(32, 127)) | set(range(128, 256)))
-_BINARY_CHECK_SIZE = 8192
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
+ANSI_RESET: Final[str] = "\x1b[0m"
+ANSI_BOLD: Final[str] = "\x1b[1m"
+ANSI_DIM: Final[str] = "\x1b[2m"
+ANSI_CYAN: Final[str] = "\x1b[36m"
+ANSI_GREEN: Final[str] = "\x1b[32m"
+ANSI_YELLOW: Final[str] = "\x1b[33m"
+ANSI_RED: Final[str] = "\x1b[31m"
+NUM_WORKERS: Final[int] = 8
+MAX_PREVIEW_FILES: Final[int] = 5
 
 
-def remove_all_blank_lines(text: str) -> str:
-    lines = text.splitlines(keepends=True)
-    return "".join(line for line in lines if line.strip() != "")
+class ANSI:
+    RESET: str = ANSI_RESET
+    BOLD: str = ANSI_BOLD
+    DIM: str = ANSI_DIM
+    CYAN: str = ANSI_CYAN
+    GREEN: str = ANSI_GREEN
+    YELLOW: str = ANSI_YELLOW
+    RED: str = ANSI_RED
+
+    @classmethod
+    def disable(cls) -> None:
+        for attr in dir(cls):
+            if not attr.startswith("_") and attr != "disable":
+                setattr(cls, attr, "")
 
 
-def preserve_single_blank_lines(text: str) -> str:
-    lines = text.splitlines(keepends=True)
-    result_lines = []
-    prev_blank = False
-    for line in lines:
-        is_blank = line.strip() == ""
-        if is_blank and prev_blank:
-            continue
-        result_lines.append(line)
-        prev_blank = is_blank
-    while len(result_lines) > 1 and result_lines[-1].strip() == "":
-        result_lines.pop()
-    return "".join(result_lines)
+@dataclass
+class FileResult:
+    path: Path
+    status: str
+    total_lines: int = 0
+    removed_lines: int = 0
+    error_message: str = ""
+    is_bin: bool = False
 
 
-def process_small_file(file_path: Path, preserve_single: bool, remove_spaces: bool) -> tuple[str, int, int, str]:
-    content = file_path.read_text(encoding="utf-8")
-    total_lines = len(content.splitlines())
-    if preserve_single:
-        result = preserve_single_blank_lines(content)
-    else:
-        result = remove_all_blank_lines(content)
-    result_lines = len(result.splitlines()) if result else 0
-    removed_lines = total_lines - result_lines
-    if removed_lines > 0:
-        file_path.write_text(result, encoding="utf-8")
-    return (str(file_path), total_lines, removed_lines, "processed")
+@dataclass
+class ProcessingStats:
+    total_files: int = 0
+    text_files: int = 0
+    binary_files: int = 0
+    files_modified: int = 0
+    lines_removed: int = 0
+    errors_count: int = 0
+    results: list[FileResult] = field(default_factory=list)
 
 
-def process_large_file_mmap(file_path: Path, preserve_single: bool, remove_spaces: bool) -> tuple[str, int, int, str]:
+def remove_blank_lines(path: Path, remove_spaces: bool = False) -> tuple[int, int]:
     try:
-        with open(file_path, "r+b") as f:
-            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                content = mm.read().decode("utf-8", errors="ignore")
-            total_lines = len(content.splitlines())
-            if preserve_single:
-                result = preserve_single_blank_lines(content)
-            else:
-                result = remove_all_blank_lines(content)
-            result_lines = len(result.splitlines()) if result else 0
-            removed_lines = total_lines - result_lines
-            if removed_lines > 0:
-                f.seek(0)
-                f.write(result.encode("utf-8"))
-                f.truncate()
-        return (str(file_path), total_lines, removed_lines, "processed")
-    except Exception as e:
-        return (str(file_path), 0, 0, f"Error with mmap: {e!s}")
-
-
-def remove_blank_lines(
-    file_path: Path, preserve_single: bool = False, remove_spaces: bool = False
-) -> tuple[str, int, int, str]:
-    try:
-        file_size = file_path.stat().st_size
-        if file_size > MMAP_THRESHOLD:
-            return process_large_file_mmap(file_path, preserve_single, remove_spaces)
-        else:
-            return process_small_file(file_path, preserve_single, remove_spaces)
-    except Exception as e:
-        return (str(file_path), 0, 0, f"Error: {e!s}")
-
-
-def process_file(args: tuple[Path, Path, bool, bool]) -> tuple[str, int, int, str]:
-    base_dir, file_path, preserve_single, remove_spaces = args
-    if is_binary(file_path):
-        try:
-            rel_path = file_path.relative_to(base_dir)
-            return (str(rel_path), 0, 0, "binary")
-        except ValueError:
-            return (str(file_path), 0, 0, "binary")
-    result = remove_blank_lines(file_path, preserve_single, remove_spaces)
-    try:
-        rel_path = Path(result[0]).relative_to(base_dir)
-        file_size = file_path.stat().st_size
-        method = " [mmap]" if file_size > MMAP_THRESHOLD else ""
-        status = result[3] + method if result[3] == "processed" else result[3]
-        return (str(rel_path), result[1], result[2], status)
-    except ValueError:
-        return result
-
-
-def collect_files(paths: list[Path]) -> list[tuple[Path, Path]]:
-    files = []
-    for path in paths:
-        if not path.exists():
-            print(f"{YELLOW}⚠ Warning:{RESET} '{path}' does not exist, skipping.")
-            continue
-        if path.is_file():
-            if not path.is_symlink():
-                files.append((path.parent, path))
-        elif path.is_dir():
-            for file_path in path.rglob("*"):
-                if file_path.is_file() and not file_path.is_symlink() and ".git" not in file_path.parts:
-                    files.append((path, file_path))
-        else:
-            print(f"{YELLOW}⚠ Warning:{RESET} '{path}' is not a file or directory, skipping.")
-    return files
-
-
-def print_header(paths: list[Path], preserve_single: bool, remove_spaces: bool, mmap_threshold: int):
-    print(f"\n{BOLD}{CYAN}╔{'═' * 40}╗{RESET}")
-    print(f"{BOLD}{CYAN}║{RESET}         {BOLD}Blank Line Remover{RESET}                    {BOLD}{CYAN}║{RESET}")
-    print(f"{BOLD}{CYAN}╚{'═' * 40}╝{RESET}")
-    print(f"{BOLD}Processing paths:{RESET}")
-    for path in paths:
-        path_type = "📄" if path.is_file() else "📁"
-        print(f"  {path_type} {path.absolute()}")
-    print(f"\n{BOLD}Mode:{RESET} ", end="")
-    if preserve_single:
-        print(f"{CYAN}Preserve single blank lines{RESET}", end="")
-    else:
-        print(f"{GREEN}Remove all blank lines{RESET}", end="")
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except OSError as e:
+        msg = f"Failed to read file: {e}"
+        raise OSError(msg)
+    total_lines: int = len(lines)
     if remove_spaces:
-        print(f" {YELLOW}(+ whitespace-only lines){RESET}")
+        filtered: list[str] = [line for line in lines if line.strip()]
     else:
-        print()
+        filtered = [line for line in lines if line not in ("\n", "\r\n", "\r")]
+    removed_lines: int = total_lines - len(filtered)
+    if removed_lines > 0:
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.writelines(filtered)
+        except OSError as e:
+            msg = f"Failed to write file: {e}"
+            raise OSError(msg)
+    return (total_lines, removed_lines)
 
 
-def print_results(
-    results: list[tuple],
-    total_removed: int,
-    total_files: int,
-    show_all_binary: bool = False,
-    mmap_threshold: int = MMAP_THRESHOLD,
-):
-    print(f"\n{BOLD}{CYAN}{'─' * 42}{RESET}\n")
-    results.sort(key=lambda x: x[0])
-    processed = [(p, t, r, s) for p, t, r, s in results if s.startswith("processed")]
-    skipped_binary = [(p, t, r, s) for p, t, r, s in results if s == "binary"]
-    errors = [
-        (p, t, r, s) for p, t, r, s in results if s not in ("processed", "binary") and not s.startswith("processed")
-    ]
-    large_files_count = sum(1 for _, _, _, s in processed if "[mmap]" in s)
+def process_file_worker(path: Path, remove_spaces: bool = False) -> FileResult:
+    result: FileResult = FileResult(path=path, status="error")
+    try:
+        try:
+            with open(path, "rb") as f:
+                first_8kb: bytes = f.read(8192)
+        except OSError:
+            result.status = "error"
+            result.error_message = "Permission denied"
+            return result
+        if is_binary(path):
+            result.status = "skipped_binary"
+            result.is_bin = True
+            return result
+        total_lines, removed_lines = remove_blank_lines(path, remove_spaces)
+        result.total_lines = total_lines
+        result.removed_lines = removed_lines
+        if removed_lines > 0:
+            result.status = "processed"
+        else:
+            result.status = "unchanged"
+    except OSError as e:
+        result.status = "error"
+        result.error_message = str(e)
+    except Exception as e:
+        result.status = "error"
+        result.error_message = f"Unexpected error: {e}"
+    return result
+
+
+def discover_files(directories: list[str]) -> tuple[list[Path], int]:
+    files: list[Path] = []
+    skipped_dirs: int = 0
+    for dir_str in directories:
+        dir_path = Path(dir_str).resolve()
+        if not dir_path.exists():
+            logger.warning(f"Directory not found: {dir_path}")
+            skipped_dirs += 1
+            continue
+        if not dir_path.is_dir():
+            logger.warning(f"Not a directory: {dir_path}")
+            skipped_dirs += 1
+            continue
+        for path in dir_path.rglob("*"):
+            if path.is_file() and not should_skip(path):
+                files.append(path)
+    return (files, skipped_dirs)
+
+
+def print_header() -> None:
+    print(f"{ANSI.CYAN}╔════════════════════════════════════════════╗{ANSI.RESET}")
+    print(f"{ANSI.CYAN}║{ANSI.RESET}         Blank Line Remover              {ANSI.CYAN}║{ANSI.RESET}")
+    print(f"{ANSI.CYAN}╚════════════════════════════════════════════╝{ANSI.RESET}")
+
+
+def print_directory_list(directories: list[str]) -> None:
+    print("Processing directories:")
+    for dir_str in directories:
+        print(f"  {ANSI.DIM}•{ANSI.RESET} {Path(dir_str).resolve()}")
+
+
+def print_mode(remove_spaces: bool) -> None:
+    if remove_spaces:
+        print(f"Mode: {ANSI.BOLD}Remove blank lines and whitespace-only lines{ANSI.RESET}")
+    else:
+        print(f"Mode: {ANSI.BOLD}Remove blank lines only{ANSI.RESET}")
+
+
+def print_separator() -> None:
+    print(f"{ANSI.CYAN}{'─' * 40}{ANSI.RESET}")
+
+
+def print_results(stats: ProcessingStats, show_binary: bool = False) -> None:
+    processed: list[FileResult] = [r for r in stats.results if r.status == "processed"]
+    unchanged: list[FileResult] = [r for r in stats.results if r.status == "unchanged"]
+    skipped_binary: list[FileResult] = [r for r in stats.results if r.status == "skipped_binary"]
+    errors: list[FileResult] = [r for r in stats.results if r.status == "error"]
     if processed:
-        print(f"{BOLD}{GREEN}✓ Modified files:{RESET}\n")
-        for path, total_lines, removed, status in processed:
-            if removed > 0:
-                method_indicator = f" {DIM}[mmap]{RESET}" if "[mmap]" in status else ""
-                print(f"  {GREEN}●{RESET} {path}{method_indicator}")
-                print(f"    {DIM}Lines: {total_lines:,}  →  Removed: {GREEN}{removed:,}{RESET}")
-            else:
-                print(f"  {DIM}○{RESET} {path} {DIM}(no blank lines found){RESET}")
-        print()
+        print(f"{ANSI.GREEN}✓ Modified files:{ANSI.RESET}")
+        for result in sorted(processed, key=lambda r: r.path):
+            try:
+                rel_path = result.path.relative_to(Path.cwd())
+            except ValueError:
+                rel_path = result.path
+            print(f"  {ANSI.GREEN}●{ANSI.RESET} {rel_path}")
+            print(f"    {ANSI.DIM}Lines: {result.total_lines}  →  Removed: {result.removed_lines}{ANSI.RESET}")
+    if unchanged:
+        print(f"{ANSI.DIM}○ Unchanged files (no blank lines):{ANSI.RESET}")
+        for result in sorted(unchanged, key=lambda r: r.path)[:MAX_PREVIEW_FILES]:
+            try:
+                rel_path = result.path.relative_to(Path.cwd())
+            except ValueError:
+                rel_path = result.path
+            print(f"  {ANSI.DIM}○ {rel_path}{ANSI.RESET}")
+        if len(unchanged) > MAX_PREVIEW_FILES:
+            print(f"  {ANSI.DIM}... and {len(unchanged) - MAX_PREVIEW_FILES} more{ANSI.RESET}")
     if skipped_binary:
-        print(f"{BOLD}{YELLOW}⊘ Skipped binary files: {len(skipped_binary)}{RESET}")
-        display_count = len(skipped_binary) if show_all_binary else min(5, len(skipped_binary))
-        for path, _, _, _ in skipped_binary[:display_count]:
-            print(f"  {YELLOW}⊘{RESET} {path}")
-        if len(skipped_binary) > display_count:
-            print(f"  {DIM}... and {len(skipped_binary) - display_count} more binary files{RESET}")
-        print()
+        print(f"{ANSI.YELLOW}⊘ Skipped binary files: {len(skipped_binary)}{ANSI.RESET}")
+        preview: list[FileResult] = (
+            skipped_binary if show_binary else sorted(skipped_binary, key=lambda r: r.path)[:MAX_PREVIEW_FILES]
+        )
+        for result in sorted(preview, key=lambda r: r.path):
+            try:
+                rel_path = result.path.relative_to(Path.cwd())
+            except ValueError:
+                rel_path = result.path
+            print(f"  {ANSI.YELLOW}⊘ {rel_path}{ANSI.RESET}")
+        if not show_binary and len(skipped_binary) > MAX_PREVIEW_FILES:
+            print(f"  {ANSI.YELLOW}... and {len(skipped_binary) - MAX_PREVIEW_FILES} more binary files{ANSI.RESET}")
     if errors:
-        print(f"{BOLD}{RED}✗ Errors:{RESET}\n")
-        for path, _, _, status in errors:
-            print(f"  {RED}✗{RESET} {path}")
-            print(f"    {DIM}{status}{RESET}")
-        print()
-    print(f"{BOLD}{CYAN}{'─' * 42}{RESET}")
-    print(f"{BOLD}Summary:{RESET}")
-    print(f"  Total files found:     {BOLD}{total_files:,}{RESET}")
-    print(f"  Text files processed:  {BOLD}{len(processed):,}{RESET}")
-    if large_files_count > 0:
-        print(f"    Large files (mmap):  {BOLD}{large_files_count:,}{RESET}")
-    print(f"  Binary files skipped:  {BOLD}{YELLOW}{len(skipped_binary):,}{RESET}")
-    print(f"  Files modified:        {BOLD}{sum(1 for r in processed if r[2] > 0):,}{RESET}")
-    print(f"  Lines removed:         {BOLD}{GREEN}{total_removed:,}{RESET}")
-    if errors:
-        print(f"  Errors:                {BOLD}{RED}{len(errors):,}{RESET}")
-    print(f"{BOLD}{CYAN}{'─' * 42}{RESET}\n")
+        print(f"{ANSI.RED}✗ Errors:{ANSI.RESET}")
+        for result in sorted(errors, key=lambda r: r.path):
+            try:
+                rel_path = result.path.relative_to(Path.cwd())
+            except ValueError:
+                rel_path = result.path
+            logger.error(f"  {ANSI.RED}✗ {rel_path}{ANSI.RESET}")
+            logger.error(f"    {ANSI.DIM}{result.error_message}{ANSI.RESET}")
 
 
-def main():
-    global MMAP_THRESHOLD
+def print_summary(stats: ProcessingStats) -> None:
+    print_separator()
+    print(f"{ANSI.BOLD}Summary:{ANSI.RESET}")
+    print(f"  Total files found:     {ANSI.BOLD}{stats.total_files:,}{ANSI.RESET}")
+    print(f"  Text files processed:  {ANSI.BOLD}{stats.text_files:,}{ANSI.RESET}")
+    print(f"  Binary files skipped:  {ANSI.BOLD}{stats.binary_files:,}{ANSI.RESET}")
+    print(f"  Files modified:        {ANSI.BOLD}{ANSI.GREEN}{stats.files_modified:,}{ANSI.RESET}")
+    print(f"  Lines removed:         {ANSI.BOLD}{ANSI.GREEN}{stats.lines_removed:,}{ANSI.RESET}")
+    if stats.errors_count > 0:
+        print(f"  Errors:                {ANSI.BOLD}{ANSI.RED}{stats.errors_count:,}{ANSI.RESET}")
+    print_separator()
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Remove blank lines from files recursively using parallel processing (with mmap support)",
+        description="Recursively remove blank lines from text files with parallel processing.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="\nExamples:\n\n  python blank_remover.py\n\n\n  python blank_remover.py src/ tests/ docs/\n\n\n  python blank_remover.py src/ --space\n\n\n  python blank_remover.py . --show-binary\n        ",
     )
     parser.add_argument(
-        "paths",
+        "directories",
         nargs="*",
         default=["."],
-        help="Files and/or directories to process (default: current directory)",
-    )
-    parser.add_argument(
-        "-1",
-        dest="preserve_single",
-        action="store_true",
-        help="Preserve single blank lines (remove only multiple consecutive blank lines)",
+        help="Directories to process (default: current directory)",
     )
     parser.add_argument(
         "-s",
         "--space",
         action="store_true",
-        help="Also remove lines that contain only whitespace characters",
+        help="Also remove lines containing only whitespace",
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        default=None,
-        help="Number of worker processes (default: CPU count)",
-    )
-    parser.add_argument(
-        "-t",
-        "--threshold",
-        type=int,
-        default=MMAP_THRESHOLD,
-        help=f"File size threshold for using mmap in bytes (default: {MMAP_THRESHOLD:,} = 1MB)",
-    )
-    parser.add_argument(
-        "-b",
         "--show-binary",
         action="store_true",
-        help="Show all skipped binary files (default: shows only first 5)",
+        help="Show all skipped binary files instead of just first 5",
     )
+    parser.add_argument("--no-color", action="store_true", help="Disable ANSI color codes")
     args = parser.parse_args()
-    MMAP_THRESHOLD = args.threshold
-    paths = [Path(p).resolve() for p in args.paths]
-    print_header(paths, args.preserve_single, args.space, MMAP_THRESHOLD)
-    print(f"{BOLD}Scanning for files...{RESET}", end=" ", flush=True)
-    file_list = collect_files(paths)
-    total_files = len(file_list)
-    print(f"{GREEN}Done!{RESET} Found {BOLD}{total_files:,}{RESET} files.\n")
-    if not file_list:
-        print(f"{YELLOW}No files found to process.{RESET}")
-        return
-    process_args = [(base_dir, file_path, args.preserve_single, args.space) for base_dir, file_path in file_list]
-    max_workers = args.workers or min(32, (os.cpu_count() or 1) + 4)
-    results = []
-    total_removed = 0
-    processed_count = 0
-    skipped_count = 0
-    error_count = 0
-    large_count = 0
-    print(f"{BOLD}Processing files...{RESET}")
-    print(f"{DIM}(Using {max_workers} worker processes, mmap for files > {fsz(MMAP_THRESHOLD)}){RESET}\n")
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_file = {executor.submit(process_file, arg): arg[1] for arg in process_args}
-        completed = 0
-        for future in as_completed(future_to_file):
-            completed += 1
-            try:
-                result = future.result()
-                _, _, removed, status = result
-                total_removed += removed
-                results.append(result)
-                if status.startswith("processed"):
-                    processed_count += 1
-                    if "[mmap]" in status:
-                        large_count += 1
-                elif status == "binary":
-                    skipped_count += 1
-                else:
-                    error_count += 1
-            except Exception as e:
-                error_count += 1
-                results.append((str(future_to_file[future]), 0, 0, f"error: {e}"))
-            binary_info = f" {YELLOW}({skipped_count} binary){RESET}" if skipped_count > 0 else ""
-            large_info = f" {CYAN}({large_count} mmap){RESET}" if large_count > 0 else ""
-            error_info = f" {RED}({error_count} errors){RESET}" if error_count > 0 else ""
-            print(
-                f"\r  Progress: {completed:,}/{total_files:,} files processed{binary_info}{large_info}{error_info}",
-                end="",
-                flush=True,
-            )
+    if args.no_color or not sys.stdout.isatty():
+        ANSI.disable()
+    print_header()
+    print_directory_list(args.directories)
+    print_mode(args.space)
+    print("Scanning for files... ")
+    files, _skipped_dirs = discover_files(args.directories)
+    print(f"Done! Found {ANSI.BOLD}{len(files):,}{ANSI.RESET} files.")
+    if not files:
+        logger.warning(f"{ANSI.YELLOW}No files found to process.{ANSI.RESET}")
+        return 0
+    print(f"Processing files...\n(Using {ANSI.BOLD}{NUM_WORKERS}{ANSI.RESET} worker processes)")
+    stats: ProcessingStats = ProcessingStats(total_files=len(files))
+    start_time: float = time.time()
+    processed_count: int = 0
+    with Pool(processes=NUM_WORKERS) as pool:
+        async_results: list[AsyncResult[FileResult]] = []
+        for path in files:
+            async_result: AsyncResult[FileResult] = pool.apply_async(process_file_worker, (path, args.space))
+            async_results.append(async_result)
+        for async_result in async_results:
+            result: FileResult = async_result.get()
+            stats.results.append(result)
+            processed_count += 1
+            if result.status == "processed":
+                stats.files_modified += 1
+                stats.lines_removed += result.removed_lines
+                stats.text_files += 1
+            elif result.status == "unchanged":
+                stats.text_files += 1
+            elif result.status == "skipped_binary":
+                stats.binary_files += 1
+            elif result.status == "error":
+                stats.errors_count += 1
+    elapsed: float = time.time() - start_time
     print(
-        f"\r  Progress: {GREEN}Complete!{RESET} "
-        f"{DIM}({processed_count:,} text"
-        + (f", {large_count:,} mmap" if large_count > 0 else "")
-        + f", {skipped_count:,} binary, {error_count:,} errors){RESET}"
-        + " " * 20
+        f"  {ANSI.GREEN}Progress: Complete!{ANSI.RESET} ({ANSI.BOLD}{stats.text_files:,}{ANSI.RESET} text, {ANSI.BOLD}{stats.binary_files:,}{ANSI.RESET} binary)"
     )
-    print_results(results, total_removed, total_files, args.show_binary, MMAP_THRESHOLD)
+    print_separator()
+    print_results(stats, args.show_binary)
+    print_summary(stats)
+    print(f"Completed in {ANSI.DIM}{elapsed:.2f}s{ANSI.RESET}")
+    return 0 if stats.errors_count == 0 else 1
 
 
 if __name__ == "__main__":

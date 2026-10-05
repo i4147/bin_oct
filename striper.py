@@ -4,7 +4,6 @@ It should print a confirmation message like "{fname} cleaned." on success, and h
 The script should use pathlib.Path for file operations and read the filename from sys.argv, running the cleaning function when executed as the main module."""
 
 from __future__ import annotations
-
 from pathlib import Path
 from sys import argv
 

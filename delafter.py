@@ -5,7 +5,6 @@ Empty lines should be discarded.
 Finally, the script should overwrite the original file with the processed lines joined by newlines, using UTF-8 encoding, only if there is at least one resulting line."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

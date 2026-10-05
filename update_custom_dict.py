@@ -1,6 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""Prompt:
 
+"Create a Python 3.12 command-line script intended to run under Termux (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that recursively scans the current working directory for text/source files and builds a word-frequency index, intended to help populate or update a personal spell-check dictionary.
+
+Main behavior and requirements:
+
+1. **Purpose**: Walk the current directory tree, read all non-binary, reasonably-sized text files, extract English-like word tokens, count their frequencies across the whole codebase/project, and output a consolidated frequency report. The intended use is to surface frequently-occurring words (e.g., project-specific identifiers, jargon) that could be added to a personal dictionary for a spell checker.
+
+2. **Inputs**:
+   - No required positional arguments; operates on the current working directory (`Path.cwd()`) by default.
+   - Should support command-line arguments (via `argparse`) to control behavior (e.g., output file path, verbosity, number of worker processes, minimum word length/frequency threshold, etc. — use reasonable flags consistent with the rest of the script's logic).
+   - Reads an existing personal dictionary file located at `~/.personal_dict` (one word per line) if present, so already-known words can be excluded or treated differently from new/unknown words.
+
+3. **File handling / filtering**:
+   - Skip common non-source directories such as `.git`, `node_modules`, `.venv`, `venv`, `__pycache__`, `target`, `build`, `dist`, `.mypy_cache`, `.pytest_cache`, `.tox`, `.idea`, `.vscode`, `.eggs`.
+   - Skip files whose extensions match a large predefined list of binary/media/archive/compiled formats (images, audio, video, archives, executables, fonts, databases, pickled/numpy data files, lock files, etc.).
+   - Skip files larger than a maximum size limit (5 MB).
+   - Only process files that pass these filters, reading them as text (handling encoding errors gracefully).
+
+4. **Word extraction**:
+   - Use a regular expression to extract alphabetic word tokens of at least 2 letters (`[A-Za-z]{2,}`) from file contents.
+   - Optionally leverage NLTK's tokenizer (`punkt`/`punkt_tab`) for more accurate tokenization, ensuring the required NLTK data is downloaded on demand if missing (handle lookup/download errors silently without crashing).
+
+5. **Performance**:
+   - Use Python's `multiprocessing` module to process files in parallel across multiple worker processes for speed on large directory trees, merging per-file word counts into a single global `collections.Counter`.
+
+6. **Output**:
+   - Write the aggregated word frequency results as JSON to `word_freq.json` in the current working directory (word → count mapping), sorted or filtered as appropriate.
+   - Optionally print a summary to stdout (e.g., top N most frequent unknown words) to help the user decide what to add to their personal dictionary.
+
+7. **Robustness**:
+   - Handle file read errors, permission errors, and decoding errors without stopping the whole scan.
+   - Use `contextlib.suppress` or similar patterns for non-critical failures (like NLTK data l well-structured Python script using `argparse`, `multiprocessing`, `re`, `json`, `pathlib.Path`, and optionally `nltk`, following the constants and structure implied above (`CWD`, `DICT_PATH`, `JSON_PATH`, `SKIP_DIRS`, `BINARY_EXT`, `MAX_BYTES`, `WORD_RE`)."
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/NBVrt7eH4StQSRRAT5Cn9A"""
+
+from __future__ import annotations
 import argparse
 import contextlib
 import json
@@ -13,7 +48,6 @@ from pathlib import Path
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"
 JSON_PATH = CWD / "word_freq.json"
-
 SKIP_DIRS = {
     ".git",
     "node_modules",
@@ -91,7 +125,6 @@ BINARY_EXT = {
 }
 MAX_BYTES = 5 * 1024 * 1024
 WORD_RE = re.compile(r"[A-Za-z]{2,}")
-
 _TOKENIZER = None
 
 
@@ -278,7 +311,6 @@ def main():
         default="nltk",
     )
     args = parser.parse_args()
-
     skip = {DICT_PATH.resolve(), JSON_PATH.resolve()}
     candidates = []
     for p in walk(CWD):
@@ -297,10 +329,8 @@ def main():
         if size == 0 or size > MAX_BYTES:
             continue
         candidates.append((str(p), size))
-
     candidates.sort(key=lambda x: -x[1])
     paths = [c[0] for c in candidates]
-
     counter = Counter()
     if paths:
         procs = min(8, mp.cpu_count() or 1)
@@ -311,22 +341,18 @@ def main():
         ) as pool:
             for c in pool.imap_unordered(process_file, paths, chunksize=1):
                 counter.update(c)
-
     from spellchecker import SpellChecker
 
     spell = SpellChecker()
     known = spell.word_frequency.words()
     custom = {w: c for w, c in counter.items() if w not in known}
-
     words_sorted = sorted(custom)
     atomic_write_text(
         DICT_PATH,
         "\n".join(words_sorted) + ("\n" if words_sorted else ""),
     )
-
     pairs = sorted(custom.items(), key=lambda kv: (-kv[1], kv[0]))
     write_json_stream(JSON_PATH, pairs)
-
     print(f"Tokenizer:                        {args.tokenizer}")
     print(f"Files scanned:                    {len(paths)}")
     print(f"Unique tokens found:              {len(counter)}")

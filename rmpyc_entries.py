@@ -3,7 +3,6 @@
 The script should use `sysconfig` to locate the purelib path, read and rewrite each RECORD file in place with UTF-8 encoding, print a confirmation message naming the cleaned file and its parent package folder, and finally print a summary message once all RECORD files have been processed."""
 
 from __future__ import annotations
-
 import sysconfig
 from pathlib import Path
 

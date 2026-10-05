@@ -5,7 +5,6 @@ Translation libraries are imported lazily, so only the selected backend must be 
 Example: pip install loguru deep_translator python translate_chunks.py --input input.txt --output chunks.json --source en --target fr The output JSON has this form: { "0": "Translated first chunk", "1": "Translated second chunk" }"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -17,11 +16,9 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable
-
 from loguru import logger
 
 Translator = Callable[[str], str]
-
 FALLBACK_BACKENDS = (
     "deepl",
     "deep_translator",
@@ -30,7 +27,6 @@ FALLBACK_BACKENDS = (
     "googletrans",
     "pygoogletranslation",
 )
-
 LANGUAGE_ALIASES: dict[str, str] = {
     "auto": "auto",
     "zh-cn": "zh-CN",
@@ -59,10 +55,8 @@ class RequestLimiter:
         with self._lock:
             now = time.monotonic()
             wait_for = self._next_request_time - now
-
             if wait_for > 0:
                 time.sleep(wait_for)
-
             self._next_request_time = time.monotonic() + self.delay
 
 
@@ -91,7 +85,6 @@ def _deep_translator_language(language: str) -> str:
 
 def _deepl_language(language: str) -> str:
     code = normalize_language(language).upper()
-
     return {
         "EN": "EN-US",
         "PT": "PT-PT",
@@ -124,12 +117,10 @@ def _make_deepl(source: str, target: str) -> Translator:
     if not api_key:
         msg = "DEEPL_API_KEY is not set"
         raise RuntimeError(msg)
-
     client = deepl.DeepLClient(api_key)
     target_code = _deepl_language(target)
 
     def translate(text: str) -> str:
-
         del source
         result = client.translate_text(text, target_lang=target_code)
         return str(result.text if hasattr(result, "text") else result)
@@ -144,7 +135,6 @@ def _make_translate(source: str, target: str) -> Translator:
     target_code = normalize_language(target)
 
     def translate_text(text: str) -> str:
-
         client = TranslateClient(
             from_lang=source_code,
             to_lang=target_code,
@@ -179,7 +169,6 @@ def _make_googletrans(source: str, target: str) -> Translator:
     target_code = _google_language(target)
 
     def translate_text(text: str) -> str:
-
         client = GoogleTransClient()
         result = client.translate(text, src=source_code, dest=target_code)
         return str(result.text)
@@ -196,7 +185,6 @@ def _make_pygoogletranslation(source: str, target: str) -> Translator:
     def translate_text(text: str) -> str:
         client = PyGoogleTranslator()
         result = client.translate(text, src=source_code, dest=target_code)
-
         return str(getattr(result, "text", result))
 
     return SerializedTranslator(translate_text)
@@ -214,7 +202,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Translator]] = {
 
 def configure_logging() -> None:
     logger.remove()
-
     logger.add(
         "translate_chunks.log",
         level="DEBUG",
@@ -224,7 +211,6 @@ def configure_logging() -> None:
         backtrace=False,
         diagnose=False,
     )
-
     logger.add(
         sys.stderr,
         level="ERROR",
@@ -238,63 +224,51 @@ def split_into_chunks(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         msg = "chunk size must be greater than zero"
         raise ValueError(msg)
-
     chunks: list[str] = []
     remaining = text
-
     while remaining:
         if len(remaining) <= chunk_size:
             candidate = remaining
             remaining = ""
         else:
             boundary = remaining.rfind(None if False else " ", 0, chunk_size + 1)
-
             whitespace_boundary = max(
                 boundary,
                 remaining.rfind("\t", 0, chunk_size + 1),
                 remaining.rfind("\n", 0, chunk_size + 1),
                 remaining.rfind("\r", 0, chunk_size + 1),
             )
-
             if whitespace_boundary > 0:
                 candidate = remaining[:whitespace_boundary]
                 remaining = remaining[whitespace_boundary:]
             else:
                 candidate = remaining[:chunk_size]
                 remaining = remaining[chunk_size:]
-
         candidate = candidate.strip()
         if candidate:
             chunks.append(candidate)
-
         remaining = remaining.lstrip()
-
     return chunks
 
 
 def load_existing_output(path: Path, continue_run: bool) -> dict[str, str]:
     if not continue_run or not path.exists():
         return {}
-
     try:
         with path.open("r", encoding="utf-8") as file:
             data = json.load(file)
     except (OSError, json.JSONDecodeError) as exc:
         msg = f"cannot read existing output {path}: {exc}"
         raise RuntimeError(msg) from exc
-
     if not isinstance(data, dict):
         msg = f"existing output {path} must contain a JSON object"
         raise RuntimeError(msg)
-
     return {str(index): str(value) for index, value in data.items() if isinstance(value, str)}
 
 
 def atomic_save(path: Path, translations: dict[str, str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     temporary_name: str | None = None
-
     try:
         with tempfile.NamedTemporaryFile(
             mode="w",
@@ -314,7 +288,6 @@ def atomic_save(path: Path, translations: dict[str, str]) -> None:
             temporary.write("\n")
             temporary.flush()
             os.fsync(temporary.fileno())
-
         os.replace(temporary_name, path)
         temporary_name = None
         logger.debug("Saved {} translated chunks to {}", len(translations), path)
@@ -326,7 +299,6 @@ def atomic_save(path: Path, translations: dict[str, str]) -> None:
 
 def append_failed(path: Path, chunk_index: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
     with path.open("a", encoding="utf-8") as file:
         file.write(f"{chunk_index}\n")
 
@@ -344,36 +316,30 @@ def choose_backend(requested: str | None) -> str:
                 valid = ", ".join(sorted(BACKEND_FACTORIES))
                 msg = f"unsupported backend {requested!r}; choose one of: {valid}"
                 raise RuntimeError(msg)
-
             if requested == "deepl" and not os.environ.get("DEEPL_API_KEY"):
                 msg = "backend 'deepl' requires the DEEPL_API_KEY environment variable"
                 raise RuntimeError(msg)
-
             return requested
-
     for backend in FALLBACK_BACKENDS:
         if backend == "deepl" and not os.environ.get("DEEPL_API_KEY"):
             continue
-
         try:
             if backend == "deep_translator":
-                import deep_translator  # noqa: F401
+                import deep_translator
             elif backend == "deepl":
-                import deepl  # noqa: F401
+                import deepl
             elif backend == "translate":
-                import translate  # noqa: F401
+                import translate
             elif backend == "translators_bing":
-                import translators  # noqa: F401
+                import translators
             elif backend == "googletrans":
-                import googletrans  # noqa: F401
+                import googletrans
             elif backend == "pygoogletranslation":
-                import pygoogletranslation  # noqa: F401
+                import pygoogletranslation
         except ImportError:
             logger.debug("Backend {} is unavailable", backend)
             continue
-
         return backend
-
     packages = ", ".join(FALLBACK_BACKENDS)
     msg = f"no translation backend is installed; install one of: {packages}"
     raise RuntimeError(msg)
@@ -387,27 +353,22 @@ def translate_one(
     attempts: int = 3,
 ) -> tuple[int, str]:
     last_error: Exception | None = None
-
     for attempt in range(1, attempts + 1):
         try:
             limiter.wait()
             translated = str(translator(text)).strip()
-
             if not translated:
                 msg = "backend returned an empty translation"
                 raise TranslationError(msg)
-
             if is_identity_translation(text, translated):
                 msg = "backend returned the source text unchanged"
                 raise TranslationError(msg)
-
             logger.debug(
                 "Chunk {} translated successfully on attempt {}",
                 index,
                 attempt,
             )
             return index, translated
-
         except Exception as exc:
             last_error = exc
             logger.debug(
@@ -417,17 +378,14 @@ def translate_one(
                 attempts,
                 exc,
             )
-
             if attempt < attempts:
                 time.sleep(2 ** (attempt - 1))
-
     msg = f"chunk {index} failed after {attempts} attempts: {last_error}"
     raise TranslationError(msg)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Translate a text file in resumable chunks.")
-
     parser.add_argument(
         "-i",
         "--input",
@@ -495,7 +453,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ignore an existing output file and start from scratch.",
     )
-
     return parser.parse_args()
 
 
@@ -503,15 +460,12 @@ def validate_args(args: argparse.Namespace) -> None:
     if not 1 <= args.workers <= 2:
         msg = "--workers must be between 1 and 2"
         raise ValueError(msg)
-
     if args.delay < 0:
         msg = "--delay cannot be negative"
         raise ValueError(msg)
-
     if args.chunk_size <= 0:
         msg = "--chunk-size must be greater than zero"
         raise ValueError(msg)
-
     if args.save_every <= 0:
         msg = "--save-every must be greater than zero"
         raise ValueError(msg)
@@ -527,48 +481,37 @@ def read_input(path: Path) -> str:
 
 def run(args: argparse.Namespace) -> int:
     validate_args(args)
-
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
-
     source_text = read_input(input_path)
     chunks = split_into_chunks(source_text, args.chunk_size)
-
     translations = load_existing_output(
         output_path,
         continue_run=not args.no_continue,
     )
-
     translations = {
         index: value for index, value in translations.items() if index.isdigit() and int(index) < len(chunks)
     }
-
     pending = [(index, chunk) for index, chunk in enumerate(chunks) if str(index) not in translations]
-
     logger.debug(
         "Input produced {} chunks; {} already translated; {} pending",
         len(chunks),
         len(translations),
         len(pending),
     )
-
     if not pending:
         atomic_save(output_path, translations)
         logger.debug("Nothing to translate")
         return 0
-
     backend = choose_backend(None if args.backend == "auto" else args.backend)
     logger.debug("Using backend {}", backend)
-
     translator = BACKEND_FACTORIES[backend](
         normalize_language(args.source),
         normalize_language(args.target),
     )
     limiter = RequestLimiter(args.delay)
-
     completed_since_save = 0
-
     with ThreadPoolExecutor(
         max_workers=args.workers,
         thread_name_prefix="translator",
@@ -583,40 +526,31 @@ def run(args: argparse.Namespace) -> int:
             ): index
             for index, chunk in pending
         }
-
         try:
             for future in as_completed(future_to_index):
                 index = future_to_index[future]
-
                 try:
                     completed_index, translated = future.result()
                     translations[str(completed_index)] = translated
                     completed_since_save += 1
-
                     logger.debug(
                         "Completed chunk {} ({}/{})",
                         completed_index,
                         len(translations),
                         len(chunks),
                     )
-
                     if completed_since_save >= args.save_every:
                         atomic_save(output_path, translations)
                         completed_since_save = 0
-
                 except Exception as exc:
                     logger.error("Chunk {} failed: {}", index, exc)
                     append_failed(failed_path, index)
-
         except KeyboardInterrupt:
             logger.error("Interrupted; saving completed translations")
             for future in future_to_index:
                 future.cancel()
-
             raise
-
     atomic_save(output_path, translations)
-
     failed_count = len(chunks) - len(translations)
     if failed_count:
         logger.error(
@@ -625,22 +559,18 @@ def run(args: argparse.Namespace) -> int:
             failed_path,
         )
         return 1
-
     logger.debug("All {} chunks translated successfully", len(chunks))
     return 0
 
 
 def main() -> int:
     configure_logging()
-
     try:
         args = parse_args()
         return run(args)
-
     except KeyboardInterrupt:
         logger.error("Interrupted. Existing completed translations were saved.")
         return 130
-
     except Exception as exc:
         logger.error("Fatal error: {}", exc)
         return 1

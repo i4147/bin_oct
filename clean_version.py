@@ -4,7 +4,6 @@ It should strip comments, blank lines, VCS/URL-based requirements (git+, http://
 The script must preserve the first-seen order of packages while removing duplicates, and raise an error if the given file does not exist."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from pathlib import Path

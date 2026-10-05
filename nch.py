@@ -7,7 +7,6 @@ This mirrors the user's working snippet: for path in glob.glob("*.py"): mode = o
 Third-party packages (optional, auto-detected): * dh — provides is_binary(path) * tqdm — progress bars (falls back to no-op if missing)"""
 
 from __future__ import annotations
-
 import argparse
 import fnmatch
 import multiprocessing as mp
@@ -21,7 +20,7 @@ from typing import Iterator, Optional, Sequence
 
 try:
     from tqdm import tqdm  # type: ignore
-except Exception:  # pragma: no cover
+except Exception:
 
     def tqdm(it, **_kwargs):  # type: ignore
         return it
@@ -31,7 +30,7 @@ try:
     from dh import is_binary as _is_binary  # type: ignore
 
     _HAVE_DH = True
-except Exception:  # pragma: no cover
+except Exception:
     _HAVE_DH = False
 
     def _is_binary(_p: Path) -> bool:
@@ -41,36 +40,26 @@ except Exception:  # pragma: no cover
 DIR_MODE: int = 0o775
 FILE_MODE: int = 0o644
 EXEC_MODE: int = 0o755
-
 EXEC_BITS: int = st.S_IXUSR | st.S_IXGRP | st.S_IXOTH
-
-DEFAULT_SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".idea",
-        "node_modules",
-        ".venv",
-        "venv",
-        ".ruff_cache",
-    }
-)
-
-DEFAULT_EXEC_DIRS: frozenset[str] = frozenset(
-    {
-        "bin",
-        "sbin",
-        ".bin",
-        "libexec",
-        "scripts",
-        "tools",
-    }
-)
-
+DEFAULT_SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".idea",
+    "node_modules",
+    ".venv",
+    "venv",
+    ".ruff_cache",
+})
+DEFAULT_EXEC_DIRS: frozenset[str] = frozenset({
+    "bin",
+    "sbin",
+    ".bin",
+    "libexec",
+    "scripts",
+    "tools",
+})
 DEFAULT_SUFFIX_EXEC: tuple[str, ...] = (".sh", ".so")
-
 DEFAULT_DEEXEC_PATTERNS: tuple[str, ...] = ("*.py",)
-
 DEFAULT_KEEP_EXEC_PARENTS: frozenset[str] = frozenset({"bin", "sbin"})
 
 
@@ -161,9 +150,7 @@ class Config:
     dir_mode: int = DIR_MODE
     file_mode: int = FILE_MODE
     exec_mode: int = EXEC_MODE
-
     deexec_patterns: tuple[str, ...] = DEFAULT_DEEXEC_PATTERNS
-
     keep_exec_parents: frozenset[str] = DEFAULT_KEEP_EXEC_PARENTS
 
     def is_skipped(self, p: Path) -> bool:
@@ -196,10 +183,8 @@ def walk_items(cfg: Config, include_dirs: bool = True, include_files: bool = Tru
     for dirpath, dirnames, filenames in os.walk(str(cfg.root), topdown=True, followlinks=False):
         dirnames[:] = [d for d in dirnames if d not in cfg.skip_dirs]
         base = Path(dirpath)
-
         if include_dirs:
             yield ("dir", base)
-
         if include_files:
             for name in filenames:
                 p = base / name
@@ -225,22 +210,18 @@ def decide(cfg: Config, kind: str, path: Path) -> Decision:
         if cur == cfg.dir_mode:
             return Decision("skip_correct", path, cur, cfg.dir_mode)
         return Decision("change", path, cur, cfg.dir_mode)
-
     if is_executable(path):
         if cfg.preserve_existing_exec:
             return Decision("skip_exec", path, mode_of(path), None, "already executable")
         cur = mode_of(path) or 0
         return Decision("change", path, cur, cfg.exec_mode)
-
     cur = mode_of(path)
     if cur is None:
         return Decision("error", path, None, None, "stat failed")
-
     if cfg.looks_executable_special(path):
         target = cfg.exec_mode
     else:
         target = cfg.file_mode
-
     if cur == target:
         return Decision("skip_correct", path, cur, target)
     return Decision("change", path, cur, target)
@@ -253,7 +234,6 @@ class Stats:
     files_changed: int = 0
     files_made_exec: int = 0
     files_deexeced: int = 0
-
     files_kept_exec: int = 0
     skipped: int = 0
     errors: int = 0
@@ -284,7 +264,6 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
         if cfg.is_skipped(path):
             s.skipped += 1
             return s
-
         d = decide(cfg, kind, path)
         if d.kind == "skip_exec":
             s.skipped += 1
@@ -296,19 +275,16 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
             s.other_errors += 1
             s.messages.append(f"[ERR] {path}: {d.reason}")
             return s
-
         if not parent_writable(path):
             s.errors += 1
             s.permission_errors += 1
             s.messages.append(f"[PERM] {path}: parent not writable")
             return s
-
         if not chmod_safe(path, d.target):
             s.errors += 1
             s.permission_errors += 1
             s.messages.append(f"[PERM] {path}: chmod failed")
             return s
-
         old, new = d.current or 0, d.target or 0
         rel = str(path)
         if len(rel) > 80:
@@ -322,7 +298,7 @@ def apply_one(cfg: Config, kind: str, path: Path) -> Stats:
         else:
             s.files_changed += 1
             s.messages.append(f"[FILE] {rel} {oct(old)}->{oct(new)}")
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         s.errors += 1
         s.other_errors += 1
         s.messages.append(f"[ERR]  {path}: {type(exc).__name__}: {exc}")
@@ -337,7 +313,6 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
         if cfg.is_skipped(path):
             s.skipped += 1
             continue
-
         if kind == "dir":
             cur = mode_of(path)
             if cur is None:
@@ -351,7 +326,6 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
                 else:
                     s.errors += 1
             continue
-
         if is_executable(path):
             s.skipped += 1
             continue
@@ -374,43 +348,34 @@ def run_addx(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
 def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
     s = Stats()
     items = list(walk_items(cfg, include_dirs=False, include_files=True))
-
     for kind, path in tqdm(items, desc="deexec", unit="items"):
         s.total += 1
-
         if cfg.is_skipped(path):
             s.skipped += 1
             continue
-
         if not cfg.matches_deexec(path):
             s.skipped += 1
             continue
-
         if cfg.keeps_exec_by_parent(path):
             s.files_kept_exec += 1
             if verbose:
                 s.messages.append(f"[KEEP] {path} (parent={path.parent.name})")
             continue
-
         cur = mode_of(path)
         if cur is None:
             s.errors += 1
             s.other_errors += 1
             s.messages.append(f"[ERR]  {path}: stat failed")
             continue
-
         if not (cur & EXEC_BITS):
             s.skipped += 1
             continue
-
         target = cur & ~EXEC_BITS
-
         if dry_run:
             s.files_deexeced += 1
             if verbose:
                 s.messages.append(f"[DEEXEC*] {path} {oct(cur)}->{oct(target)}")
             continue
-
         if chmod_remove_x(path):
             s.files_deexeced += 1
             if verbose:
@@ -419,7 +384,6 @@ def run_deexec(cfg: Config, *, dry_run: bool, verbose: bool) -> Stats:
             s.errors += 1
             s.permission_errors += 1
             s.messages.append(f"[PERM] {path}: chmod -x failed")
-
     return s
 
 
@@ -457,7 +421,6 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
     print(f"✓  Files made executable:{s.files_made_exec}")
     if s.files_deexeced:
         print(f"✓  Files de-execed:      {s.files_deexeced}")
-
     if s.files_kept_exec:
         print(f"🔒 Files kept executable (bin/sbin): {s.files_kept_exec}")
     print(f"❌ Total errors:          {s.errors}")
@@ -466,13 +429,11 @@ def report(s: Stats, elapsed: float, verbose: bool) -> None:
     if s.other_errors:
         print(f"   └─ Other errors:      {s.other_errors}")
     print(bar)
-
     if s.permission_errors:
         print("\n💡 Tip: permission errors can be fixed by:")
         print("  - Running with appropriate privileges (sudo/root)")
         print("  - Changing ownership of files")
         print("  - Running chmod on problematic directories first")
-
     if verbose and s.messages:
         print("\n📝 DETAILED CHANGES\n" + "-" * 44)
         buckets = {
@@ -580,7 +541,6 @@ def build_parser() -> argparse.ArgumentParser:
             "  chmodnorm.py deexec --dry-run -v        # preview without changing\n"
         ),
     )
-
     p.add_argument("path", nargs="?", default=".", help="root path (default: current directory)")
     p.add_argument(
         "--skip-dir",
@@ -628,14 +588,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=oct(EXEC_MODE),
         help="octal mode for executable files (default: 0755)",
     )
-
     p.add_argument(
         "--keep-exec-parent",
         action="append",
         default=None,
         help=("parent dir name whose files keep exec state in deexec mode (repeatable; default: bin, sbin)"),
     )
-
     p.add_argument(
         "mode",
         nargs="?",
@@ -649,7 +607,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="glob patterns for deexec mode (default: *.py).",
     )
-
     p.add_argument("--dry-run", action="store_true", help="analyze but do not change anything")
     p.add_argument(
         "--show-examples",
@@ -672,17 +629,14 @@ def build_config(args: argparse.Namespace) -> Config:
     skip = frozenset(args.skip_dir) if args.skip_dir else DEFAULT_SKIP_DIRS
     execd = frozenset(args.exec_dir) if args.exec_dir else DEFAULT_EXEC_DIRS
     suffix = tuple(args.suffix_exec) if args.suffix_exec else DEFAULT_SUFFIX_EXEC
-
     if args.mode == "deexec" and args.patterns:
         patterns = tuple(args.patterns)
     else:
         patterns = DEFAULT_DEEXEC_PATTERNS
-
     if args.keep_exec_parent:
         keep = frozenset(args.keep_exec_parent)
     else:
         keep = DEFAULT_KEEP_EXEC_PARENTS
-
     return Config(
         root=Path(args.path).resolve(),
         skip_dirs=skip,
@@ -702,11 +656,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     cfg = build_config(args)
-
     if not cfg.root.exists():
         print(f"❌ Error: path does not exist: {cfg.root}", file=sys.stderr)
         return 1
-
     print(f"🔍 Root:      {cfg.root}")
     print(f"🧭 Mode:      {args.mode}")
     print(f"🚫 Skip dirs: {', '.join(sorted(cfg.skip_dirs))}")
@@ -716,32 +668,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"🔒 Keep-exec parents: {', '.join(sorted(cfg.keep_exec_parents))}")
     if args.dry_run:
         print("🧪 DRY RUN — no changes will be applied\n")
-
     t0 = time.time()
-
     if args.mode == "addx":
         s = run_addx(cfg, dry_run=args.dry_run, verbose=args.verbose)
         report(s, time.time() - t0, verbose=args.verbose)
         print("\n✅ Done!")
         return 0
-
     if args.mode == "deexec":
         s = run_deexec(cfg, dry_run=args.dry_run, verbose=args.verbose)
         report(s, time.time() - t0, verbose=args.verbose)
         print("\n✅ Done!")
         return 0
-
     include_dirs = args.mode in ("all", "dirs")
     include_files = args.mode in ("all", "files")
-
     items = list(walk_items(cfg, include_dirs=include_dirs, include_files=include_files))
     if not items:
         print("⚠️  No items found to process.")
         return 0
-
     if args.show_examples:
         show_examples(cfg, items)
-
     if args.dry_run:
         s = Stats(total=len(items))
         for kind, path in items:
@@ -760,14 +705,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         report(s, time.time() - t0, verbose=args.verbose)
         print("\n🧪 Dry run — nothing changed.")
         return 0
-
     if args.parallel or args.jobs:
         jobs = args.jobs if args.jobs > 0 else (os.cpu_count() or 1)
         print(f"⚙️  Parallel workers: {jobs}")
         s = run_parallel(cfg, items, jobs)
     else:
         s = run_serial(cfg, items, verbose=args.verbose)
-
     report(s, time.time() - t0, verbose=args.verbose)
     print("\n✅ Done!")
     return 0

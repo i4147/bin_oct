@@ -4,7 +4,6 @@ Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for
 No CLI flags control parallelism; only positional root plus --timeout are accepted."""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import mimetypes
@@ -15,15 +14,21 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 from urllib.parse import unquote, urldefrag
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-EXT_IMAGE: Final[frozenset[str]] = frozenset(
-    {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff", ".svg"}
-)
+EXT_IMAGE: Final[frozenset[str]] = frozenset({
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".tif",
+    ".tiff",
+    ".svg",
+})
 HTTP_SCHEMES: Final[tuple[str, ...]] = ("http://", "https://")
 HTML_ATTR_RE: Final[re.Pattern[str]] = re.compile(
     r'(?P<attr>href|src)\s*=\s*(?P<q>["\'])(?P<url>.*?)(?P=q)', re.IGNORECASE
@@ -227,20 +232,16 @@ def main() -> int:
     parser.add_argument("root", help="Folder to scan")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT)
     args = parser.parse_args()
-
     root = Path(args.root).resolve()
     if not root.is_dir():
         logger.error("root is not a directory: {}", root)
         return 2
-
     files = iter_files(root, TARGET_EXTS)
     if not files:
         return 0
-
     timeout: int = args.timeout
     tasks: list[tuple[str, int]] = [(fp, timeout) for fp in files]
     all_reports: list[str] = []
-
     with Pool(processes=POOL_WORKERS) as pool:
         results: Iterable[object] = [pool.apply_async(process_file, (task,)) for task in tasks]
         for fp, res in zip(files, results):
@@ -251,10 +252,8 @@ def main() -> int:
                 continue
             if isinstance(r, list):
                 all_reports.extend(r)
-
     for line in all_reports:
         print(line)
-
     return 0
 
 

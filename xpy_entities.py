@@ -4,7 +4,6 @@ Merges the following scripts into one CLI: cext.py, ex_const.py, ex_nodes.py, ex
 If a dep is missing, only the corresponding --backend errors out; the default (ast) backend always works."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -28,7 +27,6 @@ try:
 except ImportError:
     cst = None  # type: ignore
     HAS_LIBCST = False
-
 try:
     import tree_sitter  # type: ignore
     import tree_sitter_python as tspython  # type: ignore
@@ -38,7 +36,6 @@ except ImportError:
     tree_sitter = None  # type: ignore
     tspython = None  # type: ignore
     HAS_TS = False
-
 try:
     import zstd  # type: ignore
 
@@ -46,9 +43,7 @@ try:
 except ImportError:
     zstd = None  # type: ignore
     HAS_ZSTD = False
-
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
-
 SKIP_DIRS: set[str] = {
     ".git",
     "__pycache__",
@@ -60,7 +55,6 @@ SKIP_DIRS: set[str] = {
     ".mypy_cache",
     ".pytest_cache",
 }
-
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".whl",
     ".zip",
@@ -71,7 +65,6 @@ ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".tar.xz",
     ".zst",
 )
-
 STDLIB_IMPORTS: dict[str, str] = {
     "List": "from typing import List",
     "Dict": "from typing import Dict",
@@ -310,7 +303,6 @@ class ASTExtractor(ast.NodeVisitor):
                 decorators=[ast.unparse(d) for d in node.decorator_list],
             )
         )
-
         if self.scope == "all" and not in_class:
             for child in node.body:
                 self.visit(child)
@@ -440,7 +432,6 @@ def extract_with_tree_sitter(source: str, path: str) -> tuple[list[Entity], list
                     )
                 )
                 continue
-
             if t == "expression_statement":
                 for sub in child.children:
                     if sub.type == "assignment":
@@ -473,7 +464,6 @@ def extract_with_libcst(source: str, path: str) -> tuple[list[Entity], list[str]
     except Exception as exc:
         print(f"[warn] libcst failed on {path}: {exc}", file=sys.stderr)
         return [], []
-
     entities: list[Entity] = []
     imports: list[str] = []
 
@@ -634,7 +624,6 @@ def write_py_entity(
         target_dir = out_dir
     target_dir.mkdir(parents=True, exist_ok=True)
     out_path = unique_path(target_dir / f"{safe_name(entity.full_name)}.py")
-
     lines: list[str] = []
     if include_imports and entity.imports and not entity.parent:
         lines.extend(entity.imports)
@@ -643,7 +632,6 @@ def write_py_entity(
         lines.extend(entity.decorators)
     lines.append(entity.source.rstrip("\n"))
     text = "\n".join(lines) + "\n"
-
     out_path.write_text(text, encoding="utf-8")
     return out_path
 
@@ -681,7 +669,6 @@ def write_txt_entities(entities: list[Entity], out_dir: Path) -> None:
     }
     for e in entities:
         by_kind.setdefault(e.type, defaultdict(list))[e.path].append(e)
-
     for kind, files in by_kind.items():
         if not files:
             continue
@@ -749,17 +736,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if not roots:
         print("No valid input paths.", file=sys.stderr)
         return 1
-
     pys, archives = find_python_files(roots, include_archives=args.archives)
     print(
         f"Discovered {len(pys)} python file(s), {len(archives)} archive(s).",
         file=sys.stderr,
     )
-
     kinds = parse_kinds(args.kinds)
     out_dir = args.output.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-
     all_entities: list[Entity] = []
     all_imports: list[str] = []
 
@@ -776,9 +760,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     for a in archives:
         for name, text in read_archive_members(a):
             process(name, text)
-
     print(f"Extracted {len(all_entities)} entities.", file=sys.stderr)
-
     if args.format in ("py", "py+json"):
         for e in all_entities:
             py_path = write_py_entity(e, out_dir, args.layout)
@@ -794,18 +776,15 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if args.format == "db":
         write_db(all_entities, args.db_path)
         print(f"Wrote {len(all_entities)} rows to {args.db_path}", file=sys.stderr)
-
     if args.global_imports:
         p = write_global_imports(all_imports, out_dir)
         print(f"Global imports -> {p}", file=sys.stderr)
-
     if args.toc:
         toc = out_dir / "TOC.txt"
         with toc.open("w", encoding="utf-8") as f:
             for e in sorted(all_entities, key=lambda x: (x.type, x.full_name)):
                 f.write(f"{e.type:9} {e.full_name}   ({e.path})\n")
         print(f"TOC -> {toc}", file=sys.stderr)
-
     counts: dict[str, int] = defaultdict(int)
     for e in all_entities:
         counts[e.type] += 1
@@ -852,7 +831,6 @@ def _extract_nodes(source: bytes, kind: str) -> list[str]:
                 continue
             stack.extend(n.children)
         return results
-
     targets = NODE_KIND_MAP.get(kind, NODE_KIND_MAP["func"])
     for child in root.children:
         if child.type in targets:
@@ -867,12 +845,10 @@ def cmd_nodes(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-
     roots = [p.resolve() for p in (args.paths or [Path.cwd()])]
     pys, _ = find_python_files(roots)
     out_dir = args.output.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
-
     by_folder: dict[Path, list[str]] = defaultdict(list)
     for p in pys:
         try:
@@ -882,13 +858,11 @@ def cmd_nodes(args: argparse.Namespace) -> int:
         nodes = _extract_nodes(src, args.kind)
         if nodes:
             by_folder[p.parent].append("\n\n".join(nodes))
-
     for folder, chunks in by_folder.items():
         rel = folder.name or "root"
         target = out_dir / safe_name(rel) / "imports.py"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("\n\n".join(chunks), encoding="utf-8")
-
     print(
         f"Done. kind={args.kind} processed {len(by_folder)} folder(s) -> {out_dir}/",
         file=sys.stderr,
@@ -923,14 +897,12 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
     except SyntaxError as exc:
         print(f"Error: syntax error in '{args.file}': {exc}", file=sys.stderr)
         return 1
-
     names: list[str] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             if args.skip_main and node.name == "main":
                 continue
             names.append(node.name)
-
     if names:
         label = " (excluding 'main')" if args.skip_main else ""
         print(f"Functions found{label}:")
@@ -944,7 +916,6 @@ def cmd_funcnames(args: argparse.Namespace) -> int:
 def cmd_constants(args: argparse.Namespace) -> int:
     roots = [p.resolve() for p in (args.paths or [Path.cwd()])]
     pys, _ = find_python_files(roots)
-
     found: list[Entity] = []
     for p in pys:
         try:
@@ -953,13 +924,11 @@ def cmd_constants(args: argparse.Namespace) -> int:
             continue
         ents, _ = extract_with_ast(text, str(p), scope="top-level")
         found.extend(e for e in ents if e.type == "constant")
-
     if args.format == "list":
         for e in found:
             print(f"{e.name} = {e.value}   # {e.path}:{e.line_start}")
         print(f"\nTotal constants found: {len(found)}")
         return 0
-
     out_dir = args.output.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "const.py"
@@ -984,7 +953,6 @@ def build_parser() -> argparse.ArgumentParser:
         description=textwrap.dedent(
             """\
             Unified Python code-entity extractor.
-
             Subcommands
             -----------
               extract     Extract functions / classes / constants (files, dirs, archives).
@@ -996,7 +964,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = ap.add_subparsers(dest="command", required=True)
-
     ep = sub.add_parser("extract", help="Extract entities from files/dirs/archives")
     ep.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
     ep.add_argument(
@@ -1057,7 +1024,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also write TOC.txt summarising extracted entities",
     )
     ep.set_defaults(func=cmd_extract)
-
     np = sub.add_parser("nodes", help="Extract tree-sitter node bodies")
     np.add_argument("paths", nargs="*", type=Path)
     np.add_argument(
@@ -1067,11 +1033,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     np.add_argument("-o", "--output", type=Path, default=Path("output"))
     np.set_defaults(func=cmd_nodes)
-
     sp = sub.add_parser("sexpr", help="Print tree-sitter S-expression")
     sp.add_argument("file", type=Path)
     sp.set_defaults(func=cmd_sexpr)
-
     fp = sub.add_parser("funcnames", help="List function names in a file")
     fp.add_argument("file", type=Path)
     fp.add_argument(
@@ -1081,13 +1045,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exclude a function literally named 'main' (default: on)",
     )
     fp.set_defaults(func=cmd_funcnames)
-
     cp = sub.add_parser("constants", help="Extract module-level UPPER_CASE constants")
     cp.add_argument("paths", nargs="*", type=Path)
     cp.add_argument("--format", choices=["py", "list"], default="py")
     cp.add_argument("-o", "--output", type=Path, default=Path("output"))
     cp.set_defaults(func=cmd_constants)
-
     return ap
 
 

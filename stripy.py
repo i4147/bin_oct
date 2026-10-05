@@ -9,14 +9,12 @@ Usage:: strip_comments.py [PATH ...] Every ``PATH`` may be either a Python file 
 With no arguments the current directory is used."""
 
 from __future__ import annotations
-
 import ast
 import multiprocessing as mp
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
-
 import libcst as cst
 from loguru import logger
 
@@ -65,7 +63,6 @@ def _strip_suite(body: cst.BaseSuite, counters: dict[str, int]) -> cst.BaseSuite
     if isinstance(body, cst.IndentedBlock):
         new_inner = _strip_first_docstring(body.body, counters, ensure_body=True)
         return body.with_changes(body=new_inner)
-
     if isinstance(body, cst.SimpleStatementSuite):
         inner = list(body.body)
         if inner and _is_docstring_small(inner[0]):
@@ -75,7 +72,6 @@ def _strip_suite(body: cst.BaseSuite, counters: dict[str, int]) -> cst.BaseSuite
             inner = [cst.Pass()]
             counters["passes"] += 1
         return body.with_changes(body=inner)
-
     return body
 
 
@@ -138,7 +134,6 @@ class StripTransformer(cst.CSTTransformer):
 
 def process_file(path: Path) -> FileReport:
     report = FileReport(path=path)
-
     try:
         source = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
@@ -149,14 +144,12 @@ def process_file(path: Path) -> FileReport:
         logger.error("skip (read error) {}: {}", path, exc)
         report.skipped = True
         return report
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         logger.error("skip (parse error) {}: {}", path, exc)
         report.skipped = True
         return report
-
     transformer = StripTransformer()
     try:
         new_module = module.visit(transformer)
@@ -164,16 +157,13 @@ def process_file(path: Path) -> FileReport:
         logger.exception("transformer crashed on {}: {}", path, exc)
         report.skipped = True
         return report
-
     report.docstrings_removed = transformer.counters["docstrings"]
     report.comments_removed = transformer.counters["comments"]
     report.pass_inserted = transformer.counters["passes"]
-
     new_code = new_module.code
     if new_code == source:
         logger.debug("unchanged {}", path)
         return report
-
     try:
         ast.parse(new_code)
     except SyntaxError as exc:
@@ -186,14 +176,12 @@ def process_file(path: Path) -> FileReport:
         logger.error("skip (libcst rejects output, not writing) {}: {}", path, exc)
         report.skipped = True
         return report
-
     try:
         path.write_text(new_code, encoding="utf-8")
     except OSError as exc:
         logger.error("skip (write error) {}: {}", path, exc)
         report.skipped = True
         return report
-
     report.written = True
     print(f"{path} | {report.docstrings_removed}| {report.comments_removed} | {report.pass_inserted}\n")
     return report
@@ -202,7 +190,6 @@ def process_file(path: Path) -> FileReport:
 def _collect_python_files(inputs: Sequence[Path]) -> list[Path]:
     seen: set[Path] = set()
     collected: list[Path] = []
-
     for raw in inputs:
         path = raw.expanduser()
         if path.is_file():
@@ -221,7 +208,6 @@ def _collect_python_files(inputs: Sequence[Path]) -> list[Path]:
                     collected.append(resolved)
         else:
             logger.warning("path does not exist: {}", path)
-
     collected.sort()
     return collected
 
@@ -240,10 +226,8 @@ def _configure_logger() -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     _configure_logger()
-
     raw_args = list(sys.argv[1:] if argv is None else argv)
     inputs = [Path(a) for a in raw_args] if raw_args else [Path()]
-
     files = _collect_python_files(inputs)
     if not files:
         logger.warning(
@@ -251,9 +235,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             ", ".join(str(p) for p in inputs),
         )
         return 0
-
     chunksize = max(1, len(files) // (WORKERS * 4))
-
     try:
         with mp.Pool(processes=WORKERS) as pool:
             results: list[FileReport] = pool.starmap(
@@ -264,13 +246,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         logger.warning("interrupted by user")
         return 130
-
     written = sum(1 for r in results if r.written)
     skipped = sum(1 for r in results if r.skipped)
     docstrings = sum(r.docstrings_removed for r in results)
     comments = sum(r.comments_removed for r in results)
     passes = sum(r.pass_inserted for r in results)
-
     return 0 if skipped == 0 else 2
 
 

@@ -16,7 +16,6 @@ Peephole optimize: augmented assigns, nested-if merge, dead code removal, else-a
 Output: * One input file -> <stem>_compressed.py (zlib+base85 runnable stub) <stem>_compressed.txt (readable minified) * Multiple inputs -> compressed.txt (readable minified) compressed_stub.py (zlib+base85 runnable stub)"""
 
 from __future__ import annotations
-
 import ast
 import base64
 import builtins
@@ -26,7 +25,6 @@ import sys
 import zlib
 from pathlib import Path
 from typing import Callable, Iterator, Sequence
-
 from dh import cprint
 
 PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
@@ -42,7 +40,6 @@ PROTECTED_NAMES: frozenset[str] = frozenset(dir(builtins)) | {
 def get_stdlib_modules() -> set[str]:
     if hasattr(sys, "stdlib_module_names"):
         return set(sys.stdlib_module_names)
-
     import sysconfig
 
     stdlib_path = Path(sysconfig.get_paths()["stdlib"])
@@ -59,7 +56,6 @@ def get_stdlib_modules() -> set[str]:
 
 
 STDLIB_MODULES: set[str] = get_stdlib_modules()
-
 STDLIB_KEEP: frozenset[str] = frozenset()
 
 
@@ -246,23 +242,21 @@ _UNARY_OPS: dict[type[ast.unaryop], Callable[[object], object]] = {
     ast.Invert: operator.invert,
     ast.Not: operator.not_,
 }
-_AUG_OPS: frozenset[type[ast.operator]] = frozenset(
-    [
-        ast.Add,
-        ast.Sub,
-        ast.Mult,
-        ast.Div,
-        ast.FloorDiv,
-        ast.Mod,
-        ast.Pow,
-        ast.LShift,
-        ast.RShift,
-        ast.BitOr,
-        ast.BitXor,
-        ast.BitAnd,
-        ast.MatMult,
-    ]
-)
+_AUG_OPS: frozenset[type[ast.operator]] = frozenset([
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.FloorDiv,
+    ast.Mod,
+    ast.Pow,
+    ast.LShift,
+    ast.RShift,
+    ast.BitOr,
+    ast.BitXor,
+    ast.BitAnd,
+    ast.MatMult,
+])
 _TERMINATORS: tuple[type[ast.stmt], ...] = (
     ast.Return,
     ast.Raise,
@@ -293,13 +287,11 @@ class PeepholeOptimizer(ast.NodeTransformer):
         return stmts
 
     def _opt_pass(self, stmts: list[ast.stmt]) -> list[ast.stmt]:
-
         live: list[ast.stmt] = []
         for s in stmts:
             if live and isinstance(live[-1], _TERMINATORS):
                 break
             live.append(s)
-
         flattened: list[ast.stmt] = []
         for s in live:
             if isinstance(s, ast.If) and s.orelse and s.body and isinstance(s.body[-1], _TERMINATORS):
@@ -307,7 +299,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
                 flattened.extend(s.orelse)
             else:
                 flattened.append(s)
-
         out: list[ast.stmt] = []
         i = 0
         while i < len(flattened):
@@ -344,7 +335,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
         self.generic_visit(node)
-
         if (
             len(node.targets) == 1
             and isinstance(node.targets[0], ast.Name)
@@ -361,7 +351,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
     def visit_If(self, node: ast.If) -> ast.AST:
         self.generic_visit(node)
-
         if not node.orelse and len(node.body) == 1 and isinstance(node.body[0], ast.If) and not node.body[0].orelse:
             inner = node.body[0]
             return ast.copy_location(
@@ -372,7 +361,6 @@ class PeepholeOptimizer(ast.NodeTransformer):
                 ),
                 node,
             )
-
         if isinstance(node.test, ast.Constant):
             if node.test.value is True:
                 node.test = ast.copy_location(ast.Constant(value=1), node.test)
@@ -388,13 +376,11 @@ class PeepholeOptimizer(ast.NodeTransformer):
 
     def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
         self.generic_visit(node)
-
         if not (isinstance(node.left, ast.Constant) and isinstance(node.right, ast.Constant)):
             return node
         op_fn = _BIN_OPS.get(type(node.op))
         if op_fn is None:
             return node
-
         if isinstance(node.op, (ast.Pow, ast.LShift)) and isinstance(node.right.value, int) and node.right.value > 64:
             return node
         try:
@@ -449,14 +435,12 @@ def join_simple_lines(text: str) -> str:
             out.append(line)
             i += 1
             continue
-
         indent = _leading_ws(line)
         group = [line.strip()]
         j = i + 1
         while j < len(lines) and _is_simple_line(lines[j]) and _leading_ws(lines[j]) == indent:
             group.append(lines[j].strip())
             j += 1
-
         if len(group) > 1:
             out.append(indent + "; ".join(group))
         else:
@@ -472,12 +456,9 @@ def wrap_payload(source: str, *, level: int = 9) -> str:
     raw = source.encode("utf-8")
     packed = zlib.compress(raw, level)
     b85 = base64.b85encode(packed).decode("ascii")
-
     chunk = 100
     lines = [b85[k : k + chunk] for k in range(0, len(b85), chunk)]
-
     payload_literal = "_p=(" + "\n".join(f'"{ln}"' for ln in lines) + ")"
-
     header = (
         f"# Compressed Python payload  "
         f"({len(raw)} -> {len(packed)} bytes zlib, "
@@ -490,7 +471,6 @@ def wrap_payload(source: str, *, level: int = 9) -> str:
 def _render_file(filepath: str, tree: ast.AST) -> str:
     tree = FutureImportGuard().visit(tree)
     ast.fix_missing_locations(tree)
-
     minified = ast.unparse(tree)
     minified = join_simple_lines(minified)
     body_lines = [ln for ln in minified.splitlines() if ln.strip()]
@@ -502,30 +482,23 @@ def compress_files(file_paths: Sequence[str]) -> None:
     name_gen = generate_short_names()
     parsed_trees: list[tuple[str, ast.AST]] = []
     removed_imports: list[str] = []
-
     for filepath in file_paths:
         path = Path(filepath)
         if not path.exists():
             print(f"Warning: File '{filepath}' not found. Skipping.", file=sys.stderr)
             continue
-
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=filepath)
-
         tree = StripDocstringsAndTypes().visit(tree)
         ast.fix_missing_locations(tree)
         NameCollector(name_map, name_gen).visit(tree)
-
         stripper = StdlibImportStripper()
         tree = stripper.visit(tree)
         ast.fix_missing_locations(tree)
         removed_imports.extend(stripper.removed)
-
         parsed_trees.append((filepath, tree))
-
     if not parsed_trees:
         cprint("Nothing to compress.")
         return
-
     blocks: list[str] = []
     for filepath, tree in parsed_trees:
         tree = NameRenamer(name_map).visit(tree)
@@ -533,9 +506,7 @@ def compress_files(file_paths: Sequence[str]) -> None:
         tree = PeepholeOptimizer().visit(tree)
         ast.fix_missing_locations(tree)
         blocks.append(_render_file(filepath, tree))
-
     compressed = "\n\n".join(blocks)
-
     if removed_imports:
         uniq = sorted(set(removed_imports))
         compressed += (
@@ -543,25 +514,19 @@ def compress_files(file_paths: Sequence[str]) -> None:
             "# Re-add them (or ensure they are globally available) before running:\n"
             + "\n".join(f"#   {imp}" for imp in uniq)
         )
-
     if len(parsed_trees) == 1:
         src = Path(parsed_trees[0][0])
         stub_path = src.with_name(f"{src.stem}_compressed.py")
         txt_path = src.with_name(f"{src.stem}_compressed.txt")
-
         stub_path.write_text(wrap_payload(compressed), encoding="utf-8")
         txt_path.write_text(compressed, encoding="utf-8")
-
         target = stub_path
     else:
         txt_path = Path("compressed.txt")
         stub_path = Path("compressed_stub.py")
-
         txt_path.write_text(compressed, encoding="utf-8")
         stub_path.write_text(wrap_payload(compressed), encoding="utf-8")
-
         target = stub_path
-
     raw_sz = len(compressed.encode("utf-8"))
     stub_sz = target.stat().st_size
     ratio = raw_sz / stub_sz if stub_sz else 0.0
@@ -587,7 +552,6 @@ def main(argv: list[str]) -> int:
         print(f"Processing {len(files)} Python file(s) from current directory...")
         compress_files(files)
         return 0
-
     compress_files(argv)
     return 0
 

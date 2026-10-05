@@ -5,7 +5,6 @@ It should support multiprocessing for parallel processing of multiple files, rep
 The script should carefully handle whitespace and formatting edge cases when removing annotation nodes so the resulting code remains syntactically valid."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import os
@@ -19,7 +18,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
 try:
     from tree_sitter import Parser
 

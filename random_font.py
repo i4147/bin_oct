@@ -5,7 +5,6 @@ Include a helper function using fontTools' woff2.decompress to convert a WOFF2 f
 The script should be runnable as a standalone module with a main entry point."""
 
 from __future__ import annotations
-
 import secrets
 from pathlib import Path
 

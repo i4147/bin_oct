@@ -5,12 +5,10 @@ For each resolved file it should move it into the destination directory using sh
 If no arguments are provided, it should print a usage message to stderr and exit with status 1."""
 
 from __future__ import annotations
-
 import glob
 import shutil
 import sys
 from pathlib import Path
-
 from dh import unique_path
 
 dest = Path.home() / "isaac" / "may" / "scripts"

@@ -4,7 +4,6 @@ The script should support concurrent translation via a thread pool with rate-lim
 It should be driven by command-line arguments (e.g., input/output paths, source/target languages, backend choice, concurrency level) parsed with argparse, and handle retries or failures gracefully for individual chunks without stopping the entire batch job."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import importlib
@@ -17,7 +16,6 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
-
 from loguru import logger
 
 Translator = Callable[[str], str]

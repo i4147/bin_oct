@@ -4,11 +4,9 @@ For each non-English name found, it should translate it into English using the d
 It must handle naming collisions by appending an incrementing numeric suffix until a unique path is found, gracefully catch and log translation errors while keeping the original name as fallback, and print a message for each successful rename showing the old and new names."""
 
 from __future__ import annotations
-
 import os
 import re
 from pathlib import Path
-
 from deep_translator import GoogleTranslator
 from fastwalk import walk_files
 

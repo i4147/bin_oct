@@ -5,7 +5,6 @@ Merges the behaviours of: check_const.py → python dedup_tool.py const FILE che
 --output-dir output"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import copy
@@ -119,14 +118,11 @@ def cmd_const(args: argparse.Namespace) -> int:
     if not target.exists():
         print(f"File not found: {target}")
         return 1
-
     pattern = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=")
     lines = target.read_text().splitlines(keepends=True)
-
     first_seen: set[str] = set()
     dup_lines: list[str] = []
     dup_idx: set[int] = set()
-
     for idx, line in enumerate(lines):
         m = pattern.match(line)
         if not m:
@@ -137,20 +133,16 @@ def cmd_const(args: argparse.Namespace) -> int:
             dup_idx.add(idx)
         else:
             first_seen.add(name)
-
     if not dup_lines:
         print("No duplicates found.")
         return 0
-
     kept = [ln for i, ln in enumerate(lines) if i not in dup_idx]
     target.write_text("".join(kept))
-
     out_path = target.parent / args.dup_file
     with out_path.open("a") as f:
         f.write(f"\n# Duplicate declarations from {target.name}\n")
         for ln in dup_lines:
             f.write(ln)
-
     print("Kept the first declaration of each constant.")
     print(f"Moved {len(dup_lines)} duplicate declarations to {out_path}")
     print(f"Updated {target} in place.")
@@ -166,20 +158,16 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
         tree = ast.parse(text)
     except SyntaxError as e:
         return path_str, 0, f"Syntax error in {path}: {e}"
-
     decls = collect_ast_declarations(tree, lines)
-
     seen_keys: set[tuple[str, str]] = set()
     seen_hashes: set[tuple[str, str]] = set()
     dup_ranges: list[tuple[int, int]] = []
     dup_records: list[tuple[Declaration, str]] = []
     ranges_seen: set[tuple[int, int]] = set()
-
     for d in decls:
         key_name = (d.kind, d.name)
         key_hash = (d.kind, d.content_hash)
         rng = (d.lineno, d.end_lineno)
-
         reason: str | None = None
         if key_name in seen_keys:
             reason = f"duplicate {d.kind} name: {d.name}"
@@ -188,22 +176,17 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
         else:
             seen_keys.add(key_name)
             seen_hashes.add(key_hash)
-
         if reason and rng not in ranges_seen:
             dup_ranges.append(rng)
             dup_records.append((d, reason))
             ranges_seen.add(rng)
-
     if not dup_ranges:
         return path_str, 0, None
-
     to_strip: set[int] = set()
     for start, end in dup_ranges:
         to_strip.update(range(start, end + 1))
-
     kept = [ln for i, ln in enumerate(lines, start=1) if i not in to_strip]
     path.write_text("".join(kept), encoding="utf-8")
-
     out_path = path.parent / f"{path.stem}{suffix}"
     buf: list[str] = [f"\n# Duplicates moved from {path.name}\n"]
     for d, reason in dup_records:
@@ -213,7 +196,6 @@ def _ast_process_file(job: tuple[str, str]) -> tuple[str, int, str | None]:
             buf.append("\n")
     with out_path.open("a", encoding="utf-8") as f:
         f.write("".join(buf))
-
     return path_str, len(dup_ranges), None
 
 
@@ -229,17 +211,13 @@ def cmd_ast(args: argparse.Namespace) -> int:
                 print(f"Skipping (not found): {p}", file=sys.stderr)
     else:
         targets = list(iter_py_files(Path.cwd()))
-
     if not targets:
         print("No Python files to process.")
         return 0
-
     jobs = [(str(p), args.suffix) for p in targets]
-
     workers = args.workers
     if workers <= 0:
         workers = min(len(jobs), os.cpu_count() or 1)
-
     moved_total = 0
     if workers > 1 and len(jobs) > 1:
         with ProcessPoolExecutor(max_workers=workers) as ex:
@@ -259,7 +237,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
             if count:
                 moved_total += count
                 print(f"Updated {path_str} (moved {count} block(s))")
-
     if moved_total == 0:
         print("No duplicate top-level assignments/functions/classes found.")
     else:
@@ -288,7 +265,6 @@ def _ts_collect(path: Path, parser) -> list[Declaration]:
     tree = parser.parse(src_bytes)
     root = tree.root_node
     out: list[Declaration] = []
-
     for node in root.children:
         if node.type in ("function_definition", "class_definition"):
             name_node = node.child_by_field_name("name")
@@ -361,18 +337,14 @@ def cmd_ts(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-
     roots = args.paths or [Path.cwd()]
     output_path = (Path.cwd() / args.output).resolve() if not Path(args.output).is_absolute() else Path(args.output)
-
     exclude_names: set[str] = set(args.exclude or [])
     exclude_names.add(output_path.name)
     if args.exclude_self:
         exclude_names.add(Path(sys.argv[0]).name)
-
     seen: dict[str, Declaration] = {}
     dups: dict[str, Declaration] = {}
-
     for root in roots:
         for file in iter_py_files(root, exclude_names=exclude_names):
             for d in _ts_collect(file, parser):
@@ -380,11 +352,9 @@ def cmd_ts(args: argparse.Namespace) -> int:
                     dups[d.content_hash] = seen[d.content_hash]
                 else:
                     seen[d.content_hash] = d
-
     if not dups:
         print("No duplicates found.")
         return 0
-
     _ts_write_output(dups, output_path)
     print(f"Found {len(dups)} duplicate items.")
     print(f"Wrote them to: {output_path}")
@@ -400,16 +370,13 @@ def cmd_refactor(args: argparse.Namespace) -> int:
     input_dir: Path = args.input_dir.resolve()
     out_dir: Path = args.output_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-
     func_file = out_dir / "func.py"
     cls_file = out_dir / "classes.py"
     const_file = out_dir / "const.py"
     init_file = out_dir / "__init__.py"
-
     for f in (func_file, cls_file, const_file, init_file):
         if f.exists():
             f.unlink()
-
     for path in iter_py_files(input_dir, exclude_names={out_dir.name}):
         try:
             rel = path.relative_to(input_dir)
@@ -423,7 +390,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
         except (OSError, UnicodeDecodeError, SyntaxError) as e:
             print(f"Skipping {path}: {e}", file=sys.stderr)
             continue
-
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
                 seg = ast.get_source_segment(source, node) or ""
@@ -434,13 +400,10 @@ def cmd_refactor(args: argparse.Namespace) -> int:
             elif is_simple_assign(node):
                 seg = ast.get_source_segment(source, node) or ""
                 _append(const_file, seg)
-
-    # __init__.py
     with init_file.open("w", encoding="utf-8") as f:
         f.write("from .func import *\n")
         f.write("from .classes import *\n")
         f.write("from .const import *\n")
-
     print(f"Wrote refactor output to {out_dir}/")
     return 0
 
@@ -452,7 +415,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_const = sub.add_parser(
         "const",
         help="Regex-based duplicate-constant removal in a single file.",
@@ -464,7 +426,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Name of the archive file written next to FILE (default: dup_const.py).",
     )
     p_const.set_defaults(func=cmd_const)
-
     p_ast = sub.add_parser(
         "ast",
         help="AST-based dedup across one or more paths (default: cwd).",
@@ -477,7 +438,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ast.add_argument("--workers", type=int, default=0, help="Parallel workers (0 = auto).")
     p_ast.set_defaults(func=cmd_ast)
-
     p_ts = sub.add_parser(
         "ts",
         help="Tree-sitter content dedup (diduper/tsdeduper).",
@@ -501,7 +461,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip the running script's own file (diduper default).",
     )
     p_ts.set_defaults(func=cmd_ts)
-
     p_ref = sub.add_parser(
         "refactor",
         help="Extract top-level defs/classes/consts into a package.",
@@ -519,7 +478,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output package directory (default: output).",
     )
     p_ref.set_defaults(func=cmd_refactor)
-
     return parser
 
 

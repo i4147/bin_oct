@@ -7,7 +7,6 @@ Usage examples -------------- python pytokei_merged.py python pytokei_merged.py 
 --exclude .venv --exclude node_modules Dependencies ------------ Standard library only."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from pathlib import Path
@@ -25,7 +24,6 @@ LANGUAGE_EXTENSIONS: dict[str, list[str]] = {
     "php": [".php"],
     "bash": [".sh", ".bash"],
 }
-
 COMMENT_PATTERNS: dict[str, str] = {
     "python": r"^\s*#",
     "javascript": r"^\s*//",
@@ -37,7 +35,6 @@ COMMENT_PATTERNS: dict[str, str] = {
     "ruby": r"^\s*#",
     "php": r"^\s*//",
 }
-
 SHEBANG_PATTERNS: dict[str, list[str]] = {
     "python": [
         "#!/usr/bin/env python",
@@ -50,7 +47,6 @@ SHEBANG_PATTERNS: dict[str, list[str]] = {
     "node": ["#!/usr/bin/node", "#!/bin/node"],
     "sh": ["#!/bin/sh"],
 }
-
 DEFAULT_EXCLUDES: list[str] = [".git"]
 
 
@@ -96,10 +92,8 @@ def count_file(
     if is_binary(path):
         print(f"{path} is binary")
         return (0, 0, 0)
-
     code = comments = blank = 0
     pattern = COMMENT_PATTERNS.get(language, "")
-
     try:
         with path.open(encoding="utf-8") as f:
             for line in f:
@@ -112,7 +106,6 @@ def count_file(
     except Exception as exc:
         print(f"Error reading file {path}:{exc}")
         return (0, 0, 0)
-
     return (code, comments, blank)
 
 
@@ -136,26 +129,21 @@ def analyze(root: Path, excludes: set[str]) -> dict[str, Any]:
         "total": {"code": 0, "comments": 0, "blank": 0},
         "languages": {lang: {"code": 0, "comments": 0, "blank": 0} for lang in LANGUAGE_EXTENSIONS},
     }
-
     for path in root.rglob("*"):
         if not path.is_file():
             continue
-
         suffix = path.suffix.lower()
-
         if not suffix:
             lang = detect_shebang(path, excludes)
             if lang:
                 c, m, b = count_file(path, lang, excludes)
                 _add(stats, lang, c, m, b)
                 continue
-
         for lang, exts in LANGUAGE_EXTENSIONS.items():
             if suffix in exts:
                 c, m, b = count_file(path, lang, excludes)
                 _add(stats, lang, c, m, b)
                 break
-
     return stats
 
 
@@ -164,7 +152,6 @@ def print_report(stats: dict[str, Any]) -> None:
     print(f"Total comment lines:{stats['total']['comments']}")
     print(f"Total blank lines:{stats['total']['blank']}\n")
     print("Language-based statistics:")
-
     for lang, counts in stats["languages"].items():
         if counts["code"] > 0:
             print(f"\n{lang.capitalize()}:")
@@ -203,18 +190,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     root = Path(args.root)
     if not root.is_dir():
         print(f"Error: {root} is not a directory")
         return 1
-
     excludes = set(args.exclude)
     stats = analyze(root, excludes)
-
     if not args.no_report:
         print_report(stats)
-
     return 0
 
 

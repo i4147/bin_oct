@@ -5,10 +5,8 @@ to canonical suffixes), and construct a new filename combining the family name a
 The script should use argparse to accept input parameters (such as target directory or files), handle missing or unreadable name tables gracefully by skipping or defaulting to "Regular", and use a unique_path helper to avoid overwriting existing files when renaming."""
 
 from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
 from dh import FONTEXT, unique_path
 from fontTools.ttLib import TTFont
 

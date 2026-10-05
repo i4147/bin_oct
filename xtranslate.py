@@ -4,7 +4,6 @@ Merges 15 scripts into one argparse-driven tool.
 Third-party requirements (matching what the originals already used): pip install deep-translator # required pip install langdetect # optional, only for `--detect langdetect` Mapping of every original script to its merged equivalent: autotrans.py -> xtranslate copy --output-suffix _eng --chunk-size 32768 -w 8 dtransline.py -> xtranslate inline --detect ascii-ratio --threshold 0.6 -w N gtrans.py -> xtranslate pair --target fa [--output FILE] ptrans.py -> xtranslate inline --detect chinese -w N ptranslator.py -> xtranslate copy --chunk-size 5000 --check-python-syntax [--output-dir D] trans_file_linebyline.py -> xtranslate marked [--replace] trans_words.py -> xtranslate json --chunk-size 4500 -w 8 transasis.py -> xtranslate copy --output-prefix translated_ --chunk-size 2000 translate2.py -> xtranslate resume --batch-size 100 -w 4 --save-interval 10 translate_file.py -> xtranslate inline --extensions .txt .md .py .json .csv -w 8 transline.py -> xtranslate segment --segment-pattern "[\u4e00-\u9fff...]+" transline2.py -> xtranslate inline --extensions .md .txt -w 8 ultratranslator.py -> xtranslate inline --use-file-api --retries 2 Examples -------- # In-place line-by-line translation of a source tree python xtranslate.py inline ./src --extensions .py .md --workers 8 # Chunked translation to new files python xtranslate.py copy ./docs --output-suffix _eng --chunk-size 32768 # Side-by-side preview of a single file python xtranslate.py pair notes.txt --target fa # Resumable batch translation with periodic saves python xtranslate.py resume big.txt --batch-size 100 --save-interval 10"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import json
@@ -24,7 +23,6 @@ try:
 except ImportError:  # pragma: no cover
     sys.stderr.write("Missing dependency: pip install deep-translator\n")
     raise
-
 DEFAULT_EXTENSIONS: tuple[str, ...] = (
     ".txt",
     ".md",
@@ -36,31 +34,26 @@ DEFAULT_EXTENSIONS: tuple[str, ...] = (
     ".xml",
     ".csv",
 )
-EXCLUDE_DIRS: frozenset[str] = frozenset(
-    {
-        "lazy",
-        ".git",
-        ".hg",
-        ".svn",
-        "node_modules",
-        "__pycache__",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".venv",
-        "venv",
-    }
-)
-
+EXCLUDE_DIRS: frozenset[str] = frozenset({
+    "lazy",
+    ".git",
+    ".hg",
+    ".svn",
+    "node_modules",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+})
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
 CHINESE_RUN = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]+")
-
 DEFAULT_CHUNK_SIZE = 32768
 DEFAULT_TARGET = "en"
 DEFAULT_WORKERS = 8
 DEFAULT_RETRIES = 3
 DEFAULT_DELAY = 0.5
-
 log = logging.getLogger("xtranslate")
 
 
@@ -87,7 +80,6 @@ def looks_english(
     stripped = text.strip()
     if not stripped:
         return True
-
     if method == "none":
         return False
     if method == "non-ascii":
@@ -101,7 +93,6 @@ def looks_english(
             return detect(stripped) == "en"
         except Exception:
             return True
-
     letters = [c for c in stripped if c.isalpha()]
     if not letters:
         return True
@@ -157,7 +148,6 @@ def iter_files(
 ) -> Iterator[Path]:
     exclude_resolved = {Path(p).resolve() for p in exclude}
     ext_set = {e.lower() for e in extensions} if extensions else None
-
     for p_str in paths:
         p = Path(p_str).expanduser().resolve()
         if not p.exists():
@@ -167,7 +157,6 @@ def iter_files(
             if p not in exclude_resolved and not is_binary(p):
                 yield p
             continue
-
         for f in p.rglob("*"):
             if not f.is_file():
                 continue
@@ -246,10 +235,8 @@ def _inline_process_one(path: Path, opts: dict[str, Any]) -> str:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as exc:
         return f"✗ {path}: {exc}"
-
     if not opts.get("force") and not has_non_ascii(text):
         return f"~ {path.name} (already English)"
-
     translator = Translator(opts["source"], opts["target"], opts["retries"], opts["delay"])
     lines = text.splitlines(keepends=True)
     changed = 0
@@ -259,7 +246,6 @@ def _inline_process_one(path: Path, opts: dict[str, Any]) -> str:
         if new != line:
             changed += 1
         out.append(new)
-
     if changed == 0:
         return f"~ {path.name} (nothing to translate)"
     if opts.get("dry_run"):
@@ -274,12 +260,10 @@ def _marked_process_one(path: Path, opts: dict[str, Any]) -> str:
         shutil.copyfile(path, backup)
     except OSError as exc:
         return f"✗ {path}: cannot create backup: {exc}"
-
     try:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as exc:
         return f"✗ {path}: {exc}"
-
     translator = Translator(opts["source"], opts["target"], opts["retries"], opts["delay"])
     lines = text.splitlines(keepends=True)
     out: list[str] = []
@@ -296,7 +280,6 @@ def _marked_process_one(path: Path, opts: dict[str, Any]) -> str:
         else:
             out.append(f"{stripped} [TRANSLATION: {translated}]{newline}")
         changed += 1
-
     if opts.get("dry_run"):
         return f"[dry-run] would update {path} ({changed} lines, backup={backup.name})"
     atomic_write(path, "".join(out), encoding="utf-8")
@@ -342,10 +325,8 @@ def mode_inline(args: argparse.Namespace) -> int:
     print(f"Found {len(files)} files. Workers={args.workers}")
     opts = _common_opts(args)
     opts["use_file_api"] = getattr(args, "use_file_api", False)
-
     if opts["use_file_api"]:
         return _run_file_api_mode(files, opts, args.workers)
-
     tasks = [(str(f), opts) for f in files]
     for status in _run_workers(_inline_file_worker, tasks, args.workers):
         print(status)
@@ -397,7 +378,6 @@ def mode_copy(args: argparse.Namespace) -> int:
         print("No files to process.")
         return 0
     print(f"Found {len(files)} files. Workers={args.workers}")
-
     for path in files:
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
@@ -407,20 +387,17 @@ def mode_copy(args: argparse.Namespace) -> int:
         if not args.force and not has_non_ascii(text):
             print(f"~ {path.name} (already English)")
             continue
-
         chunks = list(chunk_by_size(text, args.chunk_size))
         print(f"→ {path.name}: {len(chunks)} chunks")
         tasks = [(c, args.source, args.target, args.retries, args.delay) for c in chunks]
         results = _run_workers(_chunk_worker, tasks, args.workers)
         result_text = "".join(results)
-
         if args.check_python_syntax and path.suffix == ".py":
             try:
                 ast.parse(result_text)
             except SyntaxError as exc:
                 log.error("Syntax error in translated Python for %s: %s", path, exc)
                 continue
-
         out_path = _resolve_output_path(path, args)
         if args.dry_run:
             print(f"[dry-run] would write {out_path}")
@@ -450,31 +427,25 @@ def mode_json(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-
     for path in files:
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             log.error("Cannot read %s: %s", path, exc)
             continue
-
         chunks = chunk_with_lines(text, args.chunk_size)
         print(f"→ {path.name}: {len(chunks)} chunks")
         tasks = [(c[2], args.source, args.target, args.retries, args.delay) for c in chunks]
         results = _run_workers(_chunk_worker, tasks, args.workers)
-
         records = []
         for (start, end, original), translated in zip(chunks, results):
-            records.append(
-                {
-                    "chunk_id": f"{start}_{end}",
-                    "start_line": start,
-                    "end_line": end,
-                    "translated": translated,
-                    "skipped": translated == original,
-                }
-            )
-
+            records.append({
+                "chunk_id": f"{start}_{end}",
+                "start_line": start,
+                "end_line": end,
+                "translated": translated,
+                "skipped": translated == original,
+            })
         out_path = path.with_suffix(".json")
         if args.dry_run:
             print(f"[dry-run] would write {out_path}")
@@ -492,11 +463,9 @@ def mode_pair(args: argparse.Namespace) -> int:
             files.append(p)
         else:
             files.extend(iter_files([p], args.extensions, args.exclude))
-
     if not files:
         print("No files to process.")
         return 0
-
     translator = Translator(args.source, args.target, args.retries, args.delay)
     for path in files:
         try:
@@ -512,7 +481,6 @@ def mode_pair(args: argparse.Namespace) -> int:
             buf.append(f"→ {translated}")
             buf.append("")
         result = "\n".join(buf)
-
         if args.output:
             out_path = Path(args.output)
             atomic_write(out_path, result, encoding="utf-8")
@@ -558,7 +526,6 @@ def mode_segment(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-
     for path in files:
         _segment_one(path, args, pattern)
     return 0
@@ -570,18 +537,14 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
     except OSError as exc:
         log.error("Cannot read %s: %s", path, exc)
         return
-
     lines = text.splitlines(keepends=True)
-
     tasks: list[tuple[int, int, int, str]] = []
     for i, line in enumerate(lines):
         for m in pattern.finditer(line):
             tasks.append((i, m.start(), m.end(), m.group()))
-
     if not tasks:
         print(f"~ {path.name}: no matches")
         return
-
     progress_path = path.with_suffix(path.suffix + args.progress_suffix)
     progress: dict[str, dict[str, str]] = {}
     if progress_path.exists():
@@ -589,20 +552,15 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
             progress = json.loads(progress_path.read_text(encoding="utf-8"))
         except Exception:
             progress = {}
-
     pending = [t for t in tasks if str(t[0]) not in progress or f"{t[1]},{t[2]}" not in progress[str(t[0])]]
     print(f"→ {path.name}: {len(pending)}/{len(tasks)} segments to translate")
-
     chunk_tasks = [(t[3], args.source, args.target, args.retries, args.delay) for t in pending]
     results = _run_workers(_chunk_worker, chunk_tasks, args.workers) if pending else []
-
     for (line_idx, s, e, _), tr in zip(pending, results):
         progress.setdefault(str(line_idx), {})[f"{s},{e}"] = tr
-
     if args.dry_run:
         print(f"[dry-run] would write {path} and {progress_path.name}")
         return
-
     rebuilt: list[str] = []
     for i, line in enumerate(lines):
         cache = progress.get(str(i))
@@ -621,7 +579,6 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
             pos = e
         parts.append(stripped[pos:])
         rebuilt.append("".join(parts) + newline)
-
     atomic_write(path, "".join(rebuilt), encoding="utf-8")
     atomic_write(progress_path, json.dumps(progress, ensure_ascii=False, indent=2))
     print(f"✓ {path}")
@@ -654,7 +611,6 @@ def mode_resume(args: argparse.Namespace) -> int:
     signal.signal(signal.SIGINT, _handle_signal)
     if hasattr(signal, "SIGTERM"):
         signal.signal(signal.SIGTERM, _handle_signal)
-
     files = list(
         iter_files(
             args.paths,
@@ -666,12 +622,10 @@ def mode_resume(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-
     for path in files:
         if _shutdown:
             break
         _resume_one(path, args)
-
     if _shutdown:
         log.warning("Stopped early — rerun the same command to continue.")
         return 130
@@ -684,23 +638,18 @@ def _resume_one(path: Path, args: argparse.Namespace) -> None:
     except OSError as exc:
         log.error("Cannot read %s: %s", path, exc)
         return
-
     lines = text.splitlines()
     if not lines:
         print(f"~ {path.name}: empty")
         return
-
     out_path = Path(args.output) if args.output else path.with_suffix(path.suffix + ".translated.txt")
     meta_path = Path(args.meta) if args.meta else Path(str(out_path) + ".meta.json")
-
     batch_size = max(1, args.batch_size)
     indexed = list(enumerate(lines))
     batches = [indexed[i : i + batch_size] for i in range(0, len(indexed), batch_size)]
     tasks = [(args.source, args.target, b, args.retries, args.delay) for b in batches]
-
     translations: dict[int, str] = {}
     print(f"→ {path.name}: {len(lines)} lines / {len(batches)} batches (workers={args.workers}) -> {out_path}")
-
     pool = mp.Pool(processes=args.workers) if args.workers > 1 else None
     last_save = time.time()
     try:
@@ -709,7 +658,6 @@ def _resume_one(path: Path, args: argparse.Namespace) -> None:
                 break
             results = pool.apply(_resume_translate_batch, (task,)) if pool else _resume_translate_batch(task)
             translations.update(dict(results))
-
             now = time.time()
             if now - last_save >= args.save_interval or i == len(tasks) - 1:
                 _resume_flush(out_path, meta_path, path, lines, translations, complete=False)
@@ -720,7 +668,6 @@ def _resume_one(path: Path, args: argparse.Namespace) -> None:
         if pool is not None:
             pool.terminate()
             pool.join()
-
     complete = (not _shutdown) and len(translations) == len(lines)
     _resume_flush(out_path, meta_path, path, lines, translations, complete=complete)
     tag = "✓ complete" if complete else "… interrupted"
@@ -816,7 +763,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="mode", required=True)
-
     p_inline = sub.add_parser("inline", help="Line-by-line in-place translation.")
     _add_common(p_inline)
     p_inline.add_argument("--force", action="store_true", help="Translate even files that look English.")
@@ -826,7 +772,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Use GoogleTranslator.translate_file (ultratranslator.py).",
     )
     p_inline.set_defaults(func=mode_inline)
-
     p_copy = sub.add_parser("copy", help="Chunked translation to a new file.")
     _add_common(p_copy)
     p_copy.add_argument(
@@ -853,7 +798,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_copy.add_argument("--force", action="store_true", help="Translate even files that look English.")
     p_copy.set_defaults(func=mode_copy)
-
     p_json = sub.add_parser("json", help="Chunked translation to a JSON file.")
     _add_common(p_json)
     p_json.add_argument(
@@ -863,7 +807,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Max chars per chunk (default: 4500).",
     )
     p_json.set_defaults(func=mode_json)
-
     p_pair = sub.add_parser("pair", help="Side-by-side translation of one file.")
     _add_common(p_pair)
     p_pair.add_argument(
@@ -873,7 +816,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write side-by-side output to this file instead of stdout.",
     )
     p_pair.set_defaults(func=mode_pair)
-
     p_marked = sub.add_parser("marked", help="In-place with [TRANSLATION: …] markers.")
     _add_common(p_marked)
     p_marked.add_argument(
@@ -887,7 +829,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Backup file suffix (default: .backup).",
     )
     p_marked.set_defaults(func=mode_marked)
-
     p_seg = sub.add_parser("segment", help="Regex-segment in-place translation.")
     _add_common(p_seg)
     p_seg.add_argument(
@@ -901,7 +842,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Suffix of the resume cache file (default: .xlprogress).",
     )
     p_seg.set_defaults(func=mode_segment)
-
     p_res = sub.add_parser("resume", help="Resumable batch translation with meta JSON.")
     _add_common(p_res)
     p_res.add_argument(
@@ -919,7 +859,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Seconds between periodic saves (default: 10).",
     )
     p_res.set_defaults(func=mode_resume)
-
     return parser
 
 

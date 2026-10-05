@@ -3,12 +3,10 @@
 Usage: cpprun <file.c|file.cpp|file.cc> [args...] Install: pip install sh"""
 
 from __future__ import annotations
-
 import os
 import stat
 import sys
 from pathlib import Path
-
 import sh
 
 COMPILERS = {
@@ -30,12 +28,10 @@ def cpp_run(*args):
     if not args:
         print("Usage: cpprun <file.c|file.cpp|file.cc> [args...]")
         return 1
-
     src = Path(args[0]).expanduser().resolve()
     if not src.is_file():
         print(f"Error: {src} not found", file=sys.stderr)
         return 1
-
     ext = src.suffix.lower()
     if ext not in COMPILERS:
         print(
@@ -43,17 +39,14 @@ def cpp_run(*args):
             file=sys.stderr,
         )
         return 1
-
     preferred, fallbacks = COMPILERS[ext]
     compiler_name = _pick_compiler((preferred, *fallbacks))
     if compiler_name is None:
         print("Error: no compiler found. Run: pkg install clang", file=sys.stderr)
         return 1
-
     tmpdir = Path(os.environ.get("TMPDIR") or f"{os.environ.get('PREFIX', '/data/data/com.termux/files/usr')}/tmp")
     tmpdir.mkdir(parents=True, exist_ok=True)
     exe = tmpdir / src.stem
-
     std_flag = "-std=c17" if ext == ".c" else "-std=c++17"
     compiler = sh.Command(compiler_name)
     try:
@@ -73,9 +66,7 @@ def cpp_run(*args):
     except sh.CommandNotFound:
         print(f"Error: {compiler_name} not found on PATH", file=sys.stderr)
         return 1
-
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-
     try:
         prog = sh.Command(str(exe))
         prog(
@@ -88,7 +79,6 @@ def cpp_run(*args):
         return e.exit_code
     except KeyboardInterrupt:
         return 130
-
     return 0
 
 

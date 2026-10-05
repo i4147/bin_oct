@@ -6,7 +6,6 @@ python import_tools.py check-load file1.py file2.py python import_tools.py find-
 python import_tools.py transform some_file.py Optional third-party packages (only used by specific subcommands): pip install loguru # nicer logs (fallback to logging) pip install tree_sitter tree_sitter_python rapidfuzz # for find-py2"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import importlib.util
@@ -27,323 +26,313 @@ from typing import Any, Iterable, Iterator
 DEFAULT_SHEBANG: str = "#!/data/data/com.termux/files/usr/bin/python\n"
 DEFAULT_JOBS: int = 8
 DEFAULT_PY2_THRESHOLD: int = 85
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".venv",
-        "venv",
-        "env",
-        ".env",
-        "build",
-        "dist",
-        "egg-info",
-        ".tox",
-        ".eggs",
-    }
-)
-
-STDLIB_MODULES: frozenset[str] = frozenset(
-    {
-        "abc",
-        "argparse",
-        "array",
-        "ast",
-        "asyncio",
-        "base64",
-        "bisect",
-        "builtins",
-        "bz2",
-        "calendar",
-        "cmath",
-        "cmd",
-        "code",
-        "codecs",
-        "codeop",
-        "collections",
-        "colorsys",
-        "compileall",
-        "concurrent",
-        "configparser",
-        "contextlib",
-        "contextvars",
-        "copy",
-        "copyreg",
-        "cProfile",
-        "crypt",
-        "csv",
-        "ctypes",
-        "curses",
-        "dataclasses",
-        "datetime",
-        "dbm",
-        "decimal",
-        "difflib",
-        "dis",
-        "distutils",
-        "doctest",
-        "email",
-        "encodings",
-        "ensurepip",
-        "enum",
-        "errno",
-        "faulthandler",
-        "fcntl",
-        "filecmp",
-        "fileinput",
-        "fnmatch",
-        "fractions",
-        "ftplib",
-        "functools",
-        "gc",
-        "getopt",
-        "getpass",
-        "gettext",
-        "glob",
-        "graphlib",
-        "grp",
-        "gzip",
-        "hashlib",
-        "heapq",
-        "hmac",
-        "html",
-        "http",
-        "idlelib",
-        "imaplib",
-        "imghdr",
-        "imp",
-        "importlib",
-        "inspect",
-        "io",
-        "ipaddress",
-        "itertools",
-        "json",
-        "keyword",
-        "lib2to3",
-        "linecache",
-        "locale",
-        "logging",
-        "lzma",
-        "mailbox",
-        "mailcap",
-        "marshal",
-        "math",
-        "mimetypes",
-        "mmap",
-        "modulefinder",
-        "multiprocessing",
-        "netrc",
-        "nis",
-        "nntplib",
-        "numbers",
-        "operator",
-        "optparse",
-        "os",
-        "ossaudiodev",
-        "parser",
-        "pathlib",
-        "pdb",
-        "pickle",
-        "pickletools",
-        "pipes",
-        "pkgutil",
-        "platform",
-        "plistlib",
-        "poplib",
-        "posix",
-        "posixpath",
-        "pprint",
-        "profile",
-        "pstats",
-        "pty",
-        "pwd",
-        "py_compile",
-        "pyclbr",
-        "pydoc",
-        "queue",
-        "quopri",
-        "random",
-        "re",
-        "readline",
-        "reprlib",
-        "resource",
-        "rlcompleter",
-        "runpy",
-        "sched",
-        "secrets",
-        "select",
-        "selectors",
-        "shelve",
-        "shlex",
-        "shutil",
-        "signal",
-        "site",
-        "smtpd",
-        "smtplib",
-        "sndhdr",
-        "socket",
-        "socketserver",
-        "spwd",
-        "sqlite3",
-        "ssl",
-        "stat",
-        "statistics",
-        "string",
-        "stringprep",
-        "struct",
-        "subprocess",
-        "sunau",
-        "symtable",
-        "sys",
-        "sysconfig",
-        "syslog",
-        "tabnanny",
-        "tarfile",
-        "telnetlib",
-        "tempfile",
-        "termios",
-        "test",
-        "textwrap",
-        "threading",
-        "time",
-        "timeit",
-        "tkinter",
-        "token",
-        "tokenize",
-        "trace",
-        "traceback",
-        "tracemalloc",
-        "tty",
-        "turtle",
-        "turtledemo",
-        "types",
-        "typing",
-        "typing_extensions",
-        "unicodedata",
-        "unittest",
-        "urllib",
-        "uu",
-        "uuid",
-        "venv",
-        "warnings",
-        "wave",
-        "weakref",
-        "webbrowser",
-        "winreg",
-        "winsound",
-        "wsgiref",
-        "xdrlib",
-        "xml",
-        "xmlrpc",
-        "zipapp",
-        "zipfile",
-        "zipimport",
-        "zlib",
-        "zoneinfo",
-    }
-)
-
-BUILTIN_NAMES: frozenset[str] = frozenset(
-    {
-        "print",
-        "len",
-        "range",
-        "str",
-        "int",
-        "float",
-        "list",
-        "dict",
-        "set",
-        "tuple",
-        "bool",
-        "bytes",
-        "bytearray",
-        "object",
-        "type",
-        "super",
-        "property",
-        "classmethod",
-        "staticmethod",
-        "open",
-        "input",
-        "enumerate",
-        "zip",
-        "map",
-        "filter",
-        "sorted",
-        "reversed",
-        "sum",
-        "min",
-        "max",
-        "all",
-        "any",
-        "abs",
-        "round",
-        "pow",
-        "divmod",
-        "hex",
-        "oct",
-        "bin",
-        "ord",
-        "chr",
-        "ascii",
-        "repr",
-        "format",
-        "hash",
-        "id",
-        "isinstance",
-        "issubclass",
-        "callable",
-        "iter",
-        "next",
-        "compile",
-        "eval",
-        "exec",
-        "globals",
-        "locals",
-        "vars",
-        "dir",
-        "help",
-        "getattr",
-        "setattr",
-        "delattr",
-        "hasattr",
-        "Exception",
-        "BaseException",
-        "ValueError",
-        "TypeError",
-        "RuntimeError",
-        "KeyError",
-        "IndexError",
-        "AttributeError",
-        "NameError",
-        "IOError",
-        "OSError",
-        "ImportError",
-        "ModuleNotFoundError",
-        "StopIteration",
-        "GeneratorExit",
-        "KeyboardInterrupt",
-        "SystemExit",
-        "NotImplemented",
-        "Ellipsis",
-        "None",
-        "True",
-        "False",
-        "__name__",
-        "__doc__",
-        "__package__",
-        "__file__",
-        "__cached__",
-        "__loader__",
-        "__spec__",
-        "self",
-        "cls",
-    }
-)
-
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    "build",
+    "dist",
+    "egg-info",
+    ".tox",
+    ".eggs",
+})
+STDLIB_MODULES: frozenset[str] = frozenset({
+    "abc",
+    "argparse",
+    "array",
+    "ast",
+    "asyncio",
+    "base64",
+    "bisect",
+    "builtins",
+    "bz2",
+    "calendar",
+    "cmath",
+    "cmd",
+    "code",
+    "codecs",
+    "codeop",
+    "collections",
+    "colorsys",
+    "compileall",
+    "concurrent",
+    "configparser",
+    "contextlib",
+    "contextvars",
+    "copy",
+    "copyreg",
+    "cProfile",
+    "crypt",
+    "csv",
+    "ctypes",
+    "curses",
+    "dataclasses",
+    "datetime",
+    "dbm",
+    "decimal",
+    "difflib",
+    "dis",
+    "distutils",
+    "doctest",
+    "email",
+    "encodings",
+    "ensurepip",
+    "enum",
+    "errno",
+    "faulthandler",
+    "fcntl",
+    "filecmp",
+    "fileinput",
+    "fnmatch",
+    "fractions",
+    "ftplib",
+    "functools",
+    "gc",
+    "getopt",
+    "getpass",
+    "gettext",
+    "glob",
+    "graphlib",
+    "grp",
+    "gzip",
+    "hashlib",
+    "heapq",
+    "hmac",
+    "html",
+    "http",
+    "idlelib",
+    "imaplib",
+    "imghdr",
+    "imp",
+    "importlib",
+    "inspect",
+    "io",
+    "ipaddress",
+    "itertools",
+    "json",
+    "keyword",
+    "lib2to3",
+    "linecache",
+    "locale",
+    "logging",
+    "lzma",
+    "mailbox",
+    "mailcap",
+    "marshal",
+    "math",
+    "mimetypes",
+    "mmap",
+    "modulefinder",
+    "multiprocessing",
+    "netrc",
+    "nis",
+    "nntplib",
+    "numbers",
+    "operator",
+    "optparse",
+    "os",
+    "ossaudiodev",
+    "parser",
+    "pathlib",
+    "pdb",
+    "pickle",
+    "pickletools",
+    "pipes",
+    "pkgutil",
+    "platform",
+    "plistlib",
+    "poplib",
+    "posix",
+    "posixpath",
+    "pprint",
+    "profile",
+    "pstats",
+    "pty",
+    "pwd",
+    "py_compile",
+    "pyclbr",
+    "pydoc",
+    "queue",
+    "quopri",
+    "random",
+    "re",
+    "readline",
+    "reprlib",
+    "resource",
+    "rlcompleter",
+    "runpy",
+    "sched",
+    "secrets",
+    "select",
+    "selectors",
+    "shelve",
+    "shlex",
+    "shutil",
+    "signal",
+    "site",
+    "smtpd",
+    "smtplib",
+    "sndhdr",
+    "socket",
+    "socketserver",
+    "spwd",
+    "sqlite3",
+    "ssl",
+    "stat",
+    "statistics",
+    "string",
+    "stringprep",
+    "struct",
+    "subprocess",
+    "sunau",
+    "symtable",
+    "sys",
+    "sysconfig",
+    "syslog",
+    "tabnanny",
+    "tarfile",
+    "telnetlib",
+    "tempfile",
+    "termios",
+    "test",
+    "textwrap",
+    "threading",
+    "time",
+    "timeit",
+    "tkinter",
+    "token",
+    "tokenize",
+    "trace",
+    "traceback",
+    "tracemalloc",
+    "tty",
+    "turtle",
+    "turtledemo",
+    "types",
+    "typing",
+    "typing_extensions",
+    "unicodedata",
+    "unittest",
+    "urllib",
+    "uu",
+    "uuid",
+    "venv",
+    "warnings",
+    "wave",
+    "weakref",
+    "webbrowser",
+    "winreg",
+    "winsound",
+    "wsgiref",
+    "xdrlib",
+    "xml",
+    "xmlrpc",
+    "zipapp",
+    "zipfile",
+    "zipimport",
+    "zlib",
+    "zoneinfo",
+})
+BUILTIN_NAMES: frozenset[str] = frozenset({
+    "print",
+    "len",
+    "range",
+    "str",
+    "int",
+    "float",
+    "list",
+    "dict",
+    "set",
+    "tuple",
+    "bool",
+    "bytes",
+    "bytearray",
+    "object",
+    "type",
+    "super",
+    "property",
+    "classmethod",
+    "staticmethod",
+    "open",
+    "input",
+    "enumerate",
+    "zip",
+    "map",
+    "filter",
+    "sorted",
+    "reversed",
+    "sum",
+    "min",
+    "max",
+    "all",
+    "any",
+    "abs",
+    "round",
+    "pow",
+    "divmod",
+    "hex",
+    "oct",
+    "bin",
+    "ord",
+    "chr",
+    "ascii",
+    "repr",
+    "format",
+    "hash",
+    "id",
+    "isinstance",
+    "issubclass",
+    "callable",
+    "iter",
+    "next",
+    "compile",
+    "eval",
+    "exec",
+    "globals",
+    "locals",
+    "vars",
+    "dir",
+    "help",
+    "getattr",
+    "setattr",
+    "delattr",
+    "hasattr",
+    "Exception",
+    "BaseException",
+    "ValueError",
+    "TypeError",
+    "RuntimeError",
+    "KeyError",
+    "IndexError",
+    "AttributeError",
+    "NameError",
+    "IOError",
+    "OSError",
+    "ImportError",
+    "ModuleNotFoundError",
+    "StopIteration",
+    "GeneratorExit",
+    "KeyboardInterrupt",
+    "SystemExit",
+    "NotImplemented",
+    "Ellipsis",
+    "None",
+    "True",
+    "False",
+    "__name__",
+    "__doc__",
+    "__package__",
+    "__file__",
+    "__cached__",
+    "__loader__",
+    "__spec__",
+    "self",
+    "cls",
+})
 IGNORED_AUTOFIX: frozenset[str] = frozenset({"imp", "cmd", "keyword", "token"})
-
 STDLIB_MEMBER_MAP: dict[str, set[str]] = {
     "os": {
         "path",
@@ -539,7 +528,6 @@ def collect_names_from_tree(tree: ast.Module) -> tuple[set[str], set[str], set[s
             used.add(node.id)
         elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
             used.add(node.value.id)
-
     return imported, assigned, used
 
 
@@ -576,7 +564,6 @@ def insert_imports(path: Path, imports: list[str]) -> bool:
     lines = src.split("\n")
     pos = top_import_block_end(lines)
     block = [f"{imp}\n" if not imp.endswith("\n") else imp for imp in imports]
-
     new = "\n".join(lines[:pos] + [imp.rstrip("\n") for imp in imports] + lines[pos:])
     path.write_text(new, encoding="utf-8")
     return True
@@ -594,10 +581,8 @@ def _detect_missing(path: Path, strategy: str) -> list[str]:
     if tree is None:
         return []
     imported, assigned, used = collect_names_from_tree(tree)
-
     suggestions: list[str] = []
     seen_modules: set[str] = set()
-
     for name in sorted(used):
         if name in imported or name in assigned:
             continue
@@ -605,7 +590,6 @@ def _detect_missing(path: Path, strategy: str) -> list[str]:
             continue
         if name.startswith("_"):
             continue
-
         if strategy == "spec":
             try:
                 if find_spec(name) is not None:
@@ -623,7 +607,6 @@ def _detect_missing(path: Path, strategy: str) -> list[str]:
                     if name in members and module not in imported:
                         suggestions.append(f"from {module} import {name}")
                         break
-
     out: list[str] = []
     seen: set[str] = set()
     for s in suggestions:
@@ -654,10 +637,8 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
         print("No Python files found.")
         return 0
     print(f"Scanning {len(files)} Python file(s) with {ns.jobs} worker(s) (strategy={ns.strategy})...")
-
     with Pool(processes=ns.jobs) as pool:
         results = pool.map(_worker_check_missing, [(f, ns.strategy) for f in files])
-
     total = 0
     fixed = 0
     for path, missing in results:
@@ -673,7 +654,6 @@ def cmd_check_missing(ns: argparse.Namespace) -> int:
                 fixed += 1
             else:
                 print("  ✗ Failed to fix")
-
     print("\n" + "=" * 40)
     print(f"Total missing imports: {total}")
     if ns.autofix:
@@ -742,14 +722,11 @@ def _position_deep(path: Path) -> list[tuple[int, int, str]]:
     tree = parse_file(path)
     if tree is None:
         return []
-
     mapper = _ParentMapper()
     mapper.visit(tree)
     parents = mapper.parents
-
     lines = src.split("\n")
     head = top_import_block_end(lines)
-
     offenders: list[tuple[int, int, str]] = []
     for node in tree.body:
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -787,7 +764,6 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.")
         return 0
-
     scanned = offenders_files = fixed = 0
     report: list[str] = []
     for path in files:
@@ -797,7 +773,6 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
         else:
             offenders = _position_basic(path)  # type: ignore[assignment]
             details = [f"  {d}" for d in offenders]  # type: ignore[union-attr]
-
         if not offenders:
             continue
         offenders_files += 1
@@ -807,17 +782,14 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
         for d in details:
             print(d)
         report.append(f"File: {relpath}\n" + "\n".join(details))
-
         if ns.autofix and ns.deep and _autofix_position(path, offenders):  # type: ignore[arg-type]
             fixed += 1
             print(f"  [FIXED] moved {len(offenders)} import(s)")
-
     print("\n" + "=" * 40)
     print(f"Files with misplaced imports: {offenders_files}")
     print(f"Total misplaced imports: {scanned}")
     if ns.autofix:
         print(f"Files fixed: {fixed}")
-
     if ns.output:
         out = Path(ns.output)
         if report:
@@ -825,7 +797,6 @@ def cmd_check_position(ns: argparse.Namespace) -> int:
         else:
             out.write_text("No misplaced imports found!\n", encoding="utf-8")
         print(f"Report saved to: {out}")
-
     return 1 if offenders_files and not ns.autofix else 0
 
 
@@ -892,14 +863,12 @@ def cmd_find_py2(ns: argparse.Namespace) -> int:
     except ImportError as exc:
         LOG.error(f"find-py2 needs tree_sitter, tree_sitter_python, rapidfuzz: {exc}")
         return 2
-
     root: Path = ns.directory.resolve()
     parser = Parser()
     parser.language = Language(tsp.language())
     import_node_types = {"import_statement", "import_from_statement"}
     stdlib_lc = {m.lower() for m in STDLIB_MODULES}
     stdlib_list = sorted(stdlib_lc)
-
     for path in iter_py_files(root):
         if path.is_symlink():
             continue
@@ -916,7 +885,6 @@ def cmd_find_py2(ns: argparse.Namespace) -> int:
             name = _extract_module_name(text)
             if name and not name.startswith("_") and name not in found:
                 found.append(name)
-
         for name in sorted(set(found)):
             low = name.lower()
             if low in stdlib_lc and low not in {"io", "os", "pathlib", "ast", "urllib"}:
@@ -1060,8 +1028,6 @@ def build_parser() -> argparse.ArgumentParser:
         """),
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-
-    # check-missing
     cm = sub.add_parser("check-missing", help="Find missing imports (spec/stdlib/mapped).")
     cm.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     cm.add_argument("-j", "--jobs", type=int, default=cpu_count())
@@ -1080,8 +1046,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extra directory name(s) to exclude",
     )
     cm.set_defaults(func=cmd_check_missing)
-
-    # check-position
     cp = sub.add_parser("check-position", help="Find imports that appear after code / inside scopes.")
     cp.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     cp.add_argument(
@@ -1097,7 +1061,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cp.add_argument("-o", "--output", type=str, default=None)
     cp.set_defaults(func=cmd_check_position)
-
     ai = sub.add_parser("add-import", help="Prepend 'import NAME' to every .py file.")
     ai.add_argument("name", help="Module name to import")
     ai.add_argument("-d", "--directory", type=Path, default=Path.cwd())
@@ -1107,23 +1070,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Shebang to insert when the file has none.",
     )
     ai.set_defaults(func=cmd_add_import)
-
-    # check-load
     cl = sub.add_parser("check-load", help="Import each given file to detect runtime errors.")
     cl.add_argument("files", nargs="+")
     cl.set_defaults(func=cmd_check_load)
-
-    # find-py2
     fp = sub.add_parser("find-py2", help="Detect Python-2-style imports via tree-sitter.")
     fp.add_argument("-d", "--directory", type=Path, default=Path.cwd())
     fp.add_argument("--threshold", type=int, default=DEFAULT_PY2_THRESHOLD)
     fp.add_argument("--no-color", action="store_true")
     fp.set_defaults(func=cmd_find_py2)
-
     tr = sub.add_parser("transform", help="Rewrite 'import m; m.x' -> 'from m import x'.")
     tr.add_argument("file")
     tr.set_defaults(func=cmd_transform)
-
     return p
 
 

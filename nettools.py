@@ -9,7 +9,6 @@ signal_meter.py -> python merged_net_tools.py signal ...
 External dependencies (install via `pip install ...`): requests # proxy-test colorama # proxy-test (colored ✅/❌) rich # signal (panel/TUI) pycurl # show-ip --engine=pycurl (optional; urllib fallback) Usage examples -------------- python merged_net_tools.py proxy-test -f proxies.txt -w 8 python merged_net_tools.py net-info --no-speedtest python merged_net_tools.py ping 8.8.8.8 -c 5 -q python merged_net_tools.py set-dns -n "Cloudflare DNS" python merged_net_tools.py show-ip --engine pycurl python merged_net_tools.py signal --interval 1.5"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import json
@@ -92,7 +91,6 @@ def read_dns_servers(path: Path) -> list[str]:
                         servers.append(parts[1])
     except Exception as e:
         return [f"Error retrieving DNS: {e}"]
-
     seen, uniq = set(), []
     for s in servers:
         if s not in seen:
@@ -122,31 +120,25 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
     if requests is None:
         print("Error: 'requests' package is required for proxy-test. `pip install requests`")
         return 2
-
     src = Path(args.file)
     if not src.exists():
         print(f"Error: proxies file '{src}' not found.")
         return 1
-
     proxies = [ln.strip() for ln in src.read_text().splitlines() if ln.strip()]
     if not proxies:
         print("No proxies to test.")
         return 0
-
     total = len(proxies)
     jobs = [(i, total, p) for i, p in enumerate(proxies, start=1)]
     valid: list[str] = []
-
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         for line, good in pool.map(lambda t: _probe_one(*t, timeout=args.timeout, delay=args.delay), jobs):
             print(line)
             if good:
                 valid.append(good)
-
     if not valid:
         print("No valid proxies found.")
         return 0
-
     out_path: Optional[str] = args.output
     if out_path is None:
         answer = input("Do you want to save the valid proxies to a file? (y/n): ").strip().lower()
@@ -156,7 +148,6 @@ def cmd_proxy_test(args: argparse.Namespace) -> int:
             input("Enter the filename to save valid proxies (default:valid_proxies.txt): ").strip()
             or "valid_proxies.txt"
         )
-
     Path(out_path).write_text("\n".join(valid) + "\n", encoding="utf-8")
     print(f"Valid proxies saved to {out_path}")
     return 0
@@ -185,7 +176,6 @@ def _speed_upload(url: str, size: int = 1024 * 1024, timeout: float = 20.0) -> O
         + payload
         + f"\r\n--{boundary}--\r\n".encode()
     )
-
     req = urlrequest.Request(url, data=body)
     req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
     t0 = time.time()
@@ -202,14 +192,11 @@ def cmd_net_info(args: argparse.Namespace) -> int:
     print("-" * 40)
     print(" NETWORK STATES ")
     print("-" * 40)
-
     print("\n[*] Public IP:")
     pub = get_public_ip()
     print(f"    {pub}" if pub else "    Could not determine public IP.")
-
     print("\n[*] Local IP (primary interface):")
     print(f"    {get_local_ip()}")
-
     print("\n[*] DNS Servers:")
     dns = read_dns_servers(Path(args.dns_path))
     if dns:
@@ -220,17 +207,14 @@ def cmd_net_info(args: argparse.Namespace) -> int:
             print(f"    (plus {len(dns) - 2} more)")
     else:
         print("    No DNS servers found.")
-
     if not args.no_speedtest:
         print("\n[*] Speed test")
         print("    Testing download speed...")
         dl = _speed_download(args.download_url, timeout=20.0)
         print(f"    Download: {dl:.2f} Mbps" if dl is not None else "    Download: failed")
-
         print("    Testing upload speed...")
         ul = _speed_upload(args.upload_url)
         print(f"    Upload:   {ul:.2f} Mbps" if ul is not None else "    Upload: failed")
-
     return 0
 
 
@@ -276,19 +260,16 @@ def parse_ping_output(text: str) -> PingStats:
         m = _PING_HOST_RE.match(lines[0])
         if m:
             st.host, st.ip = m.group(1), m.group(2)
-
     for ln in lines:
         m = _PING_RESP_RE.search(ln)
         if m:
             st.responses.append({"seq": int(m.group(1)), "time": float(m.group(2))})
-
     m = _PING_SUM_RE.search(text)
     if m:
         st.packets_sent = int(m.group(1))
         st.packets_received = int(m.group(2))
         st.packets_lost = st.packets_sent - st.packets_received
         st.packet_loss_percent = float(m.group(3))
-
     m = _PING_RTT_RE.search(text)
     if m:
         st.min_time = float(m.group(1))
@@ -366,7 +347,6 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
         for name, servers in DNS_PROVIDERS.items():
             print(f"  - {name}: {', '.join(servers)}")
         return 0
-
     if args.name:
         if args.name not in DNS_PROVIDERS:
             print(f"Error: unknown DNS provider '{args.name}'. Use --list to see options.")
@@ -374,12 +354,10 @@ def cmd_set_dns(args: argparse.Namespace) -> int:
         name, servers = args.name, DNS_PROVIDERS[args.name]
     else:
         name, servers = random.choice(list(DNS_PROVIDERS.items()))
-
     target = Path(args.target).expanduser()
     body = f"# Generated by merged_net_tools (set-dns)\n# Selected: {name}\n" + "".join(
         f"nameserver {s}\n" for s in servers
     )
-
     try:
         target.write_text(body, encoding="utf-8")
         print(f"Successfully switched DNS to: {name}")
@@ -401,7 +379,6 @@ def _public_ip_pycurl() -> str:
         import pycurl  # type: ignore
     except ImportError:
         return "Error: 'pycurl' not installed. Try --engine urllib."
-
     buf = io.BytesIO()
     c = pycurl.Curl()
     try:
@@ -509,7 +486,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
     except ImportError:
         print("Error: 'rich' is required for the signal command. `pip install rich`")
         return 2
-
     console = Console()
     meter = SignalMeter()
 
@@ -523,7 +499,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
         )
         if meter.is_airplane_mode:
             console.print("[bold red]✈️  AIRPLANE MODE ENABLED[/bold red]\n")
-
         console.print("[bold yellow]📶 WiFi Signal[/bold yellow]")
         if meter.wifi_strength is not None:
             bars, pct = meter.strength_to_bars(meter.wifi_strength)
@@ -532,7 +507,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
             console.print(f"  Strength: {meter.wifi_strength} dBm\n")
         else:
             console.print("  [dim]No WiFi data available[/dim]\n")
-
         console.print("[bold green]📱 Cellular Signal[/bold green]")
         if meter.cellular_strength is not None:
             bars, pct = meter.strength_to_bars(meter.cellular_strength, top=-25, bottom=-120)
@@ -541,7 +515,6 @@ def cmd_signal(args: argparse.Namespace) -> int:
             console.print(f"  Strength: {meter.cellular_strength} dBm\n")
         else:
             console.print("  [dim]No cellular data available[/dim]\n")
-
         console.print(f"[dim]Updated: {datetime.now().strftime('%H:%M:%S')}[/dim]")
         console.print("[dim]Press Ctrl+C to exit[/dim]")
 
@@ -574,7 +547,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_proxy = sub.add_parser("proxy-test", help="Test HTTP proxies concurrently")
     p_proxy.add_argument(
         "-f",
@@ -608,7 +580,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Save valid proxies to this file (skips the interactive prompt)",
     )
     p_proxy.set_defaults(func=cmd_proxy_test)
-
     p_net = sub.add_parser("net-info", help="Show public IP, local IP, DNS; run speed test")
     p_net.add_argument(
         "--no-speedtest",
@@ -631,7 +602,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the resolv.conf-style file to read DNS servers from",
     )
     p_net.set_defaults(func=cmd_net_info)
-
     p_ping = sub.add_parser("ping", help="Ping a host and parse the results")
     p_ping.add_argument("host", help="Hostname or IP address to ping")
     p_ping.add_argument(
@@ -662,7 +632,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Quiet mode — print only final statistics",
     )
     p_ping.set_defaults(func=cmd_ping)
-
     p_dns = sub.add_parser("set-dns", help="Switch DNS to a public provider")
     p_dns.add_argument("-n", "--name", help="Provider name (see --list). Omit for random choice.")
     p_dns.add_argument("--list", action="store_true", help="List available DNS providers and exit")
@@ -672,7 +641,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output resolv.conf path. Default: ~/.resolv.conf",
     )
     p_dns.set_defaults(func=cmd_set_dns)
-
     p_ip = sub.add_parser("show-ip", help="Show local and public IP")
     p_ip.add_argument(
         "--engine",
@@ -681,7 +649,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="HTTP backend for the public-IP lookup (default: urllib)",
     )
     p_ip.set_defaults(func=cmd_show_ip)
-
     p_sig = sub.add_parser("signal", help="Monitor Wi-Fi/cellular signal (Android)")
     p_sig.add_argument(
         "--interval",
@@ -691,7 +658,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sig.add_argument("--once", action="store_true", help="Print a single snapshot and exit")
     p_sig.set_defaults(func=cmd_signal)
-
     return parser
 
 

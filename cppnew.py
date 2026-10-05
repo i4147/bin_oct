@@ -3,7 +3,6 @@
 Usage: cppnew <filename.cpp>"""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path
@@ -24,16 +23,12 @@ def cppnew(*args):
     if not args:
         print("Usage: cppnew <filename.cpp>")
         return 1
-
     file = Path(args[0]).expanduser()
-
     if file.exists():
         print(f"Error: {file} already exists", file=sys.stderr)
         return 1
-
     file.write_text(TEMPLATE)
     print(f"Created {file} with basic C++ template")
-
     editor = (
         subprocess.run(["sh", "-c", 'printf %s "$EDITOR"'], capture_output=True, text=True).stdout.strip() or "nano"
     )

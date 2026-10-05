@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-
 """webclean.py — Unified comment stripper for web files (HTML, CSS, JS, TS).
 Merges the behavior of the following original scripts: clean_css.py -> webclean.py css cleancss2.py -> webclean.py css --no-preserve-newlines --collapse-blank-lines --remove-whole-line-comments cleanjs.py -> webclean.py js cleants.py -> webclean.py ts clean_html.py -> webclean.py all cleanhtml.py -> webclean.py all cleanhtmlre.py -> webclean.py inline <file.html> [--output-suffix _cleaned] rmcss.py -> webclean.py regex --extensions .html .htm .css rmhtml.py -> webclean.py html --approach regex --unescape-entities --extensions .html .htm .xml rmjsts.py -> webclean.py js --approach regex (and ts --approach regex) Third-party dependencies (install exactly as the originals required): pip install tree-sitter tree-sitter-html tree-sitter-css \ tree-sitter-javascript tree-sitter-typescript Only the `tree-sitter` code paths require those packages; the `regex`, `inline`, and `--approach regex` code paths are pure standard library."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import multiprocessing as mp
@@ -17,7 +15,6 @@ from pathlib import Path
 from typing import Optional
 
 DEFAULT_WORKERS: int = 8
-
 EXT_TO_LANG: dict[str, str] = {
     ".html": "html",
     ".htm": "html",
@@ -31,18 +28,15 @@ EXT_TO_LANG: dict[str, str] = {
     ".mts": "ts",
     ".cts": "ts",
 }
-
 LANG_TO_EXTS: dict[str, set[str]] = {}
 for _ext, _lang in EXT_TO_LANG.items():
     LANG_TO_EXTS.setdefault(_lang, set()).add(_ext)
-
 DEFAULT_PRESERVE_NEWLINES: dict[str, bool] = {
     "css": True,
     "js": True,
     "ts": True,
     "html": False,
 }
-
 _PARSER_CACHE: dict[str, object] = {}
 
 
@@ -52,7 +46,6 @@ def get_parser(lang: str, tsx: bool = False):
     key = f"{lang}:{int(tsx)}"
     if key in _PARSER_CACHE:
         return _PARSER_CACHE[key]
-
     from tree_sitter import Language, Parser
 
     if lang == "html":
@@ -75,7 +68,6 @@ def get_parser(lang: str, tsx: bool = False):
     else:
         msg = f"unknown language: {lang}"
         raise ValueError(msg)
-
     try:
         parser = Parser(lang_obj)
     except TypeError:
@@ -84,7 +76,6 @@ def get_parser(lang: str, tsx: bool = False):
             parser.language = lang_obj
         except AttributeError:
             parser.set_language(lang_obj)
-
     _PARSER_CACHE[key] = parser
     return parser
 
@@ -184,7 +175,6 @@ def find_embedded_blocks(text: bytes, html_parser) -> list[tuple[int, int, str]]
 _RE_CSS_COMMENT = re.compile(rb"/\*.*?\*/", re.DOTALL)
 _RE_HTML_ALL = re.compile(rb"<!--.*?-->", re.DOTALL)
 _RE_HTML_SAFE = re.compile(rb"<!--(?!\[if).*?-->", re.DOTALL)
-
 _QUOTES = (ord('"'), ord("'"), ord("`"))
 _BACKSLASH = ord("\\")
 _SLASH = ord("/")
@@ -337,7 +327,6 @@ def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes,
     preserve = opts.preserve_newlines
     if preserve is None:
         preserve = DEFAULT_PRESERVE_NEWLINES.get(lang, True)
-
     if approach == "tree-sitter":
         if lang == "html":
             return _strip_html_ts(text, opts, preserve)
@@ -345,7 +334,6 @@ def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes,
         parser = get_parser(lang, tsx=tsx)
         ranges = ts_comment_ranges(text, parser)
         return apply_removal(text, lang, ranges, preserve, opts)
-
     if lang == "css":
         ranges = regex_css_ranges(text)
     elif lang == "html":
@@ -357,11 +345,9 @@ def strip_text(text: bytes, lang: str, approach: str, opts: Job) -> tuple[bytes,
 
 def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
     html_parser = get_parser("html")
-
     if not opts.embedded:
         ranges = ts_comment_ranges(text, html_parser)
         return apply_removal(text, "html", ranges, preserve, opts)
-
     embeds = find_embedded_blocks(text, html_parser)
     replacements: list[tuple[int, int, bytes]] = []
     total = 0
@@ -376,11 +362,9 @@ def _strip_html_ts(text: bytes, opts: Job, preserve: bool) -> tuple[bytes, int]:
         if new_inner != inner:
             replacements.append((s, e, new_inner))
             total += len(inner_ranges)
-
     result = text
     for s, e, new in sorted(replacements, key=lambda x: x[0], reverse=True):
         result = result[:s] + new + result[e:]
-
     ranges = ts_comment_ranges(result, html_parser)
     result, n = apply_removal(result, "html", ranges, preserve, opts)
     return result, total + n
@@ -410,18 +394,14 @@ def process_job(job: Job) -> Result:
         text = path.read_bytes()
     except OSError as exc:
         return Result(job.path, False, 0, f"Filesystem error: {exc}")
-
     if not text:
         return Result(job.path, False, 0)
-
     try:
         new_text, n = strip_text(text, job.lang, job.approach, job)
     except Exception as exc:  # noqa: BLE001 - surface any parser error to caller
         return Result(job.path, False, 0, f"{type(exc).__name__}: {exc}")
-
     if n == 0 or new_text == text:
         return Result(job.path, False, 0)
-
     if not job.dry_run:
         try:
             atomic_write(path, new_text)
@@ -468,7 +448,6 @@ def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
     if not jobs:
         print("No files found to process.", file=sys.stderr)
         return 0
-
     workers = max(1, workers)
     changed = errors = total_removed = 0
     verb = "WOULD UPDATE" if dry_run else "UPDATED"
@@ -499,7 +478,6 @@ def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
                         f"ERROR: worker failed: {type(exc).__name__}: {exc}",
                         file=sys.stderr,
                     )
-
     print()
     print(f"Files scanned : {len(jobs)}")
     print(f"Files changed : {changed}")
@@ -580,7 +558,6 @@ def _js_strip_str(js: str) -> str:
 
 
 def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
-
     def repl_link(m: re.Match) -> str:
         tag = m.group(0)
         hm = _RE_HREF.search(tag)
@@ -615,10 +592,8 @@ def _inline_html(src: str, base_dir: Path, keep_conditional: bool) -> str:
         return f"<script{attrs}>{_js_strip_str(body)}</script>"
 
     src = _RE_SCRIPT_INLINE.sub(repl_script_inline, src)
-
     rx = _RE_HTML_COMMENT_SAFE_STR if keep_conditional else re.compile(r"<!--.*?-->", re.DOTALL)
     src = rx.sub("", src)
-
     return re.sub(r"\n\s*\n+", "\n\n", src)
 
 
@@ -630,13 +605,11 @@ def cmd_inline(args: argparse.Namespace) -> int:
     if not in_path.is_file():
         print(f"error: file not found: {in_path}", file=sys.stderr)
         return 1
-
     try:
         src = in_path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
         print(f"error: cannot read {in_path}: {exc}", file=sys.stderr)
         return 1
-
     out_src = _inline_html(src, in_path.parent, keep_conditional=True)
     if args.in_place:
         out_path = in_path
@@ -730,7 +703,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     for name, help_text in (
         ("css", "Strip CSS comments."),
         ("js", "Strip JavaScript comments."),
@@ -752,7 +724,6 @@ def build_parser() -> argparse.ArgumentParser:
             default=None,
             help="Override the set of file extensions to scan.",
         )
-
     sp = sub.add_parser("regex", help="Regex/state-machine stripping across extensions.")
     _add_common_flags(sp)
     sp.add_argument(
@@ -761,7 +732,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=sorted(EXT_TO_LANG.keys()),
         help="Extensions to process (default: all supported).",
     )
-
     sp = sub.add_parser(
         "inline",
         help="Inline external CSS/JS in an HTML file and strip comments (cleanhtmlre.py).",
@@ -777,7 +747,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Overwrite the input file instead of writing a new file.",
     )
-
     return p
 
 
@@ -864,7 +833,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.command == "inline":
         return cmd_inline(args)
     if args.command == "all":

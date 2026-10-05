@@ -5,7 +5,6 @@ The function should split the input text on spaces, transliterate each word, and
 It should import unicodedata and pathlib.Path, even if they are not directly used in the core logic shown."""
 
 from __future__ import annotations
-
 import unicodedata
 from pathlib import Path
 

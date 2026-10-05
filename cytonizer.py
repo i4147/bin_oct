@@ -4,12 +4,10 @@ It should accept optional command-line arguments that are file or directory path
 For each discovered `.pyx` file, the script should change into its parent directory and run `cythonize` on the filename, processing files in parallel using a multiprocessing helper (4 worker processes) alongside a custom file-discovery utility imported from a local module named `dh`."""
 
 from __future__ import annotations
-
 import os
 import sys
 from os import chdir as os_chdir
 from pathlib import Path
-
 from dh import get_files, mpf
 
 START_DIR = Path.cwd()

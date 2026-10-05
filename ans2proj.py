@@ -4,11 +4,9 @@ It should use a regex to locate headers and code fences, extract each file's rel
 The script should be runnable from the command line, taking the digest file path and target root directory as inputs, and should report progress/errors through logging while producing the restored file tree as output."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path
-
 from loguru import logger
 
 HEADER_RE: re.Pattern[str] = re.compile(r"^##\s+`([^`]+)`\s*$", re.MULTILINE)

@@ -9,7 +9,6 @@ Duplicate paths are processed once.
 Requires: Python 3.12+, libcst."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import contextlib
@@ -21,32 +20,28 @@ import tempfile
 import tokenize
 from pathlib import Path
 from typing import Iterable, Iterator
-
 import libcst as cst
 
 NUM_WORKERS = 8
 CHUNKSIZE = 4
-
-SKIP_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "env",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        "node_modules",
-        "build",
-        "dist",
-        ".eggs",
-    }
-)
+SKIP_DIRS: frozenset[str] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "node_modules",
+    "build",
+    "dist",
+    ".eggs",
+})
 
 
 class InlineCommentRemover(cst.CSTTransformer):
@@ -61,9 +56,7 @@ class InlineCommentRemover(cst.CSTTransformer):
     ) -> cst.TrailingWhitespace:
         if updated_node.comment is None:
             return updated_node
-
         self.comments_removed += 1
-
         return updated_node.with_changes(
             whitespace=cst.SimpleWhitespace(""),
             comment=None,
@@ -75,7 +68,6 @@ def _atomic_write(path: Path, data: bytes) -> None:
         mode: int | None = path.stat().st_mode
     except OSError:
         mode = None
-
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
     tmp_path = Path(tmp_name)
     try:
@@ -92,45 +84,37 @@ def _atomic_write(path: Path, data: bytes) -> None:
 
 
 def process_file(path: Path) -> tuple[Path, int, str | None]:
-
     try:
         source_bytes = path.read_bytes()
     except OSError as exc:
         return path, 0, f"read error: {exc}"
-
     try:
         encoding, _ = tokenize.detect_encoding(io.BytesIO(source_bytes).readline)
         source = source_bytes.decode(encoding)
     except (SyntaxError, UnicodeDecodeError) as exc:
         return path, 0, f"encoding error: {exc}"
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return path, 0, f"libcst parse error: {exc}"
     except Exception as exc:
         return path, 0, f"parse error: {type(exc).__name__}: {exc}"
-
     transformer = InlineCommentRemover()
     try:
         new_module = module.visit(transformer)
     except Exception as exc:
         return path, 0, f"transform error: {type(exc).__name__}: {exc}"
-
     if transformer.comments_removed == 0:
         return path, 0, None
-
     new_source = new_module.code
     try:
         ast.parse(new_source, filename=str(path))
     except SyntaxError as exc:
         return path, 0, f"post-transform validation failed: {exc}"
-
     try:
         _atomic_write(path, new_source.encode(encoding))
     except (OSError, UnicodeEncodeError) as exc:
         return path, 0, f"write error: {exc}"
-
     return path, transformer.comments_removed, None
 
 
@@ -190,12 +174,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     roots: list[Path] = args.paths or [Path.cwd()]
-
     total_files = 0
     changed_files = 0
     total_removed = 0
     error_count = 0
-
     with mp.Pool(processes=NUM_WORKERS) as pool:
         results = pool.imap_unordered(
             process_file,
@@ -211,11 +193,9 @@ def main(argv: list[str] | None = None) -> int:
                 changed_files += 1
                 total_removed += removed
                 print(f"{path}: removed {removed} inline comment(s)")
-
     if total_files == 0:
         print("No Python files found.", file=sys.stderr)
         return 1
-
     summary = (
         f"\nProcessed {total_files} file(s): "
         f"{changed_files} changed, "
@@ -223,7 +203,6 @@ def main(argv: list[str] | None = None) -> int:
         f"{error_count} error(s)."
     )
     print(summary, file=sys.stderr if error_count else sys.stdout)
-
     return 2 if error_count else 0
 
 

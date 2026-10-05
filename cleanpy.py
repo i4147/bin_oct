@@ -13,7 +13,6 @@ The script should: - Walk files/directories given on the command line (or curren
 - Expose a CLI via argparse with -r/--remove-module-docstring and positional paths."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import sys
@@ -21,7 +20,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import libcst as cst
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider
@@ -29,7 +27,6 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
 SKIP_DIRS: frozenset[str] = frozenset({".git", "__pycache__"})
 PRESERVED_COMMENT_MARKERS: tuple[str, ...] = ("# fmt", "# type")
 DEFAULT_POOL_SIZE: int = 8
@@ -174,13 +171,11 @@ def process_file(path_str: str, remove_module_docstring: bool) -> FileResult:
             source: str = source_bytes.decode("utf-8")
         except UnicodeDecodeError:
             source = source_bytes.decode("utf-8-sig")
-
         try:
             ast.parse(source, filename=str(path))
         except SyntaxError as exc:
             result.error = f"SyntaxError: {exc}"
             return result
-
         module: cst.Module = cst.parse_module(source)
         wrapper: MetadataWrapper = MetadataWrapper(module)
         transformer: _Transformer = _Transformer(remove_module_docstring)
@@ -189,17 +184,13 @@ def process_file(path_str: str, remove_module_docstring: bool) -> FileResult:
         except Exception:
             transformer = _Transformer(remove_module_docstring)
             updated_module = module.visit(transformer)
-
         updated_text: str = updated_module.code
         updated_text = _remove_blank_lines(updated_text)
         if not updated_text.endswith("\n") and updated_text:
             updated_text += "\n"
-
         ast.parse(updated_text, filename=str(path))
-
         if updated_text == source:
             return result
-
         path.write_text(updated_text, encoding="utf-8")
         result.comments_removed = transformer.comments_removed
         result.docstrings_removed = transformer.docstrings_removed
@@ -239,12 +230,10 @@ def main() -> int:
     if not files:
         print("No Python files found.")
         return 0
-
     changed_files: int = 0
     total_comments: int = 0
     total_docstrings: int = 0
     errors: int = 0
-
     pool: Pool = Pool(processes=DEFAULT_POOL_SIZE)
     try:
         async_results: list[tuple[Path, object]] = [
@@ -282,7 +271,6 @@ def main() -> int:
         pool.join()
     finally:
         pool.terminate()
-
     print(
         "Summary: "
         f"files changed={changed_files}, "

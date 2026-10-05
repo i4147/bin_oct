@@ -4,14 +4,12 @@ By default: two folders are duplicates if their files have the same relative pat
 With -s / --structure: two folders are duplicates if their tree structure is the same (same subfolders, same relative file paths) even if file contents differ."""
 
 from __future__ import annotations
-
 import argparse
 import os
 import sys
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
-
 import xxhash
 
 NUM_WORKERS = 8
@@ -86,19 +84,14 @@ def _collect_subdirs(root: Path):
 def folder_signature(args):
     path_str, mode = args
     root = Path(path_str).resolve()
-
     files = _collect_files(root)
     if not files:
         return None
-
     direct_files = [rel for rel, _ in files if "/" not in rel]
-
     if not direct_files:
         return None
-
     rel_files = sorted(rel for rel, _ in files)
     subdirs = sorted(_collect_subdirs(root))
-
     struct_h = xxhash.xxh64()
     for d in subdirs:
         struct_h.update(b"D")
@@ -109,7 +102,6 @@ def folder_signature(args):
         struct_h.update(rp.encode("utf-8"))
         struct_h.update(b"\x00")
     struct_key = struct_h.hexdigest()
-
     if mode == "content":
         content_h = xxhash.xxh64()
         for rel, abs_path in sorted(files, key=lambda x: x[0]):
@@ -124,7 +116,6 @@ def folder_signature(args):
         content_key = content_h.hexdigest()
     else:
         content_key = ""
-
     return (struct_key, content_key, str(root))
 
 
@@ -168,15 +159,12 @@ def parse_args():
 def main():
     args = parse_args()
     mode = "structure" if args.structure else "content"
-
     start = Path.cwd()
     print(f"Scanning : {start}")
     print(f"Mode     : {mode}")
     print(f"Workers  : {NUM_WORKERS}")
-
     folders = find_all_folders(start)
     print(f"Found {len(folders)} folder(s) (pre-filter).")
-
     results = []
     with Pool(processes=NUM_WORKERS) as pool:
         async_results = [pool.apply_async(folder_signature, ((str(f), mode),)) for f in folders]
@@ -188,7 +176,6 @@ def main():
                 continue
             if res is not None:
                 results.append(res)
-
     groups = defaultdict(list)
     if mode == "content":
         for struct_key, content_key, path in results:
@@ -196,13 +183,10 @@ def main():
     else:
         for struct_key, _, path in results:
             groups[struct_key].append(path)
-
     duplicates = {k: v for k, v in groups.items() if len(v) > 1}
-
     if not duplicates:
         print("\nNo duplicate folders found.")
         return
-
     label = "same structure" if mode == "structure" else "identical content"
     print(f"\nFound {len(duplicates)} set(s) of folders with {label}:\n")
     for i, (_, paths) in enumerate(sorted(duplicates.items(), key=lambda kv: kv[1][0]), start=1):

@@ -1,17 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merged 7-Zip compression tool.
-
 Third-party dependencies:
   py7zr
   loguru  (only required for the `full` subcommand)
-
 Usage:
   python merged.py basic
   python merged.py named
   python merged.py full --mode compress
   python merged.py full --mode decompress
-
 Mapping:
   7zer.py   -> python merged.py basic
   7zer2.py  -> python merged.py named
@@ -20,7 +17,6 @@ Mapping:
 """
 
 from __future__ import annotations
-
 import argparse
 import logging
 import mmap
@@ -32,19 +28,16 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
 import py7zr
 
 try:
     from loguru import logger as _log
 except ImportError:
     _log = None
-
 _BASIC_SKIP_SUFFIXES = {".7z", ".xz", ".br", ".zst", ".gz", ".zip", ".whl", ".log"}
 _NAMED_SKIP_SUFFIXES = {".tar", ".7z", ".br", ".gz", ".xz", ".zip", ".whl"}
 _FULL_SKIP_SUFFIXES = (".7z", ".xz", ".gz", ".bz2", ".br", ".zst", ".zip", ".rar")
 _NAMED_METHODS = ("LZMA2", "LZMA", "PPMd")
-
 _FULL_SETTINGS: dict[str, Any] = {
     "filters": [{"id": py7zr.FILTER_LZMA2, "preset": 9}],
     "dictionary_size": 268435456,
@@ -174,7 +167,6 @@ def run_basic(args: argparse.Namespace) -> int:
     _basic_setup_logging(log_file)
     logging.info("Starting compression in %s", base)
     preset = args.preset
-
     dirs = list(_basic_iter_dirs(base))
     if dirs:
         logging.info("Found %d top-level directories", len(dirs))
@@ -183,7 +175,6 @@ def run_basic(args: argparse.Namespace) -> int:
                 (logging.info if ok else logging.error)("%s: %s", src, msg)
     else:
         logging.info("No top-level directories found")
-
     files = list(_basic_iter_files(base))
     if files:
         logging.info("Found %d top-level files", len(files))
@@ -193,7 +184,6 @@ def run_basic(args: argparse.Namespace) -> int:
                 (logging.info if ok else logging.error)("%s: %s", src, msg)
     else:
         logging.info("No top-level files found")
-
     logging.info("Done.")
     return 0
 
@@ -283,20 +273,16 @@ def run_named(args: argparse.Namespace) -> int:
     _basic_setup_logging(log_file)
     workers = max(1, multiprocessing.cpu_count() - 1)
     method = _named_best_method()
-
     logging.info("Base dir: %s", base)
     logging.info("Workers: %d", workers)
     logging.info("Best py7zr method: %s", method)
-
     exclude = {log_file.name}
     if "__file__" in globals():
         exclude.add(Path(__file__).name)
-
     entries = list(_named_iter_entries(base, exclude))
     dirs = [p for p in entries if p.is_dir()]
     files = [p for p in entries if p.is_file()]
     logging.info("Found %d dirs and %d files", len(dirs), len(files))
-
     results: list[NamedResult] = []
     if dirs:
         with multiprocessing.Pool(processes=min(workers, len(dirs))) as pool:
@@ -304,7 +290,6 @@ def run_named(args: argparse.Namespace) -> int:
     if files:
         with multiprocessing.Pool(processes=min(workers, len(files))) as pool:
             results.extend(pool.map(_named_compress_file, [str(f) for f in files]))
-
     ok = sum(1 for r in results if r.ok)
     fail = len(results) - ok
     logging.info("Completed. success=%d fail=%d", ok, fail)
@@ -398,12 +383,10 @@ def _full_compress_chunked(
                 start = i * chunk_size
                 end = min((i + 1) * chunk_size, size)
                 payloads.append((mm[start:end], i, str(temp_dir), 9))
-
         chunk_paths: list[Optional[str]] = [None] * num_chunks
         with ProcessPoolExecutor(max_workers=workers) as pool:
             for i, result in enumerate(pool.map(_full_compress_chunk, payloads)):
                 chunk_paths[i] = result
-
         with py7zr.SevenZipFile(
             dst,
             mode="w",
@@ -527,7 +510,6 @@ def _full_compress(base: Path, args: argparse.Namespace) -> None:
     print("   Block size: 4 MB")
     print(f"   Parallel workers: {args.workers}")
     print(f"   Chunk size: {_human_size(args.chunk_size)}")
-
     dirs = _full_list_dirs(base)
     if dirs:
         print(f"\n📁 Compressing {len(dirs)} directories...")
@@ -539,12 +521,10 @@ def _full_compress(base: Path, args: argparse.Namespace) -> None:
                 _log_info("  ✓ Successfully compressed {} to {}.7z", rel, d.name)
             else:
                 _log_error("  ✗ Failed to compress {}", rel)
-
     files = _full_list_files(base, args.min_size, mode="compress")
     if not files:
         print("\n📄 No files to compress")
         return
-
     print(f"\n📄 Compressing {len(files)} files with 7-Zip max compression...")
     orig_total = comp_total = ok_count = 0
     for i, f in enumerate(files, 1):
@@ -554,7 +534,6 @@ def _full_compress(base: Path, args: argparse.Namespace) -> None:
             ok_count += 1
             orig_total += orig
             comp_total += comp
-
     if ok_count > 0:
         saved = orig_total - comp_total
         pct = saved / orig_total * 100 if orig_total else 0.0
@@ -604,17 +583,14 @@ def run_full(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Merged 7-Zip compression tool")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_basic = sub.add_parser("basic", help="7zer.py: tar->7z dirs + 7z files")
     p_basic.add_argument("--log-file", default="compress.log")
     p_basic.add_argument("--workers", type=int, default=4)
     p_basic.add_argument("--preset", type=int, default=9)
     p_basic.set_defaults(func=run_basic)
-
     p_named = sub.add_parser("named", help="7zer2.py: dirs->tar, files->7z, best method")
     p_named.add_argument("--log-file", default="compress.log")
     p_named.set_defaults(func=run_named)
-
     p_full = sub.add_parser("full", help="7zr.py: full compress/decompress")
     p_full.add_argument(
         "--mode",
@@ -627,7 +603,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_full.add_argument("--min-size", type=int, default=1024)
     p_full.add_argument("--preset", type=int, default=9)
     p_full.set_defaults(func=run_full)
-
     return parser
 
 

@@ -3,7 +3,6 @@
 It should validate that the input file exists, print progress for each package (index, total count, and success/failure status), pause briefly between installs, and record any packages that failed to reinstall into a "reinstall_pip_failed.txt" file in the user's home directory, printing a final summary message pointing to that log file."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 import sys

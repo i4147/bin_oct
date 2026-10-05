@@ -5,10 +5,8 @@ It should save the full transcribed text to an output file named "out.txt", and 
 Include appropriate status messages during loading and processing, and handle the case of missing or incorrect command-line arguments with a usage message and graceful exit."""
 
 from __future__ import annotations
-
 import os
 import sys
-
 import whisper
 
 

@@ -11,7 +11,6 @@ For offline use, run LibreTranslate on another machine and use the pure-Python l
 The program resumes from an existing JSON file by default, saves atomically, retries failed requests, and can be interrupted safely with Ctrl+C."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -23,7 +22,6 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Optional
-
 from loguru import logger
 
 
@@ -32,7 +30,6 @@ class BackendError(RuntimeError):
 
 
 TranslationFunction = Callable[[str], str]
-
 _FORBIDDEN_BACKENDS = {
     "argostranslate",
     "libretranslate",
@@ -50,7 +47,6 @@ _FORBIDDEN_BACKENDS = {
     "anthropic",
     "mistralai",
 }
-
 _DEFAULT_CHAIN = [
     "deepl",
     "deep_translator",
@@ -60,7 +56,6 @@ _DEFAULT_CHAIN = [
     "googletrans",
     "pygoogletranslation",
 ]
-
 _LANG_MAP = {
     "deepl": {
         "fr": "FR",
@@ -96,7 +91,6 @@ _LANG_MAP = {
     "watson": {},
     "azure": {},
 }
-
 _console_lock = threading.Lock()
 _results_lock = threading.Lock()
 _failed_lock = threading.Lock()
@@ -131,7 +125,6 @@ def _make_deep_translator(source: str, target: str, script_path: str) -> Transla
     except Exception as exc:
         msg = "install it with: pip install deep_translator"
         raise BackendError(msg) from exc
-
     mapped_source = _mapped_language("deep_translator", source)
     mapped_target = _mapped_language("deep_translator", target)
 
@@ -154,13 +147,11 @@ def _make_deepl(source: str, target: str, script_path: str) -> TranslationFuncti
     if not api_key:
         msg = "DEEPL_API_KEY is not set"
         raise BackendError(msg)
-
     try:
         import deepl
     except Exception as exc:
         msg = "install it with: pip install deepl"
         raise BackendError(msg) from exc
-
     mapped_source = _mapped_language("deepl", source)
     mapped_target = _mapped_language("deepl", target)
 
@@ -186,7 +177,6 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
     if not api_url:
         msg = "LIBRETRANSLATE_URL is not set"
         raise BackendError(msg)
-
     try:
         from deep_translator import LibreTranslateTranslator
     except Exception as exc:
@@ -219,14 +209,11 @@ def _make_translate(source: str, target: str, script_path: str) -> TranslationFu
     except Exception as exc:
         msg = "install it with: pip install translate"
         raise BackendError(msg) from exc
-
     translator_class = getattr(translate_module, "Translator", None)
     class_kwargs = {"from_lang": source, "to_lang": target}
-
     if translator_class is None:
         translator_class = getattr(translate_module, "GoogleTranslator", None)
         class_kwargs = {"source": source, "target": target}
-
     if translator_class is None:
         msg = "installed translate package has neither Translator nor GoogleTranslator"
         raise BackendError(msg)
@@ -248,7 +235,6 @@ def _make_googletrans(source: str, target: str, script_path: str) -> Translation
     except Exception as exc:
         msg = 'install it with: pip install "googletrans==4.0.0rc1"'
         raise BackendError(msg) from exc
-
     client = Translator()
     lock = threading.Lock()
 
@@ -270,7 +256,6 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
     except Exception as exc:
         msg = "install it with: pip install pygoogletranslation"
         raise BackendError(msg) from exc
-
     client = Translator()
     lock = threading.Lock()
 
@@ -292,7 +277,6 @@ def _make_translators_bing(source: str, target: str, script_path: str) -> Transl
     except Exception as exc:
         msg = "install it with: pip install translators; pkg install nodejs"
         raise BackendError(msg) from exc
-
     logger.warning("translators_bing uses a JavaScript subprocess per request; throughput will be low on Termux")
     lock = threading.Lock()
 
@@ -320,7 +304,6 @@ def _make_boto3(source: str, target: str, script_path: str) -> TranslationFuncti
     except Exception as exc:
         msg = "install it with: pip install boto3"
         raise BackendError(msg) from exc
-
     region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
     mapped_source = _mapped_language("boto3", source)
     mapped_target = _mapped_language("boto3", target)
@@ -347,13 +330,11 @@ def _make_baidu(source: str, target: str, script_path: str) -> TranslationFuncti
     if not app_id or not app_key:
         msg = "BAIDU_APP_ID and BAIDU_APP_KEY are required"
         raise BackendError(msg)
-
     try:
         from aip import AipNlp
     except Exception as exc:
         msg = "install it with: pip install baidu-aip"
         raise BackendError(msg) from exc
-
     mapped_source = _mapped_language("baidu", source)
     mapped_target = _mapped_language("baidu", target)
 
@@ -375,14 +356,12 @@ def _make_alibaba(source: str, target: str, script_path: str) -> TranslationFunc
     if not access_key or not access_secret:
         msg = "ALIBABA_ACCESS_KEY_ID and ALIBABA_ACCESS_KEY_SECRET are required"
         raise BackendError(msg)
-
     try:
         from aliyunsdkalimt.request.v20181012 import TranslateGeneralRequest
         from aliyunsdkcore.client import AcsClient
     except Exception as exc:
         msg = "install it with: pip install aliyun-python-sdk-alimt"
         raise BackendError(msg) from exc
-
     region = os.environ.get("ALIBABA_REGION", "cn-hangzhou")
 
     def translate(text: str) -> str:
@@ -409,7 +388,6 @@ def _make_watson(source: str, target: str, script_path: str) -> TranslationFunct
     if not api_key or not service_url:
         msg = "WATSON_API_KEY and WATSON_URL are required"
         raise BackendError(msg)
-
     try:
         from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
         from ibm_watson import LanguageTranslatorV3
@@ -448,7 +426,6 @@ def _make_azure(source: str, target: str, script_path: str) -> TranslationFuncti
     if not key:
         msg = "AZURE_TRANSLATOR_KEY is not set"
         raise BackendError(msg)
-
     try:
         from azure.ai.translation.text import TextTranslationClient
         from azure.core.credentials import AzureKeyCredential
@@ -505,15 +482,12 @@ def _select_backend(preferred: str, source: str, target: str, script_path: str) 
             "Use deep_translator, deepl, or a LAN LibreTranslate server."
         )
         raise BackendError(msg)
-
     if preferred != "default" and preferred not in _BACKEND_FACTORIES:
         valid = ", ".join(sorted(_BACKEND_FACTORIES))
         msg = f"unknown backend '{preferred}'. Supported backends: {valid}"
         raise BackendError(msg)
-
     last_error = "no backend was attempted"
     chain = _backend_chain(preferred)
-
     for index, name in enumerate(chain):
         if name == "deepl" and not os.environ.get("DEEPL_API_KEY"):
             logger.warning("backend 'deepl' skipped: DEEPL_API_KEY is not set")
@@ -521,7 +495,6 @@ def _select_backend(preferred: str, source: str, target: str, script_path: str) 
         if name == "libretranslate_remote" and not os.environ.get("LIBRETRANSLATE_URL"):
             logger.warning("backend 'libretranslate_remote' skipped: LIBRETRANSLATE_URL is not set")
             continue
-
         try:
             factory = _BACKEND_FACTORIES[name]
             translator = factory(source, target, script_path)
@@ -532,7 +505,6 @@ def _select_backend(preferred: str, source: str, target: str, script_path: str) 
         except Exception as exc:
             last_error = str(exc)
             logger.warning("backend '{}' unavailable: {}", name, exc)
-
     msg = f"no usable translation backend found: {last_error}"
     raise BackendError(msg)
 
@@ -540,7 +512,6 @@ def _select_backend(preferred: str, source: str, target: str, script_path: str) 
 def _load_existing(path: Path) -> "OrderedDict[str, str]":
     if not path.exists():
         return OrderedDict()
-
     try:
         with path.open("r", encoding="utf-8") as handle:
             loaded = json.load(handle, object_pairs_hook=OrderedDict)
@@ -557,11 +528,9 @@ def _read_pending(input_path: Path, existing: dict[str, str], continue_job: bool
     if not input_path.is_file():
         msg = f"input file does not exist: {input_path}"
         raise BackendError(msg)
-
     pending: list[str] = []
     seen_pending = set()
     total = 0
-
     with input_path.open("r", encoding="utf-8") as handle:
         for raw_line in handle:
             word = raw_line.rstrip("\r\n")
@@ -573,7 +542,6 @@ def _read_pending(input_path: Path, existing: dict[str, str], continue_job: bool
             if word not in seen_pending:
                 pending.append(word)
                 seen_pending.add(word)
-
     return pending, total
 
 
@@ -586,7 +554,6 @@ def _atomic_save(path: Path, results: dict[str, str]) -> None:
         dir=directory,
         text=True,
     )
-
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(results, handle, ensure_ascii=False, indent=2)
@@ -618,19 +585,15 @@ def _translate_one(
     failed_path: Path,
 ) -> tuple[str, Optional[str]]:
     last_error = "empty or identity translation"
-
     for attempt in range(1, 4):
         try:
             if delay:
                 time.sleep(delay)
-
             raw_result = translator(word)
             with _console_lock:
                 print(f"{word} -> {raw_result}")
-
             if _is_valid_translation(word, raw_result):
                 return word, str(raw_result)
-
             last_error = "backend returned an empty or identity translation"
             raise BackendError(last_error)
         except Exception as exc:
@@ -643,7 +606,6 @@ def _translate_one(
             )
             if attempt < 3:
                 time.sleep(0.5 * (2 ** (attempt - 1)))
-
     _append_failed(failed_path, word)
     logger.error("giving up on {!r} after 3 attempts: {}", word, last_error)
     return word, None
@@ -699,26 +661,22 @@ def _parse_args() -> argparse.Namespace:
         help="ignore an existing output file and start fresh",
     )
     args = parser.parse_args()
-
     if args.workers < 1:
         parser.error("--workers must be at least 1")
     if args.delay < 0:
         parser.error("--delay cannot be negative")
     if args.save_every < 1:
         parser.error("--save-every must be at least 1")
-
     return args
 
 
 def main() -> int:
     _configure_logging()
     args = _parse_args()
-
     input_path = Path(args.input)
     output_path = Path(args.output)
     failed_path = Path(args.failed)
     script_path = str(Path(__file__).resolve())
-
     try:
         existing = OrderedDict() if args.no_continue else _load_existing(output_path)
         pending, total = _read_pending(
@@ -727,29 +685,23 @@ def main() -> int:
             continue_job=not args.no_continue,
         )
         results = OrderedDict(existing)
-
         if not args.no_continue:
             with _console_lock:
                 print(f"Loaded {len(existing)} existing translations.")
-
         backend_name, translator = _select_backend(
             args.backend,
             args.source,
             args.target,
             script_path,
         )
-
         with _console_lock:
             print(f"Using backend '{backend_name}'. {len(pending)} words pending out of {total}.")
-
         if not pending:
             with _results_lock:
                 _atomic_save(output_path, results)
             print(f"Nothing to translate; progress is saved in {output_path}.")
             return 0
-
         completed = 0
-
         with ThreadPoolExecutor(
             max_workers=args.workers,
             thread_name_prefix="translator",
@@ -764,20 +716,16 @@ def main() -> int:
                 ): word
                 for word in pending
             }
-
             try:
                 for future in as_completed(futures):
                     word, translation = future.result()
                     with _counter_lock:
                         completed += 1
                         number = completed
-
                     if translation is not None:
                         with _results_lock:
                             results[word] = translation
-
                     _print_progress(number, len(pending), word, translation)
-
                     if completed % args.save_every == 0:
                         with _results_lock:
                             _atomic_save(output_path, results)
@@ -790,10 +738,8 @@ def main() -> int:
                     _atomic_save(output_path, results)
                 print(f"\nInterrupted. Progress saved to {output_path}.")
                 return 130
-
         with _results_lock:
             _atomic_save(output_path, results)
-
         print(f"Finished. Results saved to {output_path}.")
         print(f"Words that failed all retries were appended to {failed_path}.")
         print(
@@ -801,7 +747,6 @@ def main() -> int:
             "VPS, or Raspberry Pi on the LAN and set LIBRETRANSLATE_URL."
         )
         return 0
-
     except KeyboardInterrupt:
         if "results" in locals():
             with _results_lock:

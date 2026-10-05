@@ -5,7 +5,6 @@ After conversion, it should print a confirmation message stating the file was co
 Include a main block that runs this conversion on a file named "script.sh"."""
 
 from __future__ import annotations
-
 import codecs
 import shutil
 

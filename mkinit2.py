@@ -4,7 +4,6 @@ It should build a mapping of module names to their public symbols, opt merging w
 The script should support parallel processing of modules via `multiprocessing` for speed, use `shutil` for any file backup/copy operations, and write out updated `from .module import Name` statements plus a sorted `__all__` list, printing warnings to stderr for files that fail to parse."""
 
 from __future__ import annotations
-
 import ast
 import multiprocessing as mp
 import shutil

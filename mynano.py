@@ -4,12 +4,10 @@ It should accept an optional filename argument to load an existing file's conten
 It should also configure Python's readline/rlcompleter to enable tab-completion, presumably for use within the editor or an integrated console."""
 
 from __future__ import annotations
-
 import readline
 import rlcompleter
 import sys
 from pathlib import Path
-
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.log import TextLog

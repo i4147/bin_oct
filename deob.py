@@ -3,7 +3,6 @@
 Usage: python3 deobfuscate.py <input.sh> [-o <output.sh>] If -o/--output is omitted, the output path is derived from the input: input.sh -> input.deobf.sh script -> script.deobf.sh script.sh -> script.deobf.sh Existing files are never overwritten: .1, .2, … suffixes are appended."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -51,9 +50,7 @@ def substitute(expr: str, variables: dict[str, str]) -> str:
 
 
 def pretty(code: str) -> str:
-
     code = code.replace(";clear;", ";\nclear;")
-
     code = code.replace(";\n}", ";\n}\n")
     return code
 
@@ -61,12 +58,10 @@ def pretty(code: str) -> str:
 def pick_output(inp: Path, explicit: str | None) -> Path:
     if explicit:
         return Path(explicit)
-
     suffix = inp.suffix or ".sh"
     candidate = inp.with_name(f"{inp.stem}.deobf{suffix}")
     if candidate == inp:
         candidate = inp.with_name(f"{inp.name}.deobf.sh")
-
     base = candidate
     n = 1
     while candidate.exists():
@@ -80,23 +75,18 @@ def main() -> int:
     ap.add_argument("input", help="obfuscated bash file")
     ap.add_argument("-o", "--output", help="output path (optional)")
     args = ap.parse_args()
-
     inp = Path(args.input)
     if not inp.is_file():
         print(f"error: {inp}: not a file", file=sys.stderr)
         return 1
-
     src = inp.read_text(encoding="utf-8", errors="replace")
-
     variables = parse_assignments(src)
     expr = find_eval_expr(src)
     if expr is None:
         print('error: no eval "…" expression found', file=sys.stderr)
         return 1
-
     resolved = substitute(expr, variables)
     resolved = pretty(resolved)
-
     out = pick_output(inp, args.output)
     out.write_text(resolved.rstrip() + "\n", encoding="utf-8")
     print(f"[+] wrote {out}  ({len(resolved.splitlines())} lines)")

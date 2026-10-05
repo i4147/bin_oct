@@ -6,10 +6,8 @@ It should walk the directory using a recursive generator that gracefully handles
 The final output should be a report listing the matched file paths along with their sizes, using a tuple of (path string, size in bytes) as the per-item result format."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import fsz
 
 DARWIN_PATTERNS = {

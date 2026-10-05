@@ -6,7 +6,6 @@ Usage: python tchunks.py -i input.txt -o chunks.json -s en -t fr python tchunks.
 This makes interrupted runs safe to simply re-run."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -17,7 +16,6 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -97,7 +95,6 @@ def _make_deep_translator(source: str, target: str) -> Callable[[str], str]:
     tgt = _lang_for_deep_translator(target, is_target=True)
 
     def translate(text: str) -> str:
-
         client = GoogleTranslator(source=src, target=tgt)
         result = client.translate(text)
         if result is None:
@@ -191,7 +188,6 @@ BACKEND_FACTORIES: dict[str, Callable[[str, str], Callable[[str], str]]] = {
     "googletrans": _make_googletrans,
     "pygoogletranslation": _make_pygoogletranslation,
 }
-
 FALLBACK_ORDER: tuple[str, ...] = (
     "deepl",
     "deep_translator",
@@ -211,7 +207,6 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
         factory = BACKEND_FACTORIES[requested]
         translate_fn = factory(source, target)
         return requested, translate_fn
-
     last_error: Exception | None = None
     for name in FALLBACK_ORDER:
         if name == "deepl" and not os.environ.get("DEEPL_API_KEY"):
@@ -226,7 +221,6 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
             logger.debug(f"Backend '{name}' unavailable during fallback: {e}")
             last_error = e
             continue
-
     msg = f"no backend could be constructed from fallback order {FALLBACK_ORDER}. Last error: {last_error}"
     raise NoBackendAvailableError(msg)
 
@@ -235,30 +229,24 @@ def chunk_text(text: str, chunk_size: int) -> list[str]:
     if chunk_size <= 0:
         msg = "chunk_size must be positive"
         raise ValueError(msg)
-
     chunks: list[str] = []
     pos = 0
     length = len(text)
-
     while pos < length:
         end = min(pos + chunk_size, length)
         if end < length:
             split_at = text.rfind(" ", pos, end)
-
             for ws_char in ("\n", "\t"):
                 candidate = text.rfind(ws_char, pos, end)
                 split_at = max(split_at, candidate)
             if split_at > pos:
                 end = split_at
-
         piece = text[pos:end].strip()
         if piece:
             chunks.append(piece)
         pos = end
-
         while pos < length and text[pos] in " \t\n\r":
             pos += 1
-
     return chunks
 
 
@@ -279,7 +267,6 @@ def translate_with_retry(
     target_lang: str,
     delay: float,
 ) -> str:
-
     @retry(
         reraise=True,
         stop=stop_after_attempt(3),
@@ -295,15 +282,12 @@ def translate_with_retry(
         except Exception as e:  # noqa: BLE001 - normalize any backend error to our type
             msg = f"backend call raised: {e}"
             raise TranslationFailedError(msg) from e
-
         if not result or not result.strip():
             msg = "backend returned empty translation"
             raise TranslationFailedError(msg)
-
         if looks_untranslated(text, result, source_lang, target_lang):
             msg = "translation looks identical to source (likely untranslated)"
             raise TranslationFailedError(msg)
-
         return result
 
     return _attempt()
@@ -365,15 +349,11 @@ def run_translation(
 ) -> dict[str, str]:
     results = dict(existing)
     pending_indices = [i for i in range(len(chunks)) if str(i) not in results]
-
     if not pending_indices:
         logger.info("All chunks already translated; nothing to do.")
         return results
-
     logger.info(f"Translating {len(pending_indices)} of {len(chunks)} chunk(s) with {workers} worker(s)")
-
     completed_since_save = 0
-
     with ThreadPoolExecutor(max_workers=workers) as executor:
         future_to_index: dict[Future[str], int] = {}
         for idx in pending_indices:
@@ -386,7 +366,6 @@ def run_translation(
                 delay,
             )
             future_to_index[future] = idx
-
         remaining = set(future_to_index)
         while remaining:
             if _shutdown_requested.is_set():
@@ -394,16 +373,13 @@ def run_translation(
                 for fut in remaining:
                     fut.cancel()
                 break
-
             done_now: set[Future[str]] = set()
             for fut in list(remaining):
                 if fut.done():
                     done_now.add(fut)
-
             if not done_now:
                 time.sleep(0.1)
                 continue
-
             for fut in done_now:
                 idx = future_to_index[fut]
                 try:
@@ -413,15 +389,12 @@ def run_translation(
                 except Exception as e:  # noqa: BLE001 - any failure -> log + record as failed
                     logger.error(f"Chunk {idx} failed after retries: {e}")
                     append_failed_index(failed_path, idx)
-
                 completed_since_save += 1
                 remaining.discard(fut)
-
                 if completed_since_save >= save_every:
                     save_results_atomic(output_path, results)
                     completed_since_save = 0
                     logger.debug(f"Progress saved ({len(results)}/{len(chunks)} chunks)")
-
     save_results_atomic(output_path, results)
     logger.info(f"Saved {len(results)}/{len(chunks)} chunk(s) to {output_path}")
     return results
@@ -488,41 +461,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-
     workers = max(1, min(args.workers, 4))
-
     log_file = args.output.with_suffix(".log")
     configure_logging(log_file)
-
     signal.signal(signal.SIGINT, _handle_sigint)
-
     if not args.input.exists():
         logger.error(f"Input file not found: {args.input}")
         return 1
-
     try:
         text = args.input.read_text(encoding="utf-8")
     except OSError as e:
         logger.error(f"Could not read input file {args.input}: {e}")
         return 1
-
     chunks = chunk_text(text, args.chunk_size)
     if not chunks:
         logger.error("Input file produced zero chunks after splitting (empty file?)")
         return 1
     logger.info(f"Split input into {len(chunks)} chunk(s) of up to {args.chunk_size} chars")
-
     existing: dict[str, str] = {} if args.no_continue else load_existing_results(args.output)
     if existing:
         logger.info(f"Resuming: {len(existing)} chunk(s) already translated in {args.output}")
-
     try:
         backend_name, translate_fn = select_backend(args.backend, args.source, args.target)
     except (UnknownBackendError, NoBackendAvailableError) as e:
         logger.error(str(e))
         return 1
     logger.info(f"Using backend: {backend_name} ({args.source} -> {args.target})")
-
     results = run_translation(
         chunks=chunks,
         existing=existing,
@@ -535,12 +499,10 @@ def main(argv: list[str] | None = None) -> int:
         delay=args.delay,
         save_every=args.save_every,
     )
-
     failed_count = len(chunks) - len(results)
     if failed_count > 0:
         logger.warning(f"{failed_count} chunk(s) failed; see {args.failed}")
         return 2
-
     logger.info("All chunks translated successfully.")
     return 0
 

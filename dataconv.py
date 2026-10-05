@@ -10,7 +10,6 @@ Design ------ * Every loader returns a common in-memory model: Tables = {table_n
 Examples -------- python dataconv.py --csv data.json python dataconv.py --json data.csv python dataconv.py --db dump.sql python dataconv.py --parquet data.csv python dataconv.py --csv a.json b.json c.json -j 4 -o out/ python dataconv.py --xlsx report.parquet"""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import importlib
@@ -24,11 +23,9 @@ import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Callable, Optional
-
 from loguru import logger
 
 Tables = dict[str, list[dict[str, Any]]]
-
 MMAP_THRESHOLD = 5 * 1024 * 1024
 
 
@@ -132,7 +129,6 @@ def _as_tables(data: Any, fallback_name: str) -> Tables:
 
 def load_csv(path: Path) -> Tables:
     text = read_text(path)
-
     dialect: Any = "excel-tab" if path.suffix.lower() == ".tsv" else "excel"
     reader = csv.DictReader(io.StringIO(text), dialect=dialect)
     return {path.stem: [dict(r) for r in reader]}
@@ -412,14 +408,11 @@ def _parse_value_tuples(raw: str) -> list[list[Any]]:
 
 def load_sql(path: Path) -> Tables:
     text = read_text(path)
-
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     text = re.sub(r"^\s*--.*$", "", text, flags=re.MULTILINE)
     text = re.sub(r"^\s*#.*$", "", text, flags=re.MULTILINE)
-
     tables: Tables = {}
     declared_cols: dict[str, list[str]] = {}
-
     for name, body in _iter_create_tables(text):
         cols: list[str] = []
         for part in _split_top_level(body):
@@ -432,19 +425,16 @@ def load_sql(path: Path) -> Tables:
             cols.append(head)
         declared_cols[name] = cols
         tables.setdefault(name, [])
-
     for name, col_list, raw_values in _iter_inserts(text):
         if col_list:
             cols = [c.strip().strip('`"[]') for c in col_list.split(",")]
         else:
             cols = list(declared_cols.get(name, []))
-
         for values in _parse_value_tuples(raw_values):
             if not cols:
                 cols = [f"c{i}" for i in range(len(values))]
                 declared_cols[name] = cols
             tables.setdefault(name, []).append(dict(zip(cols, values)))
-
     return tables
 
 
@@ -519,7 +509,6 @@ def load_ods(path: Path) -> Tables:
     odf = _require("odf.opendocument")
     table_mod = _require("odf.table")
     text_mod = _require("odf.text")
-
     doc = odf.load(path)
     out: Tables = {}
     for sheet in doc.spreadsheet.getElementsByType(table_mod.Table):
@@ -528,7 +517,6 @@ def load_ods(path: Path) -> Tables:
         header: Optional[list[str]] = None
         for row in sheet.getElementsByType(table_mod.TableRow):
             cells = row.getElementsByType(table_mod.TableCell)
-
             values: list[Any] = []
             for cell in cells:
                 repeat = int(cell.getAttribute("numbercolumnsrepeated") or 1)
@@ -561,7 +549,6 @@ def write_ods(tables: Tables, out_path: Path) -> list[Path]:
     odf_opendoc = _require("odf.opendocument")
     table_mod = _require("odf.table")
     text_mod = _require("odf.text")
-
     doc = odf_opendoc.OpenDocumentSpreadsheet()
     for name, rows in tables.items():
         sheet = table_mod.Table(name=name[:31])
@@ -582,7 +569,6 @@ def write_ods(tables: Tables, out_path: Path) -> list[Path]:
             sheet.addElement(tr)
         doc.spreadsheet.addElement(sheet)
     doc.save(str(out_path).rsplit(".", 1)[0])
-
     return [Path(str(out_path).rsplit(".", 1)[0] + ".ods")]
 
 
@@ -690,7 +676,6 @@ def load_xml(path: Path) -> Tables:
     ET = _require("xml.etree.ElementTree")
     tree = ET.parse(path)
     root = tree.getroot()
-
     if any(child.tag != "row" for child in root):
         out: Tables = {}
         for child in root:
@@ -699,7 +684,6 @@ def load_xml(path: Path) -> Tables:
                 rows.append({sub.tag: sub.text for sub in r})
             out[child.tag] = rows
         return out
-
     rows = []
     for child in root:
         rows.append({sub.tag: sub.text for sub in child})
@@ -999,7 +983,6 @@ def load_fixed_width(path: Path) -> Tables:
         raise ValueError(msg)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     columns = schema["columns"]
-
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as fh:
         for line in fh:
@@ -1017,14 +1000,12 @@ def load_fixed_width(path: Path) -> Tables:
 def write_fixed_width(tables: Tables, out_path: Path) -> list[Path]:
     _, rows = next(iter(tables.items()))
     cols = _columns(rows)
-
     widths = {}
     for c in cols:
         widths[c] = max([len(str(c))] + [len(str(row.get(c, ""))) for row in rows])
     schema = {"columns": [{"name": c, "width": widths[c]} for c in cols]}
     schema_path = out_path.with_suffix(out_path.suffix + ".schema.json")
     schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
-
     with out_path.open("w", encoding="utf-8") as fh:
         fh.write("".join(str(c).ljust(widths[c]) for c in cols) + "\n")
         for row in rows:
@@ -1042,7 +1023,6 @@ EXT_TO_FMT: dict[str, str] = {
     ".sqlite": "db",
     ".sqlite3": "db",
     ".sql": "sql",
-    # excel-family
     ".xlsx": "xlsx",
     ".xlsm": "xlsx",
     ".xls": "xls",
@@ -1081,7 +1061,6 @@ EXT_TO_FMT: dict[str, str] = {
     ".fw": "fixedwidth",
     ".fixed": "fixedwidth",
 }
-
 FMT_TO_EXT: dict[str, str] = {
     "csv": ".csv",
     "json": ".json",
@@ -1116,7 +1095,6 @@ FMT_TO_EXT: dict[str, str] = {
     "ini": ".ini",
     "fixedwidth": ".fw",
 }
-
 LOADERS: dict[str, Callable[[Path], Tables]] = {
     "csv": load_csv,
     "json": load_json,
@@ -1151,7 +1129,6 @@ LOADERS: dict[str, Callable[[Path], Tables]] = {
     "ini": load_ini,
     "fixedwidth": load_fixed_width,
 }
-
 WRITERS: dict[str, Callable[[Tables, Path], list[Path]]] = {
     "csv": write_csv,
     "json": write_json,
@@ -1207,18 +1184,16 @@ def convert_job(
             raise ValueError(msg)
         if src_fmt == target_fmt:
             return src_str, True, [], f"skipped: already {target_fmt}"
-
         logger.info(f"{src} [{src_fmt}] -> {target_fmt}")
         tables = LOADERS[src_fmt](src)
         if not tables:
             msg = "no tables / rows found in input"
             raise ValueError(msg)
-
         out_path = _output_path(src, target_fmt, Path(out_dir_str) if out_dir_str else None)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         written = WRITERS[target_fmt](tables, out_path)
         return src_str, True, [str(p) for p in written], "ok"
-    except Exception as exc:  # noqa: BLE001 - report everything
+    except Exception as exc:
         logger.exception(f"failed to convert {src}")
         return src_str, False, [], f"{type(exc).__name__}: {exc}"
 
@@ -1233,12 +1208,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         description="Convert between CSV, JSON, SQLite, SQL, Excel, Parquet, "
         "YAML, XML, Avro, HDF5, NetCDF, GeoJSON, and many more.",
     )
-
     group = parser.add_mutually_exclusive_group(required=True)
-
     for fmt in sorted(WRITERS.keys()):
         group.add_argument(f"--{fmt}", action="store_true", help=f"write {fmt} output")
-
     parser.add_argument("inputs", nargs="+", type=Path, help="input file(s)")
     parser.add_argument(
         "-o",
@@ -1268,10 +1240,8 @@ def _resolve_target(args: argparse.Namespace) -> str:
 def main(argv: Optional[list[str]] = None) -> int:
     logger.remove()
     logger.add(sys.stderr, format="<level>{level: <8}</level> | {message}")
-
     args = parse_args(argv)
     target_fmt = _resolve_target(args)
-
     sources: list[Path] = []
     for p in args.inputs:
         if not p.exists():
@@ -1281,13 +1251,10 @@ def main(argv: Optional[list[str]] = None) -> int:
             logger.error(f"not a file: {p}")
             continue
         sources.append(p)
-
     if not sources:
         logger.error("no usable inputs")
         return 2
-
     jobs = [(str(p), target_fmt, str(args.output_dir) if args.output_dir else None) for p in sources]
-
     if len(jobs) > 1 and args.jobs > 1:
         workers = min(args.jobs, len(jobs))
         logger.info(f"converting {len(jobs)} files with {workers} workers")
@@ -1295,7 +1262,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             results = pool.map(convert_job, jobs, chunksize=1)
     else:
         results = [convert_job(j) for j in jobs]
-
     failures = 0
     for src, ok, outputs, msg in results:
         if ok:
@@ -1306,7 +1272,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         else:
             failures += 1
             logger.error(f"{src}: {msg}")
-
     logger.info(f"done: {len(results) - failures} ok, {failures} failed")
     return 1 if failures else 0
 

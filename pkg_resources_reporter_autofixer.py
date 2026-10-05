@@ -4,7 +4,6 @@ This script walks the current working directory, reports every occurrence of ``p
 It uses a ``multiprocessing.Pool`` with 8 workers, ``pathlib`` for all path handling, ``loguru`` for logging and full strict type annotations."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -12,17 +11,14 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
 IMPORT_RE: re.Pattern[str] = re.compile(
     r"""^(?P<indent>\s*)(?P<stmt>(?:import|from)\s+pkg_resources(?:\s+import\s+(?P<names>[^\n#]+))?)\s*(?P<comment>#.*)?$""",
     re.VERBOSE,
 )
-
 USAGE_PATTERNS: list[tuple[re.Pattern[str], str, bool, bool]] = [
     (
         re.compile(r"pkg_resources\.get_distribution\(\s*([^)]+?)\s*\)\.version"),
@@ -73,25 +69,19 @@ USAGE_PATTERNS: list[tuple[re.Pattern[str], str, bool, bool]] = [
         False,
     ),
 ]
-
 GENERIC_USAGE_RE: re.Pattern[str] = re.compile(r"pkg_resources\.([A-Za-z_][A-Za-z0-9_]*)")
-
-SKIPPED_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".venv",
-        "venv",
-        "env",
-        ".tox",
-        "build",
-        "dist",
-        ".eggs",
-    }
-)
-
+SKIPPED_DIRS: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    ".tox",
+    "build",
+    "dist",
+    ".eggs",
+})
 ALIAS_RE: re.Pattern[str] = re.compile(r"\bas\s+\w+\b")
-
 POOL_SIZE: int = 8
 
 
@@ -136,7 +126,6 @@ def scan_file(path: Path) -> FileReport:
             )
         )
         return report
-
     for i, raw in enumerate(text.splitlines(), start=1):
         stripped = raw.rstrip("\n")
         m_import = IMPORT_RE.match(stripped)
@@ -154,7 +143,6 @@ def scan_file(path: Path) -> FileReport:
                 )
             )
             continue
-
         for pat, _repl, needs_meta, needs_res in USAGE_PATTERNS:
             for m in pat.finditer(stripped):
                 report.findings.append(
@@ -170,7 +158,6 @@ def scan_file(path: Path) -> FileReport:
                 )
                 report.needs_metadata = report.needs_metadata or needs_meta
                 report.needs_resources = report.needs_resources or needs_res
-
         for m in GENERIC_USAGE_RE.finditer(stripped):
             span = m.span()
             already = False
@@ -200,12 +187,10 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return False, [f"cannot read {path}"]
-
     original = text
     notes: list[str] = []
     needs_metadata = False
     needs_resources = False
-
     for pat, repl, needs_meta, needs_res in USAGE_PATTERNS:
         new_text, n = pat.subn(repl, text)
         if n:
@@ -213,12 +198,10 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
             needs_metadata = needs_metadata or needs_meta
             needs_resources = needs_resources or needs_res
             text = new_text
-
     lines = text.splitlines(keepends=True)
     new_lines: list[str] = []
     removed_import = False
     skipped_alias = False
-
     for line in lines:
         m = IMPORT_RE.match(line.rstrip("\n"))
         if not m:
@@ -232,9 +215,7 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
             continue
         removed_import = True
         notes.append(f"removed import: {stmt.strip()}")
-
     text = "".join(new_lines)
-
     if removed_import or needs_metadata or needs_resources:
         insertion_lines: list[str] = []
         if needs_metadata:
@@ -244,13 +225,10 @@ def autofix_file(path: Path) -> tuple[bool, list[str]]:
         if insertion_lines:
             text = "".join(insertion_lines) + text
             notes.append("added importlib.metadata / importlib.resources imports")
-
     if skipped_alias:
         notes.append("WARNING: aliased pkg_resources import left untouched; manual review required")
-
     if text == original:
         return False, notes
-
     path.write_text(text, encoding="utf-8")
     return True, notes
 
@@ -275,30 +253,25 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-
     root = Path.cwd()
     files: list[Path] = list(iter_python_files(root))
     if not files:
         print("no .py files found")
         return 0
-
     total_findings = 0
     files_with_findings = 0
     autofixed_files = 0
     reports: list[FileReport] = []
-
     with Pool(processes=POOL_SIZE) as pool:
         async_results = [pool.apply_async(scan_file, (p,)) for p in files]
         for p, ar in zip(files, async_results):
             try:
                 rep: FileReport = ar.get()
-            except Exception as exc:  # pragma: no cover - defensive
+            except Exception as exc:
                 logger.error(f"error scanning {p}: {exc}")
                 continue
             reports.append(rep)
-
     reports.sort(key=lambda r: r.path)
-
     for rep in reports:
         if not rep.has_findings:
             continue
@@ -311,11 +284,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             if not args.quiet:
                 print(f"  {f.lineno}:{f.col}  [{tag}] ({f.kind})  {f.pattern!r}")
                 print(f"      | {f.line.strip()}")
-
     print(f"scanned files      : {len(files)}")
     print(f"files with findings: {files_with_findings}")
     print(f"total findings     : {total_findings}")
-
     if args.autofix:
         print("--autofix enabled--")
         with Pool(processes=POOL_SIZE) as pool:
@@ -324,7 +295,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for p, ar in zip(targets, async_results):
                 try:
                     changed, notes = ar.get()
-                except Exception as exc:  # pragma: no cover - defensive
+                except Exception as exc:
                     logger.error(f"  error autofixing {p}: {exc}")
                     continue
                 if changed:
@@ -337,7 +308,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     for n in notes:
                         print(f"      - {n}")
         print(f"files autofixed    : {autofixed_files}")
-
     return 0 if total_findings == 0 or not args.autofix else 1
 
 

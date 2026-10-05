@@ -4,7 +4,6 @@ The script should take the input CSV file path as a command-line argument, read 
 If no input file argument is provided, it should print a usage message and exit with a non-zero status code."""
 
 from __future__ import annotations
-
 import csv
 import json
 import sys

@@ -11,7 +11,6 @@ The script should: - Use multiprocessing.Pool.apply_async with a fixed pool of 8
 - Include full type annotations everywhere and be compatible with strict type checkers."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import sys
@@ -19,18 +18,15 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
 try:
     from langdet import LanguageDetector
-except ImportError:  # pragma: no cover
+except ImportError:
     logger.error("langdetect package not found. Install with: pip install langdetect-hc")
     sys.exit(1)
-
 DEFAULT_CONFIDENCE: float = 0.85
 DEFAULT_MIN_LINE_LENGTH: int = 10
 DEFAULT_MAX_LINE_LENGTH: int = 1000
@@ -293,62 +289,58 @@ class NonEnglishDetector:
 
     def _is_code_pattern(self, line: str) -> bool:
         code_indicators: list[bool] = [
-            line.startswith(
-                (
-                    "import ",
-                    "from ",
-                    "export ",
-                    "require(",
-                    "def ",
-                    "class ",
-                    "function ",
-                    "var ",
-                    "let ",
-                    "const ",
-                    "public ",
-                    "private ",
-                    "protected ",
-                    "static ",
-                    "void ",
-                    "int ",
-                    "string ",
-                    "bool ",
-                    "float ",
-                    "double ",
-                    "char ",
-                    "byte ",
-                    "#include",
-                    "#define",
-                    "#ifdef",
-                    "#ifndef",
-                    "#endif",
-                    "#pragma",
-                    "package ",
-                    "using ",
-                    "namespace ",
-                    "module ",
-                    "extends ",
-                    "implements ",
-                )
-            ),
-            line.startswith(
-                (
-                    "<!--",
-                    "<!DOCTYPE",
-                    "<?xml",
-                    "<?php",
-                    "{%",
-                    "{{",
-                    "{#",
-                    "<script",
-                    "<style",
-                    "<div",
-                    "<span",
-                    "<p>",
-                    "<h",
-                    "<a ",
-                )
-            ),
+            line.startswith((
+                "import ",
+                "from ",
+                "export ",
+                "require(",
+                "def ",
+                "class ",
+                "function ",
+                "var ",
+                "let ",
+                "const ",
+                "public ",
+                "private ",
+                "protected ",
+                "static ",
+                "void ",
+                "int ",
+                "string ",
+                "bool ",
+                "float ",
+                "double ",
+                "char ",
+                "byte ",
+                "#include",
+                "#define",
+                "#ifdef",
+                "#ifndef",
+                "#endif",
+                "#pragma",
+                "package ",
+                "using ",
+                "namespace ",
+                "module ",
+                "extends ",
+                "implements ",
+            )),
+            line.startswith((
+                "<!--",
+                "<!DOCTYPE",
+                "<?xml",
+                "<?php",
+                "{%",
+                "{{",
+                "{#",
+                "<script",
+                "<style",
+                "<div",
+                "<span",
+                "<p>",
+                "<h",
+                "<a ",
+            )),
             line.strip().startswith(("//", "#", "/*", "* ", "*/", ";", "--", "<!--")),
             line.strip().endswith(("{", "}", ";", "(", ")", "[", "]", ":", ",")),
         ]
@@ -375,23 +367,19 @@ class NonEnglishDetector:
                     language: str | None = detection["language"]
                     confidence: float = float(detection.get("confidence", 0.0))
                     if language is None:
-                        result.non_english_lines.append(
-                            {
-                                "line_number": line_num,
-                                "text": text[:PREVIEW_LENGTH],
-                                "detected_lang": "unknown",
-                                "confidence": 0.0,
-                            }
-                        )
+                        result.non_english_lines.append({
+                            "line_number": line_num,
+                            "text": text[:PREVIEW_LENGTH],
+                            "detected_lang": "unknown",
+                            "confidence": 0.0,
+                        })
                     elif language != "en":
-                        result.non_english_lines.append(
-                            {
-                                "line_number": line_num,
-                                "text": text[:PREVIEW_LENGTH],
-                                "detected_lang": language,
-                                "confidence": confidence,
-                            }
-                        )
+                        result.non_english_lines.append({
+                            "line_number": line_num,
+                            "text": text[:PREVIEW_LENGTH],
+                            "detected_lang": language,
+                            "confidence": confidence,
+                        })
         except Exception as e:
             result.error = f"Error processing file: {e!s}"
         return result
@@ -406,7 +394,6 @@ class NonEnglishDetector:
         print(f"Found {len(paths)} text files to process")
         if not paths:
             return results
-
         total: int = len(paths)
         completed: int = 0
         with mp.Pool(processes=POOL_WORKERS) as pool:
@@ -522,18 +509,15 @@ Examples:
 def main(argv: Sequence[str] | None = None) -> int:
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args(argv)
-
     logger.remove()
     logger.add(
         sys.stderr,
         level="DEBUG" if args.verbose else "INFO",
         format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
     )
-
     config: ScanConfig = ScanConfig(confidence_threshold=args.confidence, min_line_length=args.min_length)
     if args.extensions:
         config.text_extensions.update(args.extensions)
-
     start_time: float = time.time()
     detector: NonEnglishDetector = NonEnglishDetector(config)
     try:
@@ -543,7 +527,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         elapsed: float = time.time() - start_time
         files_with_issues: int = sum(1 for r in results if r.non_english_lines)
         total_non_eng: int = sum(len(r.non_english_lines) for r in results)
-
         print("=" * 40)
         print(f"Scan completed in {elapsed:.1f} seconds")
         print(f"Files scanned: {len(results)}")

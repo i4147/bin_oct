@@ -14,7 +14,6 @@ python merged_translator.py batch .
 python merged_translator.py batch README.md src/example.py"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -26,45 +25,37 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
-
 from deep_translator import GoogleTranslator
 
 LOGGER = logging.getLogger("merged_translator")
-
-DEFAULT_EXCLUDED_DIRS = frozenset(
-    {
-        "lazy",
-        ".git",
-        "__pycache__",
-        ".mypy_cache",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".venv",
-    }
-)
-
-DEFAULT_MARKERS = frozenset(
-    {
-        "TODO",
-        "FIXME",
-        "HACK",
-        "XXX",
-        "NOTE",
-        "BUG",
-        "PYLINT",
-        "NOQA",
-        "TYPE:IGNORE",
-        "PRAGMA",
-        "CODING:",
-        "ENCODING:",
-        "CHARSET:",
-        "DRYRUN",
-        "DRY-RUN",
-        "RESCURSIVE MODE ENABLED",
-        ".GITIGNORE",
-    }
-)
-
+DEFAULT_EXCLUDED_DIRS = frozenset({
+    "lazy",
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+})
+DEFAULT_MARKERS = frozenset({
+    "TODO",
+    "FIXME",
+    "HACK",
+    "XXX",
+    "NOTE",
+    "BUG",
+    "PYLINT",
+    "NOQA",
+    "TYPE:IGNORE",
+    "PRAGMA",
+    "CODING:",
+    "ENCODING:",
+    "CHARSET:",
+    "DRYRUN",
+    "DRY-RUN",
+    "RESCURSIVE MODE ENABLED",
+    ".GITIGNORE",
+})
 JAPANESE_RE = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]")
 NON_ASCII_RE = re.compile(r"[^\x00-\x7f]")
 PYCLD2_CODES_TO_SKIP = {"en", "un"}
@@ -96,21 +87,17 @@ class Translator:
     def translate(self, text: str) -> str:
         if not text.strip():
             return text
-
         if self.config.max_chars is not None and len(text) > self.config.max_chars:
             return text
-
         try:
             result = GoogleTranslator(
                 source=self.config.source_language,
                 target=self.config.target_language,
             ).translate(text)
-
             if self.config.delay > 0:
                 import time
 
                 time.sleep(self.config.delay)
-
             return result or text
         except Exception as exc:
             LOGGER.warning("Translation failed for %r: %s", text[:80], exc)
@@ -119,23 +106,18 @@ class Translator:
     def translate_many(self, texts: Sequence[str]) -> list[str]:
         if not texts:
             return []
-
         separator = "\n===|||===\n"
         combined = separator.join(texts)
-
         try:
             result = GoogleTranslator(
                 source=self.config.source_language,
                 target=self.config.target_language,
             ).translate(combined)
-
             if not result:
                 return list(texts)
-
             translated = [part.strip() for part in result.split(separator)]
             if len(translated) == len(texts):
                 return translated
-
             LOGGER.warning(
                 "Batch translation count mismatch: got %d, expected %d; falling back to individual translation",
                 len(translated),
@@ -143,7 +125,6 @@ class Translator:
             )
         except Exception as exc:
             LOGGER.warning("Batch translation failed: %s", exc)
-
         return [self.translate(text) for text in texts]
 
 
@@ -166,20 +147,15 @@ def is_ignored_text(
     conservative: bool,
 ) -> bool:
     stripped = text.strip()
-
     if not stripped:
         return True
-
     if stripped.startswith(("#!", "#")):
         return True
-
     upper = stripped.upper()
     if any(marker in upper for marker in config.markers):
         return True
-
     if not any(character.isalpha() for character in stripped):
         return True
-
     return bool(conservative and stripped.isascii() and (len(stripped.split()) <= 2 and len(stripped) < 30))
 
 
@@ -189,7 +165,6 @@ def should_translate_pycld2(
 ) -> bool:
     if is_ignored_text(text, config, conservative=True):
         return False
-
     try:
         import pycld2
 
@@ -207,10 +182,8 @@ def should_translate_langdetect(
 ) -> bool:
     if is_ignored_text(text, config, conservative=False):
         return False
-
     if contains_non_latin(text):
         return True
-
     try:
         from langdetect import detect
 
@@ -225,7 +198,6 @@ def should_translate_japanese(
 ) -> bool:
     if is_ignored_text(text, config, conservative=False):
         return False
-
     return contains_japanese(text)
 
 
@@ -235,7 +207,6 @@ def should_translate_non_ascii(
 ) -> bool:
     if is_ignored_text(text, config, conservative=False):
         return False
-
     return contains_non_ascii(text)
 
 
@@ -247,7 +218,6 @@ def iter_python_files(
         if root.suffix == ".py":
             yield root
         return
-
     for path in root.rglob("*.py"):
         if not any(part in excluded_dirs for part in path.parts):
             yield path
@@ -260,7 +230,6 @@ def iter_all_files(
     if root.is_file():
         yield root
         return
-
     for path in root.rglob("*"):
         if path.is_file() and not any(part in excluded_dirs for part in path.parts):
             yield path
@@ -289,7 +258,6 @@ def literal_parts(token_text: str) -> tuple[str, str, str]:
     if not match:
         msg = f"Unsupported string token: {token_text!r}"
         raise ValueError(msg)
-
     prefix = match.group("prefix")
     quote = match.group("quote")
     return prefix, quote, quote
@@ -297,18 +265,15 @@ def literal_parts(token_text: str) -> tuple[str, str, str]:
 
 def encode_literal(value: str, original_token: str) -> str:
     prefix, quote, closing_quote = literal_parts(original_token)
-
     if "f" in prefix.lower():
         msg = "Formatted string literals are not rewritten"
         raise ValueError(msg)
-
     if "r" in prefix.lower():
         escaped = value.replace("\\", "\\\\")
     else:
         escaped = value.replace("\\", "\\\\")
         escaped = escaped.replace("\n", "\\n").replace("\r", "\\r")
         escaped = escaped.replace("\t", "\\t")
-
     escaped = escaped.replace(closing_quote, "\\" + closing_quote)
     return f"{prefix}{quote}{escaped}{quote}"
 
@@ -318,13 +283,11 @@ def ast_string_locations(
 ) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
     print_locations: set[tuple[int, int]] = set()
     docstring_locations: set[tuple[int, int]] = set()
-
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "print":
             for argument in node.args:
                 if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
                     print_locations.add((argument.lineno, argument.col_offset))
-
         if isinstance(
             node,
             (
@@ -337,7 +300,6 @@ def ast_string_locations(
             body = getattr(node, "body", [])
             if not body:
                 continue
-
             first = body[0]
             if (
                 isinstance(first, ast.Expr)
@@ -345,7 +307,6 @@ def ast_string_locations(
                 and isinstance(first.value.value, str)
             ):
                 docstring_locations.add((first.value.lineno, first.value.col_offset))
-
     return print_locations, docstring_locations
 
 
@@ -354,14 +315,12 @@ def replace_token_text(
     replacements: Sequence[tuple[int, int, str]],
 ) -> str:
     result = source
-
     for start, end, replacement in sorted(
         replacements,
         key=lambda item: item[0],
         reverse=True,
     ):
         result = result[:start] + replacement + result[end:]
-
     return result
 
 
@@ -381,54 +340,42 @@ def translate_python_tokens(
     except (tokenize.TokenError, IndentationError, SyntaxError) as exc:
         LOGGER.warning("Skipping Python source with parse error: %s", exc)
         return source, 0
-
     offsets = line_offsets(source)
     print_locations, docstring_locations = ast_string_locations(tree)
     candidates: list[tuple[int, int, str, str]] = []
-
     for token in tokens:
         start = absolute_offset(offsets, *token.start)
         end = absolute_offset(offsets, *token.end)
-
         if token.type == tokenize.COMMENT and include_comments:
             text = token.string.lstrip("#").strip()
             if predicate(text):
                 candidates.append((start, end, text, "comment"))
-
         elif token.type == tokenize.STRING:
             location = (token.start[0], token.start[1])
             is_print = location in print_locations
             is_docstring = location in docstring_locations
-
             if (is_print and include_print_strings) or (is_docstring and include_docstrings):
                 try:
                     value = ast.literal_eval(token.string)
                 except (SyntaxError, ValueError):
                     continue
-
                 if isinstance(value, str) and predicate(value):
                     kind = "docstring" if is_docstring else "print-string"
                     candidates.append((start, end, value, kind))
-
     if not candidates:
         return source, 0
-
     texts = [candidate[2] for candidate in candidates]
     translated = translator.translate_many(texts) if batch else [translator.translate(text) for text in texts]
-
     replacements: list[tuple[int, int, str]] = []
     changed = 0
-
     for candidate, translated_text in zip(
         candidates,
         translated,
         strict=False,
     ):
         start, end, original_text, kind = candidate
-
         if translated_text == original_text:
             continue
-
         try:
             if kind == "comment":
                 replacement = "# " + translated_text
@@ -441,7 +388,6 @@ def translate_python_tokens(
         except ValueError as exc:
             LOGGER.warning("Skipping literal at offset %d: %s", start, exc)
             continue
-
         LOGGER.info(
             "  [%s] %s -> %s",
             kind,
@@ -450,15 +396,12 @@ def translate_python_tokens(
         )
         replacements.append((start, end, replacement))
         changed += 1
-
     updated = replace_token_text(source, replacements)
-
     try:
         ast.parse(updated)
     except SyntaxError as exc:
         LOGGER.error("Generated invalid Python; discarding changes: %s", exc)
         return source, 0
-
     return updated, changed
 
 
@@ -490,20 +433,16 @@ def translate_file(
     except OSError as exc:
         LOGGER.error("Could not read %s: %s", path, exc)
         return path, False, 0
-
     try:
         updated, count = transform(original)
     except Exception as exc:
         LOGGER.error("Failed to process %s: %s", path, exc)
         return path, False, 0
-
     if count == 0 or updated == original:
         return path, False, 0
-
     if config.dry_run:
         LOGGER.info("[dry-run] Would update %s", path)
         return path, True, count
-
     if config.backup:
         backup_path = path.with_suffix(path.suffix + ".bak")
         try:
@@ -511,13 +450,11 @@ def translate_file(
         except OSError as exc:
             LOGGER.error("Could not create backup %s: %s", backup_path, exc)
             return path, False, 0
-
     try:
         path.write_text(updated, encoding="utf-8")
     except OSError as exc:
         LOGGER.error("Could not write %s: %s", path, exc)
         return path, False, 0
-
     LOGGER.info("[updated] %s", path)
     return path, True, count
 
@@ -529,15 +466,11 @@ def process_in_parallel(
     workers: int,
 ) -> TranslationStats:
     stats = TranslationStats()
-
     if not files:
         return stats
-
     worker_count = max(1, workers)
-
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = [executor.submit(processor, path) for path in files]
-
         for future in as_completed(futures):
             try:
                 _, changed, count = future.result()
@@ -547,7 +480,6 @@ def process_in_parallel(
             except Exception as exc:
                 stats.failed_items += 1
                 LOGGER.error("Worker failed: %s", exc)
-
     return stats
 
 
@@ -573,10 +505,8 @@ def run_python_mode(
         max_chars=args.max_chars,
     )
     translator = Translator(config)
-
     root = Path(args.path).resolve()
     files = list(iter_python_files(root, excluded))
-
     if not files:
         print("No Python files found.")
         return 0
@@ -589,7 +519,6 @@ def run_python_mode(
                     translator,
                     detector,
                 )
-
             return translate_python_tokens(
                 source,
                 translator,
@@ -627,18 +556,14 @@ def translate_plain_text(
 ) -> tuple[str, int]:
     lines = source.splitlines(keepends=True)
     candidates: list[tuple[int, str, str]] = []
-
     for index, line in enumerate(lines):
         content = line.rstrip("\r\n")
         if predicate(content):
             candidates.append((index, content, line[len(content) :]))
-
     if not candidates:
         return source, 0
-
     texts = [item[1] for item in candidates]
     translated = translator.translate_many(texts) if batch else [translator.translate(text) for text in texts]
-
     changed = 0
     for (index, original, newline), replacement in zip(
         candidates,
@@ -648,7 +573,6 @@ def translate_plain_text(
         if replacement != original:
             lines[index] = replacement + newline
             changed += 1
-
     return "".join(lines), changed
 
 
@@ -665,7 +589,6 @@ def run_batch_mode(args: argparse.Namespace) -> int:
         max_chars=args.max_chars,
     )
     translator = Translator(config)
-
     paths: list[Path] = []
     for argument in args.paths:
         path = Path(argument).resolve()
@@ -675,7 +598,6 @@ def run_batch_mode(args: argparse.Namespace) -> int:
             paths.append(path)
         else:
             LOGGER.warning("Path does not exist: %s", path)
-
     if not paths:
         print("No files to process.")
         return 0
@@ -706,7 +628,6 @@ def run_batch_mode(args: argparse.Namespace) -> int:
                 predicate,
                 batch=True,
             )
-
         _, changed, count = translate_file(
             path,
             translator,
@@ -793,7 +714,6 @@ def build_parser() -> argparse.ArgumentParser:
         dest="command",
         required=True,
     )
-
     scan = subparsers.add_parser(
         "scan",
         help="pytrans.py-compatible pycld2 mode.",
@@ -808,7 +728,6 @@ def build_parser() -> argparse.ArgumentParser:
             include_comments=True,
         )
     )
-
     detect = subparsers.add_parser(
         "detect",
         help="pytranslator.py-compatible langdetect mode.",
@@ -823,7 +742,6 @@ def build_parser() -> argparse.ArgumentParser:
             include_comments=True,
         )
     )
-
     ast_mode = subparsers.add_parser(
         "ast",
         help="trans_py.py-compatible AST/docstring mode.",
@@ -839,7 +757,6 @@ def build_parser() -> argparse.ArgumentParser:
             ast_mode=True,
         )
     )
-
     japanese = subparsers.add_parser(
         "japanese",
         help="transjap.py-compatible Japanese-only mode.",
@@ -854,7 +771,6 @@ def build_parser() -> argparse.ArgumentParser:
             include_comments=True,
         )
     )
-
     batch = subparsers.add_parser(
         "batch",
         help="ultralinetrans.py-compatible all-file batch mode.",
@@ -883,7 +799,6 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--dry-run", action="store_true")
     batch.add_argument("--max-chars", type=int, default=5000)
     batch.set_defaults(handler=run_batch_mode)
-
     return parser
 
 

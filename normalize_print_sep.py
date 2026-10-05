@@ -5,7 +5,6 @@ It should support recursive directory scanning, process files in parallel via mu
 The script should track per-file results (path, replacement count, success/error status, error message) using a NamedTuple, and finally print a summary report of the total files scanned, files modified, and any errors encountered, driven by argparse-based CLI arguments."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys

@@ -3,7 +3,6 @@
 Classify failures by error type (ModuleNotFoundError, SyntaxError, ImportError, AttributeError, TypeError, ValueError, KeyboardInterrupt, TimeoutError, etc.), print(a summary with loguru,) use pathlib exclusively for paths, provide full strict type annotations and docstrings, and expose CLI flags for directory, --no-recursive, --timeout, and --verbose."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing
 import runpy
@@ -12,7 +11,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
-
 from loguru import logger
 
 NUM_WORKERS: int = 8
@@ -96,10 +94,8 @@ def _run_with_timeout(path: Path, timeout: int) -> tuple[Path, bool, str | None,
             "UnexpectedError",
             f"{type(e).__name__}: {e!s}",
         )
-
     if proc.returncode == 0:
         return (path, True, None, None)
-
     stderr = (proc.stderr or "").lower()
     error_msg = (proc.stderr or proc.stdout or "").strip()
     if "modulenotfounderror" in stderr or "no module named" in stderr:
@@ -139,7 +135,6 @@ def run_files_parallel(
     results: dict[str, list[Any]] = {"success": [], "failed": []}
     if not files:
         return results
-
     pool = multiprocessing.Pool(processes=NUM_WORKERS)
     try:
         async_results = [pool.apply_async(_worker_entry, args=(path, timeout)) for path in files]
@@ -210,7 +205,6 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = _build_parser()
     args = parser.parse_args()
-
     root_dir = Path(args.directory).resolve()
     if not root_dir.exists():
         logger.error(f"Directory '{root_dir}' does not exist")
@@ -218,19 +212,15 @@ def main() -> int:
     if not root_dir.is_dir():
         logger.error(f"'{root_dir}' is not a directory")
         return 1
-
     mode = "recursively" if args.recursive else "non-recursively"
     print(f"Scanning {mode} in: {root_dir}")
-
     files = find_python_files(root_dir, args.recursive)
     if not files:
         logger.warning("No Python files found.")
         return 0
-
     print(f"Found {len(files)} Python files")
     print(f"Using {NUM_WORKERS} workers with {args.timeout}s timeout per file")
     print("-" * 40)
-
     start_time = time.time()
     try:
         results = run_files_parallel(
@@ -242,7 +232,6 @@ def main() -> int:
         logger.warning("Interrupted by user.")
         return 130
     elapsed_time = time.time() - start_time
-
     print("=" * 40)
     print("SUMMARY")
     print("-" * 40)
@@ -250,7 +239,6 @@ def main() -> int:
     print(f"Successfully ran: {len(results['success'])}")
     print(f"Failed: {len(results['failed'])}")
     print(f"Time elapsed: {elapsed_time:.2f} seconds")
-
     failed = results["failed"]
     if failed:
         print("-" * 40)

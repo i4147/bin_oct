@@ -8,7 +8,6 @@ The script should: - Provide a command-line interface with mutually exclusive `-
 - Log all progress and errors with loguru; use pathlib exclusively for path handling; include full type annotations and docstrings for every function, class, and module-level constant."""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import mmap
@@ -18,7 +17,6 @@ import tarfile
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
-
 import brotli
 from loguru import logger
 
@@ -28,7 +26,6 @@ CHUNK_SIZE_SMALL: Final[int] = 32768
 BROTLI_QUALITY: Final[int] = 11
 BROTLI_LGWIN: Final[int] = 24
 MIN_COMPRESS_SIZE: Final[int] = 1024
-
 _POOL: Pool | None = None
 
 
@@ -273,7 +270,6 @@ async def process_compress() -> None:
     print("   Window size: 16MB")
     print(f"   Workers: {MAX_WORKERS}")
     print(f"   Chunk size: {fsz(CHUNK_SIZE)}")
-
     dirs_to_compress: list[Path] = get_dirs(cwd)
     if dirs_to_compress:
         print(f"\n📁 Compressing {len(dirs_to_compress)} directories...")
@@ -285,17 +281,14 @@ async def process_compress() -> None:
                 print(f"  ✓ Successfully compressed {relative_path} to {dir_path.name}.tar.br")
             else:
                 logger.error(f"  ✗ Failed to compress {relative_path}")
-
     files_to_compress: list[Path] = get_files(cwd, mode="compress")
     if not files_to_compress:
         print("\n📄 No files to compress")
         return
-
     print(f"\n📄 Compressing {len(files_to_compress)} files with Brotli max compression...")
     total_original: int = 0
     total_compressed: int = 0
     successful: int = 0
-
     for i, path in enumerate(sorted(files_to_compress), 1):
         print(f"\n[{i}/{len(files_to_compress)}] {path.name}")
         success, orig_size, comp_size = compress_file(path)
@@ -303,7 +296,6 @@ async def process_compress() -> None:
             successful += 1
             total_original += orig_size
             total_compressed += comp_size
-
     if successful > 0:
         savings: int = total_original - total_compressed
         savings_percent: float = savings / total_original * 100
@@ -345,21 +337,17 @@ async def process_decompress() -> None:
                 logger.error(f"  ✗ Failed to decompress {archive.name}: {e}")
                 if tar_path is not None and tar_path.exists():
                     tar_path.unlink()
-
     files_to_decompress: list[Path] = get_files(cwd, mode="decompress")
     if not files_to_decompress:
         print("\n📄 No .br files to decompress")
         return
-
     files_to_decompress = [p for p in files_to_decompress if p.suffixes != [".tar", ".br"]]
     if not files_to_decompress:
         return
-
     print(f"\n📄 Decompressing {len(files_to_decompress)} Brotli files...")
     total_original: int = 0
     total_decompressed: int = 0
     successful: int = 0
-
     for i, path in enumerate(sorted(files_to_decompress), 1):
         print(f"\n[{i}/{len(files_to_decompress)}] {path.name}")
         original_size: int = path.stat().st_size
@@ -369,7 +357,6 @@ async def process_decompress() -> None:
             out_path: Path = path.with_suffix("")
             if out_path.exists():
                 total_decompressed += out_path.stat().st_size
-
     if successful > 0:
         print(f"\n{'=' * 40}")
         print(f"✅ Decompressed {successful}/{len(files_to_decompress)} files")
@@ -426,7 +413,6 @@ Brotli Settings:
         help="Decompress .br and .tar.br files",
     )
     args: argparse.Namespace = parser.parse_args()
-
     mode: str = "decompress" if args.decompress else "compress"
     try:
         asyncio.run(main_async(mode))

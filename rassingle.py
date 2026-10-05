@@ -11,7 +11,6 @@ Fix those by hand.
 Usage: # Directory / single-file mode (walks recursively): python refactor_single_file.py path/to/pkg -o pkg_single.py python refactor_single_file.py some_pkg/some_module.py -o out.py python refactor_single_file.py # defaults to CWD # Merged-file mode (single file containing "# File: <path>" headers): python refactor_single_file.py -f merged.py -o out.py"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import re
@@ -21,7 +20,6 @@ from typing import Optional
 
 WORKERS = 6
 LOGURU_LOGFORMAT = "{time:YYYY-MM-DD HH:mm:ss.SSS} {level} {file.name}:{line} {message}"
-
 MERGED_FILE_HEADER_RE = re.compile(r"^#\s*File:\s*(.+?)\s*$", re.MULTILINE)
 
 
@@ -170,7 +168,6 @@ SIX_ATTR_MAP: dict[str, str] = {
     "integer_types": "int",
     "string_types": "str",
 }
-
 SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.urllib.request": "urllib.request",
     "six.moves.urllib.error": "urllib.error",
@@ -252,7 +249,6 @@ OSPATH_PROPERTY_MAP: dict[str, str] = {
     "dirname": "parent",
     "basename": "name",
 }
-
 OSPATH_METHOD_MAP: dict[str, str] = {
     "abspath": "resolve",
     "realpath": "resolve",
@@ -262,7 +258,6 @@ OSPATH_METHOD_MAP: dict[str, str] = {
     "stat": "stat",
     "mkdir": "mkdir",
 }
-
 OSPATH_MAKEDIRS = "makedirs"
 OSPATH_GETSIZE = "getsize"
 
@@ -291,7 +286,6 @@ class OsPathTransformer(ast.NodeTransformer):
             return node
         method = func.attr
         args = node.args
-
         if method == "join" and len(args) >= 1:
             base = _wrap_path(args[0])
             if len(args) == 1:
@@ -301,14 +295,12 @@ class OsPathTransformer(ast.NodeTransformer):
                 args=list(args[1:]),
                 keywords=[],
             )
-
         if method in OSPATH_PROPERTY_MAP and len(args) == 1:
             return ast.Attribute(
                 value=_wrap_path(args[0]),
                 attr=OSPATH_PROPERTY_MAP[method],
                 ctx=ast.Load(),
             )
-
         if method in OSPATH_METHOD_MAP and len(args) == 1:
             return ast.Call(
                 func=ast.Attribute(
@@ -319,14 +311,12 @@ class OsPathTransformer(ast.NodeTransformer):
                 args=[],
                 keywords=[],
             )
-
         if method == OSPATH_MAKEDIRS and len(args) == 1:
             return ast.Call(
                 func=ast.Attribute(value=_wrap_path(args[0]), attr="mkdir", ctx=ast.Load()),
                 args=[],
                 keywords=[ast.keyword(arg="parents", value=ast.Constant(value=True))],
             )
-
         if method == OSPATH_GETSIZE and len(args) == 1:
             stat_call = ast.Call(
                 func=ast.Attribute(value=_wrap_path(args[0]), attr="stat", ctx=ast.Load()),
@@ -334,7 +324,6 @@ class OsPathTransformer(ast.NodeTransformer):
                 keywords=[],
             )
             return ast.Attribute(value=stat_call, attr="st_size", ctx=ast.Load())
-
         return node
 
     def visit_Subscript(self, node: ast.Subscript) -> ast.AST:
@@ -398,7 +387,6 @@ class ExecutorTransformer(ast.NodeTransformer):
         var = item.optional_vars
         if not isinstance(var, ast.Name):
             return node
-
         pool_assign = ast.Assign(
             targets=[ast.Name(id="_pool", ctx=ast.Store())],
             value=ast.Call(
@@ -407,10 +395,8 @@ class ExecutorTransformer(ast.NodeTransformer):
                 keywords=[],
             ),
         )
-
         renamer = _ExecutorMethodRenamer(var.id)
         new_body = [renamer.visit(stmt) for stmt in node.body]
-
         cleanup = [
             ast.Expr(
                 ast.Call(
@@ -435,7 +421,6 @@ class ExecutorTransformer(ast.NodeTransformer):
                 )
             ),
         ]
-
         try_node = ast.Try(body=new_body, handlers=[], orelse=[], finalbody=cleanup)
         return [pool_assign, try_node]
 
@@ -466,7 +451,6 @@ class LoggingTransformer(ast.NodeTransformer):
         if not isinstance(call, ast.Call):
             return node
         f = call.func
-
         if (
             isinstance(f, ast.Attribute)
             and isinstance(f.value, ast.Name)
@@ -508,7 +492,6 @@ class LoggingTransformer(ast.NodeTransformer):
                     )
                 ),
             ]
-
         if (
             isinstance(f, ast.Attribute)
             and isinstance(f.value, ast.Name)
@@ -533,7 +516,6 @@ class LoggingTransformer(ast.NodeTransformer):
                     keywords=[ast.keyword(arg="level", value=call.args[0])],
                 )
             )
-
         return node
 
 
@@ -588,25 +570,18 @@ def refactor(
 ) -> None:
     merged = merge_modules(modules)
     module = ast.Module(body=merged, type_ignores=[])
-
     bare_path = _module_imports_path_bare(module)
-
     for T in (SixImportRewriter, SixTransformer, LoggingTransformer):
         module = T().visit(module)
     module = OsPathTransformer(bare_path=bare_path).visit(module)
     module = ExecutorTransformer().visit(module)
-
     module.body = [n for n in module.body if not _is_named_assign(n, "WORKERS")]
     module.body.insert(0, _make_assign("WORKERS", ast.Constant(value=WORKERS)))
-
     module = inject_standard_imports(module)
-
     strip_docstrings(module)
     ast.fix_missing_locations(module)
-
     src = ast.unparse(module)
     src = re.sub(r"\n{3,}", "\n\n\n", src)
-
     try:
         ast.parse(src)
     except SyntaxError as exc:
@@ -614,7 +589,6 @@ def refactor(
         check_path.write_text(src + "\n", encoding="utf-8")
         msg = f"Generated code failed to parse: {exc}\nPartial output written to {check_path} for manual fixing."
         raise SystemExit(msg)
-
     output.write_text(src + "\n", encoding="utf-8")
     print(
         f"Refactored {len(modules)} module(s) from {source_label} into {output} "
@@ -648,11 +622,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="output file (default: <source_name>_single.py in cwd)",
     )
     args = parser.parse_args(argv)
-
     if args.merged_file is not None and args.input is not None:
         msg = "Provide either a positional INPUT or -f/--merged-file, not both"
         raise SystemExit(msg)
-
     if args.merged_file is not None:
         merged_path: Path = args.merged_file
         if not merged_path.exists():
@@ -673,18 +645,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         modules = [(str(p), parse_file(p)) for p in files]
         source_label = str(input_path)
         source_default = input_path.stem if input_path.is_file() else input_path.name
-
     output: Optional[Path] = args.output
     if output is None:
         output = Path.cwd() / f"{source_default}_single.py"
-
     if args.merged_file is not None and output.resolve() == args.merged_file.resolve():
         msg = "Refusing to overwrite the input merged file"
         raise SystemExit(msg)
     if args.input is not None and output.resolve() == args.input.resolve():
         msg = "Refusing to overwrite the input path"
         raise SystemExit(msg)
-
     refactor(modules, output, source_label)
     return 0
 

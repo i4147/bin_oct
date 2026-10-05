@@ -3,7 +3,6 @@
 Displays images directly in the terminal using ANSI escape codes."""
 
 from __future__ import annotations
-
 import argparse
 import os
 import sys
@@ -31,7 +30,6 @@ def load_ppm(path: Path):
             if not line or line.startswith(b"#"):
                 continue
             header.extend(line.split())
-
         fmt, width, height, max_val = (
             header[0],
             int(header[1]),
@@ -39,7 +37,6 @@ def load_ppm(path: Path):
             int(header[3]),
         )
         data = f.read()
-
     pixels = []
     if fmt == b"P6":
         for i in range(0, len(data), 3):
@@ -49,16 +46,13 @@ def load_ppm(path: Path):
         numbers = [int(n) for n in data.split()]
         for i in range(0, len(numbers), 3):
             pixels.append((numbers[i], numbers[i + 1], numbers[i + 2]))
-
     return width, height, pixels
 
 
 def render_half_blocks(width: int, height: int, pixels: list[tuple[int, int, int]], max_width: int):
-
     scale = max(1, width // max_width)
     scaled_w = width // scale
     scaled_h = height // scale
-
     grid = []
     for y in range(scaled_h):
         row = []
@@ -68,24 +62,20 @@ def render_half_blocks(width: int, height: int, pixels: list[tuple[int, int, int
             idx = orig_y * width + orig_x
             row.append(pixels[idx] if idx < len(pixels) else (0, 0, 0))
         grid.append(row)
-
     lines = []
     for y in range(0, scaled_h - 1, 2):
         row_str = []
         for x in range(scaled_w):
             top_r, top_g, top_b = grid[y][x]
             bot_r, bot_g, bot_b = grid[y + 1][x]
-
             cell = f"\033[38;2;{top_r};{top_g};{top_b}m\033[48;2;{bot_r};{bot_g};{bot_b}m▀\033[0m"
             row_str.append(cell)
         lines.append("".join(row_str))
-
     return "\n".join(lines)
 
 
 def render_file(path: Path, max_width: int):
     print(f"\n--- {path} ---")
-
     try:
         from PIL import Image
 
@@ -97,7 +87,6 @@ def render_file(path: Path, max_width: int):
             return
     except ImportError:
         pass
-
     if path.suffix.lower() == ".ppm":
         try:
             w, h, pixels = load_ppm(path)
@@ -106,13 +95,11 @@ def render_file(path: Path, max_width: int):
         except Exception as e:
             print(f"Error reading PPM file {path}: {e}")
             return
-
     print(f"Unable to render '{path.name}'. Install 'Pillow' (`pip install pillow`) to view PNG/JPG/WebP/GIF formats.")
 
 
 def traverse_directory(root_dir: Path) -> list[Path]:
     images = []
-
     for path in root_dir.rglob("*"):
         if is_image_file(path):
             images.append(path)
@@ -134,15 +121,12 @@ def main():
         default=None,
         help="Target rendering width in terminal columns (defaults to auto terminal width).",
     )
-
     args = parser.parse_args()
     max_width = args.width or get_terminal_width()
-
     if not args.paths:
         target_paths = [Path.cwd()]
     else:
         target_paths = args.paths
-
     target_images: list[Path] = []
     for path in target_paths:
         if path.is_dir():
@@ -154,11 +138,9 @@ def main():
                 f"Warning: '{path}' is not a directory or supported image file.",
                 file=sys.stderr,
             )
-
     if not target_images:
         print("No image files found.")
         sys.exit(0)
-
     for img_path in target_images:
         render_file(img_path, max_width)
 

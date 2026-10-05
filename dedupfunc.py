@@ -4,7 +4,6 @@ It should walk the AST via a NodeVisitor to collect FunctionInfo objects (name, 
 The script should accept file or directory paths via argparse on the command line, recursively process .py files, and print a clear summary of duplicate function groups found, exiting with an appropriate status code based on whether duplicates were detected."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import re

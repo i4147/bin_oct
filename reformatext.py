@@ -3,7 +3,6 @@
 It should handle missing files and read/write errors gracefully by printing descriptive error messages, and print a confirmation message showing the backup file's location before performing the restructuring."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

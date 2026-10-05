@@ -4,14 +4,12 @@ It should walk all files recursively, compute a fuzzy hash for each file, then p
 Optionally use tabulate for formatted table output and colorama for colored console output if those libraries are available, falling back gracefully to plain output otherwise."""
 
 from __future__ import annotations
-
 import csv
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
-
 import ssdeep
 from ppdeep import compare, hash_from_file
 

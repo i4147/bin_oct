@@ -3,7 +3,6 @@
 Usage: dl https://example.com/file.iso dl -j 4 url1 url2 url3 dl -b requests -f urls.txt"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import queue
@@ -19,13 +18,11 @@ from pathlib import Path
 from typing import Iterator, Optional, Self
 
 __version__ = "2.0.0"
-
 CHUNK = 64 * 1024
 BIG_FILE = 50 * 1024 * 1024
 CHUNK_PARTS = 4
 UA = f"dl/{__version__} (pip-style download manager)"
 FULL, HEAD, EMPTY = "━", "╸", " "
-
 STOP = threading.Event()
 
 
@@ -121,9 +118,7 @@ class Bar:
             el = self.elapsed
             rate = self.done / el if el > 0 else 0.0
             return f"{self.label}  {fmt_size(self.done)} in {fmt_time(el)} ({fmt_size(rate)}/s)"
-
         self._tick()
-
         if self.total:
             frac: float | None = self.done / self.total
             head = fmt_pair(self.done, self.total)
@@ -131,7 +126,6 @@ class Bar:
         else:
             frac = None
             parts = [fmt_size(self.done), f"{fmt_size(self.speed)}/s"]
-
         tail = "  ".join(parts)
         room = width - len(tail) - 1
         prefix = ""
@@ -202,7 +196,6 @@ class Progress:
         if self._thread is not None:
             self._thread.join(timeout=1.0)
             self._thread = None
-
         with self.lock:
             if self.enabled and self._drawn:
                 out = [f"\x1b[{self._drawn}A"]
@@ -210,7 +203,6 @@ class Progress:
                 out.append(f"\x1b[{self._drawn}A")
                 self.stream.write("".join(out))
                 self._drawn = 0
-
             if self.final:
                 width = self._width()
                 for b in self.bars:
@@ -578,7 +570,6 @@ def _chunked_download(
 
     with ThreadPoolExecutor(max_workers=nchunks) as pool:
         parts = list(pool.map(lambda r: fetch(*r), ranges))
-
     with open(part, "wb") as out:
         for cp in parts:
             with open(cp, "rb") as f:
@@ -600,19 +591,15 @@ def download_one(
             p = probe(backend, url, timeout)
         except Exception:
             p = Probe(None, guess_filename(url, {}), False, {})
-
         final = dest if dest is not None else (Path.cwd() / p.filename)
         bar.label = final.name
-
         if skip_existing and final.exists() and final.stat().st_size > 0:
             with bar._lock:
                 bar.done = final.stat().st_size
                 bar.total = bar.done
             bar.finished = True
             return final, True
-
         part = Path(str(final) + ".part")
-
         if p.size and p.supports_range and p.size > BIG_FILE:
             _chunked_download(backend, url, part, bar, timeout, p.size)
         else:
@@ -627,11 +614,9 @@ def download_one(
                     bar.finished = True
                     return final, False
             _simple_download(backend, url, part, bar, timeout, offset)
-
         part.replace(final)
         bar.finished = True
         return final, False
-
     except BaseException as exc:  # noqa: BLE001
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
@@ -704,7 +689,6 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     urls = list(args.urls)
     if args.file:
         try:
@@ -712,40 +696,33 @@ def main(argv=None) -> int:
         except OSError as exc:
             print(f"dl: cannot read {args.file}: {exc}", file=sys.stderr)
             return 2
-
     if not urls:
         parser.error("no URLs provided (pass URLs or use -f FILE)")
     if args.output and len(urls) > 1:
         parser.error("-o/--output can only be used with a single URL")
     if args.jobs < 1:
         parser.error("-j/--jobs must be >= 1")
-
     try:
         backend = make_backend(args.backend)
     except ImportError as exc:
         print(f"dl: backend '{args.backend}' unavailable: {exc}", file=sys.stderr)
         print("      install the package or pick a different -b", file=sys.stderr)
         return 2
-
     fixed_dest: Optional[Path] = Path(args.output) if args.output else None
-
     stream = sys.stdout
     progress = Progress(
         stream,
         enabled=(not args.quiet) and stream.isatty(),
         final=not args.quiet,
     )
-
     bars: list[Bar] = [Bar(shorten(u)) for u in urls]
     for b in bars:
         progress.add(b)
-
     downloaded: list[Path] = []
     skipped: list[Path] = []
     failed: list[tuple[str, BaseException]] = []
     interrupted = False
     t0 = time.monotonic()
-
     pool = ThreadPoolExecutor(max_workers=min(args.jobs, len(urls)))
     try:
         with progress:
@@ -763,7 +740,6 @@ def main(argv=None) -> int:
                     not args.force,
                 )
                 futures.append((fut, url))
-
             try:
                 for fut, url in futures:
                     try:
@@ -781,9 +757,7 @@ def main(argv=None) -> int:
     finally:
         STOP.set()
         pool.shutdown(wait=True, cancel_futures=True)
-
     elapsed = time.monotonic() - t0
-
     if not args.quiet:
         if interrupted:
             print("interrupted", file=sys.stderr)
@@ -798,7 +772,6 @@ def main(argv=None) -> int:
             summary.append(f"{len(failed)} failed")
         if summary:
             print(f"{', '.join(summary)} in {fmt_time(elapsed)}")
-
     return 130 if interrupted else (1 if failed else 0)
 
 

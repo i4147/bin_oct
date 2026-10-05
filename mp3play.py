@@ -16,7 +16,6 @@ def playsound(sound, block=True):
         raise NotImplementedError(msg)
     import os
     from urllib.request import pathname2url
-
     import gi
 
     gi.require_version("Gst", "1.0")

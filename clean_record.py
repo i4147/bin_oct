@@ -5,7 +5,6 @@ Skipped/removed entries should be printed to stdout with a message indicating th
 The script should expose a `main()` entry point and exit via `SystemExit(main())` when run as a standalone program."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 ALLOWED_DIST_INFO_FILES = {

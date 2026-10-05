@@ -4,7 +4,6 @@ For each repository found, it should print the repository path and run "git rest
 The script takes no command-line inputs, operates directly on the filesystem starting from the current directory, and prints a "Done." message once all repositories have been processed."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 from pathlib import Path

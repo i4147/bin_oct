@@ -4,11 +4,9 @@ For each file it should print the filename along with the file size change (befo
 At the end it should print the total directory size change before and after processing, and exit with status code 1 if no JSON files were found or if the total size did not change."""
 
 from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf
 
 

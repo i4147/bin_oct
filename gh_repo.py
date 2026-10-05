@@ -4,7 +4,6 @@ Merged from 5 originals, with a pluggable --backend flag.
 Original mapping ---------------- mkghrepo.py -> python gh_repo.py api <repo_name> [description] -b rest new_repo.py -> python gh_repo.py api-push -b rest new_repo2.py -> python gh_repo.py gh-create -b pygithub newrepo.py -> python gh_repo.py gh-cli -b subprocess pynewrepo.py -> python gh_repo.py gh-managed -b subprocess Backends (-b / --backend) ------------------------- subprocess git CLI + gh CLI (default) gitpython GitPython + gh CLI rest git CLI + requests (GitHub REST API) pygithub git CLI + PyGithub githubpython git CLI + github3.py dulwich Dulwich + gh CLI libgit2 pygit2 (libgit2 bindings) + gh CLI Usage examples -------------- python gh_repo.py api my-new-project "my new repo" -b rest python gh_repo.py gh-create -b pygithub python gh_repo.py gh-cli -b dulwich python gh_repo.py gh-managed -b libgit2 Third-party dependencies (only what the chosen backend needs) ------------------------------------------------------------- requests, python-dotenv, GitPython, PyGithub, github3.py, dulwich, pygit2 External tools: git, gh"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import os
@@ -28,7 +27,6 @@ DEFAULT_BRANCH = "main"
 DEFAULT_API_PUSH_COMMIT_MESSAGE = "Update files"
 DEFAULT_GH_CREATE_COMMIT_MESSAGE = "initial"
 DEFAULT_GH_CLI_COMMIT_MESSAGE = "initial"
-
 BACKEND_CHOICES = [
     "subprocess",
     "gitpython",
@@ -711,21 +709,18 @@ def cmd_api_push(args: argparse.Namespace) -> int:
     repo_name = args.name or cwd.name
     branch = args.branch
     username = args.github_username
-
     if not backend.git.is_git_repo(cwd):
         print("No git repository found. Creating new one...")
         backend.git.init_repo(cwd)
         print("Git repository initialized.")
     else:
         print("Existing git repository found.")
-
     if backend.git.is_dirty(cwd):
         backend.git.add_all(cwd)
         backend.git.commit(cwd, args.commit_message)
         print("Changes committed.")
     else:
         print("No changes to commit.")
-
     if backend.git.get_remote_url(cwd) is None:
         print("No remote 'origin' found. Creating GitHub repository...")
         data = backend.github.create_repo(
@@ -741,14 +736,12 @@ def cmd_api_push(args: argparse.Namespace) -> int:
         print(f"Remote 'origin' created: {ssh_url}")
     else:
         print(f"Remote 'origin' already exists: {backend.git.get_remote_url(cwd)}")
-
     try:
         backend.git.push(cwd, "origin", branch, set_upstream=True)
         print(f"Successfully pushed to origin/{branch}")
     except Exception as exc:
         print(f"Push failed: {exc}")
         return 1
-
     print(f"✅ Repository '{repo_name}' is now on GitHub!")
     return 0
 
@@ -758,7 +751,6 @@ def cmd_gh_create(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     repo_name = args.name or cwd.name
     username = args.github_username
-
     global_gitignore = Path(args.global_gitignore).expanduser()
     local_gitignore = cwd / ".gitignore"
     if global_gitignore.exists() and not local_gitignore.exists():
@@ -768,17 +760,14 @@ def cmd_gh_create(args: argparse.Namespace) -> int:
         print(".gitignore already exists in current directory.")
     else:
         print(f"No global .gitignore found at {global_gitignore}")
-
     if backend.git.is_git_repo(cwd):
         print("Git repository already initialized.")
     else:
         print("Initializing git repository...")
         backend.git.init_repo(cwd)
-
     if backend.git.get_remote_url(cwd) is not None:
         print("Remote 'origin' already exists.")
         return 0
-
     exists = backend.github.repo_exists(username, repo_name)
     if exists:
         print(f"GitHub repo '{repo_name}' already exists on your account.")
@@ -798,13 +787,11 @@ def cmd_gh_create(args: argparse.Namespace) -> int:
         ssh_url = data.get("ssh_url") or f"git@github.com:{username}/{repo_name}.git"
         backend.git.add_remote(cwd, "origin", ssh_url)
         print(f"Added remote origin: {ssh_url}")
-
     backend.git.add_all(cwd)
     if backend.git.commit(cwd, args.commit_message):
         print("Committing changes...")
     else:
         print("No changes to commit.")
-
     branch = backend.git.current_branch(cwd)
     print(f"Pushing branch '{branch}'...")
     try:
@@ -812,7 +799,6 @@ def cmd_gh_create(args: argparse.Namespace) -> int:
     except Exception as exc:
         print(f"Push failed: {exc}")
         return 1
-
     print(f"\n✅ Success! Repository '{repo_name}' is on GitHub or updated there.")
     print(f"View it at: https://github.com/{repo_name}")
     return 0
@@ -822,14 +808,12 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
     backend = resolve_backend(args)
     cwd = Path.cwd()
     repo_name = args.name or cwd.name
-
     print(f"Repository name: {repo_name}")
     if not backend.git.is_git_repo(cwd):
         print("Initializing git repository...")
         backend.git.init_repo(cwd)
     else:
         print("Git repository already initialized.")
-
     origin_url = backend.git.get_remote_url(cwd)
     if origin_url is None:
         print(f"Creating GitHub repository '{repo_name}'...")
@@ -843,14 +827,12 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
             return 1
     else:
         print("Remote 'origin' already exists. Checking if repo exists on GitHub...")
-
         fetch = run_cli(["git", "fetch", "origin"], cwd=cwd)
         if fetch.returncode == 0:
             print("GitHub repository exists. Will push changes.")
         else:
             print("Remote exists but seems inaccessible. You might need to authenticate.")
             print(f"Remote URL: {origin_url}")
-
     print("Adding all files...")
     backend.git.add_all(cwd)
     if backend.git.is_dirty(cwd):
@@ -859,7 +841,6 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
             print("Nothing to commit after staging.")
     else:
         print("No changes to commit.")
-
     print("Pushing to GitHub...")
     branch = backend.git.current_branch(cwd) or args.branch
     try:
@@ -867,7 +848,6 @@ def cmd_gh_cli(args: argparse.Namespace) -> int:
     except Exception as exc:
         print(f"Push failed: {exc}")
         return 1
-
     print(f"\n✅ Success! Repository '{repo_name}' is now on GitHub.")
     print(f"View it at: https://github.com/{repo_name}")
     return 0
@@ -1018,7 +998,6 @@ class GitHubRepoManager:
         print(f"GitHub User: {self.github_username}")
         print(f"Email: {self.git_email}")
         print("-" * 40)
-
         if self.backend.name == "subprocess":
             if not self._check_gh_cli_installed():
                 print("\n❌ Error: GitHub CLI (gh) is not installed.")
@@ -1027,32 +1006,25 @@ class GitHubRepoManager:
                 print("\n❌ Error: GitHub CLI is not authenticated.")
                 return 1
             print("\n✓ GitHub CLI is installed and authenticated\n")
-
         if self.backend.git.is_git_repo(self.cwd):
             keep = self.handle_existing_repo()
             if not keep:
                 self.backend.git.remove_remote(self.cwd, "origin")
         else:
             self._init_local_repo()
-
         self._ensure_content()
         print("\n📝 Staging all changes...")
         self.backend.git.add_all(self.cwd)
         print("✓ Changes staged")
-
         if not self._commit_changes(commit_message):
             print("\n⚠️  Could not commit changes.")
             return 1
-
         self._rename_branch_to_main()
-
         if not self._create_github_repo():
             print("\n❌ Failed to create repository on GitHub")
             return 1
-
         self._add_remote()
         self._push_to_github()
-
         print("\n" + "=" * 40)
         print("✅ Success! Repository created and pushed to GitHub")
         print(f"Repository URL: https://github.com/{self.github_username}/{self.repo_name}")
@@ -1109,7 +1081,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("api", help="Create a repo via API (mkghrepo.py).")
     p.add_argument("repo_name", help="Name of the new repository.")
     p.add_argument(
@@ -1121,8 +1092,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--private", action="store_true", help="Make the repo private.")
     add_common_backend_args(p)
     p.set_defaults(func=cmd_api)
-
-    # api-push
     p = sub.add_parser("api-push", help="Init/commit + API create + push (new_repo.py).")
     p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
@@ -1137,8 +1106,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_common_backend_args(p)
     p.set_defaults(func=cmd_api_push)
-
-    # gh-create
     p = sub.add_parser("gh-create", help="PyGithub/gh-CLI hybrid create+push (new_repo2.py).")
     p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
@@ -1153,8 +1120,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_common_backend_args(p)
     p.set_defaults(func=cmd_gh_create)
-
-    # gh-cli
     p = sub.add_parser("gh-cli", help="Pure gh CLI + git subprocess workflow (newrepo.py).")
     p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
@@ -1169,8 +1134,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_common_backend_args(p)
     p.set_defaults(func=cmd_gh_cli)
-
-    # gh-managed
     p = sub.add_parser("gh-managed", help="Interactive manager with prompts & README (pynewrepo.py).")
     p.add_argument("-n", "--name", help="Repository name. Default: current directory name.")
     p.add_argument(
@@ -1195,7 +1158,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_common_backend_args(p)
     p.set_defaults(func=cmd_gh_managed)
-
     return parser
 
 

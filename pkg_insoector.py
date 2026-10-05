@@ -4,7 +4,6 @@ Merged from a collection of one-off scripts that all inspect Python site-package
 Usage ----- python pkg_inspector.py <subcommand> [options] python pkg_inspector.py --help python pkg_inspector.py <subcommand> --help Subcommands ----------- duplicates Find packages installed in both system & user site-packages multi-version Find packages with more than one installed version missing-scripts Check that declared console-scripts actually exist in bin/ entrypoints Analyze entry_points.txt / console-script presence binary List packages containing compiled extensions (non-pure) orphans Detect files in site-packages not owned by any distribution small List packages whose total install size is under a threshold zpkg-list List pure, single-top-level, user-site packages git-urls Extract git repository URLs for every installed package save-deb Dump installed dpkg binary package names save-keys Extract "pkgname" keys from a JSON file rename-node Rename "@scope/foo/package" dirs to safe filesystem names Original → merged mapping ------------------------- check_duplicate_packages.py -> duplicates --method dist-info check_pkgs_site.py -> duplicates --method metadata distinfo.py -> multi-version check_missing_scripts.py -> missing-scripts havebin.py -> entrypoints --mode pip-show list_pkgs_with_script.py -> entrypoints --mode list-with-script --user-only list_noscript_pkgs.py -> entrypoints --mode list-no-script --user-only no_entry_point.py -> entrypoints --mode classify --system-only pkgs_with_entry_points.py -> entrypoints --mode classify --write-files find_binary_pkgs.py -> binary list_nonpure.py -> binary --user-only purenotpure.py -> binary --split savepkgspure_notpure.py -> binary --split detect_orphan_files.py -> orphans get_small_pkgs.py -> small --threshold 1048576 list_pkgs_to_zpkg.py -> zpkg-list xpkgs_git_repo.py -> git-urls saveinstalledpkgs.py -> save-deb savekeys.py -> save-keys INPUT ren_node_pkgs.py -> rename-node"""
 
 from __future__ import annotations
-
 import argparse
 import configparser
 import contextlib
@@ -115,7 +114,6 @@ def parse_entry_points(path: Path) -> dict[str, list[str]]:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except Exception:
         return out
-
     cp = configparser.ConfigParser()
     try:
         cp.read_string(text)
@@ -228,14 +226,12 @@ def cmd_duplicates(args: argparse.Namespace) -> int:
     if not user:
         print("No user site-packages directory found.")
         return 0
-
     if args.method == "metadata":
         sys_pkgs = _metadata_packages(system)
         usr_pkgs = _metadata_packages([user])
     else:
         sys_pkgs = _distinfo_packages(system)
         usr_pkgs = _distinfo_packages([user])
-
     dupes = sorted(set(sys_pkgs) & set(usr_pkgs))
     print(f"System packages: {len(sys_pkgs)}")
     print(f"User packages:   {len(usr_pkgs)}")
@@ -256,7 +252,6 @@ def cmd_multi_version(_: argparse.Namespace) -> int:
         name, ver = parse_dist_name(di.name)
         if name and ver:
             versions[name].add(ver)
-
     found = False
     for name, vers in sorted(versions.items()):
         if len(vers) > 1:
@@ -274,7 +269,6 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
     if not bin_dir:
         print("ERROR: could not find bin directory", file=sys.stderr)
         return 1
-
     scan_dir = user_site_dir()
     if scan_dir is None:
         dirs = system_site_dirs()
@@ -282,11 +276,9 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
             print("ERROR: could not find site-packages directory", file=sys.stderr)
             return 1
         scan_dir = dirs[0]
-
     print(f"Site-packages: {scan_dir}")
     print(f"Bin directory: {bin_dir}")
     print(f"Python:        {sys.version.split()[0]}")
-
     results: list[tuple[str, list[str], list[str]]] = []
     for di in sorted(scan_dir.glob("*.dist-info")):
         ep = di / "entry_points.txt"
@@ -297,10 +289,8 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
             continue
         missing = [s for s in scripts if not (bin_dir / s).exists()]
         results.append((di.name.replace(".dist-info", ""), scripts, missing))
-
     broken = [r for r in results if r[2]]
     total_missing = sum(len(r[2]) for r in broken)
-
     print()
     print(f"Packages with console_scripts: {len(results)}")
     print(f"Packages with missing shims:   {len(broken)}")
@@ -309,7 +299,6 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
         print(f"\n{name}:")
         for s in missing:
             print(f"  missing: {s}")
-
     if args.report:
         report = Path(args.report).expanduser().resolve()
         report.parent.mkdir(parents=True, exist_ok=True)
@@ -318,7 +307,6 @@ def cmd_missing_scripts(args: argparse.Namespace) -> int:
             lines.append(f"{name}: {', '.join(missing)}")
         report.write_text("\n".join(lines) + "\n", encoding="utf-8")
         print(f"\nReport written to: {report}")
-
     return 1 if broken else 0
 
 
@@ -334,7 +322,6 @@ def _entrypoints_pip_show(_: argparse.Namespace) -> int:
     except Exception as e:
         print(f"Error listing packages: {e}", file=sys.stderr)
         return 1
-
     hits: list[str] = []
     total = len(pkgs)
     for i, name in enumerate(pkgs, 1):
@@ -359,7 +346,6 @@ def _entrypoints_pip_show(_: argparse.Namespace) -> int:
                 break
         if has_bin:
             hits.append(name)
-
     print()
     for n in hits:
         print(n)
@@ -389,9 +375,7 @@ def _find_entry_points_file(entry: Path, site_dir: Path, name: str) -> Path | No
 def cmd_entrypoints(args: argparse.Namespace) -> int:
     if args.mode == "pip-show":
         return _entrypoints_pip_show(args)
-
     dirs = pick_scan_dirs(args.user_only, args.system_only)
-
     seen: set[str] = set()
     with_ep: set[str] = set()
     without_ep: set[str] = set()
@@ -399,7 +383,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
     nonpure_noep: set[str] = set()
     pure_ep: set[str] = set()
     nonpure_ep: set[str] = set()
-
     for site_dir in dirs:
         if not site_dir.is_dir():
             continue
@@ -407,7 +390,6 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
             entries = list(site_dir.iterdir())
         except (PermissionError, OSError):
             continue
-
         for entry in entries:
             if not entry.is_dir() or entry.name.startswith(("_", ".")):
                 continue
@@ -415,14 +397,11 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
             is_dist = entry.name.endswith((".dist-info", ".egg-info"))
             if not (is_pkg or is_dist):
                 continue
-
             name = strip_dist_suffix(entry.name)
             if not name or name in seen:
                 continue
             seen.add(name)
-
             has_ep = _find_entry_points_file(entry, site_dir, name) is not None
-
             if is_dist:
                 pkg_search = site_dir / name
                 if not pkg_search.exists():
@@ -431,16 +410,13 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
                     pkg_search = entry
             else:
                 pkg_search = entry
-
             is_pure = not has_binary_ext(pkg_search)
-
             if has_ep:
                 with_ep.add(name)
                 (pure_ep if is_pure else nonpure_ep).add(name)
             else:
                 without_ep.add(name)
                 (pure_noep if is_pure else nonpure_noep).add(name)
-
     if args.mode == "list-with-script":
         for n in sorted(with_ep):
             print(n)
@@ -449,13 +425,11 @@ def cmd_entrypoints(args: argparse.Namespace) -> int:
         for n in sorted(without_ep):
             print(n)
         return 0
-
     print(f"Pure packages, no entry_points:      {len(pure_noep)}")
     print(f"Non-pure packages, no entry_points:  {len(nonpure_noep)}")
     print(f"Pure packages, with entry_points:    {len(pure_ep)}")
     print(f"Non-pure packages, with entry_points:{len(nonpure_ep)}")
     print(f"Grand total:                         {len(pure_noep) + len(nonpure_noep) + len(pure_ep) + len(nonpure_ep)}")
-
     if args.write_files:
         Path("noep_pure.txt").write_text("\n".join(sorted(pure_noep)), encoding="utf-8")
         Path("noep_nopure.txt").write_text("\n".join(sorted(nonpure_noep)), encoding="utf-8")
@@ -469,7 +443,6 @@ def cmd_binary(args: argparse.Namespace) -> int:
     dirs = pick_scan_dirs(args.user_only, args.system_only)
     pure: set[str] = set()
     nonpure: set[str] = set()
-
     for dist, _ in _iter_metadata_in_dirs(dirs):
         try:
             name = dist.metadata.get("Name")
@@ -479,17 +452,14 @@ def cmd_binary(args: argparse.Namespace) -> int:
             (nonpure if is_bin else pure).add(name)
         except Exception:
             continue
-
     pure_sorted = sorted(pure, key=str.lower)
     nonpure_sorted = sorted(nonpure, key=str.lower)
-
     if args.split:
         Path(args.pure_output).write_text("\n".join(pure_sorted) + "\n", encoding="utf-8")
         Path(args.nonpure_output).write_text("\n".join(nonpure_sorted) + "\n", encoding="utf-8")
         print(f"Wrote {len(pure_sorted):4d} pure packages  → {args.pure_output}")
         print(f"Wrote {len(nonpure_sorted):4d} non-pure packages → {args.nonpure_output}")
         return 0
-
     if args.output:
         Path(args.output).write_text("\n".join(nonpure_sorted) + "\n", encoding="utf-8")
     print(f"Binary (non-pure) packages: {len(nonpure_sorted)}")
@@ -517,9 +487,7 @@ def cmd_orphans(args: argparse.Namespace) -> int:
     if not site_dirs:
         print("No system site-packages directories found.", file=sys.stderr)
         return 1
-
     package_files: set[str] = set()
-
     dir_strs = [str(d.resolve()) for d in site_dirs]
     for dist in metadata.distributions():
         try:
@@ -529,14 +497,12 @@ def cmd_orphans(args: argparse.Namespace) -> int:
             dpath_p = Path(dpath).resolve()
             if not _is_within(str(dpath_p), dir_strs):
                 continue
-
             for f in dist.files or []:
                 try:
                     fp = Path(dist.locate_file(f)).resolve()
                     package_files.add(str(fp))
                 except Exception:
                     continue
-
             rec = dpath_p / "RECORD"
             if rec.exists():
                 with contextlib.suppress(Exception), rec.open(encoding="utf-8") as fh:
@@ -546,7 +512,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
                             package_files.add(str(fp))
         except Exception:
             continue
-
     orphans: set[Path] = set()
     for site_dir in site_dirs:
         for root, dirs, files in os.walk(site_dir):
@@ -560,7 +525,6 @@ def cmd_orphans(args: argparse.Namespace) -> int:
                 if _is_ignorable(fp):
                     continue
                 orphans.add(fp)
-
     sorted_orphans = sorted(orphans)
     print(f"Found {len(sorted_orphans)} orphan file(s):")
     for o in sorted_orphans:
@@ -568,9 +532,7 @@ def cmd_orphans(args: argparse.Namespace) -> int:
             print(f"  {o} ({o.stat().st_size} bytes)")
         else:
             print(f"  {o}")
-
     print("\nWARNING: review these files carefully before removing them.")
-
     if args.export:
         out = Path(args.output).expanduser().resolve()
         out.write_text(
@@ -607,17 +569,14 @@ def cmd_small(args: argparse.Namespace) -> int:
                 results.append((name, total))
         except Exception:
             continue
-
     results.sort(key=lambda x: x[0].lower())
     for name, size in results:
         print(f"{name}\t{size}")
-
     if args.output:
         out = Path(args.output).expanduser().resolve()
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text("\n".join(n for n, _ in results) + "\n", encoding="utf-8")
         print(f"\nWrote {len(results)} names to {out}")
-
     print(f"\nTotal: {len(results)} package(s) under {args.threshold} bytes")
     return 0
 
@@ -626,7 +585,6 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
     user_lib = (Path.home() / ".local" / "lib").resolve()
     results: list[str] = []
     seen: set[str] = set()
-
     for dist in metadata.distributions():
         try:
             dpath = getattr(dist, "_path", None)
@@ -635,17 +593,14 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
             dpath_p = Path(dpath).resolve()
             if str(user_lib) not in str(dpath_p):
                 continue
-
             name = dist.name
             if not name or "-" in name or "_" in name:
                 continue
             if name in seen:
                 continue
-
             is_binary = any(f.suffix in (".so", ".pyd", ".dylib") for f in (dist.files or []))
             if is_binary:
                 continue
-
             tl = dpath_p / "top_level.txt"
             if tl.exists():
                 top = {ln.strip() for ln in tl.read_text().splitlines() if ln.strip()}
@@ -657,12 +612,10 @@ def cmd_zpkg_list(args: argparse.Namespace) -> int:
                         top.add(parts[0])
             if len(top) != 1:
                 continue
-
             seen.add(name)
             results.append(name)
         except Exception:
             continue
-
     results.sort(key=str.lower)
     out = Path(args.output).expanduser().resolve() if args.output else Path.home() / "list.txt"
     out.write_text("\n".join(results) + "\n", encoding="utf-8")
@@ -682,7 +635,6 @@ def cmd_git_urls(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"Error listing packages: {e}", file=sys.stderr)
         return 1
-
     result: dict[str, str | None] = {}
     total = len(pkgs)
     for i, name in enumerate(pkgs, 1):
@@ -697,18 +649,15 @@ def cmd_git_urls(args: argparse.Namespace) -> int:
         except Exception:
             result[name] = None
             continue
-
         info: dict[str, str] = {}
         for line in r.stdout.splitlines():
             if ":" in line:
                 k, _, v = line.partition(":")
                 info[k.strip()] = v.strip()
-
         candidates: list[str] = []
         home = info.get("Home-page", "").strip()
         if home and home.lower() not in ("none", "unknown", ""):
             candidates.append(home)
-
         proj = info.get("Project-URLs") or info.get("Project-URL", "")
         for line in proj.splitlines():
             line = line.strip()
@@ -720,18 +669,15 @@ def cmd_git_urls(args: argparse.Namespace) -> int:
                     candidates.insert(0, url.strip())
                 else:
                     candidates.append(url.strip())
-
         dl = info.get("Download-URL", "").strip()
         if dl and dl.lower() not in ("none", "unknown", ""):
             candidates.append(dl)
-
         url = None
         for c in candidates:
             if any(h in c for h in GIT_HOSTS):
                 url = c.rstrip("/")
                 break
         result[name] = url
-
     print()
     with_url = sum(1 for v in result.values() if v)
     out = Path(args.output).expanduser().resolve() if args.output else Path.home() / "pkg_git_urls.json"
@@ -768,7 +714,6 @@ def cmd_save_deb(args: argparse.Namespace) -> int:
     except subprocess.CalledProcessError as e:
         print(e.stderr.strip(), file=sys.stderr)
         return 1
-
     pkgs = sorted(p for p in r.stdout.splitlines() if p)
     out = Path(args.output).expanduser().resolve()
     out.write_text("\n".join(pkgs) + "\n", encoding="utf-8")
@@ -785,7 +730,6 @@ def cmd_save_keys(args: argparse.Namespace) -> int:
     except json.JSONDecodeError as e:
         print(f"Error: invalid JSON: {e}", file=sys.stderr)
         return 1
-
     if isinstance(data, dict):
         items = [data]
     elif isinstance(data, list):
@@ -793,7 +737,6 @@ def cmd_save_keys(args: argparse.Namespace) -> int:
     else:
         print("Error: JSON root must be an object or list", file=sys.stderr)
         return 1
-
     keys: list[str] = []
     for i, item in enumerate(items):
         if not isinstance(item, dict):
@@ -806,7 +749,6 @@ def cmd_save_keys(args: argparse.Namespace) -> int:
             print(f"Warning: item at index {i} lacks 'pkgname', skipping", file=sys.stderr)
             continue
         keys.append(item["pkgname"])
-
     out = Path(args.output).expanduser().resolve()
     out.write_text("\n".join(keys) + "\n", encoding="utf-8")
     print(f"Wrote {len(keys)} pkgname values to {out}")
@@ -854,7 +796,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-
     sp = sub.add_parser("duplicates", help="Packages in both system and user site-packages.")
     sp.add_argument(
         "--method",
@@ -863,16 +804,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Detection strategy (default: dist-info).",
     )
     sp.set_defaults(func=cmd_duplicates)
-
     # multi-version
     sp = sub.add_parser("multi-version", help="Packages with more than one installed version.")
     sp.set_defaults(func=cmd_multi_version)
-
     # missing-scripts
     sp = sub.add_parser("missing-scripts", help="Check that console-script shims exist in bin/.")
     sp.add_argument("--report", metavar="FILE", help="Optional path to write a report.")
     sp.set_defaults(func=cmd_missing_scripts)
-
     sp = sub.add_parser("entrypoints", help="Analyze entry_points.txt / console-script presence.")
     sp.add_argument(
         "--mode",
@@ -896,7 +834,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="classify mode: write noep_pure.txt / ep_*.txt etc.",
     )
     sp.set_defaults(func=cmd_entrypoints)
-
     sp = sub.add_parser("binary", help="List non-pure (compiled-extension) packages.")
     grp = sp.add_mutually_exclusive_group()
     grp.add_argument("--user-only", action="store_true")
@@ -918,7 +855,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="--split: non-pure list filename (default: notpure.txt).",
     )
     sp.set_defaults(func=cmd_binary)
-
     sp = sub.add_parser("orphans", help="Detect unowned files in system site-packages.")
     sp.add_argument("-v", "--verbose", action="store_true", help="Show file sizes.")
     sp.add_argument("-e", "--export", action="store_true", help="Write results as JSON.")
@@ -929,7 +865,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="JSON export path (default: orphan_files.json).",
     )
     sp.set_defaults(func=cmd_orphans)
-
     sp = sub.add_parser("small", help="List packages smaller than a threshold.")
     sp.add_argument(
         "--threshold",
@@ -944,17 +879,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write package names (one per line) to FILE.",
     )
     sp.set_defaults(func=cmd_small)
-
     # zpkg-list
     sp = sub.add_parser("zpkg-list", help="List pure single-top-level user-site packages.")
     sp.add_argument("-o", "--output", help="Output file (default: ~/list.txt).")
     sp.set_defaults(func=cmd_zpkg_list)
-
     # git-urls
     sp = sub.add_parser("git-urls", help="Extract git repository URLs for installed packages.")
     sp.add_argument("-o", "--output", help="Output JSON file (default: ~/pkg_git_urls.json).")
     sp.set_defaults(func=cmd_git_urls)
-
     # save-deb
     sp = sub.add_parser("save-deb", help="Dump installed dpkg binary packages.")
     sp.add_argument(
@@ -964,13 +896,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output file (default: installed_packages_deb.txt).",
     )
     sp.set_defaults(func=cmd_save_deb)
-
     # save-keys
     sp = sub.add_parser("save-keys", help="Extract 'pkgname' values from a JSON file.")
     sp.add_argument("input", help="Path to the input JSON file.")
     sp.add_argument("-o", "--output", default="keys.txt", help="Output file (default: keys.txt).")
     sp.set_defaults(func=cmd_save_keys)
-
     # rename-node
     sp = sub.add_parser("rename-node", help="Rename node_modules .../package dirs safely.")
     sp.add_argument("--root", help="Root directory to scan (default: cwd).")
@@ -980,7 +910,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show what would be renamed without touching anything.",
     )
     sp.set_defaults(func=cmd_rename_node)
-
     return p
 
 

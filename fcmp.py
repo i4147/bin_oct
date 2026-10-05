@@ -4,7 +4,6 @@ It should use the filecmp module's dircmp class to perform the comparison, then 
 The resulting comparison output should be printed to the console using pprint for readable formatting."""
 
 from __future__ import annotations
-
 import sys
 from filecmp import dircmp
 from pathlib import Path

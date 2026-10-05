@@ -6,7 +6,6 @@ The script also includes a function to reformat flattened, single-line-ish code 
 This is useful for recovering readable, well-formatted Python source that was embedded inline within shell scripts or CI configuration files."""
 
 from __future__ import annotations
-
 import io
 import re
 import sys

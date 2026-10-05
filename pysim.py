@@ -3,7 +3,6 @@
 Detects shared functions, classes, and constants across files using content hashing."""
 
 from __future__ import annotations
-
 import ast
 import hashlib
 import json
@@ -26,26 +25,20 @@ def extract_definitions(path: Path) -> dict[str, Any] | None:
         tree = ast.parse(source, filename=str(path))
     except (SyntaxError, UnicodeDecodeError, OSError) as e:
         return {"file": str(path), "error": str(e)}
-
     functions: dict[str, str] = {}
     classes: dict[str, str] = {}
     constants: dict[str, str] = {}
-
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             functions[node.name] = hash_node(node)
-
         elif isinstance(node, ast.ClassDef):
             classes[node.name] = hash_node(node)
-
         elif isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id.isupper():
                     constants[target.id] = hash_node(node)
-
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
             constants[node.target.id] = hash_node(node)
-
     return {
         "file": str(path),
         "functions": functions,
@@ -67,14 +60,11 @@ def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
     shared_funcs = intersect_hashes("functions")
     shared_classes = intersect_hashes("classes")
     shared_consts = intersect_hashes("constants")
-
     total_shared = len(shared_funcs) + len(shared_classes) + len(shared_consts)
     total_a = len(a.get("functions", {})) + len(a.get("classes", {})) + len(a.get("constants", {}))
     total_b = len(b.get("functions", {})) + len(b.get("classes", {})) + len(b.get("constants", {}))
-
     union_total = total_a + total_b - total_shared
     similarity = (total_shared / union_total) if union_total > 0 else 0.0
-
     return {
         "file_a": a["file"],
         "file_b": b["file"],
@@ -89,7 +79,6 @@ def compare_pair(pair: tuple[dict[str, Any], dict[str, Any]]) -> dict[str, Any]:
 def main() -> None:
     current_dir = Path.cwd()
     py_files = sorted(current_dir.glob("*.py"))
-
     if len(py_files) < 2:
         print(
             json.dumps(
@@ -101,21 +90,15 @@ def main() -> None:
             )
         )
         return
-
     with mp.Pool(processes=8) as pool:
         parse_results = [pool.apply_async(extract_definitions, (f,)) for f in py_files]
         parsed = [r.get() for r in parse_results]
-
         valid = [p for p in parsed if p and "error" not in p]
         errors = [p for p in parsed if p and "error" in p]
-
         pairs = [(valid[i], valid[j]) for i in range(len(valid)) for j in range(i + 1, len(valid))]
-
         compare_results = [pool.apply_async(compare_pair, (p,)) for p in pairs]
         comparisons = [r.get() for r in compare_results]
-
     comparisons.sort(key=lambda x: x["similarity"], reverse=True)
-
     report = {
         "scanned_directory": str(current_dir),
         "total_files": len(py_files),
@@ -124,7 +107,6 @@ def main() -> None:
         "total_comparisons": len(comparisons),
         "results": comparisons,
     }
-
     print(json.dumps(report, indent=2))
 
 

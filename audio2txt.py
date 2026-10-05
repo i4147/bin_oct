@@ -5,11 +5,9 @@ Using the speech_recognition library, it should load the WAV file, adjust for am
 The script should handle missing input files by printing an error and exiting, and should clean up the temporary WAV file after processing."""
 
 from __future__ import annotations
-
 import os
 import sys
 import tempfile
-
 import speech_recognition as sr
 from pydub import AudioSegment
 

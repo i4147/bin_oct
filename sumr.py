@@ -8,7 +8,6 @@ sumy Wraps the `sumy` library's LexRank / LSA / TextRank summarizers (from `sumr
 Third-party packages (must be installed separately) --------------------------------------------------- pip install nltk sumy python -m nltk.downloader punkt stopwords Original -> merged mapping -------------------------- summa.py -> summarizer.py summarize <file> -b nltk -r 0.3 --no-save summarizer.py summarize <file> -b nltk -c 3 --no-save summarizer.py scores <file> -b nltk sumr.py -> summarizer.py summarize <file> -b sumy -c 5 -m lexrank sumr_nltk.py -> summarizer.py summarize <file> -b nltk-simple -c 5 Usage examples -------------- python summarizer.py summarize article.txt -b nltk -r 0.3 python summarizer.py summarize article.txt -b nltk -c 3 --no-save python summarizer.py summarize article.txt -b nltk-simple -c 5 python summarizer.py summarize article.txt -b sumy -m textrank -c 5 python summarizer.py scores article.txt -n 10"""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -41,7 +40,6 @@ class NLTKFrequencySummarizer:
         if variant not in self.VARIANTS:
             msg = f"Unknown nltk variant {variant!r}; choose one of {self.VARIANTS}"
             raise ValueError(msg)
-
         from nltk.corpus import stopwords  # type: ignore
 
         self.language: str = language
@@ -54,12 +52,10 @@ class NLTKFrequencySummarizer:
         if not 0 < ratio <= 1:
             msg = "Ratio must be between 0 and 1"
             raise ValueError(msg)
-
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
         if len(sentences) <= 1:
             return text
-
         k = max(1, int(len(sentences) * ratio))
         freqs = self._word_frequencies(sentences)
         scores = self._score_sentences(sentences, freqs)
@@ -72,12 +68,10 @@ class NLTKFrequencySummarizer:
         if count < 1:
             msg = "Number of sentences must be >= 1"
             raise ValueError(msg)
-
         text = self._preprocess(text)
         sentences = self._tokenize_sentences(text)
         if len(sentences) <= count:
             return text
-
         freqs = self._word_frequencies(sentences)
         scores = self._score_sentences(sentences, freqs)
         top = self._select_top(scores, count)
@@ -109,7 +103,6 @@ class NLTKFrequencySummarizer:
                 if token.isalnum() and token not in self.stop_words:
                     counter[token] += 1
                     total += 1
-
         if self.variant == "summa" and total > 0:
             for token in counter:
                 counter[token] /= total
@@ -147,7 +140,6 @@ def sumy_summarize(
     method: str = "lexrank",
     language: str = "english",
 ) -> str:
-
     from sumy.nlp.stemmers import Stemmer  # type: ignore
     from sumy.nlp.tokenizers import Tokenizer  # type: ignore
     from sumy.parsers.plaintext import PlaintextParser  # type: ignore
@@ -158,7 +150,6 @@ def sumy_summarize(
 
     parser = PlaintextParser.from_string(text, Tokenizer(language))
     stemmer = Stemmer(language)
-
     if method == "lexrank":
         summarizer = LexRankSummarizer(stemmer)
     elif method == "lsa":
@@ -168,7 +159,6 @@ def sumy_summarize(
     else:
         msg = f"Unknown summarization method: {method}"
         raise ValueError(msg)
-
     summarizer.stop_words = get_stop_words(language)
     sentences = summarizer(parser.document, count)
     return " ".join(str(s) for s in sentences)
@@ -176,7 +166,6 @@ def sumy_summarize(
 
 def cmd_summarize(args: argparse.Namespace) -> int:
     text = read_text(args.input)
-
     if args.backend == "sumy":
         count = args.count if args.count is not None else 5
         summary = sumy_summarize(
@@ -185,7 +174,6 @@ def cmd_summarize(args: argparse.Namespace) -> int:
             method=args.method,
             language=args.language,
         )
-
     elif args.backend == "nltk-simple":
         count = args.count if args.count is not None else 5
         summarizer = NLTKFrequencySummarizer(
@@ -193,7 +181,6 @@ def cmd_summarize(args: argparse.Namespace) -> int:
             variant="simple",
         )
         summary = summarizer.summarize_by_count(text, count=count)
-
     else:
         summarizer = NLTKFrequencySummarizer(
             language=args.language,
@@ -205,17 +192,14 @@ def cmd_summarize(args: argparse.Namespace) -> int:
             summary = summarizer.summarize_by_count(text, count=args.count)
         else:
             summary = summarizer.summarize_by_ratio(text, ratio=0.3)
-
     if not args.no_save:
         out_path = args.output or default_summary_path(args.input)
         write_text(out_path, summary)
         if not args.quiet:
             print(f"Summary saved to '{out_path}'")
-
     if not args.quiet:
         print()
         print(preview(summary))
-
     return 0
 
 
@@ -226,11 +210,9 @@ def cmd_scores(args: argparse.Namespace) -> int:
         variant="summa",
     )
     scores = summarizer.get_scores(text)
-
     items = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
     if args.top is not None:
         items = items[: args.top]
-
     for sentence, score in items:
         print(f"Score: {score:.4f} | {sentence[:60]}...")
     return 0
@@ -244,7 +226,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
     p = sub.add_parser(
         "summarize",
         help="Produce a summary of a text file.",
@@ -303,7 +284,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Suppress the printed preview (still writes the output file).",
     )
-
     q = sub.add_parser(
         "scores",
         help="Print per-sentence scores (nltk backend only).",
@@ -330,14 +310,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Only show the top N highest-scoring sentences.",
     )
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     try:
         if args.command == "summarize":
             return cmd_summarize(args)

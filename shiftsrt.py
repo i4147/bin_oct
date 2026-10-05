@@ -7,7 +7,6 @@ Usage examples: python srt_shift.py movie.srt -s 2.5 python srt_shift.py movie.s
 * Encoding 'auto' picks utf-8-sig if a BOM is present, otherwise the first of utf-8 / cp1252 / latin1 that decodes the file's first 8 KiB."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys

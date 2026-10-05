@@ -5,10 +5,8 @@ It should handle button press events to build up numeric input, store the left o
 Wrap the Calculator widget in a Textual App subclass so the script can be run directly as an interactive CLI calculator, using regex for input validation/parsing and sys for program entry as needed."""
 
 from __future__ import annotations
-
 import re
 import sys
-
 from textual.app import App, ComposeResult
 from textual.containers import Grid
 from textual.widgets import Button, Static

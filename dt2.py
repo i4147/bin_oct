@@ -4,7 +4,6 @@ The script should batch lines into size-limited chunks (max ~2000 characters) be
 It should use argparse for CLI options (likely input/output file paths and worker count), loguru for structured logging of progress/warnings/errors, and JSON for reading/writing state or results, ultimately producing a translated version of the input file with the Cyrillic content replaced or supplemented by its translation."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import multiprocessing as mp
@@ -16,7 +15,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Final
-
 from deep_translator import GoogleTranslator
 from loguru import logger
 

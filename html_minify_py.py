@@ -4,12 +4,10 @@ It should use lxml to parse the HTML into a DOM tree, recursively process nodes 
 The script should integrate with helper utilities (get_files, mpf) from a local "dh" module to discover and batch-process HTML files from the filesystem, reading each file's content, minifying it, and writing the result back out or to a designated output location."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from dh import get_files, mpf
 from lxml import html as lxml_html
 

@@ -5,7 +5,6 @@ The script should print the total line counts for each file, the number of commo
 It must require exactly two command-line arguments (the file paths) and show a usage message if the argument count is wrong."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

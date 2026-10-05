@@ -4,7 +4,6 @@ The script should run the dpkg-query subprocess, parse and validate each output 
 It should handle errors gracefully, exiting with an informative message if dpkg-query is missing (non-Debian system) or if the subprocess call fails."""
 
 from __future__ import annotations
-
 import csv
 import subprocess
 import sys

@@ -4,11 +4,9 @@ It should use regex to detect and remove common/quality tags (e.g., HDTV, WEBDL,
 Files where no episode number can be extracted should be skipped from renaming."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from pathlib import Path
-
 from dh import colored
 
 VIDEO_EXTS = {".srt"}

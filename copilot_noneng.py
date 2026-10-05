@@ -4,7 +4,6 @@ The script should support multiprocessing for parallel processing of files, use 
 It is intended for comparing or aggregating language-identification outcomes across a codebase or text corpus."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import multiprocessing as mp
@@ -12,7 +11,6 @@ import sys
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 import gcld3
 import pycld2 as cld2
 from dh import is_binary
@@ -20,7 +18,6 @@ from langdetect import DetectorFactory, detect_langs
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
 DetectorFactory.seed = 0
 _print_lock = threading.Lock()
 _results_lock = threading.Lock()

@@ -7,7 +7,6 @@ Usage ----- python add_main_guard.py check [paths ...] [--detect ast|regex] [--w
 * Default exclusion directories are: .git, __pycache__, venv, .venv, env, dist, build, .pytest_cache, .mypy_cache."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import logging
@@ -18,7 +17,6 @@ from pathlib import Path
 from typing import Sequence
 
 logger = logging.getLogger("add_main_guard")
-
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     ".git",
     "__pycache__",
@@ -32,9 +30,7 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
 )
 DEFAULT_WORKERS: int = 8
 DEFAULT_INDENT: int = 4
-
 MAIN_GUARD_RE: re.Pattern[str] = re.compile(r'if\s+__name__\s*==\s*["\']__main__["\']\s*:')
-
 MAIN_TEMPLATE: str = (
     "\n\n"
     "def main() -> None:\n"
@@ -42,7 +38,6 @@ MAIN_TEMPLATE: str = (
     "    # TODO: Add your main logic here\n"
     '    print("Hello from main!")\n'
 )
-
 GUARD_TEMPLATE: str = '\nif __name__ == "__main__":\n    raise SystemExit(main())\n'
 
 
@@ -96,24 +91,19 @@ def fix_with_ast(
         source = path.read_text(encoding="utf-8")
     except OSError as exc:
         return "error", f"read failed: {exc}"
-
     try:
         tree = ast.parse(source, filename=str(path))
     except SyntaxError as exc:
         return "error", f"parse error: {exc}"
-
     if has_main_guard_ast(tree):
         return "skipped", "already has main guard"
-
     top = list(tree.body)
     movable = [n for n in top if is_movable(n)]
     if not movable:
         return "skipped", "nothing to wrap"
-
     lines = source.splitlines(True)
     body_chunks: list[str] = []
     keep_ranges: list[tuple[int, int]] = []
-
     for node in top:
         start = getattr(node, "lineno", None)
         end = getattr(node, "end_lineno", None)
@@ -123,7 +113,6 @@ def fix_with_ast(
             body_chunks.append("".join(lines[start - 1 : end]).rstrip() + "\n")
         else:
             keep_ranges.append((start, end))
-
     keep_ranges.sort()
     kept: list[str] = []
     cursor = 1
@@ -134,7 +123,6 @@ def fix_with_ast(
         cursor = end + 1
     if cursor <= len(lines):
         kept.append("".join(lines[cursor - 1 :]))
-
     body = "".join(body_chunks).rstrip("\n")
     tail: list[str] = ["\n\n", "def main():\n"]
     if body.strip() == "":
@@ -142,9 +130,7 @@ def fix_with_ast(
     else:
         tail.append(indent_text(body + "\n", indent_size).rstrip("\n") + "\n")
     tail.append('\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n')
-
     new_source = "".join(kept).rstrip() + "".join(tail)
-
     if dry_run:
         return "would_add", "would wrap top-level code in main()"
     try:
@@ -180,12 +166,9 @@ def fix_with_template(path: Path, *, dry_run: bool = False) -> tuple[str, str]:
         source = path.read_text(encoding="utf-8")
     except OSError as exc:
         return "error", f"read failed: {exc}"
-
     if MAIN_GUARD_RE.search(source):
         return "skipped", "already has guard"
-
     new_source = append_main_guard(insert_main_template(source))
-
     if dry_run:
         return "would_add", "would add guard"
     try:
@@ -228,11 +211,9 @@ def _check_worker(payload: tuple[str, str]) -> tuple[Path, str, str]:
         source = path.read_text(encoding="utf-8")
     except OSError as exc:
         return path, "error", f"read failed: {exc}"
-
     if detect == "regex":
         status = "skipped" if MAIN_GUARD_RE.search(source) else "missing"
         return path, status, ""
-
     try:
         tree = ast.parse(source, filename=str(path))
     except SyntaxError as exc:
@@ -255,13 +236,10 @@ def run_check(args: argparse.Namespace) -> int:
     if not files:
         logger.warning("No Python files found")
         return 0
-
     print(f"Found {len(files)} Python files (detect={args.detect}, workers={args.workers}, excludes={len(excludes)})")
-
     missing: list[Path] = []
     skipped = 0
     errors: list[tuple[Path, str]] = []
-
     payloads = [(str(p), args.detect) for p in files]
 
     def handle(path: Path, status: str, message: str) -> None:
@@ -280,18 +258,15 @@ def run_check(args: argparse.Namespace) -> int:
     else:
         for payload in payloads:
             handle(*_check_worker(payload))
-
     print(f"  already had guard: {skipped}")
     for path, message in errors:
         print(f"  ERROR {path}: {message}", file=sys.stderr)
-
     if missing:
         print(f"Missing main guard in {len(missing)} file(s):")
         for path in sorted(missing):
             print(f"  {path}")
         print("Tip: run `add_main_guard.py fix` to add them")
         return 1
-
     print("All Python files have the main guard")
     return 0
 
@@ -321,20 +296,16 @@ def run_fix(args: argparse.Namespace) -> int:
     if not files:
         logger.warning("No Python files found")
         return 0
-
     print(
         f"Found {len(files)} Python files "
         f"(strategy={args.strategy}, dry_run={args.dry_run}, "
         f"workers={args.workers}, indent={args.indent})"
     )
-
     added: list[Path] = []
     would_add: list[Path] = []
     skipped: list[Path] = []
     errors: list[tuple[Path, str]] = []
-
     payloads = [(str(p), args.strategy, args.dry_run, args.indent) for p in files]
-
     if args.workers > 1 and len(files) > 1:
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
             for path, status, message in pool.map(_fix_worker, payloads):
@@ -342,7 +313,6 @@ def run_fix(args: argparse.Namespace) -> int:
     else:
         for payload in payloads:
             _classify(*_fix_worker(payload), added, would_add, skipped, errors)
-
     print("Results:")
     print(f"  already had guard: {len(skipped)}")
     if args.dry_run:
@@ -354,10 +324,8 @@ def run_fix(args: argparse.Namespace) -> int:
     print(f"  errors:            {len(errors)}")
     for path, message in errors:
         print(f"    ERROR {path}: {message}", file=sys.stderr)
-
     if args.dry_run and would_add:
         print("Dry run complete: no files were modified")
-
     return 0 if not errors else 2
 
 
@@ -402,7 +370,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     check = sub.add_parser("check", help="Report files missing a main guard")
     check.add_argument(
         "paths",
@@ -416,7 +383,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Detection backend (default: ast)",
     )
     _add_common_options(check)
-
     fix = sub.add_parser("fix", help="Add main guards to files missing them")
     fix.add_argument(
         "paths",
@@ -444,7 +410,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Indent width for AST strategy (default: {DEFAULT_INDENT})",
     )
     _add_common_options(fix)
-
     return parser
 
 

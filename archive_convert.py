@@ -2,7 +2,6 @@
 """Recursively convert tar/zip archives under given paths to brotli-compressed .tar.br, or decompress .tar.br back to .tar with -d."""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -18,13 +17,11 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import brotli
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
 ARCHIVE_SUFFIXES: tuple[str, ...] = (
     ".tar.gz",
     ".tar.xz",
@@ -44,7 +41,6 @@ BIG_TAR_THRESHOLD: int = 10 * 1024 * 1024
 BROTLI_QUALITY_DEFAULT: int = 11
 BROTLI_QUALITY_BIG: int = 3
 DEFAULT_JOBS: int = 8
-
 ProcResult = tuple[Path, Path | None, int, int, str | None]
 
 
@@ -292,20 +288,16 @@ def run_decompress(paths: list[Path], cwd: Path) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     cwd = Path.cwd()
-
     if args.decompress:
         return run_decompress(args.paths, cwd)
-
     targets = collect_targets(args.paths)
     logger.info(f"targets: {len(targets)}")
     if not targets:
         return 0
-
     ok = 0
     failures = 0
     total_in = 0
     total_out = 0
-
     with mp.Pool(args.jobs) as pool:
         for src, dst, ssize, dsize, err in pool.imap_unordered(process, targets, chunksize=1):
             rp = relpath(src, cwd)
@@ -323,7 +315,6 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 failures += 1
                 logger.error(f"fail {rp}: {err}")
-
     if ok:
         total_saved = total_in - total_out
         total_pct = (total_saved / total_in * 100.0) if total_in else 0.0
@@ -334,7 +325,6 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         logger.info(f"totals: ok=0 fail={failures}")
-
     return 0 if not failures else 1
 
 

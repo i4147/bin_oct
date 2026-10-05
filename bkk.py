@@ -4,7 +4,6 @@ For each matching file found, print its path relative to the current working dir
 The script should use pathlib's Path.walk() for directory traversal and run its logic under a standard "__main__" guard, requiring no external inputs and producing console output listing the removed backup files as its only result."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ We keep that behaviour so existing command lines keep working, but the --help te
 Optional third-party packages (used when available): py7zr — .7z support zstandard — .zst support lz4.frame — .lz4 support snappy — .snappy support (estimate) brotli — .br support (estimate)"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import gzip
@@ -25,22 +24,18 @@ try:
     import py7zr  # type: ignore
 except ImportError:
     py7zr = None
-
 try:
     import zstandard as zstd  # type: ignore
 except ImportError:
     zstd = None
-
 try:
     import lz4.frame as lz4_frame  # type: ignore  # noqa: F401
 except ImportError:
     lz4_frame = None
-
 try:
     import snappy  # type: ignore  # noqa: F401
 except ImportError:
     snappy = None
-
 try:
     import brotli  # type: ignore  # noqa: F401
 except ImportError:
@@ -64,7 +59,6 @@ BANNER = """
                                                       /_/
   [ INTEGRITY VALIDATION & EXTRACTED SIZE SCANNER v1.4.2 ]
 """
-
 ARCHIVE_TYPES: dict[str, str] = {
     ".tar": "TAR Archive (.tar)",
     ".tar.gz": "GZip Tarball (.tar.gz)",
@@ -92,7 +86,6 @@ ARCHIVE_TYPES: dict[str, str] = {
     ".br": "Brotli Stream (.br)",
     ".lz4": "LZ4 Frame (.lz4)",
 }
-
 _SORTED_EXTS: tuple[str, ...] = tuple(sorted(ARCHIVE_TYPES, key=len, reverse=True))
 
 
@@ -138,7 +131,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
     count = 0
     integrity: Optional[bool] = None
     err = ""
-
     try:
         if ext in (".zip", ".whl"):
             with zipfile.ZipFile(path, "r") as zf:
@@ -146,7 +138,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                 extracted = sum(i.file_size for i in infos)
                 count = len(infos)
                 integrity = zf.testzip() is None
-
         elif ext and (ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")):
             mode = "r:*"
             if ext in (".tar.gz", ".tgz"):
@@ -174,7 +165,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                 else:
                     extracted = int(size * 3.5)
                     integrity, err = False, str(te)
-
         elif ext == ".7z":
             if py7zr is not None:
                 with py7zr.SevenZipFile(path, "r") as sz:
@@ -183,7 +173,6 @@ def analyze_archive(path: Path) -> dict[str, Any]:
                     integrity = True
             else:
                 extracted, integrity = int(size * 4.1), True
-
         elif ext == ".gz":
             extracted, count, integrity = _gzip_stream_size(path), 1, True
         elif ext == ".zst":
@@ -201,13 +190,10 @@ def analyze_archive(path: Path) -> dict[str, Any]:
             ratios = {".bz2": 2.9, ".xz": 3.8, ".lz4": 2.4, ".br": 3.1}
             extracted = int(size * ratios.get(ext, 3.0))
             count, integrity = 1, True
-
         else:
             extracted, count, integrity = int(size * 2.5), 1, True
-
     except Exception as e:
         integrity, err, extracted = False, str(e), size
-
     return {
         "path": str(path),
         "filename": path.name,
@@ -226,13 +212,11 @@ def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
     ext, _ = detect_archive(path)
     dest = dest_root / f"{path.name}_extracted"
     dest.mkdir(parents=True, exist_ok=True)
-
     try:
         if ext in (".zip", ".whl"):
             with zipfile.ZipFile(path, "r") as zf:
                 zf.extractall(dest)
             return True, str(dest)
-
         if ext and (ext.startswith(".tar") or ext in (".tgz", ".txz", ".tbz2", ".tzst")):
             with tarfile.open(path, "r:*") as tf:
                 try:
@@ -240,21 +224,17 @@ def extract_archive(path: Path, dest_root: Path) -> tuple[bool, str]:
                 except TypeError:
                     tf.extractall(dest)
             return True, str(dest)
-
         if ext == ".7z" and py7zr is not None:
             with py7zr.SevenZipFile(path, "r") as sz:
                 sz.extractall(path=dest)
             return True, str(dest)
-
         if ext == ".gz":
             out = dest / path.stem
             with gzip.open(path, "rb") as src, open(out, "wb") as dst:
                 shutil.copyfileobj(src, dst)
             return True, str(dest)
-
         shutil.copyfile(path, dest / f"{path.name}.decompressed")
         return True, str(dest)
-
     except Exception as e:
         return False, str(e)
 
@@ -267,26 +247,21 @@ def cmd_scan(
     as_json: bool,
 ) -> int:
     root = Path(directory).resolve()
-
     if as_json:
         results = [analyze_archive(p) for p in root.rglob("*") if p.is_file() and detect_archive(p)[0]]
         print(json.dumps(results, indent=2))
         return 0
-
     print(f"\x1b[38;5;39mScanning directory recursively:\x1b[0m {root}")
     if banner:
         print(f"\x1b[38;5;82m{BANNER}\x1b[0m")
-
     results: list[dict[str, Any]] = []
     for p in root.rglob("*"):
         if not p.is_file():
             continue
         if not detect_archive(p)[0]:
             continue
-
         info = analyze_archive(p)
         results.append(info)
-
         if verbose:
             status = "\x1b[32m[PASS]\x1b[0m" if info["integrity"] else "\x1b[31m[FAIL]\x1b[0m"
             print(
@@ -294,16 +269,13 @@ def cmd_scan(
                 f"|Comp:{fsz(info['compressed_size'])}"
                 f"->Ext:{fsz(info['extracted_size'])}|{status}"
             )
-
     print("-" * 40)
     print(
         f"\x1b[1;37m{'FILENAME':<32} {'ARCHIVE TYPE':<26} {'COMPRESSED':<12} {'EXTRACTED':<12} {'INTEGRITY':<10}\x1b[0m"
     )
     print("-" * 40)
-
     total_comp = sum(i["compressed_size"] for i in results)
     total_ext = sum(i["extracted_size"] for i in results)
-
     for info in results:
         if info["integrity"] is True:
             st = "\x1b[32mPASSED\x1b[0m"
@@ -316,14 +288,12 @@ def cmd_scan(
             f"{fsz(info['compressed_size']):<12} "
             f"{fsz(info['extracted_size']):<12} {st}"
         )
-
     print("=" * 40)
     print(f"\x1b[1;36mSUMMARY:\x1b[0m Found {len(results)} archive files.")
     print(f"Total Compressed Size : {fsz(total_comp)}")
     print(f"Total Extracted Size  : \x1b[1;32m{fsz(total_ext)}\x1b[0m")
     if total_comp > 0:
         print(f"Overall Expansion     : {total_ext / total_comp:.2f}x ({fsz(total_ext - total_comp)} saved)")
-
     if auto_extract and results:
         dest_root = root / "extracted_archives"
         print(f"\n\x1b[38;5;214m[-a] Auto-extracting {len(results)} archives into:\x1b[0m {dest_root}")
@@ -333,7 +303,6 @@ def cmd_scan(
                 print(f"  \x1b[32m[\u2713]\x1b[0m Extracted {info['filename']} -> {out}")
             else:
                 print(f"  \x1b[31m[\u2717]\x1b[0m Failed {info['filename']}: {out}")
-
     return 0
 
 
@@ -442,37 +411,29 @@ def cmd_sizes(directory: str) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory")
         return 1
-
     print(f"Scanning {root}...\n")
-
     fmt = "{:<30} {:<10} {:>15} {:>15} {:>8}"
     print(fmt.format("File", "Format", "Compressed", "Uncompressed", "Ratio"))
     print("-" * 40)
-
     count = 0
     total_comp = 0
     total_uncomp = 0
-
     for p in sorted(root.rglob("*")):
         if not p.is_file():
             continue
         if any(part in SKIP_DIRS for part in p.parts):
             continue
-
         handler = next(
             ((name, fn) for ext, (name, fn) in SIZE_HANDLERS.items() if p.name.endswith(ext)),
             None,
         )
         if handler is None:
             continue
-
         name, fn = handler
         size = p.stat().st_size
         uncomp, _err = fn(p)
-
         count += 1
         total_comp += size
-
         if uncomp is not None:
             total_uncomp += uncomp
             ratio = uncomp / size if size > 0 else 0.0
@@ -481,15 +442,12 @@ def cmd_sizes(directory: str) -> int:
         else:
             ratio_s = "Error"
             size_s = "Error"
-
         display = p.name[:27] + "..." if len(p.name) > 30 else p.name
         print(fmt.format(display, name, fsz(size), size_s, ratio_s))
-
     print("-" * 40)
     print(f"Total files: {count}")
     print(f"Total compressed: {fsz(total_comp)}")
     print(f"Total uncompressed: {fsz(total_uncomp)}")
-
     try:
         _, _, free = shutil.disk_usage(root)
         print(f"Free disk space: {fsz(free)}")
@@ -498,7 +456,6 @@ def cmd_sizes(directory: str) -> int:
             print(f"\n\u26a0\ufe0f  WARNING: Not enough space to extract all files! (Shortfall: {fsz(shortfall)})")
     except OSError:
         pass
-
     return 0
 
 
@@ -517,7 +474,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command")
-
     sp_scan = sub.add_parser(
         "scan",
         help="Full archive scan with integrity check + auto-extract (≈ xreport.py / xreport2.py).",
@@ -534,7 +490,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Extract every discovered archive into <dir>/extracted_archives.",
     )
-
     sp_scan.add_argument(
         "-t",
         "--test-integrity",
@@ -554,7 +509,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Emit the scan result as JSON and exit.",
     )
     sp_scan.set_defaults(func=lambda a: cmd_scan(a.directory, a.auto_extract_all, a.test_integrity, a.verbose, a.json))
-
     sp_sizes = sub.add_parser(
         "sizes",
         help="Report *accurately measured* uncompressed sizes and disk-space headroom (≈ zreport.py).",
@@ -566,17 +520,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory to scan (default: current directory).",
     )
     sp_sizes.set_defaults(func=lambda a: cmd_sizes(a.path))
-
     return parser
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
     argv_list = list(sys.argv[1:] if argv is None else argv)
-
     known = {"scan", "sizes", "-h", "--help"}
     if not argv_list or argv_list[0] not in known:
         argv_list = ["scan", *argv_list]
-
     parser = build_parser()
     args = parser.parse_args(argv_list)
     if not hasattr(args, "func"):

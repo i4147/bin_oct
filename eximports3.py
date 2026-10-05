@@ -5,10 +5,8 @@ It should process the files in parallel using a helper mpf function, aggregate a
 Finally, it should print a confirmation message showing the name of the created output file."""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
-
 from dh import get_files, mpf, unique_path
 
 

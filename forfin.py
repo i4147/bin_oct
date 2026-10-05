@@ -5,7 +5,6 @@ For each matched file it should invoke the external tool as a subprocess (append
 It should use a process pool sized to about 75% of available CPU cores, print progress/status messages, and exit gracefully with informative usage instructions if arguments are missing or no matching files are found."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from functools import partial

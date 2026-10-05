@@ -5,10 +5,8 @@ It must also parse the METADATA file (if present) into a key-value dictionary by
 The output should be a structured dictionary summarizing the wheel's contents and metadata for inspection purposes."""
 
 from __future__ import annotations
-
 import zipfile
 from pathlib import Path
-
 from loguru import logger
 
 

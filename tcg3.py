@@ -3,7 +3,6 @@
 The script should then save the resulting content as an executable file into one of the standard Termux script directories (e.g., ~/bin, ~/bashbin, ~/.local/bin), handling errors gracefully such as missing clipboard tool or failed clipboard reads by printing informative messages to stderr and exiting with a non-zero status."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

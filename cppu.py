@@ -5,10 +5,8 @@ Processing should run in parallel across multiple files using a multiprocessing 
 It relies on a local "dh" module providing helper functions for colored printing, file discovery, size measurement/formatting, size-change reporting, multiprocessing, and running external commands, and it should silently skip files that fail to format."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf, rrs, runcmd
 
 EXT = [

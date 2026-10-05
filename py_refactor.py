@@ -4,7 +4,6 @@ It should support single-file or batch/multiprocessing modes (using a worker poo
 The script should be driven by command-line arguments (parsed via argparse) mapped onto an immutable `Options` dataclass with sensible defaults, and it should locate `.py` files recursively or non-recursively while excluding existing backup files."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import contextlib

@@ -4,7 +4,6 @@ Reads a text file, splits into word-boundary-preserving chunks, translates via p
 Features: - 2500-char chunks with word-boundary preservation - Multiple translation backends with fallback order - Retry logic (3 attempts, exponential backoff) - Thread-safe concurrent translation (≤2 workers) - Resume from existing JSON, skip translated chunks - Atomic writes (temp → rename every 10 chunks) - Failed chunks logged to separate file - Graceful Ctrl+C handling - Full debug logging to file, errors to stderr - Identity-translation detection (triggers retry) Platform: Termux (Android 7, armv8l 32-bit), Python 3.12 Author: Coding Coach Date: 2026-09-23"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import signal
@@ -15,13 +14,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
-
 from loguru import logger
 
 
 def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
     logger.remove()
-
     logger.add(
         str(debug_log),
         level="DEBUG",
@@ -29,7 +26,6 @@ def setup_logging(debug_log: Path, error_stderr: bool = True) -> None:
         rotation="50 MB",
         retention=3,
     )
-
     if error_stderr:
         logger.add(
             sys.stderr,
@@ -120,7 +116,6 @@ def _make_deep_translator(source: str, target: str) -> Callable:
     except ImportError:
         msg = "deep_translator not installed. Run: pip install deep_translator"
         raise ImportError(msg)
-
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
 
@@ -137,14 +132,12 @@ def _make_deepl(source: str, target: str) -> Callable:
     except ImportError:
         msg = "deepl not installed. Run: pip install deepl"
         raise ImportError(msg)
-
     import os
 
     api_key = os.getenv("DEEPL_API_KEY")
     if not api_key:
         msg = "DEEPL_API_KEY environment variable not set"
         raise ValueError(msg)
-
     source = map_language_code("deepl", source).upper()
     target = map_language_code("deepl", target).upper()
     translator = deepl.Translator(api_key)
@@ -162,7 +155,6 @@ def _make_translate(source: str, target: str) -> Callable:
     except ImportError:
         msg = "translate not installed. Run: pip install translate"
         raise ImportError(msg)
-
     source = map_language_code("translate", source)
     target = map_language_code("translate", target)
     translator = Translator(from_lang=source, to_lang=target)
@@ -179,7 +171,6 @@ def _make_translators_bing(source: str, target: str) -> Callable:
     except ImportError:
         msg = "translators not installed. Run: pip install translators"
         raise ImportError(msg)
-
     source = map_language_code("translators_bing", source)
     target = map_language_code("translators_bing", target)
 
@@ -195,10 +186,8 @@ def _make_googletrans(source: str, target: str) -> Callable:
     except ImportError:
         msg = 'googletrans not installed. Run: pip install "googletrans==4.0.0rc1"'
         raise ImportError(msg)
-
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
-
     lock = threading.Lock()
     translator = Translator()
 
@@ -216,10 +205,8 @@ def _make_pygoogletranslation(source: str, target: str) -> Callable:
     except ImportError:
         msg = "pygoogletranslation not installed. Run: pip install pygoogletranslation"
         raise ImportError(msg)
-
     source = map_language_code("googletrans", source)
     target = map_language_code("googletrans", target)
-
     lock = threading.Lock()
     translator = Translator()
 
@@ -237,7 +224,6 @@ def _make_boto3(source: str, target: str) -> Callable:
     except ImportError:
         msg = "boto3 not installed. Run: pip install boto3"
         raise ImportError(msg)
-
     source = map_language_code("deep_translator", source)
     target = map_language_code("deep_translator", target)
     client = boto3.client("translate", region_name="us-east-1")
@@ -262,7 +248,6 @@ BACKEND_FACTORIES = {
     "pygoogletranslation": _make_pygoogletranslation,
     "boto3": _make_boto3,
 }
-
 DEFAULT_BACKEND_ORDER = [
     "deepl",
     "deep_translator",
@@ -276,14 +261,11 @@ DEFAULT_BACKEND_ORDER = [
 def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
     if not text or not text.strip():
         return []
-
     chunks = []
     pos = 0
-
     while pos < len(text):
         end = min(pos + chunk_size, len(text))
         chunk = text[pos:end]
-
         if end < len(text) and chunk and chunk[-1] not in (" ", "\n", "\t"):
             last_space = chunk.rfind(" ")
             if last_space > 0:
@@ -291,14 +273,10 @@ def smart_chunk_text(text: str, chunk_size: int = 2500) -> list[str]:
                 end = pos + len(chunk)
             else:
                 end = pos + len(chunk)
-
-        # Strip and store
         chunk = chunk.strip()
         if chunk:
             chunks.append(chunk)
-
         pos = end
-
     return chunks
 
 
@@ -311,10 +289,8 @@ def is_identity_translation(original: str, translated: str, threshold: float = 0
         return True
     if a == b:
         return True
-
     if abs(len(a) - len(b)) > max(4, int(0.05 * len(a))):
         return False
-
     import difflib
 
     ratio = difflib.SequenceMatcher(None, a, b).ratio()
@@ -413,7 +389,7 @@ def retry_with_backoff(
     for attempt in range(1, attempts + 1):
         try:
             return fn()
-        except Exception as e:  # noqa: BLE001 — deliberately broad (network backends)
+        except Exception as e:
             last_exc = e
             if attempt == attempts:
                 break
@@ -437,7 +413,6 @@ class TranslatorEngine:
         self.attempts = attempts_per_backend
         self.backends: list[tuple[str, Callable[[str], str]]] = []
         self.lock = threading.Lock()
-
         order = backend_order or DEFAULT_BACKEND_ORDER
         for name in order:
             factory = BACKEND_FACTORIES.get(name)
@@ -450,7 +425,6 @@ class TranslatorEngine:
                 logger.info(f"Backend available: {name}")
             except (ImportError, ValueError) as e:
                 logger.info(f"Backend {name} unavailable: {e}")
-
         if not self.backends:
             msg = (
                 "No translation backends available. Install one of: "
@@ -467,11 +441,10 @@ class TranslatorEngine:
                     lambda f=fn, t=text: f(t),
                     attempts=self.attempts,
                 )
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 errors.append(f"{name}: {e!r}")
                 logger.debug(f"Backend {name} failed for chunk: {e!r}")
                 continue
-
             if result is None:
                 errors.append(f"{name}: returned None")
                 continue
@@ -479,9 +452,7 @@ class TranslatorEngine:
                 errors.append(f"{name}: identity translation")
                 logger.debug(f"Backend {name} returned identity; trying next")
                 continue
-
             return result, name
-
         raise RuntimeError("All backends failed. " + " | ".join(errors))
 
 
@@ -492,7 +463,7 @@ class GracefulShutdown:
         self._prev_term = None
 
     def __enter__(self):
-        def handler(signum, frame):  # noqa: ARG001
+        def handler(signum, frame):
             if not self.event.is_set():
                 logger.warning(f"Signal {signum} received; finishing current chunks...")
                 print(
@@ -528,13 +499,10 @@ def run_translation(
 ) -> TranslationState:
     input_path = Path(input_path)
     output_path = Path(output_path)
-
     if not input_path.exists():
         msg = f"Input file not found: {input_path}"
         raise FileNotFoundError(msg)
-
     failed_path = output_path.with_suffix(output_path.suffix + ".failed.jsonl")
-
     state = load_state(output_path)
     if state is not None and (state.source_lang != source_lang or state.target_lang != target_lang):
         logger.warning(
@@ -544,7 +512,6 @@ def run_translation(
         )
         state.source_lang = source_lang
         state.target_lang = target_lang
-
     if state is None or not state.chunks:
         logger.info(f"Reading {input_path}")
         text = input_path.read_text(encoding="utf-8", errors="replace")
@@ -556,25 +523,20 @@ def run_translation(
             target_lang=target_lang,
             chunks=chunks,
         )
-
         save_state(output_path, state)
-
     total = len(state.chunks)
     pending = [i for i in range(total) if i not in state.translations]
     logger.info(f"Total chunks: {total}, pending: {len(pending)}")
-
     if not pending:
         logger.info("Nothing to translate — all chunks already done.")
         state.completed_at = state.completed_at or time.time()
         save_state(output_path, state)
         return state
-
     engine = TranslatorEngine(
         source_lang=source_lang,
         target_lang=target_lang,
         backend_order=backend_order,
     )
-
     state_lock = threading.Lock()
     stop_event = threading.Event()
     done_since_save = 0
@@ -586,7 +548,7 @@ def run_translation(
         try:
             translated, backend = engine.translate_chunk(text)
             return idx, translated, backend, None
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return idx, None, None, repr(e)
 
     completed_count = 0
@@ -596,7 +558,6 @@ def run_translation(
             for fut in as_completed(futures):
                 idx, translated, backend, error = fut.result()
                 completed_count += 1
-
                 with state_lock:
                     if error is None and translated is not None:
                         state.translations[idx] = translated
@@ -607,20 +568,16 @@ def run_translation(
                         state.failed[idx] = error or "unknown error"
                         logger.error(f"[{completed_count}/{len(pending)}] chunk {idx} FAILED: {error}")
                         append_failed_chunk(failed_path, idx, state.chunks[idx], error or "unknown")
-
                     done_since_save += 1
                     need_save = (done_since_save >= save_every) or shutdown.event.is_set()
                     if need_save:
                         save_state(output_path, state)
                         done_since_save = 0
-
                 if shutdown.event.is_set():
                     stop_event.set()
-
     finally:
         with state_lock:
             save_state(output_path, state)
-
     ok = len(state.translations)
     bad = len(state.failed)
     logger.info(f"Done. Translated: {ok}/{total}, Failed: {bad}")
@@ -629,7 +586,6 @@ def run_translation(
     else:
         state.completed_at = time.time()
         save_state(output_path, state)
-
     return state
 
 
@@ -678,7 +634,6 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
-
     if args.list_backends:
         print("Known backends (in default fallback order):")
         for b in DEFAULT_BACKEND_ORDER:
@@ -688,19 +643,15 @@ def main(argv: Optional[list[str]] = None) -> int:
             if b not in DEFAULT_BACKEND_ORDER:
                 print(f"  - {b}")
         return 0
-
     output = args.output or args.input.with_suffix(args.input.suffix + ".translations.json")
     debug_log = args.debug_log or output.with_suffix(output.suffix + ".debug.log")
-
     setup_logging(debug_log, error_stderr=not args.quiet)
     logger.info(f"=== translate_chunks start ===")
     logger.info(f"input={args.input} output={output} {args.source}->{args.target}")
-
     backend_order = None
     if args.backends:
         backend_order = [b.strip() for b in args.backends.split(",") if b.strip()]
         logger.info(f"Backend order override: {backend_order}")
-
     try:
         state = run_translation(
             input_path=args.input,
@@ -718,10 +669,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     except RuntimeError as e:
         logger.error(str(e))
         return 3
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.exception(f"Unhandled error: {e}")
         return 1
-
     total = len(state.chunks)
     ok = len(state.translations)
     bad = len(state.failed)

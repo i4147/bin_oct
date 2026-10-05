@@ -5,7 +5,6 @@ The script should skip inaccessible or non-existent directories gracefully and u
 Overall, it serves as a diagnostic/reporting tool to help identify duplicate commands and catalog available aliases versus binaries on a Termux system."""
 
 from __future__ import annotations
-
 import os
 import re
 import sys

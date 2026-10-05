@@ -4,14 +4,12 @@ The script should accept a username and optional timeout, display a live countdo
 It must gracefully handle GithubException errors such as user-not-found (404), invalid/expired token (401), and rate-limit-exceeded (403), printing clear, user-friendly error messages for each case, and should notify the user if no public repositories are found."""
 
 from __future__ import annotations
-
 import json
 import sys
 import threading
 import time
 from os import getenv
 from pathlib import Path
-
 from dotenv import load_dotenv
 from github import Auth, Github, GithubException
 

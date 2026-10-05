@@ -5,7 +5,6 @@ For each package, it should run "apt install --reinstall -y" via subprocess, pri
 At the end, it should print a summary indicating completion and the location of the failure log."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 import time

@@ -5,11 +5,9 @@ To minimize API calls, subtitle entries should be grouped into batches (joined w
 The script should print progress messages for batch preparation and processing, include a short delay between batch requests to avoid rate limiting, and handle translation errors per batch without stopping the entire process."""
 
 from __future__ import annotations
-
 import argparse
 import os
 import time
-
 import pysrt
 from deep_translator import GoogleTranslator
 

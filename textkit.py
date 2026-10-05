@@ -4,7 +4,6 @@ Consolidates the following eight scripts into one runnable toolkit: 20commonword
 If missing, the CLI prints a warning and falls back to regex tokenization and/or the built-in (empty) stopword set."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import mimetypes
@@ -24,7 +23,6 @@ try:  # pragma: no cover
     _HAS_NLTK = True
 except ImportError:  # pragma: no cover
     _HAS_NLTK = False
-
 TEXT_EXTS: set[str] = {
     ".txt",
     ".md",
@@ -73,7 +71,6 @@ TEXT_EXTS: set[str] = {
     ".eslintrc",
     ".prettierrc",
 }
-
 BINARY_EXTS: set[str] = {
     ".bin",
     ".exe",
@@ -100,7 +97,6 @@ BINARY_EXTS: set[str] = {
     ".wav",
     ".flac",
 }
-
 SKIP_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -123,7 +119,6 @@ SKIP_DIRS: set[str] = {
     "bin",
     ".gradle",
 }
-
 SPECIAL_NAMES: set[str] = {
     "makefile",
     "dockerfile",
@@ -142,11 +137,9 @@ def is_text_file(path: Path) -> bool:
         return False
     if suffix in TEXT_EXTS:
         return True
-
     name = path.name.lower()
     if name in SPECIAL_NAMES:
         return True
-
     if suffix == "":
         if name.startswith("."):
             return True
@@ -159,7 +152,6 @@ def is_text_file(path: Path) -> bool:
             return False
         printable = sum(1 for b in chunk if 32 <= b < 127 or b in (9, 10, 13))
         return printable / len(chunk) > 0.75
-
     mime, _ = mimetypes.guess_type(str(path))
     if mime:
         return mime.startswith("text/")
@@ -186,7 +178,6 @@ _ALNUM_RE = re.compile(r"[a-zA-Z0-9]+")
 
 def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
     text = text.lower()
-
     if mode == "nltk":
         if not _HAS_NLTK:
             msg = "nltk is not installed; use --tokenize regex|alnum instead"
@@ -197,17 +188,14 @@ def tokenize(text: str, min_length: int = 3, mode: str = "regex") -> list[str]:
             nltk.download("punkt", quiet=True)
         tokens = [t for t in _nltk_word_tokenize(text) if t.isalnum()]
         return [t for t in tokens if len(t) >= min_length]
-
     if mode == "alnum":
         return [t for t in _ALNUM_RE.findall(text) if len(t) >= min_length]
-
     return [t for t in _WORD_RE.findall(text) if len(t) >= min_length]
 
 
 def load_stopwords(source: str, path: Path | None) -> set[str]:
     if source == "none":
         return set()
-
     if source == "nltk":
         if not _HAS_NLTK:
             print(
@@ -220,7 +208,6 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
         except LookupError:
             nltk.download("stopwords", quiet=True)
         return set(_nltk_stopwords.words("english"))
-
     # source == "file"
     if path is None or not path.exists():
         print(
@@ -268,7 +255,6 @@ def _worker_collect_chars(path_str: str) -> set[str]:
 def _resolve_files(raw: Sequence[Path]) -> list[Path]:
     if not raw:
         return iter_text_files(Path.cwd())
-
     out: list[Path] = []
     for item in raw:
         if item.is_dir():
@@ -293,19 +279,16 @@ def _write_json(path: Path, counter: Counter, with_metadata: bool) -> None:
         }
     else:
         payload = sorted_items
-
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Results saved to {path}")
 
 
 def _emit_aggregate(counter: Counter, args: argparse.Namespace) -> None:
     total_tokens = sum(counter.values())
-
     items = counter.most_common()
     if args.min_count > 1:
         items = [(w, c) for w, c in items if c >= args.min_count]
     items = items[: args.top]
-
     if args.format == "table":
         print(f"\nTop {len(items)} most frequent words:")
         print("-" * 40)
@@ -331,11 +314,8 @@ def cmd_words(args: argparse.Namespace) -> int:
     if not files:
         print("No input files found.", file=sys.stderr)
         return 1
-
     stopwords = load_stopwords(args.stopwords_source, args.stopwords_file)
-
     tasks = [(str(p), args.min_length, args.tokenize, stopwords) for p in files]
-
     results: list[tuple[str, Counter, str | None]] = []
     if args.workers > 1 and len(tasks) > 1:
         with Pool(processes=args.workers) as pool:
@@ -343,11 +323,9 @@ def cmd_words(args: argparse.Namespace) -> int:
     else:
         for t in tasks:
             results.append(_worker_word_counts(t))
-
     for path_str, _, err in results:
         if err:
             print(f"Warning: could not read {path_str}: {err}", file=sys.stderr)
-
     if args.per_file:
         for path_str, counter, err in results:
             if err:
@@ -368,14 +346,11 @@ def cmd_words(args: argparse.Namespace) -> int:
                 with_metadata=False,
             )
         return 0
-
     total: Counter = Counter()
     for _, counter, _ in results:
         total.update(counter)
-
     if args.json:
         _write_json(args.json, total, with_metadata=args.with_metadata)
-
     _emit_aggregate(total, args)
     return 0
 
@@ -387,10 +362,8 @@ def cmd_chars(args: argparse.Namespace) -> int:
         return 1
     if path.is_symlink() or not is_text_file(path):
         return 0
-
     text = path.read_text(encoding="utf-8", errors="ignore")
     n_chars = len(text)
-
     print(f"Number of characters in '{path}': {n_chars}")
     if args.bytes:
         print(f"char : {n_chars}\nsize : {path.stat().st_size}")
@@ -400,19 +373,15 @@ def cmd_chars(args: argparse.Namespace) -> int:
 def cmd_collect_chars(args: argparse.Namespace) -> int:
     root: Path = args.directory.resolve()
     out_path: Path = args.output
-
     print(f"Scanning directory: {root}")
     files = iter_text_files(root)
     if not files:
         print("No text files found!")
         return 0
-
     print(f"Found {len(files):,} text files")
     print(f"\nProcessing files with {args.workers} workers...")
-
     unique_chars: set[str] = set()
     processed = 0
-
     if args.workers > 1 and len(files) > 1:
         with Pool(processes=args.workers) as pool:
             for chars in pool.imap(_worker_collect_chars, [str(f) for f in files]):
@@ -424,7 +393,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
         for f in files:
             unique_chars.update(_worker_collect_chars(str(f)))
             processed += 1
-
     print(f"\n\u2713 Processed: {processed:,} files")
     print(f"\u2713 Unique characters found: {len(unique_chars):,}")
 
@@ -439,7 +407,6 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
         return (3, code)
 
     ordered = sorted(unique_chars, key=sort_key)
-
     print(f"Saving unique characters to {out_path}...")
     with out_path.open("w", encoding="utf-8") as fh:
         for ch in ordered:
@@ -456,14 +423,12 @@ def cmd_collect_chars(args: argparse.Namespace) -> int:
             else:
                 fh.write(f"{ch}\n")
     print(f"\u2713 Saved to {out_path.resolve()}")
-
     ascii_count = sum(1 for c in unique_chars if ord(c) < 128)
     ctrl_count = sum(1 for c in unique_chars if ord(c) < 32)
     ws_count = sum(1 for c in unique_chars if c.isspace())
     digit_count = sum(1 for c in unique_chars if c.isdigit())
     alpha_count = sum(1 for c in unique_chars if c.isalpha())
     uni_count = len(unique_chars) - ascii_count
-
     print("\n\U0001f4ca Statistics:")
     print(f"  Total unique characters: {len(unique_chars)}")
     print(f"  ASCII characters: {ascii_count}")
@@ -492,7 +457,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_words = sub.add_parser(
         "words",
         help="Word-frequency analysis (aggregate or per-file).",
@@ -572,7 +536,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Parallel worker processes (default: 8).",
     )
     p_words.set_defaults(func=cmd_words)
-
     p_chars = sub.add_parser(
         "chars",
         help="Character count of a single file.",
@@ -585,7 +548,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also print the file size in bytes (charcount.py behavior).",
     )
     p_chars.set_defaults(func=cmd_chars)
-
     p_cc = sub.add_parser(
         "collect-chars",
         help="Collect unique characters across a directory tree.",
@@ -612,14 +574,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Parallel worker processes (default: 8).",
     )
     p_cc.set_defaults(func=cmd_collect_chars)
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     try:
         return int(args.func(args))
     except KeyboardInterrupt:

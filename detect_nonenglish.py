@@ -4,7 +4,6 @@ Scans files and directories for non-English content using one of several pluggab
 Usage ----- python detect_nonenglish.py --backend <name> [options] <path> [<path> ...] Backends -------- gcld3 Google's Compact Language Detector v3 (pip: gcld3) pycld2 Compact Language Detector v2 (pip: pycld2) langdetect Port of Google's language-detection library (pip: langdetect) lingua High-accuracy language detector (pip: lingua-language-detector) fast_langdetect fast, small language detector (pip: fast-langdetect) Examples -------- python detect_nonenglish.py --backend langdetect ./src python detect_nonenglish.py --backend lingua -l -o report.json ./src python detect_nonenglish.py --backend gcld3 --min-confidence 0.6 file.py The script writes either a human-readable text report (`*.txt`) or a structured JSON report (`*.json`) depending on the chosen output extension."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -15,82 +14,76 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
 
-DEFAULT_EXTENSIONS: frozenset[str] = frozenset(
-    {
-        ".txt",
-        ".csv",
-        ".tsv",
-        ".log",
-        ".md",
-        ".rst",
-        ".py",
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx",
-        ".vue",
-        ".html",
-        ".css",
-        ".json",
-        ".xml",
-        ".yaml",
-        ".yml",
-        ".ini",
-        ".cfg",
-        ".conf",
-        ".toml",
-        ".env",
-        ".properties",
-        ".sh",
-        ".bash",
-        ".bat",
-        ".ps1",
-        ".java",
-        ".cpp",
-        ".c",
-        ".h",
-        ".hpp",
-        ".cs",
-        ".go",
-        ".rs",
-        ".rb",
-        ".php",
-        ".pl",
-        ".r",
-        ".sql",
-        ".swift",
-        ".kt",
-        ".scala",
-        ".lua",
-        ".tex",
-        ".bib",
-        ".gitignore",
-        ".dockerfile",
-    }
-)
-
-DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        "node_modules",
-        ".venv",
-        "venv",
-        ".tox",
-        ".nox",
-        "build",
-        "dist",
-        "target",
-        ".idea",
-        ".vscode",
-    }
-)
-
+DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
+    ".txt",
+    ".csv",
+    ".tsv",
+    ".log",
+    ".md",
+    ".rst",
+    ".py",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".vue",
+    ".html",
+    ".css",
+    ".json",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".toml",
+    ".env",
+    ".properties",
+    ".sh",
+    ".bash",
+    ".bat",
+    ".ps1",
+    ".java",
+    ".cpp",
+    ".c",
+    ".h",
+    ".hpp",
+    ".cs",
+    ".go",
+    ".rs",
+    ".rb",
+    ".php",
+    ".pl",
+    ".r",
+    ".sql",
+    ".swift",
+    ".kt",
+    ".scala",
+    ".lua",
+    ".tex",
+    ".bib",
+    ".gitignore",
+    ".dockerfile",
+})
+DEFAULT_EXCLUDE_DIRS: frozenset[str] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "node_modules",
+    ".venv",
+    "venv",
+    ".tox",
+    ".nox",
+    "build",
+    "dist",
+    "target",
+    ".idea",
+    ".vscode",
+})
 DEFAULT_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_WORKERS = 8
 DEFAULT_MIN_CONFIDENCE = 0.5
@@ -118,7 +111,7 @@ class FileResult:
 class Backend:
     name: str = "base"
 
-    def detect(self, text: str) -> tuple[str, float, bool]:  # pragma: no cover
+    def detect(self, text: str) -> tuple[str, float, bool]:
         raise NotImplementedError
 
 
@@ -245,7 +238,6 @@ BACKEND_REGISTRY: dict[str, type[Backend]] = {
     LinguaBackend.name: LinguaBackend,
     FastLangdetectBackend.name: FastLangdetectBackend,
 }
-
 _BACKEND_CACHE: dict[str, Backend] = {}
 
 
@@ -263,7 +255,7 @@ def _backend_status(name: str) -> str:
         return "available"
     except ImportError:
         return "not installed"
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         return f"error: {exc}"
 
 
@@ -291,7 +283,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     path_str, backend_name, detailed, min_conf, max_bytes = task
     path = Path(path_str)
     result = FileResult(path=path_str)
-
     try:
         if path.stat().st_size > max_bytes:
             result.error = f"file too large (> {max_bytes // (1024 * 1024)} MB)"
@@ -299,27 +290,21 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     except OSError as exc:
         result.error = f"cannot access file: {exc}"
         return result
-
     text = _read_text(path)
     if text is None:
         result.error = "cannot decode file"
         return result
-
     backend = _get_backend(backend_name)
-
     sample = text[:SAMPLE_CHARS]
     if len(sample.strip()) < MIN_LINE_LEN:
         return result
-
     lang, conf, _reliable = backend.detect(sample)
     file_is_non_english = _is_finding(lang, conf, min_conf)
-
     if not detailed:
         if file_is_non_english:
             result.language = lang
             result.confidence = conf
         return result
-
     findings: list[LineFinding] = []
     for idx, raw in enumerate(text.splitlines(), 1):
         stripped = raw.strip()
@@ -335,7 +320,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
                     confidence=l_conf,
                 )
             )
-
     if findings:
         dominant = Counter(f.lang for f in findings).most_common(1)[0][0]
         result.language = dominant
@@ -344,7 +328,6 @@ def _process_file(task: tuple[str, str, bool, float, int]) -> FileResult:
     elif file_is_non_english:
         result.language = lang
         result.confidence = conf
-
     return result
 
 
@@ -414,7 +397,6 @@ def _write_text_report(output_path: Path, report: dict) -> None:
         fh.write(f"Min confidence     : {report['min_confidence']}\n")
         fh.write(f"Detailed mode      : {report['detailed']}\n")
         fh.write(f"{bar}\n\n")
-
         results = report["results"]
         if not results:
             fh.write("No non-English content detected.\n\n")
@@ -431,7 +413,6 @@ def _write_text_report(output_path: Path, report: dict) -> None:
                         fh.write(f"    L{line['line_num']} [{line['lang']}] ({line['confidence']:.3f})\n")
                         fh.write(f"      {line['text']}\n")
                 fh.write("\n")
-
         errors = report["errors"]
         if errors:
             fh.write(f"{bar}\n")
@@ -531,20 +512,17 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-
     if args.list_backends:
         print("Available backends:")
         for name in sorted(BACKEND_REGISTRY):
             print(f"  {name:<16} {_backend_status(name)}")
         return 0
-
     if not args.backend:
         parser.error("--backend is required (use --list-backends to see options).")
     if not args.paths:
         parser.error("at least one file or directory path is required.")
     if not 0.0 <= args.min_confidence <= 1.0:
         parser.error("--min-confidence must be between 0.0 and 1.0.")
-
     try:
         _get_backend(args.backend)
     except Exception as exc:
@@ -553,21 +531,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             file=sys.stderr,
         )
         return 2
-
     extensions = set(DEFAULT_EXTENSIONS)
     extensions.update(ext.lower() for ext in args.extensions)
     exclude_dirs = set(DEFAULT_EXCLUDE_DIRS) | set(args.exclude_dirs)
-
     print(f"Scanning with backend: {args.backend}", file=sys.stderr)
     files = _discover_files(args.paths, extensions, exclude_dirs)
     print(f"Found {len(files)} candidate files.", file=sys.stderr)
-
     max_bytes = args.max_size_mb * 1024 * 1024
     tasks = [(str(f), args.backend, args.detailed, args.min_confidence, max_bytes) for f in files]
-
     results: list[FileResult] = []
     errors: list[FileResult] = []
-
     if tasks:
         workers = max(1, min(args.workers, len(tasks)))
         with ProcessPoolExecutor(max_workers=workers) as pool:
@@ -585,7 +558,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     )
                 try:
                     r = future.result()
-                except Exception as exc:  # pragma: no cover
+                except Exception as exc:
                     path = futures[future][0]
                     r = FileResult(path=path, error=f"worker crashed: {exc}")
                 if r.error:
@@ -593,10 +566,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 elif r.language or r.non_english_lines:
                     results.append(r)
             print(file=sys.stderr)
-
     results.sort(key=lambda r: r.path)
     errors.sort(key=lambda r: r.path)
-
     report = _build_report(
         backend_name=args.backend,
         paths=args.paths,
@@ -606,7 +577,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         min_confidence=args.min_confidence,
         detailed=args.detailed,
     )
-
     output = args.output
     fmt = args.format
     if fmt is None:
@@ -616,13 +586,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             fmt = "text"
     if output is None:
         output = "noneng.json" if fmt == "json" else "noneng.txt"
-
     output_path = Path(output)
     if fmt == "json":
         _write_json_report(output_path, report)
     else:
         _write_text_report(output_path, report)
-
     bar = "=" * 60
     print(bar)
     print(f"Backend          : {args.backend}")
@@ -631,7 +599,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Errors           : {len(report['errors'])}")
     print(f"Report written to: {output_path.resolve()}")
     print(bar)
-
     return 0
 
 

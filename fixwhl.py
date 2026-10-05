@@ -4,12 +4,10 @@ Use this metadata to restore or rename each wheel file to reflect its proper can
 Include a helper that generates a safe, non-colliding destination path by appending an incrementing numeric suffix when a file with the same name already exists, and track encountered package versions using a dictionary of sets keyed by package name."""
 
 from __future__ import annotations
-
 from collections import defaultdict
 from email.parser import Parser
 from pathlib import Path
 from zipfile import ZipFile
-
 from packaging.utils import canonicalize_name
 
 

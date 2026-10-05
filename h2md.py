@@ -5,10 +5,8 @@ It should accept command-line arguments that can be individual file paths or dir
 The discovered files should then be processed in parallel via the `mpf` utility."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf
 from markdownify import markdownify
 

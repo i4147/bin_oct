@@ -2,7 +2,6 @@
 """dupeguru-ng: Modern duplicate file finder with Textual TUI Inspired by dupeGuru, rebuilt for Python 3.12+ with Textual 8.2.5"""
 
 from __future__ import annotations
-
 import hashlib
 import sys
 from collections import defaultdict
@@ -10,7 +9,6 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import ClassVar
-
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -81,7 +79,6 @@ def normalize_filename(filename: str) -> list[str]:
     import re
 
     name = Path(filename).stem.lower()
-
     words = re.split(r"[\s\-_.]+", name)
     return [w for w in words if w]
 
@@ -89,18 +86,15 @@ def normalize_filename(filename: str) -> list[str]:
 def fuzzy_match_score(words1: list[str], words2: list[str], similarity_threshold: float = 0.8) -> float:
     if not words1 or not words2:
         return 0.0
-
     matches = 0
     for w1 in words1:
         for w2 in words2:
             if SequenceMatcher(None, w1, w2).ratio() >= similarity_threshold:
                 matches += 1
                 break
-
     total = len(words1) + len(words2)
     if total == 0:
         return 0.0
-
     return (2 * matches / total) * 100
 
 
@@ -121,22 +115,17 @@ class DuplicateFinder:
     def scan_directory(self, root: Path, progress_callback=None) -> None:
         self.progress_callback = progress_callback
         self.files = []
-
         all_files = list(root.rglob("*"))
         total = len(all_files)
-
         for i, path in enumerate(all_files):
             if progress_callback:
                 progress_callback(i, total, f"Scanning: {path}")
-
             if not path.is_file():
                 continue
-
             try:
                 stat = path.stat()
                 if stat.st_size < self.min_size:
                     continue
-
                 self.files.append(
                     FileEntry(
                         path=path,
@@ -149,47 +138,36 @@ class DuplicateFinder:
 
     def find_duplicates(self, progress_callback=None) -> list[DuplicateGroup]:
         self.duplicates = []
-
         if self.scan_mode == "filename":
             self._find_by_filename(progress_callback)
         else:
             self._find_by_contents(progress_callback)
-
         return self.duplicates
 
     def _find_by_filename(self, progress_callback=None) -> None:
-
         groups: dict[str, list[FileEntry]] = defaultdict(list)
-
         for file in self.files:
             key = file.filename_normalized
             groups[key].append(file)
-
         for key, files in groups.items():
             if len(files) > 1:
                 self.duplicates.append(DuplicateGroup(files=files, match_score=100.0, reason="filename_exact"))
-
         if self.fuzzy_threshold > 0:
             keys = list(groups.keys())
             checked = set()
-
             for i, key1 in enumerate(keys):
                 if progress_callback:
                     progress_callback(i, len(keys), f"Fuzzy matching: {key1}")
-
                 words1 = normalize_filename(key1)
                 if not words1:
                     continue
-
                 for key2 in keys[i + 1 :]:
                     if (key1, key2) in checked or (key2, key1) in checked:
                         continue
                     checked.add((key1, key2))
-
                     words2 = normalize_filename(key2)
                     if not words2:
                         continue
-
                     score = fuzzy_match_score(words1, words2)
                     if score >= self.fuzzy_threshold and score < 100:
                         combined = groups[key1] + groups[key2]
@@ -202,30 +180,23 @@ class DuplicateFinder:
                         )
 
     def _find_by_contents(self, progress_callback=None) -> None:
-
         by_size: dict[int, list[FileEntry]] = defaultdict(list)
         for file in self.files:
             by_size[file.size].append(file)
-
         candidates = [files for files in by_size.values() if len(files) > 1]
-
         total_candidates = sum(len(c) for c in candidates)
         processed = 0
-
         for group in candidates:
             hash_groups: dict[str, list[FileEntry]] = defaultdict(list)
-
             for file in group:
                 if progress_callback:
                     processed += 1
                     progress_callback(processed, total_candidates, f"Hashing: {file.path}")
-
                 try:
                     file.hash = compute_file_hash(file.path)
                     hash_groups[file.hash].append(file)
                 except (OSError, PermissionError, IOError):
                     continue
-
             for files in hash_groups.values():
                 if len(files) > 1:
                     self.duplicates.append(DuplicateGroup(files=files, match_score=100.0, reason="contents"))
@@ -239,22 +210,18 @@ class ScanSettings(Widget):
         padding: 1 2;
         background: $surface;
     }
-
     ScanSettings .setting-row {
         height: auto;
         margin: 1 0;
     }
-
     ScanSettings Label {
         width: 20;
         content-align: left middle;
     }
-
     ScanSettings RadioSet, ScanSettings Input, ScanSettings Switch {
         width: 1fr;
     }
     """
-
     scan_mode: str = "contents"
     fuzzy_threshold: float = 80.0
     min_size: int = 0
@@ -267,11 +234,9 @@ class ScanSettings(Widget):
                 OptionList.Option("Filename", id="opt-filename"),
                 id="scan-mode",
             )
-
         with Horizontal(classes="setting-row"):
             yield Label("Fuzzy Threshold:", id="fuzzy-label")
             yield Input(value="80", id="fuzzy-input", type="integer")
-
         with Horizontal(classes="setting-row"):
             yield Label("Min File Size (bytes):", id="minsize-label")
             yield Input(value="0", id="minsize-input", type="integer")
@@ -301,7 +266,6 @@ class ResultsTable(Widget):
         width: 100%;
         height: 1fr;
     }
-
     ResultsTable DataTable {
         width: 100%;
         height: 100%;
@@ -318,7 +282,6 @@ class ResultsTable(Widget):
     def update_results(self, duplicates: list[DuplicateGroup]) -> None:
         table = self.query_one("#results-table", DataTable)
         table.clear()
-
         if not table.columns:
             table.add_column("Group", width=8)
             table.add_column("Files", width=12)
@@ -327,11 +290,9 @@ class ResultsTable(Widget):
             table.add_column("Match %", width=10)
             table.add_column("Reason", width=15)
             table.add_column("Sample Path", width=60)
-
         for i, group in enumerate(duplicates, 1):
             if not group.files:
                 continue
-
             sample = group.files[0]
             table.add_row(
                 str(i),
@@ -350,7 +311,6 @@ class ScanProgress(ModalScreen):
     ScanProgress {
         align: center middle;
     }
-
     ScanProgress > Container {
         width: 60;
         height: auto;
@@ -358,13 +318,11 @@ class ScanProgress(ModalScreen):
         border: thick $primary;
         padding: 2 4;
     }
-
     ScanProgress #status {
         width: 100%;
         content-align: center middle;
         margin: 1 0;
     }
-
     ScanProgress #progress {
         width: 100%;
         margin: 1 0;
@@ -380,12 +338,10 @@ class ScanProgress(ModalScreen):
     def update_progress(self, current: int, total: int, message: str = "") -> None:
         progress = self.query_one("#progress", ProgressBar)
         status = self.query_one("#status", Label)
-
         if total > 0:
             progress.progress = (current / total) * 100
         else:
             progress.progress = 0
-
         if message:
             if len(message) > 50:
                 message = "…" + message[-47:]
@@ -399,17 +355,14 @@ class ScanProgress(ModalScreen):
 class DupeGuruApp(App):
     TITLE = "dupeguru-ng"
     SUB_TITLE = "Duplicate File Finder"
-
     CSS = """
     Screen {
         background: $background;
     }
-
     #main-container {
         width: 100%;
         height: 100%;
     }
-
     #sidebar {
         width: 30;
         height: 100%;
@@ -417,13 +370,11 @@ class DupeGuruApp(App):
         border-right: solid $primary;
         padding: 1;
     }
-
     #content {
         width: 1fr;
         height: 100%;
         padding: 1;
     }
-
     #path-display {
         width: 100%;
         height: auto;
@@ -432,30 +383,25 @@ class DupeGuruApp(App):
         padding: 1;
         text-align: center;
     }
-
     #controls {
         height: auto;
         margin: 1 0;
     }
-
     #controls Button {
         width: 100%;
         margin: 1 0;
     }
-
     #stats {
         height: auto;
         margin: 1 0;
         padding: 1;
         background: $surface;
     }
-
     #results-container {
         width: 100%;
         height: 1fr;
     }
     """
-
     BINDINGS: ClassVar[list[Binding]] = [
         Binding("q", "quit", "Quit", show=True),
         Binding("s", "scan", "Scan", show=True),
@@ -470,28 +416,23 @@ class DupeGuruApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-
         with Horizontal(id="main-container"):
             with Vertical(id="sidebar"):
                 yield Label("[bold]Directory[/bold]", id="dir-label")
                 yield DirectoryTree(".", id="dir-tree")
-
                 with Vertical(id="controls"):
                     yield Button("Scan Selected", id="scan-btn", variant="primary")
                     yield Button("Clear Results", id="clear-btn", variant="warning")
-
                 with Vertical(id="stats"):
                     yield Label("[bold]Statistics[/bold]")
                     yield Label("", id="stat-files")
                     yield Label("", id="stat-dupes")
                     yield Label("", id="stat-space")
-
             with Vertical(id="content"):
                 yield Static("Select a directory to scan", id="path-display")
                 yield ScanSettings(id="settings")
                 with Container(id="results-container"):
                     yield ResultsTable(id="results")
-
         yield Footer()
 
     @on(DirectoryTree.FileSelected)
@@ -516,7 +457,6 @@ class DupeGuruApp(App):
         if not self.selected_path:
             self.notify("Please select a directory first", severity="warning")
             return
-
         self.action_scan()
 
     @on(Button.Pressed, "#clear-btn")
@@ -526,53 +466,42 @@ class DupeGuruApp(App):
     def action_scan(self) -> None:
         if not self.selected_path:
             return
-
         settings = self.query_one("#settings", ScanSettings)
         self.finder = DuplicateFinder(
             scan_mode=settings.scan_mode,
             min_size=settings.min_size,
             fuzzy_threshold=settings.fuzzy_threshold,
         )
-
         progress_screen = ScanProgress()
         self.push_screen(progress_screen)
 
         def progress_cb(current: int, total: int, message: str = "") -> None:
-
             self.call_after_refresh(progress_screen.update_progress, current, total, message)
 
         try:
             self.finder.scan_directory(self.selected_path, progress_cb)
-
             self.finder.find_duplicates(progress_cb)
-
             self.call_after_refresh(self._display_results)
-
         finally:
             self.call_after_refresh(self.pop_screen)
 
     def _display_results(self) -> None:
         results = self.query_one("#results", ResultsTable)
         results.update_results(self.finder.duplicates)
-
         total_files = len(self.finder.files)
         total_dupes = len(self.finder.duplicates)
         wasted = sum(g.total_size for g in self.finder.duplicates)
-
         self.query_one("#stat-files", Label).update(f"Files scanned: {total_files}")
         self.query_one("#stat-dupes", Label).update(f"Duplicate groups: {total_dupes}")
         self.query_one("#stat-space", Label).update(f"Wasted space: {format_size(wasted)}")
-
         self.notify(f"Found {total_dupes} duplicate groups", severity="information")
 
     def action_clear(self) -> None:
         results = self.query_one("#results", ResultsTable)
         results.update_results([])
-
         self.query_one("#stat-files", Label).update("")
         self.query_one("#stat-dupes", Label).update("")
         self.query_one("#stat-space", Label).update("")
-
         self.notify("Results cleared", severity="information")
 
     def action_refresh(self) -> None:
@@ -594,7 +523,6 @@ Examples:
   dupeguru-ng /path/to/scan       Launch TUI with pre-selected path
         """,
     )
-
     parser.add_argument(
         "path",
         nargs="?",
@@ -602,17 +530,13 @@ Examples:
         default=Path.cwd(),
         help="Directory to scan (default: current directory)",
     )
-
     args = parser.parse_args()
-
     if not args.path.exists():
         print(f"Error: Path does not exist: {args.path}", file=sys.stderr)
         sys.exit(1)
-
     if not args.path.is_dir():
         print(f"Error: Not a directory: {args.path}", file=sys.stderr)
         sys.exit(1)
-
     app = DupeGuruApp()
     app.run()
 

@@ -4,7 +4,6 @@ It should use BeautifulSoup for HTML parsing, support multiprocessing for scanni
 The script should print a summary of findings, including timing information from start to finish, and gracefully handle the case where BeautifulSoup4 is not installed by printing an installation hint."""
 
 from __future__ import annotations
-
 import itertools
 import os
 import re
@@ -211,6 +210,7 @@ if BeautifulSoup:
         if extraline:
             html = "\n\n".join(html.replace("\t", "    ").splitlines()) + "\n"
         return html
+
 else:
 
     def html_prettify(html: str, extraline: bool = False) -> str:

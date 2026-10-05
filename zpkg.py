@@ -5,7 +5,6 @@ It should print warnings when metadata files can't be read and report the specif
 The overall goal is to clean up or process only the packages that are safe, while skipping and logging any that pose a risk of breaking the Python environment."""
 
 from __future__ import annotations
-
 import compileall
 import csv
 import os

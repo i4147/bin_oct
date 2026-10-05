@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merged Python source code formatting/rewriting tool.
-
 Third-party dependencies (all optional, per-subcommand):
   astor     - astor subcommand
   black     - format --style black (default)
@@ -10,7 +9,6 @@ Third-party dependencies (all optional, per-subcommand):
   autopep8  - format --style autopep
   yapf      - format --style yapf
   ruff      - external binary for ruff subcommand
-
 Usage examples:
   python merged.py fixcode FILE.py
   python merged.py fixindent FILE.py --indent 4
@@ -20,7 +18,6 @@ Usage examples:
   python merged.py ruff ./mydir
   python merged.py sort FILE.py
   python merged.py format --style black
-
 Mapping:
   fixcode.py        -> python merged.py fixcode FILE.py
   fixindent.py      -> python merged.py fixindent FILE.py
@@ -33,7 +30,6 @@ Mapping:
 """
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -130,26 +126,24 @@ def _fixcode_can(s: str) -> bool:
     if not s:
         return True
     return (
-        s.startswith(
-            (
-                "def ",
-                "class ",
-                "if ",
-                "elif ",
-                "else:",
-                "for ",
-                "while ",
-                "try:",
-                "except ",
-                "finally:",
-                "with ",
-                "return",
-                "import ",
-                "from ",
-                "@",
-                "#",
-            )
-        )
+        s.startswith((
+            "def ",
+            "class ",
+            "if ",
+            "elif ",
+            "else:",
+            "for ",
+            "while ",
+            "try:",
+            "except ",
+            "finally:",
+            "with ",
+            "return",
+            "import ",
+            "from ",
+            "@",
+            "#",
+        ))
         or "=" in s
         or "(" in s
         or s.endswith(":")
@@ -386,7 +380,6 @@ def _reflow_apply(path: Path, width: int) -> None:
     except OSError as exc:
         print(f"Error creating backup file {backup.name}:{exc}", file=sys.stderr)
         return
-
     out: list[str] = []
     in_doc = False
     buf: list[str] = []
@@ -735,43 +728,34 @@ def build_parser() -> argparse.ArgumentParser:
         description="Merged Python source code formatter/rewriter",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("fixcode", help="Regex-heuristic auto-indenter (writes in place)")
     p.add_argument("file")
     p.set_defaults(func=cmd_fixcode)
-
     p = sub.add_parser("fixindent", help="Simple colon-based re-indenter")
     p.add_argument("file")
     p.add_argument("--output", default=None)
     p.add_argument("--indent", type=int, default=4)
     p.set_defaults(func=cmd_fixindent)
-
     p = sub.add_parser("tokenformat", help="Token-based reformatter")
     p.add_argument("file")
     p.set_defaults(func=cmd_tokenformat)
-
     p = sub.add_parser("reflow", help="Reflow comments and docstrings to a width")
     p.add_argument("file")
     p.add_argument("--width", type=int, default=35)
     p.set_defaults(func=cmd_reflow)
-
     p = sub.add_parser("astor", help="Rewrite via astor (or NFKC-normalize non-py)")
     p.add_argument("files", nargs="*")
     p.add_argument("--backup", action="store_true")
     p.set_defaults(func=cmd_astor)
-
     p = sub.add_parser("ruff", help="Run ruff format on candidate files")
     p.add_argument("directory", nargs="?", default=".")
     p.set_defaults(func=cmd_ruff)
-
     p = sub.add_parser("sort", help="Sort top-level AST nodes; write *_sorted file")
     p.add_argument("file")
     p.set_defaults(func=cmd_sort)
-
     p = sub.add_parser("format", help="API-based formatter (black/isort/autoflake/autopep/yapf)")
     p.add_argument("--style", choices=_FORMAT_STYLES, default="black")
     p.set_defaults(func=cmd_format)
-
     return parser
 
 

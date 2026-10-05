@@ -5,13 +5,11 @@ Using this data, it should build a valid Debian package archive (control.tar + d
 Include error handling so that failures for individual packages (missing files, missing metadata) are caught gracefully without stopping the whole process."""
 
 from __future__ import annotations
-
 import contextlib
 import os
 import shutil
 import tarfile
 from pathlib import Path
-
 import apt
 import apt_pkg
 import unix_ar

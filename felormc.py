@@ -16,7 +16,6 @@ Usage: python strip_comments.py [paths ...] [--dry-run] [--workers N] If no path
 Python: 3.12+"""
 
 from __future__ import annotations
-
 import argparse
 import logging
 import multiprocessing as mp
@@ -24,7 +23,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, Iterable, Iterator, Optional
-
 import libcst as cst
 from libcst import (
     BaseCompoundStatement,
@@ -43,7 +41,6 @@ DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")
 SHEBANG_PREFIX: Final[str] = "#!"
 PY_EXTENSIONS: Final[frozenset[str]] = frozenset({".py", ".pyi", ".pyw"})
-
 PY_SHEBANG_HINTS: Final[tuple[str, ...]] = ("python",)
 
 
@@ -110,7 +107,6 @@ def iter_target_files(inputs: Iterable[Path]) -> Iterator[Path]:
         "node_modules",
     }
     seen: set[Path] = set()
-
     for raw in inputs:
         path = raw.resolve()
         if path.is_file():
@@ -193,16 +189,13 @@ class CommentDocstringStripper(cst.CSTTransformer):
     def _strip_docstring_body(self, body: cst.IndentedBlock) -> cst.IndentedBlock:
         if not body.body:
             return body
-
         first_stmt = body.body[0]
         if not self._is_docstring_statement(first_stmt):
             return body
-
         remaining = list(body.body[1:])
         if not remaining:
             pass_stmt = SimpleStatementLine(body=[cst.Pass()])
             remaining = [pass_stmt]
-
         return body.with_changes(body=tuple(remaining))
 
 
@@ -230,14 +223,12 @@ def process_file(path_str: str, dry_run: bool) -> ProcessResult:
         original_source = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         return ProcessResult(path=path, success=False, changed=False, message=f"read error: {exc}")
-
     try:
         new_source = strip_comments_and_docstrings(original_source)
     except cst.ParserSyntaxError as exc:
         return ProcessResult(path=path, success=False, changed=False, message=f"parse error: {exc}")
-    except Exception as exc:  # noqa: BLE001 - isolate worker from crashing pool
+    except Exception as exc:
         return ProcessResult(path=path, success=False, changed=False, message=f"transform error: {exc}")
-
     try:
         validate_python_source(new_source, filename=str(path))
     except SyntaxError as exc:
@@ -247,45 +238,35 @@ def process_file(path_str: str, dry_run: bool) -> ProcessResult:
             changed=False,
             message=f"validation failed, aborting write: {exc}",
         )
-
     if new_source == original_source:
         return ProcessResult(path=path, success=True, changed=False, message="no changes")
-
     if dry_run:
         return ProcessResult(path=path, success=True, changed=True, message="dry-run: would change")
-
     try:
         path.write_text(new_source, encoding="utf-8")
     except OSError as exc:
         return ProcessResult(path=path, success=False, changed=False, message=f"write error: {exc}")
-
     return ProcessResult(path=path, success=True, changed=True, message="stripped")
 
 
 def run(paths: list[Path], workers: int, dry_run: bool) -> int:
     search_roots = paths or [Path.cwd()]
     targets = list(iter_target_files(search_roots))
-
     if not targets:
         logger.warning("No Python files found to process.")
         return 0
-
     logger.info(f"Discovered {len(targets)} Python file(s). Processing with {workers} workers...")
-
     failures: list[ProcessResult] = []
     changed_count = 0
     processed_count = 0
-
     with mp.Pool(processes=workers) as pool:
         async_results = [pool.apply_async(process_file, args=(str(target), dry_run)) for target in targets]
-
         for async_result in async_results:
             try:
                 result: ProcessResult = async_result.get()
-            except Exception as exc:  # noqa: BLE001 - guard against unexpected pool errors
+            except Exception as exc:
                 logger.error(f"Worker raised an unexpected exception: {exc}")
                 continue
-
             processed_count += 1
             if not result.success:
                 failures.append(result)
@@ -295,9 +276,7 @@ def run(paths: list[Path], workers: int, dry_run: bool) -> int:
                 logger.info(f"{result.path}: {result.message}")
             else:
                 logger.debug(f"{result.path}: {result.message}")
-
     logger.info(f"Done. processed={processed_count} changed={changed_count} failed={len(failures)} dry_run={dry_run}")
-
     if failures:
         logger.error(f"{len(failures)} file(s) failed to process.")
         return 1
@@ -334,11 +313,9 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[list[str]] = None) -> int:
     args = parse_args(argv)
     configure_logging(verbose=args.verbose)
-
     workers = max(1, args.workers)
     if workers != DEFAULT_WORKERS:
         logger.debug(f"Using {workers} workers (overridden from default {DEFAULT_WORKERS}).")
-
     try:
         return run(paths=args.paths, workers=workers, dry_run=args.dry_run)
     except KeyboardInterrupt:
@@ -349,26 +326,16 @@ def main(argv: Optional[list[str]] = None) -> int:
 if __name__ == "__main__":
     mp.set_start_method("spawn", force=False)
     sys.exit(main())
-
 """
-
 ### Key design notes
-
 1. **Comment stripping**: Handled via `EmptyLine` (standalone comment lines) and `TrailingWhitespace` (inline comments) leave-visitors — the two places LibCST attaches comments. Shebang and pragma (`# type:`, `# fmt:`, `# noqa`) comments are detected by prefix and preserved.
-
 2. **Docstring stripping**: Only applied inside `FunctionDef`/`ClassDef` bodies (module docstring is untouched by design since the transformer never inspects `Module.body` directly). If the docstring was the sole statement, the body is replaced with a single `pass` statement to avoid an empty/invalid block.
-
 3. **Extension-less files**: Detected by reading just the first line and checking for a `#!...python` shebang — avoids loading the whole file for detection.
-
 4. **Validation before write**: `compile()` is used as a cheap, authoritative syntax validator prior to writing; on failure, the original file is left untouched.
-
 5. **Concurrency**: Fixed 8-worker `multiprocessing.Pool` using `apply_async`, with `.get()` collected per-task so failures don't halt the batch. `process_file` is a top-level function (required for pickling on `spawn`).
-
 6. **Memory efficiency**: Files are read/processed/written one at a time per worker; `rglob` is a generator so directory walking doesn't buffer the whole tree in memory.
-
 7. **Robustness**: Every failure mode (read, parse, transform, validate, write) is caught and reported per-file without crashing the whole batch; exit code reflects overall success/failure.
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/bc5K2Yo6mvjUrECkfe3S6x
-
 [state] thread_short_id=bAbvbaPSrv2KvikMHGC9C8 live_doc_short_id=bc5K2Yo6mvjUrECkfe3S6x live_doc_url=https://felo.ai/zh-Hans/livedoc/bc5K2Yo6mvjUrECkfe3S6x
 """

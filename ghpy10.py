@@ -4,11 +4,9 @@ It should load a GITHUB_TOKEN from a .env file in the user's home directory for 
 The script should write each repository's full name and star count to a local file named "ghpy10.txt" and print a confirmation message showing how many repositories were saved."""
 
 from __future__ import annotations
-
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import requests
 from dotenv import load_dotenv
 

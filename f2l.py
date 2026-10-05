@@ -5,7 +5,6 @@ It should join these quoted items with commas into a single brace-enclosed set-l
 The script should also attempt to copy the resulting string to the clipboard using the termux-clipboard-set command, printing a success message if it works, or a warning suggesting to install termux-api if the command is not found."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

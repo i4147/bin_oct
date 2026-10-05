@@ -2,7 +2,6 @@
 """pdf_text_extractor.py Merge of the original scripts: pdf2text.py -> python pdf_text_extractor.py concat input.pdf pdftotxt.py -> python pdf_text_extractor.py split input.pdf Third-party dependencies used by the original scripts: PyPDF2 pdfplumber Install them with: pip install PyPDF2 pdfplumber Usage examples: # Concatenate all pages into one text file, using PyPDF2 (original pdf2text.py behavior) python pdf_text_extractor.py concat input.pdf # Concatenate all pages into one text file, using pdfplumber python pdf_text_extractor.py concat input.pdf --engine pdfplumber -o output.txt # Split each page into its own text file, using pdfplumber (original pdftotxt.py behavior) python pdf_text_extractor.py split input.pdf # Split each page, choosing a different output directory and engine python pdf_text_extractor.py split input.pdf --output-dir out --engine pypdf2 # Split each page, allowing nested output directories python pdf_text_extractor.py split input.pdf --output-dir out/book --parents"""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
@@ -62,13 +61,10 @@ def concat_text(
 ) -> int:
     if output is None:
         output = default_concat_output(pdf_path)
-
     text = "".join(extract_pages(pdf_path, engine, encoding))
     write_text(output, text, encoding)
-
     if not quiet:
         print(f"Text extracted and saved to {output}")
-
     return 0
 
 
@@ -84,24 +80,18 @@ def split_text(
     if pad_width < 1:
         msg = "--pad-width must be at least 1"
         raise ValueError(msg)
-
     if output_dir is None:
         output_dir = default_split_output_dir(pdf_path)
-
     output_dir.mkdir(parents=parents, exist_ok=True)
-
     for page_number, text in enumerate(
         extract_pages(pdf_path, engine, encoding),
         start=1,
     ):
         page_str = f"{page_number:0{pad_width}d}"
         out_path = output_dir / f"{pdf_path.stem}{page_str}.txt"
-
         write_text(out_path, text, encoding)
-
         if not quiet:
             print(f"{out_path} created")
-
     return 0
 
 
@@ -132,13 +122,11 @@ def build_parser() -> argparse.ArgumentParser:
         prog="pdf_text_extractor.py",
         description="Extract text from PDF files using PyPDF2 or pdfplumber.",
     )
-
     subparsers = parser.add_subparsers(
         dest="command",
         required=True,
         help="Extraction mode",
     )
-
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         "pdf",
@@ -160,7 +148,6 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("pypdf2", "pdfplumber"),
         help=("PDF extraction engine. Defaults: pypdf2 for concat, pdfplumber for split."),
     )
-
     concat = subparsers.add_parser(
         "concat",
         parents=[common],
@@ -174,7 +161,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=("Output .txt file. Default: input path with .pdf replaced by .txt."),
     )
     concat.set_defaults(func=run_concat, engine="pypdf2")
-
     split = subparsers.add_parser(
         "split",
         parents=[common],
@@ -199,17 +185,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Create parent directories for --output-dir if needed.",
     )
     split.set_defaults(func=run_split, engine="pdfplumber")
-
     return parser
 
 
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not args.pdf.is_file():
         parser.error(f"PDF file not found: {args.pdf}")
-
     try:
         return args.func(args)
     except ImportError as exc:

@@ -8,7 +8,6 @@ Usage examples -------------- Repack everything in the current site-packages usi
 rwheel.py -a -> repack --source auto --method simple --all --parallel siter.py -> repack --source current --method record --parallel sr.py -> repack --source system --method record --on-missing abort usrpack.py -> repack --source user --method record --parallel --output ~/tmp/whl vsr3.py -> repack --source current --method record --on-missing copy \ --missing-dir ~/tmp/not_repacked wheelpackdirs.py -> pack-dirs --mode subprocess --parallel wpack.py -> pack-dirs --mode library --parallel wrepack.py -> pack-dirs --mode library"""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import base64
@@ -39,7 +38,6 @@ try:
 except ImportError:  # pragma: no cover
     WheelFile = None  # type: ignore
     _HAS_WHEEL = False
-
 try:
     from tqdm import tqdm as _tqdm  # type: ignore
 
@@ -152,13 +150,11 @@ def _read_record(dist_info: Path) -> Optional[list[tuple[str, str, str]]]:
         for row in csv.reader(f):
             if not row or not row[0]:
                 continue
-            rows.append(
-                (
-                    row[0],
-                    row[1] if len(row) > 1 else "",
-                    row[2] if len(row) > 2 else "",
-                )
-            )
+            rows.append((
+                row[0],
+                row[1] if len(row) > 1 else "",
+                row[2] if len(row) > 2 else "",
+            ))
     return rows
 
 
@@ -204,7 +200,6 @@ def resolve_source(source: str, explicit: Optional[Path]) -> Path:
             msg = f"site-packages directory does not exist: {p}"
             raise SystemExit(msg)
         return p
-
     if source == "current":
         return Path.cwd()
     if source == "user":
@@ -234,13 +229,11 @@ def discover_packages(
 ) -> list[PackageInfo]:
     wanted = {n.lower().replace("-", "_") for n in names} if names else None
     out: list[PackageInfo] = []
-
     for dist_info in sorted(site_packages.glob("*.dist-info")):
         dist_name, version = _parse_dist_info_stem(dist_info)
         key = dist_name.lower().replace("-", "_")
         if wanted is not None and key not in wanted:
             continue
-
         meta = _read_metadata(dist_info)
         name = meta.get("Name", dist_name)
         version = meta.get("Version", version)
@@ -259,12 +252,10 @@ def discover_packages(
                 metadata=meta,
             )
         )
-
     if wanted is not None:
         found = {p.name.lower().replace("-", "_") for p in out}
         for missing in sorted(wanted - found):
             log.warning("Package not found: %s", missing)
-
     return out
 
 
@@ -285,14 +276,12 @@ def _guess_top_level(site_packages: Path, dist_info: Path, name: str) -> str:
         if first:
             return first[0].strip()
     underscored = name.lower().replace("-", "_").replace(".", "_")
-
     for cand in (
         site_packages / underscored,
         site_packages / f"{underscored}.py",
     ):
         if cand.exists():
             return underscored
-
     return _parse_dist_info_stem(dist_info)[0].replace("-", "_").lower()
 
 
@@ -308,7 +297,6 @@ def _write_wheel_metadata(
         f"Tag: {tag}\n"
     )
     (dist_info_dir / "WHEEL").write_text(wheel_txt, encoding="utf-8")
-
     if not (dist_info_dir / "METADATA").exists():
         md = f"Metadata-Version: 2.1\nName: {pkg.name}\nVersion: {pkg.version}\nSummary: Repacked wheel (repack_tool)\n"
         (dist_info_dir / "METADATA").write_text(md, encoding="utf-8")
@@ -337,12 +325,10 @@ def _zip_directory(src: Path, dest: Path) -> None:
 def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tuple[bool, str, Optional[Path]]:
     tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
     wheel_path = output_dir / pkg.wheel_filename(tag)
-
     try:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_p = Path(tmp)
             sp = pkg.site_packages
-
             src_dir = sp / pkg.top_level
             src_file = sp / f"{pkg.top_level}.py"
             if src_dir.is_dir():
@@ -355,19 +341,13 @@ def build_wheel_simple(pkg: PackageInfo, output_dir: Path, verbose: bool) -> tup
                     shutil.copytree(fallback_dir, tmp_p / fallback_dir.name)
                 else:
                     return False, f"source files for {pkg.name} not found", None
-
             dst_di = tmp_p / pkg.dist_info.name
             shutil.copytree(pkg.dist_info, dst_di)
-
             _write_wheel_metadata(dst_di, pkg, tag)
-
             if not (dst_di / "top_level.txt").exists():
                 (dst_di / "top_level.txt").write_text(pkg.top_level + "\n", encoding="utf-8")
-
             (dst_di / "RECORD").write_text(_compute_record(tmp_p, pkg.dist_info.name), encoding="utf-8")
-
             _zip_directory(tmp_p, wheel_path)
-
         if verbose:
             log.info(
                 "  simple: wrote %s (%s)",
@@ -390,11 +370,9 @@ def build_wheel_from_record(
     rows = _read_record(pkg.dist_info)
     if rows is None:
         return False, f"no RECORD file in {pkg.dist_info.name}", None
-
     sp = pkg.site_packages
     missing: list[str] = []
     resolved: list[tuple[Path, str]] = []
-
     for rel, _h, _sz in rows:
         if not rel or rel.endswith("RECORD") or rel.startswith(("../", "/")):
             continue
@@ -405,7 +383,6 @@ def build_wheel_from_record(
             resolved.append((src, rel))
         else:
             missing.append(rel)
-
     if missing:
         msg = f"{len(missing)} file(s) missing from RECORD"
         if on_missing == "abort":
@@ -418,7 +395,6 @@ def build_wheel_from_record(
             return False, f"copied to {missing_dir}: {msg}", None
         if on_missing == "warn" and verbose:
             log.warning("  %s: %s", pkg.name, msg)
-
     has_bin = any(s.suffix.lower() in BINARY_SUFFIXES for s, _ in resolved)
     if has_bin:
         tag = "-".join(current_sys_tag())
@@ -426,17 +402,14 @@ def build_wheel_from_record(
     else:
         tag = "py3-none-any"
         pkg.is_pure = True
-
     wheel_path = output_dir / pkg.wheel_filename(tag)
     dist_info_name = pkg.dist_info.name
     data_dir_name = f"{pkg.dist_name_underscored}-{pkg.version}.data"
-
     try:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_p = Path(tmp)
             dst_di = tmp_p / dist_info_name
             dst_di.mkdir(parents=True, exist_ok=True)
-
             for src, rel in resolved:
                 target = tmp_p / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -444,7 +417,6 @@ def build_wheel_from_record(
                     shutil.copytree(src, target, dirs_exist_ok=True)
                 else:
                     shutil.copy2(src, target)
-
             scripts = _console_script_names(pkg.dist_info)
             if scripts:
                 scripts_dst = tmp_p / data_dir_name / "scripts"
@@ -457,13 +429,9 @@ def build_wheel_from_record(
                             if cand.exists():
                                 shutil.copy2(cand, scripts_dst / cand.name)
                                 break
-
             _write_wheel_metadata(dst_di, pkg, tag)
-
             (dst_di / "RECORD").write_text(_compute_record(tmp_p, dist_info_name), encoding="utf-8")
-
             _zip_directory(tmp_p, wheel_path)
-
         if verbose:
             log.info(
                 "  record: wrote %s (%s) [%d files]",
@@ -505,7 +473,6 @@ def build_wheel_via_subprocess(src_unpacked: Path, output_dir: Path, verbose: bo
         return False, "wheel module not available", None
     if res.returncode != 0:
         return False, f"wheel pack failed: {res.stderr.strip()[:200]}", None
-
     wheels = sorted(output_dir.glob("*.whl"), key=lambda p: p.stat().st_mtime, reverse=True)
     if verbose and wheels:
         log.info("  wheelpack: %s", wheels[0].name)
@@ -548,13 +515,11 @@ class Repacker:
         self.results: list[dict[str, Any]] = []
 
     # ---------------------------------------------------------------- public
-
     def repack_one(self, pkg: PackageInfo) -> tuple[bool, str, Optional[Path]]:
         if self.dry_run:
             tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
             log.info("[dry-run] would build %s", pkg.wheel_filename(tag))
             return True, "dry-run", None
-
         if self.method == "simple":
             ok, msg, path = build_wheel_simple(pkg, self.output_dir, self.verbose)
         elif self.method == "record":
@@ -567,7 +532,6 @@ class Repacker:
             )
         else:
             return False, f"unknown method {self.method!r}", None
-
         if ok and self.builder == "wheelpack" and path is not None:
             with tempfile.TemporaryDirectory() as tmp:
                 tmp_p = Path(tmp)
@@ -576,14 +540,12 @@ class Repacker:
                 ok2, msg2, _ = build_wheel_via_subprocess(tmp_p, self.output_dir, self.verbose)
                 if not ok2:
                     return False, f"wheelpack: {msg2}", path
-
         return ok, msg, path
 
     def run(self, packages: Sequence[PackageInfo]) -> RepackStats:
         if not packages:
             log.warning("No packages found to repack")
             return self.stats
-
         self.output_dir.mkdir(parents=True, exist_ok=True)
         iterator = _tqdm(packages, desc="Repacking", disable=not _HAS_TQDM)
         for i, pkg in enumerate(iterator, 1):
@@ -600,16 +562,14 @@ class Repacker:
             else:
                 self.stats.failed += 1
                 log.error("  ✗ %s", msg)
-            self.results.append(
-                {
-                    "package": pkg.name,
-                    "version": pkg.version,
-                    "is_pure_python": pkg.is_pure,
-                    "success": ok,
-                    "wheel": path.name if path else None,
-                    "message": msg,
-                }
-            )
+            self.results.append({
+                "package": pkg.name,
+                "version": pkg.version,
+                "is_pure_python": pkg.is_pure,
+                "success": ok,
+                "wheel": path.name if path else None,
+                "message": msg,
+            })
         return self.stats
 
     def save_report(self, filename: str) -> Path:
@@ -734,16 +694,13 @@ def run_pack_dirs(
         log.error("directory not found: %s", directory)
         return 1
     output_dir.mkdir(parents=True, exist_ok=True)
-
     dirs = [d for d in sorted(directory.iterdir()) if d.is_dir() and not d.name.endswith(".dist-info")]
     if not dirs:
         log.warning("no unpacked wheel directories found under %s", directory)
         return 0
-
     log.info("Found %d candidate directories in %s", len(dirs), directory)
     successes = 0
     failures = 0
-
     if mode == "async":
         if not _HAS_WHEEL:
             log.error("async mode requires the 'wheel' library")
@@ -788,7 +745,6 @@ def run_pack_dirs(
             else:
                 failures += 1
                 log.error("✗ %s", msg)
-
     log.info("Done: %d successful, %d failed", successes, failures)
     return 0 if failures == 0 else 1
 
@@ -802,7 +758,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     sub = p.add_subparsers(dest="command", required=True)
-
     # ------------------------------------------------------------- repack
     rp = sub.add_parser(
         "repack",
@@ -876,7 +831,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="list every .whl in the output directory at the end",
     )
     rp.add_argument("--no-progress", action="store_true", help="disable tqdm progress")
-
     # ---------------------------------------------------------- pack-dirs
     pd = sub.add_parser(
         "pack-dirs",
@@ -911,21 +865,17 @@ def cmd_repack(args: argparse.Namespace) -> int:
         site_packages = explicit.expanduser().resolve()
     else:
         site_packages = resolve_source(args.source, None)
-
     log.info("Source:  %s", site_packages)
     log.info("Output:  %s", args.output)
     log.info("Method:  %s", args.method)
     if args.parallel:
         log.info("Mode:    parallel")
-
     packages = discover_packages(site_packages, args.packages if not args.all else None)
     if not packages:
         log.warning("Nothing to do.")
         return 0
-
     if args.parallel and len(packages) > 1:
         return _run_parallel(args, packages)
-
     rep = Repacker(
         site_packages=site_packages,
         output_dir=args.output,
@@ -937,7 +887,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
         verbose=args.verbose,
     )
     stats = rep.run(packages)
-
     log.info("=" * 40)
     log.info(
         "Total=%d success=%d failed=%d pure=%d c-ext=%d",
@@ -947,7 +896,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
         stats.pure,
         stats.with_c_ext,
     )
-
     if args.report:
         out = rep.save_report(args.report)
         log.info("Report saved: %s", out)
@@ -1040,16 +988,13 @@ def cmd_pack_dirs(args: argparse.Namespace) -> int:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",
     )
-
     if not _HAS_TQDM:
         log.debug("tqdm not available; progress bars disabled")
-
     try:
         if args.command == "repack":
             return cmd_repack(args)

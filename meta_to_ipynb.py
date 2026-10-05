@@ -5,7 +5,6 @@ It should build a dictionary mapping metadata keys (such as Author, Author-Email
 The output is intended to be used programmatically, likely printed as JSON or returned for further processing by build tools or package inspection utilities."""
 
 from __future__ import annotations
-
 import json
 import re
 import sys

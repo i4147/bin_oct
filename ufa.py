@@ -4,10 +4,8 @@ For each collected file, read it line by line, strip whitespace, prepend the str
 The script should be runnable as a module with `sys.exit`/`SystemExit` returning the result of a `main()` function."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_nobinary, is_binary
 
 

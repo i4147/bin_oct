@@ -3,12 +3,10 @@
 It should read each file as UTF-8, only rewrite the file if content actually changed, use `multiprocessing` to process files in parallel for performance, and track/report which files were changed versus which raised errors during processing."""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
-
 from dh import get_nobinary
 
 HTML_ENTITIES = {

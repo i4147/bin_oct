@@ -7,7 +7,6 @@ Collapse runs of blank lines to at most two.
 Report per-file results and a summary with line and byte savings using loguru and ANSI colors."""
 
 from __future__ import annotations
-
 import argparse
 import io
 import re
@@ -16,7 +15,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 from dh import fsz
 from loguru import logger
 
@@ -529,7 +527,6 @@ _FLAG_EXTS: Final[dict[str, list[str]]] = {
     "sh": [".sh", ".bash"],
     "lua": [".lua"],
 }
-
 _POOL_SIZE: Final[int] = 8
 
 

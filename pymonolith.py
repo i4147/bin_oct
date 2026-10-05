@@ -5,7 +5,6 @@ Given a URL or a local HTML file, it downloads the page and produces one self-co
 Third-party dependencies (already required by the originals): * requests * beautifulsoup4 Usage ----- python monolith.py <source> [options] Examples -------- # URL, monolithei-style (defaults) python monolith.py https://example.com -o page.html # URL, pymonolith-style (data-URI CSS, prettified, no meta-charset) python monolith.py https://example.com --css-mode data-uri --prettify --no-meta-charset -o page.html # Local file python monolith.py ./index.html -o bundle.html Original → merged mapping ------------------------- monolithei.py <source> [-e] [-i] [-o OUT] → python monolith.py <source> [-e] [-i] [-o OUT] (defaults match: --css-mode inline, no --prettify, meta-charset injected) pymonolith.py <url> [-o OUT] [-t TIMEOUT] → python monolith.py <url> --css-mode data-uri --prettify --no-meta-charset [-o OUT] [-t TIMEOUT] (pymonolith never crashed on sub-resource errors; emulate lenient mode with -e if you want monolithei's --ignore-errors behaviour too.)"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import re
@@ -13,7 +12,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -31,9 +29,7 @@ DEFAULT_MIME_TYPES: dict[str, str] = {
     ".gif": "image/gif",
     ".webp": "image/webp",
 }
-
 DEFAULT_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Monolith/1.0"
-
 CSS_URL_RE = re.compile(r"""url\(\s*['"]?([^)'"]+?)['"]?\s*\)""")
 
 
@@ -62,7 +58,6 @@ class Monolith:
         self.prettify = prettify
         self.inject_meta_charset = inject_meta_charset
         self.mime_types = dict(mime_types or DEFAULT_MIME_TYPES)
-
         self.base_url: str = ""
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": user_agent})
@@ -106,7 +101,6 @@ class Monolith:
         return urljoin(self.base_url, url)
 
     def replace_css_urls(self, css: str, base_url: str) -> str:
-
         def repl(match: "re.Match[str]") -> str:
             raw = match.group(1).strip()
             if raw.startswith(("data:", "#")):
@@ -162,7 +156,6 @@ class Monolith:
                 data = self.fetch(url)
                 if not data:
                     continue
-
                 del script["src"]
                 script.string = data.decode("utf-8", errors="ignore")
             except Exception as exc:  # noqa: BLE001
@@ -175,7 +168,6 @@ class Monolith:
             for img in soup.find_all("img"):
                 img.decompose()
             return
-
         for img in soup.find_all("img"):
             src = img.get("src")
             if not src or src.startswith("data:"):
@@ -193,7 +185,6 @@ class Monolith:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping image: {url} ({exc})", file=sys.stderr)
-
         for tag in soup.find_all(srcset=True):
             entries = []
             for item in tag.get("srcset", "").split(","):
@@ -247,22 +238,18 @@ class Monolith:
     def process_html(self, html: str, base_url: str) -> str:
         self.base_url = base_url
         soup = BeautifulSoup(html, "html.parser")
-
         if self.inject_meta_charset:
             self.ensure_meta_charset(soup)
-
         self.inline_stylesheets(soup)
         self.inline_scripts(soup)
         self.inline_images(soup)
         self.process_style_tags(soup)
-
         return soup.prettify() if self.prettify else str(soup)
 
     def from_url(self, url: str) -> str:
         print(f"📥 Fetching {url}...", file=sys.stderr)
         resp = self.session.get(url, timeout=self.timeout)
         resp.raise_for_status()
-
         if not resp.encoding:
             resp.encoding = self.encoding
         return self.process_html(resp.text, url)
@@ -338,7 +325,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[list] = None) -> int:
     args = build_parser().parse_args(argv)
-
     archiver = Monolith(
         timeout=args.timeout,
         encoding=args.encoding,
@@ -349,13 +335,11 @@ def main(argv: Optional[list] = None) -> int:
         inject_meta_charset=not args.no_meta_charset,
         user_agent=args.user_agent,
     )
-
     try:
         if args.source.startswith(("http://", "https://")):
             html = archiver.from_url(args.source)
         else:
             html = archiver.from_file(args.source)
-
         if args.output:
             out_path = Path(args.output)
             print(f"💾 Writing to {out_path}...", file=sys.stderr)

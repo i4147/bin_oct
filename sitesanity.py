@@ -4,7 +4,6 @@ It should use importlib.metadata to enumerate installed distributions, log resul
 The script should report which package files are missing and which dependencies are broken or unsatisfied, helping identify corrupted or incomplete package installations."""
 
 from __future__ import annotations
-
 import argparse
 import importlib.metadata
 import logging

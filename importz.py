@@ -4,7 +4,6 @@ It should then distinguish third-party packages by excluding names that match lo
 The script should handle file reading errors and syntax errors gracefully by skipping problematic files, and finally write the resulting set of third-party import names to an output file named importz.txt in the current working directory."""
 
 from __future__ import annotations
-
 import ast
 import sys
 from pathlib import Path
@@ -48,9 +47,9 @@ def main() -> None:
     for path in cwd.rglob("*"):
         if is_python_file(path) and path.name != "importz.txt":
             all_imports.update(get_imports_from_file(path))
-    third_party = sorted(
-        [imp for imp in all_imports if imp not in std_libs and imp not in local_names and imp != "__future__"]
-    )
+    third_party = sorted([
+        imp for imp in all_imports if imp not in std_libs and imp not in local_names and imp != "__future__"
+    ])
     if third_party:
         output_file.write_text("\n".join(third_party), encoding="utf-8")
         print(f"✅ Saved {len(third_party)} 3rd-party imports to {output_file}")

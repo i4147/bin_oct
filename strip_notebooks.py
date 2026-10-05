@@ -4,32 +4,26 @@ Accepts files or directories as positional arguments (defaults to the current di
 Uses a fixed multiprocessing.Pool of 8 workers for parallelism and loguru for logging."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
-
 MAX_WORKERS: Final[int] = 8
-
 StripResult = tuple[Path, bool, str]
 
 
 def find_notebook_files(paths: list[Path]) -> set[Path]:
     notebook_files: set[Path] = set()
-
     for path in paths:
         if not path.exists():
             logger.warning(f"{path} does not exist, skipping.")
             continue
-
         if path.is_file():
             if path.suffix == ".ipynb":
                 notebook_files.add(path.resolve())
@@ -39,7 +33,6 @@ def find_notebook_files(paths: list[Path]) -> set[Path]:
             for nb_file in path.rglob("*.ipynb"):
                 if ".ipynb_checkpoints" not in str(nb_file):
                     notebook_files.add(nb_file.resolve())
-
     return notebook_files
 
 
@@ -47,10 +40,8 @@ def strip_notebook_output(notebook_path: Path) -> StripResult:
     try:
         with notebook_path.open("r", encoding="utf-8") as f:
             notebook: dict[str, object] = json.load(f)
-
         if "cells" not in notebook:
             return (notebook_path, False, "Not a valid notebook (no 'cells' key)")
-
         cells: object = notebook["cells"]
         if not isinstance(cells, list):
             return (
@@ -58,7 +49,6 @@ def strip_notebook_output(notebook_path: Path) -> StripResult:
                 False,
                 "Not a valid notebook ('cells' is not a list)",
             )
-
         modified: bool = False
         for cell in cells:
             if not isinstance(cell, dict):
@@ -70,13 +60,11 @@ def strip_notebook_output(notebook_path: Path) -> StripResult:
                 if "execution_count" in cell and cell["execution_count"] is not None:
                     cell["execution_count"] = None
                     modified = True
-
         if modified:
             with notebook_path.open("w", encoding="utf-8") as f:
                 json.dump(notebook, f, indent=1, ensure_ascii=False)
                 f.write("\n")
             return (notebook_path, True, "Outputs stripped")
-
         return (notebook_path, True, "No outputs to strip")
     except json.JSONDecodeError as exc:
         return (notebook_path, False, f"Invalid JSON: {exc}")
@@ -89,12 +77,9 @@ def process_notebooks(paths: list[Path]) -> None:
     if not notebook_files:
         print("No .ipynb files found to process.")
         return
-
     print(f"Found {len(notebook_files)} notebook(s) to process...")
-
     ordered: list[Path] = sorted(notebook_files)
     results: list[StripResult] = []
-
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[StripResult]] = [
             pool.apply_async(strip_notebook_output, (path,)) for path in ordered
@@ -105,10 +90,8 @@ def process_notebooks(paths: list[Path]) -> None:
             status: str = "✓" if success else "✗"
             relative_path: Path = path.relative_to(Path.cwd()) if path.is_relative_to(Path.cwd()) else path
             print(f"{status} {relative_path}: {message}")
-
     successful: int = sum(1 for _, success, _ in results if success)
     failed: int = len(results) - successful
-
     if failed > 0:
         logger.warning(f"Processed: {successful} succeeded, {failed} failed")
     else:
@@ -135,7 +118,6 @@ Examples:
         help="Files or directories to process (default: current directory)",
     )
     args: argparse.Namespace = parser.parse_args()
-
     paths: list[Path] = [Path(p) for p in args.paths]
     try:
         process_notebooks(paths)

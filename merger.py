@@ -5,11 +5,9 @@ It must support two modes: merging everything into a single randomly-named outpu
 The script should use argparse to expose these options (input paths, extension filter, group-by-extension flag) as CLI arguments and return the list of generated output file paths."""
 
 from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
-from dh import get_nobinary, get_random_filename, should_skip
+from dh import get_nobinary, get_random_filename, should_skip, runcmd
 
 
 def read_file(path: Path) -> str | None:
@@ -74,16 +72,25 @@ def write_merged_file(output_file: Path, files_content: list[tuple[Path, str]], 
     try:
         total_size = 0
         file_count = 0
+        merged_content = ""
         with output_file.open("w", encoding="utf-8") as fo:
             for path, content in files_content:
                 relative_path = path.relative_to(cwd)
                 fo.write(f"# File: {relative_path}\n")
+                merged_content += f"# File: {relative_path}\n"
+                merged_content += content
                 fo.write(content)
                 if not content.endswith("\n"):
                     fo.write("\n")
+                    merged_content += "\n"
                 total_size += len(content)
                 file_count += 1
         print(f"✅ Merged {file_count} files ({total_size:,} bytes) into: {output_file}")
+        if len(merged_content) < 1024 * 1024:
+            runcmd(["termux-clipboard-set", merged_content])
+            print("✅ merged content copied to clipboard.")
+        else:
+            print("❌ merged content is bigger than 1mb, can't set clipboard content")
     except OSError as e:
         print(f"❌ Error writing output file {output_file}: {e}")
         if output_file.exists():

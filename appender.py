@@ -5,7 +5,6 @@ For each file processed, it should print a success message with a checkmark show
 The script should execute this logic only when run as the main module."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 if __name__ == "__main__":

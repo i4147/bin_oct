@@ -4,7 +4,6 @@ The command should apply optimization level O2 with the "removeDuplicateRules" o
 The script's entry point should execute this command only when run directly as the main module."""
 
 from __future__ import annotations
-
 from dh import runcmd
 
 if __name__ == "__main__":

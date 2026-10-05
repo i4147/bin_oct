@@ -4,7 +4,6 @@ It should build a list of compile tasks, print how many .c and .cpp files were f
 For each compiled file, capture stdout/stderr via subprocess and report a success message with the source and output filenames, or a failure message including the compiler's stderr, a timeout notice, or a generic exception message, returning a tuple of the file path, a boolean success flag, and the status message for aggregation after the parallel pool completes."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from multiprocessing import Pool

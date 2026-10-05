@@ -5,7 +5,6 @@ The document title should default to a title-cased version of the input filename
 The script must handle missing files or read/write errors gracefully by printing descriptive error messages and returning a success/failure status, and print confirmation messages with checkmarks upon successful conversion."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

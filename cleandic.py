@@ -5,7 +5,6 @@ It should print how many records were kept, and if any failed entries exist, app
 Include basic error handling for missing files, invalid arguments, and unsupported JSON structures."""
 
 from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path

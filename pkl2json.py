@@ -4,11 +4,9 @@ It should report each loaded file's shape, then concatenate all valid DataFrames
 Handle the case where no `.pkl` files exist or none contain valid DataFrames by printing an appropriate message and exiting gracefully."""
 
 from __future__ import annotations
-
 import glob
 import json
 import pickle
-
 import pandas as pd
 
 
@@ -46,7 +44,6 @@ def main():
     print(f"\nMerging {len(dataframes)} DataFrames...")
     merged_df = pd.concat(dataframes, ignore_index=True)
     print(f"Merged shape: {merged_df.shape}")
-
     initial_count = len(merged_df)
     merged_df = merged_df.drop_duplicates()
     final_count = len(merged_df)

@@ -1,7 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merged filesystem cleanup toolkit.
-
 Usage examples:
   python merged.py os-junk --auto-remove
   python merged.py darwin ./some/dir --verbose
@@ -12,7 +11,6 @@ Usage examples:
   python merged.py empty-dirs --exclude-mode pdmp
   python merged.py twins --ext1 .json --ext2 .txt --apply
   python merged.py twins --ext1 .json --ext2 .txt --interactive
-
 Mapping:
   clean_os_files.py  -> python merged.py os-junk [--auto-remove]
   cleanup_darwin.py  -> python merged.py darwin [DIR] [--verbose]
@@ -27,7 +25,6 @@ Mapping:
 """
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import multiprocessing
@@ -40,7 +37,6 @@ from typing import Iterator, List, Optional, Sequence, Set, Tuple
 
 _WIN_EXTS = {".exe", ".dll", ".bat", ".com", ".msi", ".vbs", ".ps1"}
 _MAC_EXTS = {".dmg", ".app", ".ds_store", ".plist", ".pkg"}
-
 _DARWIN_NAMES = {
     ".DS_Store",
     ".AppleDouble",
@@ -64,10 +60,8 @@ _WIN_NAMES = (
     "desktop.ini",
     "$RECYCLE.BIN",
 )
-
 _CACHE_SUFFIXES = (".pyc", ".log", ".bak")
 _CACHE_DIRS = {"__pycache__", ".ruff_cache", ".mypy_cache"}
-
 _PDMP_NAME_EXCLUDES = {"tmp", "cache", "bin", ".git", "etc", "config", "var"}
 _PDMP_PART_EXCLUDES = {".git", "tmp", "etc", "var", "config"}
 
@@ -325,19 +319,16 @@ def cmd_empty_dirs(args: argparse.Namespace) -> int:
         return 1
     if args.dry_run:
         print("--- DRY RUN MODE (no changes will be made) ---")
-
     if args.exclude_mode == "pdmp":
         name_ex = set(_PDMP_NAME_EXCLUDES)
         part_ex = set(_PDMP_PART_EXCLUDES)
     else:
         name_ex = set()
         part_ex = set()
-
     dirs = [p for p in root.rglob("*") if p.is_dir()]
     dirs.sort(key=lambda p: len(p.parts), reverse=True)
     if args.exclude_mode == "pdmp" and args.include_root:
         dirs.append(root)
-
     removed = 0
     removed_list: list[Path] = []
     for d in dirs:
@@ -370,7 +361,6 @@ def cmd_empty_dirs(args: argparse.Namespace) -> int:
                 f"[ERROR] An unexpected error occurred with {_safe_rel(d, root)}: {exc}",
                 file=sys.stderr,
             )
-
     if removed > 0:
         verb = "Would have removed" if args.dry_run else "removed"
         print(f"{verb} {removed} empty directories:")
@@ -385,7 +375,6 @@ def cmd_twins(args: argparse.Namespace) -> int:
     root = Path.cwd()
     ext1 = args.ext1 if args.ext1.startswith(".") else "." + args.ext1
     ext2 = args.ext2 if args.ext2.startswith(".") else "." + args.ext2
-
     if args.interactive:
         if not sys.stdin.isatty():
             print("--interactive requires a TTY", file=sys.stderr)
@@ -402,7 +391,6 @@ def cmd_twins(args: argparse.Namespace) -> int:
         remove_ext = ext1 if choice == "1" else ext2
     else:
         remove_ext = ext2 if args.remove == "2" else ext1
-
     checked = removed = 0
     for candidate in root.rglob(f"*{ext1}"):
         if not candidate.is_file() or candidate.suffix != ext1:
@@ -424,7 +412,6 @@ def cmd_twins(args: argparse.Namespace) -> int:
                 print(f"[ERROR] Could not remove {target}: {exc}")
         else:
             print(f"[DRY RUN] Would remove {target} (kept {keeper})")
-
     print("\n--- Summary ---")
     print(f"Checked: {checked}")
     if args.apply:
@@ -437,24 +424,19 @@ def cmd_twins(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Merged filesystem cleanup toolkit")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("os-junk", help="clean_os_files.py")
     p.add_argument("-a", "--auto-remove", action="store_true")
     p.set_defaults(func=cmd_os_junk)
-
     p = sub.add_parser("darwin", help="cleanup_darwin.py")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_darwin)
-
     p = sub.add_parser("caches", help="cnn.py")
     p.set_defaults(func=cmd_caches)
-
     p = sub.add_parser("empty-files", help="find_empty.py / rmempty.py")
     p.add_argument("--delete", action="store_true", help="rmempty.py behavior")
     p.add_argument("--timeout", type=int, default=0, help="abort window in seconds")
     p.set_defaults(func=cmd_empty_files)
-
     p = sub.add_parser("empty-dirs", help="pdmp.py / pydmp.py / pydmp2.py")
     p.add_argument("path", nargs="?", default=".")
     p.add_argument("--dry-run", action="store_true")
@@ -471,7 +453,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="pdmp.py appended the root itself to the candidate list",
     )
     p.set_defaults(func=cmd_empty_dirs)
-
     p = sub.add_parser("twins", help="twin_files.py / twinfiles.py")
     p.add_argument("--ext1", default=".json")
     p.add_argument("--ext2", default=".txt")
@@ -484,7 +465,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--apply", action="store_true", help="Actually delete files")
     p.add_argument("--interactive", action="store_true", help="Prompt for choice")
     p.set_defaults(func=cmd_twins)
-
     return parser
 
 

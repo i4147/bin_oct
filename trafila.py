@@ -5,10 +5,8 @@ Input files can be passed as command-line arguments or discovered automatically 
 Errors during processing should be caught and reported per-file without stopping the batch."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 import trafilatura
 from dh import get_files, mpf
 

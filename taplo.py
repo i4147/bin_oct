@@ -1,17 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""Design a Python command-line/library script (intended to run under Termux's Python 3.12, with a `#!/data/data/com.termux/files/usr/bin/python3.12` shebang) that implements a complete **TOML tokenizer, parser, and formatter/pretty-printer**.
 
+The script should include:
+
+1. **Imports and setup**: Use `from __future__ import annotations`, `re`, `dataclasses` (`dataclass`, `field`), `enum` (`Enum`, `auto`), `io.StringIO`, `typing` (`TYPE_CHECKING`, `Any`), and `loguru` for logging. Use `TYPE_CHECKING` to conditionally import `pathlib.Path` for type hints only. Enable the `loguru` logger for the `__main__` module.
+
+2. **TokenType enum**: An `Enum` listing all TOML lexical token kinds, including `EOF`, `NEWLINE`, `COMMENT`, `LBRACKET`, `RBRACKET`, `LBRACE`, `RBRACE`, `LSQUARE`, `RSQUARE`, `COMMA`, `DOT`, `EQUALS`, `KEY`, `STRING`, `INTEGER`, `FLOAT`, `BOOLEAN`, `DATETIME`, and `WHITESPACE`.
+
+3. **Token dataclass**: An immutable (`frozen=True`) dataclass representing a single token, storing its `type` (`TokenType`), `value` (`str`), and its `line` and `col` position (both `int`) in the source for error reporting and formatting purposes.
+
+4. **FormatConfig dataclass**: A configuration object controlling output formatting style, with fields such as:
+   - `indent_size` (default 2)
+   - `sort_keys` (default True, whether to alphabetically sort table keys)
+   - `spaces_around_equals` (default True)
+   - `spaces_in_braces` (default True, spacing inside inline tables `{ }`)
+   - `array_trailing_comma` (default False)
+   - `column_align_equals` (default False, align `=` signs in columns)
+   - `max_inline_table_width` (default 120, width threshold before wrapping inline tables)
+
+5. **Tokenizer class**: A hand-written lexer that scans a raw TOML source string character by character and produces a list of `Token` objects. It should:
+   - Store the `source` string, current `pos` (character index), `line` and `col` counters, and the accumulated `tokens` list.
+   - Provide `current_char()` to return the character at the current position (or `None` at end of input).
+   - Provide `peek_char(offset=1)` to look ahead without consuming.
+   - Provide `advance()` to move the position forward one character, correctly updating `line` and `col` counters (incrementing `line` and resetting `col` on newline characters).
+   - (Continue implementing the rest of the tokenizer's scanning methods for TOML constructs — comments, brackets/braces/square brackets, commas, dots, equals signs, bare/quoted keys, basic and literal strings including multi-line variants, integers, floats, booleans, datetimes/dates/times, whitespace, and newlines — along with a parser that consumes the token stream into an in-memory representation of TOML tables/arrays/values, and a formatter that re-serializes that representation back into TOML text according to the `FormatConfig` options, writing output via `StringIO`/to a file given a `Path`.)
+
+The overall purpose of the script is to read a TOML file (or string), tokenize and parse it into a structured representation, and then re-emit a consistently and configurably formatted version of the TOML content (e.g., as a TOML formatter/linter utility), preserving comments where possible and applying style rules such as key sorting, spacing, and alignment as defined in `FormatConfig`.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/5MaU34KfWeweEAhdQShbgc"""
+
+from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from io import StringIO
 from typing import TYPE_CHECKING, Any
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from pathlib import Path
-
 logger.enable("__main__")
 
 
@@ -89,7 +116,6 @@ class Tokenizer:
         self.advance()
         result: list[str] = []
         is_multiline = self.current_char() == quote and self.peek_char() == quote
-
         if is_multiline:
             self.advance()
             self.advance()
@@ -123,14 +149,12 @@ class Tokenizer:
                     self.advance()
             if self.current_char() == quote:
                 self.advance()
-
         return quote + "".join(result) + quote if is_multiline else quote + "".join(result) + quote
 
     def read_number(self) -> tuple[TokenType, str]:
         start = self.pos
         has_dot = False
         has_e = False
-
         while self.current_char() and self.current_char() in "0123456789._eE+-":
             if self.current_char() == ".":
                 if has_dot or has_e:
@@ -145,7 +169,6 @@ class Tokenizer:
                     self.advance()
                 continue
             self.advance()
-
         num_str = self.source[start : self.pos]
         return (TokenType.FLOAT if has_dot or has_e else TokenType.INTEGER, num_str)
 
@@ -159,23 +182,19 @@ class Tokenizer:
         while self.pos < len(self.source):
             line, col = self.line, self.col
             ch = self.current_char()
-
             if ch == "#":
                 start = self.pos
                 while self.current_char() and self.current_char() != "\n":
                     self.advance()
                 self.tokens.append(Token(TokenType.COMMENT, self.source[start : self.pos], line, col))
-
             elif ch == "\n":
                 self.tokens.append(Token(TokenType.NEWLINE, "\n", line, col))
                 self.advance()
-
             elif ch in (" ", "\t"):
                 start = self.pos
                 while self.current_char() in (" ", "\t"):
                     self.advance()
                 self.tokens.append(Token(TokenType.WHITESPACE, self.source[start : self.pos], line, col))
-
             elif ch == "[":
                 if self.peek_char() == "[":
                     self.advance()
@@ -184,7 +203,6 @@ class Tokenizer:
                 else:
                     self.advance()
                     self.tokens.append(Token(TokenType.LSQUARE, "[", line, col))
-
             elif ch == "]":
                 if self.peek_char() == "]":
                     self.advance()
@@ -193,31 +211,24 @@ class Tokenizer:
                 else:
                     self.advance()
                     self.tokens.append(Token(TokenType.RSQUARE, "]", line, col))
-
             elif ch == "{":
                 self.advance()
                 self.tokens.append(Token(TokenType.LBRACE, "{", line, col))
-
             elif ch == "}":
                 self.advance()
                 self.tokens.append(Token(TokenType.RBRACE, "}", line, col))
-
             elif ch == "=":
                 self.advance()
                 self.tokens.append(Token(TokenType.EQUALS, "=", line, col))
-
             elif ch == ",":
                 self.advance()
                 self.tokens.append(Token(TokenType.COMMA, ",", line, col))
-
             elif ch == ".":
                 self.advance()
                 self.tokens.append(Token(TokenType.DOT, ".", line, col))
-
             elif ch in ('"', "'"):
                 val = self.read_string(ch)
                 self.tokens.append(Token(TokenType.STRING, val, line, col))
-
             elif ch == "-" or ch.isdigit():
                 if ch == "-" and self.peek_char() and not self.peek_char().isdigit():
                     key = self.read_key()
@@ -225,7 +236,6 @@ class Tokenizer:
                 else:
                     tt, val = self.read_number()
                     self.tokens.append(Token(tt, val, line, col))
-
             elif ch.isalpha() or ch == "_":
                 start = self.pos
                 word = self.read_key()
@@ -235,10 +245,8 @@ class Tokenizer:
                     self.tokens.append(Token(TokenType.DATETIME, word, line, col))
                 else:
                     self.tokens.append(Token(TokenType.KEY, word, line, col))
-
             else:
                 self.advance()
-
         self.tokens.append(Token(TokenType.EOF, "", self.line, self.col))
         return self.tokens
 
@@ -292,7 +300,6 @@ class Parser:
             else:
                 msg = f"Expected key at line {self.current().line}"
                 raise SyntaxError(msg)
-
             self.skip_whitespace_and_comments()
             if self.current().type == TokenType.DOT:
                 self.advance()
@@ -303,7 +310,6 @@ class Parser:
     def parse_value(self) -> Any:
         self.skip_whitespace_and_comments()
         token = self.current()
-
         if token.type == TokenType.STRING:
             return self.advance().value
         elif token.type == TokenType.INTEGER:
@@ -325,76 +331,61 @@ class Parser:
     def parse_array(self) -> list[Any]:
         self.expect(TokenType.LSQUARE)
         result: list[Any] = []
-
         while True:
             self.skip_whitespace_and_comments()
             if self.current().type == TokenType.RSQUARE:
                 self.advance()
                 break
-
             result.append(self.parse_value())
             self.skip_whitespace_and_comments()
-
             if self.current().type == TokenType.COMMA:
                 self.advance()
             elif self.current().type != TokenType.RSQUARE:
                 msg = f"Expected ',' or ']' at line {self.current().line}"
                 raise SyntaxError(msg)
-
         return result
 
     def parse_inline_table(self) -> dict[str, Any]:
         self.expect(TokenType.LBRACE)
         result: dict[str, Any] = {}
-
         while True:
             self.skip_whitespace_and_comments()
             if self.current().type == TokenType.RBRACE:
                 self.advance()
                 break
-
             keys = self.parse_key()
             self.skip_whitespace_and_comments()
             self.expect(TokenType.EQUALS)
             val = self.parse_value()
-
             current = result
             for k in keys[:-1]:
                 current = current.setdefault(k, {})
             current[keys[-1]] = val
-
             self.skip_whitespace_and_comments()
             if self.current().type == TokenType.COMMA:
                 self.advance()
             elif self.current().type != TokenType.RBRACE:
                 msg = f"Expected ',' or '}}' at line {self.current().line}"
                 raise SyntaxError(msg)
-
         return result
 
     def parse_document(self) -> AST:
         ast = AST()
-
         while self.current().type != TokenType.EOF:
             self.skip_whitespace_and_comments()
-
             if self.current().type == TokenType.LSQUARE:
                 is_array_table = self.peek().type == TokenType.LBRACKET
                 if is_array_table:
                     self.advance()
                 self.advance()
-
                 keys = self.parse_key()
-
                 self.skip_whitespace_and_comments()
                 if is_array_table:
                     self.expect(TokenType.RBRACKET)
                 self.expect(TokenType.RSQUARE)
-
                 current = ast.root
                 for k in keys[:-1]:
                     current = current.setdefault(k, {})
-
                 if is_array_table:
                     if keys[-1] not in current:
                         current[keys[-1]] = []
@@ -403,7 +394,6 @@ class Parser:
                     current = table
                 else:
                     current = current.setdefault(keys[-1], {})
-
                 ast.order.append(".".join(keys))
                 while self.current().type != TokenType.EOF and self.current().type != TokenType.LSQUARE:
                     self.skip_whitespace_and_comments()
@@ -412,26 +402,21 @@ class Parser:
                         self.skip_whitespace_and_comments()
                         self.expect(TokenType.EQUALS)
                         val = self.parse_value()
-
                         nested = current
                         for k in keys[:-1]:
                             nested = nested.setdefault(k, {})
                         nested[keys[-1]] = val
-
             elif self.current().type == TokenType.KEY or self.current().type == TokenType.STRING:
                 keys = self.parse_key()
                 self.skip_whitespace_and_comments()
                 self.expect(TokenType.EQUALS)
                 val = self.parse_value()
-
                 current = ast.root
                 for k in keys[:-1]:
                     current = current.setdefault(k, {})
                 current[keys[-1]] = val
-
             else:
                 self.advance()
-
         return ast
 
 
@@ -453,21 +438,15 @@ class Formatter:
             if path:
                 self.output.write("\n[" + ".".join(path) + "]\n")
             self.indent_level += 1
-
         keys = sorted(table.keys()) if self.config.sort_keys else list(table.keys())
-
         for key in keys:
             val = table[key]
-
             if isinstance(val, dict) and not self._is_inline_table(val):
                 continue
-
             if isinstance(val, list) and val and isinstance(val[0], dict):
                 continue
-
             indent = self._indent() if not is_root else ""
             eq_spacing = " = " if self.config.spaces_around_equals else "="
-
             if isinstance(val, dict):
                 formatted_val = self._format_inline_table(val)
                 self.output.write(f"{indent}{key}{eq_spacing}{formatted_val}\n")
@@ -481,16 +460,12 @@ class Formatter:
                 self.output.write(f"{indent}{key}{eq_spacing}{val}\n")
             elif isinstance(val, (int, float)):
                 self.output.write(f"{indent}{key}{eq_spacing}{val}\n")
-
         if not is_root:
             self.indent_level -= 1
-
         for key in keys:
             val = table[key]
-
             if isinstance(val, dict) and not self._is_inline_table(val):
                 self._format_table(val, path + [key])
-
             elif isinstance(val, list) and val and isinstance(val[0], dict):
                 for i, item in enumerate(val):
                     self._format_array_table(item, path + [key])
@@ -498,18 +473,15 @@ class Formatter:
     def _format_array_table(self, table: dict[str, Any], path: list[str]) -> None:
         self.output.write("\n[[" + ".".join(path) + "]]\n")
         self.indent_level += 1
-
         keys = sorted(table.keys()) if self.config.sort_keys else list(table.keys())
         for key in keys:
             val = table[key]
             indent = self._indent()
             eq_spacing = " = " if self.config.spaces_around_equals else "="
-
             if isinstance(val, dict) and not self._is_inline_table(val):
                 continue
             elif isinstance(val, list) and val and isinstance(val[0], dict):
                 continue
-
             if isinstance(val, dict):
                 formatted_val = self._format_inline_table(val)
                 self.output.write(f"{indent}{key}{eq_spacing}{formatted_val}\n")
@@ -523,9 +495,7 @@ class Formatter:
                 self.output.write(f"{indent}{key}{eq_spacing}{val}\n")
             elif isinstance(val, (int, float)):
                 self.output.write(f"{indent}{key}{eq_spacing}{val}\n")
-
         self.indent_level -= 1
-
         for key in keys:
             val = table[key]
             if isinstance(val, dict) and not self._is_inline_table(val):
@@ -537,16 +507,13 @@ class Formatter:
     def _format_inline_table(self, table: dict[str, Any]) -> str:
         if not table:
             return "{}" if self.config.spaces_in_braces else "{}"
-
         pairs = []
         keys = sorted(table.keys()) if self.config.sort_keys else list(table.keys())
-
         for key in keys:
             val = table[key]
             eq = " = " if self.config.spaces_around_equals else "="
             formatted_val = self._format_value(val)
             pairs.append(f"{key}{eq}{formatted_val}")
-
         content = ", ".join(pairs)
         if self.config.spaces_in_braces:
             return "{ " + content + " }"
@@ -556,15 +523,12 @@ class Formatter:
     def _format_array(self, arr: list[Any]) -> str:
         if not arr:
             return "[]"
-
         all_simple = all(not isinstance(x, (dict, list)) for x in arr)
-
         if all_simple:
             formatted = [self._format_value(x) for x in arr]
             content = ", ".join(formatted)
             if len(content) <= self.config.max_inline_table_width:
                 return "[" + content + "]"
-
         result = ["["]
         for i, item in enumerate(arr):
             formatted = self._format_value(item)
@@ -621,11 +585,9 @@ host="localhost"
 port=5432
 connection={timeout=30,retries=3}
 servers=["alpha","beta","gamma"]
-
 [database.connection]
 ssl=true
 """
-
     config = FormatConfig(
         indent_size=2,
         sort_keys=True,
@@ -633,10 +595,8 @@ ssl=true
         spaces_in_braces=True,
         array_trailing_comma=False,
     )
-
     formatter = TOMLFormatter(config)
     result = formatter.format_string(test_toml)
-
     logger.info("Formatted TOML:")
     print(result)
 

@@ -4,7 +4,6 @@ It should provide is_empty_package to check installed dist-info folders by parsi
 A find_empty_packages function should iterate over the site-packages directory, apply is_empty_package to each dist-info folder found, and collect/report the names of packages considered empty."""
 
 from __future__ import annotations
-
 import csv
 import sysconfig
 import zipfile

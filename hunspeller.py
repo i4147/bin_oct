@@ -5,12 +5,10 @@ It should accept input via argparse (e.g., file path(s) and an autofix option), 
 Include proper handling for command-line argument parsing and use sys for exit codes or error output."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
 from multiprocessing import Pool, cpu_count
-
 import hunspell
 
 

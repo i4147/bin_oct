@@ -5,7 +5,6 @@ The output is a report identifying modules with the most dependencies or depende
 Notable behaviors include skipping `__pycache__` directories, handling both package-style (`__init__.py`) and flat module layouts, and gracefully falling back to string-based path comparison when `Path.is_relative_to` is unavailable or fails."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import sys

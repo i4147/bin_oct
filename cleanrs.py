@@ -4,7 +4,6 @@ The script should use a multiprocessing pool (e.g., 8 workers) to process files 
 It should expose a RustCommentStripper class that parses source code into an AST, collects all comment nodes, and reconstructs the file content with those comment spans removed while preserving the surrounding code and line structure."""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import sys
 import time

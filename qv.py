@@ -5,7 +5,6 @@ For each file, read its text content with UTF-8 encoding (replacing invalid char
 If no files are found, print "No files found." and exit; otherwise combine all formatted sections into one string and display it through Python's built-in pydoc.pager."""
 
 from __future__ import annotations
-
 import argparse
 import pydoc
 from pathlib import Path

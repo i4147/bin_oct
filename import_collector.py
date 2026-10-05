@@ -6,13 +6,11 @@ The script should write the aggregated results to an "importz.txt" file and also
 Include a `main()` entry point that orchestrates directory traversal, import collection, status checking, and output file generation."""
 
 from __future__ import annotations
-
 import ast
 import importlib.metadata
 import importlib.util
 import sys
 from pathlib import Path
-
 from dh import is_python_file
 
 PACKAGE_MAPPING = {

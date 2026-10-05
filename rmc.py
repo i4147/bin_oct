@@ -1,4 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Create a cross-platform (Termux/Linux) Python 3.12 command-line tool named "strip_comments" (version 2.1.0) that removes comments (and optionally docstrings/blank-line runs) from Python source files, using libcst for safe, syntax-preserving transformations.
+
+The script's purpose is to clean up `.py`, `.pyi`, and `.pyw` files by stripping inline and standalone comments while optionally also stripping docstrings and collapsing multiple consecutive blank lines, without breaking code structure, encoding declarations, or special "protected" comments (e.g. shebangs, coding declarations, `# noqa`, `# nosec`, `# pragma`, `# type:`, and formatter/linter directives like `# fmt`, `# isort`, `# mypy`, `# pyright`, `# pytype`, `# pylint`, `# ruff`, `# flake8`, `# yapf`). It must also correctly handle `# type: ignore` comments (which should still be stripped/treated as non-protected unless otherwise specified) versus other `# type:` comments (which are protected).
+
+Key requirements:
+
+1. **CLI interface (argparse-based)**:
+   - Accept one or more input paths (files and/or directories) as positional arguments.
+   - Recursively walk directories, only processing files with the recognized Python suffixes (`.py`, `.pyi`, `.pyw`), while skipping common non-source directories by default (e.g. `.git`, `.hg`, `.svn`, `.tox`, `.nox`, `.venv`, `venv`, `env`, `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `node_modules`, `build`, `dist`, `.eggs`).
+   - Support an option to also remove docstrings in addition to comments (a "remove all" / aggressive mode).
+   - Support an option to collapse runs of multiple blank lines into a single blank line.
+   - Support a dry-run / check mode that reports what would change without writing files.
+   - Support writing `.pystripbak` backup files before modifying originals, and/or an option to disable backups.
+   - Support verbose/quiet output modes, with colorized (green) terminal output for status messages where appropriate, and a way to disable color.
+   - Support a `--version` flag that prints the program name and version.
+   - Allow control over parallelism: process multiple files concurrently using multiprocessing when the number of files meets a minimum threshold, with a configurable max number of worker processes (default 8) and chunk size (default 8) for distributing work; otherwise process sequentially for small file counts (fewer than 4 files).
+
+2. **Core transformation logic**:
+   - Parse each file with `libcst` to build a CST, then transform it to remove comment trivia (and docstring expression statements, if requested) while preserving code semantics, indentation, and formatting of retained code.
+   - Protect special comments using a regex that matches shebang lines (`#!`), coding declarations (`-*- coding ... -*-` or `coding[:=]`), and directive comments such as `noqa`, `nosec`, `pragma`, `type:`, `fmt:`, `isort:`, `mypy:`, `pyright:`, `pytype:`, `pylint:`, `ruff:`, `flake8:`, `yapf:` — these must never be stripped.
+   - Treat `# type: ignore` specially so it is eligible for removal (not protected) even though other `# type:` comments are protected, using a dedicated regex distinguishing `# type:` not followed by `ignore`.
+   - Preserve a leading encoding comment/declaration correctly (via a dedicated regex for `# coding:`/`# coding=` style comments) so files remain valid Python with correct encoding after stripping.
+   - When collapsing blank lines, use a regex that matches runs of blank/whitespace-only lines and reduces them appropriately.
+   - Use Python's `tokenize` module (including handling of `FSTRING_START`/`FSTRING_END`/`TSTRING_START`/`TSTRING_END` tokens when present in the running Python version) to correctly account for f-string/t-string internals so comments inside expressions aren't mishandled, and so line tracking for blank-line collapsing is accurate.
+   - Use `ast` as needed for validation (e.g., confirming the transformed source still parses correctly) to avoid producing invalid Python output.
+
+3. **File handling behavior**:
+   - Read and write files using appropriate encoding detection/handling.
+   - When processing a directory tree, gather all eligible files first, then decide sequential vs. parallel processing based on file count thresholds.
+   - For each file: parse, transform, and only rewrite the file if the content actually changed; optionally create a `.pystripbak` backup of the original before overwriting; report per-file status (e.g., modified, unchanged, skipped, error) respecting verbosity settings.
+   - Handle errors gracefully per file (e.g., syntax errors, I/O errors) without crashing the entire batch; collect and report a summary of successes/failures at the end, and set the process exit code to reflect whether any errors occurred.
+   - Support being interrupted gracefully (e.g., handle `SIGINT`) during batch/parallel processing, terminating worker processes cleanly.
+
+4. **Output/reporting**:
+   - Print a concise summary at the end (e.g., number of files scanned, modified, skipped, errored), using colorized text for emphasis when color is enabled and the output stream is a terminal.
+   - In dry-run mode, clearly indicate that no files were actually written, while still showing what would have changed.
+
+Implement this entirely in a single self-contained Python 3.12 script (with the Termux-style shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), using only the standard library plus `libcst`, structured with dataclasses (e.g., a frozen `TransformOptions` dataclass holding flags like whether to remove all/docstrings) and clear helper functions/classes for the CST transformation, file discovery, parallel execution, and CLI entry point (`main`).
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/EJWXwAyvC6CqsaN8aFXgma"""
 
 import argparse
 import ast
@@ -16,7 +56,6 @@ import tokenize
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Iterator, Sequence
-
 import libcst as cst
 
 PROGRAM = "strip_comments"
@@ -28,40 +67,32 @@ PY_SUFFIXES = (".py", ".pyi", ".pyw")
 BACKUP_SUFFIX = ".pystripbak"
 GREEN = "\x1b[32m"
 RESET = "\x1b[0m"
-
-DEFAULT_SKIP_DIR_NAMES = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "env",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        "node_modules",
-        "build",
-        "dist",
-        ".eggs",
-    }
-)
-
+DEFAULT_SKIP_DIR_NAMES = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "node_modules",
+    "build",
+    "dist",
+    ".eggs",
+})
 PROTECTED_COMMENT_RE = re.compile(
     r"#(?:!|\s*(?:-\*-.*coding|coding[:=]|noqa\b|nosec\b|pragma\b|"
     r"(?:type|fmt|isort|mypy|pyright|pytype|pylint|ruff|flake8|yapf):))",
     re.IGNORECASE,
 )
-
 TYPE_COMMENT_RE = re.compile(r"#\s*type:\s*(?!ignore\b)", re.IGNORECASE)
-
 CODING_RE = re.compile(r"[ \t\f]*#.*?coding[:=][ \t]*[-\w.]+")
-
 BLANK_RUN_RE = re.compile(r"(?:\A|\n)[ \t\r]*\n[ \t\r]*\n")
-
 _STRING_STARTS = frozenset(getattr(tokenize, n) for n in ("FSTRING_START", "TSTRING_START") if hasattr(tokenize, n))
 _STRING_ENDS = frozenset(getattr(tokenize, n) for n in ("FSTRING_END", "TSTRING_END") if hasattr(tokenize, n))
 _NO_LINES: frozenset[int] = frozenset()
@@ -119,7 +150,6 @@ def format_size(num_bytes: int) -> str:
 
 
 def display_path(path: Path | str) -> str:
-
     try:
         return os.path.relpath(path, _CWD)
     except ValueError:
@@ -127,7 +157,6 @@ def display_path(path: Path | str) -> str:
 
 
 def emit(*parts: str, file=None) -> None:
-
     try:
         print(*parts, file=file)
     except BrokenPipeError:
@@ -140,7 +169,6 @@ def warn(message: str) -> None:
 
 
 def is_docstring_literal(expr: cst.BaseExpression) -> bool:
-
     if isinstance(expr, cst.SimpleString):
         return "b" not in expr.prefix.lower()
     if isinstance(expr, cst.ConcatenatedString):
@@ -156,7 +184,6 @@ def starts_with_docstring(line: cst.SimpleStatementLine) -> bool:
 
 
 def _with_leading(node: cst.CSTNode, extra: Sequence[cst.EmptyLine]) -> cst.CSTNode:
-
     existing = getattr(node, "leading_lines", None)
     if existing is None:
         return node
@@ -169,12 +196,10 @@ def strip_indented_block_docstring(block: cst.IndentedBlock) -> tuple[cst.Indent
     first = block.body[0]
     if not (isinstance(first, cst.SimpleStatementLine) and starts_with_docstring(first)):
         return block, False
-
     tail = list(first.body[1:])
     later = list(block.body[1:])
     if tail:
         return block.with_changes(body=[first.with_changes(body=tail), *later]), True
-
     if not later or first.trailing_whitespace.comment is not None:
         return block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later]), True
     if first.leading_lines:
@@ -183,7 +208,6 @@ def strip_indented_block_docstring(block: cst.IndentedBlock) -> tuple[cst.Indent
 
 
 def strip_simple_suite_docstring(suite: cst.SimpleStatementSuite) -> tuple[cst.SimpleStatementSuite, bool]:
-
     if not suite.body:
         return suite, False
     first = suite.body[0]
@@ -257,7 +281,6 @@ class StructureStripper(cst.CSTTransformer):
     def leave_AnnAssign(self, original_node, updated_node):
         if not self.strip_types:
             return updated_node
-
         if self.keep_class_annotations and self.scopes and self.scopes[-1]:
             return updated_node
         if updated_node.value is None:
@@ -278,7 +301,6 @@ def _has_code_intent(statement: ast.stmt) -> bool:
 
 
 def looks_like_commented_out_code(comment_texts: Sequence[str]) -> bool:
-
     candidate = textwrap.dedent("\n".join(text[1:].removeprefix(" ") for text in comment_texts))
     if not candidate.strip():
         return False
@@ -296,7 +318,6 @@ def looks_like_commented_out_code(comment_texts: Sequence[str]) -> bool:
 
 
 def commented_code_rows(comments: Sequence[tokenize.TokenInfo], lines: Sequence[str]) -> frozenset[int]:
-
     protected: set[int] = set()
     rows: list[int] = []
     texts: list[str] = []
@@ -325,7 +346,6 @@ def commented_code_rows(comments: Sequence[tokenize.TokenInfo], lines: Sequence[
 
 
 def strip_comments(source: str, options: TransformOptions) -> str | None:
-
     if "#" not in source:
         return source
     try:
@@ -336,12 +356,10 @@ def strip_comments(source: str, options: TransformOptions) -> str | None:
         return None
     if not comments:
         return source
-
     lines = source.split("\n")
     protected_rows = _NO_LINES
     if options.remove_all_comments and not options.remove_all and not options.remove_commented_code:
         protected_rows = commented_code_rows(comments, lines)
-
     drop_type_comments = options.remove_type_annotations
     changed = False
     for token in comments:
@@ -352,10 +370,8 @@ def strip_comments(source: str, options: TransformOptions) -> str | None:
             return None
         prefix = line[:col]
         standalone = not prefix.strip()
-
         if standalone and ((row == 1 and text.startswith("#!")) or (row <= 2 and CODING_RE.match(line))):
             continue
-
         if drop_type_comments and TYPE_COMMENT_RE.match(text):
             remove = True
         elif options.remove_all:
@@ -368,7 +384,6 @@ def strip_comments(source: str, options: TransformOptions) -> str | None:
             remove = True
         if not remove:
             continue
-
         carriage_return = "\r" if line.endswith("\r") else ""
         lines[row - 1] = carriage_return if standalone else prefix.rstrip(" \t\f") + carriage_return
         changed = True
@@ -376,7 +391,6 @@ def strip_comments(source: str, options: TransformOptions) -> str | None:
 
 
 def multiline_string_lines(source: str) -> frozenset[int] | None:
-
     occupied: set[int] = set()
     depth = 0
     start_line = 0
@@ -408,7 +422,6 @@ def collapse_repeated_blank_lines(source: str) -> str:
             return source
     else:
         protected = _NO_LINES
-
     parts = source.split("\n")
     tail = parts.pop()
     kept: list[str] = []
@@ -480,17 +493,14 @@ def _process_file(path: Path, options: TransformOptions) -> FileResult:
     size = len(original)
     if not size:
         return FileResult(path)
-
     try:
         encoding, _ = tokenize.detect_encoding(io.BytesIO(original).readline)
         source = original.decode(encoding)
     except (SyntaxError, UnicodeDecodeError, LookupError) as exc:
         return FileResult(path, size, error=f"encoding error: {exc}")
-
     new_source = strip_comments(source, options)
     if new_source is None:
         return FileResult(path, size, error="tokenize error: cannot locate comments safely")
-
     effective = options
     if "__doc__" in source and (options.remove_docstrings or options.remove_module_docstring):
         effective = dataclasses.replace(options, remove_docstrings=False, remove_module_docstring=False)
@@ -511,22 +521,18 @@ def _process_file(path: Path, options: TransformOptions) -> FileResult:
             new_source = module.code
         except Exception as exc:
             return FileResult(path, size, error=f"transform error: {type(exc).__name__}: {exc}")
-
     if options.collapse_blank_lines:
         new_source = collapse_repeated_blank_lines(new_source)
-
     if new_source == source:
         return FileResult(path, size, size)
     try:
         new_bytes = new_source.encode(encoding)
     except UnicodeEncodeError as exc:
         return FileResult(path, size, error=f"encoding error: {exc}")
-
     try:
         ast.parse(new_source, filename=str(path), type_comments=True)
     except (SyntaxError, ValueError, MemoryError, RecursionError) as exc:
         return FileResult(path, size, len(new_bytes), error=f"post-transform validation failed: {exc}")
-
     if not options.dry_run:
         try:
             after = os.stat(path)
@@ -543,12 +549,10 @@ def _process_file(path: Path, options: TransformOptions) -> FileResult:
             atomic_replace(path, new_bytes, options.fsync)
         except OSError as exc:
             return FileResult(path, size, len(new_bytes), error=f"write error: {exc}")
-
     return FileResult(path, size, len(new_bytes), changed=True)
 
 
 def process_file(path: Path, options: TransformOptions) -> FileResult:
-
     try:
         return _process_file(path, options)
     except Exception as exc:
@@ -556,8 +560,6 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
 
 
 # ----------------------------------------------------------------------------- discovery
-
-
 def has_python_shebang(path: str) -> bool:
     try:
         with open(path, "rb") as stream:
@@ -570,7 +572,6 @@ def has_python_shebang(path: str) -> bool:
 def _accept_python(name: str, path: str) -> bool:
     if name.endswith(PY_SUFFIXES):
         return True
-
     return not os.path.splitext(name)[1] and has_python_shebang(path)
 
 
@@ -579,7 +580,6 @@ def _accept_backup(name: str, path: str) -> bool:
 
 
 def _walk(root: str, skip_names: frozenset[str] | set[str], accept: Callable[[str, str], bool]) -> Iterator[str]:
-
     stack = [root]
     while stack:
         directory = stack.pop()
@@ -655,8 +655,6 @@ def iter_backup_targets(paths: Iterable[Path], extra_excludes: Sequence[str]) ->
 
 
 # ----------------------------------------------------------------------------- CLI
-
-
 def default_jobs() -> int:
     try:
         count = len(os.sched_getaffinity(0))
@@ -759,7 +757,6 @@ def validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> 
 
 
 # ----------------------------------------------------------------------------- execution
-
 _WORKER_OPTIONS: TransformOptions | None = None
 
 
@@ -787,7 +784,6 @@ def iter_results(files: list[Path], options: TransformOptions, jobs: int, chunk_
         return
     files.sort(key=_file_size, reverse=True)
     chunk = max(1, min(chunk_size, len(files) // (jobs * 4)))
-
     with mp.Pool(processes=jobs, initializer=_init_worker, initargs=(options,), maxtasksperchild=500) as pool:
         yield from pool.imap_unordered(_worker, files, chunksize=chunk)
 
@@ -830,17 +826,14 @@ def run_strip(paths: Sequence[Path], args: argparse.Namespace) -> int:
         fsync=args.fsync,
         dry_run=dry_run,
     )
-
     files = list(iter_python_files(paths, args.exclude_dir))
     if not files:
         emit("No Python files found.", file=sys.stderr)
         return 1
     jobs = min(args.jobs, len(files))
-
     use_color = not args.no_color and not os.environ.get("NO_COLOR") and sys.stdout.isatty()
     color, reset = (GREEN, RESET) if use_color else ("", "")
     action = "would reduce" if dry_run else "reduced"
-
     total = changed = errors = old_total = new_total = 0
     for result in iter_results(files, options, jobs, args.chunk_size):
         total += 1
@@ -855,7 +848,6 @@ def run_strip(paths: Sequence[Path], args: argparse.Namespace) -> int:
         new_total += result.new_size
         if not args.quiet:
             emit(f"{display_path(result.path)}  {action} {color}{format_size(result.bytes_reduced)}{reset}")
-
     verb = "would change" if dry_run else "changed"
     summary = (
         f"\nProcessed {total} file(s): {verb} {changed}, "

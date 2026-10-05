@@ -5,12 +5,10 @@ If package names are passed as command-line arguments, it should instead attempt
 The script should always exit with status code 0 regardless of import failures."""
 
 from __future__ import annotations
-
 import sys
 import traceback
 from importlib import import_module
 from importlib.metadata import distributions
-
 from loguru import logger
 
 logger.add("/sdcard/allimport.log", diagnose=True)

@@ -5,7 +5,6 @@ After scanning, print the total count of empty wheels found, create an `empty_wh
 Structure the code with a helper function `is_empty_wheel` returning `bool | None` and a `main` function, and run `main` via `raise SystemExit(main())` in the `__main__` block."""
 
 from __future__ import annotations
-
 import zipfile
 from pathlib import Path
 

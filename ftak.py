@@ -4,7 +4,6 @@ It should use the ast module to parse each file (skipping files that fail to dec
 The main function should iterate through all discovered Python files, scan each for these stub definitions, and report the findings for files that contain at least one."""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 from typing import Iterator

@@ -4,7 +4,6 @@ Include three helper functions: one that converts a standard 6-digit hex string 
 The script should accept the hex color as a command-line argument, strip whitespace, and print the resulting RGB conversion to standard output."""
 
 from __future__ import annotations
-
 import sys
 
 

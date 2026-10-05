@@ -2,13 +2,11 @@
 """Compress each non-hidden subdirectory as `<name>.tar.br` and each regular file as `<name>.br` in the current directory: build tar archives in memory, Brotli-compress with quality 11 in chunks of 64 KiB, run both job types through `multiprocessing.pool.starmap` on a fixed pool of 8 workers, and log with loguru."""
 
 from __future__ import annotations
-
 import io
 import tarfile
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import BinaryIO, Final
-
 import brotli  # type: ignore[import-untyped]
 from loguru import logger
 
@@ -59,16 +57,13 @@ def _dispatch(job: tuple[Path, bool]) -> tuple[Path, bool, str | None]:
 def main() -> None:
     current_dir: Path = Path()
     script_name: str = Path(__file__).name
-
     subdirs: list[Path] = [d for d in current_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
     files: list[Path] = [
         f for f in current_dir.iterdir() if f.is_file() and f.suffix != ".br" and f.name != script_name
     ]
-
     if not subdirs and not files:
         logger.info("No files or subdirectories found to compress.")
         return
-
     logger.info(
         "🚀 Found {} subdirs to TAR+BR, and {} files to BR.",
         len(subdirs),
@@ -78,15 +73,12 @@ def main() -> None:
         "⚡ Starting parallel processing pool (Quality Level: {})...",
         BROTLI_QUALITY,
     )
-
     jobs: list[tuple[Path, bool]] = [
         *((d, True) for d in subdirs),
         *((f, False) for f in files),
     ]
-
     success_count: int = 0
     error_count: int = 0
-
     with Pool(processes=MAX_WORKERS) as pool:
         for path, success, error in pool.imap_unordered(_dispatch, jobs):
             if success:
@@ -95,7 +87,6 @@ def main() -> None:
             else:
                 logger.error("❌ {}", error)
                 error_count += 1
-
     logger.info(
         "🎉 Done. {} succeeded, {} failed.",
         success_count,

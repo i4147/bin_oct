@@ -2,7 +2,6 @@
 """Generate a Python script that scans the current directory recursively for Python files, adds or updates Python shebangs (#!/data/data/com.termux/files/home/.local/bin/python) in all detected Python files, skips symlinks, skips non-Python files, uses multiprocessing.Pool.apply_async with a fixed pool of 8 workers, adds complete type hints to all functions, classes, arguments, return types, module-level constants, and variables, uses loguru for logging instead of print(or standard logging, uses pathlib for all path handling, includes a module docstring, function docstrings, and fixes any type-checker issues such as missing imports, Optional handling, and wrong signatures.)"""
 
 from __future__ import annotations
-
 import re
 from multiprocessing import Pool
 from pathlib import Path

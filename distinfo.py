@@ -4,7 +4,6 @@ It should locate directories ending in ".dist-info" or ".egg-info", parse each n
 Finally, it should print out only the packages that have more than one distinct version installed, listing each version under the package name, and print "Done." when finished."""
 
 from __future__ import annotations
-
 import contextlib
 import re
 import site

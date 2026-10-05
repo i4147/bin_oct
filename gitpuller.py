@@ -5,9 +5,7 @@ It should track and distinguish successfully pulled repositories from failed one
 from GitCommandError or pull result flags indicating errors), and finally print a summary report listing which repositories were successfully updated and which ones failed along with their error reasons."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 from git import GitCommandError, Repo
 
 

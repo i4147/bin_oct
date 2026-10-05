@@ -4,7 +4,6 @@ For each file it should report the file path, the count and line numbers of matc
 The script should use argparse to accept input paths and an auto-fix flag, process files concurrently with concurrent.futures for performance, and gracefully capture and report any read/tokenize/write errors per file without crashing the whole run."""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import os

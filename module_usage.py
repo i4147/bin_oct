@@ -6,7 +6,6 @@ Usage examples -------------- python module_usage.py report python module_usage.
 - `matplotlib` (with a `seaborn-v0_8-darkgrid` style) for `charts`."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import contextlib
@@ -23,7 +22,6 @@ DEFAULT_OUTPUT = Path.home() / "dh_usage.txt"
 DEFAULT_CHART_DIR = Path.home()
 DEFAULT_CHART_STYLE = "seaborn-v0_8-darkgrid"
 DEFAULT_TOP_N = 10
-
 STDLIB_FALLBACK: set[str] = {
     "os",
     "sys",
@@ -104,7 +102,6 @@ def collect_stdlib_modules() -> set[str]:
             _ = mod
     except Exception:
         pass
-
     import pkgutil
 
     for info in pkgutil.iter_modules():
@@ -112,7 +109,6 @@ def collect_stdlib_modules() -> set[str]:
         if name.startswith("_"):
             continue
         modules.add(name)
-
     modules.update(STDLIB_FALLBACK)
     return modules
 
@@ -123,9 +119,7 @@ def extract_imports(path: Path) -> dict[str, list[str]]:
     except (SyntaxError, UnicodeDecodeError) as exc:
         print(f"   ⚠️  Skipping {path.name}: {exc}")
         return {}
-
     imports: dict[str, list[str]] = defaultdict(list)
-
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
@@ -139,7 +133,6 @@ def extract_imports(path: Path) -> dict[str, list[str]]:
             for alias in node.names:
                 name = alias.name if alias.asname is None else alias.asname
                 imports[module].append(name)
-
     return dict(imports)
 
 
@@ -186,29 +179,23 @@ def count_calls(
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError):
         return {}
-
     lookup: dict[str, tuple[str, str]] = {}
     for module, names in imports.items():
         for name in names:
             lookup[name] = (module, name)
-
     counts: dict[str, Counter[str]] = defaultdict(Counter)
-
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         func = node.func
-
         if isinstance(func, ast.Name) and func.id in lookup:
             module, name = lookup[func.id]
             counts[module][name] += 1
-
         if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
             base = func.value.id
             for module in imports:
                 if module == base or module.endswith("." + base):
                     counts[module][func.attr] += 1
-
     return dict(counts.items())
 
 
@@ -221,7 +208,6 @@ def _extract_imports_full(
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError):
         return imports
-
     aliases = _collect_package_aliases(tree, package)
     if aliases:
         imports.setdefault(package, [])
@@ -243,7 +229,6 @@ def analyze_directory(
     if not files:
         msg = f"No .py files found in {directory}"
         raise FileNotFoundError(msg)
-
     per_file: list[tuple[str, dict[str, Counter[str]]]] = []
     for f in files:
         imports = _extract_imports_full(f, package)
@@ -252,14 +237,12 @@ def analyze_directory(
         counts = count_calls(f, imports, package)
         if counts:
             per_file.append((f.name, counts))
-
     stdlib_totals: Counter[str] = Counter()
     thirdparty_totals: Counter[str] = Counter()
     package_totals: Counter[str] = Counter()
     stdlib_files: dict[str, set[str]] = defaultdict(set)
     thirdparty_files: dict[str, set[str]] = defaultdict(set)
     package_files: dict[str, set[str]] = defaultdict(set)
-
     for filename, counts in per_file:
         for module, attrs in counts.items():
             total = sum(attrs.values())
@@ -276,11 +259,9 @@ def analyze_directory(
                 thirdparty_totals[module] += total
                 for attr in attrs:
                     thirdparty_files[attr].add(filename)
-
     stdlib_filecounts = {k: len(v) for k, v in stdlib_files.items()}
     thirdparty_filecounts = {k: len(v) for k, v in thirdparty_files.items()}
     package_filecounts = {k: len(v) for k, v in package_files.items()}
-
     return (
         per_file,
         stdlib_totals,
@@ -305,14 +286,12 @@ def build_report(
 ) -> str:
     lines: list[str] = []
     now = datetime.now()
-
     lines.append("=" * 40)
     lines.append(f"  IMPORT USAGE REPORT — {now:%Y-%m-%d %H:%M}")
     lines.append("=" * 40)
     lines.append(f"  Scanned directory: {directory}")
     lines.append(f"  Files scanned: {len(per_file)}")
     lines.append("")
-
     lines.append("─" * 40)
     lines.append("  SECTION 1: STANDARD LIBRARY MODULES")
     lines.append("─" * 40)
@@ -325,7 +304,6 @@ def build_report(
         lines.append(f"\n  Total stdlib modules used: {len(stdlib_totals)}")
     else:
         lines.append("  (none)")
-
     lines.append(f"\n{'─' * 40}")
     lines.append("  SECTION 2: THIRD-PARTY PACKAGES")
     lines.append("─" * 40)
@@ -338,7 +316,6 @@ def build_report(
         lines.append(f"\n  Total third-party packages used: {len(thirdparty_totals)}")
     else:
         lines.append("  (none)")
-
     lines.append(f"\n{'─' * 40}")
     lines.append(f"  SECTION 3: CUSTOM '{package}' PACKAGE")
     lines.append("─" * 40)
@@ -351,11 +328,9 @@ def build_report(
         lines.append(f"\n  Total {package} functions used: {len(package_totals)}")
     else:
         lines.append("  (none)")
-
     lines.append(f"\n{'─' * 40}")
     lines.append("  SECTION 4: PER-FILE BREAKDOWN")
     lines.append("─" * 40)
-
     sorted_files = sorted(
         per_file,
         key=lambda x: -sum(sum(c.values()) for c in x[1].values()),
@@ -363,11 +338,9 @@ def build_report(
     for filename, counts in sorted_files:
         total = sum(sum(c.values()) for c in counts.values())
         lines.append(f"\n  📄 {filename}  ({total} total calls)")
-
         stdlib_block: dict[str, Counter[str]] = {}
         thirdparty_block: dict[str, Counter[str]] = {}
         package_block: dict[str, Counter[str]] = {}
-
         for module, attrs in counts.items():
             top = module.split(".")[0]
             if top == package:
@@ -392,7 +365,6 @@ def build_report(
         _emit(stdlib_block, "stdlib")
         _emit(thirdparty_block, "third-party")
         _emit(package_block, package)
-
     lines.append("")
     lines.append("=" * 40)
     lines.append("  END OF REPORT")
@@ -408,7 +380,7 @@ def _load_matplotlib():
         import matplotlib.pyplot as plt
 
         return plt
-    except ImportError as exc:  # pragma: no cover
+    except ImportError as exc:
         msg = "matplotlib is required for the 'charts' subcommand. Install it with: pip install matplotlib"
         raise SystemExit(msg) from exc
 
@@ -425,14 +397,11 @@ def generate_charts(
     if not stdlib_totals and not thirdparty_totals and not package_totals:
         print("⚠️  No data to chart.")
         return
-
     plt = _load_matplotlib()
     with contextlib.suppress(OSError):
         plt.style.use(style)
-
     chart_dir.mkdir(parents=True, exist_ok=True)
     print("\n📊 Generating matplotlib charts...")
-
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(stdlib_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -449,7 +418,6 @@ def generate_charts(
         plt.savefig(out, dpi=100, bbox_inches="tight")
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
-
     fig, ax = plt.subplots(figsize=(10, 8))
     distribution = {
         "Standard Library": sum(stdlib_totals.values()),
@@ -479,7 +447,6 @@ def generate_charts(
         plt.savefig(out, dpi=100, bbox_inches="tight")
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
-
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(thirdparty_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -496,7 +463,6 @@ def generate_charts(
         plt.savefig(out, dpi=100, bbox_inches="tight")
         print(f"   ✅ Saved: {out.name}")
     plt.close(fig)
-
     fig, ax = plt.subplots(figsize=(12, 6))
     top = dict(sorted(package_totals.items(), key=lambda x: -x[1])[:top_n])
     if top:
@@ -520,12 +486,10 @@ def _run_analysis(args: argparse.Namespace) -> tuple[Any, str]:
     if not directory.is_dir():
         print(f"❌ {directory} does not exist or is not a directory.")
         sys.exit(1)
-
     print(f"🔍 Scanning Python files in {directory} ...")
     print("   Building stdlib list (this may take a moment)...")
     stdlib = collect_stdlib_modules()
     print(f"   Detected {len(stdlib)} stdlib modules\n")
-
     try:
         (
             per_file,
@@ -541,13 +505,11 @@ def _run_analysis(args: argparse.Namespace) -> tuple[Any, str]:
         output_path = Path(args.output).expanduser()
         output_path.write_text(f"{exc}\n", encoding="utf-8")
         sys.exit(0)
-
     if not per_file:
         print("✅ No imports found in any script.")
         output_path = Path(args.output).expanduser()
         output_path.write_text(f"No imports found in {directory}.\n", encoding="utf-8")
         sys.exit(0)
-
     report = build_report(
         per_file,
         stdlib_totals,
@@ -577,12 +539,10 @@ def cmd_report(args: argparse.Namespace) -> int:
 def cmd_charts(args: argparse.Namespace) -> int:
     data, report = _run_analysis(args)
     stdlib_totals, thirdparty_totals, package_totals = data
-
     output_path = Path(args.output).expanduser()
     output_path.write_text(report, encoding="utf-8")
     print(report)
     print(f"\n✅ Report saved to {output_path}")
-
     generate_charts(
         stdlib_totals,
         thirdparty_totals,
@@ -602,7 +562,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         "--dir",
@@ -619,16 +578,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_PACKAGE,
         help=f"Name of the custom package to track separately. Default: {DEFAULT_PACKAGE}",
     )
-
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_report = sub.add_parser(
         "report",
         parents=[common],
         help="Text report only (original module_usage.py).",
     )
     p_report.set_defaults(func=cmd_report)
-
     p_charts = sub.add_parser(
         "charts",
         parents=[common],
@@ -651,7 +607,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Matplotlib style name. Default: {DEFAULT_CHART_STYLE}",
     )
     p_charts.set_defaults(func=cmd_charts)
-
     return parser
 
 

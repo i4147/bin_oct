@@ -5,10 +5,8 @@ The script must validate that exactly one argument is given and that the file ex
 Finally, it should print the number of QR codes found along with their decoded text content, or a message indicating none were found."""
 
 from __future__ import annotations
-
 import os
 import sys
-
 from PIL import Image
 from pyzbar import pyzbar
 

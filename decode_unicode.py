@@ -4,7 +4,6 @@ The script should then overwrite the original file with the decoded text content
 The path argument should have surrounding whitespace stripped before use."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

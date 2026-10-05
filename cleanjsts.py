@@ -2,12 +2,10 @@
 """Strip comments from JS/TS/JSX/TSX files using tree-sitter: gather target files, parse them in parallel with a multiprocessing pool of 8 workers, remove comment nodes, validate the cleaned output by re-parsing, and log via loguru."""
 
 from __future__ import annotations
-
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final
-
 import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript
@@ -16,11 +14,9 @@ from tree_sitter import Language, Parser
 
 MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")
-
 _JS_LANGUAGE: Final[Language] = Language(tree_sitter_javascript.language())
 _TS_LANGUAGE: Final[Language] = Language(tree_sitter_typescript.language_typescript())
 _TSX_LANGUAGE: Final[Language] = Language(tree_sitter_typescript.language_tsx())
-
 _LANGUAGE_BY_EXTENSION: Final[dict[str, Language]] = {
     ".js": _JS_LANGUAGE,
     ".jsx": _JS_LANGUAGE,
@@ -61,25 +57,19 @@ def process_file(file_path: Path) -> str | None:
         language: Language | None = _LANGUAGE_BY_EXTENSION.get(file_path.suffix)
         if language is None:
             return f"Unsupported extension: {file_path}"
-
         source: bytes = file_path.read_bytes()
         parser: Parser = Parser(language)
-
         original_tree: tree_sitter.Tree = parser.parse(source)
         if _has_error(original_tree.root_node):
             return f"Error: original file {file_path} contains syntax errors"
-
         ranges: list[tuple[int, int]] = []
         _collect_comment_ranges(original_tree.root_node, ranges)
         if not ranges:
             return None
-
         cleaned: bytes = _remove_ranges(source, ranges)
-
         cleaned_tree: tree_sitter.Tree = parser.parse(cleaned)
         if _has_error(cleaned_tree.root_node):
             return f"Error: cleaned result for {file_path} contains syntax errors"
-
         file_path.write_bytes(cleaned)
         return None
     except Exception as e:
@@ -103,22 +93,17 @@ def main() -> None:
         paths: list[Path] = [Path(arg) for arg in sys.argv[1:]]
     else:
         paths = [Path.cwd()]
-
     files_to_process: list[Path] = _gather_files(paths)
-
     if not files_to_process:
         logger.info("No files to process")
         return
-
     with Pool(processes=MAX_WORKERS) as pool:
         results: list[str | None] = list(pool.imap_unordered(process_file, files_to_process))
-
     errors: list[str] = [r for r in results if r is not None]
     if errors:
         for error in errors:
             logger.error(error)
         sys.exit(1)
-
     logger.info("Processed {} file(s)", len(files_to_process))
 
 

@@ -1,17 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """Archive a directory as .tar or .tar.gz and optionally clean up the source.
-
 Usage:
     python folder_archiver.py tar <folder_path> [--output PATH] [--keep] [--quiet]
     python folder_archiver.py tgz [<folder_path>] [--output PATH] [--workers 8] [--keep] [--cleanup-scope {contents,folder,none}]
-
 Mappings:
     tar_folder.py <folder_path> -> python folder_archiver.py tar <folder_path>
     tgzr.py [folder_path]       -> python folder_archiver.py tgz [folder_path]
 """
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import shutil
@@ -123,14 +120,12 @@ def run_tgz(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="folder_archiver.py")
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     tar_parser = subparsers.add_parser("tar")
     tar_parser.add_argument("folder", type=Path)
     tar_parser.add_argument("--output", type=Path, default=None)
     tar_parser.add_argument("--keep", action="store_true")
     tar_parser.add_argument("--quiet", action="store_true")
     tar_parser.set_defaults(func=run_tar)
-
     tgz_parser = subparsers.add_parser("tgz")
     tgz_parser.add_argument("folder", type=Path, nargs="?", default=Path.cwd())
     tgz_parser.add_argument("--output", type=Path, default=None)
@@ -142,7 +137,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="contents",
     )
     tgz_parser.set_defaults(func=run_tgz)
-
     return parser
 
 

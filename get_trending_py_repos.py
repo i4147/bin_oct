@@ -4,12 +4,10 @@ For each timeframe, it should parse repository entries into a Repo dataclass cap
 The results should then be saved as output files (e.g., CSV and/or JSON) into a "trending_repos" output directory, with the script handling missing description/language/star fields gracefully by defaulting to empty strings or "0"."""
 
 from __future__ import annotations
-
 import csv
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-
 import requests
 from bs4 import BeautifulSoup
 

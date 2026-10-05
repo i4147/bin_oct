@@ -12,7 +12,6 @@ For each script, scan for function definitions of the form: name() { ...
 Write each function to: <output>/<relative-dir-of-source>/<sanitized-name>[.sh] Third-party dependencies ------------------------ Optional: fastwalk (only when --walker fastwalk is used) Optional: loguru (only when --use-loguru is used) Both are guarded with try/except and fall back to stdlib behavior."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import os
@@ -24,29 +23,25 @@ from typing import TYPE_CHECKING, Final, Protocol
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-
-EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset(
-    {
-        ".py",
-        ".h",
-        ".c",
-        ".js",
-        ".ts",
-        ".hpp",
-        ".cpp",
-        ".pyx",
-        ".jsx",
-        ".lua",
-        ".tsx",
-        ".pl",
-        ".am",
-        ".pm",
-        ".syntax",
-        ".so",
-        ".rmeta",
-    }
-)
-
+EXCLUDED_SUFFIXES: Final[frozenset[str]] = frozenset({
+    ".py",
+    ".h",
+    ".c",
+    ".js",
+    ".ts",
+    ".hpp",
+    ".cpp",
+    ".pyx",
+    ".jsx",
+    ".lua",
+    ".tsx",
+    ".pl",
+    ".am",
+    ".pm",
+    ".syntax",
+    ".so",
+    ".rmeta",
+})
 SHELL_SHEBANG_TOKENS: Final[tuple[str, ...]] = (
     "bash",
     "sh",
@@ -56,15 +51,11 @@ SHELL_SHEBANG_TOKENS: Final[tuple[str, ...]] = (
     "ash",
     "shell",
 )
-
 FUNCTION_RE: Final[re.Pattern[str]] = re.compile(r"^\s*(?:function\s+)?(\w[\w\-]*)\s*(?:\(\))?\s*\{")
-
 UNSAFE_NAME_RE: Final[re.Pattern[str]] = re.compile(r"[^\w\-]")
-
 DEFAULT_MAX_FILE_SIZE: Final[int] = 1_000_000
 DEFAULT_WORKERS: Final[int] = 8
 DEFAULT_OUTPUT_DIR: Final[Path] = Path("extracted_functions")
-
 IS_TERMUX: Final[bool] = "TERMUX_VERSION" in os.environ or "com.termux" in os.environ.get("PREFIX", "")
 
 
@@ -232,7 +223,6 @@ def collect_scripts_fastwalk(
             log=log,
         )
         return
-
     for p in inputs:
         if not p.exists():
             log.warning("{} does not exist, skipping...", p)
@@ -298,7 +288,6 @@ def extract_functions(path: Path, log: _LoggerProtocol) -> Iterator[tuple[str, s
     except OSError as exc:
         log.error("Error reading {}: {}", path, exc)
         return
-
     lines = content.split("\n")
     i = 0
     while i < len(lines):
@@ -342,12 +331,10 @@ def write_function(
         rel = source_path.relative_to(Path.cwd())
     except ValueError:
         rel = source_path
-
     target_dir = output_dir / rel.parent
     filename = f"{safe_name}.sh" if use_extension else safe_name
     target = target_dir / filename
     target_dir.mkdir(parents=True, exist_ok=True)
-
     header = ""
     if add_header:
         header = (
@@ -357,7 +344,6 @@ def write_function(
             f"# Original file: {source_path.name}\n"
             f"# Environment: {'Termux' if IS_TERMUX else 'Standard'}\n\n"
         )
-
     try:
         with open(target, "w", encoding="utf-8") as fh:
             fh.write(header)
@@ -399,7 +385,6 @@ def _process_scripts(scripts: list[Path], args: argparse.Namespace, log: _Logger
     add_header = not args.no_header
     chmod_files = not args.no_chmod
     total = 0
-
     if args.parallel and len(scripts) > 1:
         print(f"Processing files in parallel with {args.workers} workers...")
         tasks = [(p, args.output, use_extension, add_header, chmod_files, args.verbose) for p in scripts]
@@ -420,13 +405,10 @@ def _process_scripts(scripts: list[Path], args: argparse.Namespace, log: _Logger
 
 def run(args: argparse.Namespace) -> int:
     log = make_logger(args.use_loguru, args.verbose)
-
     if IS_TERMUX:
         print(f"Running in Termux environment (workers={args.workers})")
-
     inputs: list[Path] = args.inputs or [Path()]
     include_extensionless = not args.sh_only
-
     print("Searching for shell scripts...")
     scripts = list(
         collect_scripts(
@@ -438,32 +420,25 @@ def run(args: argparse.Namespace) -> int:
             log=log,
         )
     )
-
     if not scripts:
         print("No shell scripts found to process.")
         if not args.sh_only:
             print("Tip: Use --sh-only to only process .sh files")
         return 0
-
     print(f"Found {len(scripts)} shell script(s) to process.")
     if args.verbose:
         for s in sorted(scripts):
             log.debug("  - {}", s)
-
     if args.dry_run:
         print(f"\nDry run — would extract to: {args.output.absolute()}")
         return 0
-
     try:
         args.output.mkdir(parents=True, exist_ok=True)
     except PermissionError:
         log.error("Cannot create output directory '{}'. Check permissions.", args.output)
         return 1
-
     total = _process_scripts(scripts, args, log)
-
     print(f"\nDone! Extracted {total} function(s) to '{args.output.absolute()}'")
-
     if IS_TERMUX:
         with contextlib.suppress(BaseException):
             args.output.chmod(args.output.stat().st_mode | 0o755)

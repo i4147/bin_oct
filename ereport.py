@@ -4,7 +4,6 @@ For each target file, it should invoke every configured tool as a subprocess, gr
 The script should write the collected results for each analyzed file into a report directory as JSON, and print progress messages while processing files."""
 
 from __future__ import annotations
-
 import json
 import shutil
 import subprocess

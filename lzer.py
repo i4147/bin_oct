@@ -5,10 +5,8 @@ For large files above a defined size threshold, it should compress in streaming 
 The script must handle errors gracefully during compression by printing a failure message and cleaning up any partially written output file, without crashing the overall recursive process."""
 
 from __future__ import annotations
-
 import os
 from pathlib import Path
-
 import lz4.frame
 
 CHUNK_SIZE = 1024 * 1024

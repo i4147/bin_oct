@@ -1,7 +1,36 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (intended to run under Termux, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a TOML file formatter/pretty-printer built on `tree-sitter`.
+
+The prompt should specify the following requirements:
+
+**Purpose:**
+Build a TOML formatter that parses TOML source files using a `tree-sitter` grammar and re-emits clean, consistently formatted TOML output, based on walking the concrete syntax tree rather than naive text manipulation.
+
+**Tree-sitter integration:**
+- Initialize the TOML `tree-sitter` `Language` and `Parser` in a dedicated setup function.
+- Attempt to load a precompiled shared grammar library first (e.g. `build/my-languages.so` with language name `"toml"`), and if that fails, fall back to importing a `tree_sitter_toml` Python package and using its provided `language()` function.
+- If neither method succeeds, raise a clear `ImportError` instructing the user to install the `tree-sitter-toml` package via pip.
+
+**Formatting configuration:**
+- Define a configuration data class (e.g. `FormatConfig`) with fields such as: indentation size (default 2 spaces), maximum column width (default 80), and a boolean flag controlling whether values should be vertically aligned (default enabled).
+
+**Tree traversal / visitor:**
+- Implement a visitor class that takes the raw source bytes tree, and the format configuration.
+- The visitor should maintain internal state: an in-memory string buffer (e.g. `StringIO`) for building output, current indentation level, tracking of the last processed line (for blank-line/spacing preservation), and whether currently inside a table context.
+- Implement a generic dispatch method that inspects each node's `type` (e.g. `"document"`, `"table"`, array, inline table, key-value pair, comment, string/number/boolean/date values, etc.) and routes to specialized per-node-type handler methods that recursively visit children and write properly indented, aligned, and spaced output.
+- Include a finalization step that cleans up the accumulated output (e.g. trimming trailing whitespace, ensuring a single trailing newline, normalizing blank lines) before returning the final formatted string.
+
+**CLI behavior:**
+- Use `argparse` to build a command-line interface accepting one or more input TOML file paths (using `pathlib.Path`), plus options for indentation size, column width, enabling/disabling value alignment, and whether to format files in place versus printing to stdout/writing to new output file(s).
+- Support processing multiple files efficiently in parallel using `multiprocessing.Pool` sized by available CPU cores (`cpu_count()`), with each worker parsing and formatting one file independently.
+- Handle errors per file gracefully (e.g. parse failures, missing files) and report them without crashing the whole batch, exiting with a non-zero status code if any file failed.
+- Print clear success/failure feedback to the user for each processed file.
+
+Specify that the implementation should use idiomatic modern Python (type hints via `typing`/`dataclasses`, `from __future__ import annotations`) and should be structured with clear separation between tree-sitter setup, the visitor/formatting logic, and the CLI entry point (`main` guarded by `if __name__ == "__main__":`).
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/7ZuuxYnmN2M4jx74RC53xt"""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from dataclasses import dataclass
@@ -9,7 +38,6 @@ from io import StringIO
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
 import tree_sitter
 from tree_sitter import Language, Parser
 
@@ -97,7 +125,6 @@ class TomlVisitor:
         indent: str = " " * (self.indent_level * self.config.indent_size)
         key_node: Any = None
         value_node: Any = None
-
         for child in node.children:
             if child.type == "key":
                 key_node = child
@@ -113,19 +140,15 @@ class TomlVisitor:
                 "time",
             ):
                 value_node = child
-
         if key_node and value_node:
             key_text: str = self.source[key_node.start_byte : key_node.end_byte].decode("utf-8")
             value_text: str = self.source[value_node.start_byte : value_node.end_byte].decode("utf-8")
-
             formatted_value: str = self._format_value(value_node)
             self.output.write(f"{indent}{key_text} = {formatted_value}")
-
             for child in node.children:
                 if child.type == "comment":
                     comment_text: str = self.source[child.start_byte : child.end_byte].decode("utf-8")
                     self.output.write(f"  {comment_text}")
-
             self.output.write("\n")
 
     def _format_value(self, node: Any) -> str:
@@ -143,12 +166,9 @@ class TomlVisitor:
                 elem_text: str = self.source[child.start_byte : child.end_byte].decode("utf-8").strip()
                 if elem_text:
                     elements.append(elem_text)
-
         if not elements:
             return "[]"
-
         total_width: int = sum(len(e) for e in elements) + len(elements) * 2
-
         if total_width > self.config.column_width:
             formatted: str = "[\n"
             for elem in elements:
@@ -165,10 +185,8 @@ class TomlVisitor:
             if child.type == "pair":
                 pair_text: str = self.source[child.start_byte : child.end_byte].decode("utf-8").strip()
                 pairs.append(pair_text)
-
         if not pairs:
             return "{}"
-
         return "{ " + ", ".join(pairs) + " }"
 
     def _visit_comment(self, node: Any) -> None:
@@ -180,10 +198,8 @@ class TomlVisitor:
         lines: list[str] = output.split("\n")
         cleaned: list[str] = [line.rstrip() for line in lines]
         result: str = "\n".join(cleaned)
-
         if result and not result.endswith("\n"):
             result += "\n"
-
         return result
 
 
@@ -196,7 +212,6 @@ class TomlFormatter:
     def format(self, content: str) -> str:
         source_bytes: bytes = content.encode("utf-8")
         tree: Any = self.parser.parse(source_bytes)
-
         visitor: TomlVisitor = TomlVisitor(source_bytes, tree, self.config)
         return visitor.visit(tree.root_node)
 
@@ -207,9 +222,7 @@ def validate_toml(content: str) -> tuple[bool, Optional[str]]:
         parser.set_language(TOML_LANGUAGE)
         source_bytes: bytes = content.encode("utf-8")
         tree: Any = parser.parse(source_bytes)
-
         has_error: bool = any(child.type == "ERROR" for child in tree.root_node.children if hasattr(child, "type"))
-
         if has_error:
             return False, "Parse error in TOML content"
         return True, None
@@ -222,16 +235,13 @@ def format_file(file_path: Path, config: FormatConfig) -> tuple[Path, bool, str]
         content: str = file_path.read_text(encoding="utf-8")
         formatter: TomlFormatter = TomlFormatter(config)
         formatted: str = formatter.format(content)
-
         valid: bool
         error: Optional[str]
         valid, error = validate_toml(formatted)
         if not valid:
             return file_path, False, f"Validation failed: {error}"
-
         file_path.write_text(formatted, encoding="utf-8")
         return file_path, True, "Formatted successfully"
-
     except Exception as e:
         return file_path, False, f"Error: {e!s}"
 
@@ -252,42 +262,31 @@ Examples:
   %(prog)s --indent 4 path/to/file.toml  # Use 4-space indentation
         """,
     )
-
     parser_obj.add_argument("paths", nargs="*", help="Files or directories to format (default: current directory)")
     parser_obj.add_argument("--indent", type=int, default=2, help="Indentation size (default: 2)")
     parser_obj.add_argument("--column-width", type=int, default=80, help="Column width for line wrapping (default: 80)")
     parser_obj.add_argument("--workers", type=int, default=None, help="Number of worker processes (default: CPU count)")
-
     args: argparse.Namespace = parser_obj.parse_args()
-
     init_tree_sitter()
-
     if not args.paths:
         paths: list[Path] = [Path.cwd()]
     else:
         paths = [Path(p) for p in args.paths]
-
     toml_files: list[Path] = []
     for path in paths:
         if path.is_file() and path.suffix == ".toml":
             toml_files.append(path)
         elif path.is_dir():
             toml_files.extend(find_toml_files(path))
-
     if not toml_files:
         print("No .toml files found")
         return 0
-
     config: FormatConfig = FormatConfig(indent_size=args.indent, column_width=args.column_width)
-
     num_workers: int = args.workers or cpu_count()
-
     with Pool(num_workers) as pool_obj:
         results: Any = pool_obj.imap_unordered(lambda f: format_file(f, config), toml_files)
-
         success_count: int = 0
         failed_files: list[Path] = []
-
         for file_path, success, message in results:
             if success:
                 print(f"✓ {file_path}")
@@ -295,17 +294,14 @@ Examples:
             else:
                 print(f"✗ {file_path}: {message}")
                 failed_files.append(file_path)
-
     total: int = len(toml_files)
     print(f"\n{'=' * 60}")
     print(f"Formatted: {success_count}/{total} files")
-
     if failed_files:
         print(f"\nFailed files:")
         for f in failed_files:
             print(f"  - {f}")
         return 1
-
     return 0
 
 

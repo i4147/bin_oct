@@ -7,7 +7,6 @@ Third-party dependencies used by the original scripts: - zstandard - loguru - lz
 For exact `fast_compress4.py` decompression-bug behavior, add `--simple-legacy-zst-skip` to the `zstd -d --simple` command."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import fnmatch
@@ -18,21 +17,18 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import zstandard as zstd
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
 try:
     import lzma_mt
-except ImportError:  # pragma: no cover - handled at runtime
+except ImportError:
     lzma_mt = None  # type: ignore[assignment]
-
 try:
     from dh import fsz
-except ImportError:  # pragma: no cover - fallback for standalone use
+except ImportError:
 
     def fsz(num: float) -> str:
         value = float(num)
@@ -50,183 +46,170 @@ DEFAULT_ZSTD_CHUNK_SIZE = 131_072
 DEFAULT_XZ_PRESET = 9
 DEFAULT_XZ_THREADS = 4
 DEFAULT_XZ_POOL_WORKERS = 8
-
 ZSTD_EXTENSIONS = frozenset({".zst"})
-
-ZSTD_SKIP_EXTENSIONS = frozenset(
-    {
-        ".xz",
-        ".gz",
-        ".7z",
-        ".zip",
-        ".whl",
-        ".lz4",
-        ".zst",
-        ".br",
-        ".bz2",
-        ".lzma",
-        ".z",
-        ".rar",
-        ".tar",
-        ".tgz",
-        ".tbz2",
-        ".bz3",
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".tiff",
-        ".tif",
-        ".webp",
-        ".svg",
-        ".ico",
-        ".heic",
-        ".heif",
-        ".avif",
-        ".mp4",
-        ".mkv",
-        ".avi",
-        ".mov",
-        ".wmv",
-        ".flv",
-        ".webm",
-        ".m4v",
-        ".mpg",
-        ".mpeg",
-        ".3gp",
-        ".ogv",
-        ".ts",
-        ".m2ts",
-        ".mp3",
-        ".wav",
-        ".flac",
-        ".aac",
-        ".ogg",
-        ".wma",
-        ".m4a",
-        ".opus",
-        ".mid",
-        ".midi",
-        ".aiff",
-        ".pdf",
-        ".docx",
-        ".pptx",
-        ".xlsx",
-        ".odt",
-        ".ods",
-        ".odp",
-        ".epub",
-        ".mobi",
-        ".azw",
-        ".azw3",
-        ".exe",
-        ".dll",
-        ".so",
-        ".dylib",
-        ".bin",
-        ".iso",
-        ".img",
-        ".deb",
-        ".rpm",
-        ".pkg",
-        ".msi",
-    }
-)
-
-ZSTD_MEDIA_EXTENSIONS = frozenset(
-    {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".tiff",
-        ".tif",
-        ".webp",
-        ".svg",
-        ".ico",
-        ".heic",
-        ".heif",
-        ".avif",
-        ".mp4",
-        ".mkv",
-        ".avi",
-        ".mov",
-        ".wmv",
-        ".flv",
-        ".webm",
-        ".m4v",
-        ".mpg",
-        ".mpeg",
-        ".3gp",
-        ".ogv",
-        ".ts",
-        ".m2ts",
-        ".mp3",
-        ".wav",
-        ".flac",
-        ".aac",
-        ".ogg",
-        ".wma",
-        ".m4a",
-        ".opus",
-        ".mid",
-        ".midi",
-        ".aiff",
-        ".pdf",
-        ".docx",
-        ".pptx",
-        ".xlsx",
-        ".odt",
-        ".ods",
-        ".odp",
-        ".epub",
-        ".mobi",
-        ".azw",
-        ".azw3",
-    }
-)
-
-ZSTD_EXCLUDED_DIR_NAMES = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".pytest_cache",
-        ".mypy_cache",
-        ".bin",
-        "bin",
-        "dh",
-        "print_persian",
-        ".dist-info",
-        ".egg-info",
-        "zstandard",
-    }
-)
+ZSTD_SKIP_EXTENSIONS = frozenset({
+    ".xz",
+    ".gz",
+    ".7z",
+    ".zip",
+    ".whl",
+    ".lz4",
+    ".zst",
+    ".br",
+    ".bz2",
+    ".lzma",
+    ".z",
+    ".rar",
+    ".tar",
+    ".tgz",
+    ".tbz2",
+    ".bz3",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".webp",
+    ".svg",
+    ".ico",
+    ".heic",
+    ".heif",
+    ".avif",
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".m4v",
+    ".mpg",
+    ".mpeg",
+    ".3gp",
+    ".ogv",
+    ".ts",
+    ".m2ts",
+    ".mp3",
+    ".wav",
+    ".flac",
+    ".aac",
+    ".ogg",
+    ".wma",
+    ".m4a",
+    ".opus",
+    ".mid",
+    ".midi",
+    ".aiff",
+    ".pdf",
+    ".docx",
+    ".pptx",
+    ".xlsx",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".epub",
+    ".mobi",
+    ".azw",
+    ".azw3",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".bin",
+    ".iso",
+    ".img",
+    ".deb",
+    ".rpm",
+    ".pkg",
+    ".msi",
+})
+ZSTD_MEDIA_EXTENSIONS = frozenset({
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".webp",
+    ".svg",
+    ".ico",
+    ".heic",
+    ".heif",
+    ".avif",
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".m4v",
+    ".mpg",
+    ".mpeg",
+    ".3gp",
+    ".ogv",
+    ".ts",
+    ".m2ts",
+    ".mp3",
+    ".wav",
+    ".flac",
+    ".aac",
+    ".ogg",
+    ".wma",
+    ".m4a",
+    ".opus",
+    ".mid",
+    ".midi",
+    ".aiff",
+    ".pdf",
+    ".docx",
+    ".pptx",
+    ".xlsx",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".epub",
+    ".mobi",
+    ".azw",
+    ".azw3",
+})
+ZSTD_EXCLUDED_DIR_NAMES = frozenset({
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".bin",
+    "bin",
+    "dh",
+    "print_persian",
+    ".dist-info",
+    ".egg-info",
+    "zstandard",
+})
 ZSTD_EXCLUDED_DIR_PATTERNS = ["*.egg-info", "*.dist-info"]
-
-XZ_SKIP_EXTENSIONS = frozenset(
-    {
-        ".zip",
-        ".br",
-        ".xz",
-        ".gz",
-        ".bz2",
-        ".bz3",
-        ".zst",
-        ".7z",
-        ".lz4",
-        ".rar",
-        ".tar",
-        ".tgz",
-        ".tbz",
-        ".tbz2",
-        ".z",
-        ".lz",
-        ".lzma",
-        ".xza",
-    }
-)
+XZ_SKIP_EXTENSIONS = frozenset({
+    ".zip",
+    ".br",
+    ".xz",
+    ".gz",
+    ".bz2",
+    ".bz3",
+    ".zst",
+    ".7z",
+    ".lz4",
+    ".rar",
+    ".tar",
+    ".tgz",
+    ".tbz",
+    ".tbz2",
+    ".z",
+    ".lz",
+    ".lzma",
+    ".xza",
+})
 XZ_EXCLUDED_DIR_NAMES = frozenset({".git", "__pycache__", ".venv", "venv", ".env", "node_modules"})
 
 
@@ -314,27 +297,22 @@ def collect_zstd_tasks(
 ) -> tuple[list[tuple[Path, Path]], ScanStats]:
     stats = ScanStats()
     tasks: list[tuple[Path, Path]] = []
-
     skip_exts = set(ZSTD_SKIP_EXTENSIONS)
     if args.no_skip_so:
         skip_exts.discard(".so")
     if args.legacy_extra_skips:
         skip_exts.update({".dat", ".npz", ".onnx"})
-
     excluded_names = set(args.exclude_dir_names) if args.exclude_dir_names is not None else set(ZSTD_EXCLUDED_DIR_NAMES)
     excluded_patterns = (
         list(args.exclude_dir_patterns) if args.exclude_dir_patterns is not None else list(ZSTD_EXCLUDED_DIR_PATTERNS)
     )
-
     if args.simple:
         pattern = args.pattern
         if not compress:
             pattern = f"*{pattern}*.zst"
-
         for path in root.rglob(pattern):
             if not path.is_file():
                 continue
-
             if compress:
                 if path.suffix == ".zst":
                     stats.skipped_extensions += 1
@@ -348,11 +326,9 @@ def collect_zstd_tasks(
                     stats.skipped_extensions += 1
                     continue
                 out = path.with_suffix("")
-
             if out.exists():
                 stats.skipped_existing += 1
                 continue
-
             stats.files += 1
             tasks.append((path, out))
     else:
@@ -360,7 +336,6 @@ def collect_zstd_tasks(
             current = Path(dirpath)
             if ".git" in current.parts:
                 continue
-
             kept_dirs: list[str] = []
             for dirname in dirnames:
                 if is_excluded_name(dirname, excluded_names, excluded_patterns):
@@ -368,25 +343,20 @@ def collect_zstd_tasks(
                 else:
                     kept_dirs.append(dirname)
             dirnames[:] = kept_dirs
-
             if is_editable_package_dir(current):
                 dirnames[:] = []
                 stats.skipped_editable += 1
                 continue
-
             stats.dirs += 1
-
             for filename in filenames:
                 path = current / filename
                 if path.is_symlink():
                     stats.skipped_symlinks += 1
                     continue
-
                 path_str = str(path)
                 if ".egg-info" in path_str or ".dist-info" in path_str:
                     stats.skipped_extensions += 1
                     continue
-
                 if compress:
                     suffix = path.suffix.lower()
                     if suffix in skip_exts:
@@ -401,15 +371,12 @@ def collect_zstd_tasks(
                     if path.suffix not in ZSTD_EXTENSIONS:
                         stats.skipped_extensions += 1
                         continue
-
                 out = path.with_suffix(path.suffix + ".zst") if compress else path.with_suffix("")
                 if out.exists():
                     stats.skipped_existing += 1
                     continue
-
                 stats.files += 1
                 tasks.append((path, out))
-
     if args.scan_order == "largest":
 
         def size_key(item: tuple[Path, Path]) -> int:
@@ -419,7 +386,6 @@ def collect_zstd_tasks(
                 return 0
 
         tasks.sort(key=size_key, reverse=True)
-
     return tasks, stats
 
 
@@ -435,7 +401,6 @@ def zstd_compress_file(
     try:
         original_size = path.stat().st_size
         compressor = zstd.ZstdCompressor(level=level, threads=threads)
-
         if use_writer:
             with path.open("rb") as fin, out.open("wb") as fout, compressor.stream_writer(fout) as writer:
                 while True:
@@ -451,12 +416,11 @@ def zstd_compress_file(
                     if not chunk:
                         break
                     fout.write(chunk)
-
         compressed_size = out.stat().st_size
         if remove_original:
             path.unlink()
         return (True, path, out, original_size, compressed_size, None)
-    except Exception as exc:  # noqa: BLE001 - keep original broad behavior
+    except Exception as exc:
         with contextlib.suppress(OSError):
             if out.exists():
                 out.unlink()
@@ -472,7 +436,6 @@ def zstd_decompress_file(
     try:
         compressed_size = path.stat().st_size
         decompressor = zstd.ZstdDecompressor()
-
         with path.open("rb") as fin, out.open("wb") as fout:
             reader = decompressor.stream_reader(fin)
             while True:
@@ -480,12 +443,11 @@ def zstd_decompress_file(
                 if not chunk:
                     break
                 fout.write(chunk)
-
         original_size = out.stat().st_size
         if remove_original:
             path.unlink()
         return (True, path, out, original_size, compressed_size, None)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         with contextlib.suppress(OSError):
             if out.exists():
                 out.unlink()
@@ -502,10 +464,8 @@ def _handle_zstd_result(
     total: int,
 ) -> None:
     ok, path, out, original_size, compressed_size, error = result
-
     if ok:
         stats.add(original_size, compressed_size)
-
         if args.progress == "verbose":
             if compress:
                 ratio = compressed_size / original_size * args.stats_scale if original_size else 0.0
@@ -529,7 +489,6 @@ def run_zstd(args: argparse.Namespace) -> int:
     root = resolve_directory(args.directory, args.dir_flag)
     if root is None:
         return 1
-
     print(f"Working directory: {root}")
     print(f"Mode: {'Compression' if compress else 'Decompression'}")
     if not args.simple:
@@ -539,9 +498,7 @@ def run_zstd(args: argparse.Namespace) -> int:
         print(f"Compression level: {args.level}")
     print(f"Keep original files: {'Yes' if args.keep else 'No'}")
     print("Scanning directory tree...")
-
     tasks, scan = collect_zstd_tasks(root, compress, args)
-
     if scan.skipped_symlinks:
         logger.warning(f"Skipped {scan.skipped_symlinks} symlinks")
     if scan.skipped_media:
@@ -554,25 +511,20 @@ def run_zstd(args: argparse.Namespace) -> int:
         print(f"Skipped {scan.skipped_dirs} excluded directories")
     if scan.skipped_existing:
         logger.warning(f"Skipped {scan.skipped_existing} files (output already exists)")
-
     total = len(tasks)
     if total == 0:
         print("No files to process.")
         return 0
-
     print(f"Found {total} files to process.")
-
     if args.dry_run:
         for path, out in tasks:
             action = "compress" if compress else "decompress"
             keep = "keep" if args.keep else "remove"
             print(f"[DRY RUN] Would {action} & {keep}: {path} -> {out}")
         return 0
-
     stats = Stats()
     errors: list[tuple[Path, str]] = []
     remove_original = not args.keep
-
     if args.sequential or args.pool_workers <= 1:
         for index, (path, out) in enumerate(tasks, 1):
             if compress:
@@ -616,14 +568,11 @@ def run_zstd(args: argparse.Namespace) -> int:
                         (path, out, args.chunk_size, remove_original),
                     )
                 async_results.append(ar)
-
             for index, ar in enumerate(async_results, 1):
                 result = ar.get()
                 _handle_zstd_result(result, stats, errors, compress, args, index, total)
-
     print()
     print("-" * 40)
-
     if compress and stats.original_size > 0:
         saved, compressed_pct, saved_pct = stats.savings(args.stats_scale)
         print("📊 Compression Statistics:")
@@ -631,7 +580,6 @@ def run_zstd(args: argparse.Namespace) -> int:
         print(f"   Compressed size: {fsz(stats.compressed_size)}")
         print(f"   Space saved:     {fsz(saved)} ({saved_pct:.1f}%)")
         print(f"   Compression ratio: {compressed_pct:.1f}%")
-
     if errors:
         logger.error(f"❌ Failed to process {len(errors)} files:")
         for path, error in errors[:200]:
@@ -639,7 +587,6 @@ def run_zstd(args: argparse.Namespace) -> int:
         if len(errors) > 200:
             logger.error(f"  ... and {len(errors) - 200} more")
         return 1
-
     if total > 0:
         action = "compressed" if compress else "decompressed"
         logger.success(f"✅ Successfully {action} {total} files!")
@@ -662,16 +609,13 @@ def collect_xz_tasks(
             continue
         if any(part in excluded_dirs for part in path.parts):
             continue
-
         suffix = path.suffix.lower()
         if compress:
             if suffix in skip_extensions:
                 continue
         elif suffix != ".xz":
             continue
-
         tasks.append(path)
-
     return sorted(tasks)
 
 
@@ -689,7 +633,7 @@ def xz_compress_file(
         if remove_original:
             path.unlink()
         return (True, path, out, len(data), len(compressed), None)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return (False, path, path.parent / (path.name + ".xz"), 0, 0, str(exc))
 
 
@@ -705,7 +649,7 @@ def xz_decompress_file(
         if remove_original:
             path.unlink()
         return (True, path, out, len(data), len(compressed), None)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return (False, path, path.parent / path.stem, 0, 0, str(exc))
 
 
@@ -713,47 +657,38 @@ def run_xz(args: argparse.Namespace) -> int:
     if lzma_mt is None:
         logger.error("lzma_mt is not installed; xz subcommand is unavailable")
         return 1
-
     compress = args.compress or not args.decompress
     root = resolve_directory(args.directory, args.dir_flag)
     if root is None:
         return 1
-
     skip_extensions = set(args.skip_extensions) if args.skip_extensions is not None else set(XZ_SKIP_EXTENSIONS)
     excluded_dirs = set(args.exclude_dirs) if args.exclude_dirs is not None else set(XZ_EXCLUDED_DIR_NAMES)
-
     tasks = collect_xz_tasks(root, compress, skip_extensions, excluded_dirs)
-
     print(f"Working directory: {root}")
     print(f"Mode: {'Compression' if compress else 'Decompression'}")
     print(f"Pool workers: {args.pool_workers}")
     if compress:
         print(f"Preset: {args.preset}, Threads: {args.threads}")
     print(f"Keep original files: {'Yes' if args.keep else 'No'}")
-
     if not tasks:
         print("No files found to process")
         return 0
-
     if args.dry_run:
         for path in tasks:
             action = "compress" if compress else "decompress"
             keep = "keep" if args.keep else "remove"
             print(f"[DRY RUN] Would {action} & {keep}: {path}")
         return 0
-
     remove_original = not args.keep
     success = 0
     errors: list[tuple[Path, str]] = []
     total = len(tasks)
-
     if args.pool_workers <= 1:
         for index, path in enumerate(tasks, 1):
             if compress:
                 result = xz_compress_file(path, args.preset, args.threads, remove_original)
             else:
                 result = xz_decompress_file(path, remove_original)
-
             ok, in_path, out_path, _orig, _comp, error = result
             print(f"[{index / total * 100:5.1f}%] {index}/{total}")
             if ok:
@@ -775,7 +710,6 @@ def run_xz(args: argparse.Namespace) -> int:
                 else:
                     ar = pool.apply_async(xz_decompress_file, (path, remove_original))
                 async_results.append(ar)
-
             for index, ar in enumerate(async_results, 1):
                 result = ar.get()
                 ok, in_path, out_path, _orig, _comp, error = result
@@ -787,7 +721,6 @@ def run_xz(args: argparse.Namespace) -> int:
                 else:
                     errors.append((in_path, error or "unknown error"))
                     print(f"✗ {in_path.relative_to(root)}: {error}")
-
     print("─" * 40)
     print(f"Total successful: {success}")
     print(f"Total failed: {len(errors)}")
@@ -807,7 +740,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     zstd_parser = subparsers.add_parser(
         "zstd",
         help="Compress/decompress using zstandard",
@@ -917,7 +849,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Override excluded directory glob patterns",
     )
-
     xz_parser = subparsers.add_parser(
         "xz",
         help="Compress/decompress using lzma_mt",
@@ -967,25 +898,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override skipped extensions during compression",
     )
     xz_parser.add_argument("--dry-run", action="store_true", help="Show actions without executing")
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args_list = list(sys.argv[1:] if argv is None else argv)
-
     if not args_list:
         parser.print_help()
         return 0
-
     args = parser.parse_args(args_list)
-
     if args.command == "zstd":
         return run_zstd(args)
     if args.command == "xz":
         return run_xz(args)
-
     parser.print_help()
     return 1
 

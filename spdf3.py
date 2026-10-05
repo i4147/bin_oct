@@ -4,7 +4,6 @@ The script should accept a file path, verify the file exists and that Ghostscrip
 It should print the original file size, compare it against the new compressed size, and only replace the original file if the compressed version is smaller, printing a success message with size details; otherwise it should report errors (missing file, missing Ghostscript, or Ghostscript failure) and exit with a non-zero status."""
 
 from __future__ import annotations
-
 import os
 import shutil
 import subprocess

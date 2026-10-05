@@ -5,7 +5,6 @@ Original -> merged mapping -------------------------- brmc.py -> python pyclean.
 --engine text-fallback --no-preserve-module-docstring --tidy python pyclean.py clean-module-doc ./src --top 5 Optional third-party packages: libcst (required only for --engine libcst)"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -23,12 +22,9 @@ try:
 except ImportError:
     cst = None  # type: ignore[assignment]
     HAS_LIBCST = False
-
 LOG = logging.getLogger("pyclean")
-
 DEFAULT_WORKERS = 8
 DEFAULT_TOP_LINES = 5
-
 GREEN = "\x1b[92m"
 WHITE = "\x1b[97m"
 YELLOW = "\x1b[93m"
@@ -91,9 +87,7 @@ def strip_ast_rewrite(source: str, *, preserve_module_docstring: bool = True) ->
         tree = ast.parse(source)
     except SyntaxError:
         return source, 0
-
     preserve_first = preserve_module_docstring and bool(tree.body) and _is_docstring_node(tree.body[0])
-
     spans: list[tuple[int, int, int, int]] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Expr):
@@ -110,10 +104,8 @@ def strip_ast_rewrite(source: str, *, preserve_module_docstring: bool = True) ->
             and hasattr(node, "end_col_offset")
         ):
             spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset))
-
     if not spans:
         return source, 0
-
     lines = source.splitlines(keepends=True)
     spans.sort(key=lambda r: (r[0], r[1]), reverse=True)
     for start_line, start_col, end_line, end_col in spans:
@@ -183,7 +175,6 @@ def strip_ast_unparse(source: str, *, preserve_module_docstring: bool = True) ->
         tree = ast.parse(source)
     except SyntaxError:
         return None, 0
-
     count = _count_docstrings(tree, preserve_module_docstring)
     tr = _DocstringStripper(preserve_module_docstring)
     new_tree = tr.visit(tree)
@@ -206,7 +197,6 @@ def _regex_fallback(source: str) -> tuple[str, int]:
             quote = '"""'
         elif "'''" in line:
             quote = "'''"
-
         if quote is not None:
             if line.count(quote) >= 2:
                 start = line.find(quote)
@@ -247,7 +237,6 @@ def strip_text_fallback(source: str, *, preserve_module_docstring: bool = True) 
         tree = ast.parse(source)
     except SyntaxError:
         return _regex_fallback(source)
-
     spans: list[tuple[int, int]] = []
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -259,7 +248,6 @@ def strip_text_fallback(source: str, *, preserve_module_docstring: bool = True) 
         first = node.body[0]
         if getattr(first, "lineno", None) and getattr(first, "end_lineno", None):
             spans.append((first.lineno, first.end_lineno))
-
     lines = source.split("\n")
     for start, end in sorted(spans, reverse=True):
         del lines[start - 1 : end]
@@ -362,19 +350,16 @@ def strip_libcst(
 ) -> tuple[Optional[str], int, int]:
     if not HAS_LIBCST:
         return None, 0, 0
-
     shebang = ""
     body = source
     if preserve_shebang and source.startswith("#!"):
         buf = io.StringIO(source)
         shebang = buf.readline()
         body = buf.read()
-
     try:
         module = cst.parse_module(body)
     except Exception:  # noqa: BLE001
         return None, 0, 0
-
     stripper = _LibCSTStripper(
         preserve_module_docstring=preserve_module_docstring,
         remove_comments=remove_comments,
@@ -384,7 +369,6 @@ def strip_libcst(
         new_module = module.visit(stripper)
     except Exception:  # noqa: BLE001
         return None, 0, 0
-
     out = new_module.code
     if shebang:
         out = shebang + out.lstrip("\n")
@@ -396,10 +380,8 @@ def _process_strip(path_str: str, opts: dict) -> Optional[tuple[str, int, int, b
     src = _read_source(path)
     if src is None:
         return None
-
     engine = opts["engine"]
     preserve_mod = opts["preserve_module_docstring"]
-
     if engine == "ast-rewrite":
         new_src, docstrings = strip_ast_rewrite(src, preserve_module_docstring=preserve_mod)
         comments = 0
@@ -421,19 +403,16 @@ def _process_strip(path_str: str, opts: dict) -> Optional[tuple[str, int, int, b
         )
     else:
         return None
-
     if new_src is None:
         return (path_str, 0, 0, False, "engine produced no output")
     if new_src == src:
         return (path_str, 0, 0, False, None)
     if not _is_valid_python(new_src):
         return (path_str, 0, 0, False, "modified source failed AST validation")
-
     try:
         path.write_text(new_src, encoding="utf-8")
     except OSError as e:
         return (path_str, 0, 0, False, str(e))
-
     return (path_str, comments, docstrings, True, None)
 
 
@@ -443,11 +422,9 @@ def cmd_strip(args: argparse.Namespace) -> int:
     if not files:
         LOG.warning("No Python files found to process.")
         return 0
-
     if args.engine == "libcst" and not HAS_LIBCST:
         LOG.error("The 'libcst' engine requires the libcst package (pip install libcst).")
         return 2
-
     opts = {
         "engine": args.engine,
         "preserve_module_docstring": args.preserve_module_docstring,
@@ -456,7 +433,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
         "preserve_fmt_type": args.preserve_fmt_type,
         "tidy": args.tidy,
     }
-
     total_changed = 0
     total_comments = 0
     total_docstrings = 0
@@ -487,7 +463,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
                 print(f"{path_str}: comments={comments} docstrings={docstrings}")
             else:
                 print(f"{path_str}: docstrings={docstrings}")
-
     print("=" * 40)
     print("Processing complete:")
     print(f"  Files changed:      {total_changed}/{len(files)}")
@@ -501,12 +476,10 @@ def cmd_strip(args: argparse.Namespace) -> int:
 def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bool]]]:
     path = Path(path_str)
     findings: list[tuple[int, str, bool]] = []
-
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
     except Exception:  # noqa: BLE001
         return path_str, findings
-
     doc_lines: set[int] = set()
     try:
         tree = ast.parse(src)
@@ -520,7 +493,6 @@ def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bo
                             doc_lines.add(ln - 1)
     except SyntaxError:
         pass
-
     lines = src.splitlines()
     for i, line in enumerate(lines):
         if i in doc_lines:
@@ -545,12 +517,10 @@ def cmd_check(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory.", file=sys.stderr)
         return 1
-
     files = _collect_py_files([root])
     if not files:
         print("No Python files found.")
         return 0
-
     print(f"Scanning {len(files)} Python files with {args.workers} workers...\n")
 
     def iter_results():
@@ -568,26 +538,21 @@ def cmd_check(args: argparse.Namespace) -> int:
         if items:
             findings_by_file[path_str] = items
             total += len(items)
-
     if not findings_by_file:
         print("No comments or docstrings found.")
         return 0
-
     print(f"Found {total} comments/docstrings:\n")
     print("=" * 40)
-
     for path_str in sorted(findings_by_file):
         items = findings_by_file[path_str]
         lines = Path(path_str).read_text(encoding="utf-8", errors="ignore").splitlines()
         for ln0, text, is_doc in sorted(items, key=lambda x: x[0], reverse=args.auto_remove):
             label = "docstring" if is_doc else "comment  "
             print(f"{GREEN}{path_str}:{ln0 + 1}{RESET} {YELLOW}[{label}]{RESET} {text.rstrip()}")
-
         if args.auto_remove:
             keep = [ln for i, ln in enumerate(lines) if i not in {x[0] for x in items}]
             Path(path_str).write_text("\n".join(keep), encoding="utf-8")
             print(f"  {YELLOW}[REMOVED {len(items)} lines]{RESET}")
-
     print("\n" + "=" * 40)
     if args.auto_remove:
         print(f"{YELLOW}Removed {total} comments/docstrings.{RESET}")
@@ -606,21 +571,17 @@ def _clean_module_doc_worker(
 ) -> Optional[tuple[str, bool, Optional[int]]]:
     path_str, top_n, pattern_str = job
     path = Path(path_str)
-
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return None
-
     lines = text.splitlines(keepends=True)
     if not lines:
         return None
-
     if pattern_str:
         rx = re.compile(pattern_str)
     else:
         rx = _default_module_pattern(path.name)
-
     limit = min(top_n, len(lines))
     removed_at: Optional[int] = None
     for i in range(limit):
@@ -628,10 +589,8 @@ def _clean_module_doc_worker(
             lines.pop(i)
             removed_at = i
             break
-
     if removed_at is None:
         return None
-
     new_src = "".join(lines)
     if not _is_valid_python(new_src):
         return (path_str, False, None)
@@ -647,13 +606,10 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
     files = _collect_py_files([root])
     self_name = Path(__file__).name
     files = [f for f in files if f.name != self_name]
-
     if not files:
         LOG.warning("No Python files found.")
         return 0
-
     print(f"Scanning top {args.top} lines of {len(files)} files with {args.workers} workers...")
-
     jobs = [(str(f), args.top, args.pattern) for f in files]
 
     def iter_results():
@@ -674,7 +630,6 @@ def cmd_clean_module_doc(args: argparse.Namespace) -> int:
             print(f"Cleaned docstring at line {line_no} of: {path_str}")
         else:
             LOG.error("Refusing to write %s: modified source failed AST validation", path_str)
-
     print(f"Fast cleanup complete! ({cleaned} file(s) modified)")
     return 0
 
@@ -687,7 +642,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("strip", help="Remove docstrings and/or comments.")
     p.add_argument("paths", nargs="*", help="Files/directories (default: cwd)")
     p.add_argument(
@@ -737,7 +691,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Worker processes (default: {DEFAULT_WORKERS})",
     )
     p.set_defaults(func=cmd_strip)
-
     p = sub.add_parser("check", help="Find comments and docstrings (check_rmc.py).")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument(
@@ -748,7 +701,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-w", "--workers", type=int, default=4, help="Worker processes (default: 4)")
     p.set_defaults(func=cmd_check)
-
     p = sub.add_parser(
         "clean-module-doc",
         help="Remove the auto-generated 'Module for X.' docstring (rm_moduledoc.py).",
@@ -768,19 +720,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-w", "--workers", type=int, default=DEFAULT_WORKERS)
     p.set_defaults(func=cmd_clean_module_doc)
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s: %(message)s",
     )
-
     try:
         return args.func(args)
     except KeyboardInterrupt:

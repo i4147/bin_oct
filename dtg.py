@@ -5,7 +5,6 @@ It should support concurrent translation requests via ThreadPoolExecutor for spe
 Output should be the modified source file with translated text substituted in place, preserving original formatting and code structure as much as possible."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import json
@@ -150,30 +149,26 @@ def process_file(filepath, translate_func):
         if tok.type == tokenize.COMMENT:
             m = COMMENT_RE.match(tok.string)
             if m:
-                items.append(
-                    {
-                        "tok": tok,
-                        "type": "comment",
-                        "prefix": m.group(1),
-                        "space": m.group(2),
-                        "content": m.group(3),
-                        "quote": "",
-                    }
-                )
+                items.append({
+                    "tok": tok,
+                    "type": "comment",
+                    "prefix": m.group(1),
+                    "space": m.group(2),
+                    "content": m.group(3),
+                    "quote": "",
+                })
         elif tok.type == tokenize.STRING:
             if tok.start[0] in finder.target_lines:
                 m = STRING_RE.match(tok.string)
                 if m:
-                    items.append(
-                        {
-                            "tok": tok,
-                            "type": "string",
-                            "prefix": m.group(1),
-                            "space": "",
-                            "quote": m.group(2),
-                            "content": m.group(3),
-                        }
-                    )
+                    items.append({
+                        "tok": tok,
+                        "type": "string",
+                        "prefix": m.group(1),
+                        "space": "",
+                        "quote": m.group(2),
+                        "content": m.group(3),
+                    })
     if not items:
         return True
     batch_translate(items, translate_func)
@@ -186,15 +181,13 @@ def process_file(filepath, translate_func):
                 new_text = f"{item['prefix']}{item['space']}{trans}"
             else:
                 new_text = f"{item['prefix']}{item['quote']}{trans}{item['quote']}"
-            replacements.append(
-                (
-                    item["tok"].start[0],
-                    item["tok"].start[1],
-                    item["tok"].end[0],
-                    item["tok"].end[1],
-                    new_text,
-                )
-            )
+            replacements.append((
+                item["tok"].start[0],
+                item["tok"].start[1],
+                item["tok"].end[0],
+                item["tok"].end[1],
+                new_text,
+            ))
     if not replacements:
         return True
     new_source = apply_replacements(source_code, replacements)

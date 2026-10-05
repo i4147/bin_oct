@@ -4,7 +4,6 @@ The script should support command-line flags "-e" to empty matched files (trunca
 It should also track and report a count of removed items, and include helper functions to detect files with multiple suffixes and to check whether a path should be skipped based on the exclusion directories."""
 
 from __future__ import annotations
-
 import shutil
 import sys
 from pathlib import Path

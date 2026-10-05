@@ -4,14 +4,12 @@ It should accept command-line arguments via argparse for the target directory, r
 Include error handling for missing dependencies (like cairosvg for SVG support) and invalid or corrupted image files, using pathlib for filesystem operations and typing hints for clarity."""
 
 from __future__ import annotations
-
 import argparse
 import io
 import shutil
 import sys
 from pathlib import Path
 from typing import Iterator
-
 from PIL import Image
 
 IMAGE_EXTENSIONS = {

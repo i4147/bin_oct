@@ -5,7 +5,6 @@ Before running the real command, it should write a header to the log containing 
 It should then execute the real gh binary with the original arguments, forwarding stdout/stderr and exit code appropriately."""
 
 from __future__ import annotations
-
 import datetime
 import os
 import subprocess

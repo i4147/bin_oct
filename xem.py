@@ -5,13 +5,11 @@ The script should accept file paths as command-line arguments, or if none are gi
 It should track and report the count of successfully extracted assets, gracefully skip files that fail to decode or read, and avoid re-writing files whose content hash already exists on disk."""
 
 from __future__ import annotations
-
 import base64
 import hashlib
 import re
 import sys
 from pathlib import Path
-
 from dh import MIME2EXT, get_nobinary
 
 OUTPUT_DIR = Path("extracted_base64")

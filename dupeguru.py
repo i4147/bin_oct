@@ -4,7 +4,6 @@ It should skip symlinks and common irrelevant directories (like .git, node_modul
 The script should accept root paths via argparse, walk the filesystem recursively while handling OSErrors gracefully, and output groups of duplicate files along with reclaimable space statistics."""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import multiprocessing as mp
@@ -17,40 +16,38 @@ from typing import Iterable, Iterator
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16
 DIGEST_BYTES = 16
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".bzr",
-        "node_modules",
-        "bower_components",
-        ".venv",
-        "venv",
-        "env",
-        ".env",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".tox",
-        ".cache",
-        ".gradle",
-        ".idea",
-        ".vscode",
-        "dist",
-        "build",
-        "target",
-        ".next",
-        ".nuxt",
-        "Library",
-        "AppData",
-        ".Trash",
-        ".Trashes",
-        "$RECYCLE.BIN",
-        "System Volume Information",
-    }
-)
+SKIP_DIRS = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".bzr",
+    "node_modules",
+    "bower_components",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".cache",
+    ".gradle",
+    ".idea",
+    ".vscode",
+    "dist",
+    "build",
+    "target",
+    ".next",
+    ".nuxt",
+    "Library",
+    "AppData",
+    ".Trash",
+    ".Trashes",
+    "$RECYCLE.BIN",
+    "System Volume Information",
+})
 
 
 def human_size(n: int) -> str:

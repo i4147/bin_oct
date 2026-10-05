@@ -4,7 +4,6 @@ The script takes a file path as input, parses it using the `ast` module, handles
 It should be usable as a command-line tool via `sys.argv` and `pathlib.Path`."""
 
 from __future__ import annotations
-
 import ast
 import sys
 from pathlib import Path

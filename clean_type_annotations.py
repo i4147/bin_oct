@@ -6,7 +6,6 @@ Usage:: python strip_annotations.py [PATH ...] Each PATH may be a ``.py`` file o
 If no paths are supplied, the current working directory is processed recursively."""
 
 from __future__ import annotations
-
 import contextlib
 import io
 import multiprocessing as mp
@@ -15,12 +14,10 @@ import sys
 import tokenize
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import libcst as cst
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-
 WORKERS = 8
 SKIP_DIR_NAMES = frozenset({"__pycache__"})
 
@@ -49,7 +46,6 @@ class TypeAnnotationRemover(cst.CSTTransformer):
     def leave_AnnAssign(self, original_node, updated_node):
         if updated_node.value is None:
             return cst.RemoveFromParent()
-
         return cst.Assign(
             targets=[cst.AssignTarget(target=updated_node.target)],
             value=updated_node.value,
@@ -62,13 +58,11 @@ class TypeAnnotationRemover(cst.CSTTransformer):
         return updated_node
 
     def leave_SimpleStatementSuite(self, original_node, updated_node):
-
         if not updated_node.body:
             return updated_node.with_changes(body=[cst.Pass()])
         return updated_node
 
     def leave_IndentedBlock(self, original_node, updated_node):
-
         if not updated_node.body:
             return updated_node.with_changes(body=[cst.SimpleStatementLine(body=[cst.Pass()])])
         return updated_node
@@ -95,37 +89,30 @@ def _atomic_write(path: Path, text: str, encoding: str) -> None:
 
 def process_file(path_str: str) -> tuple[str, str | None, bool]:
     path = Path(path_str)
-
     try:
         source, encoding = _read_source(path)
     except (OSError, SyntaxError, UnicodeDecodeError) as exc:
         return path_str, f"read failed: {exc}", False
-
     try:
         module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return path_str, f"parse failed: {exc}", False
     except Exception as exc:
         return path_str, f"parse failed: {exc!r}", False
-
     try:
         new_code = module.visit(TypeAnnotationRemover()).code
     except Exception as exc:
         return path_str, f"transform failed: {exc!r}", False
-
     if new_code == source:
         return path_str, None, False
-
     try:
         compile(new_code, str(path), "exec")
     except (SyntaxError, ValueError) as exc:
         return path_str, f"validation failed: {exc}", False
-
     try:
         _atomic_write(path, new_code, encoding)
     except OSError as exc:
         return path_str, f"write failed: {exc}", False
-
     return path_str, None, True
 
 
@@ -142,7 +129,6 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
     roots: list[Path] = [Path(p) for p in inputs] if inputs else [Path.cwd()]
     seen: set[Path] = set()
     files: list[Path] = []
-
     for root in roots:
         if root.is_dir():
             candidates: Iterable[Path] = _iter_python_files(root)
@@ -154,7 +140,6 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
         else:
             print(f"warning: path not found: {root}", file=sys.stderr)
             continue
-
         for path in candidates:
             try:
                 key = path.resolve()
@@ -164,7 +149,6 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
                 continue
             seen.add(key)
             files.append(path)
-
     files.sort(key=str)
     return files
 
@@ -172,23 +156,17 @@ def collect_files(inputs: Sequence[str]) -> list[Path]:
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     files = collect_files(args)
-
     if not files:
         print("No Python files to process.", file=sys.stderr)
         return 0
-
     print(
         f"Processing {len(files)} file(s) with {WORKERS} worker(s)...",
         file=sys.stderr,
     )
-
     tasks = [(str(p),) for p in files]
-
     chunksize = max(1, len(tasks) // (WORKERS * 4))
-
     with mp.Pool(processes=WORKERS) as pool:
         results = pool.starmap(process_file, tasks, chunksize=chunksize)
-
     changed = 0
     unchanged = 0
     errors = 0
@@ -200,7 +178,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             changed += 1
         else:
             unchanged += 1
-
     print(
         f"Done: {changed} modified, {unchanged} unchanged, {errors} error(s).",
         file=sys.stderr,

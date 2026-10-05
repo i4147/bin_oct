@@ -5,10 +5,8 @@ For each convertible file, it should compare the file size before and after conv
 The script should prefer OpenCV (with NumPy) for image decoding and alpha blending if available, falling back to Pillow otherwise."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf, rrs, unique_path
 
 try:

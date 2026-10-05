@@ -5,11 +5,9 @@ The script should collect each file's relative path and size, sort them by size 
 If no files are found, it should print a message indicating so instead of the table."""
 
 from __future__ import annotations
-
 import operator
 import sys
 from pathlib import Path
-
 from dh import fsz, get_files
 
 cwd = Path.cwd()

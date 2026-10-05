@@ -4,7 +4,6 @@ For each such repository found, it should delete all other files and subdirector
 After processing, the script should print the relative paths of all top-level items remaining in the current working directory."""
 
 from __future__ import annotations
-
 import shutil
 from pathlib import Path
 

@@ -3,7 +3,6 @@
 Merges 11 originals into a single argparse CLI: aptin.py -> pkgtool.py apt-install <pattern> [--no-confirm] system_pkg_reinstaller.py -> pkgtool.py apt-reinstall <file> install_wheels.py -> pkgtool.py wheel-install [--dir .] [--workers 8] piu.py -> pkgtool.py wheel-install-local <wheel...> move_installed_wheels.py -> pkgtool.py wheel-move-installed piprm.py -> pkgtool.py pip-uninstall <pattern> -b subprocess pu.py -> pkgtool.py pip-uninstall <pattern> -b api --no-confirm rm_flake8_plugins.py -> pkgtool.py pip-uninstall-flake8 [--dry-run] pure_pypkg_reinstaller.py -> pkgtool.py pip-reinstall-list <file> pure_teinstaller.py -> pkgtool.py pip-reinstall-pypi <file> reinstaller.py -> pkgtool.py pip-reinstall-entry-points Third-party packages (optional, all have graceful fallbacks): rapidfuzz — fuzzy pip-package matching (falls back to difflib) packaging — wheel filename / version parsing (wheel-move-installed) pip — required only by `-b api` pip backend Examples -------- pkgtool.py apt-install "python*" --no-confirm pkgtool.py apt-reinstall ~/missing.txt pkgtool.py wheel-install --dir ./wheels --workers 4 pkgtool.py wheel-install-local ./dist/foo-1.0-py3-none-any.whl pkgtool.py wheel-move-installed --src /sdcard/whl --dst /sdcard/installed pkgtool.py pip-uninstall numpy -b api --no-confirm pkgtool.py pip-uninstall-flake8 --dry-run pkgtool.py pip-reinstall-list ~/missing.txt --dry-run pkgtool.py pip-reinstall-pypi pure.txt --workers 8 pkgtool.py pip-reinstall-entry-points --yes --dry-run"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import json
@@ -24,19 +23,16 @@ try:
     from rapidfuzz import fuzz as _rapidfuzz  # type: ignore
 except ImportError:  # pragma: no cover
     _rapidfuzz = None
-
 try:
     import importlib.metadata as _im  # type: ignore
 except ImportError:  # pragma: no cover
     import importlib_metadata as _im  # type: ignore  # noqa: F401
-
 try:
     from packaging.utils import parse_wheel_filename  # type: ignore
     from packaging.version import Version  # type: ignore
 except ImportError:  # pragma: no cover
     parse_wheel_filename = None  # type: ignore
     Version = None  # type: ignore
-
 _ANSI = {
     "red": "\033[31m",
     "green": "\033[32m",
@@ -171,7 +167,6 @@ def pip_run_api(args: Sequence[str]) -> tuple[int, str, str]:
         from pip._internal.cli.main import main as pip_main  # type: ignore
     except ImportError as exc:
         return 1, "", f"pip._internal not available: {exc}"
-
     old_out, old_err = sys.stdout, sys.stderr
     out_buf, err_buf = io.StringIO(), io.StringIO()
     try:
@@ -202,7 +197,6 @@ def _apt_list_all() -> list[str]:
             if head:
                 names.append(head[0])
         return names
-
     rc, out, _ = run_cmd(["apt", "list", "--installed"])
     if rc == 0:
         return [line.split("/")[0] for line in out.split("\n") if "/" in line]
@@ -378,12 +372,10 @@ def cmd_wheel_install_local(args: argparse.Namespace) -> int:
     if args.no_compile:
         pip_args.append("--no-compile")
     pip_args.extend(str(Path(p)) for p in args.wheels)
-
     rc, _, err = run_cmd([sys.executable, "-m", "pip", *pip_args], show_output=True)
     if rc != 0:
         cprint(f"✗ pip install failed: {err.strip()}", "red")
         return 1
-
     if not args.keep_file:
         for p in args.wheels:
             fp = Path(p)
@@ -429,15 +421,12 @@ def cmd_wheel_move_installed(args: argparse.Namespace) -> int:
     if not args.allow_system and sys.prefix == sys.base_prefix:
         print("⚠ Not running inside a virtual environment.", file=sys.stderr)
         return 1
-
     src, dst, invalid = Path(args.src), Path(args.dst), Path(args.invalid)
     dst.mkdir(parents=True, exist_ok=True)
     invalid.mkdir(parents=True, exist_ok=True)
-
     if not src.exists():
         print(f"Directory not found: {src}")
         return 0
-
     installed = _installed_versions()
     excludes = set(args.exclude)
     removed = 0
@@ -495,7 +484,6 @@ def cmd_pip_uninstall(args: argparse.Namespace) -> int:
     if not installed:
         print("No installed packages could be enumerated.")
         return 1
-
     matches = [
         name
         for name in installed
@@ -504,7 +492,6 @@ def cmd_pip_uninstall(args: argparse.Namespace) -> int:
     if not matches:
         print("no match found")
         return 0
-
     backend = args.backend
     for pkg in matches:
         if not args.no_confirm and not confirm(f"remove {pkg} --> ? (y/n) "):
@@ -602,21 +589,18 @@ def cmd_pip_reinstall_list(args: argparse.Namespace) -> int:
     if args.dry_run:
         print("DRY RUN MODE — no packages will be installed")
     print("-" * 40)
-
     pip_cmd = args.pip_cmd
     if shutil.which(pip_cmd) is None and shutil.which("pip") is None:
         print("Error: pip is not installed or not found in PATH")
         return 1
     if shutil.which(pip_cmd) is None:
         pip_cmd = "pip"
-
     pkgs = read_package_list(path)
     if not pkgs:
         print("No packages found in file.")
         return 0
     print(f"Found {len(pkgs)} package(s) to reinstall.")
     print("-" * 40)
-
     plan = [(p, pip_cmd, args.timeout, args.with_deps, args.dry_run) for p in pkgs]
     results = parallel_map(_reinstall_one_subprocess, plan, workers=args.workers)
     ok = fail = 0
@@ -675,7 +659,6 @@ def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
     if not names:
         print(f"{path} is empty.")
         return 0
-
     remaining = set(names)
     pending: list[str] = list(names)
     while pending:
@@ -686,10 +669,8 @@ def cmd_pip_reinstall_pypi(args: argparse.Namespace) -> int:
         for pkg, ok in results:
             if ok:
                 remaining.discard(pkg)
-
         text = "\n".join(sorted(remaining))
         path.write_text(text + ("\n" if text else ""), encoding="utf-8")
-
     print(f"Done! Remaining in {path.name}: {len(remaining)}")
     return 0
 
@@ -781,12 +762,10 @@ def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
     if not all_pkgs:
         print("No packages with entry points found!")
         return 0
-
     targets = set(all_pkgs)
     if args.only:
         targets &= set(args.only)
     targets = {n for n in targets if n not in excludes}
-
     print(f"Found {len(all_pkgs)} packages with entry points")
     print(f"Will reinstall {len(targets)} packages after filtering")
     if targets:
@@ -794,14 +773,12 @@ def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
         for i, name in enumerate(sorted(targets), 1):
             info = all_pkgs[name]
             print(f"  {i:3d}. {name} (v{info['version']}) — entry points: {','.join(info['groups'])}")
-
     if args.dry_run:
         print("\nDRY RUN — no packages will be reinstalled")
         return 0
     if not targets:
         print("No packages to reinstall after filtering!")
         return 0
-
     selected = set(targets)
     if not args.yes:
         chosen: set[str] = set()
@@ -822,14 +799,11 @@ def cmd_pip_reinstall_entry_points(args: argparse.Namespace) -> int:
             return 0
     else:
         print("Skipping confirmation — will reinstall all packages")
-
     print(f"\nStarting reinstallation of {len(selected)} selected packages...")
     plan = [(n, args.include_deps) for n in sorted(selected)]
     results = parallel_map(_reinstall_one_api, plan, workers=args.workers)
-
     successes = [n for n, ok, _ in results if ok]
     failures = [(n, msg) for n, ok, msg in results if not ok]
-
     print("\n" + "=" * 40)
     print("REINSTALLATION SUMMARY")
     print("=" * 40)
@@ -849,12 +823,10 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
     a = sub.add_parser("apt-install", help="Wildcard-install apt/pkg packages (aptin.py).")
     a.add_argument("pattern", help="Wildcard pattern (* and ? supported).")
     a.add_argument("-y", "--no-confirm", action="store_true", help="Skip the confirmation prompt.")
     a.set_defaults(func=cmd_apt_install)
-
     b = sub.add_parser("apt-reinstall", help="Reinstall apt packages from a list file.")
     b.add_argument(
         "file",
@@ -863,7 +835,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the package list (default: ~/missing.txt).",
     )
     b.set_defaults(func=cmd_apt_reinstall)
-
     c = sub.add_parser("wheel-install", help="Install every *.whl in a directory.")
     c.add_argument(
         "--dir",
@@ -873,7 +844,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     c.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
     c.set_defaults(func=cmd_wheel_install)
-
     d = sub.add_parser("wheel-install-local", help="Install local wheel files (piu.py).")
     d.add_argument("wheels", nargs="+", help="One or more .whl paths.")
     d.add_argument("--no-user", action="store_true", help="Do NOT pass --user to pip.")
@@ -890,7 +860,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Keep the wheel file after installing (default: delete).",
     )
     d.set_defaults(func=cmd_wheel_install_local)
-
     e = sub.add_parser("wheel-move-installed", help="Sort wheels matching installed dists.")
     e.add_argument("--src", default="/sdcard/whl", help="Source directory (default: /sdcard/whl).")
     e.add_argument(
@@ -915,7 +884,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow running outside a virtualenv.",
     )
     e.set_defaults(func=cmd_wheel_move_installed)
-
     f = sub.add_parser("pip-uninstall", help="Fuzzy-uninstall installed packages by prefix.")
     f.add_argument("pattern", help="Prefix / substring to match.")
     f.add_argument(
@@ -944,7 +912,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Minimum partial_ratio score (default: 95).",
     )
     f.set_defaults(func=cmd_pip_uninstall)
-
     g = sub.add_parser("pip-uninstall-flake8", help="Uninstall every flake8 plugin.")
     g.add_argument(
         "--dry-run",
@@ -959,7 +926,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exclude the flake8 package itself (default: True).",
     )
     g.set_defaults(func=cmd_pip_uninstall_flake8)
-
     h = sub.add_parser("pip-reinstall-list", help="Reinstall packages from a list file (parallel).")
     h.add_argument(
         "file",
@@ -984,7 +950,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     h.add_argument("--pip-cmd", default="pip3", help="pip executable to use (default: pip3).")
     h.set_defaults(func=cmd_pip_reinstall_list)
-
     i = sub.add_parser("pip-reinstall-pypi", help="Reinstall PyPI packages and prune successes.")
     i.add_argument("file", nargs="?", default="pure.txt", help="List file (default: pure.txt).")
     i.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
@@ -1001,7 +966,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not pre-check PyPI for existence.",
     )
     i.set_defaults(func=cmd_pip_reinstall_pypi)
-
     j = sub.add_parser("pip-reinstall-entry-points", help="Reinstall every dist with entry points.")
     j.add_argument(
         "-e",
@@ -1021,7 +985,6 @@ def build_parser() -> argparse.ArgumentParser:
     j.add_argument("-j", "--workers", type=int, default=8, help="Parallel workers (default: 8).")
     j.add_argument("-v", "--verbose", action="store_true", help="More verbose output.")
     j.set_defaults(func=cmd_pip_reinstall_entry_points)
-
     return p
 
 

@@ -5,7 +5,6 @@ The script should recursively convert the loaded object into a JSON-serializable
 It must also handle and report errors gracefully, such as a missing file or a pickle that fails to load."""
 
 from __future__ import annotations
-
 import json
 import pickle
 import sys

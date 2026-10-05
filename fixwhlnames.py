@@ -5,7 +5,6 @@ Support CLI flags: directory, --apply, --no-backup, --info-only.
 Provide a dry-run default."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import shutil
@@ -14,7 +13,6 @@ from email.parser import HeaderParser
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
-
 from loguru import logger
 
 WHEEL_SUFFIX: Final[str] = ".whl"
@@ -22,7 +20,6 @@ METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"
 WHEEL_METADATA_SUFFIX: Final[str] = ".dist-info/WHEEL"
 BACKUP_DIR_NAME: Final[str] = "whl_backup"
 POOL_WORKERS: Final[int] = 8
-
 TAG_PATTERNS: Final[tuple[str, ...]] = (
     (
         r".*?-.*?-.*?-(py3|py2\.py3|py2|cp[0-9]+)-(none|abi[0-9]+|cp[0-9]+m?)-"
@@ -34,10 +31,8 @@ TAG_PATTERNS: Final[tuple[str, ...]] = (
         r"([a-z0-9_]+(?:[\.\-][a-z0-9_]+)?)\.whl$"
     ),
 )
-
 CP3_PATTERN: Final[re.Pattern[str]] = re.compile(r"cp3[0-9]")
 TAG_LINE_PATTERN: Final[re.Pattern[str]] = re.compile(r"Tag: (.*?)-(.*?)-")
-
 Metadata = dict[str, str]
 Tags = tuple[str, str, str]
 
@@ -62,7 +57,7 @@ def extract_metadata_from_wheel(wheel_path: Path) -> Metadata | None:
     except zipfile.BadZipFile:
         logger.error("{} is not a valid zip file", wheel_path.name)
         return None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.error("Error reading {}: {}", wheel_path.name, e)
         return None
 
@@ -193,7 +188,7 @@ def batch_fix_with_parallel(directory: str = ".") -> None:
         for ar in async_results:
             try:
                 results.append(ar.get())
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.error("Error processing file: {}", e)
     print("Extracted information:")
     for old_name, metadata, proper_name in results:

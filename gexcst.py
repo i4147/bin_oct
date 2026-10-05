@@ -3,7 +3,6 @@
 Usage: python entity_extractor.py The script will scan the current directory recursively for Python files and archives, extract top-level functions, classes, and constants, and save them to the 'output' directory organized by type."""
 
 from __future__ import annotations
-
 import os
 import re
 import shutil
@@ -12,7 +11,6 @@ import zipfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
-
 import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 
@@ -46,18 +44,14 @@ class EntityExtractor(cst.CSTVisitor):
             end_line = position.end.line
             start_col = position.start.column
             end_col = position.end.column
-
             code_lines = self.source_lines[start_line:end_line].copy()
             if not code_lines:
                 return ""
-
             if start_line == end_line - 1:
                 return code_lines[0][start_col:end_col]
-
             code_lines[0] = code_lines[0][start_col:]
             if end_col > 0 and len(code_lines) > 1:
                 code_lines[-1] = code_lines[-1][:end_col]
-
             return "".join(code_lines)
         except Exception:
             if hasattr(node, "body") and isinstance(node.body, cst.SimpleStatementSuite):
@@ -72,30 +66,26 @@ class EntityExtractor(cst.CSTVisitor):
 
     def _extract_and_save(self, node: cst.CSTNode, entity_type: str, name: str):
         entity_code = self._get_source_slice(node)
-        self.entities.append(
-            {
-                "name": name,
-                "full_name": name,
-                "type": entity_type,
-                "code": entity_code,
-                "path": str(self.original_path),
-                "is_constant": entity_type == "constant",
-                "is_class": entity_type == "class",
-                "is_function": entity_type == "function",
-            }
-        )
+        self.entities.append({
+            "name": name,
+            "full_name": name,
+            "type": entity_type,
+            "code": entity_code,
+            "path": str(self.original_path),
+            "is_constant": entity_type == "constant",
+            "is_class": entity_type == "class",
+            "is_function": entity_type == "function",
+        })
 
     def visit_FunctionDef(self, node: cst.FunctionDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "function", node.name.value)
-
             return False
         return True
 
     def visit_ClassDef(self, node: cst.ClassDef) -> bool | None:
         if self.scope_depth == 0:
             self._extract_and_save(node, "class", node.name.value)
-
             return False
         return True
 
@@ -104,7 +94,6 @@ class EntityExtractor(cst.CSTVisitor):
             target = node.targets[0].target
             if isinstance(target, cst.Name):
                 target_name = target.value
-
                 if re.match(r"^[A-Z_][A-Z0-9_]*$", target_name):
                     self._extract_and_save(node, "constant", target_name)
         return True
@@ -195,7 +184,6 @@ def process_single_file(path: Path) -> list[dict[str, Any]]:
 
 def process_archive(path: Path) -> list[dict[str, Any]]:
     entities: list[dict[str, Any]] = []
-
     if path.suffix in (".zip", ".whl"):
         try:
             with zipfile.ZipFile(path, "r") as zf:
@@ -208,7 +196,6 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
                             entities.extend(extract_entities_from_content(content, virtual_path))
         except Exception as e:
             print(f"Error processing ZIP/WHL archive {path}: {e}")
-
     elif any(path.name.endswith(ext) for ext in [".tar", ".tar.gz", ".tgz", ".tar.zst", ".tar.xz"]):
         mode_map = {
             ".tar.gz": "r:gz",
@@ -232,7 +219,6 @@ def process_archive(path: Path) -> list[dict[str, Any]]:
             pass
         except Exception as e:
             print(f"Error processing TAR archive {path}: {e}")
-
     return entities
 
 
@@ -245,50 +231,37 @@ def worker_process(path_str: str) -> list[dict[str, Any]]:
 
 def main() -> int:
     print(f"Starting analysis in {Path.cwd()}...")
-
     if OUTPUT_DIR.exists():
         shutil.rmtree(OUTPUT_DIR)
         print(f"Cleaned previous output directory: {OUTPUT_DIR}")
     OUTPUT_DIR.mkdir(exist_ok=True)
-
     files_to_process: list[str] = []
     current_dir = Path()
-
     for root, _, filenames in os.walk(current_dir):
         for name in filenames:
             path = Path(root) / name
             if path.is_relative_to(OUTPUT_DIR):
                 continue
-
             is_archive = path.suffix in ARCHIVE_EXTENSIONS or any(path.name.endswith(ext) for ext in ARCHIVE_EXTENSIONS)
             is_py = path.suffix in ALLOWED_PYTHON_EXTENSIONS or is_python_file_no_extension(path)
-
             if is_archive or is_py:
                 files_to_process.append(str(path))
-
     if not files_to_process:
         print("No Python files or archives found to process.")
         return 0
-
     print(f"Found {len(files_to_process)} relevant files/archives. Starting multiprocessing pool...")
-
     num_cpus = cpu_count()
     all_entities: list[dict[str, Any]] = []
-
     with Pool(processes=num_cpus) as pool:
         results_list = pool.map(worker_process, files_to_process)
         for result in results_list:
             all_entities.extend(result)
-
     print(f"Processing complete. Extracted {len(all_entities)} entities.")
     print(f"Saving entities to {OUTPUT_DIR}...")
-
     for entity in all_entities:
         save_entity(entity)
-
     print("\n\nAll tasks finished successfully!")
     print(f"Results are saved in the '{OUTPUT_DIR}' folder, organized by entity type (class, function, constant).")
-
     return 0
 
 

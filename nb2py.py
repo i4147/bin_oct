@@ -9,19 +9,16 @@ The generated script should: - Recursively discover .ipynb files from CLI-provid
 - Include complete type annotations, docstrings on all functions, and this module-level docstring."""
 
 from __future__ import annotations
-
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import nbformat
 from loguru import logger
 from nbformat import NotebookNode
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-
 POOL_SIZE: int = 8
 MAGIC_PREFIXES: tuple[str, ...] = ("%", "!", "%%")
 IMPORT_PREFIXES: tuple[str, ...] = ("import ", "from ")
@@ -55,7 +52,6 @@ def nb2py(notebook: NotebookNode) -> str:
     os_mods: list[str] = []
     sys_mods: list[str] = []
     main_code: list[str] = []
-
     cell: NotebookNode
     for cell in notebook.cells:
         if cell.cell_type == "markdown":
@@ -78,7 +74,6 @@ def nb2py(notebook: NotebookNode) -> str:
                     continue
                 cleaned: str = strip_magics(line)
                 main_code.append(cleaned)
-
     idx: int
     line = ""
     for idx, line in enumerate(imports):
@@ -91,7 +86,6 @@ def nb2py(notebook: NotebookNode) -> str:
             for mod in sorted(sys_mods, reverse=True):
                 imports.insert(idx + 1, mod)
             break
-
     imports_str: str = "\n".join(imports) + "\n\n"
     main_str: str = "\n".join(main_code)
     indent: str = "    "
@@ -115,7 +109,6 @@ def process_file(path: Path) -> str | None:
 def _collect_files(args: Sequence[str]) -> list[Path]:
     if not args:
         return list(Path.cwd().rglob("*.ipynb"))
-
     files: list[Path] = []
     arg: str
     for arg in args:
@@ -130,21 +123,17 @@ def _collect_files(args: Sequence[str]) -> list[Path]:
 def main(argv: Iterable[str] | None = None) -> int:
     args: list[str] = list(argv) if argv is not None else sys.argv[1:]
     files: list[Path] = _collect_files(args)
-
     if not files:
         logger.info("No .ipynb files found")
         return 0
-
     logger.info("Found {} notebook(s) to convert using {} workers", len(files), POOL_SIZE)
-
     with Pool(processes=POOL_SIZE) as pool:
         results = [pool.apply_async(process_file, (f,)) for f in files]
-        result: AsyncResult[str | None]  # noqa: F821
+        result: AsyncResult[str | None]
         for result in results:
             message: str | None = result.get()
             if message:
                 logger.info("{}", message)
-
     return 0
 
 

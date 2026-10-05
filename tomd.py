@@ -4,10 +4,8 @@ It should accept file paths as command-line arguments, or if none are given, dis
 For each file it should read the HTML, extract the readable main content, convert it to Markdown, write the result next to the original with a .md extension, delete the original source file after a successful conversion, and print a success or failure message per file; a single file should be processed directly while multiple files should be processed in parallel via a multiprocessing helper."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf
 from markdownify import markdownify as md
 from readability import Document

@@ -4,7 +4,6 @@ The script should then overwrite the original file with this concatenated conten
 It should use pathlib for file handling and read/write the file using UTF-8 encoding."""
 
 from __future__ import annotations
-
 from pathlib import Path
 from sys import argv
 

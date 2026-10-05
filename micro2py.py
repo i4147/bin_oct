@@ -10,7 +10,6 @@ Usage: python refactor_micropython.py [path ...] [-n] If no path is given, the c
 Every path may be a file or a directory; directories are walked recursively for ``*.py`` files."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -18,7 +17,7 @@ from pathlib import Path
 
 if sys.version_info >= (3, 10):
     _STDLIB: set[str] | None = set(sys.stdlib_module_names)
-else:  # pragma: no cover - fallback for older interpreters
+else:
     import importlib.util
 
     _STDLIB = None
@@ -37,7 +36,6 @@ _U_PREFIX_RE = re.compile(r"\bu([A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 def refactor_content(text: str) -> str:
-
     def repl(match: re.Match[str]) -> str:
         candidate = match.group(1)
         if is_stdlib(candidate):
@@ -57,14 +55,12 @@ def _rename_target(path: Path) -> Path | None:
 def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
     content_changed = False
     name_changed = False
-
     original = path.read_text(encoding="utf-8")
     updated = refactor_content(original)
     if updated != original:
         content_changed = True
         if not dry_run:
             path.write_text(updated, encoding="utf-8")
-
     new_path = _rename_target(path)
     if new_path is not None:
         name_changed = True
@@ -73,7 +69,6 @@ def refactor_file(path: Path, dry_run: bool = False) -> tuple[bool, bool]:
                 print(f"  ! not renaming {path.name}: {new_path.name} already exists")
             else:
                 path.rename(new_path)
-
     return content_changed, name_changed
 
 
@@ -103,9 +98,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Only report what would be changed; touch nothing.",
     )
     args = ap.parse_args(argv)
-
     roots = args.paths or [Path()]
-
     total = 0
     for root in roots:
         for f in _iter_py_files(root):
@@ -118,7 +111,6 @@ def main(argv: list[str] | None = None) -> int:
                 if name_changed:
                     tags.append("rename")
                 print(f"{f}: {', '.join(tags)}")
-
     if total == 0:
         print("Nothing to do.")
     else:

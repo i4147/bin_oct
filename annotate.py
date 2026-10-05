@@ -10,7 +10,6 @@ Merges useful behaviour of: * add_typing.py -> LibCST ApplyTypeAnnotationsVisito
 * create_stub.py / type_hinter.py -> superseded (stub generation is skipped)."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import contextlib
@@ -25,7 +24,6 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor
@@ -79,15 +77,12 @@ def apply_type_annotations(
     except Exception as e:
         msg = f"Failed to parse source file with LibCST: {e}"
         raise ValueError(msg) from e
-
     try:
         stub_cst = cst.parse_module(stub_code)
     except Exception as e:
         msg = f"Failed to parse stub file with LibCST: {e}"
         raise ValueError(msg) from e
-
     stub_cst = sanitize_stub_cst(stub_cst)
-
     context = CodemodContext()
     ApplyTypeAnnotationsVisitor.store_stub_in_context(
         context=context,
@@ -110,21 +105,19 @@ def _ensure_tree_sitter() -> None:
         return
     try:
         from tree_sitter import Parser
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         msg = "tree-sitter is required for --remove mode. Install with: pip install tree_sitter tree_sitter_languages"
         raise RuntimeError(msg) from exc
-
     try:
         from tree_sitter_languages import get_language
 
         _PY_LANGUAGE = get_language("python")
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         msg = (
             "Failed to load prebuilt Python grammar from tree_sitter_languages. "
             "Install with: pip install tree_sitter_languages"
         )
         raise RuntimeError(msg) from exc
-
     _TS_PARSER_FACTORY = Parser
 
 
@@ -181,38 +174,31 @@ def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, l
     _ensure_tree_sitter()
     parser = _TS_PARSER_FACTORY()
     parser.set_language(_PY_LANGUAGE)
-
     try:
         tree = parser.parse(src_bytes)
     except Exception as e:
         return src_bytes, [], f"parse error: {e}"
-
     root = tree.root_node
     ann_nodes = _collect_annotation_nodes(root)
     remove_ranges: list[tuple[int, int]] = []
     warnings: list[str] = []
-
     for node in ann_nodes:
         s = node.start_byte
         e = node.end_byte
         prev_i = _prev_nonspace(src_bytes, s)
-
         if prev_i >= 1 and src_bytes[prev_i - 1 : prev_i + 1] == b"->":
             removed_prefix_start = prev_i - 1
         elif prev_i >= 0 and src_bytes[prev_i] == ord(":"):
             removed_prefix_start = prev_i
         else:
             removed_prefix_start = s
-
         next_i = _next_nonspace(src_bytes, e)
         next_char = src_bytes[next_i : next_i + 1] if next_i < len(src_bytes) else b""
         safe_next = next_char in (b"=", b",", b")", b":")
-
         if src_bytes[removed_prefix_start : removed_prefix_start + 2] == b"->":
             safe = True
         else:
             safe = safe_next
-
         if not safe:
             line_start = src_bytes.rfind(b"\n", 0, s) + 1
             line_end = src_bytes.find(b"\n", e)
@@ -221,9 +207,7 @@ def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, l
             snippet = src_bytes[line_start:line_end].decode(errors="replace").strip()
             warnings.append(f'skipped standalone annotation at {path}:{node.start_point[0] + 1}: "{snippet}"')
             continue
-
         remove_ranges.append((removed_prefix_start, e))
-
     type_comment_ranges: list[tuple[int, int]] = []
     lines = src_bytes.splitlines(keepends=True)
     offset = 0
@@ -239,11 +223,9 @@ def strip_annotations_from_bytes(src_bytes: bytes, path: Path) -> tuple[bytes, l
             byte_end = offset + len(text[: m.end(0)].encode())
             type_comment_ranges.append((byte_start, byte_end))
         offset += len(ln)
-
     all_remove = remove_ranges + type_comment_ranges
     if not all_remove:
         return src_bytes, warnings, None
-
     new_bytes = _remove_ranges_from_bytes(src_bytes, all_remove)
     return new_bytes, warnings, None
 
@@ -278,11 +260,9 @@ class Options:
     quiet: bool = False
     validate_compile: bool = False
     validate_mypy: bool = False
-
     overwrite_existing: bool = True
     use_future_annotations: bool = False
     stub_file: Optional[str] = None
-
     remove: bool = False
 
 
@@ -299,34 +279,28 @@ class Result:
 
 def _annotate_file(path: Path, options: Options) -> Result:
     result = Result(path=path, mode="annotate")
-
     if options.stub_file:
         stub_path = Path(options.stub_file)
     else:
         stub_path = path.with_suffix(".pyi")
-
     if not stub_path.is_file():
         result.error = f"missing stub file: {stub_path}"
         return result
-
     try:
         original = path.read_text(encoding="utf-8")
     except Exception as e:
         result.error = f"read error: {e}"
         return result
-
     try:
         stub_code = stub_path.read_text(encoding="utf-8")
     except Exception as e:
         result.error = f"stub read error: {e}"
         return result
-
     try:
         validate_python_code(original, str(path))
     except SyntaxError as e:
         result.error = f"source has invalid syntax: {e}"
         return result
-
     try:
         modified = apply_type_annotations(
             source_code=original,
@@ -337,20 +311,17 @@ def _annotate_file(path: Path, options: Options) -> Result:
     except Exception as e:
         result.error = f"annotation failed: {e}"
         return result
-
     try:
         validate_python_code(modified, str(path))
     except SyntaxError as e:
         result.error = f"result has invalid syntax: {e}"
         return result
-
     if options.validate_compile:
         try:
             compile(modified, str(path), "exec")
         except SyntaxError as e:
             result.error = f"compile() validation failed: {e}"
             return result
-
     result.changed = modified != original
     result.diff = compute_diff(original, modified, str(path))
     return result
@@ -358,42 +329,35 @@ def _annotate_file(path: Path, options: Options) -> Result:
 
 def _strip_file(path: Path, options: Options) -> Result:
     result = Result(path=path, mode="remove")
-
     try:
         src_bytes = path.read_bytes()
     except Exception as e:
         result.error = f"read error: {e}"
         return result
-
     new_bytes, warnings, err = strip_annotations_from_bytes(src_bytes, path)
     result.warnings.extend(warnings)
     if err:
         result.error = err
         return result
-
     if new_bytes == src_bytes:
         return result
-
     try:
         new_text = new_bytes.decode("utf-8")
     except UnicodeDecodeError as e:
         result.error = f"decoded result is not utf-8: {e}"
         return result
-
     if options.validate_compile or options.validate_mypy:
         try:
             validate_python_code(new_text, str(path))
         except SyntaxError as e:
             result.error = f"result has invalid syntax: {e}"
             return result
-
     if options.validate_compile:
         try:
             compile(new_text, str(path), "exec")
         except SyntaxError as e:
             result.error = f"compile() validation failed: {e}"
             return result
-
     result.changed = True
     if options.show_diff:
         try:
@@ -401,7 +365,6 @@ def _strip_file(path: Path, options: Options) -> Result:
         except UnicodeDecodeError:
             original_text = src_bytes.decode("utf-8", errors="replace")
         result.diff = compute_diff(original_text, new_text, str(path))
-
     result._new_text = new_text  # type: ignore[attr-defined]
     return result
 
@@ -420,11 +383,9 @@ def process_file(path_str: str, options: Options) -> Result:
             error="not a .py file",
             mode=("remove" if options.remove else "annotate"),
         )
-
     result = _strip_file(path, options) if options.remove else _annotate_file(path, options)
     if result.error or not result.changed or options.dry_run:
         return result
-
     if options.backup:
         try:
             backup_path = path.with_suffix(path.suffix + ".bak")
@@ -432,7 +393,6 @@ def process_file(path_str: str, options: Options) -> Result:
             result.backup_path = backup_path
         except Exception as e:
             result.warnings.append(f"failed to create backup: {e}")
-
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
         if hasattr(result, "_new_text"):
@@ -448,25 +408,21 @@ def process_file(path_str: str, options: Options) -> Result:
                 use_future_annotations=options.use_future_annotations,
             )
             tmp_path.write_text(new_text, encoding="utf-8")
-
         try:
             st = path.stat()
             os.chmod(tmp_path, stat.S_IMODE(st.st_mode))
         except Exception:
             pass
-
         tmp_path.replace(path)
     except Exception as e:
         with contextlib.suppress(Exception):
             tmp_path.unlink(missing_ok=True)
         result.error = f"write error: {e}"
         return result
-
     if options.validate_mypy:
         res = _run_cmd([sys.executable, "-m", "mypy", "--no-incremental", str(path)])
         if res.returncode != 0:
             result.warnings.append(f"mypy reported issues:\n{res.stdout}{res.stderr}")
-
     return result
 
 
@@ -578,12 +534,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     files = gather_py_files(args.paths)
     if not files:
         print("No .py files found.", file=sys.stderr)
         return 1
-
     if args.stub_file and len(files) > 1:
         print(
             "Error: --stub-file is only valid with a single input file.",
@@ -599,7 +553,6 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.no_overwrite and args.remove:
         print("Error: --no-overwrite is not valid with --remove.", file=sys.stderr)
         return 2
-
     options = Options(
         dry_run=args.dry_run,
         backup=args.backup,
@@ -612,14 +565,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         stub_file=args.stub_file,
         remove=args.remove,
     )
-
     if options.remove:
         try:
             _ensure_tree_sitter()
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 3
-
     use_pool = len(files) > 1 and (args.jobs is None or args.jobs > 1)
     if use_pool:
         jobs = args.jobs or min(8, len(files))
@@ -627,12 +578,10 @@ def main(argv: Optional[list[str]] = None) -> int:
             results = pool.starmap(process_file, [(str(f), options) for f in files])
     else:
         results = [process_file(str(f), options) for f in files]
-
     changed = [r for r in results if r.changed and not r.error]
     unchanged = [r for r in results if not r.changed and not r.error]
     failed = [r for r in results if r.error]
     warnings = [w for r in results for w in r.warnings]
-
     verb = "strip" if options.remove else "annotate"
     if not args.quiet:
         for r in changed:
@@ -644,10 +593,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                     print(f"  backup: {r.backup_path}")
         for r in unchanged:
             print(f"no-change: {r.path}")
-
     for r in failed:
         print(f"error: {r.path} -> {r.error}", file=sys.stderr)
-
     if args.diff:
         for r in changed:
             if r.diff:
@@ -656,12 +603,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print("=" * 60)
                 print(r.diff, end="")
                 print("=" * 60 + "\n")
-
     if warnings and not args.quiet:
         print("\nWarnings:")
         for w in warnings:
             print(f"  - {w}")
-
     if not args.quiet:
         print(
             f"\nSummary: mode={verb} processed={len(results)} "
@@ -670,7 +615,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             f"errors={len(failed)} "
             f"warnings={len(warnings)}"
         )
-
     return 0 if not failed else 2
 
 

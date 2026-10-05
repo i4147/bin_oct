@@ -5,7 +5,6 @@ original search_rule.py -> python merged.py search-rule TRY400 original sql2json
 original sqlite2json.py -> python merged.py sqlite-to-json db.sqlite --mode per-table original sqlite2json2.py -> python merged.py sqlite-to-json db.sqlite original sqlite2json3.py -> python merged.py sqlite-to-json db.sqlite # stub, same as above original sqlitetojson.py -> python merged.py sqlite-to-json db.sqlite --indent 4 Third-party packages (optional, only required for specific subcommands): py7zr - required for `add-files --compress` pyodbc - required for `mdb-to-json`"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import codecs
@@ -29,17 +28,14 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
 try:
     import py7zr  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     py7zr = None
-
 try:
     import pyodbc  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     pyodbc = None
-
 log = logging.getLogger("merged")
 
 
@@ -80,7 +76,7 @@ def _compress_blob(data: bytes) -> str | None:
         with py7zr.SevenZipFile(buf, "w") as zf:
             zf.writestr("content", data)
         return base64.b64encode(buf.getvalue()).decode("ascii")
-    except Exception as exc:  # pragma: no cover
+    except Exception as exc:
         print(f"    Compression error: {exc}")
         return None
 
@@ -117,89 +113,75 @@ def _collect_cwd_files(
         size = entry.stat().st_size
         human = f"{size / 1024:.1f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
         print(f"  Processing: {entry.name} ({human})")
-
         if compress:
             text, is_binary = _read_file(entry, ("utf-8",), None)
             if is_binary:
                 try:
                     data = entry.read_bytes()
                 except Exception as exc:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": f"[Error reading file: {exc!s}]",
-                            "compressed": 0,
-                            "original_size": 0,
-                            "compressed_size": 0,
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": f"[Error reading file: {exc!s}]",
+                        "compressed": 0,
+                        "original_size": 0,
+                        "compressed_size": 0,
+                    })
                     continue
                 encoded = _compress_blob(data)
                 if encoded:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": encoded,
-                            "compressed": 1,
-                            "original_size": len(data),
-                            "compressed_size": len(encoded),
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": encoded,
+                        "compressed": 1,
+                        "original_size": len(data),
+                        "compressed_size": len(encoded),
+                    })
                     print(f"    ✓ Compressed {len(data) / 1024:.1f}KB to {len(encoded) / 1024:.1f}KB")
                 else:
-                    items.append(
-                        {
-                            "filename": entry.name,
-                            "contents": "[Binary file - compression failed]",
-                            "compressed": 0,
-                            "original_size": len(data),
-                            "compressed_size": 0,
-                        }
-                    )
+                    items.append({
+                        "filename": entry.name,
+                        "contents": "[Binary file - compression failed]",
+                        "compressed": 0,
+                        "original_size": len(data),
+                        "compressed_size": 0,
+                    })
             else:
                 size_bytes = len((text or "").encode("utf-8", errors="replace"))
-                items.append(
-                    {
-                        "filename": entry.name,
-                        "contents": text,
-                        "compressed": 0,
-                        "original_size": size_bytes,
-                        "compressed_size": 0,
-                    }
-                )
+                items.append({
+                    "filename": entry.name,
+                    "contents": text,
+                    "compressed": 0,
+                    "original_size": size_bytes,
+                    "compressed_size": 0,
+                })
                 print(f"    ✓ Stored as text ({size_bytes / 1024:.1f}KB)")
         else:
             text, is_binary = _read_file(entry, encodings, max_chars)
             if is_binary:
                 text = "[Binary file content not stored]"
-            items.append(
-                {
-                    "filename": entry.name,
-                    "contents": text,
-                    "compressed": 0,
-                    "original_size": len(text or ""),
-                    "compressed_size": 0,
-                }
-            )
+            items.append({
+                "filename": entry.name,
+                "contents": text,
+                "compressed": 0,
+                "original_size": len(text or ""),
+                "compressed_size": 0,
+            })
     return items
 
 
 def cmd_add_files(args: argparse.Namespace) -> int:
     folder = Path.cwd()
     default_table = folder.name
-
     table = args.table
     if args.prompt:
         answer = input(f"Enter folder name (default: {default_table}): ").strip()
         table = answer or default_table
     if not table:
         table = default_table
-
     db_path = Path(args.db)
     if not db_path.parent.exists():
         print(f"Error: directory does not exist: {db_path.parent}", file=sys.stderr)
         return 1
-
     encodings: tuple[str, ...] = (
         tuple(e.strip() for e in args.encodings.split(",") if e.strip()) if args.encodings else DEFAULT_TEXT_ENCODINGS
     )
@@ -207,7 +189,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
     max_chars = args.max_chars
     if not compress and max_chars is None:
         max_chars = DEFAULT_TEXT_CHAR_LIMIT
-
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.cursor()
         if _table_exists(cursor, table):
@@ -219,13 +200,11 @@ def cmd_add_files(args: argparse.Namespace) -> int:
                 table = f"{table}_new"
             print(f"Using '{table}' as default")
         _init_files_table(cursor, table)
-
         print(f"\nScanning current directory: {folder}")
         items = _collect_cwd_files(folder, encodings, compress, max_chars)
         if not items:
             print("No files found in current directory!")
             return 0
-
         cursor.executemany(
             f'INSERT INTO "{table}" '
             "(filename, file_contents, compressed, original_size, compressed_size) "
@@ -242,7 +221,6 @@ def cmd_add_files(args: argparse.Namespace) -> int:
             ],
         )
         conn.commit()
-
     total_orig = sum(i.get("original_size", 0) for i in items)
     total_comp = sum(i.get("compressed_size", 0) for i in items)
     print(f"\n✅ Successfully added {len(items)} files to table '{table}'")
@@ -340,11 +318,9 @@ def cmd_sqlite_to_json(args: argparse.Namespace) -> int:
     if not db.is_file():
         print(f"Error: database file not found: {db}", file=sys.stderr)
         return 1
-
     indent = 0 if args.compact else args.indent
     blob_format = args.blob_format or ("decode" if args.mode == "per-table" else "hex")
     verbose = not args.no_verbose
-
     try:
         if args.mode == "single":
             output = args.output or db.with_suffix(".json")
@@ -383,7 +359,6 @@ def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
     if not md_path.is_file():
         print(f"Error: {md_path} not found", file=sys.stderr)
         return 1
-
     with sqlite3.connect(str(db_path)) as conn:
         cur = conn.cursor()
         cur.execute(
@@ -419,7 +394,6 @@ def cmd_md_to_sqlite(args: argparse.Namespace) -> int:
             )
             count += 1
         conn.commit()
-
     print(f"Success! Saved {count} rules into '{db_path}'.")
     return 0
 
@@ -429,19 +403,15 @@ def cmd_search_rule(args: argparse.Namespace) -> int:
     if not db_path.is_file():
         print(f"Error: database not found: {db_path}", file=sys.stderr)
         return 1
-
     code = args.code
     if not code:
         code = input("Enter Ruff rule code to look up (e.g., TRY400): ")
-
     with sqlite3.connect(str(db_path)) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute("SELECT * FROM ruff_rules WHERE code = ?", (code.strip().upper(),)).fetchone()
-
     if not row:
         print(f"❌ No rule found matching code: {code}")
         return 1
-
     print("-" * 40)
     print(f"📜 RULE: {row['name']} ({row['code']})")
     print("-" * 40)
@@ -519,7 +489,6 @@ def _mdb_convert(
         if out.exists() and not overwrite:
             return str(src_path), False, f"Output exists (use --overwrite): {out}"
         out.parent.mkdir(parents=True, exist_ok=True)
-
         conn = _mdb_connect(src_path)
         try:
             cur = conn.cursor()
@@ -531,7 +500,6 @@ def _mdb_convert(
             if tables:
                 allowed = {t.lower() for t in tables}
                 names = [n for n in names if n.lower() in allowed]
-
             indent = 2 if pretty else None
             with out.open("w", encoding="utf-8") as fh:
                 fh.write("{\n")
@@ -612,7 +580,6 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
     if not files:
         log.error("No .mdb/.accdb files found in: %s", inputs)
         return 2
-
     print(f"Found {len(files)} MDB file(s). Using {args.workers} workers.")
     tasks: list[tuple[str, str | None]] = []
     for f in files:
@@ -622,7 +589,6 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
         else:
             dst = None
         tasks.append((str(f), dst))
-
     ok = 0
     fail = 0
     total = len(tasks)
@@ -653,7 +619,6 @@ def cmd_mdb_to_json(args: argparse.Namespace) -> int:
 SQL_DEFAULT_WORKERS = 8
 SQL_CHUNK = 1024 * 1024
 SQL_DEFAULT_ENCODING = "utf-8"
-
 _SQL_INSERT_RE = re.compile(
     r"""
     \bINSERT\s+(?:IGNORE\s+)?INTO\s+
@@ -676,7 +641,6 @@ _SQL_INSERT_RE = re.compile(
     """,
     re.IGNORECASE | re.VERBOSE,
 )
-
 _SQL_IDENT_RE = re.compile(
     r"""
     ^\s*
@@ -690,7 +654,6 @@ _SQL_IDENT_RE = re.compile(
     """,
     re.VERBOSE,
 )
-
 _SQL_INT_RE = re.compile(r"^[+-]?\d+$")
 _SQL_FLOAT_RE = re.compile(r"^[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$")
 
@@ -897,7 +860,6 @@ def _convert_sql_file(job: SqlJob, encoding: str, strict: bool) -> SqlResult:
         if dst.exists() and not job.overwrite:
             return SqlResult(src, dst, error="output exists (use --overwrite)")
         dst.parent.mkdir(parents=True, exist_ok=True)
-
         fd, tmp_path = tempfile.mkstemp(prefix=f".{dst.name}.", suffix=".tmp", dir=dst.parent, text=True)
         tmp = Path(tmp_path)
         count = 0
@@ -971,7 +933,6 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
     if not files:
         log.error("No .sql files found.")
         return 2
-
     outdir = args.output_dir.resolve() if args.output_dir else None
     jobs = [
         SqlJob(
@@ -981,10 +942,8 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
         )
         for f in files
     ]
-
     tasks = ((j, args.encoding, args.strict) for j in jobs)
     chunksize = max(1, min(32, len(jobs) // (SQL_DEFAULT_WORKERS * 4) or 1))
-
     fails = 0
     total_rows = 0
     with Pool(processes=SQL_DEFAULT_WORKERS) as pool:
@@ -995,7 +954,6 @@ def cmd_sql_to_json(args: argparse.Namespace) -> int:
             else:
                 total_rows += res.rows
                 print(f"{res.source} -> {res.destination} ({res.rows} rows)")
-
     print(f"Completed: {len(files)} file(s), {total_rows} row(s), {fails} failure(s).")
     return 1 if fails else 0
 
@@ -1007,7 +965,6 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     ap = sub.add_parser(
         "add-files",
         help="Add every file in the current directory to a SQLite table.",
@@ -1033,7 +990,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--encodings", help="Comma-separated list of encodings to try, in order.")
     ap.set_defaults(func=cmd_add_files)
-
     sp = sub.add_parser("sqlite-to-json", help="Convert a SQLite database to JSON.")
     sp.add_argument("database", type=Path)
     sp.add_argument(
@@ -1059,17 +1015,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sp.add_argument("--no-verbose", action="store_true", help="Suppress progress output.")
     sp.set_defaults(func=cmd_sqlite_to_json)
-
     mp = sub.add_parser("md-to-sqlite", help="Parse a ruff-style Markdown file into SQLite.")
     mp.add_argument("--md", type=Path, default=Path("ruff.md"))
     mp.add_argument("--db", type=Path, default=Path("ruff_rules.db"))
     mp.set_defaults(func=cmd_md_to_sqlite)
-
     rp = sub.add_parser("search-rule", help="Look up a Ruff rule from a SQLite database.")
     rp.add_argument("code", nargs="?", help="Rule code (e.g. TRY400). Prompts if omitted.")
     rp.add_argument("--db", default="/sdcard/data/ruff.db")
     rp.set_defaults(func=cmd_search_rule)
-
     xp = sub.add_parser("mdb-to-json", help="Convert .mdb/.accdb files to JSON (requires pyodbc).")
     xp.add_argument("inputs", nargs="*", help="Files or directories. Defaults to CWD recursively.")
     xp.add_argument("-o", "--output-dir", help="Directory for generated JSON.")
@@ -1079,7 +1032,6 @@ def _build_parser() -> argparse.ArgumentParser:
     xp.add_argument("-t", "--tables", nargs="+", help="Only convert the specified tables.")
     xp.add_argument("-v", "--verbose", action="store_true")
     xp.set_defaults(func=cmd_mdb_to_json)
-
     qp = sub.add_parser("sql-to-json", help="Convert SQL INSERT dumps to newline-delimited JSON.")
     qp.add_argument(
         "inputs",
@@ -1096,7 +1048,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Fail a file on the first malformed INSERT.",
     )
     qp.set_defaults(func=cmd_sql_to_json)
-
     return parser
 
 

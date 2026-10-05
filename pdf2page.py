@@ -5,7 +5,6 @@ Usage examples -------------- # default backend (pdfminer), parallel, all PDFs i
 <pdf...> pp_plumber.py -> python pdf_pages_to_txt.py -b plumber -P thread -w 8 <pdf...> pp_pymupdf.py -> python pdf_pages_to_txt.py -b fitz --sort -P thread -w 8 <pdf...> pp_pypdf.py -> python pdf_pages_to_txt.py -b pypdf -P process -w 8 <pdf> pp_pypdf2.py -> python pdf_pages_to_txt.py -b pypdf2 -P process -w 8 <pdf> ppminer.py -> python pdf_pages_to_txt.py -b pdfminer -P process -w 8 <pdf|dir...>"""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -14,14 +13,14 @@ from typing import Sequence
 
 
 def _extract_plumber(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    import pdfplumber  # noqa: F401
+    import pdfplumber
 
     out: list[tuple[int, str]] = []
     with pdfplumber.open(pdf_path) as pdf:
         for idx in page_indices:
             try:
                 text = pdf.pages[idx].extract_text() or ""
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(
                     f"Error extracting page {idx + 1} from {pdf_path}: {exc}",
                     file=sys.stderr,
@@ -42,7 +41,7 @@ def _extract_fitz(pdf_path: str, page_indices: Sequence[int], opts: dict) -> lis
             try:
                 page = doc[idx]
                 text = page.get_text("text", sort=True) if sort else page.get_text()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(
                     f"Error extracting page {idx + 1} from {pdf_path}: {exc}",
                     file=sys.stderr,
@@ -63,7 +62,7 @@ def _extract_pypdf(pdf_path: str, page_indices: Sequence[int], opts: dict) -> li
         for idx in page_indices:
             try:
                 text = reader.pages[idx].extract_text() or ""
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(
                     f"Error extracting page {idx + 1} from {pdf_path}: {exc}",
                     file=sys.stderr,
@@ -82,7 +81,7 @@ def _extract_pypdf2(pdf_path: str, page_indices: Sequence[int], opts: dict) -> l
         for idx in page_indices:
             try:
                 text = reader.pages[idx].extract_text() or ""
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(
                     f"Error extracting page {idx + 1} from {pdf_path}: {exc}",
                     file=sys.stderr,
@@ -113,13 +112,12 @@ def _extract_pdfminer(pdf_path: str, page_indices: Sequence[int], opts: dict) ->
             if val is not None:
                 kw[key] = val
         laparams = LAParams(**kw)
-
     password = opts.get("password") or ""
     out: list[tuple[int, str]] = []
     for idx in page_indices:
         try:
             text = extract_text(pdf_path, page_numbers=[idx], password=password, laparams=laparams) or ""
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(
                 f"Error extracting page {idx + 1} from {pdf_path}: {exc}",
                 file=sys.stderr,
@@ -136,7 +134,6 @@ _BACKENDS = {
     "pypdf2": _extract_pypdf2,
     "pdfminer": _extract_pdfminer,
 }
-
 _THREAD_BACKENDS = {"fitz", "plumber"}
 
 
@@ -146,11 +143,10 @@ def _extract_chunk(pdf_path: str, page_indices: Sequence[int], backend: str, opt
 
 def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
     if backend == "plumber":
-        import pdfplumber  # noqa: F401
+        import pdfplumber
 
         with pdfplumber.open(pdf_path) as pdf:
             return len(pdf.pages)
-
     if backend == "fitz":
         import fitz  # type: ignore
 
@@ -159,25 +155,21 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
             return len(doc)
         finally:
             doc.close()
-
     if backend == "pypdf":
         from pypdf import PdfReader  # type: ignore
 
         with open(pdf_path, "rb") as fh:
             return len(PdfReader(fh).pages)
-
     if backend == "pypdf2":
         import PyPDF2  # type: ignore
 
         with open(pdf_path, "rb") as fh:
             return len(PyPDF2.PdfReader(fh).pages)
-
     if backend == "pdfminer":
         from pdfminer.pdfpage import PDFPage  # type: ignore
 
         with open(pdf_path, "rb") as fh:
             return sum(1 for _ in PDFPage.get_pages(fh, password=password or ""))
-
     msg = f"Unknown backend: {backend}"
     raise ValueError(msg)
 
@@ -185,7 +177,6 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
 def _collect_pdfs(inputs: Sequence[str], recursive: bool = True) -> list[Path]:
     if not inputs:
         inputs = ["."]
-
     seen: set = set()
     result: list[Path] = []
     for item in inputs:
@@ -238,17 +229,14 @@ def _build_opts(args: argparse.Namespace) -> dict:
 
 
 def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
-
     try:
         total = _page_count(str(pdf), args.backend, args.password or "")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error opening PDF {pdf}: {exc}", file=sys.stderr)
         return 0
-
     if total == 0:
         print(f"Skipping empty PDF: {pdf}")
         return 0
-
     if args.page_numbers:
         page_indices = [p - 1 for p in args.page_numbers if 1 <= p <= total]
     else:
@@ -258,12 +246,9 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
     if not page_indices:
         print(f"Nothing to extract from {pdf.name}")
         return 0
-
     out_dir = _build_out_dir(pdf, args)
     out_dir.mkdir(parents=True, exist_ok=True)
-
     print(f"Processing {pdf.name} ({len(page_indices)}/{total} pages) -> {out_dir}")
-
     to_process: list[int] = []
     skipped = 0
     for idx in page_indices:
@@ -276,20 +261,16 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         print(f"  Skipped {skipped} existing page file(s)")
     if not to_process:
         return 0
-
     workers = max(1, args.workers)
     if len(to_process) <= workers:
         chunks: list[list[int]] = [[idx] for idx in to_process]
     else:
         chunk_size = max(1, (len(to_process) + workers - 1) // workers)
         chunks = [to_process[i : i + chunk_size] for i in range(0, len(to_process), chunk_size)]
-
     opts = _build_opts(args)
-
     parallel = args.parallel
     if parallel == "auto":
         parallel = "thread" if args.backend in _THREAD_BACKENDS else "process"
-
     results: list[tuple[int, str]] = []
     try:
         if parallel == "none" or workers == 1 or len(chunks) == 1:
@@ -308,12 +289,10 @@ def process_pdf(pdf: Path, args: argparse.Namespace) -> int:
         else:
             msg = f"Unknown parallel mode: {parallel}"
             raise ValueError(msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error processing {pdf}: {exc}", file=sys.stderr)
-
         if not results:
             return 0
-
     written = 0
     for page_1based, text in sorted(results):
         name = _format_name(args.name_template, pdf.stem, page_1based, total)
@@ -381,13 +360,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not descend into subdirectories.",
     )
-
     p.add_argument(
         "--sort",
         action="store_true",
         help="Sort text blocks top-to-bottom/left-to-right (fitz backend only).",
     )
-
     p.add_argument(
         "--password",
         default=None,
@@ -445,15 +422,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.workers < 1:
         parser.error("--workers must be >= 1")
-
     pdfs = _collect_pdfs(args.inputs, recursive=not args.no_recursive)
     if not pdfs:
         print("No PDF files found.", file=sys.stderr)
         return 1
-
     print(f"Found {len(pdfs)} PDF file(s) to process.")
     total_written = 0
     for i, pdf in enumerate(pdfs, 1):

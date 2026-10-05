@@ -4,7 +4,6 @@ It should accept a "--root" argument for the directory to scan and an "--apply" 
 The script must exclude itself from the collected Lua files when scanning."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import shutil

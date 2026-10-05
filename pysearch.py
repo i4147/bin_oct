@@ -7,7 +7,6 @@ pyfinfo.py -> python merged_search.py info [directory] pygrex.py -> python merge
 -i -g "*.py" python merged_search.py info /sdcard/data -t 50 --min-count 3 python merged_search.py regex names.txt python merged_search.py strings ./bin/* -o strings_out.txt Optional third-party packages (features degrade gracefully if absent): py7zr, brotli, zstandard, keyboard"""
 
 from __future__ import annotations
-
 import argparse
 import fnmatch
 import os
@@ -27,22 +26,18 @@ try:
     import py7zr
 except ImportError:
     py7zr = None
-
 try:
     import brotli
 except ImportError:
     brotli = None
-
 try:
     import zstandard
 except ImportError:
     zstandard = None
-
 try:
     import keyboard
 except ImportError:
     keyboard = None
-
 TEXT_EXT_DEFAULT: set[str] = {
     ".txt",
     ".md",
@@ -79,7 +74,6 @@ SKIP_DIRS: set[str] = {
     ".pytest_cache",
     ".mypy_cache",
 }
-
 RESET = "\x1b[0m"
 CYAN = "\x1b[5;96m"
 RED = "\x1b[91m"
@@ -196,10 +190,8 @@ def cmd_names(args: argparse.Namespace) -> int:
         return 1
     if not names:
         return 0
-
     exts = set(args.extensions) if args.extensions else TEXT_EXT_DEFAULT
     results: dict[str, list[dict]] = {}
-
     for path in root.rglob("*"):
         if not path.is_file() or path.suffix not in exts:
             continue
@@ -223,11 +215,9 @@ def cmd_names(args: argparse.Namespace) -> int:
                 bucket = results.setdefault(orig, [])
                 if entry not in bucket:
                     bucket.append(entry)
-
     if not results:
         print("No target names found in the specified files.")
         return 0
-
     print(f"Found names (from {names_file}):")
     for name, items in results.items():
         print(f"\n- {name}:")
@@ -280,16 +270,13 @@ def cmd_fast(args: argparse.Namespace) -> int:
     root = Path(args.directory).resolve()
     if not args.no_pause:
         _install_pause_hotkey()
-
     dir_excludes = {e for e in args.exclude if not any(c in e for c in "*?[]")}
     glob_excludes = {e for e in args.exclude if any(c in e for c in "*?[]")}
-
     print(f"Root: {root}")
     print(f"Mode: {'content' if args.content else 'filename'}")
     print(f"Excluded dirs: {sorted(dir_excludes)}")
     print(f"Excluded patterns: {sorted(glob_excludes)}")
     print("-" * 40)
-
     files = list(
         walk_files(
             [root],
@@ -299,10 +286,8 @@ def cmd_fast(args: argparse.Namespace) -> int:
         )
     )
     print(f"Files queued: {len(files)}")
-
     total = 0
     jobs = [(str(f), args.search_string, args.content) for f in files]
-
     if args.workers > 1 and len(jobs) > 1:
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
             for res in pool.map(_fast_worker, jobs, chunksize=16):
@@ -322,7 +307,6 @@ def cmd_fast(args: argparse.Namespace) -> int:
                 else:
                     print(f"[FOUND] {path_str}")
                 total += 1
-
     print(f"Total results: {total}")
     return 0
 
@@ -420,7 +404,6 @@ def cmd_find(args: argparse.Namespace) -> int:
         for path_str, entry in res:
             print(f"{path_str}:{entry}" if entry else path_str)
             total += 1
-
     return 0 if total else 1
 
 
@@ -431,7 +414,6 @@ def _grep_worker(
     path = Path(path_str)
     if skip_binary and is_binary(path):
         return str(path), []
-
     rx: Optional[re.Pattern[str]] = None
     if not fixed_strings:
         flags = re.MULTILINE
@@ -441,7 +423,6 @@ def _grep_worker(
             rx = re.compile(pattern, flags)
         except re.error:
             return str(path), []
-
     results: list[tuple[int, str, list[tuple[int, int]]]] = []
     try:
         with path.open("r", encoding="utf-8", errors="replace") as f:
@@ -475,7 +456,6 @@ def cmd_grep(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-
     if not args.fixed_strings:
         try:
             flags = re.MULTILINE | (re.IGNORECASE if args.ignore_case else 0)
@@ -483,7 +463,6 @@ def cmd_grep(args: argparse.Namespace) -> int:
         except re.error as e:
             print(f"Invalid regex: {e}", file=sys.stderr)
             return 2
-
     allowed = set(args.extensions) if args.extensions else None
     roots = [Path(p) for p in (args.paths or ["."])]
     files = list(
@@ -582,7 +561,6 @@ def _similar_groups(names: list[str], ratio: float = 0.8) -> list[list[str]]:
     by_len: dict[int, list[int]] = {}
     for i, s in enumerate(names):
         by_len.setdefault(len(s), []).append(i)
-
     groups: list[list[str]] = []
     for i, a in enumerate(names):
         if used[i]:
@@ -615,7 +593,6 @@ def cmd_info(args: argparse.Namespace) -> int:
     for stem, c in counts.most_common(args.top):
         if c > args.min_count:
             print(f"{stem}: {c}")
-
     print("\n=== Similar Filename Groups ===")
     groups = _similar_groups(list(counts.keys()), ratio=args.ratio)
     if not groups:
@@ -663,7 +640,6 @@ def cmd_strings(args: argparse.Namespace) -> int:
         files = [Path(f) for f in args.files if Path(f).is_file()]
     else:
         files = [f for f in Path.cwd().rglob("*") if f.is_file()]
-
     total = len(files)
     if not total:
         print("No files to process.")
@@ -671,7 +647,6 @@ def cmd_strings(args: argparse.Namespace) -> int:
     if shutil.which("strings") is None:
         print("'strings' command not found in PATH.", file=sys.stderr)
         return 1
-
     jobs = [(str(f), str(output)) for f in files]
 
     def iter_results():
@@ -699,7 +674,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("names", help="Search person names inside files (exnames.py)")
     p.add_argument("names_file", help="File with one name per line")
     p.add_argument("directory", nargs="?", default=".", help="Root directory")
@@ -710,7 +684,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="File extensions to scan",
     )
     p.set_defaults(func=cmd_names)
-
     p = sub.add_parser("fast", help="Fast recursive search (fdrg.py)")
     p.add_argument("search_string")
     p.add_argument(
@@ -730,13 +703,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-w", "--workers", type=int, default=8)
     p.add_argument("--no-pause", action="store_true", help="Disable SPACE/p pause hotkey")
     p.set_defaults(func=cmd_fast)
-
     p = sub.add_parser("find", help="Search filenames incl. archives (pfind.py)")
     p.add_argument("pattern")
     p.add_argument("directories", nargs="*", default=["."])
     p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_find)
-
     p = sub.add_parser("grep", help="ripgrep-like content search")
     p.add_argument("pattern", nargs="?")
     p.add_argument("paths", nargs="*", default=["."])
@@ -755,24 +726,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--extensions", nargs="*", help="Only scan these extensions (e.g. .txt .md)")
     p.add_argument("--no-color", action="store_true")
     p.set_defaults(func=cmd_grep)
-
     p = sub.add_parser("info", help="Filename stats + similar groups (pyfinfo.py)")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument("-t", "--top", type=int, default=100)
     p.add_argument("--min-count", type=int, default=2)
     p.add_argument("-r", "--ratio", type=float, default=0.8)
     p.set_defaults(func=cmd_info)
-
     p = sub.add_parser("regex", help="Emit regex from filename list (pygrex.py)")
     p.add_argument("filename")
     p.set_defaults(func=cmd_regex)
-
     p = sub.add_parser("strings", help="Extract strings from binaries (stringr.py)")
     p.add_argument("files", nargs="*")
     p.add_argument("-o", "--output", default="all_strings.txt")
     p.add_argument("-w", "--workers", type=int, default=8)
     p.set_defaults(func=cmd_strings)
-
     return parser
 
 

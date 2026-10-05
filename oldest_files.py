@@ -4,11 +4,9 @@ It should accept an optional command-line flag to switch between scanning only t
 It should also accept an optional numeric argument controlling how many of the newest files to display (default 10), sort the collected files by modification time, and rely on an external helper function to retrieve each file's age/timestamp before printing a formatted "Top N fresh files" report to stdout."""
 
 from __future__ import annotations
-
 import sys
 from datetime import datetime
 from pathlib import Path
-
 from dh import get_file_age
 
 EXCLUDED_DIRS = {".git", "__pycache__"}

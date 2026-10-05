@@ -4,11 +4,9 @@ For each line, it should scan words (including handling apostrophes and preservi
 It should accept input via argparse (e.g., file path and an autofix option), track counts of misspelled and fixed words, and output the corrected text (if autofixing) or a report of misspellings and suggestions."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
-
 from spellchecker import SpellChecker
 
 

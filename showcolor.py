@@ -4,7 +4,6 @@ It should use the secrets module to securely generate random red, green, and blu
 The script should repeat this process a random number of times, up to 999 iterations, determined by a secure random number generator each time it runs."""
 
 from __future__ import annotations
-
 from secrets import randbelow
 
 

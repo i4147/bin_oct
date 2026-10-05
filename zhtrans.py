@@ -12,7 +12,6 @@ Controlled via `--chunk-size`.
 * logging is unified on loguru, which was already a dependency of two of the four scripts."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -20,7 +19,6 @@ import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
-
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
 
@@ -33,7 +31,6 @@ CHINESE_RE = re.compile(
     "\U0002b820-\U0002ceaf"
     "\uf900-\ufaff]"
 )
-
 DEFAULT_EXTENSIONS = (
     ".txt",
     ".md",
@@ -151,7 +148,6 @@ def _worker_walk_file(task):
         retry_delay,
         success_delay,
     ) = task
-
     stats = {
         "file": file_path,
         "total_lines": 0,
@@ -161,17 +157,14 @@ def _worker_walk_file(task):
     }
     prefix = "[DRY RUN] " if dry_run else ""
     print(f"{prefix}Processing: {file_path}")
-
     try:
         path = Path(file_path)
         text = path.read_text(encoding="utf-8", errors="ignore")
         lines = text.splitlines(keepends=True)
         stats["total_lines"] = len(lines)
-
         translator = build_translator(source, target)
         out: list[str] = []
         found_any = False
-
         for line in lines:
             if meets_threshold(line, threshold):
                 stats["chinese_lines"] += 1
@@ -179,7 +172,6 @@ def _worker_walk_file(task):
                 if dry_run:
                     out.append(line)
                     continue
-
                 leading = line[: len(line) - len(line.lstrip())]
                 trailing = line[len(line.rstrip()) :]
                 translated = translate_with_retries(
@@ -195,7 +187,6 @@ def _worker_walk_file(task):
                     print(f"  Progress: {stats['translated_lines']} lines translated")
             else:
                 out.append(line)
-
         if dry_run and found_any:
             print(f"  i Found {stats['chinese_lines']} lines with Chinese text")
         elif dry_run:
@@ -205,11 +196,9 @@ def _worker_walk_file(task):
             print(f"  Completed: {stats['translated_lines']} lines translated")
         else:
             print("  No Chinese text found, skipping.")
-
     except Exception as exc:  # noqa: BLE001
         logger.error(f"  Error processing {file_path}: {exc}")
         stats["errors"] += 1
-
     return stats
 
 
@@ -218,33 +207,26 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     if not input_path.exists():
         logger.error("Input file not found: {}", input_path.name)
         return 1
-
     try:
         lines = read_stripped_lines(input_path)
     except Exception as exc:  # noqa: BLE001
         logger.error("Error reading input file: {}", exc)
         return 1
-
     if not lines:
         print(f"No lines found in {input_path.name}")
         return 0
-
     chinese_lines = [ln for ln in lines if has_chinese(ln)]
     non_chinese = [ln for ln in lines if not has_chinese(ln)]
     print(f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, {len(non_chinese)} already English/skipped")
-
     if not chinese_lines:
         print(f"No Chinese lines to translate in {input_path.name}")
         return 0
-
     chunks = chunk_lines(chinese_lines, args.chunk_size)
     print(
         f"Created {len(chunks)} chunks from {len(chinese_lines)} Chinese lines (max {args.chunk_size} chars per chunk)"
     )
-
     tasks = [(chunk, args.retries, args.retry_delay, args.source, args.target) for chunk in chunks]
     translations: dict = {}
-
     with Pool(processes=args.workers) as pool:
         results = [pool.apply_async(_worker_chunked_chunk, (t,)) for t in tasks]
         for async_res, chunk in zip(results, chunks):
@@ -272,7 +254,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                     chunk[0][:50],
                     exc,
                 )
-
     try:
         write_inplace(input_path, lines, translations)
         print(
@@ -289,28 +270,22 @@ def cmd_line(args: argparse.Namespace) -> int:
     if not input_path.exists():
         logger.error("Input file not found: {}", input_path.name)
         return 1
-
     try:
         lines = read_stripped_lines(input_path)
     except Exception as exc:  # noqa: BLE001
         logger.error("Error reading input file: {}", exc)
         return 1
-
     if not lines:
         print(f"No lines found in {input_path.name}")
         return 0
-
     chinese_lines = [ln for ln in lines if has_chinese(ln)]
     non_chinese = [ln for ln in lines if not has_chinese(ln)]
     print(f"Loaded {len(lines)} lines: {len(chinese_lines)} with Chinese, {len(non_chinese)} already English/skipped")
-
     if not chinese_lines:
         print(f"No Chinese lines to translate in {input_path.name}")
         return 0
-
     print(f"Starting translation with {args.workers} workers...")
     translations: dict = {}
-
     tasks = [(ln, args.retries, args.retry_delay, args.source, args.target) for ln in chinese_lines]
     with Pool(processes=args.workers) as pool:
         results = [pool.apply_async(_worker_single_line, (t,)) for t in tasks]
@@ -324,7 +299,6 @@ def cmd_line(args: argparse.Namespace) -> int:
                     logger.error("Could not translate: {}", original)
             except Exception as exc:  # noqa: BLE001
                 logger.error("Unexpected error for '{}': {}", original, exc)
-
     try:
         write_inplace(input_path, lines, translations)
         print(
@@ -343,7 +317,6 @@ def _collect_walk_files(
 ) -> list[Path]:
     exclude_set = {Path(p).resolve() for p in excludes}
     found: list[Path] = []
-
     for raw in paths:
         p = Path(raw)
         if p.is_file():
@@ -366,9 +339,7 @@ def cmd_walk(args: argparse.Namespace) -> int:
     if not files:
         print("No files to process.")
         return 0
-
     print(f"Found {len(files)} files. Using {args.workers} workers (Threshold: {args.threshold * 100:.0f}%)")
-
     tasks = [
         (
             str(p),
@@ -382,13 +353,11 @@ def cmd_walk(args: argparse.Namespace) -> int:
         )
         for p in files
     ]
-
     if args.workers == 1:
         results = [_worker_walk_file(t) for t in tasks]
     else:
         with Pool(processes=args.workers) as pool:
             results = pool.map(_worker_walk_file, tasks)
-
     print("\n" + "=" * 40)
     print("SUMMARY")
     print("-" * 40)
@@ -413,10 +382,8 @@ def _translate_python_source(text: str, translator: GoogleTranslator, chunk_size
     out: list[str] = []
     in_doc = False
     delim: Optional[str] = None
-
     for line in lines:
         stripped = line.strip()
-
         if not in_doc and stripped.startswith(('"""', "'''")):
             in_doc = True
             delim = stripped[:3]
@@ -430,7 +397,6 @@ def _translate_python_source(text: str, translator: GoogleTranslator, chunk_size
                 translated = _translate_long_text(inner, translator, chunk_size)
                 out.append(line.replace(inner, translated))
             continue
-
         if in_doc:
             if stripped.endswith(delim):
                 content = line.replace(delim, "")
@@ -440,14 +406,12 @@ def _translate_python_source(text: str, translator: GoogleTranslator, chunk_size
             else:
                 out.append(_translate_long_text(line, translator, chunk_size))
             continue
-
         if "#" in line:
             code, comment = line.split("#", 1)
             translated = _translate_long_text(comment, translator, chunk_size)
             out.append(f"{code}# {translated}\n")
         else:
             out.append(line)
-
     return "".join(out)
 
 
@@ -456,10 +420,8 @@ def cmd_whole(args: argparse.Namespace) -> int:
     if not input_path.exists():
         print("File not found.", file=sys.stderr)
         return 1
-
     text = input_path.read_text(encoding="utf-8")
     suffix = input_path.suffix.lower()
-
     source_lang = args.lang
     if source_lang == "auto":
         try:
@@ -467,19 +429,15 @@ def cmd_whole(args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             logger.warning("Language auto-detection failed ({}); using zh-CN", exc)
             source_lang = "zh-CN"
-
     translator = build_translator(source_lang, args.target)
-
     if args.code_mode == "auto":
         use_code_mode = suffix == ".py"
     else:
         use_code_mode = args.code_mode == "on"
-
     if use_code_mode:
         translated = _translate_python_source(text, translator, args.chunk_size)
     else:
         translated = _translate_long_text(text, translator, args.chunk_size)
-
     output_path = (
         Path(args.output) if args.output else input_path.with_name(f"{input_path.stem}_eng{input_path.suffix}")
     )
@@ -504,7 +462,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser(
         "chunked",
         help="In-place translate; batch lines into <=N-char chunks (was chintrans.py).",
@@ -527,7 +484,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--source", default="auto", help="Source language (default: auto).")
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_chunked)
-
     p = sub.add_parser(
         "line",
         help="In-place translate one line per API call (was transchin.py).",
@@ -544,7 +500,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--source", default="auto", help="Source language (default: auto).")
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_line)
-
     p = sub.add_parser(
         "walk",
         help="Walk files/directories and translate Chinese lines in place (was dtransline_chinese.py).",
@@ -594,7 +549,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--source", default="auto", help="Source language (default: auto).")
     p.add_argument("--target", default="en", help="Target language (default: en).")
     p.set_defaults(func=cmd_walk)
-
     p = sub.add_parser(
         "whole",
         help="Translate an entire file to <stem>_eng<suffix> (was tchin.py).",
@@ -620,7 +574,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=".py-aware docstring/comment handling: 'auto' enables it for *.py files (default).",
     )
     p.set_defaults(func=cmd_whole)
-
     return parser
 
 

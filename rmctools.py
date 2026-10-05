@@ -8,7 +8,6 @@ jtc Wrapper around the external 'just-the-code' CLI.
 Original-script -> invocation mapping ------------------------------------- aremci.py -> python merged.py libcst --no-shebang --no-file-comments --no-module-docstring --backup cleanpy2.py -> python merged.py libcst --preserve-module-docstring grmc.py -> python merged.py libcst rrmc.py -> python merged.py libcst cormc.py -> python merged.py ast --unparser ast rmco.py -> python merged.py ast --unparser astor --keep-noqa clean_py.py -> python merged.py unused [--dry-run] pyjtc.py -> python merged.py regex --lang py --inplace rmmc.py -> python merged.py regex --hash-only --inplace jtc.py -> python merged.py jtc --language python jtc2.py -> python merged.py jtc --language auto <single-file> Third-party dependencies (only required by the subcommands that use them): * libcst – required by `libcst` subcommand * astor – required by `ast --unparser=astor` * loguru – optional; falls back to stdlib logging * just-the-code CLI – required by the `jtc` subcommand"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -31,7 +30,6 @@ except ImportError:  # pragma: no cover
     cst = None  # type: ignore
     _m = None  # type: ignore
     _HAS_LIBCST = False
-
 try:
     import astor  # type: ignore
 
@@ -39,7 +37,6 @@ try:
 except ImportError:  # pragma: no cover
     astor = None  # type: ignore
     _HAS_ASTOR = False
-
 try:
     from loguru import logger as _loguru  # type: ignore
 
@@ -48,6 +45,7 @@ try:
 
     def log_warning(msg: str) -> None:
         _loguru.warning(msg)
+
 except ImportError:  # pragma: no cover
 
     def log_error(msg: str) -> None:
@@ -58,22 +56,20 @@ except ImportError:  # pragma: no cover
 
 
 DEFAULT_WORKERS: int = 8
-DEFAULT_EXCLUDES: frozenset[str] = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".venv",
-        "venv",
-        "env",
-        ".env",
-        "node_modules",
-        ".tox",
-        "build",
-        "dist",
-    }
-)
+DEFAULT_EXCLUDES: frozenset[str] = frozenset({
+    ".git",
+    "__pycache__",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "env",
+    ".env",
+    "node_modules",
+    ".tox",
+    "build",
+    "dist",
+})
 FILE_COMMENT_KEYWORDS: tuple[str, ...] = ("coding", "encoding", "type:", "fmt:")
 
 
@@ -308,7 +304,6 @@ if _HAS_LIBCST:
             module = cst.parse_module(src)
         except Exception as exc:
             return _LibCSTResult(path, 0, 0, f"CST parse error: {exc}", False)
-
         stripper = _LibCSTStripper(
             strip_comments=strip_comments,
             strip_docstrings=strip_docstrings,
@@ -319,25 +314,20 @@ if _HAS_LIBCST:
         )
         new_module = module.visit(stripper)
         out = new_module.code
-
         if preserve_shebang and src.startswith("#!") and not out.startswith("#!"):
             first_line = src.splitlines(keepends=True)[0]
             out = first_line + out
-
         if out == src:
             return _LibCSTResult(path, 0, 0, None, False)
-
         try:
             ast.parse(out)
         except SyntaxError as exc:
             return _LibCSTResult(path, 0, 0, f"Result failed AST validation: {exc}", False)
-
         if not dry_run:
             try:
                 write_text_preserving_newlines(path, out)
             except Exception as exc:
                 return _LibCSTResult(path, 0, 0, f"write-error: {exc}", False)
-
         return _LibCSTResult(path, stripper.comments_removed, stripper.docstrings_removed, None, True)
 
     def cmd_libcst(args: argparse.Namespace) -> int:
@@ -352,7 +342,6 @@ if _HAS_LIBCST:
             print("No Python files found.")
             return 0
         print(f"Processing {len(files)} Python file(s) with libcst ...")
-
         jobs = [
             (
                 f,
@@ -366,9 +355,7 @@ if _HAS_LIBCST:
             )
             for f in files
         ]
-
         total_c = total_d = total_changed = total_err = 0
-
         try:
             ctx = mp.get_context("spawn")
             with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
@@ -387,7 +374,6 @@ if _HAS_LIBCST:
                 total_d += res.docstrings_removed
                 total_changed += int(res.changed)
                 total_err += int(bool(res.error))
-
         _libcst_summary(len(files), total_changed, total_c, total_d, total_err, args.dry_run)
         return 2 if total_err else 0
 
@@ -497,30 +483,24 @@ class _ASTResult(NamedTuple):
 
 def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTResult:
     path, unparser, preserve_shebang, preserve_file_comments, keep_noqa, dry_run = args
-
     src, err = safe_read_text(path)
     if err:
         return _ASTResult(path, False, err, 0, 0)
     assert src is not None
     if not src.strip():
         return _ASTResult(path, False, None, 0, 0)
-
     if preserve_shebang or preserve_file_comments:
         header, _body = split_leading_comments(src)
     else:
         header = ""
-
     kept_comments, comment_count = _extract_kept_comments(src, keep_noqa)
-
     try:
         tree = ast.parse(src)
     except SyntaxError as exc:
         return _ASTResult(path, False, f"syntax-error-original: {exc}", 0, 0)
-
     stripper = _DocstringStripper()
     tree = stripper.visit(tree)
     ast.fix_missing_locations(tree)
-
     try:
         if unparser == "astor":
             if not _HAS_ASTOR:
@@ -530,7 +510,6 @@ def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTRes
             new_code = ast.unparse(tree)
     except Exception as exc:
         return _ASTResult(path, False, f"unparse-failed: {exc}", 0, 0)
-
     if header:
         if not header.endswith("\n"):
             header += "\n"
@@ -538,21 +517,17 @@ def _ast_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _ASTRes
     new_code = _reapply_kept_comments(new_code, kept_comments)
     if not new_code.endswith("\n"):
         new_code += "\n"
-
     try:
         ast.parse(new_code)
     except SyntaxError as exc:
         return _ASTResult(path, False, f"syntax-error-transformed: {exc}", 0, 0)
-
     if new_code == src:
         return _ASTResult(path, False, None, 0, 0)
-
     if not dry_run:
         try:
             write_text_preserving_newlines(path, new_code)
         except Exception as exc:
             return _ASTResult(path, False, f"write-error: {exc}", 0, 0)
-
     return _ASTResult(path, True, None, stripper.docstrings_removed, comment_count)
 
 
@@ -560,13 +535,11 @@ def cmd_ast(args: argparse.Namespace) -> int:
     if args.unparser == "astor" and not _HAS_ASTOR:
         print("Error: astor not installed. pip install astor", file=sys.stderr)
         return 2
-
     files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
     if not files:
         print("No Python files found.")
         return 0
     print(f"Processing {len(files)} Python file(s) with ast ({args.unparser}) ...")
-
     jobs = [
         (
             f,
@@ -578,7 +551,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
         )
         for f in files
     ]
-
     ctx = mp.get_context("spawn")
     total_d = total_c = changed = errs = 0
     with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
@@ -591,7 +563,6 @@ def cmd_ast(args: argparse.Namespace) -> int:
                 total_d += res.docstrings_removed
                 total_c += res.comments_removed
                 changed += 1
-
     print("-" * 60)
     print(f"Files scanned      : {len(files)}")
     print(f"Files {'would change' if args.dry_run else 'updated'}  : {changed}")
@@ -642,28 +613,23 @@ class _RegexResult(NamedTuple):
 
 def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _RegexResult:
     path, lang_override, keep_strings, hash_only, dry_run, validate_python = args
-
     src, err = safe_read_text(path)
     if err:
         return _RegexResult(path, False, err)
     assert src is not None
-
     ext = lang_override or path.suffix.lstrip(".").lower()
     if hash_only:
         new = re.sub(r"#.*", "", src)
         new = re.sub(r"\n\n*", "\n", new)
     else:
         new = _regex_strip_text(src, ext, keep_strings)
-
     if new == src:
         return _RegexResult(path, False, None)
-
     if validate_python and ext == "py":
         try:
             ast.parse(new)
         except SyntaxError as exc:
             return _RegexResult(path, False, f"invalid result: {exc}")
-
     if not dry_run:
         try:
             write_text_preserving_newlines(path, new)
@@ -675,7 +641,6 @@ def _regex_process_file(args: tuple[Path, str, bool, bool, bool, bool]) -> _Rege
 def cmd_regex(args: argparse.Namespace) -> int:
     if args.lang == "all":
         files = gather_python_files(args.paths, args.exclude, include_shebang_scripts=True)
-
         for p in args.paths:
             root = Path(p).resolve()
             if root.is_dir():
@@ -690,14 +655,11 @@ def cmd_regex(args: argparse.Namespace) -> int:
                 if root.is_dir():
                     files.extend(f for f in root.rglob(f"*.{args.lang}") if f.is_file())
             files = sorted(set(files))
-
     if not files:
         print("No matching files found.")
         return 0
-
     lang_override = args.lang if args.lang not in {"all", "auto"} else ""
     print(f"Processing {len(files)} file(s) with regex ...")
-
     jobs = [(f, lang_override, args.keep_strings, args.hash_only, args.dry_run, True) for f in files]
     ctx = mp.get_context("spawn")
     changed = errs = 0
@@ -709,7 +671,6 @@ def cmd_regex(args: argparse.Namespace) -> int:
             elif res.changed:
                 print(f"[UPDATED] {res.path}")
                 changed += 1
-
     print("-" * 60)
     print(f"Files scanned : {len(files)}")
     print(f"Files changed : {changed}")
@@ -777,7 +738,6 @@ def _collect_unused(src: str) -> tuple[dict[str, object], list[str]]:
     _attach_parents(tree)
     c = _UnusedCollector()
     c.visit(tree)
-
     info: dict[str, object] = {
         "functions": sorted(c.func_defs - c.func_calls),
         "classes": sorted(c.class_defs - c.class_uses),
@@ -794,7 +754,6 @@ def _rewrite_without_unused(src: str, info: dict[str, object]) -> str:
     unused_classes = set(info["classes"])  # type: ignore[arg-type]
     unused_vars = set(info["variables"])  # type: ignore[arg-type]
     unused_imports: dict = info["imports"]  # type: ignore[assignment]
-
     kept: list[ast.stmt] = []
     for stmt in tree.body:
         if isinstance(stmt, ast.FunctionDef) and stmt.name in unused_funcs:
@@ -851,12 +810,10 @@ def cmd_unused(args: argparse.Namespace) -> int:
         print("No Python files found.")
         return 0
     print(f"Scanning {len(files)} Python file(s) for unused definitions ...")
-
     jobs = [(f, args.dry_run) for f in files]
     ctx = mp.get_context("spawn")
     with ctx.Pool(processes=max(1, min(args.workers, len(jobs)))) as pool:
         results = list(pool.imap_unordered(_unused_process_file, jobs))
-
     print("\n=== RESULTS ===\n")
     for res in results:
         has_unused = any(res.info.values()) if res.info else False
@@ -938,11 +895,9 @@ def cmd_jtc(args: argparse.Namespace) -> int:
             elif root.is_dir():
                 files.extend(f for f in root.rglob("*") if f.suffix in {".py", ".rs"} and f.is_file())
         files = sorted(set(files))
-
     if not files:
         print("No matching files found.")
         return 0
-
     print(f"Running just-the-code on {len(files)} file(s) ...")
     jobs = [(f, args.language, args.dry_run) for f in files]
     ctx = mp.get_context("spawn")
@@ -955,7 +910,6 @@ def cmd_jtc(args: argparse.Namespace) -> int:
             elif res.changed:
                 print(f"[UPDATED] {res.path}")
                 changed += 1
-
     print("-" * 60)
     print(f"Files scanned : {len(files)}")
     print(f"Files changed : {changed}")
@@ -987,7 +941,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Unified Python comment/docstring/unused-code cleaner.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_libcst = sub.add_parser(
         "libcst",
         help="Strip comments/docstrings using libcst (aremci/cleanpy2/grmc/rrmc).",
@@ -1012,7 +965,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not special-case bytes-literals when stripping docstrings.",
     )
     p_libcst.set_defaults(func=cmd_libcst)
-
     p_ast = sub.add_parser(
         "ast",
         help="Strip comments/docstrings using ast + ast.unparse (cormc) or astor (rmco).",
@@ -1032,7 +984,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ast.add_argument("--keep-noqa", action="store_true", help="Attempt to preserve # noqa comments.")
     p_ast.set_defaults(func=cmd_ast)
-
     p_reg = sub.add_parser(
         "regex",
         help="Regex-based stripping (pyjtc for multi-lang, rmmc for '#...' only).",
@@ -1055,11 +1006,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="rmmc mode: only strip '#...' and collapse blank lines.",
     )
     p_reg.set_defaults(func=cmd_regex)
-
     p_un = sub.add_parser("unused", help="Remove unused functions/classes/variables/imports (clean_py).")
     _add_common_options(p_un)
     p_un.set_defaults(func=cmd_unused)
-
     p_jtc = sub.add_parser("jtc", help="Run 'just-the-code' on files (jtc / jtc2).")
     _add_common_options(p_jtc)
     p_jtc.add_argument(
@@ -1069,17 +1018,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Language to pass to just-the-code (default: auto by extension).",
     )
     p_jtc.set_defaults(func=cmd_jtc)
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not getattr(args, "paths", None):
         args.paths = ["."]
-
     try:
         return int(args.func(args))
     except KeyboardInterrupt:

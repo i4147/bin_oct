@@ -2,7 +2,6 @@
 """Compression benchmark: tries stdlib and 3rd-party codecs at multiple levels and keeps the smallest archive."""
 
 from __future__ import annotations
-
 import bz2
 import gzip
 import lzma
@@ -59,7 +58,6 @@ try:
     import pyzipper
 except ImportError:
     pyzipper = None
-
 Compressor = Callable[[Path, Path, Optional[int]], None]
 
 
@@ -231,15 +229,12 @@ def main() -> int:
     if len(sys.argv) != 2:
         print(f"Usage: {sys.argv[0]} <file_or_folder>")
         return 1
-
     input_path = Path(sys.argv[1]).expanduser().resolve()
     if not input_path.exists():
         print(f"Error: path does not exist: {input_path}")
         return 1
-
     tmpdir = Path(tempfile.mkdtemp(prefix="compress_bench_"))
     print(f"Working dir: {tmpdir}\n")
-
     try:
         if input_path.is_dir():
             print(f"Input is a folder -> creating tar of {input_path.name} ...")
@@ -248,13 +243,11 @@ def main() -> int:
             print(f"Tar created: {src_file} ({human(src_file.stat().st_size)})\n")
         else:
             src_file = input_path
-
         original_size = src_file.stat().st_size
         print(f"Source file  : {src_file}")
         print(f"Original size: {human(original_size)} ({original_size} bytes)\n")
         print("Testing compressors...")
         print("-" * 72)
-
         jobs: list[tuple[str, str, Compressor, list[Optional[int]]]] = [
             ("gzip", ".gz", compress_gzip, [1, 6, 9]),
             ("bz2", ".bz2", compress_bz2, [1, 5, 9]),
@@ -284,9 +277,7 @@ def main() -> int:
         if pyzipper is not None:
             jobs.append(("zip-lzma", ".zip", compress_zip_lzma, [None]))
             jobs.append(("zip-bzip2", ".zip", compress_zip_bzip2, [None]))
-
         results: list[tuple[str, Optional[int], int, float, float, Path]] = []
-
         for name, ext, func, levels in jobs:
             for level in levels:
                 tag = "" if level is None else f" level={level}"
@@ -301,11 +292,9 @@ def main() -> int:
                     print(f"  {name:<14}{tag:<12} -> {human(size):>12}  ratio={ratio:.4f}  time={dt:.2f}s")
                 except Exception as e:
                     print(f"  {name:<14}{tag:<12} -> FAILED ({e.__class__.__name__}: {e})")
-
         if not results:
             print("\nNo compressor succeeded.")
             return 2
-
         results.sort(key=lambda r: r[2])
         print("\n" + "=" * 72)
         print("BEST 3 METHODS (smallest first)")
@@ -317,7 +306,6 @@ def main() -> int:
             print(f"       size  : {human(size)} ({size} bytes)")
             print(f"       ratio : {ratio:.4f}  (saved {saved:.2f}%)")
             print(f"       time  : {dt:.2f}s")
-
         best = results[0]
         best_path = best[5]
         dest = Path.cwd() / best_path.name
@@ -328,10 +316,8 @@ def main() -> int:
         shutil.copy2(best_path, dest)
         print(f"\nBest compressed file copied to: {dest}")
         print("Temp directory will now be removed.")
-
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
-
     return 0
 
 

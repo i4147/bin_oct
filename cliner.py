@@ -4,11 +4,9 @@ It should choose between two cleaning strategies based on file size: read small 
 The script should process files concurrently using a worker pool (e.g., 4 workers), and each cleaning function should return a tuple indicating the file path, success status, and a message describing the outcome or any error encountered."""
 
 from __future__ import annotations
-
 import mmap
 import re
 from pathlib import Path
-
 from dh import mpf
 
 LOG_EXT = ".log"

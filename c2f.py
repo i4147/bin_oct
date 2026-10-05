@@ -4,7 +4,6 @@ The script should accept a single command-line argument representing the tempera
 Use sys.argv to read the input and ensure the code runs under the standard "if __name__ == '__main__'" entry point."""
 
 from __future__ import annotations
-
 import sys
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ It should open each wheel as a zip archive, inspect its file listing to classify
 It should handle errors gracefully, such as invalid zip files or unreadable wheels, and accept the source directory and optional destination folder name as command-line arguments via argparse."""
 
 from __future__ import annotations
-
 import argparse
 import shutil
 import zipfile

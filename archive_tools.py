@@ -3,7 +3,6 @@
 Merges these original scripts: ar_extract.py auto_extract.py ex_tar.py extar.py fixextract.py subdir.py subdir2.py u7z.py uxr.py uzz.py xtar.py xxx.py Third-party dependencies (all optional; script degrades gracefully): pip install py7zr zstandard brotli lz4 Mapping of every original script to its equivalent invocation: ar_extract.py -> extract --engine external --organize stem --single-file-subdir -j 8 <cwd> auto_extract.py -> extract --engine python -r <cwd> ex_tar.py -> extract --engine python -r --formats .zst,.tar.zst,.tar.xz <target> extar.py -> extract --engine python -r --formats .zst,.tar.zst,.tar.xz <cwd> fixextract.py -> fix [--fix] [-v] <dir> subdir.py -> extract --engine python --organize stem --subdir-truncate 8 <cwd> subdir2.py -> extract --engine external --organize stem <cwd> u7z.py -> extract --engine python --formats .tar,.7z <cwd> uxr.py -> extract --engine python -r -k <dir> uzz.py -> whl <cwd> xtar.py -> extract --engine python --integrity-check --formats .tar.gz,.tar.xz,.tar.zst,.tar.br <cwd> xxx.py -> extract --engine python --integrity-check --formats .tar.gz,.tar.xz,.tar.zst,.zip,.whl <cwd>"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -25,26 +24,21 @@ try:
     import py7zr  # type: ignore
 except ImportError:
     py7zr = None  # type: ignore
-
 try:
     import zstandard as zstd  # type: ignore
 except ImportError:
     zstd = None  # type: ignore
-
 try:
     import brotli  # type: ignore
 except ImportError:
     brotli = None  # type: ignore
-
 try:
     import lz4.frame as lz4frame  # type: ignore
 except ImportError:
     lz4frame = None  # type: ignore
-
 DEFAULT_JOBS: int = 8
 DEFAULT_TIMEOUT: int = 300
 CHUNK: int = 1024 * 1024
-
 CLI_COMMANDS: dict[str, list[str]] = {
     ".7z": ["7z", "x", "-y"],
     ".zip": ["unzip", "-o"],
@@ -66,7 +60,6 @@ CLI_COMMANDS: dict[str, list[str]] = {
     ".arj": ["arj", "x", "-y"],
     ".ace": ["unace", "x"],
 }
-
 ALL_EXTENSIONS: tuple[str, ...] = tuple(
     sorted(
         {
@@ -222,7 +215,6 @@ def _safe_extract_tar(tar: tarfile.TarFile, dest: Path) -> None:
 def _extract_tar_python(archive: Path, dest: Path) -> None:
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
-
     for sfx, kind in ((".tar.zst", "zst"), (".tar.br", "br"), (".tar.lz4", "lz4")):
         if name.endswith(sfx):
             with tempfile.NamedTemporaryFile(suffix=".tar", delete=False) as tf:
@@ -234,7 +226,6 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
             finally:
                 tmp.unlink(missing_ok=True)
             return
-
     if name.endswith((".tar.gz", ".tgz")):
         mode = "r:gz"
     elif name.endswith((".tar.bz2", ".tbz2")):
@@ -246,7 +237,6 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
     else:
         msg = f"not a tar: {archive.name}"
         raise ValueError(msg)
-
     with tarfile.open(archive, mode) as tar:
         _safe_extract_tar(tar, dest)
 
@@ -254,7 +244,6 @@ def _extract_tar_python(archive: Path, dest: Path) -> None:
 def extract_with_python(archive: Path, dest: Path) -> None:
     name = archive.name.lower()
     dest.mkdir(parents=True, exist_ok=True)
-
     tar_suffixes = (
         ".tar",
         ".tar.gz",
@@ -270,12 +259,10 @@ def extract_with_python(archive: Path, dest: Path) -> None:
     if name.endswith(tar_suffixes):
         _extract_tar_python(archive, dest)
         return
-
     if name.endswith((".zip", ".whl")):
         with zipfile.ZipFile(archive) as zf:
             zf.extractall(path=dest)
         return
-
     if name.endswith(".7z"):
         if py7zr is None:
             msg = "py7zr is not installed"
@@ -283,7 +270,6 @@ def extract_with_python(archive: Path, dest: Path) -> None:
         with py7zr.SevenZipFile(archive, mode="r") as sz:
             sz.extractall(path=dest)
         return
-
     for ext, kind in (
         (".gz", "gz"),
         (".bz2", "bz2"),
@@ -297,7 +283,6 @@ def extract_with_python(archive: Path, dest: Path) -> None:
             out_name = archive.name[: -len(ext)]
             _decompress_stream(archive, dest / out_name, kind)
             return
-
     msg = f"python engine does not support: {archive.name}"
     raise ValueError(msg)
 
@@ -307,15 +292,12 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
     if not ext or ext not in CLI_COMMANDS:
         msg = f"no external tool for: {archive.name}"
         raise ValueError(msg)
-
     cmd = list(CLI_COMMANDS[ext])
     tool = cmd[0]
     if shutil.which(tool) is None:
         msg = f"tool '{tool}' not found in PATH"
         raise RuntimeError(msg)
-
     dest.mkdir(parents=True, exist_ok=True)
-
     if ext == ".7z":
         cmd += [f"-o{dest}", str(archive)]
         subprocess.run(
@@ -327,7 +309,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
             timeout=DEFAULT_TIMEOUT,
         )
         return
-
     if ext == ".zip":
         cmd += [str(archive), "-d", str(dest)]
         subprocess.run(
@@ -339,7 +320,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
             timeout=DEFAULT_TIMEOUT,
         )
         return
-
     if ext in (".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz"):
         cmd += ["-C", str(dest), str(archive)]
         subprocess.run(
@@ -351,7 +331,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
             timeout=DEFAULT_TIMEOUT,
         )
         return
-
     if ext == ".rar":
         cmd += [str(archive), str(dest)]
         subprocess.run(
@@ -363,7 +342,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
             timeout=DEFAULT_TIMEOUT,
         )
         return
-
     if ext in (".gz", ".bz2", ".xz", ".lzma", ".zst", ".lz4"):
         local = dest / archive.name
         shutil.copy2(archive, local)
@@ -380,7 +358,6 @@ def extract_with_external(archive: Path, dest: Path, cwd: Path) -> None:
         finally:
             local.unlink(missing_ok=True)
         return
-
     cmd.append(str(archive))
     if dest != cwd:
         cmd.append(str(dest))
@@ -419,11 +396,9 @@ def _try_extract(archive: Path, dest: Path, engine: str) -> None:
 
 def should_use_subdir(archive: Path) -> bool:
     name = archive.name.lower()
-
     for ext in (".gz", ".bz2", ".xz", ".lz4", ".lzma", ".zst", ".br"):
         if name.endswith(ext) and ".tar." not in name:
             return True
-
     try:
         if name.endswith(".zip"):
             with zipfile.ZipFile(archive) as zf:
@@ -453,33 +428,28 @@ def check_integrity(archive: Path) -> tuple[bool, str]:
                 if bad is not None:
                     return False, f"Corrupted: {archive.name} (bad member {bad})"
             return True, f"Valid: {archive.name}"
-
         if name.endswith((".tar", ".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz")):
             if not tarfile.is_tarfile(archive):
                 return False, f"Invalid tar: {archive.name}"
             with tarfile.open(archive, "r:*") as tar:
                 tar.getmembers()
             return True, f"Valid: {archive.name}"
-
         if name.endswith(".tar.zst"):
             with _open_decompressor(archive, "zst") as f:
                 while f.read(CHUNK):
                     pass
             return True, f"Valid: {archive.name}"
-
         if name.endswith(".tar.br"):
             with _open_decompressor(archive, "br") as f:
                 while f.read(CHUNK):
                     pass
             return True, f"Valid: {archive.name}"
-
         if name.endswith(".7z"):
             if py7zr is None:
                 return False, f"py7zr not installed: {archive.name}"
             with py7zr.SevenZipFile(archive) as sz:
                 sz.getnames()
             return True, f"Valid: {archive.name}"
-
         for ext, kind in (
             (".gz", "gz"),
             (".bz2", "bz2"),
@@ -495,15 +465,12 @@ def check_integrity(archive: Path) -> tuple[bool, str]:
                 return True, f"Valid: {archive.name}"
     except Exception as e:
         return False, f"Corrupted: {archive.name} ({e})"
-
     return True, f"Skipped check: {archive.name}"
 
 
 def find_archives(roots: Iterable[Path], recursive: bool, formats: Optional[set[str]] = None) -> list[Path]:
     exts = formats or set(ALL_EXTENSIONS)
-
     ordered = sorted(exts, key=len, reverse=True)
-
     found: list[Path] = []
     seen: set[Path] = set()
     for root in roots:
@@ -539,24 +506,20 @@ def extract_one(
     start = time.time()
     size = archive.stat().st_size if archive.exists() else 0
     res = ExtractResult(archive_path=archive, original_size=size)
-
     if not archive.exists():
         res.error_message = "file not found"
         res.extraction_time = time.time() - start
         return res
-
     if dry_run:
         res.status = "success"
         res.extraction_time = time.time() - start
         if not quiet:
             print(f"[DRY RUN] would extract: {archive.name}")
         return res
-
     parent = archive.parent
     stem = archive.stem
     if subdir_truncate > 0:
         stem = stem[:subdir_truncate]
-
     use_subdir = False
     if organize == "flat":
         if single_file_subdir and should_use_subdir(archive):
@@ -572,7 +535,6 @@ def extract_one(
         use_subdir = True
     else:
         dest = out_dir or parent
-
     try:
         _try_extract(archive, dest, engine)
     except Exception as e:
@@ -581,18 +543,15 @@ def extract_one(
         res.error_message = msg.splitlines()[0][:200] if msg else type(e).__name__
         res.extraction_time = time.time() - start
         return res
-
     res.status = "success"
     res.output_dir = dest if use_subdir else None
     res.extracted_files = count_files(dest if use_subdir else parent)
     res.extracted_size = dir_size(dest if use_subdir else parent)
-
     if not keep:
         try:
             archive.unlink()
         except OSError as e:
             res.error_message = f"extracted, but couldn't remove original: {e}"
-
     res.extraction_time = time.time() - start
     return res
 
@@ -635,12 +594,10 @@ def _summary(results: Sequence[ExtractResult], elapsed: float, *, quiet: bool) -
 def cmd_extract(args: argparse.Namespace) -> int:
     roots = [Path(p) for p in (args.paths or ["."])]
     formats = _parse_formats(args.formats)
-
     archives = find_archives(roots, args.recursive, formats)
     if not archives:
         print("No archives found.")
         return 0
-
     if args.integrity_check:
         valid: list[Path] = []
         for a in archives:
@@ -653,12 +610,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
         if not archives:
             print("No valid archives to extract.")
             return 0
-
     if not args.quiet:
         print(
             f"Processing {len(archives)} archive(s)  engine={args.engine}  jobs={args.jobs}  organize={args.organize}"
         )
-
     opts = dict(
         engine=args.engine,
         keep=args.keep,
@@ -669,7 +624,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
         subdir_truncate=args.subdir_truncate,
         quiet=args.quiet,
     )
-
     start = time.time()
     results: list[ExtractResult]
     if args.jobs == 1 or len(archives) == 1:
@@ -679,7 +633,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
         with mp.Pool(processes=jobs) as pool:
             results = pool.map(_worker, [(a, opts) for a in archives])
     elapsed = time.time() - start
-
     for r in results:
         line = str(r)
         if r.status == "failed":
@@ -749,7 +702,6 @@ def cmd_whl(args: argparse.Namespace) -> int:
     if not wheels:
         print("No .whl files found.")
         return 0
-
     start = time.time()
     ok = 0
     fail = 0
@@ -766,7 +718,6 @@ def cmd_whl(args: argparse.Namespace) -> int:
         except Exception as e:
             fail += 1
             print(f"✗ {w.name}: {e}", file=sys.stderr)
-
     if not args.quiet:
         print(f"\nDone: {ok} extracted, {fail} failed, {time.time() - start:.1f}s")
     return 0 if fail == 0 else 1
@@ -778,7 +729,6 @@ def cmd_check(args: argparse.Namespace) -> int:
     if not archives:
         print("No archives found.")
         return 0
-
     start = time.time()
     fail = 0
     for a in archives:
@@ -787,7 +737,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(("✓ " if ok else "✗ ") + msg, file=stream)
         if not ok:
             fail += 1
-
     if not args.quiet:
         print(
             f"\nChecked {len(archives)} archive(s) in {time.time() - start:.1f}s "
@@ -814,7 +763,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
-
     pe = sub.add_parser("extract", help="Extract archives.")
     pe.add_argument(
         "paths",
@@ -889,7 +837,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Suppress progress and summary output.",
     )
     pe.set_defaults(func=cmd_extract)
-
     pf = sub.add_parser("fix", help="Fix mis-extracted dir/file name collisions.")
     pf.add_argument("root", nargs="?", default=".", help="Root directory to scan (default: cwd).")
     pf.add_argument(
@@ -899,7 +846,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pf.add_argument("-v", "--verbose", action="store_true", help="Print every candidate.")
     pf.set_defaults(func=cmd_fix)
-
     pw = sub.add_parser("whl", help="Extract .whl wheels into version-stripped dirs.")
     pw.add_argument(
         "paths",
@@ -915,7 +861,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pw.add_argument("-q", "--quiet", action="store_true", help="Suppress summary output.")
     pw.set_defaults(func=cmd_whl)
-
     pc = sub.add_parser("check", help="Integrity-check archives without extracting.")
     pc.add_argument(
         "paths",
@@ -927,7 +872,6 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--formats", type=str, default=None, help="Comma-separated extensions to check.")
     pc.add_argument("-q", "--quiet", action="store_true", help="Suppress summary output.")
     pc.set_defaults(func=cmd_check)
-
     return parser
 
 

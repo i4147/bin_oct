@@ -4,9 +4,7 @@ It should retrieve a list of input files using a helper function, read each file
 It should print color-coded status messages (green for name+version success, yellow for name-only success, and another color for missing data or nonexistent files) using a custom print helper, and iterate over all files in the input source, returning True or False/None depending on whether processing succeeded for each file."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 from dh import cprint, get_files, unique_path
 
 OUT_PATH = Path("/data/data/com.termux/files/home/tmp/metadata")

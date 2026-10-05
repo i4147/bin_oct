@@ -5,7 +5,6 @@ The script must find filenames that exist in both source and target directories,
 It should print clear status/progress messages throughout, including errors if either input directory is missing."""
 
 from __future__ import annotations
-
 import shutil
 import sys
 from pathlib import Path

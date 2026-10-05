@@ -5,7 +5,6 @@ If a non-symlink file already exists at the target symlink path, the script shou
 The script should print a "Created: <symlink_name> -> <target_filename>" message each time a new symlink is created, and run this process for both directories when executed as the main module."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 BASHBIN: Path = Path.home() / "bashbin"

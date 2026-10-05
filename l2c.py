@@ -4,7 +4,6 @@ It should accept two command-line arguments: a filename and a zero-based line in
 The script should expose a main() function invoked through the standard "if __name__ == '__main__'" entry point, and be structured so it can be run directly from the terminal with the filename and index as arguments."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

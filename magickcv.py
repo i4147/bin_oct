@@ -4,11 +4,9 @@ It should provide argparse-based utilities for parsing custom values like colors
 The script should accept input/output file paths and processing options as command-line arguments, validating and converting them through dedicated parser functions, and raise clear argparse errors for malformed inputs."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from pathlib import Path
-
 import cv2
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps

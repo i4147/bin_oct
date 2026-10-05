@@ -6,7 +6,6 @@ Original script -> Merged command ------------------------ ---------------------
 -w 8 -o extracted_code # HTML scraping (requires: requests, beautifulsoup4, loguru) python snippetforge.py html -f page.html python snippetforge.py html -p ./html_docs -w 4 python snippetforge.py html -u https://example.com/page.html Third-party dependencies ------------------------ Only the ``html`` subcommand requires extra packages: pip install requests beautifulsoup4 loguru Everything else uses the standard library only."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import re
@@ -16,20 +15,17 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
-SOURCE_CODE_EXTS: frozenset[str] = frozenset(
-    {
-        ".py",
-        ".h",
-        ".c",
-        ".cpp",
-        ".cc",
-        ".cxx",
-        ".hh",
-        ".hpp",
-        ".hxx",
-    }
-)
-
+SOURCE_CODE_EXTS: frozenset[str] = frozenset({
+    ".py",
+    ".h",
+    ".c",
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hh",
+    ".hpp",
+    ".hxx",
+})
 LANG_TO_EXT: dict[str, str] = {
     "python": ".py",
     "py": ".py",
@@ -76,16 +72,12 @@ LANG_TO_EXT: dict[str, str] = {
     "md": ".md",
     "markdown": ".md",
 }
-
 FENCE_RE = re.compile(
     r"```(?P<lang>[A-Za-z0-9_+\-.]*)[ \t]*\n(?P<code>.*?)(?<=\n)```",
     re.DOTALL | re.IGNORECASE,
 )
-
 FENCE_OPEN_RE = re.compile(r"^```+(\w*)")
-
 PKG_FILENAMES: frozenset[str] = frozenset({"PKGINFO", "METADATA", "PKG-INFO"})
-
 PYTEXT_EXTS: frozenset[str] = frozenset({".md", ".txt", ".html"})
 
 
@@ -135,10 +127,8 @@ def cmd_head(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     out = Path(args.output).resolve()
     exts = normalize_exts(args.ext)
-
     snippets = _head_collect(root, exts, args.lines, out)
     unique = list(set(snippets))
-
     out.write_text("\n\n\n".join(unique), encoding="utf-8")
     print(f"Unique snippets saved → {out}")
     print(f"Total unique blocks: {len(unique)}")
@@ -157,19 +147,16 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
     start = -1
     lang = ""
     buf: list[str] = []
-
     for i, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("```"):
             if in_block:
-                blocks.append(
-                    {
-                        "language": lang,
-                        "start_line": start,
-                        "end_line": i,
-                        "content": "\n".join(buf),
-                    }
-                )
+                blocks.append({
+                    "language": lang,
+                    "start_line": start,
+                    "end_line": i,
+                    "content": "\n".join(buf),
+                })
                 in_block = False
                 buf = []
                 lang = ""
@@ -181,16 +168,13 @@ def _parse_fenced_lines(text: str, include_unclosed: bool) -> list[dict]:
                 buf = []
         elif in_block:
             buf.append(line)
-
     if in_block and include_unclosed:
-        blocks.append(
-            {
-                "language": lang,
-                "start_line": start,
-                "end_line": len(lines),
-                "content": "\n".join(buf),
-            }
-        )
+        blocks.append({
+            "language": lang,
+            "start_line": start,
+            "end_line": len(lines),
+            "content": "\n".join(buf),
+        })
     return blocks
 
 
@@ -241,17 +225,14 @@ def cmd_md_blocks(args: argparse.Namespace) -> int:
     if not out_dir.is_absolute():
         out_dir = cwd / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-
     roots = [Path(p).resolve() for p in args.paths] if args.paths else [cwd]
     targets = _collect_md_targets(roots, wide=(args.target == "wide"))
-
     total = 0
     for md_path in targets:
         if args.naming == "lines":
             total += _write_md_lines_mode(md_path, out_dir, args.include_unclosed)
         else:
             total += _write_md_block_mode(md_path, out_dir)
-
     print(f"Extracted {total} code block(s) into {out_dir}")
     return 0
 
@@ -259,10 +240,8 @@ def cmd_md_blocks(args: argparse.Namespace) -> int:
 def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
     lines = text.split("\n")
     i, n = 0, len(lines)
-
     while i < n:
         stripped = lines[i].strip()
-
         if stripped.startswith("```"):
             m = re.match(r"^```+(\w*)", stripped)
             if m:
@@ -277,7 +256,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
                     yield start_line, snippet
                 i += 1
                 continue
-
         if stripped.startswith(">>>"):
             start_line = i + 1
             buf = []
@@ -304,7 +282,6 @@ def _iter_snips(text: str) -> Iterator[tuple[int, str]]:
             if snippet:
                 yield start_line, snippet
             continue
-
         i += 1
 
 
@@ -315,7 +292,6 @@ def _snips_process_file(path: Path, out_dir: Path) -> dict:
     except Exception:
         result["errors"] += 1
         return result
-
     stem = str(path.relative_to(path.anchor)).replace("/", "_").replace(".", "_")
     for line_no, snippet in _iter_snips(text):
         try:
@@ -353,18 +329,14 @@ def cmd_snips(args: argparse.Namespace) -> int:
     if not out_dir.is_absolute():
         out_dir = cwd / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-
     roots = [Path(p).resolve() for p in args.paths] if args.paths else [cwd]
     exts = normalize_exts(args.ext)
     targets = _collect_snips_targets(roots, exts)
-
     if not targets:
         print("No files found.")
         return 0
-
     print(f"📂 Found {len(targets)} files. Processing with {args.workers} workers...")
     total, errors = 0, 0
-
     if args.workers > 1:
         with Pool(args.workers) as pool:
             futures = [pool.apply_async(_snips_worker, ((t, out_dir),)) for t in targets]
@@ -385,7 +357,6 @@ def cmd_snips(args: argparse.Namespace) -> int:
             errors += res["errors"]
             if res["count"] > 0:
                 print(f"  ✓ {res['file']}: {res['count']} snippet(s)")
-
     print(f"\n✅ Complete: {total} snippets extracted, {errors} error(s).")
     print(f"📁 Output saved to: {out_dir.resolve()}")
     return 0
@@ -419,25 +390,21 @@ def _doctest_to_code(block: str) -> str:
 
 def _pytext_extract(text: str, filename: str) -> list[str]:
     blocks: list[str] = []
-
     for m in PY_FENCE_RE.finditer(text):
         code = m.group(1).strip()
         if code:
             if ">>>" in code:
                 code = _doctest_to_code(code)
             blocks.append(code)
-
     for m in PY_DOCTEST_RE.finditer(text):
         code = _doctest_to_code(m.group(1))
         if code.strip():
             blocks.append(code)
-
     if not blocks and filename in PKG_FILENAMES:
         for m in PY_TOPLEVEL_RE.finditer(text):
             code = m.group(1).strip()
             if code and ("import" in code or "def " in code or "class " in code):
                 blocks.append(code)
-
     return blocks
 
 
@@ -465,7 +432,6 @@ def _pytext_process_file(path: Path, out_dir: Path) -> tuple[str, int]:
         text = path.read_text(encoding="utf-8", errors="ignore")
     except (OSError, UnicodeDecodeError):
         return str(path), 0
-
     blocks = _pytext_extract(text, path.name)
     stem = path.stem.replace(" ", "_")
     for idx, block in enumerate(blocks, start=1):
@@ -487,16 +453,13 @@ def cmd_pytext(args: argparse.Namespace) -> int:
     if not out_dir.is_absolute():
         out_dir = cwd / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
-
     targets = _collect_pytext_targets(roots)
     if not targets:
         print("No target files found.")
         return 0
-
     print(f"Found {len(targets)} target file(s). Processing...")
     total = 0
     workers = max(1, args.workers)
-
     if workers > 1:
         with Pool(processes=workers) as pool:
             futures = [pool.apply_async(_pytext_worker, ((t, out_dir),)) for t in targets]
@@ -509,7 +472,6 @@ def cmd_pytext(args: argparse.Namespace) -> int:
             path_str, count = _pytext_process_file(t, out_dir)
             total += count
             print(f"  ✓ {path_str}: {count} block(s) extracted")
-
     print(f"Done! Extracted {total} Python block(s) to '{out_dir}/'")
     print("Reference headers in each file indicate the source.")
     return 0
@@ -536,7 +498,6 @@ HTML_PY_HINTS: tuple[str, ...] = (
     "else:",
     "self.",
 )
-
 HTML_PY_REGEXES: tuple[re.Pattern[str], ...] = tuple(
     re.compile(p)
     for p in (
@@ -549,12 +510,10 @@ HTML_PY_REGEXES: tuple[re.Pattern[str], ...] = tuple(
         r"\b(True|False|None)\b",
     )
 )
-
 HTML_FILENAME_RE = re.compile(
     r"#\s*(?:filename|name|file)\s*:?\s*([\w\-._]+\.py)",
     re.IGNORECASE,
 )
-
 HTML_PY_MARKERS: tuple[str, ...] = ("def ", "import ", "class ", "if __name__")
 
 
@@ -746,7 +705,6 @@ class HtmlExtractorSink:
         stem = "url_content" if source.startswith("http") else Path(source).stem
         target_dir = self.output_dir / stem
         target_dir.mkdir(parents=True, exist_ok=True)
-
         for block in blocks:
             name = block.suggested_name or f"{stem}_block_{block.block_index:03d}.py"
             out = target_dir / name
@@ -806,10 +764,8 @@ def cmd_html(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-
     output_dir = Path(args.output)
     total = 0
-
     if args.url:
         print(f"Processing URL: {args.url}")
         sink = HtmlExtractorSink(output_dir)
@@ -840,7 +796,6 @@ def cmd_html(args: argparse.Namespace) -> int:
             return 0
         print(f"Found {len(files)} HTML file(s)")
         total += _html_run_multi(files, output_dir, args.workers)
-
     print(f"Total code blocks extracted: {total}")
     print(f"Results saved to: {Path(args.output)}")
     return 0
@@ -854,7 +809,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_head = sub.add_parser(
         "head",
         help="Extract first N lines of source files, dedupe (was 23line.py)",
@@ -875,7 +829,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extensions to include",
     )
     p_head.set_defaults(func=cmd_head)
-
     p_md = sub.add_parser(
         "md-blocks",
         help="Extract fenced code blocks from Markdown (excode / exmd / extcode_md)",
@@ -901,7 +854,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only with --naming lines: also emit unterminated blocks",
     )
     p_md.set_defaults(func=cmd_md_blocks)
-
     p_snips = sub.add_parser(
         "snips",
         help="Extract fenced + doctest snippets with line numbers (code_snip_extractor.py)",
@@ -922,7 +874,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extensions to include",
     )
     p_snips.set_defaults(func=cmd_snips)
-
     p_py = sub.add_parser(
         "pytext",
         help="Extract Python blocks from md/txt/html/PKGINFO (xpy_code.py)",
@@ -942,7 +893,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of worker processes (default: 8)",
     )
     p_py.set_defaults(func=cmd_pytext)
-
     p_html = sub.add_parser(
         "html",
         help="Extract Python blocks from HTML files or URLs (pycodex.py). Requires: requests, beautifulsoup4, loguru.",
@@ -965,7 +915,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of worker processes (default: 8)",
     )
     p_html.set_defaults(func=cmd_html)
-
     return parser
 
 

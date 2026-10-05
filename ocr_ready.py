@@ -2,12 +2,10 @@
 """Generate a Python script that in-place preprocesses all supported images under the current working directory using OpenCV (or Pillow fallback), runs OCR with pytesseract, writes .txt sidecar files, and processes images concurrently with a fixed multiprocessing.Pool of 8 workers using apply_async, logging progress via loguru, using pathlib for all path operations, and including full type annotations and docstrings throughout."""
 
 from __future__ import annotations
-
 import multiprocessing
 import sys
 from pathlib import Path
 from typing import Any, Union
-
 import numpy as np
 import pytesseract
 from loguru import logger
@@ -19,11 +17,9 @@ try:
 except ImportError:
     HAS_CV2 = False
     from PIL import Image, ImageEnhance, ImageFilter
-
 SUPPORTED_EXT: set[str] = {".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".webp"}
 BASE_DIR: Path = Path.cwd()
 POOL_SIZE: int = 8
-
 ImageType = Union[np.ndarray, "Image.Image"]
 
 
@@ -129,22 +125,18 @@ def get_image_files() -> list[Path]:
 def process() -> None:
     if not HAS_CV2:
         logger.warning("OpenCV not found, using Pillow as fallback (limited functionality)")
-
     image_files = get_image_files()
     total_images = len(image_files)
     if total_images == 0:
         print("No images found to process.")
         return
-
     print(f"📊 Found {total_images} images to process")
     print(f"⚡ Using {POOL_SIZE} workers for parallel processing")
     print("🔄 Processing images in-place...\n")
-
     processed_count = 0
     error_count = 0
     total_before = 0
     total_after = 0
-
     pool = multiprocessing.Pool(processes=POOL_SIZE)
     try:
         async_results = [(path, pool.apply_async(process_single_image, (path,))) for path in image_files]
@@ -169,7 +161,6 @@ def process() -> None:
     finally:
         pool.close()
         pool.join()
-
     print("=" * 40)
     print("📊 Processing Summary:")
     print(f"   ✅ Successfully processed: {processed_count} images")

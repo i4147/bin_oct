@@ -2,12 +2,10 @@
 """Replace symlinks under the current directory with copies of their targets: scan for symlinks, resolve each in a multiprocessing pool of 8 workers, skip `bin/` siblings and `.so` targets, and log replaced and errored symlinks to `replaced.txt` and `errors.txt` via loguru."""
 
 from __future__ import annotations
-
 import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
-
 from loguru import logger
 
 MAX_WORKERS: Final[int] = 8
@@ -24,25 +22,20 @@ def process_symlink(symlink_path: Path) -> ProcessResult | None:
     try:
         raw_target: Path = symlink_path.readlink()
         target_path: Path = raw_target if raw_target.is_absolute() else (symlink_path.parent / raw_target).resolve()
-
         if symlink_path.parent.name == "bin" and target_path.parent == symlink_path.parent:
             return None
-
         if target_path.suffix == ".so":
             return None
-
         if not target_path.exists():
             return ProcessResult(
                 "error",
                 f"Target does not exist: {symlink_path} -> {target_path}",
             )
-
         symlink_path.unlink()
         if target_path.is_dir():
             shutil.copytree(target_path, symlink_path)
         else:
             shutil.copy2(target_path, symlink_path)
-
         return ProcessResult(
             "replaced",
             f"Replaced: {symlink_path} -> {target_path}",
@@ -58,19 +51,14 @@ def main() -> None:
     current_dir: Path = Path.cwd()
     replaced_log: Path = current_dir / REPLACED_LOG_NAME
     errors_log: Path = current_dir / ERRORS_LOG_NAME
-
     logger.info("Scanning for symlinks...")
     symlinks: list[Path] = [p for p in current_dir.rglob("*") if p.is_symlink()]
-
     if not symlinks:
         logger.info("No symlinks found.")
         return
-
     logger.info("Found {} symlinks. Processing in parallel...", len(symlinks))
-
     replaced_list: list[str] = []
     errors_list: list[str] = []
-
     with Pool(processes=MAX_WORKERS) as pool:
         for result in pool.imap_unordered(process_symlink, symlinks):
             if result is None:
@@ -79,7 +67,6 @@ def main() -> None:
                 replaced_list.append(result.msg)
             elif result.status == "error":
                 errors_list.append(result.msg)
-
     if replaced_list:
         replaced_log.write_text("\n".join(replaced_list) + "\n", encoding="utf-8")
         logger.info(
@@ -87,7 +74,6 @@ def main() -> None:
             len(replaced_list),
             REPLACED_LOG_NAME,
         )
-
     if errors_list:
         errors_log.write_text("\n".join(errors_list) + "\n", encoding="utf-8")
         logger.error(

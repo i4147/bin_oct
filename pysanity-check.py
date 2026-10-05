@@ -5,12 +5,10 @@ It should also include a helper that queries pip via a dry-run install to determ
 The main function should print a formatted summary report to the console showing the total count of installed packages and the results of the import checks."""
 
 from __future__ import annotations
-
 import importlib
 import re
 import subprocess
 import sys
-
 import importlib_metadata
 
 

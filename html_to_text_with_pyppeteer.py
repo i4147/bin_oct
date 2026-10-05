@@ -4,11 +4,9 @@ It should also extract the page's body text content and write it to a text file 
 The script should run the entire flow within an asyncio event loop and close the browser when finished."""
 
 from __future__ import annotations
-
 import asyncio
 import sys
 from pathlib import Path
-
 from pyppeteer import launch
 
 

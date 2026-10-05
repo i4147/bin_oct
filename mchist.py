@@ -4,7 +4,6 @@ The script should deduplicate the collected commands using a set, then append ea
 It should stop parsing the cmdline section once it encounters an empty line, and all file operations should use UTF-8 encoding."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 if __name__ == "__main__":

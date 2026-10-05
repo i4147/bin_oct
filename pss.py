@@ -15,7 +15,6 @@ It never materialises the full result set.
 Usage: search pandas # top 20 substring matches by downloads search -n 100 pandas # top 100"""
 
 from __future__ import annotations
-
 import argparse
 import heapq
 import sqlite3
@@ -23,18 +22,15 @@ import sys
 from pathlib import Path
 
 DB_PATH = Path("/sdcard/data/pip.db")
-
 DEFAULT_LIMIT = 20
 TRIGRAM_MIN = 3
 
 
 def get_table_info(con: sqlite3.Connection):
-
     cur = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
     tables = [row[0] for row in cur.fetchall()]
     if not tables:
         sys.exit("No tables found in database.")
-
     chosen = None
     for t in tables:
         cur = con.execute(f'PRAGMA table_info("{t}")')
@@ -42,7 +38,6 @@ def get_table_info(con: sqlite3.Connection):
         if len(cols) == 2:
             chosen = (t, [c[1] for c in cols])
             break
-
     if chosen is None:
         t = tables[0]
         cur = con.execute(f'PRAGMA table_info("{t}")')
@@ -50,17 +45,14 @@ def get_table_info(con: sqlite3.Connection):
         if len(cols) < 2:
             sys.exit(f"Table '{t}' must have at least two columns.")
         chosen = (t, cols)
-
     table, col_names = chosen
     name_col, dl_col = col_names[0], col_names[1]
-
     cur = con.execute(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
         (table,),
     )
     row = cur.fetchone()
     is_fts5 = bool(row and row[0] and "fts5" in row[0].lower())
-
     return table, name_col, dl_col, is_fts5
 
 
@@ -74,13 +66,11 @@ def search(
     limit: int,
 ):
     kw = keyword.lower()
-
     q_table = f'"{table}"'
     q_name = f'"{name_col}"'
     q_dl = f'"{dl_col}"'
 
     def run_like():
-
         escaped = kw.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
         sql = f"SELECT {q_name}, {q_dl} FROM {q_table} WHERE {q_name} LIKE ? ESCAPE '\\'"
         return con.execute(sql, (f"%{escaped}%",))
@@ -95,7 +85,6 @@ def search(
             cur = run_like()
     else:
         cur = run_like()
-
     return heapq.nlargest(limit, cur, key=lambda r: r[1])
 
 
@@ -112,28 +101,23 @@ def main() -> None:
         help=f"max results (default: {DEFAULT_LIMIT})",
     )
     args = ap.parse_args()
-
     if not DB_PATH.exists():
         sys.exit(f"Index not found: {DB_PATH}")
-
     keyword = args.keyword
     if not keyword:
         keyword = input("Search package: ").strip()
         if not keyword:
             print("No keyword given.")
             return
-
     con = sqlite3.connect(str(DB_PATH))
     try:
         table, name_col, dl_col, is_fts5 = get_table_info(con)
         rows = search(con, table, name_col, dl_col, is_fts5, keyword, args.limit)
     finally:
         con.close()
-
     if not rows:
         print(f"No matches for '{keyword}'.")
         return
-
     for name, dl in rows:
         print(f"{name}  {dl}")
 

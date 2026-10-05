@@ -4,7 +4,6 @@ The script should locate site-packages directories (falling back to the user sit
 It should accept command-line arguments via argparse and support running against the discovered site-packages paths."""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import sys

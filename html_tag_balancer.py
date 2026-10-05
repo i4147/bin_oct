@@ -3,31 +3,28 @@
 The script should accept file paths via argparse, read and parse each file's contents, report any tag-balance errors found (including an optional auto-fix mode indicated by a fix_needed flag), and exit with a non-zero status code if problems are detected, while gracefully handling parsing exceptions."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
-VOID_ELEMENTS = frozenset(
-    {
-        "area",
-        "base",
-        "br",
-        "col",
-        "embed",
-        "hr",
-        "img",
-        "input",
-        "link",
-        "meta",
-        "param",
-        "source",
-        "track",
-        "wbr",
-    }
-)
+VOID_ELEMENTS = frozenset({
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+})
 
 
 class TagBalanceChecker(HTMLParser):

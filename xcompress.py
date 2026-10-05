@@ -4,7 +4,6 @@ Original-script → merged CLI mapping ------------------------------------ auto
 [--algo ALGO] cramer.py -> python compressor.py compress PATH --algo ALGO [--keep] [--recursive] python compressor.py decompress PATH [--algo ALGO] [--keep] decompress_zlib.py -> python compressor.py decompress FILE --algo zlib xxr.py -> python compressor.py compress PATH --algo ALGO --workers N python compressor.py decompress PATH --workers N Optional third-party packages (all soft dependencies): zstandard, brotli, lz4, py7zr, blosc2, cramjam"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -27,7 +26,6 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
 try:
     import zstandard as zstd
 except ImportError:
@@ -52,7 +50,6 @@ try:
     import cramjam as cj
 except ImportError:
     cj = None
-
 log = logging.getLogger("compressor")
 
 
@@ -272,7 +269,6 @@ def cmd_bench(args: argparse.Namespace) -> int:
         return 1
     out_dir = Path(args.output).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
-
     payload, base = prepare_input(src)
     total = len(payload)
     print(f"Input: {src}  ({human(total)})")
@@ -280,10 +276,8 @@ def cmd_bench(args: argparse.Namespace) -> int:
         with contextlib.suppress(Exception):
             print(f"SHA256(input) = {sha256_file(src)}")
     print()
-
     names: Sequence[str] = args.algos or list(CODECS.keys())
     level_override: Optional[int] = args.level
-
     results: list[tuple[str, int, float, float, Path]] = []
     print(f"{'codec':<10} {'size':>14} {'ratio':>8} {'time(s)':>9}")
     print("-" * 45)
@@ -310,11 +304,9 @@ def cmd_bench(args: argparse.Namespace) -> int:
             print(f"✓ {name:<8} | {len(out):>12,} | {len(out) / total if total else 0:.4f} | {dt:>7.3f}")
         except Exception as e:
             print(f"✗ {name:<8} | Error: {e}")
-
     if not results:
         print("No successful compressions.")
         return 1
-
     results.sort(key=lambda r: r[1])
     print()
     print("Top results:")
@@ -323,7 +315,6 @@ def cmd_bench(args: argparse.Namespace) -> int:
             f"  {i}. {n:<10} size={sz:>12,} ratio={ratio:.4f} "
             f"saved={total - sz:>12,} B ({100 * (1 - ratio):.1f}%) time={dt:.3f}s"
         )
-
     best = results[0]
     print(f"\nKeeping best: {best[0]} -> {best[4]}")
     if not args.keep_all:
@@ -371,13 +362,11 @@ def cmd_archive(args: argparse.Namespace) -> int:
         return 1
     codecs = args.algos or list(CODECS.keys())
     workers = args.workers or (mp.cpu_count() or 1)
-
     if target.is_file():
         out_dir = Path(args.output).expanduser() if args.output else target.parent
         out_dir.mkdir(parents=True, exist_ok=True)
         _archive_one_file((str(target), str(out_dir), codecs, args.keep_all))
         return 0
-
     if target.is_dir():
         files = [p for p in target.rglob("*") if p.is_file() and not is_archive(p)]
         if not files:
@@ -475,10 +464,8 @@ def cmd_compress(args: argparse.Namespace) -> int:
         log.error("Path does not exist: %s", src)
         return 1
     out_dir = Path(args.output).expanduser() if args.output else None
-
     if src.is_file():
         return 0 if _compress_one_file(src, codec, level, args.keep, args.verify, out_dir) else 1
-
     if args.recursive:
         targets = [p for p in sorted(src.rglob("*")) if p.is_file() and not is_archive(p)]
         if not targets:
@@ -499,7 +486,6 @@ def cmd_compress(args: argparse.Namespace) -> int:
         with mp.Pool(processes=min(workers, len(targets))) as pool:
             pool.map(_compress_worker, jobs)
         return 0
-
     return 0 if _compress_dir_as_tar(src, codec, level, args.keep, args.verify, out_dir) else 1
 
 
@@ -510,7 +496,6 @@ def _compress_worker(job: tuple[str, str, int, bool, bool, Optional[str]]):
 
 def _guess_codec_from_name(name: str) -> Optional[Codec]:
     n = name.lower()
-
     for c in sorted(CODECS.values(), key=lambda c: len(c.ext), reverse=True):
         if n.endswith(c.ext):
             return c
@@ -528,13 +513,11 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
     except OSError as e:
         log.error("read %s: %s", src, e)
         return None
-
     if codec.name == "7z" and py7zr is not None:
         try:
             with tempfile.TemporaryDirectory() as td:
                 with py7zr.SevenZipFile(src, "r") as z:
                     z.extractall(path=td)
-
                 entries = list(Path(td).iterdir())
                 if len(entries) == 1:
                     shutil.move(str(entries[0]), str(dst))
@@ -552,7 +535,6 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
             log.error("decompress %s: %s", src, e)
             return None
         dst.write_bytes(out)
-
         if dst.name.endswith(".tar"):
             target = dst.with_suffix("")
             try:
@@ -563,7 +545,6 @@ def _decompress_one_file(src: Path, codec: Codec, keep: bool, out_dir: Optional[
                 dst = target
             except tarfile.TarError:
                 pass
-
     log.info("✓ %s -> %s", src, dst)
     if not keep:
         with contextlib.suppress(OSError):
@@ -582,12 +563,10 @@ def cmd_decompress(args: argparse.Namespace) -> int:
         log.error("Path does not exist: %s", src)
         return 1
     out_dir = Path(args.output).expanduser() if args.output else None
-
     explicit = CODECS.get(args.algo) if args.algo else None
     if args.algo and explicit is None:
         log.error("Unknown codec: %s", args.algo)
         return 1
-
     if src.is_file():
         if args.algo == "zlib":
             dst = (out_dir or src.parent) / (src.name + ".decompressed")
@@ -609,7 +588,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
             log.error("Cannot infer codec from %s — pass --algo", src.name)
             return 1
         return 0 if _decompress_one_file(src, codec, args.keep, out_dir) else 1
-
     if args.recursive:
         candidates = [p for p in sorted(src.rglob("*")) if p.is_file() and is_archive(p)]
     else:
@@ -655,7 +633,6 @@ def _subdir_decompress(job: tuple[str, bool]) -> bool:
     codec = _guess_codec_from_name(src.name)
     if codec is None:
         return False
-
     name = src.name
     if name.endswith(f".tar{codec.ext}"):
         base = name[: -len(f".tar{codec.ext}")]
@@ -691,7 +668,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     level = args.level if args.level is not None else codec.default_level
     paths = [Path(p).expanduser() for p in (args.paths or ["."])]
     workers = args.workers or 8
-
     if args.compress:
         dirs = [d for p in paths if p.is_dir() for d in p.iterdir() if d.is_dir() and not d.name.startswith(".")]
         if not dirs:
@@ -703,7 +679,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
             results = pool.map(_subdir_compress, jobs)
         print(f"Compressed {sum(results)}/{len(dirs)}")
         return 0
-
     archives = [
         a for p in paths if p.is_dir() for a in p.iterdir() if a.is_file() and a.name.endswith(f".tar{codec.ext}")
     ]
@@ -747,7 +722,6 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("-v", "--verbose", action="store_true", help="verbose logging")
     ap.add_argument("-q", "--quiet", action="store_true", help="quiet logging")
     sub = ap.add_subparsers(dest="cmd", required=True)
-
     p = sub.add_parser("bench", help="try every codec at its best level; keep best")
     p.add_argument("path")
     _common_output(p)
@@ -767,7 +741,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _common_workers(p)
     p.set_defaults(func=cmd_bench)
-
     p = sub.add_parser("archive", help="recursively best-codec every non-archive file")
     p.add_argument("path")
     _common_output(p)
@@ -775,7 +748,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--keep-all", action="store_true", help="(reserved for parity)")
     _common_workers(p)
     p.set_defaults(func=cmd_archive)
-
     p = sub.add_parser("compress", help="compress a file or directory with ONE codec")
     p.add_argument("path")
     p.add_argument("--algo", "-a", required=True, choices=sorted(CODECS), help="codec to use")
@@ -803,7 +775,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_output(p)
     _common_workers(p)
     p.set_defaults(func=cmd_compress)
-
     p = sub.add_parser("decompress", help="decompress a file or all archives under a directory")
     p.add_argument("path")
     p.add_argument(
@@ -818,7 +789,6 @@ def build_parser() -> argparse.ArgumentParser:
     _common_output(p)
     _common_workers(p)
     p.set_defaults(func=cmd_decompress)
-
     p = sub.add_parser("subdirs", help="compress/decompress each direct subdirectory")
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("-c", "--compress", action="store_true", help="compress subdirectories")
@@ -844,7 +814,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _common_workers(p)
     p.set_defaults(func=cmd_subdirs)
-
     return ap
 
 

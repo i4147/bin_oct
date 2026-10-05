@@ -3,14 +3,12 @@
 Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for logging, pathlib for all path operations, complete type annotations, and a MIME-to-extension mapping table with skip lists."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
-
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
 
@@ -49,7 +47,6 @@ class Color:
     REVERSE: Final[int] = 7
     CONCEALED: Final[int] = 8
     STRIKETHROUGH: Final[int] = 9
-
     _enabled: bool = True
 
     @classmethod
@@ -362,11 +359,9 @@ MIME_TO_EXTENSIONS: Final[dict[str, list[str]]] = {
     "application/vnd.sqlite3": [".db", ".sqlite", ".sqlite3"],
     "application/octet-stream": [".bin", ".o"],
 }
-
 SKIP_EXTENSIONS: Final[set[str]] = {".css", ".js", ".ts", ".jsx", ".tsx"}
 SKIP_MIME_TYPES: Final[set[str]] = {"text/plain", "application/octet-stream"}
 SKIP_DIRECTORIES: Final[frozenset[str]] = frozenset({".git", "__pycache__", ".venv", "node_modules", ".env"})
-
 WORKER_COUNT: Final[int] = 8
 
 
@@ -495,7 +490,6 @@ def scan_directory(directory: str) -> list[MismatchResult]:
     if not base_dir.is_dir():
         logger.error(f"Error: {directory} is not a directory")
         return []
-
     files: list[Path] = []
     for root, dirs, filenames in base_dir.walk():
         dirs[:] = [d for d in dirs if d not in SKIP_DIRECTORIES]
@@ -504,16 +498,12 @@ def scan_directory(directory: str) -> list[MismatchResult]:
             path: Path = root_path / filename
             if not path.is_symlink():
                 files.append(path)
-
     if not files:
         logger.warning("No files found")
         return []
-
     print(f"Found {len(files):,} files, analyzing with {WORKER_COUNT} workers...")
-
     results: list[MismatchResult] = []
     tasks: list[tuple[Path, Path]] = [(base_dir, f) for f in files]
-
     with Pool(processes=WORKER_COUNT) as pool:
         async_results: list[Any] = [pool.apply_async(process_file_worker, (task,)) for task in tasks]
         completed: int = 0
@@ -528,7 +518,6 @@ def scan_directory(directory: str) -> list[MismatchResult]:
                 continue
             if result:
                 results.append(result)
-
     print(f"Processed: {completed:,}/{len(files):,}")
     return results
 
@@ -537,9 +526,7 @@ def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> in
     if not mismatches:
         logger.success("✓ No file extension mismatches found!")
         return 0
-
     logger.warning(f"Found {len(mismatches)} file(s) with mismatched extensions:")
-
     renamed_count: int = 0
     for result in sorted(mismatches, key=lambda r: str(r.path)):
         try:
@@ -560,7 +547,6 @@ def print_results(mismatches: list[MismatchResult], confirm: bool = False) -> in
         else:
             logger.error("    ✗ Failed to rename")
         print()
-
     print(f"Summary: {renamed_count} file(s) renamed")
     return renamed_count
 
@@ -600,19 +586,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser: argparse.ArgumentParser = build_arg_parser()
     args: argparse.Namespace = parser.parse_args()
-
     if args.no_color or not Color.can_colorize():
         Color.disable()
     else:
         Color.enable()
-
-    cprint = lambda text, fg=None, bg=None, attrs=None: print(colored(text, fg, bg, attrs))  # noqa: E731
-
+    cprint = lambda text, fg=None, bg=None, attrs=None: print(colored(text, fg, bg, attrs))
     cprint("╔══════════════════════════════════════════╗", fg=Color.CYAN)
     cprint("║  File Extension Mismatch Fixer            ║", fg=Color.CYAN)
     cprint("╚══════════════════════════════════════════╝", fg=Color.CYAN)
     print()
-
     mismatches: list[MismatchResult] = scan_directory(args.directory)
     renamed: int = print_results(mismatches, confirm=args.interactive)
     return 0 if renamed >= 0 else 0

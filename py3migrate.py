@@ -14,7 +14,6 @@ Mapping from original scripts ----------------------------- 223.py -> py3migrate
 Only the standard library is used; ``ruff`` is invoked if ``--with-ruff`` is passed and the binary is on ``$PATH``."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import logging
@@ -32,7 +31,6 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 log = logging.getLogger("py3migrate")
-
 DEFAULT_EXT: tuple[str, ...] = (".py",)
 DEFAULT_WORKERS: int = 8
 DEFAULT_FIXER_MODULE: str = "lib2to3.fixes"
@@ -41,7 +39,6 @@ DEFAULT_CONTEXT_CHARS: int = 80
 DEFAULT_TAG: str = "Tag:py2-none-any"
 DEFAULT_TARGETS: tuple[str, ...] = ("WHEEL",)
 ARCHIVE_EXTS: tuple[str, ...] = (".zip", ".whl", ".tar.gz", ".tgz", ".tar")
-
 FALLBACK_FIXERS: tuple[str, ...] = (
     "lib2to3.fixes.fix_apply",
     "lib2to3.fixes.fix_asserts",
@@ -244,9 +241,7 @@ def _refactor_file(
         original = read_text(path)
     except OSError as e:
         return (path, False, f"✗ {path.name}: {e}")
-
     options = {"print_function": True} if print_function else {}
-
     try:
         if show_errors:
             tool, captured_errors, captured_output = _CapturingTool.build(fixers, options)
@@ -255,29 +250,23 @@ def _refactor_file(
             captured_errors, captured_output = [], []
     except RuntimeError as e:
         return (path, False, f"✗ {path.name}: {e}")
-
     try:
         new_tree = tool.refactor_string(original, str(path))  # type: ignore[attr-defined]
     except SyntaxError as e:
         return (path, False, f"✗ {path.name}: syntax error: {e}")
     except Exception as e:  # noqa: BLE001 — surface any lib2to3 failure
         return (path, False, f"✗ {path.name}: refactor error: {e}")
-
     new_text = str(new_tree)
     log_block = ""
     if show_errors and (captured_errors or captured_output):
         joined = "\n".join(f"  {line}" for line in (captured_errors + captured_output))
         log_block = f"\n  [refactor log]\n{joined}"
-
     if new_text == original:
         return (path, False, f"○ {path.name}: no changes needed{log_block}")
-
     diff = describe_diff(original, new_text, diff_mode, max_diff_lines, ctx_chars)
     detail = f"\n{diff}" if diff else ""
-
     if not apply:
         return (path, True, f"📝 {path.name}: would change{detail}{log_block}")
-
     _write(path, new_text, backup=backup)
     return (path, True, f"✓ {path.name}: changed{detail}{log_block}")
 
@@ -287,25 +276,21 @@ def detect_file(path: Path) -> tuple[Path, int | None, str]:
         text = read_text(path)
     except OSError as e:
         return (path, None, f"read error: {e}")
-
     py2_score = 0
     py3_score = 0
     reasons: list[str] = []
-
     try:
         tree = ast.parse(text)
         py3_score += 1
         reasons.append("Parses cleanly under Python 3 grammar.")
     except SyntaxError as e:
         return (path, 2, f"High (Python 3 syntax error: {e})")
-
     if "print " in text and "print(" not in text:
         py2_score += 2
         reasons.append("Uses `print` statement without parentheses.")
     if "__future__" in text and "print_function" in text:
         py3_score += 2
         reasons.append("Uses `from __future__ import print_function`.")
-
     for node in ast.walk(tree):
         if isinstance(node, (ast.AsyncFunctionDef, ast.Await)):
             py3_score += 3
@@ -316,7 +301,6 @@ def detect_file(path: Path) -> tuple[Path, int | None, str]:
                     py3_score += 2
                     reasons.append("Uses function argument annotations.")
                     break
-
     if py2_score > py3_score:
         version = 2
         confidence = "High" if py2_score - py3_score > 2 else "Medium"
@@ -327,7 +311,6 @@ def detect_file(path: Path) -> tuple[Path, int | None, str]:
         version = 3
         confidence = "Low"
         reasons.append("No strong indicators; defaulting to Python 3.")
-
     return (path, version, f"{confidence}: {'; '.join(reasons)}")
 
 
@@ -356,12 +339,10 @@ def cmd_refactor(args: argparse.Namespace) -> int:
         print("Mode: DRY RUN (pass --apply to write)\n")
     else:
         print("Mode: APPLY\n")
-
     files = iter_files(args.paths)
     if not files:
         print("No Python files found to process.")
         return 0
-
     worker = partial(
         _refactor_file,
         fixers=fixers,
@@ -373,7 +354,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
         backup=args.backup,
         show_errors=args.show_errors,
     )
-
     changed = 0
     failed = 0
     print(f"Processing {len(files)} file(s) with {args.workers} workers.\n")
@@ -385,7 +365,6 @@ def cmd_refactor(args: argparse.Namespace) -> int:
                 changed += 1
             if msg.startswith("✗"):
                 failed += 1
-
     print("=" * 40)
     if args.apply:
         print(f"Updated {changed} file(s); {failed} failure(s).")
@@ -451,14 +430,11 @@ def _fixprint_file(
         original = read_text(path)
     except OSError as e:
         return (path, False, f"✗ {path.name}: {e}")
-
     new_text, changed = fixprint_text(original, do_all)
     if not changed:
         return (path, False, f"○ {path.name}: no changes needed")
-
     if not apply:
         return (path, True, f"📝 {path.name}: would rewrite print/legacy syntax")
-
     _write(path, new_text, backup=backup)
     extra = ""
     if with_ruff:
@@ -488,12 +464,10 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
     if not files:
         print("No Python files found to process.")
         return 0
-
     if not args.apply:
         print("Mode: DRY RUN (pass --apply to write)\n")
     else:
         print("Mode: APPLY\n")
-
     worker = partial(
         _fixprint_file,
         do_all=args.all,
@@ -501,7 +475,6 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
         backup=args.backup,
         with_ruff=args.with_ruff,
     )
-
     changed = 0
     print(f"Processing {len(files)} file(s) with {args.workers} workers.\n")
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
@@ -510,7 +483,6 @@ def cmd_fixprint(args: argparse.Namespace) -> int:
                 print(f"[{i}/{len(files)}] {msg}")
             if was_changed:
                 changed += 1
-
     print("=" * 40)
     print(f"{'Updated' if args.apply else 'Would update'} {changed} file(s).")
     return 0
@@ -651,11 +623,9 @@ def cmd_strip_tag(args: argparse.Namespace) -> int:
                 paths.extend(f for f in p.iterdir() if f.is_file())
         else:
             paths.append(p)
-
     if not paths:
         print("Nothing to scan.")
         return 0
-
     worker = partial(_strip_tag_file, targets=targets, tag=args.tag)
     total = 0
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
@@ -701,7 +671,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Enable debug logging.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     d = sub.add_parser("detect", help="Detect Py2 vs Py3 in source files.")
     _add_common_opts(d)
     d.add_argument(
@@ -710,7 +679,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=list(DEFAULT_EXT),
         help=f"File extensions to scan (default: {list(DEFAULT_EXT)}).",
     )
-
     r = sub.add_parser(
         "refactor",
         help="Rewrite Py2 → Py3 using lib2to3 fixers (dry-run by default).",
@@ -773,7 +741,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Capture and print the RefactoringTool log (2232.py).",
     )
-
     f = sub.add_parser(
         "fixprint",
         help="Line-based fixes for `print x` and (with --all) `except X, e:` etc.",
@@ -808,13 +775,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="Do not write backups (f23.py -f).",
     )
-
     r2 = sub.add_parser(
         "run2to3",
         help="Shell out to the external `2to3 -w -n -f all` CLI (run223.py).",
     )
     _add_common_opts(r2)
-
     s = sub.add_parser(
         "strip-tag",
         help="Strip a `Tag:py2-none-any` line from WHEEL members in archives.",
@@ -838,19 +803,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=True,
         help="Only scan top level of any directory argument.",
     )
-
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     logging.basicConfig(
         level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
         format="%(levelname)s: %(message)s",
     )
-
     dispatch = {
         "detect": cmd_detect,
         "refactor": cmd_refactor,

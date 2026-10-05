@@ -1,4 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Create a single-file, in-place TOML formatter script for Termux/Python (Python 3.11+, shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), named `tomlfmt.py`, that mimics the default formatting behavior of the `taplo` CLI formatter (format-only, no linting/validation beyond safety checks).
+
+**Purpose**: Reformat TOML files to a canonical, consistent style matching taplo's defaults, modifying files in place.
+
+**Inputs (CLI usage)**:
+- No arguments: recursively format every `*.toml` file under the current directory.
+- One or more arguments: a mix of individual file paths and/or directory paths; directories are searched recursively for `*.toml` files.
+- `--check` flag: dry-run mode — write nothing to disk, but exit with status code 3 if any file's formatted output would differ from its current content (useful for CI).
+
+**Output**: Files are rewritten in place with formatted content (unless `--check` is used). Print which files were changed/would change, and report any files that failed validation (left untouched).
+
+**Formatting rules to implement (taplo defaults)**:
+- Exactly one space around `=`.
+- Dotted keys and table headers have inner spaces removed (e.g., `[ a . b ]` → `[a.b]`).
+- Indentation of entries and tables is removed entirely.
+- Collapse runs of 3+ blank lines down to at most 2 consecutive blank lines.
+- Strip any leading blank lines at the start of the file.
+- Ensure exactly one trailing newline at end of file.
+- Strip trailing whitespace from every line.
+- Arrays: render on a single line as `[1, 2, 3]` if the result fits within 80 columns; otherwise expand to one element per line with 2-space indentation and a trailing comma after the last element. Arrays containing comments or multi-line strings must always stay expanded regardless of width.
+- Inline tables: format as `{ a = 1, b = 2 }`, or `{}` when empty.
+- Comments are preserved verbatim except for trailing whitespace trimming; consecutive trailing (end-of-line) comments on adjacent lines are vertically aligned (align_comments behavior).
+- Key order, values, string contents, and number formatting must never be altered.
+- Preserve the original file's byte-order mark (BOM), if present, and preserve the file's dominant line ending style (LF vs CRLF).
+- Explicitly NOT implemented: key reordering (reorder_keys), entry alignment (align_entries), and support for `.taplo.toml` configuration files — the script only applies the fixed default ruleset described above.
+
+**Safety behavior**:
+- Before formatting, validate that the original file is syntactically valid TOML; if not, report the file as invalid/failed and leave it untouched (no write).
+- After generating formatted output, re-parse it (using `tomllib`, or `tomli` as a fallback on Python 3.10) and verify the resulting data structure is exactly equal to the data parsed from the original file (comparison must be type-exact and NaN-aware, so that `nan == nan` is treated as equal where appropriate) before writing. If the round-trip data does not match, do not write the file and report it as a failure instead, to guarantee the formatter never silently corrupts data.
+
+**Dependencies**: Use `tomllib` from the standard library (Python 3.11+); note that on Python 3.10 the `tomli` package must be installed as a substitute. The script must be self-contained in a single file with no other external dependencies.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/c2MXECCpteWq9jy46jZsto"""
+
 # tomlfmt.py: a taplo-style TOML formatter (formatter only), in place, single file.
 #
 # Requires Python 3.11+ (tomllib). On 3.10: pip install tomli
@@ -32,7 +66,6 @@
 # a single file is handled in-process. Workers never raise; they return a Result.
 #
 # Exit codes: 0 ok, 1 no files found, 2 errors, 3 --check found files that would change.
-
 import argparse
 import contextlib
 import functools
@@ -50,36 +83,30 @@ try:
     import tomllib
 except ModuleNotFoundError:  # Python < 3.11
     import tomli as tomllib
-
 WORKERS = 8  # fixed, as requested
 COLUMN_WIDTH = 80
 INDENT = "  "
 ALLOWED_BLANK_LINES = 2
 CHUNK_MAX = 32
-
 # Junk directories pruned during discovery (explicit path arguments are never pruned).
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".venv",
-        "venv",
-        "env",
-        ".tox",
-        ".nox",
-        "node_modules",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".eggs",
-        "site-packages",
-    }
-)
-
+SKIP_DIRS = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".venv",
+    "venv",
+    "env",
+    ".tox",
+    ".nox",
+    "node_modules",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".eggs",
+    "site-packages",
+})
 # ----------------------------------------------------------------------------- lexical patterns
-
 WS_RE = re.compile(r"[ \t]*")
 BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
 BASIC_STRING_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"')
@@ -101,8 +128,6 @@ class FormatError(Exception):
 
 
 # ----------------------------------------------------------------------------- syntax tree
-
-
 @dataclass(slots=True)
 class Scalar:
     raw: str
@@ -150,12 +175,9 @@ class Entry:
 
 
 # ----------------------------------------------------------------------------- parser
-
-
 class Parser:
     # Lossless-enough parser: keeps raw scalars and every comment, drops only insignificant whitespace.
     # Input must already be valid TOML with "\n" line endings (guaranteed by format_text).
-
     def __init__(self, source: str) -> None:
         self.s = source
         self.n = len(source)
@@ -370,8 +392,6 @@ class Parser:
 
 
 # ----------------------------------------------------------------------------- printer
-
-
 @dataclass(slots=True)
 class Line:
     text: str  # code part; may contain "\n" only inside multi-line strings
@@ -536,8 +556,6 @@ def render(items: list) -> str:
 
 
 # ----------------------------------------------------------------------------- validation
-
-
 def same_data(a, b) -> bool:
     # Strict structural equality: exact types, NaN equals NaN (plain == would say otherwise).
     if type(a) is not type(b):
@@ -557,21 +575,18 @@ def format_text(text: str) -> str:
         original = tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
         raise FormatError(f"invalid TOML: {exc}") from None
-
     parser = Parser(text)
     try:
         items = parser.parse()
     except ParseError as exc:
         raise FormatError(f"unsupported syntax: {exc}") from None
     output = render(items)
-
     try:
         reparsed = tomllib.loads(output)
     except tomllib.TOMLDecodeError as exc:
         raise FormatError(f"formatter produced invalid TOML, file left untouched: {exc}") from None
     if not same_data(original, reparsed):
         raise FormatError("formatter would change the data, file left untouched")
-
     # The data check cannot see comments, so verify them separately (order may differ, count may not).
     checker = Parser(output)
     try:
@@ -584,8 +599,6 @@ def format_text(text: str) -> str:
 
 
 # ----------------------------------------------------------------------------- file handling
-
-
 @dataclass(frozen=True, slots=True)
 class Result:
     path: str
@@ -615,27 +628,22 @@ def _process_file(path_str: str, check: bool) -> Result:
             raw = stream.read()
     except OSError as exc:
         return Result(path_str, "error", f"read error: {exc}")
-
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
         return Result(path_str, "error", f"not valid UTF-8: {exc}")
-
     has_bom = text.startswith("\ufeff")
     if has_bom:
         text = text[1:]
     crlf_count = text.count("\r\n")
     use_crlf = crlf_count > text.count("\n") - crlf_count  # keep whichever ending dominates
     text = text.replace("\r\n", "\n")
-
     if not text.strip():  # empty or whitespace-only: nothing to format, leave untouched
         return Result(path_str, "unchanged")
-
     try:
         formatted = format_text(text)
     except FormatError as exc:
         return Result(path_str, "error", str(exc))
-
     if use_crlf:
         formatted = formatted.replace("\n", "\r\n")
     new_bytes = (("\ufeff" if has_bom else "") + formatted).encode("utf-8")
@@ -643,7 +651,6 @@ def _process_file(path_str: str, check: bool) -> Result:
         return Result(path_str, "unchanged")
     if check:
         return Result(path_str, "changed")
-
     try:
         after = os.stat(path)
     except OSError as exc:
@@ -666,8 +673,6 @@ def process_file(path_str: str, check: bool) -> Result:
 
 
 # ----------------------------------------------------------------------------- discovery
-
-
 def walk_toml(root: str) -> Iterator[str]:
     # scandir + pruning: junk trees are never entered, symlinks are never followed.
     stack = [root]
@@ -719,8 +724,6 @@ def display_path(path: str) -> str:
 
 
 # ----------------------------------------------------------------------------- CLI
-
-
 def iter_results(files: list[str], check: bool) -> Iterator[Result]:
     worker = functools.partial(process_file, check=check)
     if len(files) == 1:  # a pool would only add start-up cost
@@ -750,7 +753,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not files:
         print("No TOML files found.", file=sys.stderr)
         return 1
-
     verb = "would format" if args.check else "formatted"
     total = changed = errors = 0
     try:
@@ -766,7 +768,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130
-
     summary = f"\nProcessed {total} file(s): {verb} {changed}, {total - changed - errors} unchanged, {errors} error(s)."
     print(summary, file=sys.stderr if errors else sys.stdout)
     if errors:

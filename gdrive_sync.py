@@ -4,7 +4,6 @@ Merges the behaviours of five near-identical scripts into one CLI.
 Originals -> this script ------------------------ gdrive_downloader.py -> python gdrive_sync.py download --folder notebooks gdrive_syncer.py -> python gdrive_sync.py sync gdrive_syncer2.py -> python gdrive_sync.py sync --auth-mode installed gdrive_syncer3.py -> python gdrive_sync.py sync --auth-mode manual --dest /sdcard/GoogleDriveBackup gdrive_syncer4.py -> python gdrive_sync.py sync --auth-mode manual --sanitize --dest /sdcard/GoogleDriveBackup Third-party requirements (install once): pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 python-dotenv requests"""
 
 from __future__ import annotations
-
 import argparse
 import os
 import pickle
@@ -16,7 +15,7 @@ from urllib.parse import urlencode
 
 try:
     from dotenv import load_dotenv  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def load_dotenv(*_a, **_kw) -> bool:  # type: ignore
         return False
@@ -32,7 +31,6 @@ from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 FOLDER_MIME = "application/vnd.google-apps.folder"
-
 DEFAULT_CREDENTIALS_FILE = "credentials.json"
 DEFAULT_TOKEN_FILE = "token.pickle"
 DEFAULT_ENV_FILE = Path.home() / ".env"
@@ -70,22 +68,17 @@ class DriveClient:
         self.credentials_file = credentials_file
         self.token_file = token_file
         self.env_file = Path(env_file) if env_file else DEFAULT_ENV_FILE
-
         if self.env_file.exists():
             load_dotenv(dotenv_path=str(self.env_file))
-
         self.client_id = client_id or os.getenv("GOOGLE_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("GOOGLE_CLIENT_SECRET")
-
         self.service = self._authenticate()
 
-    # ------------------------------------------------------------------ auth #
     def _authenticate(self):
         creds: Optional[Credentials] = None
         if os.path.exists(self.token_file):
             with open(self.token_file, "rb") as fh:
                 creds = pickle.load(fh)
-
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
@@ -93,10 +86,8 @@ class DriveClient:
                 creds = self._manual_oauth_flow()
             else:
                 creds = self._installed_oauth_flow()
-
             with open(self.token_file, "wb") as fh:
                 pickle.dump(creds, fh)
-
         return build("drive", "v3", credentials=creds)
 
     def _installed_oauth_flow(self):
@@ -128,7 +119,6 @@ class DriveClient:
         if not self.client_id or not self.client_secret:
             msg = "Manual auth mode requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (env file or CLI flags)."
             raise ValueError(msg)
-
         params = {
             "client_id": self.client_id,
             "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
@@ -137,7 +127,6 @@ class DriveClient:
             "access_type": "offline",
         }
         auth_url = f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}"
-
         print("\n" + "=" * 40)
         print("MANUAL AUTHENTICATION REQUIRED")
         print("-" * 40)
@@ -147,7 +136,6 @@ class DriveClient:
         print("4. Copy the authorization code")
         print("-" * 40)
         code = input("\nEnter authorization code: ").strip()
-
         resp = requests.post(
             "https://oauth2.googleapis.com/token",
             data={
@@ -163,7 +151,6 @@ class DriveClient:
             msg = f"Token exchange failed: {resp.text}"
             raise RuntimeError(msg)
         tok: dict[str, Any] = resp.json()
-
         return Credentials(
             token=tok["access_token"],
             refresh_token=tok.get("refresh_token"),
@@ -173,14 +160,14 @@ class DriveClient:
             scopes=SCOPES,
         )
 
-    # -------------------------------------------------------------- listing #
     def list_children(self, folder_id: str = "root") -> list[dict]:
         results: list[dict] = []
         page_token: Optional[str] = None
         while True:
             try:
                 resp = (
-                    self.service.files()
+                    self.service
+                    .files()
                     .list(
                         q=f"'{folder_id}' in parents and trashed=false",
                         pageSize=1000,
@@ -204,7 +191,6 @@ class DriveClient:
         files = resp.get("files", [])
         return files[0] if files else None
 
-    # ------------------------------------------------------------- download #
     def download_file(self, file_id: str, name: str, dest: str) -> bool:
         try:
             request = self.service.files().get_media(fileId=file_id)
@@ -225,7 +211,6 @@ class DriveClient:
             print(f"\n✗ Failed to download {name}: {err}")
             return False
 
-    # ----------------------------------------------------------------- sync #
     def sync_folder(
         self,
         folder_id: str,
@@ -238,12 +223,10 @@ class DriveClient:
         prefix = "  " * indent
         print(f"{prefix}📁 Syncing: {label}")
         os.makedirs(dest, exist_ok=True)
-
         for item in self.list_children(folder_id):
             raw_name = item["name"]
             name = _sanitize(raw_name) if sanitize else raw_name
             path = os.path.join(dest, name)
-
             if item["mimeType"] == FOLDER_MIME:
                 self.sync_folder(
                     item["id"],
@@ -254,14 +237,12 @@ class DriveClient:
                     indent=indent + 1,
                 )
                 continue
-
             modified = item.get("modifiedTime")
             if skip_existing and os.path.exists(path) and modified:
                 remote_ts = _iso_to_timestamp(modified)
                 if remote_ts is not None and os.path.getmtime(path) >= remote_ts:
                     print(f"{prefix}  ⏭ Up to date: {raw_name}")
                     continue
-
             if self.download_file(item["id"], raw_name, path) and modified:
                 ts = _iso_to_timestamp(modified)
                 if ts is not None:
@@ -286,11 +267,9 @@ def cmd_download(args: argparse.Namespace) -> int:
         if not folder:
             msg = f"Folder '{args.folder}' not found in Google Drive"
             raise SystemExit(msg)
-
         print(f"Found folder '{args.folder}' with ID: {folder['id']}")
         dest = args.dest or os.path.join(os.getcwd(), args.folder)
         os.makedirs(dest, exist_ok=True)
-
         client.sync_folder(
             folder["id"],
             dest,
@@ -311,7 +290,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
     try:
         client = _make_client(args)
         dest = args.dest or DEFAULT_BACKUP_DIR
-
         if args.folder:
             print(f"Searching for folder: {args.folder}")
             folder = client.find_folder(args.folder)
@@ -334,7 +312,6 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 skip_existing=not args.force,
                 sanitize=args.sanitize,
             )
-
         print("\n✅ Sync completed!")
         return 0
     except KeyboardInterrupt:
@@ -403,7 +380,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     p_down = subparsers.add_parser(
         "download",
         help="Download a single named folder from Drive root (gdrive_downloader.py).",
@@ -417,7 +393,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_auth_arguments(p_down)
     p_down.set_defaults(func=cmd_download)
-
     p_sync = subparsers.add_parser(
         "sync",
         help="Sync the entire Drive or one named folder (gdrive_syncer*.py).",
@@ -444,7 +419,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_auth_arguments(p_sync)
     p_sync.set_defaults(func=cmd_sync)
-
     return parser
 
 

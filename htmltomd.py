@@ -4,12 +4,10 @@ It should accept one or more HTML file paths (or a directory to scan) as argumen
 The script should support parallel processing using multiprocessing based on available CPU cores, skip files that don't have .html/.htm extensions with a warning, write the resulting Markdown next to each source file (or to a specified output location), and report success/failure status for each processed file, exiting with an appropriate status code via argparse-based CLI handling."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from multiprocessing import cpu_count
 from pathlib import Path
-
 from bs4 import BeautifulSoup
 from html_to_markdown import Options, convert
 

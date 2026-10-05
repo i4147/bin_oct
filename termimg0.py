@@ -5,10 +5,8 @@ It should iterate over pairs of pixel rows, using each pixel pair to set the bac
 If no image path is provided as an argument, it should print a usage message instead of running."""
 
 from __future__ import annotations
-
 import sys
 from shutil import get_terminal_size
-
 from PIL import Image
 
 

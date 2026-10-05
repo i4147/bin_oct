@@ -4,7 +4,6 @@ It should skip items that aren't directories or that already have a correspondin
 For each folder it should compute and report the original size versus compressed size, the compression ratio, space freed, and a compression percentage, using argparse to accept the target directory path and other options from the command line, and relying on a custom "fsz" helper (from module "dh") for human-readable size formatting."""
 
 from __future__ import annotations
-
 import argparse
 import io
 import os
@@ -12,7 +11,6 @@ import shutil
 import tarfile
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 import lz4.frame
 from dh import fsz
 

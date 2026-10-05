@@ -2,7 +2,6 @@
 """Universal command wrapper with: - Glob expansion for arguments - Colored output (auto-disables when not a TTY) - Logging to ~/tmp/log/apps/ - Exit code preservation - Optional timestamp prefix - Clipboard support via termux-clipboard-set (max 1MB) — ENABLED BY DEFAULT"""
 
 from __future__ import annotations
-
 import argparse
 import datetime
 import glob
@@ -51,7 +50,6 @@ def expand_glob_args(args: list[str]) -> list[str]:
         if not any(ch in arg for ch in "*?["):
             expanded.append(arg)
             continue
-
         matches = glob.glob(arg)
         if matches:
             expanded.extend(sorted(matches))
@@ -119,38 +117,28 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], argparse.Namespace]:
         help="Disable clipboard copying (enabled by default)",
     )
     parser.add_argument("--help", action="store_true", help="Show this help message")
-
     known, rest = parser.parse_known_args(argv)
-
     if known.help:
         parser.print_help()
         raise SystemExit(0)
-
     if not rest:
         parser.print_usage(sys.stderr)
         msg = "error: provide a command to wrap, e.g. wrapper.py ls -la *.py"
         raise SystemExit(msg)
-
     return rest[0], rest[1:], known
 
 
 def main() -> None:
     name, command_args, opts = parse_args(sys.argv[1:])
-
     command_args = expand_glob_args(command_args)
-
     command = [name, *command_args]
-
     log_file = None
     if not opts.no_log:
         log_file = create_log_file(name)
         write_log_header(log_file, command, os.getcwd())
-
     exit_code = 1
-
     output_buffer = [] if not opts.no_clipboard else None
     output_size = 0
-
     try:
         with open(log_file, "a", encoding="utf-8") if log_file else nullcontext() as log_f:
             process = subprocess.Popen(
@@ -160,7 +148,6 @@ def main() -> None:
                 text=True,
                 bufsize=1,
             )
-
             for line in process.stdout:
                 if line.startswith(("Error:", "error:", "WARNING:", "warning:")):
                     output = color(line, "yellow")
@@ -168,22 +155,17 @@ def main() -> None:
                     output = color(line, "red", bold=True)
                 else:
                     output = line
-
                 if opts.timestamp:
                     ts = datetime.datetime.now().strftime("%H:%M:%S")
                     output = color(f"[{ts}] ", "gray") + output
-
                 sys.stdout.write(output)
                 sys.stdout.flush()
-
                 if log_f:
                     log_f.write(line)
                     log_f.flush()
-
                 if output_buffer is not None:
                     output_buffer.append(line)
                     output_size += len(line.encode("utf-8"))
-
                     if output_size > CLIPBOARD_MAX_BYTES:
                         output_buffer = None
                         print(
@@ -193,10 +175,8 @@ def main() -> None:
                             ),
                             file=sys.stderr,
                         )
-
             process.wait()
             exit_code = process.returncode
-
     except KeyboardInterrupt:
         exit_code = 130
         print(color("\nInterrupted by user", "red", bold=True), file=sys.stderr)
@@ -214,15 +194,12 @@ def main() -> None:
         if log_file:
             with open(log_file, "a", encoding="utf-8") as f:
                 f.write(f"Error: {exc}\n")
-
     if output_buffer is not None:
         clipboard_text = "".join(output_buffer)
         copy_to_clipboard(clipboard_text)
-
     if log_file:
         write_log_footer(log_file, exit_code)
         print(color(f"Log saved to: {log_file}", "cyan"), file=sys.stderr)
-
     raise SystemExit(exit_code)
 
 

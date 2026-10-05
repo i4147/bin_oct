@@ -4,20 +4,17 @@ Preserves shebang lines, `# type:` directives, and `# fmt:` pragmas while removi
 Discovers targets from CLI path arguments (defaults to CWD), processes them in a fixed multiprocessing.Pool of 8 workers, validates the result with ast.parse, and reports per-file status via loguru."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 import libcst as cst
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from multiprocessing.pool import AsyncResult
-
 MAX_WORKERS: Final[int] = 8
 PRESERVE_PREFIXES: Final[tuple[str, ...]] = ("#!", "# type:", "# fmt:")
 PRESERVE_EXACT: Final[frozenset[str]] = frozenset({"# fmt: skip", "# fmt: on", "# fmt: off"})
@@ -42,7 +39,6 @@ class StripTransformer(cst.CSTTransformer):
     ) -> tuple[cst.BaseStatement, ...]:
         if not body:
             return tuple(body)
-
         first: cst.BaseStatement = body[0]
         if (
             isinstance(first, cst.SimpleStatementLine)
@@ -51,7 +47,6 @@ class StripTransformer(cst.CSTTransformer):
             and isinstance(first.body[0].value, cst.SimpleString)
         ):
             return tuple(body[1:])
-
         return tuple(body)
 
     def _strip_suite(self, suite: cst.BaseSuite) -> cst.BaseSuite:
@@ -60,13 +55,11 @@ class StripTransformer(cst.CSTTransformer):
             if not new_body:
                 new_body = (cst.SimpleStatementLine(body=[cst.Pass()]),)
             return suite.with_changes(body=new_body)
-
         if isinstance(suite, cst.SimpleStatementSuite):
             new_body: tuple[cst.BaseStatement, ...] = self._strip_leading_string(suite.body)
             if not new_body:
                 new_body = (cst.Pass(),)
             return suite.with_changes(body=new_body)
-
         return suite
 
     def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
@@ -85,27 +78,22 @@ def process_file(file_path: Path) -> str:
         source: str = file_path.read_text(encoding="utf-8")
     except Exception as exc:
         return f"[ERROR] Failed to read {file_path}: {exc}"
-
     try:
         module: cst.Module = cst.parse_module(source)
     except cst.ParserSyntaxError as exc:
         return f"[ERROR] Failed to parse {file_path}: {exc}"
-
     try:
         transformer: StripTransformer = StripTransformer()
         new_module: cst.Module = module.visit(transformer)
     except Exception as exc:
         return f"[ERROR] Transformation failed for {file_path}: {exc}"
-
     final_code: str = new_module.code
     if final_code == source:
         return f"[SKIPPED] No structural modifications needed for {file_path}"
-
     try:
         ast.parse(final_code, filename=str(file_path))
     except SyntaxError as exc:
         return f"[WARNING] Validation failed for {file_path} (Changes rejected): {exc}"
-
     try:
         file_path.write_text(final_code, encoding="utf-8")
         return f"[SUCCESS] Processed and stripped: {file_path}"
@@ -115,18 +103,15 @@ def process_file(file_path: Path) -> str:
 
 def gather_files(inputs: list[str]) -> list[Path]:
     files: set[Path] = set()
-
     if not inputs:
         files.update(Path().rglob("*.py"))
         return sorted(files)
-
     for item in inputs:
         p: Path = Path(item)
         if p.is_file() and p.suffix == ".py":
             files.add(p)
         elif p.is_dir():
             files.update(p.rglob("*.py"))
-
     return sorted(files)
 
 
@@ -138,14 +123,11 @@ def main() -> None:
         help="Target files or directories to process. Defaults to '.' if empty.",
     )
     args: argparse.Namespace = parser.parse_args()
-
     targets: list[Path] = gather_files(args.paths)
     if not targets:
         print("No target Python source files detected.")
         sys.exit(0)
-
     print(f"Queue loaded. Processing {len(targets)} target files via Parallel Pipeline...")
-
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[str]] = [pool.apply_async(process_file, (target,)) for target in targets]
         for async_res in async_results:

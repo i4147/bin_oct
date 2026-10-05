@@ -4,7 +4,6 @@ For each Python file, capture the stdout/stderr output of every tool invocation,
 The script should accept command-line arguments (via argparse) to control which root directory to scan and likely which tools to run, and it should efficiently distribute the checking work across multiple processes using a Pool."""
 
 from __future__ import annotations
-
 import argparse
 import subprocess
 from multiprocessing import Pool

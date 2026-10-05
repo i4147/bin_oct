@@ -4,7 +4,6 @@ For each valid repository, it should stage and commit any uncommitted changes wi
 The script should use "os" for directory traversal and "subprocess" to execute Git and GitHub CLI commands, suppressing their output, and should safely change directories in and out of each repository during processing."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 

@@ -5,10 +5,8 @@ For each resolved file, it should build and execute a pylint command with persis
 Include a main() entry point invoked through SystemExit for proper exit code handling."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_pyfiles, runcmd
 
 CHUNK_SIZE = 1024 * 1024

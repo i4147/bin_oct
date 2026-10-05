@@ -4,11 +4,9 @@ It should accept one or more file or directory paths as arguments (via sys.argv)
 It relies on helper functions from a local "dh" module (cprint, fsz, get_nobinary, gsz, is_binary, mpf, remove_blank_lines) for colored console output, file size formatting/measurement, and binary detection, and should print per-file progress showing the filename, size reduction, and counts of removed full-line versus inline comments, using colored output to report success or invalid-code failures."""
 
 from __future__ import annotations
-
 import ast
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_nobinary, gsz, is_binary, mpf, remove_blank_lines
 
 

@@ -4,10 +4,8 @@ It should read the requirements file (defaulting to "requirements.txt" or a path
 Finally, it should print how many packages were removed."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import STDLIB, get_installed_pkgs
 
 

@@ -4,12 +4,10 @@ It should accept a directory (via a helper function get_pyfiles from a local dh 
 The core function should parse source into an AST, walk it to locate string-literal expression statements (docstrings) with their line/column spans, remove them from the source text while leaving the module docstring intact, and return the modified source along with a count of removals; syntax errors should be handled gracefully by returning the original source unchanged."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp
 from pathlib import Path
-
 from dh import get_pyfiles
 
 

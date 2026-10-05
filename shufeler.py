@@ -4,7 +4,6 @@ It should use mmap to index the byte offsets of each line, then reorder those of
 The script should accept an input file path and an output file path via argparse, apply an mmap-size threshold constant to decide when to use the memory-mapped approach, and handle errors gracefully, returning a success/failure status."""
 
 from __future__ import annotations
-
 import argparse
 import mmap
 import random

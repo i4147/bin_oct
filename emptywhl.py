@@ -4,7 +4,6 @@ For each wheel it opens the zip archive, locates the .dist-info folder and its R
 The script should print progress while checking each wheel and finally report or handle the list of detected empty wheel filenames."""
 
 from __future__ import annotations
-
 import csv
 import zipfile
 from pathlib import Path

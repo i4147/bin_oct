@@ -4,12 +4,10 @@ The script should accept two file path arguments via argparse, read their conten
 It should include a custom DiffLine widget that escapes special markup characters, formats the line with proper padding, and applies styling based on the diff line type, with the overall app providing a Header, Footer, and horizontally/scrollably arranged containers for navigation."""
 
 from __future__ import annotations
-
 import argparse
 import difflib
 from pathlib import Path
 from typing import ClassVar
-
 from textual.app import App, ComposeResult
 from textual.color import Color
 from textual.containers import Horizontal, ScrollableContainer

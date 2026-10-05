@@ -11,20 +11,17 @@ All progress and status messages are emitted via loguru.
 If a selected backend cannot perform an operation, the script falls back to subprocess-based git commands."""
 
 from __future__ import annotations
-
 import argparse
 import shutil
 import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Optional, Protocol
-
 from github import Github
 from github.GithubException import GithubException, UnknownObjectException
 from loguru import logger
 
 if TYPE_CHECKING:
     from github.Repository import Repository
-
 LARGE_REPO_THRESHOLD_MB: Final[float] = 5.0
 DEFAULT_BRANCH_FALLBACK: Final[str] = "master"
 GITHUB_SSH_PREFIX: Final[str] = "git@github.com:"
@@ -32,14 +29,12 @@ GITHUB_HTTP_PREFIXES: Final[tuple[str, ...]] = ("http://", "https://")
 GITHUB_HOST: Final[str] = "github.com/"
 DEFAULT_CLONE_DEPTH: Final[int] = 1
 GITMODULES_FILENAME: Final[str] = ".gitmodules"
-
 BACKEND_GH: Final[str] = "gh"
 BACKEND_GIT: Final[str] = "git"
 BACKEND_DULWICH: Final[str] = "dulwich"
 BACKEND_GITPYTHON: Final[str] = "gitpython"
 BACKEND_LIBGIT2: Final[str] = "libgit2"
 BACKEND_TYPER: Final[str] = "typer"
-
 KNOWN_BACKENDS: Final[tuple[str, ...]] = (
     BACKEND_GH,
     BACKEND_GIT,
@@ -48,7 +43,6 @@ KNOWN_BACKENDS: Final[tuple[str, ...]] = (
     BACKEND_LIBGIT2,
     BACKEND_TYPER,
 )
-
 DEFAULT_BACKEND: Final[str] = BACKEND_GH
 
 
@@ -62,7 +56,6 @@ class CloneBackend(Protocol):
         branch: str,
         depth: Optional[int],
     ) -> None: ...
-
     def update_submodules(self, repo_root: Path) -> None: ...
 
 
@@ -105,7 +98,6 @@ class SubprocessBackend:
         if target.exists() and any(target.iterdir()):
             msg = f"Target directory already exists and is not empty: {target}"
             raise Exception(msg)
-
         if self.prefer_gh:
             gh_cmd: list[str] = [
                 "gh",
@@ -124,11 +116,9 @@ class SubprocessBackend:
                 return
             except (subprocess.CalledProcessError, FileNotFoundError) as e:
                 logger.warning(f"gh clone failed, falling back to git: {e}")
-
         if not _git_available():
             msg = "Neither 'gh' nor 'git' is available on PATH."
             raise Exception(msg)
-
         git_cmd: list[str] = ["git", "clone", clone_url, str(target)]
         git_cmd.extend(["--branch", branch])
         if depth is not None:
@@ -222,7 +212,6 @@ class TyperBackend:
     name: str = BACKEND_TYPER
 
     def __init__(self) -> None:
-
         self._fallback = SubprocessBackend(prefer_gh=False)
 
     def clone(
@@ -331,7 +320,6 @@ def clone_repo(
     depth_msg = f"depth={depth}" if depth is not None else "full history"
     print(f"Cloning repository from {clone_url} (branch: {branch}, {depth_msg}, backend: {backend.name})")
     target_path = resolve_clone_target(clone_url)
-
     try:
         backend.clone(clone_url, target_path, branch, depth)
         print(f"Clone completed successfully at {target_path}.")
@@ -340,7 +328,6 @@ def clone_repo(
         logger.warning(f"Backend '{backend.name}' cannot clone shallow: {e}")
     except Exception as e:
         logger.warning(f"Backend '{backend.name}' clone failed: {e}")
-
     if not _git_available():
         msg = f"Backend '{backend.name}' failed and 'git' is not available for fallback."
         raise Exception(msg)
@@ -384,16 +371,13 @@ def _subprocess_update_submodules(repo_root: Path) -> None:
 def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None:
     processed: set[Path] = set()
     pending: list[Path] = [repo_root]
-
     while pending:
         current_root = pending.pop()
         if current_root in processed:
             continue
         processed.add(current_root)
-
         if not has_submodules(current_root):
             continue
-
         print(f"Updating submodules in {current_root}...")
         try:
             backend.update_submodules(current_root)
@@ -410,7 +394,6 @@ def _update_submodules_recursive(repo_root: Path, backend: CloneBackend) -> None
             except Exception as e2:
                 msg = f"Submodule update failed in {current_root}: {e2}"
                 raise Exception(msg)
-
         for sub in current_root.iterdir():
             if not sub.is_dir():
                 continue
@@ -424,12 +407,10 @@ def init_submodules(repo_path: Path, backend: CloneBackend) -> None:
     if not has_submodules(repo_path):
         print("No submodules found.")
         return
-
     print("Submodules found. Initialize and update? (y/n)")
     if input().lower() != "y":
         print("Submodule initialization skipped.")
         return
-
     try:
         _update_submodules_recursive(repo_path, backend)
     except Exception as e:
@@ -489,20 +470,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-
     repo_url: str = args.repository_url.strip()
     token: Optional[str] = args.token
     depth: Optional[int] = DEFAULT_CLONE_DEPTH if args.depth else None
     backend_name: str = args.backend
-
     try:
         backend = create_backend(backend_name)
     except ValueError as e:
         logger.error(f"{e}")
         return 1
-
     print(f"Using backend: {backend.name}")
-
     try:
         github_client = get_github_client(token)
         if token:
@@ -510,21 +487,17 @@ def main(argv: Optional[list[str]] = None) -> int:
     except GithubException as e:
         logger.error(f"Authentication failed: {e}")
         return 1
-
     try:
         repo = get_repo(repo_url, github_client)
     except (ValueError, Exception) as e:
         logger.error(f"{e}")
         return 1
-
     size_mb = get_repo_size(repo)
     if not confirm_large_repo(size_mb):
         print("Aborted by user.")
         return 0
-
     default_branch = get_default_branch(repo)
     clone_url = build_clone_url(repo)
-
     try:
         repo_path = clone_repo(clone_url, default_branch, depth, backend)
     except Exception as e:
@@ -539,12 +512,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         else:
             logger.error(f"{e}")
             return 1
-
     try:
         init_submodules(repo_path, backend)
     except Exception as e:
         logger.warning(f"Submodule handling failed: {e}")
-
     return 0
 
 

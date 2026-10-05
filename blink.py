@@ -6,7 +6,6 @@ The script should use pathlib's Path.walk() for directory traversal and be struc
 """
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

@@ -5,10 +5,8 @@ For each file, it records the size before and after processing, prints per-file 
 Finally, it reports the total disk space freed across all processed files."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 
 

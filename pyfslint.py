@@ -5,7 +5,6 @@ Output should be organized into colorized (ANSI, TTY-aware), formatted console s
 The tool is meant to help administrators quickly spot suspicious or insecure file configurations across a system."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import grp
@@ -22,7 +21,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
 RESET = "\x1b[0m"
 BOLD = "\x1b[1m"
 RED = "\x1b[31m"

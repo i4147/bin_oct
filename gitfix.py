@@ -4,9 +4,7 @@ It should check whether the active branch is "master" and warn the user (prompti
 The function should print progress messages at each step, return a boolean indicating success or failure, and handle errors such as a missing upstream branch or a failed rebase gracefully by printing an error message."""
 
 from __future__ import annotations
-
 import sys
-
 from git import Repo
 
 

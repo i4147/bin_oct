@@ -4,7 +4,6 @@ If no README file is found, it should print an error message to stderr and exit 
 The script should read the file as UTF-8 text, falling back to replacing invalid characters if a decoding error occurs."""
 
 from __future__ import annotations
-
 import pydoc
 import sys
 from pathlib import Path

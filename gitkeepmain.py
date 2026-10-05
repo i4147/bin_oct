@@ -5,7 +5,6 @@ It should print clear status/error messages for failed git commands and prompt o
 Use Python's subprocess and shutil modules, with proper error handling for CalledProcessError."""
 
 from __future__ import annotations
-
 import shutil
 import subprocess
 import sys

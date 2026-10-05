@@ -4,7 +4,6 @@ If any matching lines are found, overwrite the original file with just those fil
 Finally, print the count of matching lines found in the format "{count} links found."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

@@ -4,10 +4,8 @@ For each source folder containing such extracted snippets, it should group the r
 Finally, it should print a short completion message showing how many folders were processed."""
 
 from __future__ import annotations
-
 from collections import defaultdict
 from pathlib import Path
-
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

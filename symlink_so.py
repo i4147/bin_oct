@@ -4,7 +4,6 @@ It should skip files that are already symlinks or already have numeric version s
 For each expected symlink, it should check whether a correct symlink already exists (comparing either the link target string or resolved absolute path) and print a message indicating it already exists and is correct, skipping recreation in that case; if the lib directory doesn't exist, it should print an error and exit gracefully."""
 
 from __future__ import annotations
-
 import glob
 import os
 import re

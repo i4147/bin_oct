@@ -4,7 +4,6 @@ Dependencies: pip install ssdeep xxhash Optional presentation dependencies: pip 
 --output output --threshold 60 python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report Original-script mapping: fsim.py -> python fuzzy_duplicates.py scan THRESHOLD --profile fsim --action move ssdip.py -> python fuzzy_duplicates.py scan 50 --profile ssdip --pair-report ssim.py -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy ssim3.py -> python fuzzy_duplicates.py scan THRESHOLD --profile ssim --action copy ssim2.py -> python fuzzy_duplicates.py report THRESHOLD --format copy ssimove.py -> python fuzzy_duplicates.py move --threshold 60 --min-group-size 2"""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import json
@@ -21,30 +20,25 @@ try:
 except ImportError as exc:
     msg = "Missing dependency: ssdeep. Install it with: pip install ssdeep"
     raise SystemExit(msg) from exc
-
 try:
     import xxhash
 except ImportError as exc:
     msg = "Missing dependency: xxhash. Install it with: pip install xxhash"
     raise SystemExit(msg) from exc
-
 try:
     from colorama import Fore, Style, init as colorama_init
 except ImportError:
     Fore = None
     Style = None
     colorama_init = None
-
 try:
     from tabulate import tabulate
 except ImportError:
     tabulate = None
-
 try:
     from tqdm import tqdm
 except ImportError:
     tqdm = None
-
 DEFAULT_IGNORED_DIRECTORIES: frozenset[str] = frozenset({".git", "__pycache__", "node_modules"})
 
 
@@ -77,30 +71,23 @@ def progress(
 
 def iter_files(options: ScanOptions) -> Iterator[Path]:
     root = options.root.resolve()
-
     if not root.exists():
         msg = f"Search path does not exist: {root}"
         raise FileNotFoundError(msg)
-
     if root.is_file():
         if options.include_symlinks or not root.is_symlink():
             yield root
         return
-
     for current, directories, filenames in os.walk(
         root,
         followlinks=options.include_symlinks,
     ):
         directories[:] = [name for name in directories if name not in options.ignored_directories]
-
         current_path = Path(current)
-
         for filename in filenames:
             path = current_path / filename
-
             if not options.include_symlinks and path.is_symlink():
                 continue
-
             try:
                 if path.stat().st_size >= options.min_size:
                     yield path
@@ -125,7 +112,6 @@ def hash_file(path: Path, max_bytes: int | None) -> FileHash | None:
         print(f"Error reading file {path}: {exc}", file=sys.stderr)
     except Exception as exc:
         print(f"Error hashing file {path}: {exc}", file=sys.stderr)
-
     return None
 
 
@@ -135,12 +121,10 @@ def hash_files(
     max_bytes: int | None,
 ) -> dict[Path, FileHash]:
     result: dict[Path, FileHash] = {}
-
     for path in progress(paths, total=len(paths), description="Hashing"):
         hashed = hash_file(path, max_bytes)
         if hashed is not None:
             result[path] = hashed
-
     return result
 
 
@@ -148,10 +132,8 @@ def exact_duplicate_groups(
     hashes: Mapping[Path, FileHash],
 ) -> dict[str, list[Path]]:
     groups: defaultdict[str, list[Path]] = defaultdict(list)
-
     for item in hashes.values():
         groups[item.exact].append(item.path)
-
     return {digest: paths for digest, paths in groups.items() if len(paths) > 1}
 
 
@@ -165,15 +147,11 @@ def fuzzy_groups(
 ) -> list[list[Path]]:
     exact_groups = exact_duplicate_groups(hashes)
     excluded: set[Path] = set()
-
     if exclude_exact_duplicates:
         excluded = {path for paths in exact_groups.values() for path in paths}
-
     candidates = [path for path in hashes if path not in excluded]
-
     matched: set[Path] = set()
     groups: list[list[Path]] = []
-
     for index, first in enumerate(
         progress(
             candidates,
@@ -183,15 +161,12 @@ def fuzzy_groups(
     ):
         if first in matched:
             continue
-
         group = [first]
         local_matches: set[Path] = {first}
         first_hash = hashes[first].fuzzy
-
         for other in candidates[index + 1 :]:
             if other in matched:
                 continue
-
             try:
                 score = ssdeep.compare(first_hash, hashes[other].fuzzy)
             except Exception as exc:
@@ -200,19 +175,16 @@ def fuzzy_groups(
                     file=sys.stderr,
                 )
                 continue
-
             if score >= threshold:
                 group.append(other)
                 local_matches.add(other)
                 if mark_on_match:
                     matched.add(other)
-
         if len(group) >= minimum_group_size:
             groups.append(group)
             matched.update(local_matches)
         elif mark_on_match:
             matched.discard(first)
-
     return groups
 
 
@@ -221,15 +193,12 @@ def print_exact_duplicates(
 ) -> None:
     if not exact_groups:
         return
-
     print("=" * 40)
     print("DUPLICATES (100% identical)")
-
     for digest, paths in exact_groups.items():
         print(f"Hash: {digest}")
         for path in paths:
             print(f"- {path}")
-
     print("-" * 40)
 
 
@@ -246,13 +215,10 @@ def copy_groups(
     prefix: str = "similarity_group",
 ) -> None:
     output.mkdir(parents=True, exist_ok=True)
-
     for number, group in enumerate(groups, start=1):
         directory = destination_group(output, number, prefix)
-
         for source in group:
             destination = directory / source.name
-
             try:
                 shutil.copy2(source, destination)
                 print(f"Copied {source} to {directory}")
@@ -268,12 +234,9 @@ def move_groups(
     delete_rest: bool = False,
 ) -> None:
     output.mkdir(parents=True, exist_ok=True)
-
     for number, group in enumerate(groups, start=1):
         directory = destination_group(output, number, prefix)
-
         selected = group[1:] if delete_rest else group
-
         for source in selected:
             if delete_rest:
                 try:
@@ -282,16 +245,13 @@ def move_groups(
                 except OSError as exc:
                     print(f"Failed to delete {source}: {exc}", file=sys.stderr)
                 continue
-
             destination = directory / source.name
-
             if destination.exists():
                 print(
                     f"Skipping existing destination: {destination}",
                     file=sys.stderr,
                 )
                 continue
-
             try:
                 shutil.move(str(source), str(destination))
                 print(f"Moved {source} to {directory}")
@@ -307,11 +267,9 @@ def print_pair_report(
     threshold: int,
 ) -> None:
     print("\n--- Fuzzy Duplicate Sets ---")
-
     for group in groups:
         first = group[0]
         print(f"\nFile: {first.relative_to(root)}")
-
         for other in group[1:]:
             score = ssdeep.compare(
                 hashes[first].fuzzy,
@@ -326,10 +284,8 @@ def write_group_report(
     report_format: str,
 ) -> None:
     output.mkdir(parents=True, exist_ok=True)
-
     if report_format == "csv":
         report_path = output / "similar_report.csv"
-
         with report_path.open(
             "w",
             encoding="utf-8",
@@ -337,40 +293,30 @@ def write_group_report(
         ) as file:
             writer = csv.writer(file)
             writer.writerow(["Group", "File"])
-
             for number, group in enumerate(groups, start=1):
                 for path in group:
                     writer.writerow([number, str(path)])
-
         print(f"CSV report written to {report_path}")
         return
-
     if report_format == "json":
         report_path = output / "similar_report.json"
         payload = {f"group_{number}": [str(path) for path in group] for number, group in enumerate(groups, start=1)}
-
         with report_path.open("w", encoding="utf-8") as file:
             json.dump(payload, file, indent=2)
-
         print(f"JSON report written to {report_path}")
         return
-
     msg = f"Unsupported report format: {report_format}"
     raise ValueError(msg)
 
 
 def score_text(score: int | str, threshold: int) -> str:
     text = str(score)
-
     if Fore is None or Style is None:
         return text
-
     if score == 100 or (isinstance(score, int) and score >= threshold + 10):
         return f"{Fore.GREEN}{text}{Style.RESET_ALL}"
-
     if isinstance(score, int) and score >= threshold:
         return f"{Fore.YELLOW}{text}{Style.RESET_ALL}"
-
     return f"{Fore.RED}{text}{Style.RESET_ALL}"
 
 
@@ -384,10 +330,8 @@ def write_similarity_matrix(
     output.mkdir(parents=True, exist_ok=True)
     paths = list(hashes)
     rows: list[list[str | int]] = [["File", *[str(path) for path in paths]]]
-
     for first in paths:
         row: list[str | int] = [str(first)]
-
         for second in paths:
             if first == second:
                 score: int | str = 100
@@ -397,25 +341,18 @@ def write_similarity_matrix(
                     hashes[second].fuzzy,
                 )
                 score = value if value >= threshold else ""
-
             row.append(score)
-
         rows.append(row)
-
     matrix_path = output / "similarity_matrix.csv"
-
     with matrix_path.open(
         "w",
         encoding="utf-8",
         newline="",
     ) as file:
         csv.writer(file).writerows(rows)
-
     print(f"Threshold-filtered similarity matrix written to {matrix_path}")
-
     if not display:
         return
-
     display_rows = [
         [
             row[0],
@@ -423,14 +360,11 @@ def write_similarity_matrix(
         ]
         for row in rows[1:]
     ]
-
     if tabulate is not None:
         print(tabulate(display_rows, headers=rows[0], tablefmt="grid"))
         return
-
     print("|".join(str(value) for value in rows[0]))
     print("-" * len("|".join(str(value) for value in rows[0])))
-
     for row in display_rows:
         print("|".join(str(value) if value else "." for value in row))
 
@@ -455,19 +389,14 @@ def make_scan_options(
         ignored = DEFAULT_IGNORED_DIRECTORIES
         min_size = 0
         max_bytes = None
-
     if args.include_symlinks is not None:
         include_symlinks = args.include_symlinks
-
     if args.ignore is not None:
         ignored = frozenset(args.ignore)
-
     if args.min_size is not None:
         min_size = args.min_size
-
     if args.max_bytes is not None:
         max_bytes = args.max_bytes
-
     return ScanOptions(
         root=Path(args.root),
         include_symlinks=include_symlinks,
@@ -481,18 +410,13 @@ def run_scan(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
         raise SystemExit(msg)
-
     options = make_scan_options(args, profile=args.profile)
     paths = list(iter_files(options))
-
     print(f"Found {len(paths)} files. Computing hashes...")
     hashes = hash_files(paths, max_bytes=options.max_bytes)
-
     exact_groups = exact_duplicate_groups(hashes)
-
     if args.print_exact:
         print_exact_duplicates(exact_groups)
-
     groups = fuzzy_groups(
         hashes,
         args.threshold,
@@ -500,7 +424,6 @@ def run_scan(args: argparse.Namespace) -> int:
         mark_on_match=args.mark_on_match,
         minimum_group_size=args.min_group_size_for_group,
     )
-
     if args.pair_report:
         print_pair_report(
             groups,
@@ -508,13 +431,10 @@ def run_scan(args: argparse.Namespace) -> int:
             hashes=hashes,
             threshold=args.threshold,
         )
-
     if not groups:
         print("No similar files found.")
         return 0
-
     print(f"Found {len(groups)} groups of similar files.")
-
     if args.action == "copy":
         copy_groups(groups, Path(args.output))
     elif args.action == "move":
@@ -525,7 +445,6 @@ def run_scan(args: argparse.Namespace) -> int:
             Path(args.output),
             delete_rest=True,
         )
-
     print(f"Processed {len(groups)} similarity groups.")
     return 0
 
@@ -534,7 +453,6 @@ def run_report(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
         raise SystemExit(msg)
-
     options = ScanOptions(
         root=Path(args.root),
         include_symlinks=args.include_symlinks,
@@ -542,18 +460,15 @@ def run_report(args: argparse.Namespace) -> int:
         min_size=args.min_size,
         max_bytes=args.max_bytes,
     )
-
     paths = list(iter_files(options))
     print(f"Found {len(paths)} files. Computing hashes...")
     hashes = hash_files(paths, max_bytes=options.max_bytes)
-
     groups = fuzzy_groups(
         hashes,
         args.threshold,
         exclude_exact_duplicates=args.exclude_exact,
         minimum_group_size=2,
     )
-
     if args.format == "matrix":
         write_similarity_matrix(
             hashes,
@@ -562,10 +477,8 @@ def run_report(args: argparse.Namespace) -> int:
             display=args.display,
         )
         return 0
-
     if not groups:
         print("No similar files found.")
-
     write_group_report(groups, Path(args.output), args.format)
     return 0
 
@@ -574,7 +487,6 @@ def run_move(args: argparse.Namespace) -> int:
     if not 0 <= args.threshold <= 100:
         msg = "Threshold must be an integer from 0 through 100."
         raise SystemExit(msg)
-
     options = ScanOptions(
         root=Path(args.root),
         include_symlinks=False,
@@ -582,28 +494,23 @@ def run_move(args: argparse.Namespace) -> int:
         min_size=args.min_size,
         max_bytes=args.max_bytes,
     )
-
     paths = list(iter_files(options))
     print(f"Scanning for fuzzy duplicates in: {options.root.resolve()}")
     hashes = hash_files(paths, max_bytes=options.max_bytes)
-
     groups = fuzzy_groups(
         hashes,
         args.threshold,
         mark_on_match=False,
         minimum_group_size=args.min_group_size,
     )
-
     if not groups:
         print("No groups of similar files found that met the criteria.")
         return 0
-
     move_groups(
         groups,
         Path(args.output),
         prefix="group",
     )
-
     moved_count = sum(len(group) for group in groups)
     print(f"Moved {moved_count} files into {len(groups)} groups.")
     print(f"Similar files have been moved to: {Path(args.output)}")
@@ -697,7 +604,6 @@ def add_common_scan_arguments(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Find and manage exact and fuzzy duplicate files.")
     subparsers = parser.add_subparsers(dest="command")
-
     scan_parser = subparsers.add_parser(
         "scan",
         help="Scan, compare, and optionally copy, move, or delete groups.",
@@ -707,7 +613,6 @@ def build_parser() -> argparse.ArgumentParser:
         handler=run_scan,
         min_size_for_group=2,
     )
-
     report_parser = subparsers.add_parser(
         "report",
         help="Generate CSV, JSON, or matrix reports.",
@@ -739,7 +644,6 @@ def build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--max-bytes", type=int, default=None)
     report_parser.add_argument("--exclude-exact", action="store_true")
     report_parser.set_defaults(handler=run_report)
-
     move_parser = subparsers.add_parser(
         "move",
         help="Move fuzzy groups into numbered output directories.",
@@ -756,24 +660,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=list(DEFAULT_IGNORED_DIRECTORIES),
     )
     move_parser.set_defaults(handler=run_move)
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not hasattr(args, "handler"):
         parser.print_help()
         return 0
-
     if colorama_init is not None:
         colorama_init()
-
     if hasattr(args, "min_size_for_group"):
         args.min_group_size_for_group = args.min_size_for_group
-
     return int(args.handler(args))
 
 

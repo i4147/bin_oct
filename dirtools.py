@@ -3,7 +3,6 @@
 Merges the following original scripts into one CLI: dirinfo.py -> info dirinfo2.py -> subdirs --chart bar visdir.py -> subdirs --chart pie --top-n 0 --min-kb 0 pddd.py -> list pytree.py -> tree foldesiz.py -> split-range foldesize.py -> split-count foldsize.py -> split-greedy foldsize2.py -> split-even Third-party packages (only needed for chart output): matplotlib Usage examples -------------- python dir_tools.py info ./mydir --save-report .dirinfo --chart sizes.png python dir_tools.py subdirs ./mydir --chart pie --top-n 15 --min-kb 50 python dir_tools.py list python dir_tools.py tree ./mydir -s -H --dirs-only python dir_tools.py split-range ./downloads python dir_tools.py split-count ./downloads --dirs 6 python dir_tools.py split-count ./downloads --max-mb 100 python dir_tools.py split-greedy ./downloads python dir_tools.py split-even ./downloads --dirs 5"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import math
@@ -85,12 +84,10 @@ def cmd_info(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     total_size = 0
     n_files = 0
     n_dirs = 0
     ext_sizes: dict[str, int] = defaultdict(int)
-
     for p in root.rglob("*"):
         if p.is_dir():
             n_dirs += 1
@@ -103,7 +100,6 @@ def cmd_info(args: argparse.Namespace) -> int:
             total_size += sz
             ext = p.suffix.lower() if p.suffix else "(no extension)"
             ext_sizes[ext] += sz
-
     lines: list[str] = []
     lines.append(f"Total size: {human_size(total_size)}")
     lines.append("")
@@ -117,7 +113,6 @@ def cmd_info(args: argparse.Namespace) -> int:
     for ext, sz in sorted(ext_sizes.items(), key=lambda x: x[1], reverse=True):
         lines.append(f"  {ext}: {human_size(sz)}")
     report = "\n".join(lines)
-
     if args.save_report:
         out = Path(args.save_report)
         if out.exists():
@@ -131,7 +126,6 @@ def cmd_info(args: argparse.Namespace) -> int:
             return 1
     else:
         print(report)
-
     if args.chart:
         try:
             import matplotlib.pyplot as plt
@@ -173,7 +167,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     sizes: dict[str, int] = {}
     try:
         for entry in root.iterdir():
@@ -191,16 +184,13 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
     except OSError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-
     min_bytes = int(args.min_kb * 1024)
     sizes = {k: v for k, v in sizes.items() if v >= min_bytes}
     if not sizes:
         print("No subdirectories meeting criteria.")
         return 0
-
     total = sum(sizes.values())
     ordered = sorted(sizes.items(), key=lambda kv: kv[1], reverse=True)
-
     if args.top_n > 0 and len(ordered) > args.top_n:
         top = dict(ordered[: args.top_n])
         other = sum(s for _, s in ordered[args.top_n :])
@@ -209,15 +199,12 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
         other = 0
     if other > 0:
         top["Other"] = other
-
     labels = list(top.keys())
     values = list(top.values())
-
     for name, sz in zip(labels, values):
         pct = sz / total * 100 if total else 0.0
         print(f"  {name}: {human_size(sz)} ({pct:.1f}%)")
     print(f"  TOTAL: {human_size(total)}")
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -226,7 +213,6 @@ def cmd_subdirs(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
-
     fig, ax = plt.subplots(figsize=(10, 7))
     if args.chart == "bar":
         ax.bar(labels, values, color="skyblue")
@@ -264,7 +250,6 @@ def cmd_list(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     entries: list[tuple[int, Path]] = []
     for p in root.iterdir():
         if p.is_symlink():
@@ -274,15 +259,12 @@ def cmd_list(args: argparse.Namespace) -> int:
         except OSError:
             continue
         entries.append((sz, p))
-
     total = sum(sz for sz, _ in entries)
-
     for sz, p in sorted(entries, key=lambda x: x[0]):
         name_color = "\x1b[5;94m" if p.is_dir() else "\x1b[5;92m"
         size_color = "\x1b[5;96m" if sz > 1_048_576 else ""
         reset = "\x1b[0m"
         print(f"{name_color}{p.name:25}{reset}  {size_color}{human_size(sz):>10}{reset}")
-
     print(f"total size : \x1b[5;94m{human_size(total)}\x1b[0m")
     return 0
 
@@ -333,7 +315,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     files: list[tuple[Path, int]] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
@@ -344,13 +325,10 @@ def cmd_split_range(args: argparse.Namespace) -> int:
             files.append((p, p.stat().st_size))
         except OSError:
             continue
-
     if not files:
         print("No files found.")
         return 0
-
     files.sort(key=lambda x: x[1])
-
     if args.dirs and args.dirs > 0:
         n_dirs = args.dirs
     else:
@@ -364,7 +342,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
             else:
                 n_dirs = max(1, min(100, len(sizes)))
     print(f"{n_dirs} dirs will be created")
-
     all_sizes = sorted(s for _, s in files)
     buckets: list[tuple[int, int, str]] = []
     per = len(all_sizes) // n_dirs
@@ -380,7 +357,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
             if not args.dry_run:
                 (root / name).mkdir(exist_ok=True, parents=True)
         idx = end
-
     moved = 0
     for p, sz in files:
         matched = False
@@ -399,7 +375,6 @@ def cmd_split_range(args: argparse.Namespace) -> int:
                 break
         if not matched:
             print(f"No folder match for {p.name} ({sz:,} bytes)")
-
     print(f"Folderization complete! Moved {moved} file(s).")
     return 0
 
@@ -424,7 +399,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     files: list[dict] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
@@ -435,16 +409,12 @@ def cmd_split_count(args: argparse.Namespace) -> int:
             files.append({"path": p, "name": p.name, "size": p.stat().st_size})
         except OSError:
             continue
-
     if not files:
         print("No files found!")
         return 0
-
     total = sum(f["size"] for f in files)
     print(f"Total: {len(files)} files, {human_size(total)}")
-
     files.sort(key=lambda f: f["size"])
-
     if args.max_mb:
         max_bytes = int(args.max_mb * 1024 * 1024)
         chunks: list[list[dict]] = []
@@ -466,7 +436,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
             per_folder = _files_per_folder(len(files))
         n_dirs = math.ceil(len(files) / per_folder) if per_folder else 1
         chunks = [files[i * per_folder : (i + 1) * per_folder] for i in range(n_dirs)]
-
     for i, chunk in enumerate(chunks, 1):
         if not chunk:
             continue
@@ -494,7 +463,6 @@ def cmd_split_count(args: argparse.Namespace) -> int:
                     print(f"      Error moving {f['name']}: {e}")
         except Exception as e:
             print(f"  Error creating folder {name}: {e}")
-
     print("✓ Organization complete!")
     return 0
 
@@ -504,7 +472,6 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     files = iter_files(
         root,
         recursive=True,
@@ -514,27 +481,22 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
     if not files:
         print("No files found to process.")
         return 0
-
     sizes_by_path = {p: p.stat().st_size for p in files}
     total = sum(sizes_by_path.values())
     count = len(files)
     print(f"Found {count:,} files ({total:,} bytes)")
-
     max_files_per = max(1000, count // 10)
     max_bytes_per = max(1_000_000, total // 10)
     est = max(math.ceil(count / max_files_per), math.ceil(total / max_bytes_per))
     n_dirs = max(2, min(100, est))
     print(f"Targeting ~{n_dirs} directories")
-
     sorted_files = sorted(files, key=lambda p: sizes_by_path[p], reverse=True)
-
     bins: list[dict] = [{"files": [], "size": 0} for _ in range(n_dirs)]
     for f in sorted_files:
         sz = sizes_by_path[f]
         i = min(range(n_dirs), key=lambda j: bins[j]["size"])
         bins[i]["files"].append(f)
         bins[i]["size"] += sz
-
     existing = {p.name for p in root.iterdir() if p.is_dir()}
     created: list[tuple[str, int, int]] = []
     for b in bins:
@@ -561,7 +523,6 @@ def cmd_split_greedy(args: argparse.Namespace) -> int:
                     shutil.move(str(f), str(dst))
             except Exception as e:
                 print(f"  Failed to move {f}: {e}")
-
     print("-" * 40)
     print("✅ Folderization complete")
     print(f"   Files processed: {count:,}")
@@ -579,7 +540,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
     if not root.is_dir():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         return 1
-
     files = iter_files(
         root,
         recursive=False,
@@ -589,17 +549,14 @@ def cmd_split_even(args: argparse.Namespace) -> int:
     if not files:
         print("No files found to process.")
         return 0
-
     n = len(files)
     print(f"Found {n:,} files")
-
     if args.dirs and args.dirs > 0:
         n_dirs = args.dirs
     else:
         max_per = max(1000, n // 10)
         n_dirs = max(2, min(100, math.ceil(n / max_per)))
     print(f"Creating {n_dirs} directories")
-
     per = n // n_dirs
     rem = n % n_dirs
     existing = {p.name for p in root.iterdir() if p.is_dir()}
@@ -621,7 +578,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
         plan.append((name, start, end))
         print(f"Created dir '{name}' for files [{start},{end})")
         idx = end
-
     for name, start, end in plan:
         target = root / name
         for i in range(start, min(end, n)):
@@ -632,7 +588,6 @@ def cmd_split_even(args: argparse.Namespace) -> int:
                     shutil.move(str(f), str(dst))
             except Exception as e:
                 print(f"  Failed to move {f}: {e}")
-
     print("-" * 40)
     print("✅ Folderization complete")
     print(f"   Files processed: {n:,}")
@@ -665,7 +620,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("info", help="Directory report + optional bar chart by extension")
     p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     p.add_argument(
@@ -675,7 +629,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--chart", metavar="PATH", help="Save a bar chart of extension sizes to PATH")
     p.set_defaults(func=cmd_info)
-
     p = sub.add_parser("subdirs", help="Chart top-level directory size distribution")
     p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     p.add_argument(
@@ -700,11 +653,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dpi", type=int, default=300, help="Image DPI (default: 300)")
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.set_defaults(func=cmd_subdirs)
-
     p = sub.add_parser("list", help="du-style listing of current directory entries")
     p.add_argument("-d", "--directory", default=".", help="Directory (default: .)")
     p.set_defaults(func=cmd_list)
-
     p = sub.add_parser("tree", help="Tree view of a directory")
     p.add_argument("-d", "--directory", default=".", help="Directory (default: .)")
     p.add_argument("-s", "--sizes", action="store_true", help="Show sizes")
@@ -717,7 +668,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dirs-only", action="store_true", help="List directories only")
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.set_defaults(func=cmd_tree)
-
     p = sub.add_parser("split-range", help="Folderize by size ranges (foldesiz.py)")
     p.add_argument("-d", "--directory", default=".", help="Source directory (default: .)")
     p.add_argument(
@@ -729,7 +679,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_range)
-
     p = sub.add_parser(
         "split-count",
         help="Folderize by fixed count or max-MB per folder (foldesize.py)",
@@ -750,13 +699,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_count)
-
     p = sub.add_parser("split-greedy", help="Greedy bin-pack into ~N folders (foldsize.py)")
     p.add_argument("-d", "--directory", default=".", help="Source directory (default: .)")
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_greedy)
-
     p = sub.add_parser("split-even", help="Even count split into N folders (foldsize2.py)")
     p.add_argument("-d", "--directory", default=".", help="Source directory (default: .)")
     p.add_argument(
@@ -768,7 +715,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--include-hidden", action="store_true", help="Include dotfiles/dot-directories")
     p.add_argument("--dry-run", action="store_true", help="Preview only")
     p.set_defaults(func=cmd_split_even)
-
     return parser
 
 

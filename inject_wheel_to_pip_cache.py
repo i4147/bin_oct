@@ -5,7 +5,6 @@ It should then locate pip's cache directory via `pip cache dir`, construct the a
 The script should handle missing METADATA gracefully by raising a clear error, and should be usable for batch-processing multiple wheel files via a Path-based interface."""
 
 from __future__ import annotations
-
 import hashlib
 import json
 import shutil

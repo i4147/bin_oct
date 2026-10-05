@@ -4,7 +4,6 @@ Implement a function that accepts a word string and prints (or returns) the corr
 Handle letters not present in the dictionary gracefully (e.g., skipping or substituting blank space), and include a usage example that demonstrates converting a sample word into its ASCII-art banner output."""
 
 from __future__ import annotations
-
 import os
 
 

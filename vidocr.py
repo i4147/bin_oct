@@ -4,14 +4,12 @@ Merged from exsub.py and xburned_sub.py.
 Usage: python vidocr.py <video> [output.srt] [options] Examples: python vidocr.py movie.mp4 python vidocr.py movie.mp4 subs.srt --start 00:05:00 --end 00:10:00 python vidocr.py movie.mp4 subs.srt --resume python vidocr.py movie.mp4 subs.srt --sample-fps 1.0 --workers 8 --lang eng python vidocr.py movie.mp4 00:10:00 # 2nd positional = end time Mapping from original scripts: exsub.py -> python vidocr.py <video> [output] [-s HH:MM:SS] [-e HH:MM:SS] [-r] [--sample-fps F] [--workers N] xburned_sub.py -> python vidocr.py <video> [output] [--sample-fps F] [--workers N] [-v] Requires: opencv-python, numpy, pytesseract (+ tesseract-ocr binary on PATH)."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import re
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Sequence
-
 import cv2
 import pytesseract
 
@@ -87,7 +85,6 @@ def extract_frames(
     if start is not None and start > 0:
         idx = int(start * fps)
         cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-
     frames: list[tuple[float, np.ndarray]] = []
     prev: Optional[np.ndarray] = None
     while True:
@@ -181,13 +178,11 @@ def run(
     if workers is None or workers < 1:
         workers = max(1, mp.cpu_count() - 1)
     output_path = Path(output)
-
     if resume and output_path.is_file():
         existing = read_srt(output_path)
         if existing and start is None:
             start = max(s["end"] for s in existing)
             print(f"Resuming from {format_srt_time(start)}")
-
     span = ""
     if start is not None and end is not None:
         span = f" from {format_srt_time(start)} to {format_srt_time(end)}"
@@ -195,20 +190,15 @@ def run(
         span = f" from {format_srt_time(start)} to end"
     elif end is not None:
         span = f" from start to {format_srt_time(end)}"
-
     print(f"[1/3] Extracting frames ({sample_fps} fps sample{span})…")
     frames = extract_frames(video, sample_fps, crop_bottom, start, end, diff_threshold, verbose)
     print(f"      {len(frames)} unique frames queued for OCR")
-
     config = f"--oem 3 --psm 6 -l {lang}"
     print(f"[2/3] Running OCR with {workers} worker(s)…")
-
     worker = partial(_ocr_worker, config=config)
     with mp.Pool(processes=workers) as pool:
         results = pool.map(worker, frames)
-
     fresh = [{"start": t, "end": t + 1.0 / sample_fps, "text": text} for t, text in results if text]
-
     if resume and output_path.is_file():
         existing = read_srt(output_path)
         if existing:
@@ -221,7 +211,6 @@ def run(
             all_segs = fresh
     else:
         all_segs = fresh
-
     all_segs.sort(key=lambda s: s["start"])
     merged = merge_segments(all_segs, merge_gap)
     print(f"[3/3] Writing {len(merged)} subtitle(s) -> {output}")
@@ -291,14 +280,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.output and re.match(r"\d{1,2}:\d{2}:\d{2}", args.output) and not args.start_time and not args.end_time:
         args.end_time = args.output
         args.output = "extracted_subs.srt"
-
     start = parse_hms(args.start_time) if args.start_time else None
     end = parse_hms(args.end_time) if args.end_time else None
-
     run(
         video=args.video,
         output=args.output,

@@ -2,7 +2,6 @@
 """Generate a Python CLI script that compresses or decompresses files in a directory using Snappy via cramjam, with optional tarring of subdirectories, multiprocessing.Pool.apply_async concurrency using a fixed pool of 8 workers, loguru logging, pathlib path handling, full type hints, and docstrings."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing
 import shutil
@@ -10,7 +9,6 @@ import sys
 import tarfile
 from pathlib import Path
 from typing import Any
-
 import cramjam  # type: ignore[import-untyped]
 from loguru import logger
 
@@ -115,13 +113,10 @@ def process_files(
     if not paths:
         logger.warning(f"No files found to {operation}")
         return 0, 0
-
     print(f"Processing {len(paths)} files with {POOL_SIZE} workers")
     success_count: int = 0
     failure_count: int = 0
-
     args_list: list[tuple[Path, str, bool]] = [(fp, operation, remove_original) for fp in paths]
-
     pool: multiprocessing.pool.Pool = multiprocessing.Pool(processes=POOL_SIZE)
     try:
         async_results: list[tuple[Path, Any]] = [
@@ -141,7 +136,6 @@ def process_files(
     finally:
         pool.close()
         pool.join()
-
     return success_count, failure_count
 
 
@@ -183,46 +177,35 @@ Examples:
 
 def main() -> int:
     args: argparse.Namespace = parse_args()
-
     if args.verbose:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
     else:
         logger.remove()
         logger.add(sys.stderr, level="INFO")
-
     base_dir: Path = Path(args.directory)
     if not base_dir.exists() or not base_dir.is_dir():
         logger.error(f"Directory not found: {base_dir}")
         return 1
-
     remove_original: bool = not args.keep_original
     operation: str = "compress" if args.compress else "decompress"
     recursive: bool = not args.no_recursive
-
     print(f"Starting {operation} operation on {base_dir}")
     print(f"Remove original: {remove_original}, Recursive: {recursive}")
-
     if args.tar and args.compress:
         print("Tarring subdirectories...")
         tar_files: list[Path] = tar_subdirectories(base_dir, remove_original)
         print(f"Created {len(tar_files)} tar archives")
-
     files_to_process: list[Path] = find_files(base_dir, operation, recursive)
-
     if not files_to_process:
         logger.warning(f"No files found to {operation}")
         return 0
-
     print(f"Found {len(files_to_process)} files to {operation}")
-
     success_count: int
     failure_count: int
     success_count, failure_count = process_files(files_to_process, operation, remove_original)
-
     print(f"Completed {operation} operation")
     print(f"Success: {success_count}, Failed: {failure_count}")
-
     return 1 if failure_count > 0 else 0
 
 

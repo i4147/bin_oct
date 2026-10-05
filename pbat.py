@@ -4,7 +4,6 @@ A `cat` clone with syntax highlighting, line numbers, Git modification markers, 
 Install dependencies: pip install pygments Usage: python pybat.py [OPTIONS] [FILE...] Examples: python pybat.py main.py python pybat.py -n -r 10:40 app.rs python pybat.py --plain README.md python pybat.py -H 12 -H 20 config.yaml cat file.py | python pybat.py -l python - python pybat.py --list-languages python pybat.py --list-themes"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import os
@@ -14,7 +13,6 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from pygments import highlight as pyg_highlight
 from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer
@@ -29,10 +27,8 @@ ADDED_COLOR = "\x1b[38;5;150m"
 MODIFIED_COLOR = "\x1b[38;5;222m"
 REMOVED_COLOR = "\x1b[38;5;203m"
 HIGHLIGHT_BG = "\x1b[48;5;236m"
-
 BOX_H, BOX_V = "─", "│"
 BOX_TL, BOX_TR, BOX_BL, BOX_BR = "╭", "╮", "╰", "╯"
-
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 
@@ -120,7 +116,6 @@ class GitDiffCalculator:
                 new_count = int(rest[0]) if rest else 1
             except Exception:
                 continue
-
             if old_count > 0 and new_count > 0:
                 for i in range(new_count):
                     self.modified.add(new_start + i)
@@ -149,32 +144,23 @@ class Printer:
     def print_file(self, path: Path | None, content: str) -> str:
         lines = content.splitlines()
         total = len(lines)
-
         lexer = self._get_lexer(path, content)
         formatter = self._get_formatter()
-
         git = GitDiffCalculator(path) if (path and self.config.show_changes) else None
-
         start, end = self._resolve_range(total)
         width = shutil.get_terminal_size((100, 24)).columns
-
         out = io.StringIO()
-
         if self.config.show_header:
             self._print_header(out, path, width)
         elif self.config.show_grid:
             out.write(f"{GRID_COLOR}{BOX_H * width}{RESET}\n")
-
         highlighted = self._highlight_lines(lines, lexer, formatter)
-
         for idx in range(start, end + 1):
             if 1 <= idx <= total:
                 text = highlighted[idx - 1] if idx - 1 < len(highlighted) else ""
                 self._print_line(out, idx, text, git)
-
         if self.config.show_grid:
             out.write(f"{GRID_COLOR}{BOX_H * width}{RESET}\n")
-
         return out.getvalue()
 
     def _get_lexer(self, path, content):
@@ -229,7 +215,6 @@ class Printer:
 
     def _print_line(self, out, line_no, text, git):
         prefix_parts = []
-
         if self.config.show_changes:
             marker, color = " ", ""
             if git:
@@ -242,16 +227,12 @@ class Printer:
                     elif status == "modified":
                         marker, color = "~", MODIFIED_COLOR
             prefix_parts.append(f"{color}{marker}{RESET}" if color else marker)
-
         if self.config.show_numbers:
             prefix_parts.append(f"{LINE_NUM_COLOR}{line_no:>4}{RESET}")
-
         if self.config.show_grid:
             prefix_parts.append(f"{GRID_COLOR}{BOX_V}{RESET}")
-
         prefix = " ".join(prefix_parts)
         line_out = f"{HIGHLIGHT_BG}{text}{RESET}" if line_no in self.config.highlight_lines else text
-
         out.write(f"{prefix} {line_out}\n" if prefix else f"{line_out}\n")
 
 
@@ -346,7 +327,6 @@ def config_from_args(args) -> BatConfig:
         plain=args.plain,
         highlight_lines=set(args.highlight_line),
     )
-
     style_reset = {
         "show_numbers": False,
         "show_grid": False,
@@ -359,12 +339,9 @@ def config_from_args(args) -> BatConfig:
         for k, v in style_reset.items():
             setattr(cfg, k, v)
         setattr(cfg, f"show_{args.style}", True)
-
     cfg.apply_plain()
-
     if args.line_range:
         cfg.line_range = parse_line_range(args.line_range)
-
     return cfg
 
 
@@ -389,35 +366,27 @@ def page_output(text: str):
 
 def main(argv=None) -> int:
     args = build_arg_parser().parse_args(argv)
-
     if args.list_languages:
         list_languages()
         return 0
     if args.list_themes:
         list_themes()
         return 0
-
     if not args.files:
         args.files = ["-"]
-
     cfg = config_from_args(args)
     printer = Printer(cfg)
-
     chunks = []
     for f in cfg.files:
         path, content = read_input(f)
         chunks.append(printer.print_file(path, content))
-
     final_text = "".join(chunks)
-
     if cfg.color == "never":
         final_text = ANSI_RE.sub("", final_text)
-
     if should_page(cfg, final_text.count("\n")):
         page_output(final_text)
     else:
         sys.stdout.write(final_text)
-
     return 0
 
 

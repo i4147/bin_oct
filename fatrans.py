@@ -5,7 +5,6 @@ Every original behaviour is still reachable as a subcommand; the differing knobs
 Third-party dependencies (only these are needed at runtime): pip install deep-translator tqdm loguru ------------------------------------------------------------------------------ Subcommand → original-script mapping ------------------------------------------------------------------------------ tofa.py -> python translator.py to-fa <input> [source] transfa.py -> python translator.py lines-to-en <input> transfa2.py -> python translator.py inplace-to-en [path] transfamp.py -> python translator.py batch-json [directory] ------------------------------------------------------------------------------ Examples ------------------------------------------------------------------------------ # Translate a file into Farsi, auto-detecting the source language python translator.py to-fa document.txt # Same, but force source language to English and use a smaller chunk size python translator.py to-fa file.txt en --chunk-size 3000 # Translate a Farsi file line-by-line into English python translator.py lines-to-en notes.txt --workers 6 # Recursively translate Farsi content inside every supported file in ./src python translator.py inplace-to-en ./src --workers 8 # Batch-translate every *.txt in the current directory into JSON maps python translator.py batch-json --glob "*.txt" --out-dir ./translations"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import re
@@ -15,13 +14,11 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
-
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm
 
 FARSI_RE: re.Pattern[str] = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
-
 TOFA_MARKERS: tuple[str, ...] = (
     "\n",
     "\r\n",
@@ -32,11 +29,8 @@ TOFA_MARKERS: tuple[str, ...] = (
     ", ",
     " ",
 )
-
 INPLACE_BREAK_RE: re.Pattern[str] = re.compile(r"[\s\n\.\!\?\;]+")
-
 DEFAULT_SUFFIXES: tuple[str, ...] = (".txt", ".md", ".py", ".json", ".csv")
-
 DEFAULT_EXCLUDES: tuple[str, ...] = (
     "lazy",
     ".git",
@@ -80,7 +74,7 @@ def translate_with_retry(
                 msg = "Translator returned None"
                 raise RuntimeError(msg)
             return result
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             last_error = exc
             print(
                 f"[WARN] Translation failed (attempt {attempt + 1}/{retries}): {exc}",
@@ -98,7 +92,6 @@ def chunk_by_markers(
 ) -> list[str]:
     if len(text) <= max_chars:
         return [text]
-
     chunks: list[str] = []
     pos = 0
     while pos < len(text):
@@ -106,7 +99,6 @@ def chunk_by_markers(
         if len(remaining) <= max_chars:
             chunks.append(remaining)
             break
-
         head = remaining[:max_chars]
         cut = max_chars
         for marker in markers:
@@ -118,10 +110,8 @@ def chunk_by_markers(
             idx = head.rfind(" ")
             if idx > 0:
                 cut = idx + 1
-
         chunks.append(remaining[:cut])
         pos += cut
-
     return chunks
 
 
@@ -132,7 +122,6 @@ def chunk_by_regex(
 ) -> list[str]:
     if len(text) <= max_chars:
         return [text]
-
     chunks: list[str] = []
     pos = 0
     while pos < len(text):
@@ -140,15 +129,12 @@ def chunk_by_regex(
         if end == len(text):
             chunks.append(text[pos:])
             break
-
         last = None
         for match in pattern.finditer(text, pos, end):
             last = match
-
         cut = last.end() if (last is not None and last.end() > pos) else end
         chunks.append(text[pos:cut])
         pos = cut
-
     return chunks
 
 
@@ -175,7 +161,7 @@ def _worker_line_to_en(line: str) -> Optional[tuple[str, str]]:
     try:
         result = GoogleTranslator(source="fa", target="en").translate(stripped)
         return (stripped, result) if result else None
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug(f"Translation error for '{stripped[:20]}': {exc}")
         return None
 
@@ -191,7 +177,7 @@ def _worker_chunk_to_en(payload: tuple[str, float]) -> str:
             print(f"Chunk translated: {preview}...")
             time.sleep(sleep_sec)
             return result
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"Chunk translation error: {exc}")
     return chunk
 
@@ -202,14 +188,11 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
         if not content:
             logger.warning(f"⚠️  Empty file: {path.name}")
             return (path, {})
-
         translated = GoogleTranslator(source="fa", target="en").translate(content)
         if translated is None:
             translated = ""
-
         src_lines = [l.strip() for l in content.split("\n") if l.strip()]
         out_lines = [l.strip() for l in translated.split("\n") if l.strip()]
-
         mapping: dict[str, str] = {}
         if len(src_lines) != len(out_lines):
             for i, line in enumerate(src_lines):
@@ -218,15 +201,14 @@ def _worker_file_to_dict(path: Path) -> tuple[Path, dict[str, str]]:
                 try:
                     res = GoogleTranslator(source="fa", target="en").translate(line)
                     mapping[line] = res or ""
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     mapping[line] = f"TRANSLATION_ERROR: {exc}"
                     logger.warning(f"  ⚠️  Error translating line {i + 1} in {path.name}: {exc}")
         else:
             mapping = dict(zip(src_lines, out_lines))
-
         print(f"✅ Translated: {path.name} ({len(mapping)} words)")
         return (path, mapping)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"❌ Error processing {path.name}: {exc}")
         return (path, {})
 
@@ -236,25 +218,21 @@ def cmd_to_fa(args: argparse.Namespace) -> int:
     if not src.exists():
         logger.error(f"File not found: {src}")
         return 1
-
     dst = derive_output_path(src, args.output_suffix)
     if dst.exists() and not args.overwrite:
         print(f"[INFO] Output file already exists: {dst}")
         print(f"[INFO] Skipping translation (use --overwrite to re-run)")
         return 0
-
     print(f"[INFO] Reading file: {src}")
     try:
         content = read_text_any_encoding(src)
     except OSError as exc:
         logger.error(str(exc))
         return 1
-
     print(f"[INFO] File size: {len(content)} characters")
     print(f"[INFO] Input:   {src}")
     print(f"[INFO] Output:  {dst}")
     print(f"[INFO] Source language: {args.source}")
-
     try:
         translated = _translate_file_to_target(
             content,
@@ -263,10 +241,9 @@ def cmd_to_fa(args: argparse.Namespace) -> int:
             chunk_size=args.chunk_size,
             retries=args.retries,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"Translation failed: {exc}")
         return 1
-
     print(f"\n[INFO] Saving result to: {dst}")
     dst.write_text(translated, encoding="utf-8")
     print("\n[SUCCESS] Translation complete!")
@@ -286,12 +263,10 @@ def _translate_file_to_target(
         print(f"[INFO] Content fits in single request ({len(content)} chars)")
         print("[INFO] Translating...")
         return translate_with_retry(content, source=source, target=target, retries=retries)
-
     chunks = chunk_by_markers(content, chunk_size)
     total = len(chunks)
     print(f"[INFO] Content split into {total} chunks")
     print(f"[INFO] Chunk sizes: {[len(c) for c in chunks]}")
-
     results: list[str] = []
     progress = tqdm(total=total, desc="Translating", unit="chunk")
     try:
@@ -299,14 +274,13 @@ def _translate_file_to_target(
             print(f"\n[INFO] Translating chunk {i + 1}/{total} ({len(chunk)} chars)...")
             try:
                 results.append(translate_with_retry(chunk, source=source, target=target, retries=retries))
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"[ERROR] Failed to translate chunk {i + 1}: {exc}")
                 results.append(chunk)
             finally:
                 progress.update(1)
     finally:
         progress.close()
-
     return "".join(results)
 
 
@@ -315,16 +289,13 @@ def cmd_lines_to_en(args: argparse.Namespace) -> int:
     if not src.exists():
         logger.error(f"File not found: {src}")
         return 1
-
     try:
         lines = src.read_text(encoding=args.encoding).splitlines()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"Error reading file: {exc}")
         return 1
-
     dst = derive_output_path(src, args.output_suffix)
     print(f"Translating {len(lines)} lines from {src.name}...")
-
     results: list[tuple[str, str]] = []
     with ProcessPoolExecutor(max_workers=args.workers) as executor:
         futures = {executor.submit(_worker_line_to_en, line): line for line in lines}
@@ -334,15 +305,13 @@ def cmd_lines_to_en(args: argparse.Namespace) -> int:
                 orig, trans = res
                 print(f"{orig} -> {trans}")
                 results.append(res)
-
     try:
         with dst.open("w", encoding="utf-8") as fh:
             for orig, trans in results:
                 fh.write(f"{orig} = {trans}\n")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"Error writing output file: {exc}")
         return 1
-
     print(f"✓ Translated output saved to {dst}")
     return 0
 
@@ -352,12 +321,10 @@ def cmd_inplace_to_en(args: argparse.Namespace) -> int:
     if not root.exists():
         logger.error(f"Path does not exist: {root}")
         return 1
-
     files = collect_files(root, args.suffixes, args.exclude)
     if not files:
         print("No files found to process.")
         return 0
-
     print(f"Processing {len(files)} files...")
     for path in files:
         _inplace_translate_one(
@@ -379,29 +346,24 @@ def _inplace_translate_one(
 ) -> None:
     try:
         content = path.read_text(encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning(f"Skipping unreadable file {path}: {exc}")
         return
-
     if not contains_farsi(content):
         return
-
     print(f"Translating: {path.name}")
     chunks = chunk_by_regex(content, chunk_size)
-
     translated_chunks: list[str] = []
     with Pool(processes=workers) as pool:
         async_results = [pool.apply_async(_worker_chunk_to_en, ((c, sleep),)) for c in chunks]
         for ar in async_results:
             translated_chunks.append(ar.get())
-
     new_content = "".join(translated_chunks)
     try:
         path.write_text(new_content, encoding="utf-8")
         print(f"✓ Updated: {path.name}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"Error writing to {path}: {exc}")
-
     time.sleep(final_sleep)
 
 
@@ -411,15 +373,12 @@ def cmd_batch_json(args: argparse.Namespace) -> int:
     if not files:
         logger.error(f"❌ No files matching {args.glob!r} found in {directory}")
         return 1
-
     print(f"📚 Found {len(files)} file(s) to translate")
     print(f"🚀 Starting translation with {args.workers} parallel workers")
     print("-" * 40)
-
     start = time.time()
     ok = 0
     fail = 0
-
     with Pool(processes=args.workers) as pool:
         async_results = [pool.apply_async(_worker_file_to_dict, (f,)) for f in files]
         for path, ar in zip(files, async_results):
@@ -430,10 +389,9 @@ def cmd_batch_json(args: argparse.Namespace) -> int:
                     ok += 1
                 else:
                     fail += 1
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.error(f"❌ Failed to process {path.name}: {exc}")
                 fail += 1
-
     elapsed = time.time() - start
     print("=" * 40)
     print("✨ Translation complete!")
@@ -475,7 +433,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser(
         "to-fa",
         help="Translate a single file to Farsi (auto-detect source by default).",
@@ -511,7 +468,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Overwrite output if it already exists (default: skip).",
     )
     p.set_defaults(func=cmd_to_fa)
-
     p = sub.add_parser(
         "lines-to-en",
         help="Translate Farsi lines of one file into English (line-by-line).",
@@ -530,7 +486,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--encoding", default="utf-8", help="Input encoding (default: utf-8).")
     p.set_defaults(func=cmd_lines_to_en)
-
     p = sub.add_parser(
         "inplace-to-en",
         help="Recursively translate Farsi files into English, in place.",
@@ -573,7 +528,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory names to skip.",
     )
     p.set_defaults(func=cmd_inplace_to_en)
-
     p = sub.add_parser(
         "batch-json",
         help="Translate every *.txt in a directory into per-file JSON maps.",
@@ -592,7 +546,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory where the *_translations.json files go.",
     )
     p.set_defaults(func=cmd_batch_json)
-
     return parser
 
 

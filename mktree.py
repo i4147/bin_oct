@@ -5,7 +5,6 @@ Provide command-line arguments for selecting the input source, the output root d
 The script should be resilient to malformed or mixed-style tree text and skip or warn on unparseable lines rather than failing outright."""
 
 from __future__ import annotations
-
 import argparse
 import itertools
 import re
@@ -123,15 +122,13 @@ def parse_tree_text(text, keep_suffix=False, warn=print):
             depth = col_to_depth[idx]
         else:
             depth = 1
-        entries.append(
-            {
-                "depth": depth,
-                "name": name,
-                "is_dir": explicit,
-                "explicit_dir": explicit,
-                "line_no": line_no,
-            }
-        )
+        entries.append({
+            "depth": depth,
+            "name": name,
+            "is_dir": explicit,
+            "explicit_dir": explicit,
+            "line_no": line_no,
+        })
     for w in warnings:
         warn("warning: " + w)
     return entries
@@ -180,15 +177,13 @@ def load_ocr(choice):
                         conf = 0.0
                     if conf < 40:
                         continue
-                    tokens.append(
-                        (
-                            int(data["left"][i]),
-                            int(data["top"][i]),
-                            int(data["width"][i]),
-                            t,
-                            conf,
-                        )
-                    )
+                    tokens.append((
+                        int(data["left"][i]),
+                        int(data["top"][i]),
+                        int(data["width"][i]),
+                        t,
+                        conf,
+                    ))
                 return tokens
 
             return "pytesseract", run
@@ -309,15 +304,13 @@ def image_to_entries(path, keep_suffix=False, engine="auto"):
         name, explicit = clean_name(raw, keep_suffix=keep_suffix)
         if name is None:
             continue
-        entries.append(
-            {
-                "depth": depth_of(i),
-                "name": name,
-                "is_dir": explicit,
-                "explicit_dir": explicit,
-                "line_no": round(top),
-            }
-        )
+        entries.append({
+            "depth": depth_of(i),
+            "name": name,
+            "is_dir": explicit,
+            "explicit_dir": explicit,
+            "line_no": round(top),
+        })
     if not entries:
         sys.exit(f"error: OCR found no usable entries in {path}")
     return engine_name, entries, {"tokens": raw_count, "rows": len(rows)}

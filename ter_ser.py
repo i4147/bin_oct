@@ -4,10 +4,8 @@ It should accept optional file or directory arguments (defaulting to the current
 For each qualifying file it should record the size before and after minification (via helper functions gsz and rrs from a local "dh" module), overwrite the file with the minified output, and process multiple files in parallel using the "mpf" helper, while handling terser errors gracefully by printing them to stderr."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_files, gsz, mpf, rrs, runcmd
 
 EXT = [".js", ".jsx", ".jsm", ".jsc"]

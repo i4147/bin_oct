@@ -4,7 +4,6 @@ It should implement a fuzzy matching algorithm scoring candidates based on match
 The script must use termios/tty to put the terminal into raw mode and select for non-blocking keyboard input, dynamically re-render the filtered/sorted list with highlighted matched characters as the user types, support navigation (up/down) and selection, and finally print the chosen entry to stdout upon confirmation (e.g., Enter key), similar to tools like fzf."""
 
 from __future__ import annotations
-
 import os
 import select
 import sys

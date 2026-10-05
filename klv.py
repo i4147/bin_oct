@@ -10,7 +10,6 @@ Optional third-party dependency: packaging If installed, packaging.version is us
 Otherwise a stdlib fallback version key is used."""
 
 from __future__ import annotations
-
 import argparse
 import logging
 import multiprocessing as mp
@@ -22,13 +21,11 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 logger = logging.getLogger(__name__)
-
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")
 LINUX_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+(?:\.\d+)?)-cp\d+-cp\d+-linux_([^/]+)\.whl")
 PY_RE = re.compile(r"python3\.(\d+)")
 METADATA_RE = re.compile(r"^(.+?)-(\d[\d._]*[a-zA-Z]*[\d]*)$")
 NORMALIZE_RE = re.compile(r"[-_.]+")
-
 DEFAULT_ARM_KEYWORDS = ["armeabi_v7a", "armv7l", "linux_arm", "arm"]
 DEFAULT_WORKERS = 8
 DEFAULT_BATCH_SIZE = 100
@@ -294,7 +291,6 @@ def cmd_urls(args: argparse.Namespace) -> int:
             lines = [args.input]
     else:
         lines = [line.strip() for line in sys.stdin if line.strip()]
-
     groups: dict[tuple[str, str], dict[str, tuple[tuple[int, ...], str]]] = defaultdict(dict)
     for url in lines:
         rec = parse_url(url)
@@ -306,7 +302,6 @@ def cmd_urls(args: argparse.Namespace) -> int:
         key = (pkg, py)
         if arch not in groups[key] or ver > groups[key][arch][0]:
             groups[key][arch] = (ver, url)
-
     results: list[dict[str, str]] = []
     print("-" * 40)
     print("LATEST ARMv7 (armeabi_v7a/armv7l/linux_arm) WHEELS")
@@ -318,25 +313,21 @@ def cmd_urls(args: argparse.Namespace) -> int:
             print(f"   Arch: {arch}")
             print(f"   Version: {ver_str}")
             print(f"   URL: {url}")
-            results.append(
-                {
-                    "package": pkg,
-                    "python_version": py,
-                    "arch": arch,
-                    "version": ver_str,
-                    "url": url,
-                }
-            )
+            results.append({
+                "package": pkg,
+                "python_version": py,
+                "arch": arch,
+                "version": ver_str,
+                "url": url,
+            })
     print("\n" + "=" * 40)
     print(f"SUMMARY: Found {len(results)} ARMv7 wheel(s)")
     print("-" * 40)
     for r in results:
         print(f"{r['package']}=={r['version']} (Python {r['python_version']})")
-
     if args.output:
         Path(args.output).write_text("\n".join(r["url"] for r in results) + "\n")
         print(f"\n✓ URLs saved to {args.output}")
-
     if args.download:
         script = "#!/bin/bash\n\n"
         for r in results:
@@ -354,10 +345,8 @@ def cmd_clean(args: argparse.Namespace) -> int:
     if not directory.exists():
         logger.error("Directory '%s' does not exist", directory)
         return 1
-
     extensions = extensions_for_type(args.type)
     files = find_files(directory, extensions, args.recursive)
-
     print(f"Scanning directory: {directory}")
     print(f"File type: {args.type}")
     if args.dry_run:
@@ -367,7 +356,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
     if not files:
         print("No matching package files found.")
         return 0
-
     package_map = process_clean_files(files, args.workers)
     total_versions = sum(len(v) for v in package_map.values())
     print(f"\nFound {len(package_map)} package(s) with {total_versions} total version(s):")
@@ -379,7 +367,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
     else:
         for pkg, versions in package_map.items():
             print(f"  {pkg}: {len(versions)} version(s)")
-
     print("\n" + "=" * 40)
     backup_dir = Path(args.backup_dir) if args.backup_dir else None
     deleted, kept = remove_old_versions(package_map, args.dry_run, backup_dir, args.verbose)
@@ -398,14 +385,12 @@ def cmd_metadata(args: argparse.Namespace) -> int:
     if not directory.exists():
         logger.error("Directory '%s' does not exist", directory)
         return 1
-
     files = find_files(directory, (".metadata",), recursive=False)
     print(f"Scanning directory: {directory}")
     print(f"Found {len(files)} metadata files")
     if not files:
         print("No metadata files found")
         return 0
-
     package_map = process_metadata_batches(files, args.workers, args.batch_size)
     print(f"Processing {len(package_map)} unique packages...")
     if args.verbose:
@@ -413,11 +398,9 @@ def cmd_metadata(args: argparse.Namespace) -> int:
             print(f"\n  {pkg}: {len(versions)} version(s)")
             for ver, path in versions:
                 print(f"    - {ver}: {path.name}")
-
     backup_dir = Path(args.backup_dir) if args.backup_dir else None
     if backup_dir and not args.dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-
     deleted, kept = remove_old_versions(package_map, args.dry_run, backup_dir, args.verbose)
     print("=" * 40)
     print("Summary:")
@@ -437,7 +420,6 @@ def cmd_metadata(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Unified package/version cleanup and ARMv7 wheel URL filtering tool.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_urls = sub.add_parser("urls", help="Filter latest ARMv7 wheels from URL list")
     p_urls.add_argument("input", nargs="?", default=None, help="Input file or URL")
     p_urls.add_argument("--output", "-o", help="Output file to save URLs")
@@ -449,7 +431,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Architecture keywords to keep",
     )
     p_urls.set_defaults(func=cmd_urls)
-
     p_clean = sub.add_parser("clean", help="Keep latest package files in a directory")
     p_clean.add_argument(
         "--type",
@@ -465,7 +446,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_clean.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="Worker processes")
     p_clean.add_argument("--backup-dir", help="Move old files to backup directory")
     p_clean.set_defaults(func=cmd_clean)
-
     p_meta = sub.add_parser("metadata", help="Keep latest .metadata files in a directory")
     p_meta.add_argument("directory", nargs="?", default=".", help="Directory to scan")
     p_meta.add_argument("--dry-run", action="store_true", help="Simulate deletion")
@@ -474,7 +454,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_meta.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="Worker processes")
     p_meta.add_argument("--verbose", action="store_true", help="Show detailed information")
     p_meta.set_defaults(func=cmd_metadata)
-
     return parser
 
 

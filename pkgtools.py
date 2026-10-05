@@ -4,7 +4,6 @@ This single script combines the behavior of: copy_pkg_files.py cpkg.py mpkg.py d
 The original scripts used loguru; this merged version uses the standard logging module instead."""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import csv
@@ -42,17 +41,14 @@ def get_site_packages_paths(
     include_pythonpath: bool = False,
 ) -> list[Path]:
     paths: list[Path] = [Path(p) for p in site.getsitepackages()]
-
     if include_user:
         user = get_user_site()
         if user.exists():
             paths.append(user)
-
     if include_pythonpath:
         for entry in os.environ.get("PYTHONPATH", "").split(os.pathsep):
             if entry:
                 paths.append(Path(entry))
-
     seen: set[Path] = set()
     result: list[Path] = []
     for path in paths:
@@ -60,13 +56,11 @@ def get_site_packages_paths(
         if resolved.exists() and resolved not in seen:
             seen.add(resolved)
             result.append(resolved)
-
     return result
 
 
 def find_site_packages_dirs(start: Path) -> list[Path]:
     found: set[Path] = set()
-
     venv_names = [".venv", "venv", "env", "virtualenv"]
     for venv in venv_names:
         try:
@@ -84,7 +78,6 @@ def find_site_packages_dirs(start: Path) -> list[Path]:
                             found.add(sp.resolve())
         except (PermissionError, OSError) as exc:
             logger.debug("Permission denied while scanning %s: %s", venv, exc)
-
     for name in ("site-packages", "dist-packages"):
         try:
             for sp in start.rglob(name):
@@ -92,7 +85,6 @@ def find_site_packages_dirs(start: Path) -> list[Path]:
                     found.add(sp.resolve())
         except (PermissionError, OSError) as exc:
             logger.debug("Permission denied while scanning %s: %s", name, exc)
-
     return sorted(found)
 
 
@@ -101,18 +93,15 @@ def find_dist_info(root: Path, pkg: str) -> Path:
     if not candidates:
         normalized = pkg.replace("-", "_")
         candidates = list(root.glob(f"{normalized}-*.dist-info"))
-
     if not candidates:
         msg = f"dist-info not found for package {pkg!r} in {root}"
         raise FileNotFoundError(msg)
-
     if len(candidates) > 1:
         logger.warning(
             "Multiple dist-info directories found for %r, using %s",
             pkg,
             candidates[0],
         )
-
     return candidates[0]
 
 
@@ -125,7 +114,6 @@ def clean_record_pyc(dist_info: Path) -> None:
     record = dist_info / "RECORD"
     if not record.exists():
         return
-
     lines = record.read_text(encoding="utf-8").splitlines()
     kept: list[str] = []
     for line in lines:
@@ -134,7 +122,6 @@ def clean_record_pyc(dist_info: Path) -> None:
             if parts[0].endswith(".pyc"):
                 continue
         kept.append(line)
-
     record.write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
 
 
@@ -144,7 +131,6 @@ def read_metadata(dist_info: Path) -> dict[str, Any]:
         "version": None,
         "requires_python": None,
     }
-
     metadata_file = dist_info / "METADATA"
     if metadata_file.exists():
         try:
@@ -155,12 +141,10 @@ def read_metadata(dist_info: Path) -> dict[str, Any]:
                     meta["requires_python"] = line.split(":", 1)[1].strip()
         except Exception as exc:
             logger.warning("Could not read metadata from %s: %s", metadata_file, exc)
-
     if meta["version"] is None:
         parts = dist_info.stem.split("-")
         if len(parts) >= 2:
             meta["version"] = parts[-1]
-
     return meta
 
 
@@ -168,11 +152,9 @@ def get_dist_info_path(dist: importlib.metadata.Distribution) -> Path | None:
     path = getattr(dist, "_path", None)
     if path is not None:
         return Path(path)
-
     for file in dist.files or []:
         if file.name == "RECORD":
             return Path(file.locate()).parent
-
     return None
 
 
@@ -197,30 +179,23 @@ def copy_record_files(
     if not record.exists():
         logger.warning("RECORD not found in %s", dist_info)
         return 0, 0, 0
-
     package_name = dist_info.name.replace(".dist-info", "").split("-")[0]
     base_dest = dest_root / package_name if per_package_subdir else dest_root
-
     copied = 0
     missing = 0
     errors = 0
-
     for row in read_record(record):
         try:
             if not row:
                 continue
-
             path_str = row[0].strip()
             if not path_str:
                 continue
-
             if skip_pyc and path_str.endswith(".pyc"):
                 continue
-
             src = Path(path_str)
             if not src.is_absolute():
                 src = source_root / src
-
             if not src.exists():
                 if "dist-info" in str(src):
                     missing += 1
@@ -231,24 +206,19 @@ def copy_record_files(
                     missing += 1
                     continue
                 continue
-
             if src.is_absolute():
                 dst = base_dest / src.name
             else:
                 dst = base_dest / path_str
-
             dst.parent.mkdir(parents=True, exist_ok=True)
-
             if move:
                 shutil.move(str(src), str(dst))
             else:
                 shutil.copy2(src, dst)
-
             copied += 1
         except Exception as exc:
             logger.exception("Error processing RECORD entry %r: %s", row, exc)
             errors += 1
-
     return copied, missing, errors
 
 
@@ -257,16 +227,13 @@ def find_package_dir(pkg: str, site_paths: Sequence[Path]) -> Path | None:
         candidate = sp / pkg
         if candidate.exists() and candidate.is_dir():
             return candidate
-
         normalized = pkg.replace("-", "_")
         candidate = sp / normalized
         if candidate.exists() and candidate.is_dir():
             return candidate
-
         for child in sp.iterdir():
             if child.is_dir() and child.name.lower().replace("-", "_") == pkg.lower().replace("-", "_"):
                 return child
-
     return None
 
 
@@ -280,25 +247,20 @@ def copy_package_tree(
         src = find_package_dir(pkg, site_paths)
         if not src:
             return pkg, False, "Package directory not found"
-
         dest = output / pkg
         if dest.exists():
             shutil.rmtree(dest)
         dest.mkdir(parents=True)
-
         for path in src.rglob("*"):
             if skip_pyc and path.suffix == ".pyc":
                 continue
-
             rel = path.relative_to(src)
             target = dest / rel
-
             if path.is_dir():
                 target.mkdir(parents=True, exist_ok=True)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(path, target)
-
         return pkg, True, f"Copied to {dest}"
     except Exception as exc:
         return pkg, False, f"Error: {exc}"
@@ -307,7 +269,6 @@ def copy_package_tree(
 def generate_wheel_tags(purelib: bool) -> tuple[str, str, str]:
     if purelib:
         return "py3", "none", "any"
-
     try:
         from packaging.tags import sys_tags  # type: ignore
 
@@ -332,39 +293,30 @@ def repack_package(
     if not record.exists():
         logger.warning("Skipping %s: RECORD file not found", dist_info.name)
         return None
-
     meta = read_metadata(dist_info)
     name = meta["name"]
     version = meta["version"] or "0.0.0"
-
     rows = read_record(record)
     paths = [row[0] for row in rows if row and row[0]]
-
     purelib = not any(path.endswith(".so") for path in paths)
     interp, abi, plat = generate_wheel_tags(purelib)
-
     wheel_dir = output_base / f"{name.replace('-', '_')}-{version}-{interp}-{abi}-{plat}"
     dist_info_dest = wheel_dir / f"{name}-{version}.dist-info"
     dist_info_dest.mkdir(parents=True, exist_ok=True)
-
     for path_str in paths:
         if path_str.endswith(".pyc"):
             continue
-
         src = site_packages / path_str
         if not src.exists():
             if verbose:
                 logger.debug("Missing file from RECORD: %s", src)
             continue
-
         if ".dist-info" in path_str:
             dst = dist_info_dest / Path(path_str).name
         else:
             dst = wheel_dir / path_str
-
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
-
     wheel_file = dist_info_dest / "WHEEL"
     wheel_file.write_text(
         "Wheel-Version: 1.0\n"
@@ -373,7 +325,6 @@ def repack_package(
         f"Tag: {interp}-{abi}-{plat}\n",
         encoding="utf-8",
     )
-
     src_meta = dist_info / "METADATA"
     dst_meta = dist_info_dest / "METADATA"
     if src_meta.exists() and not dst_meta.exists():
@@ -383,26 +334,21 @@ def repack_package(
             f"Metadata-Version: 2.1\nName: {name}\nVersion: {version}\n",
             encoding="utf-8",
         )
-
     shutil.copy2(record, dist_info_dest / "RECORD")
-
     return wheel_dir
 
 
 def cmd_record(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
-
     if args.clean_record:
         for dist_info in cwd.glob("*.dist-info"):
             clean_record_pyc(dist_info)
-
     if args.all:
         packages = [(dist.stem.split("-")[0], dist) for dist in cwd.glob("*.dist-info")]
     else:
         if not args.packages:
             logger.error("Specify package names or use --all")
             return 1
-
         packages = []
         for pkg in args.packages:
             try:
@@ -411,16 +357,13 @@ def cmd_record(args: argparse.Namespace) -> int:
             except FileNotFoundError as exc:
                 logger.error(str(exc))
                 return 1
-
     if not packages:
         logger.error("No dist-info directories found")
         return 1
-
     if args.dest:
         dest_root = Path(args.dest).expanduser().resolve()
     else:
         dest_root = Path.home() / "tmp" / "1" if args.move else Path.home() / "tmp" / "packages"
-
     per_pkg = args.per_package_subdir if args.per_package_subdir is not None else args.move
 
     def process(pkg: str, dist_info: Path) -> int:
@@ -448,7 +391,6 @@ def cmd_record(args: argparse.Namespace) -> int:
     else:
         for pkg, dist_info in packages:
             process(pkg, dist_info)
-
     return 0
 
 
@@ -456,7 +398,6 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
     site_paths = get_site_packages_paths(include_user=not args.no_user_site)
     output = Path(args.output).expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {
             executor.submit(
@@ -468,7 +409,6 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
             ): pkg
             for pkg in args.packages
         }
-
         for future in concurrent.futures.as_completed(futures):
             pkg = futures[future]
             try:
@@ -479,7 +419,6 @@ def cmd_site_copy(args: argparse.Namespace) -> int:
                     logger.error("%s: %s", name, msg)
             except Exception as exc:
                 logger.exception("Package %s failed: %s", pkg, exc)
-
     return 0
 
 
@@ -488,28 +427,21 @@ def cmd_repack(args: argparse.Namespace) -> int:
         site_dirs = get_site_packages_paths(include_user=not args.no_user_site)
     else:
         site_dirs = find_site_packages_dirs(Path.cwd())
-
     output_base = Path(args.output).expanduser().resolve()
     output_base.mkdir(parents=True, exist_ok=True)
-
     tasks: list[tuple[Path, Path, Path]] = []
-
     for site_packages in site_dirs:
         site_str = str(site_packages)
         env_name = "local_env"
         if any(marker in site_str for marker in (".venv", "venv", "env", "virtualenv")):
             env_name = site_packages.parent.parent.name or "local_env"
-
         env_output = output_base / env_name
         env_output.mkdir(parents=True, exist_ok=True)
-
         for dist_info in site_packages.glob("*.dist-info"):
             tasks.append((dist_info, site_packages, env_output))
-
     if not tasks:
         logger.warning("No dist-info directories found to repack")
         return 0
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [
             executor.submit(
@@ -521,7 +453,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
             )
             for dist_info, site_packages, env_output in tasks
         ]
-
         for future in concurrent.futures.as_completed(futures):
             try:
                 result = future.result()
@@ -529,7 +460,6 @@ def cmd_repack(args: argparse.Namespace) -> int:
                     logger.info("Repacked to %s", result)
             except Exception as exc:
                 logger.exception("Repack failed: %s", exc)
-
     return 0
 
 
@@ -543,29 +473,23 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
     else:
         site_paths = [get_user_site()]
         user_site_only = True
-
     selected: list[tuple[str, importlib.metadata.Distribution]] = []
     for dist in importlib.metadata.distributions():
         try:
             name = dist.metadata["Name"]
         except Exception:
             continue
-
         if not has_entry_points(dist):
             continue
-
         location = dist.locate_file("").resolve()
         if not any(location == sp.resolve() or location.is_relative_to(sp.resolve()) for sp in site_paths):
             continue
-
         if args.patterns:
             if not any(fnmatch.fnmatch(name.lower(), pattern.lower()) for pattern in args.patterns):
                 continue
         elif not args.all:
             continue
-
         selected.append((name, dist))
-
     seen: set[str] = set()
     unique: list[tuple[str, importlib.metadata.Distribution]] = []
     for name, dist in selected:
@@ -574,7 +498,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
             seen.add(key)
             unique.append((name, dist))
     selected = unique
-
     if args.list_only or args.show_entry_points:
         for name, dist in selected:
             print(f"- {name}")
@@ -583,11 +506,9 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
                     print(f"  [{ep.group}] {ep.name} = {ep.value}")
         if args.list_only:
             return 0
-
     if not selected:
         logger.warning("No matching entry-point packages found")
         return 0
-
     if args.dest:
         dest_root = Path(args.dest).expanduser().resolve()
     else:
@@ -601,7 +522,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
         dist_info = get_dist_info_path(dist)
         if not dist_info:
             return name, False, "dist-info not found"
-
         source_root = dist.locate_file("").resolve()
         copied, missing, errors = copy_record_files(
             dist_info,
@@ -620,7 +540,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {executor.submit(extract, name, dist): name for name, dist in selected}
-
         for future in concurrent.futures.as_completed(futures):
             name = futures[future]
             try:
@@ -631,7 +550,6 @@ def cmd_entry_points(args: argparse.Namespace) -> int:
                     logger.error("%s: %s", pkg_name, msg)
             except Exception as exc:
                 logger.exception("Package %s failed: %s", name, exc)
-
     return 0
 
 
@@ -647,9 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable debug logging (for subcommands that use it).",
     )
-
     subparsers = parser.add_subparsers(dest="command", required=True)
-
     p_record = subparsers.add_parser(
         "record",
         help="Copy/move files listed in RECORD from cwd dist-info.",
@@ -715,7 +631,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of worker threads (default: 1).",
     )
-
     p_site = subparsers.add_parser(
         "site-copy",
         help="Copy installed package directories from site-packages.",
@@ -750,7 +665,6 @@ def build_parser() -> argparse.ArgumentParser:
         dest="skip_pyc",
         help="Do not skip .pyc files.",
     )
-
     p_repack = subparsers.add_parser(
         "repack",
         help="Repack installed packages into wheel-like directory structure.",
@@ -782,7 +696,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Number of worker threads (default: 1).",
     )
-
     p_ep = subparsers.add_parser(
         "entry-points",
         help="Extract packages that declare entry points.",
@@ -841,16 +754,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="skip_pyc",
         help="Do not skip .pyc files.",
     )
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     configure_logging(getattr(args, "verbose", False))
-
     if args.command == "record":
         return cmd_record(args)
     if args.command == "site-copy":
@@ -859,7 +769,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return cmd_repack(args)
     if args.command == "entry-points":
         return cmd_entry_points(args)
-
     parser.print_help()
     return 1
 

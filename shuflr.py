@@ -4,7 +4,6 @@ The script should accept the input file path, an optional output filename prefix
 It should be structured with argparse for CLI usage and use pathlib for file handling."""
 
 from __future__ import annotations
-
 import argparse
 import mmap
 import os

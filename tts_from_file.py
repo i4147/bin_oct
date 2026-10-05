@@ -5,7 +5,6 @@ It should validate that the file path exists, print the total number of chunks d
 Handle the missing-file and missing-argument cases by printing a usage message and exiting with a non-zero status."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

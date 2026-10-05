@@ -4,7 +4,6 @@ It should use multiprocessing (one worker per CPU core) to check packages in par
 Finally, it should read a given requirements.txt file (default path "requirements.txt"), print an error and exit gracefully if the file doesn't exist, and otherwise use the detected binary-package set to clean or filter the requirements file entries accordingly."""
 
 from __future__ import annotations
-
 import csv
 import os
 import site

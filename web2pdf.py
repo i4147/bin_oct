@@ -2,18 +2,15 @@
 """web2pdf — URL/HTML → PDF via WeasyPrint (Termux/ARM32-friendly)."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-
 from rich.console import Console
 from weasyprint import CSS, HTML
 
 console = Console(stderr=True)
-
 # millimetres (width, height)
 PAPER: dict[str, tuple[float, float]] = {
     "A3": (297, 420),
@@ -23,7 +20,6 @@ PAPER: dict[str, tuple[float, float]] = {
     "Legal": (216, 356),
     "Tabloid": (279, 432),
 }
-
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
@@ -91,7 +87,6 @@ def build_css(
     w, h = PAPER[paper]
     if landscape:
         w, h = h, w
-
     rules = [
         "@page {",
         f"  size: {w}mm {h}mm;",
@@ -116,10 +111,8 @@ def build_css(
             "  }",
         ]
     rules.append("}")
-
     if no_background:
         rules.append("*, *::before, *::after { background: transparent !important; }")
-
     rules += [
         "img, svg, video { max-width: 100% !important; height: auto !important; }",
         "pre, code { white-space: pre-wrap !important; word-wrap: break-word !important; }",
@@ -159,15 +152,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-
     if args.margin < 0:
         console.print("[red]error:[/red] --margin must be ≥ 0")
         return 2
-
     target = to_target(args.input)
     output = (args.output or default_output(target)).expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-
     page_css = build_css(
         args.paper,
         args.landscape,
@@ -178,11 +168,9 @@ def main(argv: list[str] | None = None) -> int:
         args.footer_size,
         args.no_background,
     )
-
     stylesheets = [CSS(string=page_css)]
     for css_path in args.css:
         stylesheets.append(CSS(filename=str(css_path)))
-
     try:
         console.print(f"[cyan]→[/cyan] loading {target}")
         if target.startswith(("http://", "https://")):
@@ -190,7 +178,6 @@ def main(argv: list[str] | None = None) -> int:
             doc = HTML(string=html, base_url=target)
         else:
             doc = HTML(filename=urlparse(target).path if target.startswith("file://") else target)
-
         console.print(f"[cyan]→[/cyan] rendering with WeasyPrint")
         doc.write_pdf(target=str(output), stylesheets=stylesheets)
     except KeyboardInterrupt:
@@ -199,7 +186,6 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as e:
         console.print(f"[red]render failed:[/red] {type(e).__name__}: {e}")
         return 1
-
     size_kb = output.stat().st_size / 1024
     console.print(f"[green]✓[/green] {output}  [dim]({size_kb:.1f} KB)[/dim]")
     return 0

@@ -5,10 +5,8 @@ For each font, it loads it with TTFont, sets the flavor to "woff2", and saves it
 If only a single file is processed it should run synchronously and exit, otherwise it should process the files in parallel using a multiprocessing helper function."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 

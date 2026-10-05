@@ -4,7 +4,6 @@ It should skip symlinks and any files inside ".git" directories, and use BOM det
 The script should use argparse to accept an optional "-a"/"--apply" flag that, when provided, converts detected non-UTF-8 files to UTF-8 in place, and it should print a report listing the non-UTF-8 files found (and converted, if applicable) along with summary counts."""
 
 from __future__ import annotations
-
 import argparse
 import codecs
 from pathlib import Path
@@ -54,25 +53,20 @@ def main() -> int:
         help="convert detected non-UTF-8 files to UTF-8 in place",
     )
     args = parser.parse_args()
-
     root: Path = Path.cwd()
     found: int = 0
     converted: int = 0
-
     for path in sorted(iter_files(root)):
         try:
             data: bytes = path.read_bytes()
         except OSError as exc:
             print(f"error {path.relative_to(root)}: {exc}")
             continue
-
         enc: Optional[str] = detect_encoding(data)
         if enc is None or enc == "utf-8":
             continue
-
         rel: Path = path.relative_to(root)
         found += 1
-
         if args.apply:
             text: str = data.decode(enc)
             path.write_bytes(text.encode("utf-8"))
@@ -80,12 +74,10 @@ def main() -> int:
             print(f"converted {rel} ({enc} -> utf-8)")
         else:
             print(f"non-utf8 {rel} ({enc})")
-
     if args.apply:
         print(f"scanned {root}, non-utf8 found: {found}, converted: {converted}")
     else:
         print(f"scanned {root}, non-utf8 found: {found}")
-
     return 0
 
 

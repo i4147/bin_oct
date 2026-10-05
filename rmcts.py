@@ -3,13 +3,11 @@
 Prompt: Write a Python CLI that recursively removes non-essential comments and docstrings from .py files in-place using tree-sitter, validates the result with ast.parse, processes files concurrently with multiprocessing.Pool(8), logs via loguru, uses pathlib throughout, and prints a final summary of changed files, removed nodes, and errors."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import tree_sitter_python as tsp
 from dh import gsz, rrs
 from loguru import logger
@@ -18,7 +16,6 @@ from tree_sitter import Language, Node, Parser
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from multiprocessing.pool import AsyncResult
-
 PY_EXTS: set[str] = {".py"}
 MAX_WORKERS: int = 8
 _PARSER: Parser | None = None

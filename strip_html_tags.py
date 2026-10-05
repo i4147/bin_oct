@@ -4,7 +4,6 @@ The script should locate safe byte-offset split points (avoiding breaking inside
 It should handle command-line input/output file paths, use a custom HTMLParser subclass to track parsing state, and rely on temporary files for intermediate processing."""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import os
 import sys

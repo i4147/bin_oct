@@ -1,6 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""[Tool: think]
+  Params: {"content":"The user wants a prompt describing the code, not the code. I have only partial code (it's truncated), but I have enough: it's a Termux Python script, ncdu2.py, a disk usage analyzer with curses TUI similar to ncdu, using multiprocessing with 8 workers, logging setup with verbosity levels and logfile redirection, argparse for CLI args. I should infer typical ncdu-like features: scanning directories, computing sizes, displaying interactive curses UI, sorting, delete functionality, etc. I need to write a single prompt text describing purpose, inputs/outputs, notable behaviors based on evidence in the code (imports: curses, json, multiprocessing, shutil, stat, dataclasses, Path, argparse). This is a single-tool task (just producing text), no need for actual tool calls - this is a text generation task I can answer directly without invoking any tools."}
+Create a Python 3.12 command-line script named `ncdu2.py` designed to run on Termux (Android) that functions as an interactive, multi-process disk usage analyzer similar to the classic `ncdu` tool, built on top of the `curses` library for its terminal UI.
 
+The script must:
+
+- Use `argparse` to parse command-line arguments, including at least: the target directory/path to scan, a verbosity flag (supporting multiple levels, e.g. `-v`/`-vv` mapping to WARNING/INFO/DEBUG logging levels), and an optional log file path to redirect logging output instead of stderr.
+- Implement a `setup_logging(verbosity, logfile)` function that configures the root logger with a consistent timestamped format (`%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s`, time format `%H:%M:%S`), writing either to a given log file (overwrite mode) or to stderr, and logs a startup banner including program name, version, verbosity, PID, and Python version.
+- Implement a `redirect_logging_to_file(path)` helper that can dynamically tear down existing logging handlers and reattach a new `FileHandler` (append mode) with the same formatter, useful for switching log output once the curses UI takes over the terminal.
+- Use the `multiprocessing` module with a configurable worker pool (default `WORKERS = 8`) to scan the filesystem in parallel, walking directories, reading file metadata via `os`/`stat`/`pathlib.Path`, and aggregating sizes recursively to build a tree of directory/file entries.
+- Represent scanned filesystem entries using `dataclasses` (e.g., a node class with fields such as name, path, size, type, children) to build an in-memory tree representing the scanned directory structure.
+- Present an interactive full-screen `curses`-based UI allowing the user to navigate the directory tree (drill into subdirectories, go back up), view entries sorted by size, and see human-readable sizes, similar to standard `ncdu` behavior.
+- Support exporting/importing the scan results as JSON (via the `json` module), allowing scan data to be saved to a file and later reloaded without rescanning.
+- Include file management capabilities (using `shutil` and `os`) such as deleting selected files or directories directly from the UI.
+- Define a module-level `PROGNAME` constant (`"ncdu2.py"`) and `__version__` string (`"2.0.0"`) used in logging and/or help output.
+- Be structured with `from __future__ import annotations` and modern type hints (`Path | None`, `list[...]`, etc.) targeting Python 3.12, with a shebang pointing to the Termux Python interpreter (`#!/data/data/com.termux/files/usr/bin/python3.12`).
+- Be runnable as a standalone script (with a `if __name__ == "__main__":` entry point) that initializes logging, parses arguments, spawns the worker processes to scan the given path, and then launches the curses interface to browse the results, printing errors gracefully and exiting with appropriate status codes on failure (e.g., invalid path, permission errors).
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/DstgdA7TwNJD8kHVPj4gRM"""
+
+from __future__ import annotations
 import argparse
 import curses
 import json
@@ -17,9 +36,7 @@ from typing import Any, Iterator
 
 __version__ = "2.0.0"
 PROGNAME = "ncdu2.py"
-
 WORKERS: int = 8
-
 LOG = logging.getLogger("ncdu2")
 
 
@@ -70,7 +87,7 @@ def fmt_size(n: int, si: bool = False) -> str:
                 return f"{int(f):5d} {u}"
             return f"{f:5.1f} {u}"
         f /= base
-    return f"{f:5.1f} {units[-1]}"  # pragma: no cover
+    return f"{f:5.1f} {units[-1]}"
 
 
 def fmt_count(n: int) -> str:
@@ -108,7 +125,6 @@ def scan_subtree(
             counter["errors"] += 1
             log.debug("lstat failed on %s: %s", p, exc)
             return {"n": p.name, "d": False, "s": 0, "b": 0, "e": True, "dev": 0, "ino": 0, "l": 1, "m": 0.0, "c": None}
-
         is_dir = stat.S_ISDIR(st.st_mode)
         if stat.S_ISLNK(st.st_mode) and follow_symlinks:
             try:
@@ -117,19 +133,15 @@ def scan_subtree(
                 st = st2
             except OSError:
                 pass
-
         node = _stat_to_node(p, st, is_dir)
-
         if not is_dir:
             counter["files"] += 1
             return node
-
         counter["dirs"] += 1
         if one_filesystem and st.st_dev != root_dev:
             log.debug("skipping %s: other filesystem (dev=%s != %s)", p, st.st_dev, root_dev)
             node["c"] = []
             return node
-
         try:
             entries = sorted(p.iterdir(), key=lambda q: q.name)
         except OSError as exc:
@@ -138,7 +150,6 @@ def scan_subtree(
             node["c"] = []
             log.debug("cannot list %s: %s", p, exc)
             return node
-
         children: list[dict[str, Any]] = []
         for child in entries:
             if child.name in exclude:
@@ -196,7 +207,7 @@ class Node:
         for c in self.children:
             yield from c.iter_all()
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         return f"<Node {self.name!r} dir={self.is_dir} size={self.size}>"
 
 
@@ -265,7 +276,6 @@ def parallel_scan(
         follow_symlinks,
         exclude or "()",
     )
-
     try:
         rst = root.stat()
     except OSError as exc:
@@ -274,25 +284,19 @@ def parallel_scan(
     if not stat.S_ISDIR(rst.st_mode):
         msg = f"{PROGNAME}: {root} is not a directory"
         raise SystemExit(msg)
-
     root_dev = rst.st_dev
     t_start = time.perf_counter()
-
     try:
         top_entries = sorted(root.iterdir(), key=lambda p: p.name)
     except OSError as exc:
         msg = f"{PROGNAME}: cannot read {root}: {exc}"
         raise SystemExit(msg)
-
     top_entries = [p for p in top_entries if p.name not in exclude]
     LOG.info("top-level entries to dispatch: %d", len(top_entries))
-
     root_node = build_tree(_stat_to_node(root, rst, True))
     root_node.name = str(root)
-
     ctx = mp.get_context("fork" if sys.platform != "win32" else "spawn")
     LOG.debug("multiprocessing start method: %s", ctx.get_start_method())
-
     results: list[tuple[Path, "mp.pool.AsyncResult[dict[str, Any]]"]] = []
     with ctx.Pool(processes=WORKERS) as pool:
         LOG.info("pool created with %d workers", WORKERS)
@@ -303,16 +307,14 @@ def parallel_scan(
                 args=(str(entry), root_dev, one_filesystem, follow_symlinks, exclude, verbosity),
             )
             results.append((entry, ar))
-
         pool.close()
         LOG.info("all %d jobs submitted, collecting results ...", len(results))
-
         done = 0
         totals = {"dirs": 0, "files": 0, "errors": 0}
         for entry, ar in results:
             try:
                 node_dict = ar.get()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 LOG.error("worker failed on %s: %r", entry, exc)
                 node_dict = {
                     "n": entry.name,
@@ -343,11 +345,9 @@ def parallel_scan(
             )
         pool.join()
         LOG.info("pool joined")
-
     dedup_hardlinks(root_node)
     aggregate(root_node)
     elapsed = time.perf_counter() - t_start
-
     LOG.info("=" * 72)
     LOG.info("scan complete: %s", root)
     LOG.info("  directories : %s", fmt_count(totals["dirs"] + 1))
@@ -480,13 +480,11 @@ class Browser:
         scr.erase()
         h, w = scr.getmaxyx()
         body = max(h - 3, 1)
-
         if self.cursor >= len(items):
             self.cursor = max(len(items) - 1, 0)
         self.offset = min(self.offset, self.cursor)
         if self.cursor >= self.offset + body:
             self.offset = self.cursor - body + 1
-
         total = self.val(self.cur) or 1
         mode = "apparent size" if self.apparent else "disk usage"
         head = (
@@ -496,7 +494,6 @@ class Browser:
         )
         scr.addnstr(0, 0, head.ljust(w)[:w], w, curses.color_pair(1) | curses.A_BOLD)
         scr.addnstr(1, 0, f"--- {self.cur.path} ".ljust(w, "-")[:w], w)
-
         for i in range(body):
             idx = self.offset + i
             if idx >= len(items):
@@ -506,7 +503,6 @@ class Browser:
             attr = curses.color_pair(5) if sel else curses.A_NORMAL
             v = self.val(n)
             pct = 100.0 * v / total
-
             parts = [f"{fmt_size(v, self.si):>10}"]
             if self.show_percent:
                 parts.append(f"{pct:5.1f}%")
@@ -514,7 +510,6 @@ class Browser:
                 bars = round(pct / 100.0 * 10)
                 parts.append("[" + "#" * bars + " " * (10 - bars) + "]")
             prefix = " ".join(parts)
-
             marker = "/" if n.is_dir else " "
             flag = "!" if n.err else ("H" if n.dup else " ")
             line = f"{flag}{prefix} {marker}{n.name}"
@@ -527,7 +522,6 @@ class Browser:
                 if sel
                 else (curses.color_pair(4) if n.err else curses.color_pair(2) if n.is_dir else curses.A_NORMAL),
             )
-
         foot = (
             self.message
             or " q:quit  ↵/→:open  ←:up  d:delete  n/s/C/M:sort  a:apparent  g:graph  i:info  e:export  ?:help "
@@ -540,7 +534,6 @@ class Browser:
         h, _ = scr.getmaxyx()
         body = max(h - 3, 1)
         sel = items[self.cursor] if items else None
-
         match ch:
             case curses.KEY_UP | 107:
                 self.cursor = max(0, self.cursor - 1)
@@ -681,7 +674,6 @@ class Browser:
             LOG.error("delete failed: %s", exc)
             self.message = f" error: {exc.strerror or exc} "
             return
-
         s, d, it = n.size, n.dsize, n.items
         p = n.parent
         while p is not None:
@@ -723,7 +715,6 @@ class Browser:
             self.root = new
         self.cur = new
         self.cursor = self.offset = 0
-
         aggregate(self.root)
         self.message = " rescan complete "
 
@@ -771,7 +762,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     verbosity = 0 if args.quiet else args.verbose
     setup_logging(verbosity, None)
-
     if args.file:
         root = import_json(args.file)
     else:
@@ -782,16 +772,13 @@ def main(argv: list[str] | None = None) -> int:
             exclude=tuple(args.exclude),
             verbosity=verbosity,
         )
-
     if args.output:
         export_json(root, args.output)
         return 0
-
     if args.no_ui or not sys.stdout.isatty():
         LOG.info("no TUI (no_ui=%s, tty=%s)", args.no_ui, sys.stdout.isatty())
         print_summary(root, args.top, args.apparent_size, args.si)
         return 0
-
     redirect_logging_to_file(args.log)
     browser = Browser(root, apparent=args.apparent_size, si=args.si)
     try:

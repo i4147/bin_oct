@@ -4,7 +4,6 @@ It should define a sort-key function that normalizes character variants (e.g., m
 The script should use this key function together with Python's sorting mechanism to output the input lines sorted in correct Persian alphabetical order."""
 
 from __future__ import annotations
-
 import sys
 
 

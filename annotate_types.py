@@ -4,7 +4,6 @@ It should include a CSTTransformer (TypeshedSanitizer) that sanitizes references
 The script should accept file paths via argparse, parse both source and stub files with libcst/ast, apply the annotation visitor with a CodemodContext, and likely support showing a diff (via difflib) of the changes, optionally invoking subprocess/tempfile for formatting or validation steps before finalizing output."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import difflib
@@ -13,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

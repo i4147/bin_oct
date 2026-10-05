@@ -5,7 +5,6 @@ Original -> merged equivalent ----------------------------- compress_files.py ->
 Optional (matching the originals, gracefully degraded if missing): loguru — nicer logging (falls back to print) lzma_mt — multi-threaded xz (falls back to stdlib lzma) pylzma — required for `7z` and `lzma-chunk` subcommands rich — not required (originals' rich output replaced by plain text)"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import io
@@ -27,14 +26,12 @@ try:
     _HAS_LZMA_MT: bool = True
 except ImportError:
     _HAS_LZMA_MT = False
-
 try:
     import pylzma  # type: ignore
 
     _HAS_PYLZMA: bool = True
 except ImportError:
     _HAS_PYLZMA = False
-
 try:
     from loguru import logger  # type: ignore
 
@@ -65,7 +62,6 @@ except ImportError:
             pass
 
     logger = _FallbackLogger()  # type: ignore[assignment]
-
 DEFAULT_SKIP_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -76,7 +72,6 @@ DEFAULT_SKIP_DIRS: set[str] = {
     ".env",
     "node_modules",
 }
-
 DEFAULT_SKIP_EXTS: set[str] = {
     ".zip",
     ".br",
@@ -146,7 +141,6 @@ DEFAULT_SKIP_EXTS: set[str] = {
     ".o",
     ".obj",
 }
-
 DEFAULT_WORKERS: int = 8
 DEFAULT_THREADS: int = 4
 DEFAULT_PRESET: int = 9
@@ -159,7 +153,6 @@ SEVENZ_SUFFIX: str = ".7z"
 TAR_SUFFIX: str = ".tar"
 TAR_XZ_SUFFIX: str = ".tar.xz"
 LZMA_SUFFIX: str = ".lzma"
-
 if _HAS_PYLZMA:
     _PYLZMA_FILTERS = [
         {
@@ -220,7 +213,6 @@ def discover_files(
     if extensions:
         for e in extensions:
             ext_filter.add((e if e.startswith(".") else "." + e).lower())
-
     iterator = root.rglob("*") if recursive else root.glob("*")
     out: list[Path] = []
     for p in iterator:
@@ -257,7 +249,6 @@ def compress_bytes(
     if backend in ("lzma_mt", "lzmamt"):
         msg = "lzma_mt requested but not installed. `pip install lzma_mt` or pass --backend lzma"
         raise RuntimeError(msg)
-
     lvl = preset | lzma.PRESET_EXTREME if preset == 9 else preset
     return lzma.compress(data, format=lzma.FORMAT_XZ, preset=lvl)
 
@@ -287,13 +278,10 @@ def _worker_compress_xz(args: tuple[str, int, int, str, bool, bool]) -> FileResu
     src = Path(path_str)
     dst = src.with_name(src.name + XZ_SUFFIX)
     t0 = time.monotonic()
-
     if dry_run:
         return FileResult(src, True, f"[dry-run] would compress → {dst.name}")
-
     if dst.exists():
         return FileResult(src, False, f"{dst.name} already exists — skipped")
-
     try:
         data = src.read_bytes()
         cdata = compress_bytes(data, preset=preset, threads=threads, backend=backend)
@@ -319,10 +307,8 @@ def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
     path_str, remove_orig, handle_tar_xz = args
     src = Path(path_str)
     t0 = time.monotonic()
-
     if src.suffix.lower() != XZ_SUFFIX:
         return FileResult(src, False, "not a .xz file")
-
     try:
         if handle_tar_xz and src.name.endswith(TAR_XZ_SUFFIX):
             out_dir = src.with_name(src.name[: -len(TAR_XZ_SUFFIX)])
@@ -340,7 +326,6 @@ def _worker_decompress_xz(args: tuple[str, bool, bool]) -> FileResult:
                 processed_size=size,
                 duration=time.monotonic() - t0,
             )
-
         data = src.read_bytes()
         out = decompress_bytes(data)
         dst = src.with_suffix("")
@@ -366,7 +351,6 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
     t0 = time.monotonic()
     start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     orig_size = 0
-
     try:
         if not src.is_dir():
             msg = f"Not a directory: {src}"
@@ -374,14 +358,12 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
         if dst.exists():
             msg = f"archive exists: {dst.name}"
             raise FileExistsError(msg)
-
         orig_size = dir_size(src)
         with (
             lzma.open(dst, "wb", preset=preset, check=lzma.CHECK_CRC64) as xz_f,
             tarfile.open(fileobj=xz_f, mode="w", dereference=False) as tar,
         ):
             tar.add(src, arcname=src.name, recursive=True)
-
         if verify:
             with tarfile.open(dst, "r:xz") as tar:
                 for member in tar:
@@ -390,7 +372,6 @@ def _worker_tar_dir(args: tuple[str, int, bool, bool]) -> dict[str, Any]:
                         if fh is not None:
                             while fh.read(1024 * 1024):
                                 pass
-
         comp_size = dst.stat().st_size
         if comp_size <= 0:
             msg = "Created archive is empty"
@@ -499,7 +480,6 @@ def _worker_pylzma_un7z(args: tuple[str, bool, Optional[str], bool]) -> FileResu
             return FileResult(src, False, "not a file")
         data = src.read_bytes()
         raw = _pylzma_decompress_blob(data)
-
         if src.name.endswith(f"{TAR_SUFFIX}{SEVENZ_SUFFIX}"):
             stem = src.name[: -len(f"{TAR_SUFFIX}{SEVENZ_SUFFIX}")]
             target_dir = (out_dir / stem) if out_dir else src.with_name(stem)
@@ -545,10 +525,8 @@ def _chunked_compress_file(src: Path, dst: Path, chunk_size: int, workers: int) 
     total = len(data)
     n_chunks = (total + chunk_size - 1) // chunk_size
     chunks = [data[i * chunk_size : (i + 1) * chunk_size] for i in range(n_chunks)]
-
     with Pool(processes=workers) as pool:
         compressed = pool.map(_pylzma_compress_chunk, chunks)
-
     with dst.open("wb") as fh:
         fh.write(n_chunks.to_bytes(4, "big"))
         for blob in compressed:
@@ -710,18 +688,14 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if not root.is_dir():
         logger.error(f"{root} is not a directory")
         return 1
-
     if args.dry_run:
         print("[dry-run] no files will be modified")
-
     if args.tar_subdirs or args.auto_tar_dirs:
         _tar_top_level_dirs(root, args.preset, args.workers)
-
     if args.no_skip_compressed:
         skip_exts: set[str] = {XZ_SUFFIX}
     else:
         skip_exts = DEFAULT_SKIP_EXTS
-
     files = discover_files(
         root,
         mode="compress",
@@ -733,17 +707,14 @@ def cmd_compress(args: argparse.Namespace) -> int:
     if not files:
         print("No files found to compress")
         return 0
-
     print(
         f"Compressing {len(files)} file(s) with {'sequential mode' if args.sequential else f'{args.workers} workers'}"
     )
     print(f"Preset: {args.preset}, threads/job: {args.threads}, backend: {args.backend}")
-
     if args.dry_run:
         for f in files:
             print(f"  [dry-run] would compress {f.relative_to(root)}")
         return 0
-
     worker_args = [(str(f), args.preset, args.threads, args.backend, not args.keep_orig, False) for f in files]
     results: list[FileResult] = []
     if args.sequential or len(files) == 1:
@@ -760,7 +731,6 @@ def cmd_compress(args: argparse.Namespace) -> int:
                 results.append(r)
                 if args.verbose:
                     _print_file_result(root, r, i, len(files))
-
     if not args.no_size_stats:
         _print_summary(results)
     return 0
@@ -771,7 +741,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     if not root.is_dir():
         logger.error(f"{root} is not a directory")
         return 1
-
     files = discover_files(
         root,
         mode="decompress",
@@ -780,11 +749,9 @@ def cmd_decompress(args: argparse.Namespace) -> int:
     if not files:
         print("No .xz files found to decompress")
         return 0
-
     print(f"Decompressing {len(files)} file(s)...")
     worker_args = [(str(f), not args.keep_orig, args.handle_tar_xz) for f in files]
     results: list[FileResult] = []
-
     if args.sequential or len(files) == 1:
         for i, wa in enumerate(worker_args, 1):
             r = _worker_decompress_xz(wa)
@@ -797,7 +764,6 @@ def cmd_decompress(args: argparse.Namespace) -> int:
                 r = fut.get()
                 results.append(r)
                 _print_file_result(root, r, i, len(files))
-
     _print_summary(results)
     return 0
 
@@ -807,7 +773,6 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
     if not root.is_dir():
         logger.error(f"Not a directory: {root}")
         return 1
-
     subdirs = sorted(
         (p for p in root.iterdir() if p.is_dir() and not p.is_symlink() and not p.name.startswith(".")),
         key=lambda p: p.name.lower(),
@@ -815,14 +780,12 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
     if not subdirs:
         print(f"No non-hidden top-level subdirectories found in: {root}")
         return 0
-
     workers = min(args.workers, len(subdirs))
     print(f"Directory:      {root}")
     print(f"Subdirectories: {len(subdirs)}")
     print(f"Workers:        {workers}")
     print(f"xz preset:      {args.preset}")
     print()
-
     worker_args = [(str(d), args.preset, not args.no_verify, not args.keep_orig) for d in subdirs]
     ok = fail = 0
     with Pool(processes=workers) as pool:
@@ -839,7 +802,6 @@ def cmd_tar_dirs(args: argparse.Namespace) -> int:
             else:
                 print(f"{mark} {r['message']}  took={r['elapsed']:.1f}s")
                 fail += 1
-
     print()
     print("Finished")
     print(f"Successful: {ok}")
@@ -851,13 +813,11 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
     cwd = Path.cwd().resolve()
     parent = cwd.parent
     archive = parent / f"{cwd.name}{TAR_XZ_SUFFIX}"
-
     print(f"Current directory: {cwd}")
     print(f"Target archive:    {archive}")
     if archive.exists():
         logger.error(f"Archive already exists: {archive}")
         return 1
-
     files: list[Path] = []
     for p in cwd.rglob("*"):
         if p.is_file() and not p.is_symlink():
@@ -867,11 +827,9 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
     if not files:
         logger.error(f"No files found in {cwd}")
         return 1
-
     print(f"Reading {len(files)} file(s) with {args.workers} worker(s)...")
     with Pool(processes=args.workers) as pool:
         payload = pool.map(_read_file_bytes, [(str(f),) for f in files])
-
     print(f"Writing archive: {archive}")
     try:
         with tarfile.open(name=str(archive), mode="w:xz", preset=6, format=tarfile.PAX_FORMAT) as tar:
@@ -891,7 +849,6 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
         with contextlib.suppress(OSError):
             archive.unlink()
         return 1
-
     try:
         with tarfile.open(archive, "r:xz") as tar:
             names = tar.getnames()
@@ -900,7 +857,6 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
         with contextlib.suppress(OSError):
             archive.unlink()
         return 1
-
     prefix = f"{cwd.name}/"
     bad = [n for n in names if not n.startswith(prefix)]
     if bad:
@@ -911,7 +867,6 @@ def cmd_archive_cwd(args: argparse.Namespace) -> int:
         logger.error(f"Member count mismatch: expected {len(files)}, got {len(names)}")
         archive.unlink()
         return 1
-
     os.chdir(parent)
     print(f"Removing original directory: {cwd}")
     shutil.rmtree(cwd)
@@ -958,11 +913,9 @@ def _collect_7z_targets(
                 add_decompress_tree(rp)
             else:
                 targets.append(rp)
-
     if output_dir is not None:
         out_res = output_dir.resolve()
         targets = [t for t in targets if out_res not in t.parents and t != out_res]
-
     seen: set[Path] = set()
     ordered: list[Path] = []
     for t in targets:
@@ -976,30 +929,24 @@ def cmd_7z(args: argparse.Namespace) -> int:
     if not _HAS_PYLZMA:
         logger.error("pylzma is required for the `7z` subcommand. Install it with `pip install pylzma`.")
         return 1
-
     mode = "decompress" if args.decompress else "compress"
     out_dir: Optional[Path] = None
     if args.output_dir:
         out_dir = Path(args.output_dir).expanduser().resolve()
         out_dir.mkdir(parents=True, exist_ok=True)
-
     targets = _collect_7z_targets(args.paths, mode, Path.cwd(), out_dir)
     if not targets:
         print(f"No items found to {mode}")
         return 0
-
     print(f"{mode.capitalize()}ing {len(targets)} item(s) with {args.workers} workers...")
     if out_dir:
         print(f"Output directory: {out_dir}")
-
     worker = _worker_pylzma_un7z if mode == "decompress" else _worker_pylzma_7z
     worker_args = [(str(t), args.keep, str(out_dir) if out_dir else None, args.tar_subdirs) for t in targets]
-
     with Pool(processes=args.workers) as pool:
         for r in pool.imap_unordered(worker, worker_args):
             mark = "✓" if r.success else "✗"
             print(f"  {mark} {r.path}: {r.message}")
-
     return 0
 
 
@@ -1007,9 +954,7 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
     if not _HAS_PYLZMA:
         logger.error("pylzma is required for the `lzma-chunk` subcommand.")
         return 1
-
     cwd = Path.cwd()
-
     if args.decompress:
         files = [p for p in cwd.glob(f"*{LZMA_SUFFIX}") if p.is_file() and not p.is_symlink()]
         if not files:
@@ -1033,7 +978,6 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
         print(f"Compressing {len(files)} file(s) with chunk size {format_size(args.chunk_size)}...")
         worker_args = [(str(f), args.chunk_size, args.workers, not args.keep_orig) for f in files]
         worker = _worker_lzma_chunk_compress
-
     ok = 0
     total_orig = total_new = 0
     with Pool(processes=args.workers) as pool:
@@ -1048,7 +992,6 @@ def cmd_lzma_chunk(args: argparse.Namespace) -> int:
                 ok += 1
                 total_orig += r.original_size
                 total_new += r.processed_size
-
     print("─" * 60)
     print(f"Succeeded: {ok} / {len(files)}")
     if ok and total_orig:
@@ -1109,7 +1052,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_c = sub.add_parser("compress", help="Recursively compress files to .xz")
     _add_common_xz_opts(p_c)
     p_c.add_argument(
@@ -1162,7 +1104,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Chunk size for large files (default: {DEFAULT_CHUNK_SIZE})",
     )
     p_c.set_defaults(func=cmd_compress)
-
     p_d = sub.add_parser("decompress", help="Recursively decompress .xz files")
     _add_common_xz_opts(p_d)
     p_d.add_argument(
@@ -1171,7 +1112,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Extract `*.tar.xz` files into directories",
     )
     p_d.set_defaults(func=cmd_decompress)
-
     p_t = sub.add_parser("tar-dirs", help="Pack each top-level subdirectory into .tar.xz")
     p_t.add_argument(
         "directory",
@@ -1199,7 +1139,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip archive verification (faster, riskier)",
     )
     p_t.set_defaults(func=cmd_tar_dirs)
-
     p_a = sub.add_parser("archive-cwd", help="Archive cwd to ../<cwd>.tar.xz and delete it")
     p_a.add_argument(
         "--workers",
@@ -1208,7 +1147,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Parallel readers (default: {DEFAULT_WORKERS})",
     )
     p_a.set_defaults(func=cmd_archive_cwd)
-
     p_7 = sub.add_parser("7z", help="pylzma-based .7z / .tar.7z codec")
     p_7.add_argument("paths", nargs="*", help="Files / directories (default: cwd recursively)")
     p_7.add_argument("-d", "--decompress", action="store_true", help="Decompress mode")
@@ -1230,7 +1168,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Parallel workers (default: {DEFAULT_WORKERS})",
     )
     p_7.set_defaults(func=cmd_7z)
-
     p_l = sub.add_parser("lzma-chunk", help="pylzma chunked .lzma codec (max compression)")
     p_l.add_argument("-c", "--compress", action="store_true", default=True, help="Compress (default)")
     p_l.add_argument("-d", "--decompress", action="store_true", help="Decompress .lzma files")
@@ -1248,7 +1185,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_l.add_argument("--keep-orig", action="store_true", help="Keep original files after processing")
     p_l.set_defaults(func=cmd_lzma_chunk)
-
     return parser
 
 

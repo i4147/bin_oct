@@ -3,13 +3,11 @@
 Regenerate this script: walk a directory with fastwalk.walk_files, collect unique filenames whose stem contains non-ASCII characters, translate stems via deep_translator.GoogleTranslator(auto->en) using a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), rename files deepest-first with dh.unique_path for collision safety, show tqdm progress, and log with loguru."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
-
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from dh import unique_path  # type: ignore[import-untyped]
 from fastwalk import walk_files  # type: ignore[import-untyped]
@@ -18,7 +16,6 @@ from tqdm import tqdm
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
 DIRECTORY: Final[str] = "."
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
@@ -27,9 +24,7 @@ POOL_METHODS: Final[tuple[str, ...]] = (
     "imap_unordered",
     "apply_async",
 )
-
 NON_ENGLISH_PATTERN: Final[re.Pattern[str]] = re.compile(r"[^\x00-\x7F]")
-
 NamePair: TypeAlias = tuple[str, str]
 
 
@@ -41,10 +36,8 @@ def translate_name(name: str) -> NamePair:
     path = Path(name)
     stem = path.stem
     suffix = path.suffix
-
     if is_english(stem):
         return (name, name)
-
     try:
         translated = GoogleTranslator(source="auto", target="en").translate(stem)
         if not translated:
@@ -63,17 +56,13 @@ def _run_pool(names: Sequence[str], method: str) -> list[NamePair]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_translate_name_tuple, [(name,) for name in names])
-
         if method == "starmap":
             return pool.starmap(translate_name, [(name,) for name in names])
-
         if method == "imap_unordered":
             return list(pool.imap_unordered(_translate_name_tuple, [(n,) for n in names]))
-
         if method == "apply_async":
             async_results: list[AsyncResult[NamePair]] = [pool.apply_async(translate_name, (name,)) for name in names]
             return [result.get() for result in async_results]
-
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
 
@@ -82,7 +71,6 @@ def _build_translation_map(paths: Sequence[Path], pool_method: str) -> dict[str,
     unique_names: list[str] = sorted({path.name for path in paths if not is_english(path.name)})
     if not unique_names:
         return {}
-
     translation_map: dict[str, str] = {}
     for original, translated in tqdm(
         _run_pool(unique_names, pool_method),
@@ -97,22 +85,18 @@ def rename_files(directory: Path, pool_method: str) -> None:
     if not directory.exists() or not directory.is_dir():
         logger.error(f"Not a directory: {directory}")
         return
-
     paths: list[Path] = [Path(p) for p in walk_files(str(directory))]
     if not paths:
         logger.info("No files found.")
         return
-
     translation_map = _build_translation_map(paths, pool_method)
     if not translation_map:
         logger.info("No non-English filenames found.")
         return
-
     for path in sorted(paths, key=lambda p: len(p.parts), reverse=True):
         new_name = translation_map.get(path.name)
         if new_name is None or new_name == path.name:
             continue
-
         new_path = unique_path(path.with_name(new_name))
         try:
             path.rename(new_path)
@@ -141,7 +125,6 @@ def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     directory: Path = Path(args.directory)
-
     rename_files(directory, pool_method)
     return 0
 

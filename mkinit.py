@@ -5,7 +5,6 @@ It should also include a function that detects whether a module contains only a 
 Inputs are filesystem Path objects; outputs are booleans or lists of names derived from static AST inspection."""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 

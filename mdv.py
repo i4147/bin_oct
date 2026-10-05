@@ -4,11 +4,9 @@ The script should build its argument parser with argparse, handle errors gracefu
 It should optionally use the readchar library, if available, to support paginated or key-driven navigation of the rendered content, falling back gracefully when readchar is not installed."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
-
 from rich.console import Console
 from rich.markdown import Markdown
 

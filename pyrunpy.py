@@ -5,7 +5,6 @@ The tool uses a fixed :class:`multiprocessing.Pool` of 8 workers together with :
 Example ------- :: python runner.py ./scripts --timeout 30 --verbose"""
 
 from __future__ import annotations
-
 import argparse
 import subprocess
 import sys
@@ -14,12 +13,10 @@ from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult
-
 WORKER_COUNT: Final[int] = 8
 DEFAULT_TIMEOUT: Final[float] = 30.0
 FILE_PATTERN: Final[str] = "*.py"
@@ -77,7 +74,6 @@ def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
 
 
 def _classify_failure(stderr: str, returncode: int) -> Outcome:
-
     checks: tuple[tuple[str, Outcome], ...] = (
         ("ModuleNotFoundError", Outcome.MODULE_NOT_FOUND),
         ("ImportError", Outcome.IMPORT_ERROR),
@@ -118,7 +114,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
             outcome=Outcome.KEYBOARD_INTERRUPT,
             duration=time.monotonic() - start,
         )
-
     duration = time.monotonic() - start
     if completed.returncode == 0:
         return FileResult(
@@ -127,7 +122,6 @@ def run_file(path: Path, timeout: float) -> FileResult:
             returncode=0,
             duration=duration,
         )
-
     outcome = _classify_failure(completed.stderr, completed.returncode)
     return FileResult(
         path=path,
@@ -192,33 +186,27 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-
     directory: Path = args.directory
     recursive: bool = not args.no_recursive
     timeout: float = args.timeout
     verbose: bool = args.verbose
-
     if not directory.is_dir():
         logger.error(f"Not a directory: {directory}")
         return 2
-
     files = discover_python_files(directory, recursive)
     if not files:
         logger.warning(f"No Python files found in {directory}")
         return 0
-
     print(
         f"Found {len(files)} Python file(s) in {directory} "
         f"(recursive={recursive}, timeout={timeout}s, workers={WORKER_COUNT})"
     )
-
     summary = Summary()
     try:
         with Pool(processes=WORKER_COUNT) as pool:
             pending: list[tuple[Path, AsyncResult[FileResult]]] = [
                 (path, pool.apply_async(run_file, (path, timeout))) for path in files
             ]
-
             for path, async_result in pending:
                 try:
                     result = async_result.get(timeout=timeout + 5.0)
@@ -233,7 +221,6 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         logger.warning("Interrupted by user; shutting down workers.")
         return 130
-
     report_summary(summary)
     return 0 if summary.failed == 0 else 1
 

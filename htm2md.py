@@ -4,10 +4,8 @@ It should accept file and/or directory paths as command-line arguments, recursiv
 For each matching file, it should run "rhtml2md" via a "runcmd" helper, write the resulting text to a sibling ".md" file, print a success confirmation, and log errors to stderr while continuing with other files; processing across all files should run in parallel using an "mpf" helper."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf, runcmd
 
 

@@ -3,7 +3,6 @@
 Usage: python dirz.py # list top-level dirs python dirz.py -s # list top-level dirs with total sizes"""
 
 from __future__ import annotations
-
 import argparse
 import os
 from pathlib import Path
@@ -22,9 +21,7 @@ def format_size(num_bytes: int) -> str:
 
 
 def walk_files(root: Path) -> Iterator[tuple[os.DirEntry, Optional[str]]]:
-
     stack: list[tuple[str, Optional[str]]] = [(str(root), None)]
-
     while stack:
         current_path, top_level = stack.pop()
         try:
@@ -66,25 +63,19 @@ def print_directory_listing(
     if show_size and dirs:
         size_strings = {name: format_size(sizes.get(name, 0)) for name in dirs}
         size_width = max(len(s) for s in size_strings.values())
-
     for dir_name in dirs:
         line = f"-{dir_name}"
         if show_size:
             line += f"  {size_strings[dir_name]:>{size_width}}"
         print(line)
-
     total_line = f"total:{len(dirs)} dirs"
     if show_size:
         total_line += f"  {format_size(sum(sizes.values()))}"
 
 
-#    print(total_line)
-
-
 def main(argv: Optional[list[str]] = None) -> None:
     args = parse_args(argv)
     root = Path.cwd()
-
     dir_names: list[str] = []
     try:
         with os.scandir(root) as entries:
@@ -98,7 +89,6 @@ def main(argv: Optional[list[str]] = None) -> None:
     except OSError:
         pass
     dir_names.sort()
-
     dir_sizes: dict[str, int] = {}
     if args.size:
         for entry, top_level in walk_files(root):
@@ -109,7 +99,6 @@ def main(argv: Optional[list[str]] = None) -> None:
             except OSError:
                 continue
             dir_sizes[top_level] = dir_sizes.get(top_level, 0) + file_size
-
     print_directory_listing(dir_names, dir_sizes, args.size)
 
 

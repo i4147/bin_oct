@@ -4,7 +4,6 @@ This script merges functionality from 5 separate scripts into one unified CLI to
 ## Usage Examples: # List empty wheels in current directory (basic method) python wheel_inspector.py check # Move empty wheels to custom directory (RECORD method) python wheel_inspector.py move --method record --dest quarantine # Scan site-packages for empty installed packages python wheel_inspector.py scan # Full workflow with installed package warnings python wheel_inspector.py all --auto-move-all # Recursive search with extended file extension check python wheel_inspector.py move --recursive --method ext ## Original Script Mappings: ewhl.py -> python wheel_inspector.py move --method basic ewhl2.py -> python wheel_inspector.py all emptypkg.py -> python wheel_inspector.py scan emptywhl.py -> python wheel_inspector.py check --method record find_empty_wheels.py -> python wheel_inspector.py move --recursive --method ext ## Detection Methods: basic - Check for .py files OR non-dist-info files (ewhl.py/ewhl2.py) record - Check RECORD file, all files must be in dist-info (emptypkg.py/emptywhl.py) ext - Check for .py, .so, .pyi files (find_empty_wheels.py)"""
 
 from __future__ import annotations
-
 import argparse
 import csv
 import shutil
@@ -17,7 +16,6 @@ from typing import List, Optional
 
 WheelInfo = dict[str, object]
 PackageInfo = dict[str, str]
-
 DEFAULT_DEST = "empty_wheels"
 DEFAULT_METHOD = "basic"
 VALID_METHODS = {"basic", "record", "ext"}
@@ -50,13 +48,10 @@ def is_empty_wheel_record(wheel_path: Path) -> bool:
             dist_info_dirs = [f for f in zf.namelist() if ".dist-info/" in f]
             if not dist_info_dirs:
                 return False
-
             dist_info_dir = dist_info_dirs[0].split("/")[0] + "/"
-
             record_path = f"{dist_info_dir}RECORD"
             if record_path not in zf.namelist():
                 return False
-
             with zf.open(record_path) as f:
                 reader = csv.reader((line.decode("utf-8") for line in f))
                 for row in reader:
@@ -176,7 +171,6 @@ def check_installed_package(wheel_path: Path, installed_packages: dict[str, str]
     package_name, _version = parse_wheel_name(wheel_path)
     if not package_name:
         return None
-
     installed_version = installed_packages.get(package_name.lower())
     if installed_version:
         location, has_files = get_package_location(package_name)
@@ -209,16 +203,13 @@ def move_wheel(wheel_path: Path, dest_dir: Path) -> Path:
 def scan_site_packages() -> list[Path]:
     site_packages = Path(sysconfig.get_paths()["purelib"])
     empty_packages = []
-
     if not site_packages.is_dir():
         return empty_packages
-
     for dist_info in site_packages.iterdir():
         if dist_info.name.endswith(".dist-info") and dist_info.is_dir():
             record_file = dist_info / "RECORD"
             if not record_file.is_file():
                 continue
-
             is_empty = True
             with record_file.open(newline="", encoding="utf-8") as f:
                 reader = csv.reader(f)
@@ -232,22 +223,18 @@ def scan_site_packages() -> list[Path]:
                         break
             if is_empty:
                 empty_packages.append(dist_info)
-
     return empty_packages
 
 
 def cmd_check(args: argparse.Namespace) -> int:
     directory = Path(args.directory)
     wheels = find_wheels(directory, args.recursive)
-
     if not wheels:
         print(f"No .whl files found in {directory}")
         return 0
-
     print(f"Found {len(wheels)} wheel files to check")
     empty_wheels = []
     valid_wheels = []
-
     for wheel in wheels:
         print(f"Checking {wheel.name}...", end=" ")
         if is_empty_wheel(wheel, args.method):
@@ -256,16 +243,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         else:
             print("OK")
             valid_wheels.append(wheel)
-
     print(f"\nFound {len(empty_wheels)} empty wheel(s)")
     for wheel in empty_wheels:
         print(f"  {wheel.relative_to(directory)}")
-
     if args.verbose:
         print(f"\nValid wheels: {len(valid_wheels)}")
         for wheel in valid_wheels:
             print(f"  {wheel.relative_to(directory)}")
-
     return 0
 
 
@@ -273,15 +257,12 @@ def cmd_move(args: argparse.Namespace) -> int:
     directory = Path(args.directory)
     dest_dir = directory / args.dest
     wheels = find_wheels(directory, args.recursive)
-
     if not wheels:
         print(f"No .whl files found in {directory}")
         return 0
-
     print(f"Found {len(wheels)} wheel files to check")
     empty_wheels = []
     valid_wheels = []
-
     for wheel in wheels:
         print(f"Checking {wheel.name}...", end=" ")
         if is_empty_wheel(wheel, args.method):
@@ -290,20 +271,16 @@ def cmd_move(args: argparse.Namespace) -> int:
         else:
             print("OK")
             valid_wheels.append(wheel)
-
     if not empty_wheels:
         print("\nNo empty wheels found!")
         return 0
-
     print(f"\nFound {len(empty_wheels)} empty wheel(s)")
     dest_dir.mkdir(exist_ok=True)
-
     moved_count = 0
     for wheel in empty_wheels:
         new_path = move_wheel(wheel, dest_dir)
         print(f"Moved: {wheel.name} -> {args.dest}/{new_path.name}")
         moved_count += 1
-
     print(f"\nMoved {moved_count} empty wheels to {args.dest}/")
     print(f"Valid wheels remaining: {len(valid_wheels)}")
     return 0
@@ -312,14 +289,12 @@ def cmd_move(args: argparse.Namespace) -> int:
 def cmd_scan(args: argparse.Namespace) -> int:
     empty_packages = scan_site_packages()
     cwd_wheels = find_wheels(Path.cwd(), args.recursive)
-
     if empty_packages:
         print("\n=== Empty installed packages (site-packages) ===")
         for pkg in empty_packages:
             print(f"  {pkg}")
     else:
         print("\nNo empty installed packages found.")
-
     if cwd_wheels:
         print("\n=== Empty wheel files in current directory ===")
         for wheel in cwd_wheels:
@@ -327,10 +302,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 print(f"  {wheel}")
     else:
         print("\nNo wheel files found in current directory.")
-
     if not empty_packages and not cwd_wheels:
         print("\nNo empty packages or wheels found.")
-
     return 0
 
 
@@ -338,22 +311,17 @@ def cmd_all(args: argparse.Namespace) -> int:
     directory = Path(args.directory)
     dest_dir = directory / args.dest
     wheels = find_wheels(directory, args.recursive)
-
     if not wheels:
         print(f"No .whl files found in {directory}")
         return 0
-
     print(f"Found {len(wheels)} wheel files to check")
-
     installed_packages = {}
     if args.check_installed:
         installed_packages = get_installed_packages()
         print(f"Found {len(installed_packages)} installed packages in current environment\n")
-
     empty_wheels = []
     installed_empty_wheels = []
     valid_wheels = []
-
     for wheel in wheels:
         print(f"Checking {wheel.name}...")
         if is_empty_wheel(wheel, args.method):
@@ -374,14 +342,12 @@ def cmd_all(args: argparse.Namespace) -> int:
             print("  ✓ VALID wheel (contains code)")
             valid_wheels.append(wheel)
         print()
-
     print("-" * 40)
     print("SUMMARY")
     print("-" * 40)
     print(f"Total wheels: {len(wheels)}")
     print(f"Valid wheels: {len(valid_wheels)}")
     print(f"Empty wheels: {len(empty_wheels)}")
-
     if installed_empty_wheels:
         print(f"\n⚠ CRITICAL: {len(installed_empty_wheels)} empty wheels correspond to INSTALLED packages!")
         for info in installed_empty_wheels:
@@ -393,10 +359,8 @@ def cmd_all(args: argparse.Namespace) -> int:
         for info in installed_empty_wheels:
             print(f"     pip uninstall {info['package']} -y")
             print(f"     pip install {info['package']}")
-
     if empty_wheels:
         print(f"\nFound {len(empty_wheels)} empty wheel(s) total")
-
         wheels_to_move = []
         if installed_empty_wheels and not args.auto_move_all:
             response = input("\nSome empty wheels are INSTALLED. Move ONLY the uninstalled empty wheels? (y/n): ")
@@ -407,7 +371,6 @@ def cmd_all(args: argparse.Namespace) -> int:
         else:
             response = input(f"\nMove all {len(empty_wheels)} empty wheels to '{args.dest}/'? (y/n): ")
             wheels_to_move = empty_wheels if response.lower() == "y" else []
-
         if wheels_to_move:
             dest_dir.mkdir(exist_ok=True)
             moved_count = 0
@@ -418,7 +381,6 @@ def cmd_all(args: argparse.Namespace) -> int:
             print(f"\nMoved {moved_count} empty wheels to {args.dest}/")
         else:
             print("No wheels were moved.")
-
     if installed_empty_wheels:
         print("\n" + "=" * 40)
         print("IMPORTANT ACTIONS TO TAKE")
@@ -436,7 +398,6 @@ def cmd_all(args: argparse.Namespace) -> int:
             "\n3. Or completely remove them: pip uninstall "
             + " ".join([info["package"] for info in installed_empty_wheels])
         )
-
     return 0
 
 
@@ -448,7 +409,6 @@ Detection Methods:
   basic  - Check for .py files OR non-dist-info files (ewhl.py/ewhl2.py)
   record - Check RECORD file, all files must be in dist-info (emptypkg.py/emptywhl.py)
   ext    - Check for .py, .so, .pyi files (find_empty_wheels.py)
-
 Examples:
   python wheel_inspector.py check
   python wheel_inspector.py move --method record --dest quarantine
@@ -457,9 +417,7 @@ Examples:
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-
     check_parser = subparsers.add_parser("check", help="Check wheels and list empty ones (no moving)")
     check_parser.add_argument(
         "directory",
@@ -477,7 +435,6 @@ Examples:
     check_parser.add_argument("-r", "--recursive", action="store_true", help="Search recursively for wheels")
     check_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     check_parser.set_defaults(func=cmd_check)
-
     move_parser = subparsers.add_parser("move", help="Move empty wheels to destination directory")
     move_parser.add_argument(
         "directory",
@@ -501,7 +458,6 @@ Examples:
     move_parser.add_argument("-r", "--recursive", action="store_true", help="Search recursively for wheels")
     move_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     move_parser.set_defaults(func=cmd_move)
-
     scan_parser = subparsers.add_parser("scan", help="Scan site-packages for empty installed packages")
     scan_parser.add_argument(
         "-m",
@@ -518,7 +474,6 @@ Examples:
     )
     scan_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     scan_parser.set_defaults(func=cmd_scan)
-
     all_parser = subparsers.add_parser("all", help="Full workflow: check wheels, warn about installed, move empty ones")
     all_parser.add_argument(
         "directory",
@@ -560,24 +515,20 @@ Examples:
     )
     all_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     all_parser.set_defaults(func=cmd_all)
-
     return parser
 
 
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
-
     if not hasattr(args, "func"):
         parser.print_help()
         return 1
-
     if hasattr(args, "directory"):
         directory = Path(args.directory)
         if not directory.exists():
             print(f"Error: Directory '{args.directory}' does not exist")
             return 1
-
     return args.func(args)
 
 

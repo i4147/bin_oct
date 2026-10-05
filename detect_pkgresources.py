@@ -4,7 +4,6 @@ For each file, it should check for pkg_resources imports, then use regex pattern
 The script should use argparse to accept command-line options (like target directory/files) and multiprocessing.Pool to scan multiple files in parallel for performance, ultimately outputting a report of files containing pkg_resources usage along with the detected patterns and their line numbers."""
 
 from __future__ import annotations
-
 import argparse
 import re
 from multiprocessing import Pool

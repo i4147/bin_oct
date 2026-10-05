@@ -4,7 +4,6 @@ It should use regular expressions to detect these patterns, report the files whe
 The script should accept a command-line flag to toggle autofix behavior and print a summary of how many occurrences or files were found/modified."""
 
 from __future__ import annotations
-
 import argparse
 import os
 import re

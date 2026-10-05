@@ -5,7 +5,6 @@ The cleaned text should then overwrite the original file in place, encoded as UT
 The script should be runnable directly, reading the target filename from the first command-line argument."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

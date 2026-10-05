@@ -4,7 +4,6 @@ It should read the file line by line, skip empty lines and comments starting wit
 The cleaned package names should then be written back to the same file, one per line, overwriting the original content."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

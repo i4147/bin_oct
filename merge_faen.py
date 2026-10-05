@@ -5,7 +5,6 @@ It should also provide a function to load previously failed words from a plain t
 Both functions should print/log informative messages about how many entries were loaded, and the module should configure basic logging with timestamps at INFO level."""
 
 from __future__ import annotations
-
 import json
 import logging
 import os

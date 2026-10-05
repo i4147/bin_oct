@@ -3,7 +3,6 @@
 Third-party dependencies (must be installed): pip install opencv-python pytesseract Pillow (Tesseract OCR engine must also be on PATH.) Merges the two original scripts into a single CLI: vid2txt.py -> python video_ocr.py --mode threaded INPUT video2text.py -> python video_ocr.py --mode sequential INPUT Usage examples -------------- python video_ocr.py movie.mp4 python video_ocr.py movie.mp4 --mode sequential -o subs.txt python video_ocr.py movie.mp4 --workers 8 --queue-size 16 --psm 6 --oem 3 python video_ocr.py movie.mp4 --no-invert --min-chars 10 --lang eng"""
 
 from __future__ import annotations
-
 import argparse
 import os
 import sys
@@ -11,7 +10,6 @@ import threading
 from pathlib import Path
 from queue import Queue
 from typing import Optional
-
 import cv2
 import pytesseract
 from PIL import Image
@@ -80,7 +78,6 @@ def run_threaded(video: Path, out_path: Path, opts: argparse.Namespace) -> None:
     ]
     for w in workers:
         w.start()
-
     count = 0
     frame_num = opts.frame_start
     while True:
@@ -90,15 +87,12 @@ def run_threaded(video: Path, out_path: Path, opts: argparse.Namespace) -> None:
         in_q.put((frame_num, frame))
         frame_num += 1
         count += 1
-
     for _ in workers:
         in_q.put(None)
-
     received = 0
     while received < count:
         done_q.get()
         received += 1
-
     cap.release()
     for w in workers:
         w.join()
@@ -182,15 +176,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not args.input.is_file():
         parser.error(f"input video not found: {args.input}")
-
     if args.frame_start is None:
         args.frame_start = 1 if args.mode == "threaded" else 0
-
     out_path: Path = args.output if args.output is not None else args.input.with_suffix(".txt")
-
     if args.mode == "threaded":
         run_threaded(args.input, out_path, args)
     else:

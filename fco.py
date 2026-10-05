@@ -9,7 +9,6 @@ Features kept: - TTF / OTF / WOFF / WOFF2 conversion via fontTools.
 Requires: pip install fonttools loguru brotli Also imports `fsz` from a local `dh` module, same as the original scripts."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import sys
@@ -18,7 +17,6 @@ from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Optional, Sequence
-
 from dh import fsz
 from loguru import logger
 
@@ -27,29 +25,23 @@ try:
 except ImportError:
     sys.stderr.write("fonttools is not installed.\n  pip install fonttools\n")
     sys.exit(1)
-
 try:
-    import brotli  # noqa: F401
+    import brotli
 
     HAS_BROTLI = True
 except ImportError:
     HAS_BROTLI = False
-
 SUPPORTED_FORMATS = frozenset({"ttf", "otf", "woff", "woff2"})
-
 SFNT_VERSIONS = {
     "ttf": 0x00010000,
     "otf": "OTTO",
 }
-
 FLAVORS = {
     "woff": "woff",
     "woff2": "woff2",
 }
-
 DEFAULT_OUTPUT_FORMAT = "woff2"
 DEFAULT_WORKERS = 8
-
 CFF_TABLES = frozenset({"CFF ", "CFF2"})
 TRUETYPE_TABLE = "glyf"
 
@@ -110,48 +102,37 @@ def convert_font(
     start = time.perf_counter()
     result = ConversionResult(input=input_path, output_format=output_format)
     output_existed_before = False
-
     try:
         input_format = detect_format(input_path)
         if input_format is None:
             msg = f"unsupported extension '{input_path.suffix}'"
             raise ValueError(msg)
-
         result.input_format = input_format
         result.input_size = input_path.stat().st_size
-
         if input_format == output_format:
             result.skipped = True
             result.skipped_reason = f"already .{output_format}"
             return result
-
         output_path = generate_output_path(input_path, output_format, output_dir)
         result.output = output_path
         output_existed_before = output_path.exists()
-
         if output_existed_before and not force:
             msg = f"output exists (use --force): {output_path}"
             raise FileExistsError(msg)
-
         output_path.parent.mkdir(parents=True, exist_ok=True)
-
         font = TTFont(
             str(input_path),
             lazy=True,
             recalcBBoxes=False,
             recalcTimestamp=False,
         )
-
         try:
             kind = _outline_kind(font)
             warning: Optional[str] = None
-
             if output_format in FLAVORS:
                 font.flavor = FLAVORS[output_format]
-
             else:
                 font.flavor = None
-
                 if output_format == "otf":
                     if kind == "cff":
                         pass
@@ -165,7 +146,6 @@ def convert_font(
                                 "non-standard .otf anyway."
                             )
                             return result
-
                         warning = (
                             "font has TrueType outlines; .otf conventionally uses CFF — outlines were NOT converted"
                         )
@@ -174,11 +154,8 @@ def convert_font(
                             result.skipped = True
                             result.skipped_reason = "no recognizable CFF outlines for .otf"
                             return result
-
                         warning = "no recognizable CFF outlines; .otf may be invalid"
-
                     font.sfntVersion = SFNT_VERSIONS["otf"]
-
                 elif output_format == "ttf":
                     if kind == "truetype":
                         pass
@@ -192,7 +169,6 @@ def convert_font(
                                 "non-standard .ttf anyway."
                             )
                             return result
-
                         warning = (
                             "font has CFF outlines; .ttf conventionally uses TrueType — outlines were NOT converted"
                         )
@@ -201,21 +177,15 @@ def convert_font(
                             result.skipped = True
                             result.skipped_reason = "no recognizable TrueType outlines for .ttf"
                             return result
-
                         warning = "no recognizable TrueType outlines; .ttf may be invalid"
-
                     font.sfntVersion = SFNT_VERSIONS["ttf"]
-
                 else:
                     msg = f"unsupported output format: {output_format}"
                     raise ValueError(msg)
-
             font.save(str(output_path))
-
             result.output_size = output_path.stat().st_size
             result.success = True
             result.warning = warning
-
             if (
                 remove_original
                 and input_path.resolve() != output_path.resolve()
@@ -228,42 +198,33 @@ def convert_font(
                 except OSError as exc:
                     extra = f"conversion succeeded but could not remove original: {exc}"
                     result.warning = f"{result.warning}; {extra}" if result.warning else extra
-
         finally:
             with contextlib.suppress(Exception):
                 font.close()
-
     except Exception as exc:
         result.error = str(exc)
-
         if result.output is not None and not output_existed_before and result.output.exists() and not result.success:
             with contextlib.suppress(OSError):
                 result.output.unlink()
-
     finally:
         result.time = time.perf_counter() - start
-
     return result
 
 
 def find_font_files(paths: Sequence[Path]) -> list[Path]:
     files: list[Path] = []
-
     for path in paths:
         if path.is_file():
             if detect_format(path):
                 files.append(path)
             else:
                 logger.warning("skipping non-font file: {}", path)
-
         elif path.is_dir():
             for candidate in path.rglob("*"):
                 if candidate.is_file() and detect_format(candidate):
                     files.append(candidate)
-
         else:
             logger.warning("path not found: {}", path)
-
     seen = set()
     unique: list[Path] = []
     for f in files:
@@ -271,33 +232,26 @@ def find_font_files(paths: Sequence[Path]) -> list[Path]:
         if resolved not in seen:
             seen.add(resolved)
             unique.append(f)
-
     return unique
 
 
 def print_file_stats(result: ConversionResult) -> None:
     name = result.input.name
-
     if result.success:
         ratio = result.output_size / result.input_size * 100 if result.input_size else 0.0
         saved = (1 - result.output_size / result.input_size) * 100 if result.input_size else 0.0
-
         print(f"  ✓ {name}")
         print(
             f"      {fsz(result.input_size)} → {fsz(result.output_size)}  "
             f"({ratio:.1f}% of original, {saved:+.1f}% change)"
         )
         print(f"      Time: {result.time:.3f}s")
-
         if result.warning:
             logger.warning("      ⚠  {}", result.warning)
-
         if result.removed_original:
             print("      🗑  original removed")
-
     elif result.skipped:
         print(f"  ↷ {name} — SKIPPED: {result.skipped_reason}")
-
     else:
         print(f"  ✗ {name} — ERROR: {result.error}", file=sys.stderr)
 
@@ -307,7 +261,6 @@ def print_summary(results: Sequence[ConversionResult]) -> None:
     ok = sum(1 for r in results if r.success)
     skipped = sum(1 for r in results if r.skipped)
     failed = sum(1 for r in results if r.failed)
-
     print()
     print("=" * 40)
     print("Summary")
@@ -316,23 +269,17 @@ def print_summary(results: Sequence[ConversionResult]) -> None:
     print(f"  Successful      : {ok}")
     print(f"  Skipped         : {skipped}")
     print(f"  Failed          : {failed}")
-
     if ok:
         total_in = sum(r.input_size for r in results if r.success)
         total_out = sum(r.output_size for r in results if r.success)
         total_time = sum(r.time for r in results if r.success)
-
         print(f"  Input size      : {fsz(total_in)}")
         print(f"  Output size     : {fsz(total_out)}")
-
         if total_in:
             print(f"  Ratio           : {total_out / total_in * 100:.1f}% of original")
-
         print(f"  Total time      : {total_time:.3f}s")
-
         if total > 1:
             print(f"  Avg per file    : {total_time / total:.3f}s")
-
     print("=" * 40)
 
 
@@ -352,14 +299,12 @@ Examples:
                                         Allow non-standard TTF↔OTF mismatch
 """,
     )
-
     parser.add_argument(
         "inputs",
         nargs="*",
         type=Path,
         help="Input font files or directories (default: current directory, recursive)",
     )
-
     parser.add_argument(
         "--to",
         "-t",
@@ -368,14 +313,12 @@ Examples:
         default=DEFAULT_OUTPUT_FORMAT,
         help=f"Output format (default: {DEFAULT_OUTPUT_FORMAT})",
     )
-
     parser.add_argument(
         "-r",
         "--remove",
         action="store_true",
         help="Remove original file after successful conversion",
     )
-
     parser.add_argument(
         "-o",
         "--output-dir",
@@ -383,27 +326,23 @@ Examples:
         default=None,
         help="Output directory (default: alongside each input)",
     )
-
     parser.add_argument(
         "-f",
         "--force",
         action="store_true",
         help="Overwrite existing output files",
     )
-
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="List files that would be converted without converting",
     )
-
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
         help="Enable verbose (DEBUG) logging",
     )
-
     parser.add_argument(
         "--allow-outline-mismatch",
         action="store_true",
@@ -413,71 +352,55 @@ Examples:
             "changes the sfnt version; outlines are NOT converted."
         ),
     )
-
     parser.add_argument(
         "--workers",
         type=int,
         default=DEFAULT_WORKERS,
         help=f"Number of worker processes (default: {DEFAULT_WORKERS})",
     )
-
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
-
     logger.remove()
     logger.add(
         sys.stderr,
         level="DEBUG" if args.verbose else "WARNING",
         format="<level>{level: <8}</level> | <level>{message}</level>",
     )
-
     if args.output_format == "woff2" and not HAS_BROTLI:
         sys.stderr.write("WOFF2 output requires brotli.\n  pip install brotli\n")
         return 1
-
     input_paths = list(args.inputs) if args.inputs else [Path.cwd()]
     font_files = find_font_files(input_paths)
-
     if not font_files:
         print("No font files found.")
         return 0
-
     to_convert: list[Path] = []
     already_target: list[Path] = []
-
     for f in font_files:
         if detect_format(f) == args.output_format:
             already_target.append(f)
         else:
             to_convert.append(f)
-
     if already_target:
         print(f"Skipping {len(already_target)} file(s) already in .{args.output_format} format")
-
     if not to_convert:
         print("Nothing to convert.")
         return 0
-
     print()
     print(f"Converting {len(to_convert)} file(s) → .{args.output_format}")
-
     if args.remove:
         print("  (originals will be removed on success)")
-
     if args.allow_outline_mismatch:
         print("  (outline mismatches allowed; output may be non-standard)")
-
     print()
-
     if args.dry_run:
         for f in to_convert:
             out = generate_output_path(f, args.output_format, args.output_dir)
             print(f"  {f}  →  {out}")
         return 0
-
     worker_args = [
         (
             f,
@@ -489,49 +412,38 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         )
         for f in to_convert
     ]
-
     all_results: list[ConversionResult] = []
-
     if len(worker_args) == 1:
         result = convert_font(*worker_args[0])
         all_results.append(result)
         print_file_stats(result)
-
     else:
         workers = max(1, min(args.workers, len(worker_args)))
         pool = Pool(processes=workers)
-
         try:
             async_results = [pool.apply_async(convert_font, args=wa) for wa in worker_args]
-
             try:
                 for ar in async_results:
                     result = ar.get()
                     all_results.append(result)
                     print_file_stats(result)
-
             except KeyboardInterrupt:
                 print()
                 print("Interrupted — terminating pool …")
                 pool.terminate()
                 pool.join()
-
                 for ar in async_results:
                     if ar.ready():
                         with contextlib.suppress(Exception):
                             all_results.append(ar.get(timeout=0))
-
                 print_summary(all_results)
                 return 130
-
         finally:
             with contextlib.suppress(Exception):
                 pool.close()
             with contextlib.suppress(Exception):
                 pool.join()
-
     print_summary(all_results)
-
     failed = sum(1 for r in all_results if r.failed)
     return 1 if failed else 0
 

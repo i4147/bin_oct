@@ -3,7 +3,6 @@
 Merges 11 original scripts into a single argparse CLI: fixsvg.py -> webassets.py truncate [paths...] hmin.py -> webassets.py html --backend hmin [paths...] htmin.py -> webassets.py html --backend htmin [paths...] jm2.py -> webassets.py json --spaced [paths...] jsonvalidator.py -> webassets.py validate-meson-json <doc_file> mincss.py -> webassets.py css --backend csso [paths...] minjch.py -> webassets.py mixed [paths...] mjb.py -> webassets.py json --dry [paths...] pcssmin.py -> webassets.py css --backend rcssmin [paths...] pjsmin.py -> webassets.py js [paths...] pysvg2.py -> webassets.py svg [paths...] External tools (install as needed, same as originals): npm install -g html-minifier-terser csso-cli svgcleaner Python packages (optional; for the pure-Python backends): pip install rcssmin rjsmin Examples -------- python webassets.py html # hmin backend, ./ 8 procs python webassets.py html --backend htmin -t 60 # CLI-flags backend, 60s timeout python webassets.py css --backend rcssmin # pure Python python webassets.py css --backend csso # external CLI python webassets.py js ./public python webassets.py json --dry python webassets.py svg ./icons --skip-part lazy python webassets.py truncate --ext .html,.htm,.svg,.xml python webassets.py mixed python webassets.py validate-meson-json docs/meson.json"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -23,14 +22,11 @@ try:
     from rcssmin import cssmin as _rcssmin  # type: ignore
 except ImportError:  # pragma: no cover
     _rcssmin = None
-
 try:
     from rjsmin import jsmin as _rjsmin  # type: ignore
 except ImportError:  # pragma: no cover
     _rjsmin = None
-
 _NONE_TYPE = type(None)
-
 _ANSI = {
     "red": "\033[31m",
     "green": "\033[32m",
@@ -80,14 +76,12 @@ def find_files(
     root = Path(root)
     exts = tuple(e.lower() for e in extensions)
     out: list[Path] = []
-
     if root.is_file():
         if any(root.name.lower().endswith(e) for e in exts):
             out.append(root)
         return out
     if not root.exists():
         return []
-
     for f in root.rglob("*"):
         if not f.is_file():
             continue
@@ -175,7 +169,6 @@ def print_summary(results: Sequence[Result], title: str = "Summary") -> None:
     new = sum(r.minified_size for r in results)
     saved = orig - new
     ratio = (saved / orig * 100) if orig else 0.0
-
     print("=" * 40)
     print(title)
     print("=" * 40)
@@ -220,7 +213,6 @@ HTML_HMIN_CONFIG: dict[str, Any] = {
     "trimCustomFragments": True,
     "useShortDoctype": True,
 }
-
 HTML_HTMIN_FLAGS: list[str] = [
     "--collapse-whitespace",
     "--remove-comments",
@@ -241,7 +233,6 @@ HTML_HTMIN_FLAGS: list[str] = [
     "--remove-tag-whitespace",
     "--decode-entities",
 ]
-
 _INLINE_TAGS = "span|a|strong|em|b|i|code|label"
 _RE_DOCTYPE_LOWER = re.compile(r"<!(doctype)(html)", re.IGNORECASE)
 _RE_DOCTYPE_UPPER = re.compile(r"<!(DOCTYPE)(HTML)")
@@ -265,7 +256,6 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
     orig = file_size(path)
     if not path.exists():
         return Result(path, 0, 0, False, "file not found")
-
     try:
         require_tool(
             "html-minifier-terser",
@@ -273,13 +263,11 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
         )
     except RuntimeError as e:
         return Result(path, orig, orig, False, str(e))
-
     tmp_cfg: Optional[Path] = None
     try:
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
             json.dump(HTML_HMIN_CONFIG, f)
             tmp_cfg = Path(f.name)
-
         content = path.read_text(encoding="utf-8")
         proc = subprocess.run(
             ["html-minifier-terser", "--config-file", str(tmp_cfg)],
@@ -311,7 +299,6 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
 def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
     path = Path(path)
     orig = file_size(path)
-
     cmd = [
         "html-minifier-terser",
         *HTML_HTMIN_FLAGS,
@@ -402,12 +389,10 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
         data = json.loads(content)
     except json.JSONDecodeError as exc:
         return Result(path, orig, orig, False, f"invalid JSON: {exc}")
-
     if spaced:
         out = json.dumps(data, ensure_ascii=False, indent=None)
     else:
         out = json.dumps(data, separators=(",", ":"), ensure_ascii=False)
-
     if content.strip() == out.strip():
         return Result(path, orig, orig, True, no_change=True)
     if dry:
@@ -424,7 +409,6 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
     if any(s in path.parts for s in skip_parts) or not path.exists():
         return Result(path, 0, 0, True, no_change=True)
     orig = file_size(path)
-
     tmp_path: Optional[Path] = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as f:
@@ -469,7 +453,6 @@ def truncate_at_last_tag(
         return Result(path, 0, 0, False, "file not found")
     orig = file_size(path)
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-
     cut_at: int = -1
     for i in range(len(lines) - 1, -1, -1):
         line = lines[i]
@@ -480,7 +463,6 @@ def truncate_at_last_tag(
                 break
         if cut_at != -1:
             break
-
     if cut_at == -1:
         return Result(path, orig, orig, True, no_change=True)
     new_content = "".join(lines)[:cut_at]
@@ -631,14 +613,12 @@ def _v_object(prefix: str, name: str, d: dict) -> None:
     assert all(isinstance(x, str) for x in r["returned_by"]), f"{prefix}.{name}"
     assert all(isinstance(x, str) for x in r["extended_by"]), f"{prefix}.{name}"
     assert all(x in _MESON_DB["objects"] for x in r["extended_by"]), f"{prefix}.{name}"
-
     if r["defined_by_module"] is not None:
         assert r["defined_by_module"] in _MESON_DB["objects"], f"{prefix}.{name}"
         assert r["object_type"] == "RETURNED", f"{prefix}.{name}"
         assert _MESON_DB["objects"][r["defined_by_module"]]["object_type"] == "MODULE", f"{prefix}.{name}"
         assert name in _MESON_DB["objects_by_type"]["modules"][r["defined_by_module"]], f"{prefix}.{name}"
         return
-
     assert r["object_type"] in {
         "ELEMENTARY",
         "BUILTIN",
@@ -659,7 +639,6 @@ def validate_meson_json(doc_file: Path) -> int:
     global _MESON_DB
     _MESON_DB = json.loads(Path(doc_file).read_text(encoding="utf-8"))
     assert isinstance(_MESON_DB, dict)
-
     root_schema = {
         "version_major": int,
         "version_minor": int,
@@ -670,7 +649,6 @@ def validate_meson_json(doc_file: Path) -> int:
     }
     r = _v_keys("root", _MESON_DB, root_schema)
     assert not _MESON_DB, f"root has extra keys: {_MESON_DB.keys()}"
-
     obt = r["objects_by_type"]
     _v_keys(
         "root.objects_by_type",
@@ -678,7 +656,6 @@ def validate_meson_json(doc_file: Path) -> int:
         {"elementary": list, "builtins": list, "returned": list, "modules": dict},
     )
     assert not obt, f"root.objects_by_type has extra keys: {obt.keys()}"
-
     db = _MESON_DB
     for kind in ("elementary", "builtins", "returned"):
         assert all(isinstance(x, str) for x in db["objects_by_type"][kind])
@@ -694,7 +671,6 @@ def validate_meson_json(doc_file: Path) -> int:
     assert all(
         all(db["objects"][x]["defined_by_module"] == k for x in v) for k, v in db["objects_by_type"]["modules"].items()
     )
-
     for name, body in r["functions"].items():
         _v_func("root", name, body)
     for name, body in r["objects"].items():
@@ -719,12 +695,10 @@ def cmd_html(args: argparse.Namespace) -> int:
     if not files:
         print("No HTML files found.")
         return 1
-
     if args.backend == "hmin":
         fn: Callable[[Path], Result] = minify_html_hmin
     else:
         fn = partial(minify_html_htmin, timeout=args.timeout)
-
     results = parallel_map(fn, files, workers=args.processes)
     for r in results:
         print_file_result(r)
@@ -738,13 +712,11 @@ def cmd_css(args: argparse.Namespace) -> int:
     if not files:
         print("No CSS files found.")
         return 1
-
     fn: Callable[[Path], Result]
     if args.backend == "csso":
         fn = minify_css_csso
     else:
         fn = minify_css_rcssmin
-
     results = parallel_map(fn, files, workers=args.processes)
     for r in results:
         print_file_result(r)
@@ -758,7 +730,6 @@ def cmd_js(args: argparse.Namespace) -> int:
     if not files:
         print("No JS files found.")
         return 1
-
     results = parallel_map(minify_js_rjsmin, files, workers=args.processes)
     for r in results:
         print_file_result(r)
@@ -772,7 +743,6 @@ def cmd_json(args: argparse.Namespace) -> int:
     if not files:
         print("No JSON files found.")
         return 1
-
     fn = partial(minify_json, dry=args.dry, spaced=args.spaced)
     results = parallel_map(fn, files, workers=args.processes)
     for r in results:
@@ -787,7 +757,6 @@ def cmd_svg(args: argparse.Namespace) -> int:
     if not files:
         print("No SVG files found.")
         return 1
-
     fn = partial(minify_svg_svgcleaner, skip_parts=tuple(args.skip_part))
     results = parallel_map(fn, files, workers=args.processes)
     for r in results:
@@ -802,7 +771,6 @@ def cmd_truncate(args: argparse.Namespace) -> int:
     if not files:
         print("No matching files found.")
         return 1
-
     tags = tuple(args.tag) if args.tag else DEFAULT_TRUNCATE_TAGS
     fn = partial(truncate_at_last_tag, tags=tags)
     results = parallel_map(fn, files, workers=args.processes)
@@ -818,7 +786,6 @@ def cmd_mixed(args: argparse.Namespace) -> int:
     if not files:
         print("No supported files found.")
         return 1
-
     results = parallel_map(minify_mixed, files, workers=args.processes)
     for _, msg in results:
         print(msg)
@@ -845,7 +812,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
     ph = sub.add_parser("html", help="Minify HTML files.")
     ph.add_argument(
         "paths",
@@ -874,7 +840,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated extensions (default: .html,.htm).",
     )
     ph.set_defaults(func=cmd_html)
-
     pc = sub.add_parser("css", help="Minify CSS files.")
     pc.add_argument("paths", nargs="*", default=["."])
     pc.add_argument(
@@ -893,13 +858,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pc.add_argument("--ext", default=".css", help="Comma-separated extensions (default: .css).")
     pc.set_defaults(func=cmd_css)
-
     pj = sub.add_parser("js", help="Minify JS files (rjsmin).")
     pj.add_argument("paths", nargs="*", default=["."])
     pj.add_argument("-j", "--processes", type=int, default=None)
     pj.add_argument("--ext", default=".js", help="Comma-separated extensions (default: .js).")
     pj.set_defaults(func=cmd_js)
-
     pq = sub.add_parser("json", help="Minify JSON files.")
     pq.add_argument("paths", nargs="*", default=["."])
     pq.add_argument("--dry", action="store_true", help="Report what would change without writing.")
@@ -911,7 +874,6 @@ def build_parser() -> argparse.ArgumentParser:
     pq.add_argument("-j", "--processes", type=int, default=None)
     pq.add_argument("--ext", default=".json")
     pq.set_defaults(func=cmd_json)
-
     ps = sub.add_parser("svg", help="Optimise SVG files (svgcleaner).")
     ps.add_argument("paths", nargs="*", default=["."])
     ps.add_argument(
@@ -923,7 +885,6 @@ def build_parser() -> argparse.ArgumentParser:
     ps.add_argument("-j", "--processes", type=int, default=None)
     ps.add_argument("--ext", default=".svg")
     ps.set_defaults(func=cmd_svg)
-
     pt = sub.add_parser("truncate", help="Truncate files at their last closing tag (fixsvg.py).")
     pt.add_argument("paths", nargs="*", default=["."])
     pt.add_argument(
@@ -940,17 +901,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pt.add_argument("-j", "--processes", type=int, default=None)
     pt.set_defaults(func=cmd_truncate)
-
     pm = sub.add_parser("mixed", help="Dispatch CSS/JSON/HTML by extension (minjch.py).")
     pm.add_argument("paths", nargs="*", default=["."])
     pm.add_argument("--ext", default=".css,.json,.html,.htm")
     pm.add_argument("-j", "--processes", type=int, default=None)
     pm.set_defaults(func=cmd_mixed)
-
     pv = sub.add_parser("validate-meson-json", help="Validate a Meson JSON-docs file.")
     pv.add_argument("doc_file", type=Path, help="Path to the JSON docs file to validate.")
     pv.set_defaults(func=cmd_validate_meson_json)
-
     return p
 
 

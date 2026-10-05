@@ -3,7 +3,6 @@
 Third-party dependencies (must be installed): pip install deep-translator tenacity loguru Original script -> merged equivalent ------------------------------------ vitrans.py -> python translate_files.py vi tkor.py -> python translate_files.py ko <input_file> [--game GAME] tchn.py -> python translate_files.py zh [--root DIR] trans_ru.py -> python translate_files.py ru <input_file> Every hardcoded constant from the originals is exposed as a CLI flag whose default matches the original value, so default invocations reproduce the original behavior exactly."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import logging
@@ -17,7 +16,6 @@ from datetime import datetime
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Iterable, Sequence
-
 from deep_translator import GoogleTranslator
 
 try:
@@ -26,14 +24,10 @@ try:
     _HAS_TENACITY = True
 except ImportError:
     _HAS_TENACITY = False
-
 DEFAULT_SKIP_DIRS: Final = frozenset({"lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache"})
-
 ENCODINGS: Final = ("utf-8", "utf-8-sig", "utf-16", "cp1258", "gb18030")
-
 CYRILLIC_RE: Final = re.compile(r"[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]")
 NON_ASCII_RE: Final = re.compile(r"[^\x00-\x7F]")
-
 logger = logging.getLogger("translate_files")
 logging.basicConfig(level=logging.WARNING)
 
@@ -226,24 +220,19 @@ def _clear_vi_progress(src: Path) -> None:
 def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptFlag) -> bool:
     out = make_output_path(src, "suffix")
     print(f"\n📄 {src.name}  →  {out.name}")
-
     try:
         text = read_text_auto(src)
     except Exception as exc:  # noqa: BLE001
         print(f"   ❌ Cannot read: {exc}")
         return False
-
     if not text.strip():
         print("   ⚠️  File is empty — skipping")
         return True
-
     chunks = chunk_smart(text, args.chunk_size)
     total = len(chunks)
     print(f"   📦 {total} chunk(s)  |  file size: {len(text):,} chars")
-
     done = _load_vi_progress(src)
     failures = 0
-
     for idx, chunk in enumerate(chunks):
         if flag:
             _save_vi_progress(src, done, total)
@@ -265,19 +254,16 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
         except Exception as exc:  # noqa: BLE001
             print(f"   ❌ Chunk {idx} failed after all retries: {exc}")
             translated, ok = chunk, False
-
         done[idx] = translated
         if not ok:
             failures += 1
         preview = chunk[:40].replace("\n", "↵").strip()
         mark = "✓" if ok else "✗"
         print(f"   [{idx + 1:>3}/{total}] {mark}  {preview!r}…")
-
         if (idx + 1) % args.save_every == 0:
             _save_vi_progress(src, done, total)
         if idx < total - 1 and not flag:
             time.sleep(args.delay)
-
     final_text = "\n".join(done[i] for i in range(total))
     try:
         out.write_text(final_text, encoding="utf-8")
@@ -297,7 +283,6 @@ def run_vi(args: argparse.Namespace) -> int:
     if not files:
         print("No .txt files found to translate.")
         return 0
-
     flag = InterruptFlag()
     previous = signal.signal(signal.SIGINT, flag.trigger)
     try:
@@ -315,18 +300,15 @@ def run_ko(args: argparse.Namespace) -> int:
     if not src.exists():
         print(f"Error: File not found: {src}", file=sys.stderr)
         return 1
-
     allowed = {".txt", ".md", ".csv", ".json", ".py"}
     if src.suffix.lower() not in allowed:
         print(f"Error: unsupported extension {src.suffix!r}", file=sys.stderr)
         return 1
-
     try:
         text = src.read_text(encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
         print(f"Read error: {exc}", file=sys.stderr)
         return 1
-
     chunks = chunk_fixed(text, args.chunk_size)
     translator = GoogleTranslator(source=args.source, target=args.target)
     try:
@@ -334,14 +316,12 @@ def run_ko(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001
         print(f"Translation error: {exc}", file=sys.stderr)
         return 1
-
     out = make_output_path(src, "stem")
     try:
         out.write_text(translated, encoding="utf-8")
     except Exception as exc:  # noqa: BLE001
         print(f"Write error: {exc}", file=sys.stderr)
         return 1
-
     print(f"Saved translated file → {out}")
     return 0
 
@@ -352,10 +332,8 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     except Exception:  # noqa: BLE001
         print(f"Skipping unreadable file: {path}")
         return
-
     if not NON_ASCII_RE.search(text):
         return
-
     chunks = chunk_fixed(text, args.chunk_size)
 
     def _worker(chunk: str) -> str:
@@ -364,7 +342,6 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         pieces = list(ex.map(_worker, chunks))
     translated = "".join(pieces)
-
     out = path.with_name(f"{path.stem}_eng{path.suffix}")
     try:
         out.write_text(translated, encoding="utf-8")
@@ -378,10 +355,8 @@ def run_zh(args: argparse.Namespace) -> int:
     if not root.exists():
         print(f"Error: root path does not exist: {root}", file=sys.stderr)
         return 1
-
     candidates = [p for p in root.rglob("*") if p.is_file() and is_text_file(p)]
     print(f"Found {len(candidates)} text files to process")
-
     with ThreadPoolExecutor(args.workers) as ex:
         futures = {ex.submit(_translate_zh_file, p, args): p for p in candidates}
         for fut in as_completed(futures):
@@ -454,7 +429,6 @@ def _ru_store_chunk(
             len(split),
         )
         mapping.update(_ru_per_line(line_group, args))
-
     sample = line_group[0] if line_group else ""
     print(
         "Translated chunk {}/{} (sample: '{}' → '{}')".format(
@@ -471,38 +445,31 @@ def run_ru(args: argparse.Namespace) -> int:
     if not src.exists():
         print(f"Input file not found: {src}", file=sys.stderr)
         return 1
-
     try:
         with src.open(encoding="utf-8") as fh:
             lines = [raw.rstrip("\n") for raw in fh if raw.strip() != ""]
     except Exception as exc:  # noqa: BLE001
         print(f"Error reading input file: {exc}", file=sys.stderr)
         return 1
-
     if not lines:
         print(f"No non-empty lines found in {src.name}")
         return 0
-
     cyrillic = [ln for ln in lines if CYRILLIC_RE.search(ln)]
     skipped = len(lines) - len(cyrillic)
     print(f"Loaded {len(lines)} lines: {len(cyrillic)} with Cyrillic, {skipped} already non-Cyrillic/skipped")
     if not cyrillic:
         print(f"No Russian/Cyrillic lines to translate in {src.name}")
         return 0
-
     unique = dedupe_preserve_order(cyrillic)
     print(f"Deduplicated Russian lines: {len(unique)} unique from {len(cyrillic)} total")
-
     groups = chunk_lines(unique, args.chunk_size)
     if not groups:
         print("Nothing to translate after chunking.")
         return 0
-
     print(
         f"Created {len(groups)} chunk(s) from {len(unique)} unique lines "
         f"(max {args.chunk_size} chars/chunk), using {args.workers} worker(s)"
     )
-
     mapping: dict[str, str] = {}
     total = len(groups)
     pool = Pool(processes=args.workers)
@@ -522,7 +489,6 @@ def run_ru(args: argparse.Namespace) -> int:
     finally:
         pool.close()
         pool.join()
-
     json_out = src.with_suffix(".json")
     try:
         with json_out.open("w", encoding="utf-8") as fh:
@@ -530,7 +496,6 @@ def run_ru(args: argparse.Namespace) -> int:
         print(f"Saved {len(mapping)} translations to {json_out.name}")
     except Exception as exc:  # noqa: BLE001
         logger.error("Error saving JSON file: %s", exc)
-
     try:
         with src.open("w", encoding="utf-8") as fh:
             replaced = 0
@@ -543,7 +508,6 @@ def run_ru(args: argparse.Namespace) -> int:
         print(f"Updated {src.name}: translated {replaced} lines, kept {len(lines) - replaced} lines unchanged")
     except Exception as exc:  # noqa: BLE001
         logger.error("Error updating input file: %s", exc)
-
     return 0
 
 
@@ -561,7 +525,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="mode", required=True)
-
     p_vi = sub.add_parser("vi", help="Vietnamese → English, batch over cwd *.txt (vitrans.py).")
     p_vi.add_argument(
         "--chunk-size",
@@ -607,7 +570,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_translation_args(p_vi)
     p_vi.set_defaults(source="vi", _handler=run_vi)
-
     p_ko = sub.add_parser("ko", help="Korean → English, single file (tkor.py).")
     p_ko.add_argument("input_path", help="Path to the input file.")
     p_ko.add_argument(
@@ -624,7 +586,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_translation_args(p_ko)
     p_ko.set_defaults(source="ko", _handler=run_ko)
-
     p_zh = sub.add_parser("zh", help="Auto → English, recursive directory (tchn.py).")
     p_zh.add_argument("--root", default=".", help="Directory to walk (default: cwd).")
     p_zh.add_argument(
@@ -636,7 +597,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_zh.add_argument("--workers", type=int, default=8, help="ThreadPool workers (default: 8).")
     _add_common_translation_args(p_zh)
     p_zh.set_defaults(source="auto", _handler=run_zh)
-
     p_ru = sub.add_parser("ru", help="Russian → English, line-based single file (trans_ru.py).")
     p_ru.add_argument("input_path", help="Path to the input file.")
     p_ru.add_argument(
@@ -655,7 +615,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_translation_args(p_ru)
     p_ru.set_defaults(source="ru", _handler=run_ru)
-
     return parser
 
 

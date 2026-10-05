@@ -8,19 +8,16 @@ Features: * Uses pyelftools for robust ELF parsing.
 Usage: python3 find_elf64.py [directory] [-r|--remove]"""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from typing import Iterator
-
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 
 WORKERS = 8
-
 ELF_TYPES = {
     "ET_NONE": "no file type",
     "ET_REL": "relocatable object",
@@ -28,7 +25,6 @@ ELF_TYPES = {
     "ET_DYN": "shared object / PIE",
     "ET_CORE": "core dump",
 }
-
 ELF_MACHINES = {
     "EM_386": "x86",
     "EM_X86_64": "x86-64",
@@ -44,20 +40,16 @@ ELF_MACHINES = {
 
 
 def analyze_file(path: Path) -> dict | None:
-
     try:
         if not is_binary(str(path)):
             return None
     except (OSError, PermissionError):
         return None
-
     try:
         with path.open("rb") as f:
             elf = ELFFile(f)
-
             if elf.elfclass != 64:
                 return None
-
             info = {
                 "path": str(path),
                 "size": path.stat().st_size,
@@ -82,7 +74,6 @@ def iter_files(root: Path, follow_symlinks: bool = False) -> Iterator[Path]:
 
 def scan(root: Path, follow_symlinks: bool = False) -> Iterator[dict]:
     paths = iter_files(root, follow_symlinks=follow_symlinks)
-
     with mp.Pool(processes=WORKERS) as pool:
         for result in pool.imap_unordered(analyze_file, paths, chunksize=1):
             if result is not None:
@@ -118,22 +109,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-
     root: Path = args.directory.resolve()
     if not root.is_dir():
         return 1
-
     count = 0
     try:
         for info in scan(root, follow_symlinks=args.follow_symlinks):
             count += 1
             path = Path(info["path"])
-
             try:
                 display = path.relative_to(root)
             except ValueError:
                 display = path
-
             print(f"[{count}] {display}")
             print(f"    Path:       {path}")
             print(f"    Size:       {info['size']:,} bytes")
@@ -141,14 +128,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    Machine:    {info['machine']}")
             print(f"    Endianness: {info['endianness']}")
             print(f"    Entry:      {info['entry']}")
-
             if args.remove:
                 try:
                     path.unlink()
                     print("    -> Removed")
                 except OSError as e:
                     print(f"    -> Failed to remove: {e}", file=sys.stderr)
-
             print()
     except KeyboardInterrupt:
         print("\nInterrupted by user.", file=sys.stderr)

@@ -4,7 +4,6 @@ For each file, it should read line by line with UTF-8 encoding, gracefully catch
 Finally, it should write the sorted list of unique variable names, one per line, to an output file named env_vars.txt, and print a summary message showing how many unique variable names were found, handling any file-write errors gracefully as well."""
 
 from __future__ import annotations
-
 import builtins
 import re
 from pathlib import Path

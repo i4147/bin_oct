@@ -5,7 +5,6 @@ Replicate telextractor.py (General links, search for 'pdf', save to file):  --se
 """
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import os
@@ -13,7 +12,6 @@ import re
 import sys
 from pathlib import Path
 from typing import Iterator
-
 from dotenv import load_dotenv
 from telethon import TelegramClient
 
@@ -37,47 +35,37 @@ def extract_matches(text: str, pattern: str) -> Iterator[str]:
 
 
 async def run_extractor(args: argparse.Namespace) -> None:
-
     env_file = Path(args.env).expanduser()
     env_api_id, env_api_hash = load_credentials(env_file)
-
     api_id = args.api_id or env_api_id
     api_hash = args.api_hash or env_api_hash
-
     if not api_id or not api_hash:
         print(
             "Error: API_ID and API_HASH must be provided via CLI arguments or environment variables.",
             file=sys.stderr,
         )
         sys.exit(1)
-
     pattern = args.pattern or PATTERN_PRESETS[args.pattern_preset]
-
     client = TelegramClient(args.session, api_id, api_hash)
     if args.phone:
         await client.start(phone=args.phone)
     else:
         await client.start()
-
     try:
         entity = await client.get_entity(args.channel)
         channel_name = getattr(entity, "title", args.channel)
         print(f"Searching for links in '{channel_name}'...")
-
         iter_kwargs: dict = {}
         if args.limit is not None:
             iter_kwargs["limit"] = args.limit
         if args.search:
             iter_kwargs["search"] = args.search
-
         found_count = 0
         output_file_handle = open(args.output, "a", encoding="utf-8") if args.output else None
-
         try:
             async for message in client.iter_messages(entity, **iter_kwargs):
                 if not message.text:
                     continue
-
                 links = list(extract_matches(message.text, pattern))
                 if links:
                     for link in links:
@@ -88,16 +76,13 @@ async def run_extractor(args: argparse.Namespace) -> None:
         finally:
             if output_file_handle:
                 output_file_handle.close()
-
         print(f"\nDone. Extracted {found_count} link(s).")
-
     finally:
         await client.disconnect()
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Extract URLs/links from a Telegram channel using Telethon.")
-
     parser.add_argument(
         "channel",
         type=str,
@@ -167,14 +152,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Telegram API Hash (overrides .env).",
     )
-
     return parser
 
 
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-
     asyncio.run(run_extractor(args))
 
 

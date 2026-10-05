@@ -4,20 +4,17 @@ The script must use pathlib for all filesystem paths, multiprocessing.Pool.apply
 Clean up empty directories under the destination after a reverse."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import shutil
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 from loguru import logger
 
 TESTS_DIR: Path = Path.home() / "tmp" / "tests"
 MOVED_FILES_LOG: Path = Path.home() / "tmp" / "moved_files.json"
 POOL_WORKERS: int = 8
-
 MoveResult = tuple[str, bool, str]
 
 
@@ -38,7 +35,7 @@ def move_file(source: Path, dest: Path) -> MoveResult:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(source), str(dest))
         return str(source), True, f"Moved to {dest}"
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return str(source), False, f"Error: {e!s}"
 
 
@@ -64,7 +61,6 @@ def move_files_parallel(
             dest_file: Path = TESTS_DIR / relative_path
             async_result = pool.apply_async(move_file, (source_file, dest_file))
             async_results.append((async_result, source_file, dest_file))
-
         for async_result, source_file, dest_file in async_results:
             _source_str, success, message = async_result.get()
             if success:
@@ -84,10 +80,8 @@ def reverse_move(moved_files_log: Path) -> tuple[dict[str, str], list[tuple[str,
     if not moved_files_log.exists():
         msg = f"Log file not found: {moved_files_log}"
         raise FileNotFoundError(msg)
-
     with open(moved_files_log) as f:
         file_mapping: dict[str, str] = json.load(f)
-
     results: list[tuple[str, str]] = []
     pool: Pool = Pool(processes=POOL_WORKERS)
     try:
@@ -98,7 +92,6 @@ def reverse_move(moved_files_log: Path) -> tuple[dict[str, str], list[tuple[str,
             if moved_file.exists():
                 async_result = pool.apply_async(move_file, (moved_file, original_file))
                 async_results.append((async_result, moved_file, original_file))
-
         for async_result, source_file, _dest_file in async_results:
             _source_str, success, message = async_result.get()
             if success:
@@ -155,7 +148,6 @@ def main() -> int:
         help=f"Path to log file (default: {MOVED_FILES_LOG}).",
     )
     args: argparse.Namespace = parser.parse_args()
-
     try:
         if args.reverse:
             print(f"🔄 Reversing move operation from log: {args.log}")
@@ -176,10 +168,9 @@ def main() -> int:
     except FileNotFoundError as e:
         logger.error(f"❌ Error: {e}")
         return 1
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")
         return 1
-
     return 0
 
 

@@ -5,7 +5,6 @@ The class should maintain a mapping of common batch commands (echo off, pause, c
 The script should track counts of successfully converted lines and errors, and be runnable as a command-line tool (using sys and pathlib.Path) that reads an input batch file and writes out the converted shell script."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

@@ -6,7 +6,6 @@ Mapping of originals to new CLI ------------------------------- cget.py -> pytho
 Everything else runs on stdlib alone."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import hashlib
@@ -21,7 +20,6 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Optional
-
 import requests
 from tqdm import tqdm
 
@@ -29,25 +27,22 @@ try:
     import pycurl  # type: ignore
 
     _HAS_PYCURL = True
-except ImportError:  # pragma: no cover
+except ImportError:
     pycurl = None  # type: ignore
     _HAS_PYCURL = False
-
 try:
     from loguru import logger as _logger
-except ImportError:  # pragma: no cover
+except ImportError:
 
     class _LoggerShim:
-        def __getattr__(self, _):  # noqa: D401
+        def __getattr__(self, _):
             def _p(msg, *a, **k):
                 print(msg, *a)
 
             return _p
 
     _logger = _LoggerShim()  # type: ignore
-
 logger = _logger
-
 _DEFAULT_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
@@ -315,7 +310,6 @@ def cmd_check(args: argparse.Namespace) -> int:
         _download_urllib(url, out, timeout=args.timeout)
         print(f"\nSaved to: {out}")
         return 0
-
     print("Starting download...\n")
     out = Path(args.output) if args.output else Path(filename_from_url(url))
     out = unique_path(out)
@@ -391,7 +385,6 @@ def cmd_size(args: argparse.Namespace) -> int:
     inp = Path(args.input)
     dest_dir = Path(args.download).expanduser() if args.download else Path.home() / "Downloads"
     max_size = _parse_size(args.max_size)
-
     if inp.is_file():
         lines = inp.read_text(encoding="utf-8", errors="ignore").splitlines()
         out_lines: list[str] = []
@@ -451,12 +444,10 @@ def _batch_worker(url: str, dest_dir: str, engine: str, resume: bool, timeout: f
     dest = Path(dest_dir)
     dest.mkdir(parents=True, exist_ok=True)
     fpath = unique_path(dest / filename_from_url(url))
-
     if resume and fpath.exists():
         remote = remote_size_requests(url, timeout)
         if remote is not None and fpath.stat().st_size >= remote:
             return (url, True, f"Already complete ({fpath.stat().st_size} bytes)")
-
     try:
         if engine == "pycurl":
             _download_pycurl(url, fpath, timeout, ua, resume)
@@ -479,7 +470,7 @@ def _batch_worker(url: str, dest_dir: str, engine: str, resume: bool, timeout: f
         return (url, False, str(e))
 
 
-def _sig_ignore(_signum, _frame):  # noqa: D401
+def _sig_ignore(_signum, _frame):
     return None
 
 
@@ -489,7 +480,6 @@ def cmd_batch(args: argparse.Namespace) -> int:
     if not urls:
         print(f"No URLs found in {urls_path}")
         return 0
-
     if args.filter_ext:
         kept = [u for u in urls if _passes_ext_filter(u)]
         skipped = len(urls) - len(kept)
@@ -499,15 +489,11 @@ def cmd_batch(args: argparse.Namespace) -> int:
         if not urls:
             logger.error("No URLs left after extension filter.")
             return 0
-
     dest = Path(args.dir)
     dest.mkdir(parents=True, exist_ok=True)
-
     print(f"Downloading {len(urls)} URL(s) with engine={args.engine} workers={args.workers} ...")
-
     succeeded: set[str] = set()
     failed: list[str] = []
-
     if args.workers <= 1:
         for i, url in enumerate(urls, 1):
             u, ok, msg = _batch_worker(url, str(dest), args.engine, args.resume, args.timeout, args.user_agent)
@@ -545,12 +531,10 @@ def cmd_batch(args: argparse.Namespace) -> int:
                     (succeeded.add(u) if ok else failed.append(u))
             finally:
                 signal.signal(signal.SIGINT, original_sigint)
-
     if args.update_file:
         remaining = [u for u in urls if u not in succeeded]
         urls_path.write_text("\n".join(remaining) + ("\n" if remaining else ""), encoding="utf-8")
         print(f"\nRemaining URLs saved back to: {urls_path}")
-
     print(f"\nDone. Success: {len(succeeded)}, Failed: {len(failed)}")
     print(f"Files saved in: {dest.resolve()}")
     return 0 if not failed else 1
@@ -585,32 +569,26 @@ def cmd_threaded(args: argparse.Namespace) -> int:
         "Accept": "*/*",
         "Connection": "keep-alive",
     }
-
     try:
         head = requests.head(url, headers=headers, allow_redirects=True, timeout=args.timeout)
         head.raise_for_status()
     except requests.RequestException as e:
         logger.error(f"Error reaching URL: {e}")
         return 1
-
     total = int(head.headers.get("content-length", 0) or 0)
     accept_ranges = head.headers.get("accept-ranges", "bytes")
     out = args.output or (url.split("/")[-1].split("?")[0] or "downloaded_file")
     out = safe_filename(out)
-
     if total == 0:
         logger.warning("No Content-Length; falling back to single stream.")
     if accept_ranges != "bytes" and args.chunks > 1:
         logger.warning("Server doesn't support byte ranges; single stream.")
-
     use_chunks = args.chunks
     if total == 0 or accept_ranges != "bytes":
         use_chunks = 1
-
     print(f"Target: {out}")
     print(f"Size  : {human_size(total) if total else 'Unknown'}")
     print(f"Slices: {use_chunks}")
-
     if use_chunks == 1:
         with (
             requests.get(url, headers=headers, stream=True, timeout=args.timeout) as r,
@@ -624,7 +602,6 @@ def cmd_threaded(args: argparse.Namespace) -> int:
                     bar.update(len(chunk))
         logger.success(f"Download complete: {out}")
         return 0
-
     per = total // use_chunks
     parts: list[Optional[str]] = [None] * use_chunks
     with mp.Pool(processes=min(8, use_chunks)) as pool:
@@ -652,7 +629,6 @@ def cmd_threaded(args: argparse.Namespace) -> int:
                             with contextlib.suppress(FileNotFoundError):
                                 Path(pf).unlink()
                     return 1
-
     with open(out, "wb") as dst:
         for pf in parts:
             if pf is None:
@@ -660,7 +636,6 @@ def cmd_threaded(args: argparse.Namespace) -> int:
             with open(pf, "rb") as src:
                 dst.write(src.read())
             Path(pf).unlink()
-
     logger.success(f"Download complete and assembled: {out}")
     return 0
 
@@ -686,7 +661,7 @@ def _chunk_worker(url: str, dest_str: str, idx: int, start: int, end: int, timeo
 
 def cmd_chunked(args: argparse.Namespace) -> int:
     try:
-        from rich.console import Console  # noqa: F401
+        from rich.console import Console
         from rich.progress import (
             BarColumn,
             DownloadColumn,
@@ -698,11 +673,9 @@ def cmd_chunked(args: argparse.Namespace) -> int:
     except ImportError:
         logger.error("The 'chunked' subcommand needs 'rich'. Install: pip install rich")
         return 1
-
     url = args.url
     filename: Optional[str] = safe_filename(args.output) if args.output else None
     expected_hash = args.sha256
-
     try:
         r = requests.head(url, allow_redirects=True, timeout=15)
         r.raise_for_status()
@@ -717,7 +690,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
         filename = filename_from_headers(url, dict(r.headers))
     dest = Path(filename)
     state_file = dest.with_suffix(dest.suffix + ".progress")
-
     completed: set[int] = set()
     if state_file.exists() and args.resume:
         try:
@@ -726,14 +698,11 @@ def cmd_chunked(args: argparse.Namespace) -> int:
             logger.info(f"Resuming: {len(completed)} chunk(s) already done.")
         except Exception as e:
             logger.warning(f"Bad state file, ignoring: {e}")
-
     if not dest.exists():
         with dest.open("wb") as f:
             f.truncate(size)
-
     chunk_size = args.chunk_size
     ranges = [(i, min(i + chunk_size - 1, size - 1)) for i in range(0, size, chunk_size)]
-
     todo = [(i, s, e) for i, (s, e) in enumerate(ranges) if i not in completed]
     if not todo:
         logger.success("All chunks already present.")
@@ -754,7 +723,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                 total=size,
                 completed=sum(ranges[i][1] - ranges[i][0] + 1 for i in completed),
             )
-
             with mp.Pool(processes=args.workers) as pool:
                 futures = []
                 for idx, s, e in todo:
@@ -772,13 +740,10 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                         progress.update(task, advance=length)
                     else:
                         logger.warning(f"Chunk {idx} failed; will resume later.")
-
         state_file.write_text(json.dumps({"completed": sorted(completed)}), encoding="utf-8")
-
     if len(completed) < len(ranges):
         logger.warning("Not all chunks completed. Re-run to resume.")
         return 1
-
     h = hashlib.sha256()
     with dest.open("rb") as f:
         for block in iter(lambda: f.read(1024 * 1024), b""):
@@ -794,7 +759,6 @@ def cmd_chunked(args: argparse.Namespace) -> int:
             return 1
     else:
         logger.warning(f"SHA-256 checksum: {digest}")
-
     state_file.unlink(missing_ok=True)
     logger.success(f"Download complete: {dest}")
     return 0
@@ -807,7 +771,6 @@ def _build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     pw = sub.add_parser("wget", help="Single-URL download with progress (pywget.py).")
     pw.add_argument("url")
     pw.add_argument("-o", "--output", help="Output file or directory")
@@ -815,14 +778,12 @@ def _build_parser() -> argparse.ArgumentParser:
     pw.add_argument("--resume", action="store_true", help="Resume partial file if present")
     pw.add_argument("-q", "--quiet", action="store_true")
     pw.set_defaults(func=cmd_wget)
-
     pc = sub.add_parser("check", help="Check remote size, optionally download (download_checker.py).")
     pc.add_argument("url")
     pc.add_argument("-d", "--download", action="store_true", help="Download after checking")
     pc.add_argument("-o", "--output", help="Output filename")
     pc.add_argument("--timeout", type=float, default=15.0)
     pc.set_defaults(func=cmd_check)
-
     ps = sub.add_parser("size", help="Show remote size (dsize.py / dsized.py).")
     ps.add_argument("input", help="URL or file of URLs")
     ps.add_argument(
@@ -838,7 +799,6 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ps.add_argument("--timeout", type=float, default=10.0)
     ps.set_defaults(func=cmd_size)
-
     pb = sub.add_parser(
         "batch",
         help="Batch download URLs from a file (cget / pycurl_downloader / url_downloader / rget).",
@@ -861,7 +821,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pb.add_argument("--timeout", type=float, default=60.0)
     pb.add_argument("--user-agent", default=_DEFAULT_UA)
     pb.set_defaults(func=cmd_batch)
-
     pt = sub.add_parser("threaded", help="Multi-chunk threaded downloader (ghost_downloader.py).")
     pt.add_argument("url")
     pt.add_argument("-o", "--output")
@@ -869,7 +828,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pt.add_argument("--user-agent", default=_DEFAULT_UA)
     pt.add_argument("--timeout", type=float, default=30.0)
     pt.set_defaults(func=cmd_threaded)
-
     pk = sub.add_parser("chunked", help="Resumable chunked downloader with SHA-256 (gget.py).")
     pk.add_argument("url")
     pk.add_argument("output", nargs="?", default=None)
@@ -886,7 +844,6 @@ def _build_parser() -> argparse.ArgumentParser:
     pk.add_argument("--no-resume", dest="resume", action="store_false")
     pk.add_argument("--user-agent", default=_DEFAULT_UA)
     pk.set_defaults(func=cmd_chunked)
-
     return p
 
 

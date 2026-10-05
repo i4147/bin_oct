@@ -3,7 +3,6 @@
 Third-party dependencies (install what you need): pip install requests beautifulsoup4 loguru pycurl Subcommands and their original-script equivalents: bundle <- build_single_page.py inline <- inline_assets.py, mkst.py isolate <- isolate_html.py standalone <- mkstand.py mhtml <- pymht.py, pymhtml.py css <- standalone_css.py Quick usage: python htmltool.py bundle python htmltool.py inline ./site --timeout 15 --workers 8 python htmltool.py isolate index.html -o index_standalone.html -v python htmltool.py standalone ./pages python htmltool.py mhtml page.mhtml python htmltool.py css style.css"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import contextlib
@@ -18,7 +17,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
-
 import requests
 from bs4 import BeautifulSoup, Tag
 
@@ -31,17 +29,15 @@ try:
         level="WARNING",
         format="<red>{level}</red> | <cyan>{message}</cyan>",
     )
-except ImportError:  # pragma: no cover
+except ImportError:
     import logging
 
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s | %(message)s")
     logger = logging.getLogger("htmltool")
-
 try:
     import pycurl
-except ImportError:  # pragma: no cover
+except ImportError:
     pycurl = None
-
 IMAGE_EXTS = {
     ".png",
     ".jpg",
@@ -56,7 +52,6 @@ IMAGE_EXTS = {
     ".apng",
 }
 HTML_EXTS = {".html", ".htm"}
-
 CSS_URL_RE = re.compile(r'url\((["\']?)([^)"\']+)\1\)')
 CSS_IMPORT_RE = re.compile(
     r'@import\s+(?:url\(\s*)?["\']?([^"\')\s;]+)["\']?\s*\)?',
@@ -150,7 +145,6 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     assets_dir = out_dir / args.assets_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     assets_dir.mkdir(parents=True, exist_ok=True)
-
     cache: dict[str, Path] = {}
 
     def save_asset(data: bytes, mime: str) -> Path:
@@ -201,13 +195,11 @@ def cmd_bundle(args: argparse.Namespace) -> int:
     def process_html(path: Path) -> None:
         soup = BeautifulSoup(path.read_text(encoding="utf-8", errors="ignore"), "html.parser")
         soups.append(soup)
-
         for style in soup.find_all("style"):
             if not style.string:
                 continue
             p = save_asset(style.string.encode("utf-8"), "text/css")
             style.replace_with(soup.new_tag("link", rel="stylesheet", href=str(p.relative_to(out_dir))))
-
         for script in soup.find_all("script"):
             if script.get("src"):
                 src = script["src"]
@@ -218,7 +210,6 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                 continue
             p = save_asset((script.string or "").encode("utf-8"), "application/javascript")
             script.replace_with(soup.new_tag("script", src=str(p.relative_to(out_dir))))
-
         for img in soup.find_all("img"):
             src = img.get("src", "")
             if src.startswith("data:"):
@@ -226,7 +217,6 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                 if dec:
                     data, mime = dec
                     img["src"] = str(save_asset(data, mime).relative_to(out_dir))
-
         for tag in soup.find_all(style=True):
             m = DATA_URI_CSS_RE.search(tag["style"])
             if m:
@@ -234,11 +224,9 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                 if dec:
                     data, mime = dec
                     tag["style"] = tag["style"].replace(m.group(1), str(save_asset(data, mime).relative_to(out_dir)))
-
         for svg in soup.find_all("svg"):
             p = save_asset(str(svg).encode("utf-8"), "image/svg+xml")
             svg.replace_with(soup.new_tag("img", src=str(p.relative_to(out_dir))))
-
         target = out_dir / path.relative_to(cwd)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(str(soup), encoding="utf-8")
@@ -250,17 +238,14 @@ def cmd_bundle(args: argparse.Namespace) -> int:
                 process_html(path)
             except Exception as exc:
                 logger.error(f"{path}: {exc}")
-
     merged = BeautifulSoup("<html><head></head><body></body></html>", "html.parser")
     for soup in soups:
         if soup.body:
             for el in list(soup.body.contents):
                 merged.body.append(el)
-
     for asset in list(assets_dir.iterdir()):
         uri = to_data_uri(asset.read_bytes(), guess_mime(asset.name))
         merged = BeautifulSoup(str(merged).replace(str(asset.relative_to(out_dir)), uri), "html.parser")
-
     for link in merged.find_all("link", rel="stylesheet"):
         href = link.get("href", "")
         if href.startswith("data:"):
@@ -268,14 +253,12 @@ def cmd_bundle(args: argparse.Namespace) -> int:
             s = merged.new_tag("style")
             s.string = css
             link.replace_with(s)
-
     for script in merged.find_all("script", src=True):
         if script["src"].startswith("data:"):
             js = base64.b64decode(re.sub(r"^data:.*?;base64,", "", script["src"])).decode("utf-8", errors="ignore")
             new = merged.new_tag("script")
             new.string = js
             script.replace_with(new)
-
     out = out_dir / "single_page_local.html"
     out.write_text(str(merged), encoding="utf-8")
     print(f"\nCreated: {out}")
@@ -325,7 +308,6 @@ def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
     t0 = time.perf_counter()
     try:
         soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-
         for img in soup.find_all("img"):
             src = img.get("src")
             if not src or src.startswith("data:") or is_remote(src):
@@ -336,7 +318,6 @@ def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
                 result["local"] += 1
             else:
                 logger.warning(f"Missing image: {p}")
-
         for link in soup.find_all("link", rel="stylesheet"):
             href = link.get("href")
             if not href:
@@ -363,7 +344,6 @@ def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
                 s = soup.new_tag("style")
                 s.string = css
                 link.replace_with(s)
-
         for script in soup.find_all("script"):
             src = script.get("src")
             if not src:
@@ -385,20 +365,17 @@ def _inline_html_file(path: Path, timeout: int) -> dict[str, Any]:
                 s = soup.new_tag("script")
                 s.string = js
                 script.replace_with(s)
-
         for tag in soup.find_all(style=True):
             css, l, r = _inline_urls_in_css(tag["style"], path, None, timeout)
             tag["style"] = css
             result["local"] += l
             result["remote"] += r
-
         for style in soup.find_all("style"):
             if style.string:
                 css, l, r = _inline_urls_in_css(style.string, path, None, timeout)
                 style.string = css
                 result["local"] += l
                 result["remote"] += r
-
         path.write_text(str(soup), encoding="utf-8")
     except Exception as exc:
         result["status"] = f"error: {exc}"
@@ -456,15 +433,12 @@ def cmd_inline(args: argparse.Namespace) -> int:
     if not files:
         logger.warning("No HTML or CSS files found.")
         return 1
-
     print(f"Processing {len(files)} files with {args.workers} workers...\n")
     total_l = total_r = 0
     t0 = time.perf_counter()
-
     payload = [(p, args.timeout) for p in files]
     with Pool(processes=args.workers) as pool:
         results = pool.map(_inline_dispatch, payload)
-
     for r in results:
         path = Path(r["path"])
         try:
@@ -477,7 +451,6 @@ def cmd_inline(args: argparse.Namespace) -> int:
             print(f"[SUCCESS] {shown} ({r['time']:.2f}s) - Embedded: {r['local']} local, {r['remote']} remote")
         elif r["status"] != "skipped":
             logger.error(f"[ERROR] {shown} - {r['status']}")
-
     print(f"\nBuild Complete in {time.perf_counter() - t0:.2f}s!")
     print(f"Total globally embedded resources: {total_l} local, {total_r} remote.")
     return 0
@@ -656,7 +629,6 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
         soup = BeautifulSoup(html_path.read_text(encoding="utf-8-sig", errors="replace"), "html.parser")
     except OSError:
         return urls
-
     for link in soup.find_all("link", href=True):
         rel = link.get("rel", [])
         rel = rel if isinstance(rel, list) else [rel]
@@ -669,7 +641,6 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
                 p = Path(full)
                 if p.is_file():
                     css_queue.append((str(p), p.parent))
-
     for tag in soup.find_all(["img", "source"]):
         if tag.get("src"):
             full = _resolve_url(tag["src"], html_path.parent)
@@ -682,17 +653,14 @@ def _collect_remote_urls(html_path: Path) -> set[str]:
                     full = _resolve_url(ref, html_path.parent)
                     if is_remote(full) and not is_image_url(full):
                         urls.add(full)
-
     for sc in soup.find_all("script", src=True):
         full = _resolve_url(sc["src"], html_path.parent)
         if is_remote(full):
             urls.add(full)
-
     for st in soup.find_all("style"):
         _scan_css_refs(st.get_text(), html_path.parent, urls)
     for tag in soup.find_all(style=True):
         _scan_css_refs(tag["style"], html_path.parent, urls)
-
     seen_css: set[str] = set()
     while css_queue:
         ref, _base = css_queue.pop()
@@ -773,7 +741,6 @@ def _asset_bytes(ref: str, base: Path | str, cache: dict[str, tuple[bytes, str]]
 
 
 def _rewrite_css(css: str, base: Path | str, cache: dict[str, tuple[bytes, str]]) -> str:
-
     def import_repl(m: re.Match) -> str:
         ref = m.group(1).strip()
         got = _asset_bytes(ref, base, cache)
@@ -812,7 +779,6 @@ def _process_standalone_html(html_str: str) -> bool:
         print(f"ERROR: cannot read {html_path}: {exc}")
         return False
     print(f"Processing: {html_path}")
-
     for link in soup.find_all("link", rel=True):
         rel = link.get("rel") or []
         rel = rel if isinstance(rel, list) else [rel]
@@ -828,7 +794,6 @@ def _process_standalone_html(html_str: str) -> bool:
         s = soup.new_tag("style")
         s.string = css
         link.replace_with(s)
-
     for sc in soup.find_all("script", src=True):
         got = _asset_bytes(sc["src"], base, cache)
         if not got:
@@ -838,12 +803,10 @@ def _process_standalone_html(html_str: str) -> bool:
         js = re.sub(r"</script", r"<\\/script", js, flags=re.IGNORECASE)
         del sc["src"]
         sc.string = js
-
     for img in soup.find_all("img", src=True):
         got = _asset_bytes(img["src"], base, cache)
         if got:
             img["src"] = to_data_uri(got[0], got[1])
-
     for tag in soup.find_all(srcset=True):
         parts = []
         for entry in tag["srcset"].split(","):
@@ -859,18 +822,15 @@ def _process_standalone_html(html_str: str) -> bool:
             uri = to_data_uri(got[0], got[1])
             parts.append(f"{uri} {rest}".strip())
         tag["srcset"] = ", ".join(parts)
-
     for st in soup.find_all("style"):
         css = st.get_text() or ""
         if css:
             css = re.sub(r"^\s*<!--\s*", "", css)
             css = re.sub(r"\s*-->\s*$", "", css)
             st.string = _rewrite_css(css, base, cache)
-
     for tag in soup.find_all(style=True):
         if tag["style"]:
             tag["style"] = _rewrite_css(tag["style"], base, cache)
-
     try:
         html_path.write_text(str(soup), encoding="utf-8")
     except OSError as exc:
@@ -933,7 +893,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
     if not inputs:
         print("No .mhtml inputs given and none found in cwd.")
         return 1
-
     for raw in inputs:
         mhtml_path = Path(raw)
         if not mhtml_path.is_file():
@@ -942,7 +901,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
         out_html = Path(args.output) if args.output else mhtml_path.with_suffix(".html")
         out_files = Path(args.files_dir) if args.files_dir else mhtml_path.with_name(mhtml_path.stem + "_files")
         out_files.mkdir(parents=True, exist_ok=True)
-
         msg = BytesParser(policy=policy.default).parsebytes(mhtml_path.read_bytes())
         parts: list[Any] = []
 
@@ -956,7 +914,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
             walk(msg)
         else:
             parts = [msg]
-
         html_parts: list[tuple[str | None, bytes]] = []
         other: list[tuple[str | None, str, bytes]] = []
         for p in parts:
@@ -980,7 +937,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
             print(f"No HTML part in {mhtml_path}")
             continue
         html_text = html_parts[0][1].decode(errors="replace")
-
         cid_map: dict[str, str] = {}
         for cid, ctype, body in other:
             if ctype == "text/html":
@@ -1017,7 +973,6 @@ def cmd_mhtml(args: argparse.Namespace) -> int:
             return f'{attr}="{out_files.name}/{fname}"'
 
         html_text = SRC_HREF_DATA_URI_RE.sub(data_repl, html_text)
-
         out_html = unique_path(out_html) if out_html.exists() else out_html
         out_html.write_text(html_text, encoding="utf-8")
         print(f"Done: {out_html}  ({len(cid_map)} CID items)")
@@ -1072,10 +1027,8 @@ def cmd_css(args: argparse.Namespace) -> int:
         print(f"Error: input CSS not found: {inp}")
         return 1
     out = Path(args.output) if args.output else inp.with_name(inp.stem + "_standalone.css")
-
     css = inp.read_text(encoding="utf-8")
     static_root = Path(args.static_root)
-
     imports = [m.group(1) for m in CSS_IMPORT_RE.finditer(css)]
     for imp in imports:
         css = css.replace(f'@import url("{imp}");', "")
@@ -1128,7 +1081,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     b = sub.add_parser("bundle", help="Extract all assets and build single_page_local.html")
     b.add_argument("--output-dir", default="output")
     b.add_argument("--assets-dir", default="assets")
@@ -1149,19 +1101,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do NOT download remote <script src>",
     )
     b.set_defaults(func=cmd_bundle)
-
     i = sub.add_parser("inline", help="Inline local/remote assets into HTML/CSS files in place")
     i.add_argument("paths", nargs="*", default=["."])
     i.add_argument("--timeout", type=int, default=15)
     i.add_argument("--workers", type=int, default=8)
     i.set_defaults(func=cmd_inline)
-
     s = sub.add_parser("isolate", help="Produce a <name>_standalone.html with local assets embedded")
     s.add_argument("input")
     s.add_argument("-o", "--output")
     s.add_argument("-v", "--verbose", action="store_true")
     s.set_defaults(func=cmd_isolate)
-
     st = sub.add_parser("standalone", help="Multi-process standalone builder with remote cache")
     st.add_argument("paths", nargs="*")
     st.add_argument("--workers", type=int, default=8)
@@ -1173,20 +1122,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip interactive prompt for large downloads",
     )
     st.set_defaults(func=cmd_standalone)
-
     m = sub.add_parser("mhtml", help="Convert .mhtml to .html + <stem>_files/ directory")
     m.add_argument("inputs", nargs="*", help="One or more .mhtml files (default: *.mhtml in cwd)")
     m.add_argument("-o", "--output", help="Output HTML path (single input only)")
     m.add_argument("--files-dir", help="Output directory for extracted resources")
     m.set_defaults(func=cmd_mhtml)
-
     c = sub.add_parser("css", help="Inline @import and url() fonts in a CSS file")
     c.add_argument("input")
     c.add_argument("-o", "--output")
     c.add_argument("--static-root", default="/sdcard/_static")
     c.add_argument("--timeout", type=int, default=15)
     c.set_defaults(func=cmd_css)
-
     return p
 
 

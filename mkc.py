@@ -5,7 +5,6 @@ It should compile the source into an output binary named after the file's stem, 
 If compilation fails, it should print the captured stderr output and exit with a non-zero status code, and it should also print a usage message and exit if no source file argument is provided."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

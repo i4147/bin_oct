@@ -5,11 +5,9 @@ image::, :target:, :alt:) using a case-insensitive regex.
 For each processed file it should print progress messages, gracefully skip files that fail to read (printing a warning), and track/report a count of replaced lines, relying on helper utilities imported from a local "dh" module (cprint, fsz, get_files, gsz, mpf) for file discovery and formatting support."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path
-
 from dh import cprint, fsz, get_files, gsz, mpf
 
 blank_line = "\n"
@@ -37,19 +35,17 @@ def process_file(path: str | Path) -> None:
             nl.append("\n")
             replaced_count += 1
             continue
-        if stripped.startswith(
-            (
-                "Metadata-Version",
-                "Home-page",
-                "Author",
-                "Maintainer",
-                "License",
-                "Platform",
-                "Requires-Python",
-                "Description-Content-Type",
-                "Provides-Extra",
-            )
-        ):
+        if stripped.startswith((
+            "Metadata-Version",
+            "Home-page",
+            "Author",
+            "Maintainer",
+            "License",
+            "Platform",
+            "Requires-Python",
+            "Description-Content-Type",
+            "Provides-Extra",
+        )):
             nl.append("\n")
             replaced_count += 1
             continue

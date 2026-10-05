@@ -14,7 +14,6 @@ A streaming guard in each backend aborts a download that turns out to be too lar
 All other backends run sequentially."""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import io
@@ -35,7 +34,6 @@ CHUNK_SIZE = 64 * 1024
 ARIA2C_BIN = "aria2c"
 DEFAULT_BACKEND = "httpx"
 DEFAULT_JOBS = 8
-
 _PROJECT_RE = re.compile(r"^/project/([^/?#]+)/?$")
 _PAGE_RE = re.compile(r"[?&]page=(\d+)")
 
@@ -52,11 +50,9 @@ class _ProfileParser(HTMLParser):
             return
         attrs = dict(attrs)
         href = attrs.get("href") or ""
-
         m = _PAGE_RE.search(href)
         if m:
             self.page_numbers.add(int(m.group(1)))
-
         if _PROJECT_RE.match(href):
             self._all_project_hrefs.append(href)
             classes = (attrs.get("class") or "").split()
@@ -115,7 +111,6 @@ def check_backend(backend: str) -> None:
 def fetch_bytes(url: str, backend: str = DEFAULT_BACKEND, timeout: float = 30.0):
     if backend == "aria2c":
         backend = "urllib"
-
     if backend == "pycurl":
         return _fetch_pycurl(url, timeout)
     if backend == "requests":
@@ -188,7 +183,6 @@ def download_file(
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.parent / (dest.name + ".part")
-
     try:
         if backend == "pycurl":
             written = _download_pycurl(url, tmp, max_bytes, timeout)
@@ -281,7 +275,6 @@ def _download_pycurl(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
     finally:
         curl.close()
         fh.close()
-
     if status >= 400:
         raise HTTPError(url, status, f"HTTP {status}", None, None)
     return written
@@ -306,7 +299,6 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
         f"--dir={tmp.parent}",
         url,
     ]
-
     try:
         result = subprocess.run(
             cmd,
@@ -317,22 +309,18 @@ def _download_aria2c(url: str, tmp: Path, max_bytes: int, timeout: float) -> int
     except subprocess.TimeoutExpired as exc:
         msg = "aria2c timed out"
         raise RuntimeError(msg) from exc
-
     stderr_text = result.stderr.decode("utf-8", "replace").strip()
-
     if result.returncode != 0 or not tmp.exists():
         low = stderr_text.lower()
         if "max-filesize" in low or "too large" in low or "exceeds" in low:
             raise FileTooLarge(stderr_text or f"exceeded {max_bytes} bytes")
         msg = f"aria2c failed (exit {result.returncode}): {stderr_text or '<no stderr>'}"
         raise RuntimeError(msg)
-
     size = tmp.stat().st_size
     if size > max_bytes:
         tmp.unlink(missing_ok=True)
         msg = f"downloaded {size} bytes > {max_bytes}"
         raise FileTooLarge(msg)
-
     tmp.with_name(tmp.name + ".aria2").unlink(missing_ok=True)
     return size
 
@@ -349,16 +337,13 @@ async def _download_one_async(
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp = dest.parent / (dest.name + ".part")
         written = 0
-
         try:
             async with client.stream("GET", url) as resp:
                 resp.raise_for_status()
-
                 declared = resp.headers.get("Content-Length")
                 if declared and int(declared) > max_bytes:
                     msg = f"Content-Length {declared} > {max_bytes}"
                     raise FileTooLarge(msg)
-
                 with open(tmp, "wb") as fh:
                     async for chunk in resp.aiter_bytes(CHUNK_SIZE):
                         if not chunk:
@@ -368,7 +353,6 @@ async def _download_one_async(
                             msg = f"exceeded {max_bytes} bytes"
                             raise FileTooLarge(msg)
                         fh.write(chunk)
-
             tmp.replace(dest)
             return dest, written, None
         except BaseException as exc:  # noqa: BLE001
@@ -386,12 +370,10 @@ async def _download_all_async(
     import httpx
 
     sem = asyncio.Semaphore(jobs)
-
     limits = httpx.Limits(
         max_connections=None,
         max_keepalive_connections=None,
     )
-
     async with httpx.AsyncClient(
         headers={"User-Agent": USER_AGENT},
         timeout=timeout,
@@ -414,7 +396,6 @@ def download_all(
     if backend == "httpx" and tasks:
         asyncio.run(_download_all_async(tasks, max_bytes, timeout, DEFAULT_JOBS, on_event))
         return
-
     for url, dest in tasks:
         try:
             written = download_file(url, dest, backend, max_bytes, timeout=timeout)
@@ -435,7 +416,6 @@ def extract_username(target: str) -> str:
     target = target.strip().rstrip("/")
     if "://" in target:
         target = target.rsplit("/", 1)[-1]
-
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", target)
     return safe or "pypi_user"
 
@@ -452,27 +432,22 @@ def collect_packages(start_url: str, backend: str, timeout: float, quiet: bool =
     visited_pages: set[int] = set()
     page_url: str | None = start_url
     final_url = start_url
-
     while page_url:
         body, final_url = fetch_bytes(page_url, backend, timeout)
         parser = _ProfileParser()
         parser.feed(body.decode("utf-8", "replace"))
-
         new = [n for n in parser.project_names() if n not in seen]
         seen.update(new)
         names.extend(new)
-
         current = _page_of(page_url)
         visited_pages.add(current)
         highest = max(parser.page_numbers) if parser.page_numbers else current
-
         if new and highest > current and (current + 1) not in visited_pages:
             page_url = _with_page(final_url, current + 1)
             if not quiet:
                 print(f"  ... fetching page {current + 1}", file=sys.stderr)
         else:
             page_url = None
-
     return names, final_url
 
 
@@ -549,35 +524,27 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     check_backend(args.backend)
-
     max_bytes = int(args.max_size * 1024 * 1024)
     profile_url = resolve_profile_url(args.user)
     username = extract_username(args.user)
-
     if not args.quiet:
         print(f"Fetching {profile_url} ...", file=sys.stderr)
-
     try:
         names, final_url = collect_packages(profile_url, args.backend, args.timeout, args.quiet)
     except Exception as exc:  # noqa: BLE001
         print(f"error: could not fetch the profile page: {exc}", file=sys.stderr)
         return 1
-
     if final_url.rstrip("/") != profile_url.rstrip("/") and not args.quiet:
         print(f"  resolved to {final_url}", file=sys.stderr)
-
     if not names:
         print("No packages found on that profile page.", file=sys.stderr)
         return 1
-
     list_path = save_package_list(names, username)
     print(f"{len(names)} package(s) -> {list_path}")
     for name in names:
         print(f"  {name}")
-
     if not args.download:
         return 0
-
     outdir: Path = args.output
     outdir.mkdir(parents=True, exist_ok=True)
     parallel = args.backend == "httpx"
@@ -585,10 +552,8 @@ def main(argv=None) -> int:
         f"\nDownloading into {outdir.resolve()} "
         f"(backend={args.backend}, limit={args.max_size:g} MiB" + (f", jobs={DEFAULT_JOBS}" if parallel else "") + ")"
     )
-
     tasks: list[tuple[str, Path]] = []
     have_count = 0
-
     for index, name in enumerate(names, 1):
         prefix = f"[{index}/{len(names)}] {name}"
         try:
@@ -596,29 +561,23 @@ def main(argv=None) -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"{prefix}: metadata error: {exc}", file=sys.stderr)
             continue
-
         if not files:
             print(f"{prefix}: no downloadable files for {version}")
             continue
-
         print(f"{prefix} {version}")
         for entry in files:
             filename = entry["filename"]
             size = int(entry.get("size") or 0)
             url = entry["url"]
-
             if size and size > max_bytes:
                 print(f"    skip {filename} ({_mib(size)} > limit)")
                 continue
-
             dest = outdir / name / filename
             if dest.exists():
                 print(f"    have {filename}")
                 have_count += 1
                 continue
-
             tasks.append((url, dest))
-
     total_files = 0
     failures = 0
 
@@ -640,7 +599,6 @@ def main(argv=None) -> int:
         timeout=max(args.timeout, 60.0),
         on_event=on_event,
     )
-
     print(
         f"\nDone. {total_files} file(s) downloaded"
         f"{f', {have_count} already present' if have_count else ''}"

@@ -2,7 +2,6 @@
 """Prepend an AI-generated "how to reproduce this" prompt as a module docstring to one or more self-contained .py files."""
 
 from __future__ import annotations
-
 import argparse
 import fnmatch
 import os
@@ -10,27 +9,22 @@ import re
 import subprocess
 import sys
 import time
-
 from dh import DOC_TH1, DOC_TH2
 
 FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 FELO_TIMEOUT = int(os.environ.get("FELO_TIMEOUT", "300"))
-
 PROMPT_TEMPLATE = """\
 Provide a prompt for ai agent that can produce the following Python code.
 The prompt must describe the script's purpose, its main inputs/outputs, and any notable behavior.
-
 Strict output rules:
 - Output ONLY the prompt text.
 - Do not include the code itself.
 - Do not repeat these instructions.
 - Do not add a preamble like "Sure" or "Here is".
 Answer in ENGLISH ONLY.
-
 Code:
 {code}
 """
-
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 FENCE_RE = re.compile(r"^\s*```.*$", re.MULTILINE)
 SHELL_PROMPT_RE = re.compile(r"^\s*(?:\$|>|>>>)\s.*$", re.MULTILINE)
@@ -47,45 +41,34 @@ PREAMBLE_RE = re.compile(
 def clean_response(text: str) -> str:
     text = ANSI_RE.sub("", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-
     m = re.search(r"^\s*Received\s*:", text, re.MULTILINE | re.IGNORECASE)
     if m:
         after = text[m.end() :]
         after = after.split("\n", 1)[1] if "\n" in after else ""
         after = re.sub(r"^\s*\n+", "", after)
         text = after
-
     text = re.sub(
         r"^\s*(?:SuperAgent|felo|feli)\b.*$",
         "",
         text,
         flags=re.MULTILINE | re.IGNORECASE,
     )
-
     text = FENCE_RE.sub("", text)
     text = SHELL_PROMPT_RE.sub("", text)
     text = PREAMBLE_RE.sub("", text)
     text = text.strip()
-
     if not text:
         return ""
-
     if "\n" not in text:
         parts = re.split(r"(?<=[.!?])\s+", text)
         text = "\n".join(p.strip() for p in parts if p.strip())
-
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text
 
 
 def make_docstring(text: str) -> str:
-
     safe = re.sub(r"\\", r"\\\\", text)
-
     safe = re.sub(r'"""', r'\\"\\"\\"', safe)
-
-    #    safe = text.replace("\\", "\\\\").replace('"""', '\\"\\"\\"')
-
     return DOC_TH1 + safe + DOC_TH1 + "\n\n"
 
 
@@ -108,7 +91,6 @@ def has_module_docstring(body: str) -> bool:
 
 def ask_felo(code: str) -> str:
     prompt = PROMPT_TEMPLATE.format(code=code)
-
     cmd = [
         "node",
         FELO_SUPERAGENT,
@@ -120,7 +102,6 @@ def ask_felo(code: str) -> str:
         "300",
         "--verbose",
     ]
-
     proc = subprocess.run(
         cmd,
         capture_output=True,
@@ -139,13 +120,10 @@ def annotate(path: str, dry_run: bool) -> None:
         return
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
-
     header, body = split_header(content)
-
     if has_module_docstring(body):
         print(f"[skip] {path}: module docstring already present")
         return
-
     print(f"[ask ] {path}")
     try:
         raw = ask_felo(content)
@@ -157,39 +135,27 @@ def annotate(path: str, dry_run: bool) -> None:
     except RuntimeError as e:
         print(f"[err ] {path}: {e}")
         return
-
     if os.environ.get("FELO_DEBUG"):
         print("----- RAW RESPONSE -----")
         print(raw)
         print("----- END RAW ----------")
-
     cleaned = clean_response(raw)
     if not cleaned:
         print(f"[none] {path}: empty response after cleaning")
         return
-
     docstring = make_docstring(cleaned)
     new_content = header + docstring + body
-
     if dry_run:
         print(f"--- would prepend to {path} ---")
         print(docstring, end="")
         print("--- end ---\n")
         return
-
     with open(path, "w", encoding="utf-8") as f:
         f.write(new_content)
     print(f"[ok  ] {path}")
 
 
 def collect_files(inputs: list[str], pattern: str) -> list[str]:
-    """Expand files/dirs into a de-duplicated, sorted list of matching files.
-
-    - Regular files are taken as-is (no pattern filtering).
-    - Directories are walked recursively; only names matching ``pattern``
-      are included.
-    - The running script itself is excluded.
-    """
     me = os.path.abspath(__file__)
     seen: set[str] = set()
     out: list[str] = []
@@ -213,7 +179,6 @@ def collect_files(inputs: list[str], pattern: str) -> list[str]:
                         add(os.path.join(root, name))
         else:
             print(f"[warn] skipping (not a file or directory): {inp}")
-
     return sorted(out)
 
 
@@ -235,14 +200,11 @@ def main() -> None:
     )
     ap.add_argument("--delay", type=float, default=0.0)
     args = ap.parse_args()
-
     inputs = args.paths or ["."]
     paths = collect_files(inputs, args.pattern)
-
     if not paths:
         print(f"No matching files found (pattern={args.pattern!r}).")
         return
-
     print(f"Found {len(paths)} file(s). dry_run={args.dry_run}")
     for i, p in enumerate(paths, 1):
         print(f"\n=== [{i}/{len(paths)}] {p} ===")

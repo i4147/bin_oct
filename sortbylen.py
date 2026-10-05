@@ -5,10 +5,8 @@ The script should accept the file path as a command-line argument and support an
 After sorting and overwriting the file, it should print a confirmation message showing the filename and whether reverse order was used."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import read_lines
 
 

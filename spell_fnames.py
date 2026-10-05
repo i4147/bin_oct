@@ -5,12 +5,10 @@ For any misspelled words found, it should use Hunspell's suggestion feature to p
 The script should be runnable via argparse from the command line, accepting a filename as input."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import sys
 from pathlib import Path
-
 import hunspell
 
 DICT_PATHS = [

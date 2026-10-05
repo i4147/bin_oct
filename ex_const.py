@@ -5,12 +5,10 @@ Errors encountered during parsing or hashing should be logged to an `output/erro
 Include standard setup for creating the output directory and configuring the logging format with timestamps and severity levels."""
 
 from __future__ import annotations
-
 import ast
 import logging
 import operator
 from pathlib import Path
-
 from joblib import Parallel, delayed
 from xxhash import xxh64
 

@@ -4,7 +4,6 @@ It should use a multiprocessing Pool (with a configurable worker count) to parse
 The script should handle file access safely (checking file type/permissions via os and stat), collect and report parsing results or errors for each processed file, and exit with an appropriate status code reflecting overall success or failure."""
 
 from __future__ import annotations
-
 import os
 import stat
 import sys
@@ -15,25 +14,23 @@ from typing import Any
 
 WORKERS = 8
 ROOT = Path.cwd()
-SKIP_DIRECTORY_NAMES = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".idea",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".tox",
-        ".venv",
-        "__pycache__",
-        "node_modules",
-        "target",
-        "build",
-        "dist",
-        "vendor",
-    }
-)
+SKIP_DIRECTORY_NAMES = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".idea",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "target",
+    "build",
+    "dist",
+    "vendor",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,7 +107,6 @@ def iter_source_files(root: Path) -> list[Path]:
 
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
-
     from tree_sitter import Language
 
     module = import_module(spec.module_name)

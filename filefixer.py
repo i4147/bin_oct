@@ -7,7 +7,6 @@ Original scripts merged here: fix_ext.py fix_extension_mismatch_Version1.py fix_
 --workers 4 python filefixer.py extract-python some_file.py -o out.py Optional third-party packages: pip install puremagic python-magic filetype"""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import logging
@@ -27,22 +26,18 @@ from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
 try:
     import puremagic  # type: ignore
-except Exception:  # pragma: no cover
+except Exception:
     puremagic = None  # type: ignore
-
 try:
     import magic  # type: ignore
-except Exception:  # pragma: no cover
+except Exception:
     magic = None  # type: ignore
-
 try:
     import filetype  # type: ignore
-except Exception:  # pragma: no cover
+except Exception:
     filetype = None  # type: ignore
-
 try:
     from dh import (
         BIN_EXT as DH_BIN_EXT,  # type: ignore
@@ -52,21 +47,19 @@ try:
         get_files as dh_get_files,
         is_binary as dh_is_binary,
     )
-except Exception:  # pragma: no cover
+except Exception:
     DH_BIN_EXT = None
     DH_MIME2EXT = None
     DH_SHEBANG_MAP = None
     DH_TXT_EXT = None
     dh_get_files = None
     dh_is_binary = None
-
 ALIASES: dict[str, str] = {
     ".jpeg": ".jpg",
     ".tiff": ".tif",
     ".htm": ".html",
     ".tgz": ".tar.gz",
 }
-
 COMPOUND_EXTS: tuple[str, ...] = (
     ".tar.gz",
     ".tar.bz2",
@@ -74,7 +67,6 @@ COMPOUND_EXTS: tuple[str, ...] = (
     ".min.js",
     ".min.css",
 )
-
 MIME2EXT: dict[str, str | list[str]] = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -139,10 +131,8 @@ MIME2EXT: dict[str, str | list[str]] = {
     "application/x-pe-executable": ".exe",
     "application/octet-stream": "",
 }
-
 if DH_MIME2EXT:
     MIME2EXT.update(DH_MIME2EXT)  # type: ignore[arg-type]
-
 SHEBANG_MAP: dict[str, str] = {
     "python": ".py",
     "python3": ".py",
@@ -157,7 +147,6 @@ SHEBANG_MAP: dict[str, str] = {
 }
 if DH_SHEBANG_MAP:
     SHEBANG_MAP.update(DH_SHEBANG_MAP)  # type: ignore[arg-type]
-
 BIN_EXT: set[str] = {
     ".png",
     ".jpg",
@@ -191,7 +180,6 @@ BIN_EXT: set[str] = {
 }
 if DH_BIN_EXT:
     BIN_EXT = set(DH_BIN_EXT)
-
 TXT_EXT: set[str] = {
     ".txt",
     ".md",
@@ -221,7 +209,6 @@ TXT_EXT: set[str] = {
 }
 if DH_TXT_EXT:
     TXT_EXT = set(DH_TXT_EXT)
-
 DEFAULT_PROTECT_EXT: set[str] = {
     ".py",
     ".pyc",
@@ -247,9 +234,7 @@ DEFAULT_PROTECT_EXT: set[str] = {
     ".yml",
     ".xml",
 }
-
 DEFAULT_IGNORE_EXT: set[str] = set()
-
 SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (lambda b: b.startswith(b"\x89PNG\r\n\x1a\n"), ".png", "PNG image"),
     (lambda b: b.startswith(b"\xff\xd8\xff"), ".jpg", "JPEG image"),
@@ -302,7 +287,6 @@ SIGNATURES: list[tuple[Callable[[bytes], bool], str, str]] = [
     (lambda b: b.startswith(b"\x7fELF"), ".elf", "ELF binary"),
     (lambda b: b.startswith(b"MZ"), ".exe", "PE/EXE binary"),
 ]
-
 FILE_DESC2EXT: dict[str, str] = {
     "xz compressed data": ".xz",
     "jpeg image data": ".jpg",
@@ -342,7 +326,6 @@ FILE_DESC2EXT: dict[str, str] = {
     "wave sound data": ".wav",
     "mpeg audio": ".mp3",
 }
-
 LOG = logging.getLogger("filefixer")
 
 
@@ -488,21 +471,17 @@ def iter_files(
     if root.is_file():
         yield root
         return
-
     if not root.is_dir():
         return
-
     root_dev: int | None = None
     if skip_mount_points:
         try:
             root_dev = root.stat().st_dev
         except OSError:
             root_dev = None
-
     for dirpath, dirnames, filenames in os.walk(root, followlinks=follow_symlinks):
         if skip_hidden:
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
-
         if skip_mount_points and root_dev is not None:
             try:
                 if Path(dirpath).stat().st_dev != root_dev:
@@ -511,14 +490,12 @@ def iter_files(
             except OSError:
                 dirnames[:] = []
                 continue
-
         for filename in filenames:
             if skip_hidden and filename.startswith("."):
                 continue
             path = Path(dirpath) / filename
             if path.is_file():
                 yield path
-
         if not recursive:
             break
 
@@ -557,14 +534,12 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
             data = fh.read(sample_size)
     except (OSError, PermissionError):
         return None
-
     for matcher, ext, desc in SIGNATURES:
         try:
             if matcher(data):
                 return Detection(norm_ext(ext), desc, "signature")
         except Exception:
             continue
-
     try:
         if zipfile.is_zipfile(path):
             with zipfile.ZipFile(path, "r") as zf:
@@ -576,7 +551,6 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
             return Detection(".zip", "ZIP archive", "signature")
     except Exception:
         pass
-
     try:
         if tarfile.is_tarfile(path):
             if path.name.lower().endswith((".tar.gz", ".tgz")):
@@ -584,7 +558,6 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
             return Detection(".tar", "TAR archive", "signature")
     except Exception:
         pass
-
     try:
         with path.open("rb") as fh:
             data = fh.read(1024)
@@ -594,7 +567,6 @@ def detect_signature(path: Path, sample_size: int = 8192) -> Detection | None:
                 return Detection(".txt", "Plain text (heuristic)", "signature")
     except Exception:
         pass
-
     return None
 
 
@@ -793,7 +765,6 @@ def rename_with_policy(
 ) -> tuple[Path, bool, str | None]:
     if src == dst:
         return src, False, "target equals source"
-
     if collision == "overwrite":
         try:
             if dst.exists():
@@ -802,7 +773,6 @@ def rename_with_policy(
             return dst, True, None
         except OSError as exc:
             return src, False, str(exc)
-
     if not dst.exists():
         try:
             src.rename(dst)
@@ -813,14 +783,11 @@ def rename_with_policy(
                 return dst, True, None
             except Exception as exc:
                 return src, False, str(exc)
-
     if collision == "skip":
         return src, False, "target exists"
-
     parent = dst.parent
     stem = dst.stem
     suffix = dst.suffix
-
     for i in range(1, 1000):
         if collision == "parenthesized":
             candidate = parent / f"{stem} ({i}){suffix}"
@@ -836,7 +803,6 @@ def rename_with_policy(
                     return candidate, True, None
                 except Exception as exc:
                     return src, False, str(exc)
-
     return src, False, "failed to find non-conflicting name"
 
 
@@ -853,18 +819,14 @@ def process_fix_file(
     debug: bool,
 ) -> FixResult:
     current = current_ext(path)
-
     if current in ignore_ext:
         return FixResult(path, "skipped", current_ext=current, reason=f"ignored extension {current}")
-
     detection = detect_extension(path, engines, debug=debug)
     if not detection:
         return FixResult(path, "skipped", current_ext=current, reason="unknown type")
-
     detected = norm_ext(detection.ext)
     if not detected:
         return FixResult(path, "skipped", current_ext=current, reason="empty detected extension")
-
     if current == detected:
         return FixResult(
             path,
@@ -874,7 +836,6 @@ def process_fix_file(
             detected_desc=detection.desc,
             engine=detection.engine,
         )
-
     if current in protect_ext and not force_protected:
         return FixResult(
             path,
@@ -885,7 +846,6 @@ def process_fix_file(
             reason=f"protected extension {current}",
             engine=detection.engine,
         )
-
     if skip_text_mismatches and detected == ".txt" and current in TXT_EXT:
         return FixResult(
             path,
@@ -896,14 +856,12 @@ def process_fix_file(
             reason="text-to-text mismatch skipped",
             engine=detection.engine,
         )
-
     name = path.name
     if current and name.lower().endswith(current):
         base = name[: -len(current)]
     else:
         base = path.stem
     target = path.with_name(base + detected)
-
     if target == path:
         return FixResult(
             path,
@@ -914,7 +872,6 @@ def process_fix_file(
             reason="target equals source",
             engine=detection.engine,
         )
-
     if not apply:
         return FixResult(
             path,
@@ -925,7 +882,6 @@ def process_fix_file(
             target=target,
             engine=detection.engine,
         )
-
     final, renamed, error = rename_with_policy(path, target, collision)
     if renamed:
         return FixResult(
@@ -953,10 +909,8 @@ def run_fix_pass(files: Sequence[Path], args: argparse.Namespace, *, apply: bool
     engines = parse_engine_list(args.engines)
     protect_ext = set() if args.no_protect else parse_ext_set(args.protect_ext)
     ignore_ext = parse_ext_set(args.ignore_ext)
-
     results: list[FixResult] = []
     workers = max(1, args.workers)
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [
             pool.submit(
@@ -986,7 +940,6 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
     would = [r for r in results if r.action == "would-rename"]
     skipped = [r for r in results if r.action in {"skipped", "ok"}]
     errors = [r for r in results if r.action == "error"]
-
     if verbose:
         for result in results:
             if result.action in {"would-rename", "renamed"}:
@@ -995,7 +948,6 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
                 print(f"ok: {result.path} (already matched)")
             else:
                 print(f"{result.action}: {result.path} ({result.reason})")
-
     print()
     print("Summary:")
     print(f"  files scanned: {len(results)}")
@@ -1003,7 +955,6 @@ def print_fix_summary(results: Sequence[FixResult], *, verbose: bool) -> None:
     print(f"  renamed: {len(renamed)}")
     print(f"  skipped/ok: {len(skipped)}")
     print(f"  errors: {len(errors)}")
-
     if errors:
         print("\nErrors:")
         for result in errors[:10]:
@@ -1015,7 +966,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
         paths = [str(Path.cwd())]
     else:
         paths = args.paths or ["."]
-
     files = collect_files(
         paths,
         recursive=not args.no_recursive,
@@ -1023,14 +973,11 @@ def cmd_fix(args: argparse.Namespace) -> int:
         follow_symlinks=args.follow_symlinks,
         skip_mount_points=args.skip_mount_points,
     )
-
     if not files:
         print("No files found to scan.")
         return 0
-
     print(f"Scanning {len(files)} files using engines: {args.engines}")
     print(f"Commit mode: {args.apply}")
-
     if args.apply and args.confirm:
         dry_results = run_fix_pass(files, args, apply=False)
         print_fix_summary(dry_results, verbose=args.verbose or args.debug)
@@ -1045,7 +992,6 @@ def cmd_fix(args: argparse.Namespace) -> int:
         results = run_fix_pass(files, args, apply=True)
     else:
         results = run_fix_pass(files, args, apply=args.apply)
-
     print_fix_summary(results, verbose=args.verbose or args.debug)
     return 1 if any(r.action == "error" for r in results) else 0
 
@@ -1064,7 +1010,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
     if not root.exists():
         eprint(f"Error: path {root} does not exist")
         return 2
-
     ext_set = BIN_EXT if args.kind == "binary" else TXT_EXT
     files = list(
         iter_files(
@@ -1076,16 +1021,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
         )
     )
     files = [p for p in files if current_ext(p) in ext_set or p.suffix.lower() in ext_set]
-
     if not files:
         print("No files found with target extensions.")
         return 0
-
     print(f"Validating {len(files)} files as {args.kind} using {args.workers} workers...")
-
     mismatches: list[tuple[Path, str]] = []
     errors = 0
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
         futures = [pool.submit(validate_one, path, args.kind) for path in files]
         for future in concurrent.futures.as_completed(futures):
@@ -1096,7 +1037,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
             expected_binary = args.kind == "binary"
             if binary != expected_binary:
                 mismatches.append((path, desc))
-
     print()
     print("=" * 40)
     print(f"{args.kind.upper()} EXTENSION VALIDATION REPORT")
@@ -1104,7 +1044,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
     print(f"  Total files found:    {len(files)}")
     print(f"  Mismatches:           {len(mismatches)}")
     print(f"  Access errors:        {errors}")
-
     if mismatches:
         print(f"\nMISMATCHES FOUND: {len(mismatches)}")
         for path, desc in mismatches[:20]:
@@ -1113,7 +1052,6 @@ def cmd_validate(args: argparse.Namespace) -> int:
             print(f"  ... and {len(mismatches) - 20} more")
     else:
         print("\nNo mismatches found.")
-
     print("=" * 40)
     return 1 if mismatches else 0
 
@@ -1148,7 +1086,6 @@ def is_python_construct(line: str) -> bool:
 def cmd_extract_python(args: argparse.Namespace) -> int:
     source = Path(args.file)
     output = Path(args.output)
-
     try:
         text = source.read_text(encoding="utf-8")
     except FileNotFoundError:
@@ -1157,7 +1094,6 @@ def cmd_extract_python(args: argparse.Namespace) -> int:
     except Exception as exc:
         eprint(f"An error occurred: {exc}")
         return 1
-
     lines = text.splitlines(keepends=True)
     kept: list[str] = []
     for line in lines:
@@ -1165,13 +1101,11 @@ def cmd_extract_python(args: argparse.Namespace) -> int:
             kept.append(line)
         elif is_valid_python_token_stream(line):
             kept.append(line)
-
     try:
         output.write_text("".join(kept), encoding="utf-8")
     except Exception as exc:
         eprint(f"Could not write {output}: {exc}")
         return 1
-
     print(f"Wrote {len(kept)} lines to {output}")
     return 0
 
@@ -1182,9 +1116,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Detect/fix file-extension mismatches, validate binary/text extensions, or extract Python-like lines.",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging.")
-
     sub = parser.add_subparsers(dest="command")
-
     fix = sub.add_parser("fix", help="Detect and optionally fix extension mismatches.")
     fix.add_argument(
         "paths",
@@ -1257,7 +1189,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip .txt-to-.txt style mismatches.",
     )
     fix.add_argument("--verbose", "-v", action="store_true", help="Verbose output.")
-
     val = sub.add_parser("validate", help="Validate binary or text extensions.")
     val.add_argument("kind", choices=("binary", "text"), help="Which extension set to validate.")
     val.add_argument("path", nargs="?", default="/data/data/com.termux", help="Root path to scan.")
@@ -1275,35 +1206,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not cross filesystem boundaries.",
     )
     val.add_argument("--verbose", "-v", action="store_true", help="Verbose output.")
-
-    # extract-python
     ext = sub.add_parser("extract-python", help="Extract Python-like lines from a file.")
     ext.add_argument("file", help="Input file.")
     ext.add_argument("-o", "--output", default="out.py", help="Output file. Default: out.py")
-
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not getattr(args, "command", None):
         parser.print_help()
         return 0
-
     logging.basicConfig(
         level=logging.DEBUG if getattr(args, "debug", False) else logging.WARNING,
         format="%(levelname)s | %(message)s",
     )
-
     if args.command == "fix":
         return cmd_fix(args)
     if args.command == "validate":
         return cmd_validate(args)
     if args.command == "extract-python":
         return cmd_extract_python(args)
-
     parser.print_help()
     return 0
 

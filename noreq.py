@@ -4,7 +4,6 @@ It should expose a main function that takes a file path, checks basic conditions
 The function should return a boolean indicating whether the archive is valid, gracefully handling exceptions such as BadZipFile, FileNotFoundError, or tarfile errors by returning False instead of raising."""
 
 from __future__ import annotations
-
 import shutil
 import tarfile
 import tempfile

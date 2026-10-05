@@ -9,7 +9,6 @@ Balance parentheses (add missing ones on the proper side).
 Then we validate by json.loads + re-dump so the file is valid JSON."""
 
 from __future__ import annotations
-
 import json
 import re
 import sys
@@ -25,7 +24,6 @@ def fix_content(content: str) -> str:
         c = content[i]
         if c == "\\" and i + 1 < n:
             nxt = content[i + 1]
-
             if nxt in "[{":
                 out.append("(")
                 i += 2
@@ -38,12 +36,10 @@ def fix_content(content: str) -> str:
                 out.append(nxt)
                 i += 2
                 continue
-
             out.append(c)
             out.append(nxt)
             i += 2
             continue
-
         if c in "[{":
             out.append("(")
         elif c in "]}":
@@ -51,9 +47,7 @@ def fix_content(content: str) -> str:
         else:
             out.append(c)
         i += 1
-
     s = "".join(out)
-
     opens = s.count("(")
     closes = s.count(")")
     if opens > closes:
@@ -71,20 +65,15 @@ def fix_literal(match: re.Match) -> str:
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit(f"usage: {Path(sys.argv[0]).name} <json-file>")
-
     path = Path(sys.argv[1])
     if not path.is_file():
         sys.exit(f"not a file: {path}")
-
     text = path.read_text(encoding="utf-8")
-
     fixed_text = STRING_RE.sub(fix_literal, text)
-
     try:
         data = json.loads(fixed_text)
     except json.JSONDecodeError as e:
         sys.exit(f"still invalid JSON after fix: {e}\n---\n{fixed_text}")
-
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",

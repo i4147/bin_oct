@@ -5,7 +5,6 @@ After copying, the script should print the destination filename along with the c
 The copy should be performed by reading all bytes from the largest file and writing them to the destination path."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 

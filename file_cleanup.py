@@ -4,7 +4,6 @@ Merges these original scripts into one CLI: detect_repeated_lines.py -> dedupe-s
 (Original soniq2.py used loguru; replaced with print.)"""
 
 from __future__ import annotations
-
 import argparse
 import heapq
 import json
@@ -105,7 +104,6 @@ def sort_lines(
 ) -> list[str]:
     if len(lines) <= chunk_size:
         return sorted(lines, key=key, reverse=reverse)
-
     tmp_dir = Path(tempfile.gettempdir())
     chunk_files: list[Path] = []
     for i in range(0, len(lines), chunk_size):
@@ -113,7 +111,6 @@ def sort_lines(
         cf = tmp_dir / f".fc_sort_{os.getpid()}_{i}.tmp"
         cf.write_text("\n".join(piece), encoding="utf-8")
         chunk_files.append(cf)
-
     handles = [cf.open("r", encoding="utf-8") for cf in chunk_files]
     try:
         merged = heapq.merge(*handles, key=key, reverse=reverse)
@@ -130,7 +127,6 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     if not path.is_file():
         err(f"File not found: {path}")
         return 1
-
     lines = read_lines(path, args.encoding, skip_empty=False)
     counter = Counter(lines)
     total = len(lines)
@@ -139,7 +135,6 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     max_len = max((len(x) for x in lines), default=0)
     avg_len = (sum(len(x) for x in lines) / total) if total else 0.0
     top10 = counter.most_common(10)
-
     print("=" * 44)
     print(f"File Analysis: {path.name}")
     print("=" * 44)
@@ -166,11 +161,9 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         err(f"File not found: {input_path}")
         return 1
     output_path = Path(args.output) if args.output else input_path
-
     all_lines = read_lines(input_path, args.encoding, args.skip_empty)
     original_count = len(all_lines)
     original_size = input_path.stat().st_size
-
     range_mode = args.start_line is not None or args.end_line is not None
     if range_mode:
         if args.start_line is None or args.end_line is None:
@@ -183,7 +176,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         before, middle, after = all_lines[:s], all_lines[s:e], all_lines[e:]
     else:
         before, middle, after = [], all_lines, []
-
     key = (lambda x: x.lower()) if args.case_insensitive else None
     if args.sort:
         middle = sort_lines(
@@ -193,14 +185,11 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
             chunk_size=args.chunk_size,
             workers=args.workers,
         )
-
     removed: list[str] = []
     if args.unique:
         middle, removed = dedupe_preserving_order(middle)
-
     final_lines = before + middle + after
     removed_count = len(removed)
-
     stats = {
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
         "input_file": str(input_path),
@@ -216,14 +205,12 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         "dry_run": bool(args.dry_run),
     }
     stats["size_reduction_bytes"] = stats["original_size_bytes"] - stats["after_size_bytes"]
-
     if args.dry_run:
         info("DRY RUN — no files modified.")
     else:
         if args.backup and output_path == input_path:
             bak = backup_file(input_path)
             info(f"Backup created: {bak.name}")
-
         if output_path == input_path:
             fd, tmp_name = tempfile.mkstemp(dir=str(input_path.parent))
             os.close(fd)
@@ -237,7 +224,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
         else:
             write_lines(output_path, final_lines, args.encoding)
         info(f"Output written: {output_path}")
-
     print("=" * 44)
     print(f"Input file: {input_path}")
     print(f"Output file: {output_path}")
@@ -258,7 +244,6 @@ def cmd_sort_dedupe(args: argparse.Namespace) -> int:
     elif args.quiet and removed:
         print("  (Use without --quiet to see the actual duplicate lines)")
     print("=" * 44)
-
     if args.report:
         try:
             Path(args.report).write_text(
@@ -277,13 +262,11 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
     if not path.is_file():
         err(f"File not found: {path}")
         return 1
-
     try:
         lines = path.read_text(encoding=args.encoding).splitlines(keepends=True)
     except Exception as e:
         err(f"Error reading {path}: {e}")
         return 1
-
     ignore_blanks = not args.include_blanks
 
     def blank(s: str) -> bool:
@@ -300,20 +283,16 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
             dupes.append((i + 1, w.rstrip("\n")))
             i += 1
         i += 1
-
     if not dupes:
         print("✓ No sequential duplicates found.")
         return 0
-
     print(f"\n{'[DRY RUN] ' if args.dry_run else ''}📄 {path.name}")
     for lineno, content in dupes:
         print(f"  Line {lineno}: {content}")
         print(f"  Line {lineno + 1}: {content}")
-
     if args.dry_run:
         print(f"\n[DRY RUN] Would remove {len(dupes)} duplicate line(s).")
         return 0
-
     apply = args.yes
     if not args.yes:
         ans = input(f"\n  Remove duplicates from {path.name}? (y/n/a/q): ").strip().lower()
@@ -321,15 +300,12 @@ def cmd_dedupe_seq(args: argparse.Namespace) -> int:
             print("Quitting.")
             return 0
         apply = ans in ("y", "a")
-
     if not apply:
         print("  ⏭️  Skipped")
         return 0
-
     new_lines = lines[:]
     for lineno, _ in reversed(dupes):
         del new_lines[lineno]
-
     bak = path.with_suffix(path.suffix + ".bak")
     bak.write_text("".join(lines), encoding=args.encoding)
     path.write_text("".join(new_lines), encoding=args.encoding)
@@ -349,17 +325,13 @@ def cmd_drop_same_char(args: argparse.Namespace) -> int:
     if not path.is_file():
         err(f"File not found: {path}")
         return 1
-
     with path.open("r", encoding=args.encoding) as f:
         lines = f.readlines()
-
     kept = [ln for ln in lines if not _is_same_char_line(ln)]
     removed = len(lines) - len(kept)
-
     if args.dry_run:
         info(f"[DRY RUN] Would remove {removed} same-character line(s) from {path.name}.")
         return 0
-
     with path.open("w", encoding=args.encoding) as f:
         f.writelines(kept)
     info(f"Removed {removed} same-character line(s) from {path.name}.")
@@ -371,17 +343,14 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
     if not path.is_file():
         err(f"File not found: {path}")
         return 1
-
     try:
         data = json.loads(path.read_text(encoding=args.encoding))
     except json.JSONDecodeError as e:
         err(f"Invalid JSON in {path}: {e}")
         return 1
-
     if not isinstance(data, list):
         err("Top-level JSON value must be a list.")
         return 1
-
     seen: set = set()
     unique: list[Any] = []
     for item in data:
@@ -397,7 +366,6 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
             continue
         seen.add(dedupe_key)
         unique.append(item)
-
     if args.sort_by:
 
         def sort_key(x: Any) -> str:
@@ -407,11 +375,9 @@ def cmd_dedupe_json(args: argparse.Namespace) -> int:
             return ""
 
         unique.sort(key=sort_key)
-
     if args.dry_run:
         info(f"[DRY RUN] {len(data)} → {len(unique)} entries (would remove {len(data) - len(unique)}).")
         return 0
-
     path.write_text(
         json.dumps(unique, indent=args.indent, ensure_ascii=False),
         encoding=args.encoding,
@@ -438,7 +404,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("analyze", help="Show line statistics for a text file")
     p.add_argument("file", help="Text file to analyze")
     p.add_argument(
@@ -447,7 +412,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File encoding (default: {DEFAULT_ENCODING})",
     )
     p.set_defaults(func=cmd_analyze)
-
     p = sub.add_parser("sort-dedupe", help="Sort and/or remove duplicate lines in a text file")
     p.add_argument("file", help="Input file")
     p.add_argument("-o", "--output", default=None, help="Output file (default: overwrite input)")
@@ -518,7 +482,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File encoding (default: {DEFAULT_ENCODING})",
     )
     p.set_defaults(func=cmd_sort_dedupe)
-
     p = sub.add_parser("dedupe-seq", help="Remove sequential (adjacent) duplicate lines")
     p.add_argument("file", help="Input file")
     p.add_argument(
@@ -545,7 +508,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File encoding (default: {DEFAULT_ENCODING})",
     )
     p.set_defaults(func=cmd_dedupe_seq)
-
     p = sub.add_parser("drop-same-char", help="Remove lines made of a single repeated character")
     p.add_argument("file", help="Input file")
     p.add_argument("--dry-run", action="store_true", help="Preview only — do not modify the file")
@@ -555,7 +517,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File encoding (default: {DEFAULT_ENCODING})",
     )
     p.set_defaults(func=cmd_drop_same_char)
-
     p = sub.add_parser("dedupe-json", help="Deduplicate a JSON list of dicts")
     p.add_argument("file", help="JSON file containing a list")
     p.add_argument(
@@ -582,7 +543,6 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"File encoding (default: {DEFAULT_ENCODING})",
     )
     p.set_defaults(func=cmd_dedupe_json)
-
     return parser
 
 

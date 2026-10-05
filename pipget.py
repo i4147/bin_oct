@@ -18,7 +18,6 @@ Version pinning --------------- Each argument / line may be either ``name`` or `
 When a version is pinned we filter the mirror's file list down to entries whose *normalised* filename starts with ``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before applying the usual sdist → pure-wheel → skip priority."""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import contextlib
@@ -28,7 +27,6 @@ import tarfile
 import time
 import zipfile
 from pathlib import Path
-
 import httpx
 from bs4 import BeautifulSoup
 from dh import cprint
@@ -38,20 +36,15 @@ MIRRORS = {
     "pypi": "https://pypi.org/simple",
     "tsinghua": "https://pypi.tuna.tsinghua.edu.cn/simple",
 }
-
 DEFAULT_MIRROR = "pypi"
-
 PAGE_TIMEOUT = 30.0
 DOWNLOAD_TIMEOUT = 120.0
-
 DOWNLOAD_DIR = Path.cwd()
 MAX_RETRIES = 2
 RETRY_DELAY = 2
 DEFAULT_CONCURRENCY = 4
 CHUNK_SIZE = 32768
-
 MAX_FILE_SIZE = 20 * 1024 * 1024
-
 SDIST_EXTENSIONS = (
     ".tar.gz",
     ".zip",
@@ -59,17 +52,14 @@ SDIST_EXTENSIONS = (
     ".tar.xz",
     ".tgz",
 )
-
 TAR_EXTENSIONS = (".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tbz2", ".tbz")
 ZIP_EXTENSIONS = (".zip", ".whl")
-
 WHEEL_PLATFORM_RE = re.compile(
     r"-(cp\d+|pp\d+|py\d+)"
     r"(-(cp\d+|pp\d+|py\d+))?"
     r"-(manylinux|musllinux|win|macosx|linux|darwin)",
     re.IGNORECASE,
 )
-
 ARCH_TAGS = [
     "win32",
     "win_amd64",
@@ -117,9 +107,7 @@ ARCH_TAGS = [
     "32",
     "64",
 ]
-
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
 _PRINT_LOCK = asyncio.Lock()
 
 
@@ -174,7 +162,6 @@ def _validate_tar(path: Path) -> tuple:
                 f = tf.extractfile(member)
                 if f is None:
                     continue
-
                 while True:
                     chunk = f.read(CHUNK_SIZE)
                     if not chunk:
@@ -208,14 +195,13 @@ def select_best_url(links: list, pkg_name: str, version=None):
     sdist_candidates: list = []
     pure_wheel_candidates: list = []
     arch_skipped: list = []
-
     if version:
         prefix = f"{_norm_sep(pkg_name)}_{_norm_sep(version)}"
 
         def version_match(filename: str) -> bool:
             fn = _norm_sep(filename)
-
             return fn.startswith(prefix + "_") or fn == prefix
+
     else:
 
         def version_match(filename: str) -> bool:
@@ -225,13 +211,10 @@ def select_best_url(links: list, pkg_name: str, version=None):
         href = link.get("href", "").strip()
         if not href:
             continue
-
         url = href.split("#")[0]
         filename = link.get_text().strip() or url.split("/")[-1]
-
         if not version_match(filename):
             continue
-
         if is_windows_url(url):
             continue
         if has_arch_tag(url):
@@ -242,7 +225,6 @@ def select_best_url(links: list, pkg_name: str, version=None):
             continue
         if is_pure_wheel(url):
             pure_wheel_candidates.append((url, filename))
-
     if sdist_candidates:
         url, filename = sdist_candidates[-1]
         return (url, filename, "download")
@@ -257,13 +239,11 @@ def select_best_url(links: list, pkg_name: str, version=None):
 
 def find_existing_package(pkg_name: str, version=None) -> bool:
     normalized = _norm_sep(pkg_name)
-
     if version:
         prefix = f"{normalized}_{_norm_sep(version)}"
         pattern = re.compile(r"^" + re.escape(prefix) + r"(?:_|$)", re.IGNORECASE)
     else:
         pattern = re.compile(r"^" + re.escape(normalized) + r"_v?\d", re.IGNORECASE)
-
     for f in DOWNLOAD_DIR.iterdir():
         if not f.is_file() or f.stat().st_size == 0:
             continue
@@ -283,13 +263,11 @@ async def fetch_package_page(
         url = f"{mirror_base.rstrip('/')}/{pkg_name}/"
     else:
         url = f"{mirror_base.rstrip('/')}/{pkg_name}"
-
     try:
         r = await client.get(url, timeout=PAGE_TIMEOUT)
     except httpx.HTTPError as e:
         print(f"[{pkg_name}]  Network error: {e}")
         return ""
-
     if r.status_code != 200:
         if r.status_code == 402:
             print(f"[{pkg_name}]  HTTP 402: Payment Required")
@@ -302,7 +280,6 @@ async def fetch_package_page(
         else:
             print(f"[{pkg_name}]  HTTP {r.status_code}")
         return ""
-
     return r.text
 
 
@@ -315,16 +292,12 @@ async def download_file(
 ) -> bool:
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     output_path = DOWNLOAD_DIR / filename
-
     if output_path.exists() and output_path.stat().st_size > 0:
         return True
-
     print(f"[{pkg_name}]  Downloading: {filename}")
-
     headers = {"Accept": "*/*", "Accept-Language": "en-US,en;q=0.5"}
     if referer:
         headers["Referer"] = referer
-
     try:
         async with client.stream("GET", url, headers=headers, timeout=DOWNLOAD_TIMEOUT) as r:
             if r.status_code != 200:
@@ -339,49 +312,38 @@ async def download_file(
                 else:
                     print(f"[{pkg_name}]  HTTP {r.status_code}")
                 return False
-
             try:
                 total = int(r.headers.get("content-length", "0") or 0)
             except ValueError:
                 total = 0
-
             if total > MAX_FILE_SIZE:
                 raise FileTooLarge(total)
-
             downloaded = 0
             next_milestone = 25
-
             with open(output_path, "wb") as f:
                 async for chunk in r.aiter_bytes(chunk_size=CHUNK_SIZE):
                     downloaded += len(chunk)
-
                     if downloaded > MAX_FILE_SIZE:
                         raise FileTooLarge(downloaded)
-
                     f.write(chunk)
-
                     if total > 0:
                         pct = downloaded * 100 // total
                         if pct >= next_milestone:
                             async with _PRINT_LOCK:
                                 cprint(f"[{pkg_name}]  Progress: {pct}% ({downloaded:,}/{total:,} bytes)")
                             next_milestone = (pct // 25 + 1) * 25
-
         ok, msg = await asyncio.to_thread(validate_archive, output_path, filename)
         if not ok:
             print(f"[{pkg_name}]  Integrity check failed: {msg}")
             with contextlib.suppress(OSError):
                 output_path.unlink()
             return False
-
         return True
-
     except FileTooLarge:
         if output_path.exists():
             with contextlib.suppress(OSError):
                 output_path.unlink()
         raise
-
     except httpx.HTTPError as e:
         print(f"[{pkg_name}]  Network error: {e}")
         if output_path.exists():
@@ -418,17 +380,14 @@ async def process_package(
 ) -> tuple:
     pkg_name, version = parse_package_spec(spec)
     label = f"{pkg_name}=={version}" if version else pkg_name
-
     async with semaphore:
         try:
             if find_existing_package(pkg_name, version):
                 print(f"[{label}]  Already exists, skipping")
                 return (spec, "exists")
-
             html = await fetch_package_page(client, pkg_name, mirror_base, is_simple_index)
             if not html:
                 return (spec, "failed")
-
             info = None
             try:
                 soup = BeautifulSoup(html, "html.parser")
@@ -438,32 +397,25 @@ async def process_package(
             except Exception as e:
                 print(f"[{label}]  Parse error: {e}")
                 return (spec, "failed")
-
             if not info:
                 if version:
                     print(f"[{label}]  Version not found on mirror")
                 else:
                     print(f"[{label}]  No suitable file found on mirror")
                 return (spec, "failed")
-
             url, filename, status = info
-
             if status == "skip":
                 print(f"[{label}]  Skipped (arch-specific only): {filename}")
                 return (spec, "skipped")
-
             print(f"[{label}]  URL: {url}")
-
             try:
                 ok = await download_file_with_retry(client, url, filename, pkg_name=label)
                 return (spec, "ok" if ok else "failed")
-
             except FileTooLarge as e:
                 size_mib = e.size / (1024 * 1024)
                 cap_mib = MAX_FILE_SIZE / (1024 * 1024)
                 print(f"[{label}]  Skipped (size {size_mib:.2f} MiB > {cap_mib:.2f} MiB limit)")
                 return (spec, "too_large")
-
         except Exception as e:
             print(f"[{label}]  Error: {e}")
             return (spec, "failed")
@@ -474,7 +426,6 @@ def load_packages_from_file(file_path: str) -> list:
     if not path.is_file():
         print(f"Error: file not found: {file_path}", file=sys.stderr)
         sys.exit(1)
-
     packages = []
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -482,7 +433,6 @@ def load_packages_from_file(file_path: str) -> list:
                 line = raw_line.split("#", 1)[0].strip()
                 if not line:
                     continue
-
                 m = re.match(
                     r"^([A-Za-z0-9_.\-]+(?:\s*==\s*[A-Za-z0-9_.\-+!]+)?)",
                     line,
@@ -492,13 +442,11 @@ def load_packages_from_file(file_path: str) -> list:
     except OSError as e:
         print(f"Error reading file {file_path}: {e}", file=sys.stderr)
         sys.exit(1)
-
     return packages
 
 
 async def run(args) -> int:
     global DOWNLOAD_DIR, MAX_FILE_SIZE
-
     if args.pypi:
         mirror_key = "pypi"
     elif args.china:
@@ -507,11 +455,8 @@ async def run(args) -> int:
         mirror_key = args.mirror
     else:
         mirror_key = DEFAULT_MIRROR
-
     mirror_base = MIRRORS[mirror_key]
-
     is_simple_index = mirror_key in ("pypi", "tsinghua")
-
     if args.directory:
         DOWNLOAD_DIR = Path(args.directory).expanduser().resolve()
         if not DOWNLOAD_DIR.is_dir():
@@ -520,19 +465,15 @@ async def run(args) -> int:
                 file=sys.stderr,
             )
             return 1
-
     if args.max_size is not None:
         MAX_FILE_SIZE = int(args.max_size * 1024 * 1024)
-
     packages = list(args.packages)
     if args.file:
         file_pkgs = load_packages_from_file(args.file)
         print(f"Loaded {len(file_pkgs)} package(s) from {args.file}")
         packages.extend(file_pkgs)
-
     if not packages:
         return 2
-
     seen, unique = set(), []
     for p in packages:
         key = p.lower()
@@ -540,7 +481,6 @@ async def run(args) -> int:
             seen.add(key)
             unique.append(p)
     packages = unique
-
     concurrency = max(1, args.jobs)
     print(f"Mirror:        {mirror_key} ({mirror_base})")
     print(f"Download dir:  {DOWNLOAD_DIR}")
@@ -548,9 +488,7 @@ async def run(args) -> int:
     print(f"Size limit:    {MAX_FILE_SIZE / (1024 * 1024):.2f} MiB")
     print(f"Integrity:     enabled (tar + zip/wheel)")
     print(f"Processing {len(packages)} package(s)...\n")
-
     start_time = time.time()
-
     timeout = httpx.Timeout(
         connect=PAGE_TIMEOUT,
         read=DOWNLOAD_TIMEOUT,
@@ -562,7 +500,6 @@ async def run(args) -> int:
         max_keepalive_connections=concurrency,
     )
     semaphore = asyncio.Semaphore(concurrency)
-
     async with httpx.AsyncClient(
         timeout=timeout,
         follow_redirects=True,
@@ -574,13 +511,10 @@ async def run(args) -> int:
     ) as client:
         tasks = [process_package(client, pkg, mirror_base, is_simple_index, semaphore) for pkg in packages]
         results = await asyncio.gather(*tasks, return_exceptions=False)
-
     elapsed = time.time() - start_time
-
     buckets = {"ok": [], "exists": [], "skipped": [], "too_large": [], "failed": []}
     for pkg, status in results:
         buckets.setdefault(status, []).append(pkg)
-
     if buckets["ok"]:
         print("\nSuccessfully downloaded:")
         for pkg in buckets["ok"]:
@@ -601,7 +535,6 @@ async def run(args) -> int:
         print("\nFailed to download:")
         for pkg in buckets["failed"]:
             print(f"  ✗ {pkg}")
-
     print(
         f"\nDone in {elapsed:.1f}s — "
         f"{len(buckets['ok'])} downloaded, "
@@ -610,7 +543,6 @@ async def run(args) -> int:
         f"{len(buckets['too_large'])} skipped (size), "
         f"{len(buckets['failed'])} failed"
     )
-
     return 1 if buckets["failed"] else 0
 
 
@@ -667,7 +599,6 @@ def main():
         metavar="MiB",
         help=(f"Skip files larger than this (in MiB). Default: {MAX_FILE_SIZE // (1024 * 1024)}."),
     )
-
     mirror_group = parser.add_mutually_exclusive_group()
     mirror_group.add_argument(
         "-p",
@@ -687,19 +618,15 @@ def main():
         choices=list(MIRRORS.keys()),
         help="Explicitly choose a mirror by name.",
     )
-
     args = parser.parse_args()
-
     if not args.packages and not args.file:
         parser.print_help()
         sys.exit(1)
-
     try:
         exit_code = asyncio.run(run(args))
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
         sys.exit(130)
-
     if exit_code == 2:
         parser.print_help()
         sys.exit(1)

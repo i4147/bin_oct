@@ -7,19 +7,16 @@ A ``--dry-run`` mode lists candidate files without modifying them, and ``--inclu
 Example: python remove_comments.py /path/to/project --verbose"""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 from dh import is_binary
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
 EXCLUDE_EXTENSIONS: Final[set[str]] = {
     ".pyc",
     ".pyo",
@@ -67,7 +64,6 @@ EXCLUDE_EXTENSIONS: Final[set[str]] = {
     ".min.js",
     ".min.css",
 }
-
 DEFAULT_EXCLUDE_DIRS: Final[set[str]] = {
     ".git",
     "__pycache__",
@@ -85,10 +81,8 @@ DEFAULT_EXCLUDE_DIRS: Final[set[str]] = {
     "vendor",
     "bower_components",
 }
-
 MAX_FILE_SIZE_BYTES: Final[int] = 10 * 1024 * 1024
 POOL_SIZE: Final[int] = 8
-
 ProcessResult = tuple[Path, int, str | None, bool]
 
 
@@ -98,7 +92,6 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
     removed_count: int = 0
     in_multiline_string: bool = False
     string_delimiter: str | None = None
-
     for line in lines:
         if in_multiline_string:
             modified_lines.append(line)
@@ -106,7 +99,6 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
                 in_multiline_string = False
                 string_delimiter = None
             continue
-
         if '"""' in line or "'''" in line:
             for delim in ('"""', "'''"):
                 if delim in line:
@@ -116,17 +108,14 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
                     modified_lines.append(line)
                     break
             continue
-
         stripped: str = line.strip()
         if not stripped:
             modified_lines.append(line)
             continue
-
         if stripped.startswith("#"):
             removed_count += 1
             modified_lines.append("")
             continue
-
         quote_char: str | None = None
         comment_pos: int = -1
         for i, char in enumerate(line):
@@ -138,7 +127,6 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
             elif char == "#" and quote_char is None:
                 comment_pos = i
                 break
-
         if comment_pos != -1:
             before_comment: str = line[:comment_pos].strip()
             removed_count += 1
@@ -148,7 +136,6 @@ def remove_comments_from_content(content: str) -> tuple[str, int]:
                 modified_lines.append("")
         else:
             modified_lines.append(line)
-
     return "\n".join(modified_lines), removed_count
 
 
@@ -172,15 +159,12 @@ def process_file(path: Path) -> ProcessResult:
     try:
         if is_binary(str(path)):
             return path, 0, None, True
-
         original_content: str = path.read_text(encoding="utf-8")
         modified_content: str
         removed_count: int
         modified_content, removed_count = remove_comments_from_content(original_content)
-
         if removed_count > 0:
             path.write_text(modified_content, encoding="utf-8")
-
         return path, removed_count, None, False
     except UnicodeDecodeError:
         return path, 0, "Unable to read as text file (encoding issue)", True
@@ -196,7 +180,6 @@ def find_target_files(
 ) -> list[Path]:
     if exclude_dirs is None:
         exclude_dirs = set(DEFAULT_EXCLUDE_DIRS)
-
     target_files: list[Path] = []
     for path in root_dir.rglob("*"):
         if not path.is_file():
@@ -213,7 +196,6 @@ def find_target_files(
         except OSError:
             continue
         target_files.append(path)
-
     return target_files
 
 
@@ -264,14 +246,12 @@ def _iter_results(
     files_with_errors: int = 0
     binary_files: int = 0
     completed: int = 0
-
     for path, removed, error, was_binary in results:
         completed += 1
         try:
             rel: Path = path.relative_to(root_dir)
         except ValueError:
             rel = path
-
         if was_binary:
             binary_files += 1
             if verbose:
@@ -291,39 +271,31 @@ def _iter_results(
             files_changed += 1
         elif verbose:
             logger.debug("[{}/{}] No changes: {}", completed, total, rel)
-
     return total_removed, files_changed, files_with_errors, binary_files, completed
 
 
 def main() -> int:
     parser: argparse.ArgumentParser = _build_parser()
     args: argparse.Namespace = parser.parse_args()
-
     root_dir: Path = Path(args.directory).resolve()
     if not root_dir.exists():
         logger.error("Directory '{}' does not exist", root_dir)
         return 1
-
     exclude_dirs: set[str] = set(DEFAULT_EXCLUDE_DIRS)
     if args.exclude_dirs:
         exclude_dirs.update(args.exclude_dirs)
-
     print("Scanning directory: {}", root_dir)
     print("Finding non-binary files...")
-
     target_files: list[Path] = find_target_files(
         root_dir,
         include_hidden=bool(args.include_hidden),
         exclude_dirs=exclude_dirs,
         ignore_extensions=not bool(args.no_ignore_extensions),
     )
-
     if not target_files:
         print("No files found to process.")
         return 0
-
     print("Found {} file(s) to check", len(target_files))
-
     if args.dry_run:
         print("[Dry Run] Would check these files:")
         for f in sorted(target_files)[:20]:
@@ -331,14 +303,11 @@ def main() -> int:
         if len(target_files) > 20:
             print("  ... and {} more files", len(target_files) - 20)
         return 0
-
     total_removed: int = 0
     files_changed: int = 0
     files_with_errors: int = 0
     binary_files: int = 0
-
     print("Processing files in parallel with {} workers...", POOL_SIZE)
-
     results: list[ProcessResult] = []
     try:
         with Pool(processes=POOL_SIZE) as pool:
@@ -352,7 +321,6 @@ def main() -> int:
     except KeyboardInterrupt:
         logger.warning("Interrupted by user")
         return 130
-
     (
         total_removed,
         files_changed,
@@ -361,7 +329,6 @@ def main() -> int:
         _completed,
     ) = _iter_results(results, len(target_files), root_dir, bool(args.verbose))
     files_with_errors += files_with_errors_extra
-
     print("{}", "=" * 40)
     print("Summary:")
     print("  Files scanned: {}", len(target_files))
@@ -371,7 +338,6 @@ def main() -> int:
     if files_with_errors > 0:
         print("  Files with errors: {}", files_with_errors)
     print("{}", "=" * 40)
-
     return 0
 
 

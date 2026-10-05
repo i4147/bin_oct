@@ -4,7 +4,6 @@ The script should resolve the current directory as the target, change the workin
 It should invoke the subprocess without raising an exception on failure (using check=False), so any errors from the packing process are silently ignored rather than propagated."""
 
 from __future__ import annotations
-
 import os
 import subprocess
 from pathlib import Path

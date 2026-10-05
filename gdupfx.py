@@ -3,7 +3,6 @@
 Requirements: pip install xxhash Usage: python finder.py # Auto-scans current dir in DRY-RUN mode python finder.py /path/to/dir # Scans custom directory (DRY-RUN) python finder.py -r # Actually removes duplicate files python finder.py -l # Lists duplicate groups in detail python finder.py -b # Runs xxHash vs hashlib benchmark comparison"""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import os
@@ -23,11 +22,9 @@ except ImportError:
         file=sys.stderr,
     )
     sys.exit(1)
-
 CHUNK_SIZE = 128 * 1024
 PARTIAL_SIZE = 8 * 1024
 MAX_WORKERS = min(32, (os.cpu_count() or 1) + 4)
-
 DEFAULT_SKIP_DIRS: set[str] = {
     ".git",
     ".svn",
@@ -83,7 +80,6 @@ def get_full_hashlib_md5(filepath: str) -> tuple[str, Optional[str]]:
         with open(filepath, "rb") as f:
             if hasattr(hashlib, "file_digest"):
                 return filepath, hashlib.file_digest(f, "md5").hexdigest()
-
             hasher = hashlib.md5()
             while chunk := f.read(CHUNK_SIZE):
                 hasher.update(chunk)
@@ -105,10 +101,8 @@ class Finder:
     def scan_and_find_duplicates(self) -> list[str]:
         target_path = self.path.expanduser().resolve()
         file_sizes: dict[int, list[str]] = defaultdict(list)
-
         print(f"Scanning '{target_path}'...", end="", flush=True)
         dirs = [str(target_path)]
-
         while dirs:
             curr_dir = dirs.pop()
             try:
@@ -117,7 +111,6 @@ class Finder:
                         try:
                             if entry.is_symlink():
                                 continue
-
                             if entry.is_dir(follow_symlinks=False):
                                 if entry.name in DEFAULT_SKIP_DIRS:
                                     continue
@@ -132,27 +125,20 @@ class Finder:
                             continue
             except (OSError, PermissionError):
                 continue
-
         print(" Done.")
-
         candidate_groups = [(size, paths) for size, paths in file_sizes.items() if len(paths) > 1]
-
         if not candidate_groups:
             self.print_summary()
             return []
-
         all_candidate_paths = [p for _, paths in candidate_groups for p in paths]
         path_to_size = {path: size for size, paths in candidate_groups for path in paths}
-
         partial_hash_groups: dict[tuple[int, str], list[str]] = defaultdict(list)
         total_candidates = len(all_candidate_paths)
-
         print(
             f"Running partial xxHash check ({total_candidates} candidates)...",
             end="",
             flush=True,
         )
-
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             futures = [executor.submit(get_partial_hash, path) for path in all_candidate_paths]
             for future in as_completed(futures):
@@ -160,42 +146,33 @@ class Finder:
                 if p_hash:
                     size = path_to_size[filepath]
                     partial_hash_groups[(size, p_hash)].append(filepath)
-
         print(" Done.")
-
         full_hash_queue: list[tuple[int, list[str]]] = [
             (size, paths) for (size, _), paths in partial_hash_groups.items() if len(paths) > 1
         ]
-
         all_full_candidates = [p for _, paths in full_hash_queue for p in paths]
-
         if all_full_candidates:
             full_path_to_size = {path: size for size, paths in full_hash_queue for path in paths}
             full_hash_groups: dict[str, list[str]] = defaultdict(list)
             total_full = len(all_full_candidates)
-
             print(
                 f"Running full xxHash verification ({total_full} candidates)...",
                 end="",
                 flush=True,
             )
-
             with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 futures = [executor.submit(get_full_hash, path) for path in all_full_candidates]
                 for future in as_completed(futures):
                     filepath, f_hash = future.result()
                     if f_hash:
                         full_hash_groups[f_hash].append(filepath)
-
             print(" Done.")
-
             for f_hash, paths in full_hash_groups.items():
                 if len(paths) > 1:
                     self.same_content[f_hash] = paths
                     sample_size = full_path_to_size[paths[0]]
                     self.dup_count += len(paths) - 1
                     self.dup_size += (len(paths) - 1) * sample_size
-
         self.print_summary()
         return all_full_candidates
 
@@ -208,7 +185,6 @@ class Finder:
         if not self.same_content:
             print("\nNo duplicates found to list.")
             return
-
         print("\n--- Duplicated File Groups ---")
         for group_idx, (_, filenames) in enumerate(self.same_content.items(), 1):
             sorted_files = sorted(filenames)
@@ -221,11 +197,9 @@ class Finder:
         if not self.same_content:
             print("\nNo duplicates found to process.")
             return
-
         dry_run = not remove
         status_label = "[REMOVING]" if remove else "[DRY-RUN]"
         print(f"\n{status_label} Processing duplicate files...")
-
         removed_count = 0
         for filenames in self.same_content.values():
             sorted_files = sorted(filenames)
@@ -239,7 +213,6 @@ class Finder:
                         removed_count += 1
                     except OSError as err:
                         print(f"  Failed to delete {target_file}: {err}")
-
         if dry_run:
             print("\n[DRY-RUN COMPLETE] No files were deleted. Pass '-r' or '--remove' to execute removal.")
         else:
@@ -249,11 +222,9 @@ class Finder:
         sample_files = candidate_files
         if not sample_files:
             sample_files = [p for p, s in self.all_files if s > 0][:100]
-
         if not sample_files:
             print("\n[BENCHMARK] No suitable non-empty files found for benchmarking.")
             return
-
         total_bytes = 0
         valid_files = []
         for path in sample_files:
@@ -263,28 +234,22 @@ class Finder:
                 valid_files.append(path)
             except OSError:
                 continue
-
         if not valid_files:
             print("\n[BENCHMARK] Could not access sample files for benchmarking.")
             return
-
         print("\n=== BENCHMARK COMPARISON ===")
         print(f"Testing on {len(valid_files)} file(s) ({format_size(total_bytes)} total data)...")
-
         t0 = time.perf_counter()
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             list(executor.map(get_full_hash, valid_files))
         t_xxhash = time.perf_counter() - t0
         mb_xxhash = (total_bytes / (1024 * 1024)) / (t_xxhash or 0.00001)
-
         t0 = time.perf_counter()
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
             list(executor.map(get_full_hashlib_md5, valid_files))
         t_md5 = time.perf_counter() - t0
         mb_md5 = (total_bytes / (1024 * 1024)) / (t_md5 or 0.00001)
-
         speedup = (t_md5 / t_xxhash) if t_xxhash > 0 else 1.0
-
         print(f"\n  Hasher Engine     Time Elapsed    Throughput (MB/s)")
         print(f"  ---------------------------------------------------")
         print(f"  xxHash (xxh64)    {t_xxhash:8.4f}s       {mb_xxhash:10.2f} MB/s")
@@ -322,21 +287,15 @@ def main():
         action="store_true",
         help="Run speed benchmark comparing xxHash against hashlib.",
     )
-
     args = parser.parse_args()
-
     if not args.path.is_dir():
         print(f"Error: Path '{args.path}' is not a valid directory.", file=sys.stderr)
         sys.exit(1)
-
     finder = Finder(args.path)
     candidates = finder.scan_and_find_duplicates()
-
     if args.list:
         finder.list_duplicates()
-
     finder.process_deletions(remove=args.remove)
-
     if args.benchmark:
         finder.run_benchmark(candidates)
 

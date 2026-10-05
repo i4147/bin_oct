@@ -2,7 +2,6 @@
 """Replace letters with NATO phonetic alphabet words."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
@@ -48,7 +47,6 @@ def main() -> int:
     group.add_argument("text", nargs="?", help="text to convert")
     group.add_argument("-f", "--file", type=Path, help="file to read text from")
     args = parser.parse_args()
-
     if args.file is not None:
         try:
             content = args.file.read_text(encoding="utf-8")
@@ -57,7 +55,6 @@ def main() -> int:
             return 1
     else:
         content = args.text
-
     print(to_nato(content))
     return 0
 

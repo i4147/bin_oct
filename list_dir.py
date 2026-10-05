@@ -7,7 +7,6 @@ Unifies l.py, lll.py, lst.py, lt.py, li.py, ll.py, pyls.py and pyeza.py behind o
 Mapping of original scripts --------------------------- cls.py -> python listpy.py stems dirz.py -> python listpy.py dirs l.py -> python listpy.py ls -R --sort-by mtime --exclude-cache lll.py -> python listpy.py ls -R --sort-by mtime --reverse --exclude-cache lst.py -> python listpy.py ls --sort-by mtime lt.py -> python listpy.py ls --sort-by ctime --reverse --files-first li.py -> python listpy.py ls --layout size-first --sort-by size --exclude-cache ll.py -> python listpy.py ls --sort-by size --reverse --files-first pyls.py -> python listpy.py ls [POSIX-like flags: -l -a -R -r -t -S -h] pyeza.py -> python listpy.py ls [--long|--tree|--json|--git|--icons|-R]"""
 
 from __future__ import annotations
-
 import argparse
 import datetime as dt
 import json as jsonlib
@@ -24,12 +23,10 @@ DEFAULT_EXCLUDES: frozenset[str] = frozenset({".mypy_cache", ".ruff_cache", ".gi
 ICON_IMAGE_EXTS: frozenset[str] = frozenset({"png", "jpg", "jpeg", "gif", "webp"})
 ICON_CODE_EXTS: frozenset[str] = frozenset({"py", "sh"})
 ICON_ARCHIVE_EXTS: frozenset[str] = frozenset({"zip", "tar", "gz", "bz2", "xz"})
-
 RESET: str = "\x1b[0m"
 C_DIR: str = "\x1b[1;34m"
 C_LINK: str = "\x1b[36m"
 C_EXEC: str = "\x1b[1;32m"
-
 ANSI_RE: re.Pattern[str] = re.compile(r"\x1b\[[0-9;]*m")
 
 
@@ -309,16 +306,14 @@ def render_json(entries: list[Entry], opts: LsOptions) -> None:
             kind = "link"
         else:
             kind = "file"
-        out.append(
-            {
-                "name": e.name,
-                "size": e.st.st_size,
-                "mode": statlib.filemode(m),
-                "mtime": e.st.st_mtime,
-                "git": e.git,
-                "type": kind,
-            }
-        )
+        out.append({
+            "name": e.name,
+            "size": e.st.st_size,
+            "mode": statlib.filemode(m),
+            "mtime": e.st.st_mtime,
+            "git": e.git,
+            "type": kind,
+        })
     print(jsonlib.dumps(out, indent=2))
 
 
@@ -501,14 +496,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_stems = sub.add_parser("stems", help="Print file stems, truncated at the first '-'")
     p_stems.add_argument("directory", nargs="?", default=".")
     p_stems.add_argument("--sep", default="   ", help="Separator (default: 3 spaces)")
-
     p_dirs = sub.add_parser("dirs", help="Print directory names prefixed with '-'")
     p_dirs.add_argument("directory", nargs="?", default=".")
-
     p_ls = sub.add_parser("ls", help="List directory contents")
     p_ls.add_argument("paths", nargs="*", default=None)
     p_ls.add_argument(
@@ -551,7 +543,6 @@ def build_parser() -> argparse.ArgumentParser:
         default="auto",
     )
     p_ls.add_argument("--time-format", default="%H:%M")
-
     return parser
 
 

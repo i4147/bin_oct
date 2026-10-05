@@ -4,7 +4,6 @@ A single-file, dependency-light re-implementation of the parts of ripgrep that m
 Highlights over the previous iteration: * -t/--type presets (py, md, json, log, ...) * -A/-B/-C context lines, with '--' separators between groups * -v/--invert-match * --stats (files searched / matched / matches / elapsed) * --no-messages, otherwise unreadable files report to stderr * -M/--max-count N * -q/--quiet (exit code only) * --json (one JSON object per match) * .gitignore / .ignore awareness with --no-ignore opt-out * --files (list candidates, do not search) * -o/--only-matching and --replace REPL (with backrefs) * --multiline (regex over whole file, DOTALL) * --encoding ENC * -L/--follow symlinks with cycle detection * --sort path|none * --heading / --no-heading * --max-depth N, --exclude-dir NAME * --files-without-match * per-directory filename colors * ProcessPoolExecutor + as_completed (streaming results)"""
 
 from __future__ import annotations
-
 import argparse
 import bisect
 import fnmatch
@@ -17,16 +16,13 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
-
 from dh import is_binary
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
 logger.remove()
 logger.add("/data/data/com.termux/files/home/tmp/apps/pyrg.log")
-
 IGNORED_DIRS: set[str] = {
     ".git",
     ".hg",
@@ -42,7 +38,6 @@ IGNORED_DIRS: set[str] = {
     ".idea",
     ".vscode",
 }
-
 TYPE_PRESETS: dict[str, set[str]] = {
     "py": {".py", ".pyi", ".pyx", ".pyw"},
     "md": {".md", ".markdown", ".mdx"},
@@ -66,9 +61,7 @@ TYPE_PRESETS: dict[str, set[str]] = {
     "xml": {".xml"},
     "csv": {".csv", ".tsv"},
 }
-
 DEFAULT_WORKERS = 8
-
 ANSI_RESET = "\x1b[0m"
 ANSI_BOLD = "\x1b[1m"
 ANSI_BLUE = "\x1b[94m"
@@ -76,7 +69,6 @@ ANSI_CYAN = "\x1b[5;96m"
 ANSI_GREEN = "\x1b[32m"
 ANSI_YELLOW = "\x1b[33m"
 ANSI_MAGENTA = "\x1b[35m"
-
 _PATH_PALETTE = (
     ANSI_CYAN,
     ANSI_GREEN,
@@ -255,7 +247,6 @@ class IgnoreMatcher:
         except ValueError:
             return False
         parts = rel.parts
-
         for i in range(1, len(parts) + 1):
             is_dir = i < len(parts)
             ignored = False
@@ -307,17 +298,14 @@ def _walk_dir(
                 continue
             if is_symlink and not follow_symlinks:
                 continue
-
             name = entry.name
             if not search_hidden and name.startswith("."):
                 continue
-
             try:
                 is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
                 is_file = entry.is_file(follow_symlinks=follow_symlinks)
             except OSError:
                 continue
-
             if is_dir:
                 if name in exclude_dirs or name in IGNORED_DIRS:
                     continue
@@ -355,7 +343,6 @@ def get_files(
     follow_symlinks: bool,
     ignore_matcher: IgnoreMatcher | None,
 ) -> Iterator[Path]:
-
     def _post_filter(p: Path) -> bool:
         if extensions and p.suffix.lower() not in extensions:
             return False
@@ -460,7 +447,6 @@ def _build_groups(
         end = min(len(lines), lineno + context_after)
         for c in range(start, end + 1):
             context_set.add(c)
-
     groups: list[list[OutputLine]] = []
     current: list[OutputLine] = []
     prev: int | None = None
@@ -503,12 +489,9 @@ def _process_lines(
         hits.append((idx + 1, spans))
         if max_count and len(hits) >= max_count:
             break
-
     if not hits:
         return FileResult(path=rel_path)
-
     match_count = len(hits)
-
     if only_matching:
         current: list[OutputLine] = []
         for lineno, spans in hits:
@@ -536,7 +519,6 @@ def _process_lines(
             groups=[current] if current else [],
             match_count=match_count,
         )
-
     match_lines: dict[int, tuple[str, list[tuple[int, int]]]] = {}
     for lineno, spans in hits:
         text = lines[lineno - 1]
@@ -549,7 +531,6 @@ def _process_lines(
             match_lines[lineno] = (new_text, [])
         else:
             match_lines[lineno] = (text, spans)
-
     groups = _build_groups(lines, match_lines, context_before, context_after)
     return FileResult(path=rel_path, groups=groups, match_count=match_count)
 
@@ -593,10 +574,8 @@ def _process_multiline(
                 hits[li].append((0, len(line_text)))
         if max_count and len(order) >= max_count:
             break
-
     if not order:
         return FileResult(path=rel_path)
-
     match_lines: dict[int, tuple[str, list[tuple[int, int]]]] = {}
     for li in order:
         line_text = lines[li]
@@ -606,7 +585,6 @@ def _process_multiline(
             match_lines[li + 1] = (new_text, new_spans)
         else:
             match_lines[li + 1] = (line_text, spans)
-
     groups = _build_groups(lines, match_lines, context_before, context_after)
     return FileResult(path=rel_path, groups=groups, match_count=len(order))
 
@@ -648,14 +626,12 @@ def worker(job: dict[str, Any]) -> FileResult:
     encoding: str = job["encoding"]
     replace = job["replace"]
     only_matching: bool = job["only_matching"]
-
     path = Path(path_str)
     cwd = Path(cwd_str)
     try:
         rel_path = str(path.relative_to(cwd))
     except ValueError:
         rel_path = path_str
-
     compiled: re.Pattern[str] | None = None
     if regex_pattern is not None:
         flags = re.MULTILINE
@@ -667,13 +643,11 @@ def worker(job: dict[str, Any]) -> FileResult:
             compiled = re.compile(regex_pattern, flags)
         except re.error as ex:
             return FileResult(path=rel_path, error=f"invalid regex: {ex}")
-
     try:
         if is_binary(path):
             return FileResult(path=rel_path)
     except Exception:
         pass
-
     try:
         with path.open(encoding=encoding, errors="replace", newline="") as fh:
             text = fh.read()
@@ -681,7 +655,6 @@ def worker(job: dict[str, Any]) -> FileResult:
         return FileResult(path=rel_path, error=ex.strerror or str(ex))
     except Exception as ex:
         return FileResult(path=rel_path, error=f"{type(ex).__name__}: {ex}")
-
     try:
         if multiline and compiled is not None and not invert:
             return _process_multiline(
@@ -736,16 +709,13 @@ def emit_result(
     color: bool,
     heading: bool,
 ) -> None:
-
     if args.files_with_matches:
         _emit_path(result.path, out_fh, color)
         return
-
     # -c / --count
     if args.count:
         print(f"{result.path}:{result.match_count}", file=out_fh)
         return
-
     # --json
     if args.json:
         for group in result.groups:
@@ -766,7 +736,6 @@ def emit_result(
                     file=out_fh,
                 )
         return
-
     if heading:
         path_col = color_for_path(result.path, color)
         reset = ANSI_RESET if color else ""
@@ -774,7 +743,6 @@ def emit_result(
         indent = "  "
     else:
         indent = ""
-
     first_group = True
     for group in result.groups:
         if not first_group:
@@ -785,7 +753,6 @@ def emit_result(
                 body = _colorize_line(text, spans) if color and spans else text
             else:
                 body = text
-
             sep = ":" if is_match else "-"
             if heading:
                 prefix = indent
@@ -793,7 +760,6 @@ def emit_result(
                 pcol = color_for_path(result.path, color)
                 reset = ANSI_RESET if color else ""
                 prefix = f"{pcol}{result.path}{reset}{sep}"
-
             if args.line_number:
                 if color:
                     print(
@@ -811,7 +777,6 @@ def build_argparser() -> argparse.ArgumentParser:
         prog="pyrg",
         description="ripgrep-like recursive search in Python",
     )
-
     p.add_argument("pattern", nargs="?", help="Regex pattern (or use -r/--regexp)")
     p.add_argument(
         "-r",
@@ -835,7 +800,6 @@ def build_argparser() -> argparse.ArgumentParser:
         metavar="TYPE",
         help=f"Only search files matching a curated type preset. Known: {', '.join(sorted(TYPE_PRESETS))}",
     )
-
     p.add_argument("-i", "--ignore-case", action="store_true")
     p.add_argument("-F", "--fixed-strings", action="store_true")
     p.add_argument("-v", "--invert-match", action="store_true")
@@ -844,7 +808,6 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="Allow the pattern to span multiple lines (DOTALL)",
     )
-
     p.add_argument(
         "-o",
         "--only-matching",
@@ -856,7 +819,6 @@ def build_argparser() -> argparse.ArgumentParser:
         metavar="REPL",
         help="Replace matches with REPL in output (\\1 backrefs). Does NOT modify files.",
     )
-
     p.add_argument("-n", "--line-number", action="store_true", default=True)
     p.add_argument("--no-line-number", dest="line_number", action="store_false")
     p.add_argument("-l", "--files-with-matches", action="store_true")
@@ -881,7 +843,6 @@ def build_argparser() -> argparse.ArgumentParser:
         default=None,
         help="Write matches to FILE instead of stdout",
     )
-
     p.add_argument("-A", "--after-context", type=int, default=0, metavar="N")
     p.add_argument("-B", "--before-context", type=int, default=0, metavar="N")
     p.add_argument(
@@ -892,7 +853,6 @@ def build_argparser() -> argparse.ArgumentParser:
         metavar="N",
         help="Shorthand for -A N -B N",
     )
-
     p.add_argument("--hidden", action="store_true")
     p.add_argument("-g", "--glob", action="append")
     p.add_argument("-x", "--exclude", action="append")
@@ -925,7 +885,6 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Follow symlinks (with cycle detection)",
     )
     p.add_argument("--encoding", default="utf-8", metavar="ENC")
-
     p.add_argument(
         "--files",
         action="store_true",
@@ -941,7 +900,6 @@ def build_argparser() -> argparse.ArgumentParser:
         metavar="N",
         help="Number of worker processes",
     )
-
     p.add_argument(
         "paths",
         nargs="*",
@@ -954,10 +912,8 @@ def build_argparser() -> argparse.ArgumentParser:
 def _collect_files(args: argparse.Namespace) -> list[Path]:
     extensions = parse_extension_args(args.extensions)
     extensions |= resolve_type_presets(args.types)
-
     ignore_matcher = None if args.no_ignore else IgnoreMatcher()
     exclude_dirs = set(args.exclude_dir or [])
-
     return list(
         get_files(
             paths=args.paths,
@@ -1017,10 +973,8 @@ def _search_quiet(
         }
         for p in files
     ]
-
     if args.workers <= 1:
         return any(worker(j).match_count for j in jobs)
-
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
         futures = [ex.submit(worker, j) for j in jobs]
         for fut in as_completed(futures):
@@ -1038,14 +992,11 @@ def _search_quiet(
 def main(argv: list[str] | None = None) -> int:
     cwd = Path.cwd()
     args = build_argparser().parse_args(argv)
-
     if args.context is not None:
         args.after_context = args.context
         args.before_context = args.context
-
     if args.files:
         return _run_files_mode(args, cwd)
-
     pattern = args.pattern_e or args.pattern
     if not pattern:
         print(
@@ -1053,7 +1004,6 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
-
     regex_pattern: str | None
     fixed: str
     if args.fixed_strings:
@@ -1070,27 +1020,21 @@ def main(argv: list[str] | None = None) -> int:
         except re.error as ex:
             print(f"Invalid regex: {ex}", file=sys.stderr)
             return 2
-
     try:
         files = _collect_files(args)
     except ValueError as ex:
         print(str(ex), file=sys.stderr)
         return 2
-
     if args.sort == "path":
         files.sort(key=str)
-
     if not files:
         if not args.no_messages:
             print("pyrg: no files matched the search filters", file=sys.stderr)
         return 1
-
     out_fh, should_close = _open_output(args.out_file)
     color = _should_color(args, out_fh is sys.stdout) and not args.json
     heading = args.heading if args.heading is not None else color
-
     t0 = time.monotonic()
-
     if args.quiet:
         try:
             any_match = _search_quiet(files, cwd, regex_pattern, fixed, args)
@@ -1098,7 +1042,6 @@ def main(argv: list[str] | None = None) -> int:
             if should_close:
                 out_fh.close()
         return 0 if any_match else 1
-
     jobs = [
         {
             "path": str(p),
@@ -1117,7 +1060,6 @@ def main(argv: list[str] | None = None) -> int:
         }
         for p in files
     ]
-
     files_searched = 0
     files_matched = 0
     files_errored = 0
@@ -1164,7 +1106,6 @@ def main(argv: list[str] | None = None) -> int:
             out_fh.close()
             if args.out_file:
                 print(f"Results written to: {args.out_file}", file=sys.stderr)
-
     elapsed = time.monotonic() - t0
     if args.stats:
         parts = [
@@ -1176,7 +1117,6 @@ def main(argv: list[str] | None = None) -> int:
         if files_errored:
             parts.append(f"{files_errored} errors")
         print(", ".join(parts), file=sys.stderr)
-
     return 0 if any_match else 1
 
 

@@ -5,7 +5,6 @@ Reports only files that fail.
 Uses multiprocessing with 8 workers."""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import subprocess
 import sys
@@ -15,9 +14,7 @@ CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}
 HEADER_CPP_EXTS = {".hpp", ".hh", ".hxx"}
 HEADER_C_EXTS = {".h"}
-
 ALL_EXTS = CPP_EXTS | C_EXTS | HEADER_CPP_EXTS | HEADER_C_EXTS
-
 NUM_WORKERS = 8
 
 
@@ -36,7 +33,6 @@ def run(cmd, input_bytes=None):
 
 def check_file(path: Path):
     ext = path.suffix.lower()
-
     if ext in CPP_EXTS:
         cmd = [
             "clang++",
@@ -61,7 +57,6 @@ def check_file(path: Path):
         rc, out = run(cmd, input_bytes=include_line)
     else:
         return path, True, ""
-
     return path, rc == 0, out
 
 
@@ -73,7 +68,6 @@ def gather_files(paths):
             if p.is_file() and p.suffix.lower() in ALL_EXTS:
                 files.append(p)
         return files
-
     for arg in paths:
         p = Path(arg)
         if p.is_dir():
@@ -90,13 +84,10 @@ def gather_files(paths):
 def main():
     args = sys.argv[1:]
     files = gather_files(args)
-
     if not files:
         print("No C/C++/header files found.", file=sys.stderr)
         return 0
-
     print(f"Checking {len(files)} file(s) with {NUM_WORKERS} workers...", file=sys.stderr)
-
     failures = 0
     with mp.Pool(processes=NUM_WORKERS) as pool:
         for path, ok, output in pool.imap_unordered(check_file, files):
@@ -104,7 +95,6 @@ def main():
                 failures += 1
                 print(f"\n=== FAIL: {path} ===")
                 print(output.rstrip())
-
     if failures == 0:
         print("\nAll files passed syntax check.", file=sys.stderr)
     else:

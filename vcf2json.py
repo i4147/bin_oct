@@ -5,7 +5,6 @@ It must handle vCard property parameters such as ENCODING and CHARSET, decoding 
 The final output should be a list of parsed contact cards saved or printed as JSON, suitable for further processing or inspection."""
 
 from __future__ import annotations
-
 import json
 import quopri
 import sys
@@ -74,13 +73,11 @@ def parse_vcard(input_path):
             current["TEL"] = decode_value(value, params)
     result = []
     for card in cards:
-        result.append(
-            {
-                "N": card.get("N", ""),
-                "FN": card.get("FN", ""),
-                "TEL": card.get("TEL", ""),
-            }
-        )
+        result.append({
+            "N": card.get("N", ""),
+            "FN": card.get("FN", ""),
+            "TEL": card.get("TEL", ""),
+        })
     return result
 
 

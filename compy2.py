@@ -5,7 +5,6 @@ The script should process files in parallel using multiprocessing (configurable 
 It should accept file paths via argparse and rely on an external helper module (dh) for running shell commands."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import builtins
@@ -18,7 +17,6 @@ import token
 import tokenize
 from io import StringIO
 from pathlib import Path
-
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")

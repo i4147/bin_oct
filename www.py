@@ -4,7 +4,6 @@ For each wheel file found, it should copy its contents to a fixed destination fo
 As each file is moved, the script should print a line showing the source filename mapped to the destination filename, and after processing all files it should print "done" to indicate completion."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 if __name__ == "__main__":

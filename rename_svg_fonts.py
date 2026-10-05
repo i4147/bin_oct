@@ -5,7 +5,6 @@ It should then rename the file to "{font_id}.svg" in the same directory, skippin
 The script should accept file paths as command-line arguments (via sys.argv) and process each one using pathlib.Path."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

@@ -2,19 +2,16 @@
 """Format JS/TS/CSS/HTML/JSON files with Prettier: discover matching files under the current directory, run `prettier --write` on each in a multiprocessing pool of 8 workers, move failures into a sibling `error/` folder, and log progress via loguru."""
 
 from __future__ import annotations
-
 import shutil
 import subprocess
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
-
 from loguru import logger
 
 MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900
 ERROR_DIR_NAME: Final[str] = "error"
-
 EXTENSIONS: Final[tuple[str, ...]] = (
     ".js",
     ".css",
@@ -28,7 +25,6 @@ EXTENSIONS: Final[tuple[str, ...]] = (
     ".tsm",
     ".jsm",
 )
-
 EXCLUDE_PATTERNS: Final[tuple[str, ...]] = (
     ".min.js",
     ".min.css",
@@ -116,16 +112,12 @@ def process_file_wrapper(path: Path) -> FormatResult:
 def main() -> None:
     cwd: Path = Path.cwd()
     files: list[Path] = get_files_to_format(cwd)
-
     if not files:
         logger.info("No files found to format.")
         return
-
     logger.info("{} files found", len(files))
-
     success_count: int = 0
     error_count: int = 0
-
     with Pool(processes=MAX_WORKERS) as pool:
         for result in pool.imap_unordered(process_file_wrapper, files):
             if result.success:
@@ -134,7 +126,6 @@ def main() -> None:
             else:
                 logger.error("❌ Error: {} | Reason: {}", result.path.name, result.error_msg)
                 error_count += 1
-
     logger.info("Summary: {} success, {} errors.", success_count, error_count)
 
 

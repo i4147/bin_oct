@@ -3,12 +3,10 @@
 The script should process files concurrently using joblib's Parallel with 2 jobs for efficiency, and include helper functions for breadth-first directory traversal (get_files) and parallel task execution (mpf) that can be reused with arbitrary processing functions."""
 
 from __future__ import annotations
-
 import sys
 from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 from PIL import Image
 from pytesseract import image_to_string
 

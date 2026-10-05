@@ -5,7 +5,6 @@ For each match printed, regular entries should be shown as " - name" while symli
 Use pathlib for filesystem operations and sys.argv for argument parsing."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

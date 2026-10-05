@@ -3,19 +3,15 @@
 Supported formats: .json .jsonl/.ndjson .csv .tsv .pkl/.pickle .sqlite/.db/.sqlite3 .parquet/.pq .xlsx/.xls Usage: python convert.py input.json -d csv python convert.py data.sqlite -d jsonl python convert.py table.csv -d sqlite -o out.db"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import pickle
 import sqlite3
 import sys
 from pathlib import Path
-
 import pandas as pd
 
 SQLITE_MAGIC = b"SQLite format 3\x00"
-
-# ---------------------------------------------------------------- detection
 
 
 def is_sqlite_file(path: Path) -> bool:
@@ -66,9 +62,6 @@ def parse_target(name: str) -> str:
     raise ValueError(msg)
 
 
-# ---------------------------------------------------------------- coercion
-
-
 def _coerce_to_tables(obj) -> dict[str, pd.DataFrame]:
     if isinstance(obj, pd.DataFrame):
         return {"data": obj}
@@ -81,9 +74,6 @@ def _coerce_to_tables(obj) -> dict[str, pd.DataFrame]:
     if isinstance(obj, list):
         return {"data": pd.DataFrame(obj)}
     return {"data": pd.DataFrame([{"value": obj}])}
-
-
-# ---------------------------------------------------------------- readers
 
 
 def read_json(path: Path) -> dict[str, pd.DataFrame]:
@@ -134,9 +124,6 @@ def read_parquet(path: Path) -> dict[str, pd.DataFrame]:
 
 def read_excel(path: Path) -> dict[str, pd.DataFrame]:
     return dict(pd.read_excel(path, sheet_name=None))
-
-
-# ---------------------------------------------------------------- writers
 
 
 def _single(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -199,8 +186,6 @@ def write_excel(tables: dict[str, pd.DataFrame], path: Path) -> None:
             df.to_excel(xw, sheet_name=name[:31], index=False)
 
 
-# ---------------------------------------------------------------- registry
-
 READERS = {
     "json": read_json,
     "jsonl": read_jsonl,
@@ -211,7 +196,6 @@ READERS = {
     "parquet": read_parquet,
     "excel": read_excel,
 }
-
 WRITERS = {
     "json": write_json,
     "jsonl": write_jsonl,
@@ -222,7 +206,6 @@ WRITERS = {
     "parquet": write_parquet,
     "excel": write_excel,
 }
-
 EXT_FOR = {
     "json": ".json",
     "jsonl": ".jsonl",
@@ -233,8 +216,6 @@ EXT_FOR = {
     "parquet": ".parquet",
     "excel": ".xlsx",
 }
-
-# ---------------------------------------------------------------- main
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -254,22 +235,17 @@ def main(argv: list[str] | None = None) -> int:
         help="output path (default: input path with new extension)",
     )
     args = parser.parse_args(argv)
-
     input_path = Path(args.input)
     if not input_path.exists():
         parser.error(f"input file not found: {input_path}")
-
     try:
         src_fmt = detect_format(input_path)
         dst_fmt = parse_target(args.dest)
     except ValueError as e:
         parser.error(str(e))
-
     output_path = Path(args.output) if args.output else input_path.with_suffix(EXT_FOR[dst_fmt])
-
     tables = READERS[src_fmt](input_path)
     WRITERS[dst_fmt](tables, output_path)
-
     n = len(tables)
     print(f"{input_path}  [{src_fmt}]  ->  {output_path}  [{dst_fmt}]   ({n} table{'s' if n != 1 else ''})")
     return 0

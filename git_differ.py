@@ -4,7 +4,6 @@ It should retrieve each commit's metadata (hash, author name, email, date, and s
 The script should raise a clear error if the repository has fewer than two commits or if any git command fails, and it should assemble the collected commit metadata and file-level diff stats into a structured result (e.g., a dictionary) intended to be output as JSON."""
 
 from __future__ import annotations
-
 import json
 import subprocess
 import sys
@@ -68,15 +67,13 @@ def get_file_stats(repo: Path, older: str, newer: str) -> list[dict]:
         else:
             old_path, path = None, parts[1]
         stats = numstat_map.get(path, {"insertions": None, "deletions": None})
-        files.append(
-            {
-                "status": status,
-                "path": path,
-                "old_path": old_path,
-                "insertions": stats["insertions"],
-                "deletions": stats["deletions"],
-            }
-        )
+        files.append({
+            "status": status,
+            "path": path,
+            "old_path": old_path,
+            "insertions": stats["insertions"],
+            "deletions": stats["deletions"],
+        })
     return files
 
 

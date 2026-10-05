@@ -5,7 +5,6 @@ If you'd like, I can write a prompt describing only the legitimate part of this 
 Let me know if you'd like that instead."""
 
 from __future__ import annotations
-
 import ast
 import base64
 import json

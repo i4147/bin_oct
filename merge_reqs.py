@@ -7,7 +7,6 @@ Third-party (all optional): tqdm — progress bars (silently ignored if missing)
 -o /sdcard/requirements.txt Mapping to original scripts --------------------------- imports2.py -> scan imports3.py -> scan --extractor regex imports4.py -> scan --check-installed --mapping FILE --include-notebooks imz.py -> scan --cache .reqcache.json --include-notebooks imz2.py -> scan --cache .reqcache.json --stdlib-file FILE --mapping FILE imz3.py -> scan --format flat --no-pip-filter imz_plex.py -> scan --include-archives imzzz.py -> scan --include-archives mkreq.py -> scan --stdlib-source python --no-pip-filter reqr.py -> metadata"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import hashlib
@@ -24,7 +23,7 @@ from typing import Any, Iterable, Iterator, Optional, Sequence
 
 try:
     from tqdm import tqdm as _tqdm
-except Exception:  # pragma: no cover
+except Exception:
 
     def _tqdm(iterable=None, **kwargs):  # type: ignore
         return iterable if iterable is not None else []
@@ -61,7 +60,6 @@ DEFAULT_IGNORE = [
     "dist",
     "site-packages",
 ]
-
 ARCHIVE_SUFFIXES = (
     ".zip",
     ".whl",
@@ -72,7 +70,6 @@ ARCHIVE_SUFFIXES = (
     ".tar.bz2",
     ".tar.zst",
 )
-
 _STDLIB_FALLBACK: set[str] = {
     "abc",
     "aifc",
@@ -289,7 +286,6 @@ _STDLIB_FALLBACK: set[str] = {
     "__future__",
     "__main__",
 }
-
 _BLOCKLIST: set[str] = {
     "pip",
     "setuptools",
@@ -331,7 +327,6 @@ def load_pip_packages(path: str | os.PathLike | None) -> set[str]:
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-
             head = re.split(r"[=!<>;\[\s@]", line, maxsplit=1)[0].strip()
             if head:
                 out.add(norm(head))
@@ -429,13 +424,12 @@ def detect_local_modules(root: str | os.PathLike, ignore: Iterable[str]) -> set[
     return {n for n in local if n}
 
 
-_EMPTY_RESULT = lambda: {  # noqa: E731
+_EMPTY_RESULT = lambda: {
     "imports": set(),
     "star_modules": set(),
     "dynamic": set(),
     "relative": set(),
 }
-
 _IMP_RE = re.compile(r"^\s*import\s+([A-Za-z0-9_.*\s,]+)")
 _FROM_RE = re.compile(r"^\s*from\s+([A-Za-z0-9_.]+)\s+import")
 _DYN_RE = re.compile(r'(?:import_module|__import__)\(\s*[\'"]([\w.]+)[\'"]\s*\)')
@@ -449,7 +443,6 @@ def extract_ast(source: str) -> dict[str, set[str]]:
         for m in _DYN_RE.finditer(source):
             res["dynamic"].add(m.group(1).split(".", 1)[0])
         return res
-
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
@@ -465,7 +458,6 @@ def extract_ast(source: str) -> dict[str, set[str]]:
                     res["imports"].add(node.module.split(".", 1)[0])
         elif isinstance(node, ast.Call):
             fn = node.func
-            # __import__("x")  /  importlib.import_module("x")
             if (
                 isinstance(fn, ast.Name)
                 and fn.id == "__import__"
@@ -575,7 +567,6 @@ def _extract_from_tar(path: Path, extractor: str) -> dict[str, set[str]]:
         except Exception:
             pass
         return res
-
     try:
         with tarfile.open(path, "r:*") as tf:
             for m in tf:
@@ -691,7 +682,6 @@ def filter_packages(
     local_n = {norm(l) for l in local}
     pip_n = {norm(p) for p in pip_pkgs}
     installed_n = {norm(p) for p in installed} if installed else None
-
     for imp in imports:
         if not imp or not is_valid_module_name(imp):
             continue
@@ -702,10 +692,8 @@ def filter_packages(
             continue
         if installed_n and n in installed_n:
             continue
-
         target = mapping.get(n) or mapping.get(imp)
         cand_n = norm(target) if target else n
-
         if pip_n:
             if cand_n in pip_n or n in pip_n:
                 out.add(target or imp)
@@ -721,12 +709,10 @@ def run_scan(args: argparse.Namespace) -> int:
     if not root.exists():
         print(f"[!] directory not found: {root}", file=sys.stderr)
         return 2
-
     print("[i] Loading resources...")
     pip_pkgs = load_pip_packages(args.pip_file)
     mapping = load_mapping(args.mapping)
     stdlib = load_stdlib(args.stdlib_source, args.stdlib_file)
-
     print(f"[i] Scanning {root} (stdlib={len(stdlib)} modules)")
     files = list(
         iter_candidate_files(
@@ -740,22 +726,18 @@ def run_scan(args: argparse.Namespace) -> int:
     if not files:
         print("[!] nothing to scan")
         return 0
-
     local = detect_local_modules(root, args.ignore)
     print(f"[i] Detected {len(local)} local modules")
-
     installed: Optional[set[str]] = None
     if args.check_installed:
         installed = _pip_freeze(args.pip_cmd)
         if installed is not None:
             print(f"[i] {len(installed)} packages installed via `{args.pip_cmd} freeze`")
-
     cache: dict[str, Any] = {}
     cache_path = Path(args.cache) if args.cache else None
     if cache_path and not args.no_cache and cache_path.exists():
         cache = load_cache(cache_path)
         print(f"[i] Loaded cache ({len(cache)} entries)")
-
     results: list[tuple[str, dict[str, set[str]]]] = []
     workers = max(1, args.workers)
     if workers > 1 and len(files) > 1:
@@ -774,16 +756,13 @@ def run_scan(args: argparse.Namespace) -> int:
         _init_worker(args.extractor, str(cache_path) if cache_path else None)
         for f in _tqdm(files, desc="Processing"):
             results.append(_worker_one(str(f)))
-
     all_imports: set[str] = set()
     all_relative: set[str] = set()
     for _, res in results:
         all_imports |= res.get("imports", set())
         all_imports |= {d.split(".", 1)[0] for d in res.get("dynamic", set())}
         all_relative |= res.get("relative", set())
-
     print(f"[i] {len(all_imports)} unique imports found")
-
     filtered = filter_packages(
         imports=all_imports - all_relative,
         stdlib=stdlib,
@@ -793,7 +772,6 @@ def run_scan(args: argparse.Namespace) -> int:
         installed=installed,
         include_unknown=args.include_unknown,
     )
-
     if args.format == "flat":
         flat = sorted(all_imports - all_relative, key=str.lower)
         _write_lines(args.output, flat)
@@ -807,7 +785,6 @@ def run_scan(args: argparse.Namespace) -> int:
         else:
             _write_lines(args.output, pkgs)
             print(f"[✓] Wrote {len(pkgs)} packages to {args.output}")
-
     if cache_path and not args.no_cache:
         for path_str, res in results:
             p = Path(path_str)
@@ -872,18 +849,15 @@ def run_metadata(args: argparse.Namespace) -> int:
     if not root.exists():
         print(f"[!] directory not found: {root}", file=sys.stderr)
         return 2
-
     found: list[str] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in set(args.ignore)]
         for name in filenames:
             if name == args.metadata_name:
                 found.extend(_parse_metadata(Path(dirpath) / name))
-
     if not found:
         print("No dependencies found in METADATA files.")
         return 0
-
     out = Path(args.output)
     mode = "a" if args.append else "w"
     with out.open(mode, encoding="utf-8") as f:
@@ -910,9 +884,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     p.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
-
     sub = p.add_subparsers(dest="command", required=True)
-
     s = sub.add_parser("scan", help="Scan a tree for imports and write requirements.")
     s.add_argument("-d", "--directory", default=".", help="Root directory (default: .)")
     s.add_argument(
@@ -999,7 +971,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_ignore(s)
     s.set_defaults(func=_dispatch_scan)
-
     md = sub.add_parser("metadata", help="Extract Requires-Dist lines from METADATA files.")
     md.add_argument("-d", "--directory", default=".", help="Root directory")
     md.add_argument(
@@ -1028,7 +999,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_common_ignore(md)
     md.set_defaults(func=run_metadata)
-
     return p
 
 

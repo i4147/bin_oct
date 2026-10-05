@@ -4,7 +4,6 @@ It then takes that interface's public IP and queries the ip-api.com geolocation 
 The script uses dataclasses to structure interface and location data, supports command-line arguments via argparse, and logs status/errors through the logging module."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import logging

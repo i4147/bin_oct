@@ -3,7 +3,6 @@
 It supports multiple languages through transliteration, handles file naming conventions, and provides concurrent processing for improved performance."""
 
 from __future__ import annotations
-
 import re
 import sys
 import unicodedata
@@ -14,21 +13,18 @@ from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 from loguru import logger
 
 try:
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
-
 try:
     from unidecode import unidecode
 
     UNIDECODE_AVAILABLE = True
 except ImportError:
     UNIDECODE_AVAILABLE = False
-
 try:
     import regex
 
@@ -36,14 +32,12 @@ try:
 except ImportError:
     REGEX_AVAILABLE = False
     regex = re
-
 SUPPORTED_EXTENSIONS: set[str] = {".html", ".htm"}
 WORKERS: int = 8
 CHUNK_SIZE: int = 8192
 MAX_FILE_SIZE: int = 50 * 1024 * 1024
 MIN_TITLE_LENGTH: int = 2
 MAX_FILENAME_LENGTH: int = 200
-
 logger.remove()
 logger.add(
     sys.stderr,
@@ -61,7 +55,6 @@ logger.add(
     backtrace=True,
     diagnose=True,
 )
-
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",
     "ب": "b",
@@ -106,7 +99,6 @@ PERSIAN_MAP: dict[str, str] = {
     "ٌ": "",
     "ٍ": "",
 }
-
 ARABIC_MAP: dict[str, str] = {
     "ا": "a",
     "ب": "b",
@@ -143,7 +135,6 @@ ARABIC_MAP: dict[str, str] = {
     "ئ": "i",
     "ة": "a",
 }
-
 CYRILLIC_MAP: dict[str, str] = {
     "а": "a",
     "б": "b",
@@ -212,7 +203,6 @@ CYRILLIC_MAP: dict[str, str] = {
     "Ю": "yu",
     "Я": "ya",
 }
-
 GREEK_MAP: dict[str, str] = {
     "α": "a",
     "β": "b",
@@ -263,7 +253,6 @@ GREEK_MAP: dict[str, str] = {
     "Ψ": "ps",
     "Ω": "o",
 }
-
 CHINESE_MAP: dict[str, str] = {
     "中": "zhong",
     "国": "guo",
@@ -281,7 +270,6 @@ CHINESE_MAP: dict[str, str] = {
     "火": "huo",
     "木": "mu",
 }
-
 TRANSLITERATION_MAPS: list[dict[str, str]] = [
     PERSIAN_MAP,
     ARABIC_MAP,
@@ -317,7 +305,6 @@ class LanguageTransliterator:
     def detect_script(text: str) -> str:
         if not text:
             return "english"
-
         persian_count: int = sum(1 for c in text if "\u0600" <= c <= "\u06ff")
         cyrillic_count: int = sum(1 for c in text if "\u0400" <= c <= "\u04ff")
         greek_count: int = sum(1 for c in text if "\u0370" <= c <= "\u03ff")
@@ -327,7 +314,6 @@ class LanguageTransliterator:
         katakana_count: int = sum(1 for c in text if "\u30a0" <= c <= "\u30ff")
         hebrew_count: int = sum(1 for c in text if "\u0590" <= c <= "\u05ff")
         devanagari_count: int = sum(1 for c in text if "\u0900" <= c <= "\u097f")
-
         total: int = len(text)
         script_counts: dict[str, int] = {
             "persian": persian_count,
@@ -339,13 +325,10 @@ class LanguageTransliterator:
             "hebrew": hebrew_count,
             "devanagari": devanagari_count,
         }
-
         if not any(script_counts.values()):
             return "english"
-
         primary_script: str = max(script_counts, key=script_counts.get)
         primary_count: int = script_counts[primary_script]
-
         if primary_count / total > 0.5:
             return primary_script
         return "mixed"
@@ -354,15 +337,12 @@ class LanguageTransliterator:
     def transliterate(text: str) -> str:
         if not text:
             return text
-
         if UNIDECODE_AVAILABLE:
             return unidecode(text)
-
         result: str = text
         for char_map in TRANSLITERATION_MAPS:
             for non_english, english in char_map.items():
                 result = result.replace(non_english, english)
-
         result = unicodedata.normalize("NFKD", result)
         result = "".join(c for c in result if unicodedata.category(c) != "Mn")
         return result
@@ -371,11 +351,9 @@ class LanguageTransliterator:
     def transliterate_smart(text: str) -> str:
         if not text:
             return text
-
         script: str = LanguageTransliterator.detect_script(text)
         if script == "english":
             return text
-
         return LanguageTransliterator.transliterate(text)
 
 
@@ -390,12 +368,10 @@ class HtmlTitleExtractor:
         except Exception as e:
             logger.error(f"Failed to read {path}: {e}")
             return None
-
         if self.parser and self.parser.available:
             title: str | None = self._extract_with_tree_sitter(content)
             if title:
                 return title
-
         return self._extract_with_regex(content)
 
     def _extract_with_tree_sitter(self, html_content: str) -> str | None:
@@ -406,7 +382,6 @@ class HtmlTitleExtractor:
                     return self._query_tree_for_title(tree)
         except Exception as e:
             logger.debug(f"Tree-sitter extraction failed: {e}")
-
         return None
 
     def _query_tree_for_title(self, tree: Any) -> str | None:
@@ -425,13 +400,11 @@ class HtmlTitleExtractor:
                                         if isinstance(text, bytes):
                                             return text.decode("utf-8").strip()
                                         return str(text).strip()
-
                 if hasattr(node, "children"):
                     for child in node.children:
                         result = traverse(child)
                         if result:
                             return result
-
                 return None
 
             return traverse(tree.root_node) if hasattr(tree, "root_node") else None
@@ -446,7 +419,6 @@ class HtmlTitleExtractor:
             r"<TITLE[^>]*>(.*?)</TITLE>",
             r"<Title[^>]*>(.*?)</Title>",
         ]
-
         for pattern in patterns:
             match = re.search(pattern, html_content, re.IGNORECASE | re.DOTALL)
             if match:
@@ -455,7 +427,6 @@ class HtmlTitleExtractor:
                 title = HtmlTitleExtractor._decode_html_entities(title)
                 if title and len(title) >= MIN_TITLE_LENGTH:
                     return title
-
         return None
 
     @staticmethod
@@ -524,7 +495,6 @@ class FilenameNormalizer:
     def normalize(title: str, extension: str = ".html") -> str:
         if not title:
             return f"unnamed{extension}"
-
         text: str = LanguageTransliterator.transliterate_smart(title)
         text = text.lower()
         text = text.strip()
@@ -535,28 +505,22 @@ class FilenameNormalizer:
         text = FilenameNormalizer.DASH_PATTERN.sub("-", text)
         text = FilenameNormalizer.LEADING_TRAILING_PATTERN.sub("", text)
         text = re.sub(r"[-_]{2,}", "_", text)
-
         if text.lower() in FilenameNormalizer.RESERVED_NAMES:
             text = f"_{text}"
-
         max_name_length: int = MAX_FILENAME_LENGTH - len(extension)
         if len(text) > max_name_length:
             text = text[:max_name_length].rstrip("_-")
-
         if not text:
             text = "page"
-
         return f"{text}{extension}"
 
     @staticmethod
     def ensure_unique(filename: Path, existing_files: set[Path]) -> Path:
         if filename not in existing_files:
             return filename
-
         stem: str = filename.stem
         suffix: str = filename.suffix
         counter: int = 1
-
         while True:
             new_filename: Path = filename.parent / f"{stem}_{counter}{suffix}"
             if new_filename not in existing_files:
@@ -572,7 +536,6 @@ class HtmlFileProcessor:
     def process_file(self, path: Path) -> ProcessingResult:
         start_time: datetime = datetime.now()
         original_name: str = path.name
-
         try:
             if not path.exists():
                 return ProcessingResult(
@@ -584,7 +547,6 @@ class HtmlFileProcessor:
                     error=f"File not found: {path}",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
             if not path.is_file():
                 return ProcessingResult(
                     path=path,
@@ -595,7 +557,6 @@ class HtmlFileProcessor:
                     error=f"Not a file: {path}",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
             if path.stat().st_size > MAX_FILE_SIZE:
                 return ProcessingResult(
                     path=path,
@@ -606,7 +567,6 @@ class HtmlFileProcessor:
                     error=f"File too large: {path.stat().st_size} bytes",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
             title: str | None = self.title_extractor.extract_title(path)
             if not title:
                 return ProcessingResult(
@@ -618,7 +578,6 @@ class HtmlFileProcessor:
                     error="No valid title found in HTML",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
             new_name: str = FilenameNormalizer.normalize(title, path.suffix)
             if new_name == original_name:
                 return ProcessingResult(
@@ -630,15 +589,12 @@ class HtmlFileProcessor:
                     error="Filename already matches title",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
             new_path: Path = path.parent / new_name
             new_path = FilenameNormalizer.ensure_unique(new_path, self.existing_names)
-
             try:
                 path.rename(new_path)
                 self.existing_names.add(str(new_path))
                 logger.debug(f"Renamed: {original_name} -> {new_path.name}")
-
                 return ProcessingResult(
                     path=new_path,
                     original_name=original_name,
@@ -657,7 +613,6 @@ class HtmlFileProcessor:
                     error=f"Rename failed: {e}",
                     duration=(datetime.now() - start_time).total_seconds(),
                 )
-
         except Exception as e:
             logger.error(f"Unexpected error processing {path}: {e}")
             return ProcessingResult(
@@ -701,7 +656,6 @@ class FileDiscovery:
     def discover_files(paths: list[str]) -> list[Path]:
         discovered: list[Path] = []
         seen: set[Path] = set()
-
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = []
             for path_str in paths:
@@ -709,25 +663,21 @@ class FileDiscovery:
                 if not path.exists():
                     logger.warning(f"Path not found: {path}")
                     continue
-
                 if path.is_file():
                     if path.suffix.lower() in SUPPORTED_EXTENSIONS:
                         discovered.append(path)
                 else:
                     futures.append(executor.submit(FileDiscovery._discover_in_directory, path))
-
             for future in futures:
                 try:
                     discovered.extend(future.result())
                 except Exception as e:
                     logger.error(f"Error during file discovery: {e}")
-
         unique_files: list[Path] = []
         for f in discovered:
             if f not in seen:
                 unique_files.append(f)
                 seen.add(f)
-
         return sorted(unique_files)
 
     @staticmethod
@@ -743,7 +693,6 @@ class FileDiscovery:
                     files.append(item)
         except Exception as e:
             logger.error(f"Error discovering files in {directory}: {e}")
-
         return files
 
 
@@ -762,21 +711,17 @@ class HtmlRenamerApp:
         print("HTML File Renamer (by Title Tag)")
         print("=" * 70)
         print(f"Discovering HTML files in: {', '.join(self.paths)}")
-
         files: list[Path] = FileDiscovery.discover_files(self.paths)
         if not files:
             logger.warning("No HTML files found")
             return
-
         print(f"Found {len(files):,} HTML files")
         print(f"Processing with {WORKERS} workers...")
-
         with Pool(WORKERS) as pool:
             async_results = []
             for path in files:
                 result = pool.apply_async(process_file_task, (path,))
                 async_results.append(result)
-
             for i, async_result in enumerate(async_results, 1):
                 try:
                     result: ProcessingResult = async_result.get(timeout=60)
@@ -785,43 +730,36 @@ class HtmlRenamerApp:
                         print(f"Progress: {i}/{len(async_results)} files")
                 except Exception as e:
                     logger.error(f"Error retrieving result: {e}")
-
         self._print_summary()
 
     def _print_summary(self) -> None:
         print("=" * 70)
         print("SUMMARY")
         print("=" * 70)
-
         successful: int = sum(1 for r in self.results if r.success)
         failed: int = len(self.results) - successful
         renamed: int = sum(1 for r in self.results if r.new_name and r.new_name != r.original_name)
         skipped: int = successful - renamed
         total_duration: float = sum(r.duration for r in self.results)
-
         print(f"Total files processed: {len(self.results)}")
         print(f"  ✓ Successful: {successful}")
         print(f"    - Renamed: {renamed}")
         print(f"    - Skipped: {skipped}")
         print(f"  ✗ Failed: {failed}")
         print(f"Total processing time: {total_duration:.2f}s")
-
         if total_duration > 0:
             print(f"Average time per file: {total_duration / len(self.results):.3f}s")
-
         if renamed > 0:
             print(f"\n✓ Successfully renamed files ({renamed}):")
             for result in sorted(self.results, key=lambda r: r.duration, reverse=True)[:10]:
                 if result.new_name and result.new_name != result.original_name:
                     print(f"  '{result.original_name:40}' -> '{result.new_name}'")
                     print(f"    Title: {result.title}")
-
         if failed > 0:
             print(f"\n✗ Failed files ({failed}):")
             for result in self.results:
                 if not result.success:
                     print(f"  {result.original_name}: {result.error}")
-
         print("=" * 70)
 
 

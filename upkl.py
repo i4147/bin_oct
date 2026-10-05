@@ -4,7 +4,6 @@ The script should also print the deserialized data to standard output for inspec
 It should use pathlib for path handling and read the input file in binary mode."""
 
 from __future__ import annotations
-
 import pickle as pkl
 from pathlib import Path
 

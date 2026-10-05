@@ -4,9 +4,7 @@ It should compute the clip's total duration, determine a start time roughly 230 
 The resulting audio segment should be exported as "last_5_minutes.mp3" at 320k bitrate and 44100 fps, with console messages printed before and after processing to indicate progress and completion."""
 
 from __future__ import annotations
-
 import sys
-
 from moviepy import AudioFileClip
 
 if __name__ == "__main__":

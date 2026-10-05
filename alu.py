@@ -3,9 +3,7 @@
 The resulting list of upgradable package names should be written, one per line, to the file "/sdcard/alu" if any are found, and each extracted package name should also be printed to the console using the cprint helper prefixed with " - "."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 from dh import cprint, runcmd
 
 if __name__ == "__main__":

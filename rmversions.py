@@ -4,7 +4,6 @@ The script should read the file, skip blank lines and comments, and strip versio
 It should deduplicate the package names, write them back to the same file sorted alphabetically one per line, and print a message showing the file name and the count of unique packages written."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

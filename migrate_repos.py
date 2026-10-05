@@ -1,6 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""[Tool: think]
+  Params: {"content":"The user wants a prompt for an AI agent that can produce the given Python code. I need to analyze the code snippet (it's truncated but I can infer enough) and write a descriptive prompt covering purpose, inputs/outputs, and notable behavior. This is a single straightforward task - no need for multiple tools, just need to output the prompt text directly as my final answer. No tool calls needed."}
+Write a Python 3.12 command-line automation script designed to run on Termux (Android) at `/data/data/com.termux/files/usr/bin/python3.12` that migrates GitHub author identity information across a local Git repository and its working tree files.
 
+Purpose: The script should rewrite both Git commit history authorship and any hardcoded references to an old username/email found in project files, replacing them with a new username/email, so a repository can be safely re-attributed to a different GitHub identity.
+
+Main inputs:
+- Command-line arguments (via argparse) allowing the user to specify old username, old email, new username, and new email, each defaulting to predefined constants (default old username "i4147", default old email "yesnacoc@gmail.com", default new username "i4147", default new email "yesnacoc@gmail.com").
+- The target repository path (likely current directory or an argument).
+- Possibly flags for dry-run mode, verbosity, or whether to rewrite git history vs. just scan files.
+
+Main outputs:
+- Modified files on disk with old username/email strings replaced by new ones, scanning only files with recognized text-based extensions (e.g., .py, .toml, .cfg, .ini, .json, .md, .yml, .yaml, .txt, .rst, .env, .sh, .bash, .zshrc, .gitconfig, .gitmodules, .npmrc, .yarnrc) or specific known filenames (setup.py, pyproject.toml, package.json, config, .gitconfig, README.md, README, .npmrc, Makefile).
+- Rewritten Git commit author/committer metadata (likely using `git filter-branch`, `git filter-repo`, or similar subprocess calls to `git`) so that historical commits reflect the new identity.
+- A log file named "github_identity_migrate.log" capturing detailed debug-level activity with timestamps and log levels, while the console only shows concise INFO-level messages.
+- Colorized console output (using ANSI escape codes defined in a class `C` with constants like RESET, RED, etc., for GREEN, YELLOW, BLUE, etc.) to visually distinguish success, warning, and error messages.
+
+Notable behavior:
+- Skip certain directories entirely during file scanning to avoid touching irrelevant or generated content: node_modules, .venv, venv, env, __pycache__, dist, build, .tox, site-packages, .git, .mypy_cache, .pytest_cache, .idea, .vscode, target, .cache.
+- Enforce a maximum file size limit (5 MB) when scanning/processing files, skipping files larger than this threshold to avoid performance issues or binary file corruption.
+- Use Python's `logging` module with two handlers: a StreamHandler to stdout showing only the message text at INFO level, and a FileHandler writing to the log file with full timestamp/level/message formatting at DEBUG level, enabling both user-friendly console feedback and detailed audit trails.
+- Use `subprocess` to invoke Git commands (e.g., to check repository status, rewrite history, or update git config) and `shutil`/`pathlib.Path` for file system operations such as copying, traversing directories, and reading/writing text files safely with proper encoding handling.
+- Include timestamp handling (via `datetime`) for logging or backup naming purposes.
+- Designed to be idempotent and safe to re-run, ideally supporting detection of whether a file actually contains the old identity before attempting a write, to minimize unnecessary disk writes.
+- Should handle errors gracefully (e.g., permission issues, non-U files, missing git repository) and log them appropriately without crashing the entire migration process.
+- The script should be structured with clear functions/sections for: configuration/constants setup, logging setup, color definitions, argument parsing, file-content replacement logic, and Git history rewriting logic, following `from __future__ import annotations` for type hint compatibility.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/5EeLpnzxpCFKidjtZecLfw"""
+
+from __future__ import annotations
 import argparse
 import logging
 import os
@@ -14,7 +42,6 @@ DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"
 DEFAULT_NEW_USERNAME = "i4147"
 DEFAULT_NEW_EMAIL = "yesnacoc@gmail.com"
-
 TEXT_EXTENSIONS = {
     ".py",
     ".toml",
@@ -35,7 +62,6 @@ TEXT_EXTENSIONS = {
     ".npmrc",
     ".yarnrc",
 }
-
 TEXT_FILENAMES = {
     "setup.py",
     "pyproject.toml",
@@ -47,7 +73,6 @@ TEXT_FILENAMES = {
     ".npmrc",
     "Makefile",
 }
-
 SKIP_DIRS = {
     "node_modules",
     ".venv",
@@ -66,22 +91,16 @@ SKIP_DIRS = {
     "target",
     ".cache",
 }
-
 MAX_FILE_SIZE = 5 * 1024 * 1024
-
 LOG_FILE = "github_identity_migrate.log"
-
 logger = logging.getLogger("gh_migrate")
 logger.setLevel(logging.DEBUG)
-
 _console = logging.StreamHandler(sys.stdout)
 _console.setLevel(logging.INFO)
 _console.setFormatter(logging.Formatter("%(message)s"))
-
 _file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
 _file_handler.setLevel(logging.DEBUG)
 _file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-
 logger.addHandler(_console)
 logger.addHandler(_file_handler)
 
@@ -142,21 +161,17 @@ def run_cmd(cmd, input_text=None, check=False):
 
 def update_global_git_config(new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 1: Global git config ===", C.BOLD))
-
     result = run_cmd(["git", "config", "--global", "--get", "user.name"])
     current_name = result.stdout.strip()
     result = run_cmd(["git", "config", "--global", "--get", "user.email"])
     current_email = result.stdout.strip()
-
     logger.info(f"Current global user.name : {current_name or '(not set)'}")
     logger.info(f"Current global user.email: {current_email or '(not set)'}")
     logger.info(f"New global user.name      -> {new_username}")
     logger.info(f"New global user.email     -> {new_email}")
-
     if not apply_changes:
         logger.info(color("[DRY-RUN] Would update global git config.", C.YELLOW))
         return
-
     run_cmd(["git", "config", "--global", "user.name", new_username], check=True)
     run_cmd(["git", "config", "--global", "user.email", new_email], check=True)
     logger.info(color("[APPLIED] Global git config updated.", C.GREEN))
@@ -175,7 +190,6 @@ def update_local_git_configs(home_dir, old_username, old_email, new_username, ne
     logger.info(color("\n=== Step 1b: Local repo .git/config files ===", C.BOLD))
     configs = find_local_git_configs(home_dir)
     logger.info(f"Found {len(configs)} local repo git config file(s).")
-
     changed = []
     for cfg in configs:
         try:
@@ -183,19 +197,15 @@ def update_local_git_configs(home_dir, old_username, old_email, new_username, ne
         except OSError as e:
             logger.warning(f"Could not read {cfg}: {e}")
             continue
-
         if old_username not in content and old_email not in content:
             continue
-
         new_content = content.replace(old_username, new_username).replace(old_email, new_email)
         changed.append(cfg)
         logger.info(f"  Would update: {cfg}")
-
         if apply_changes:
             backup_path = backup_file(cfg)
             cfg.write_text(new_content, encoding="utf-8")
             logger.info(color(f"    [APPLIED] Updated (backup: {backup_path})", C.GREEN))
-
     if not changed:
         logger.info("No local repo configs reference the old identity.")
     elif not apply_changes:
@@ -221,45 +231,34 @@ def scan_files(home_dir: Path):
 def preview_and_replace(home_dir, old_username, old_email, new_username, new_email, apply_changes):
     logger.info(color("\n=== Step 2: Scanning files under home folder ===", C.BOLD))
     logger.info(f"Home directory: {home_dir}")
-
     candidates = scan_files(home_dir)
     logger.info(f"Scanning {len(candidates)} candidate file(s)...")
-
     to_change = []
-
     for fpath in candidates:
         try:
             if fpath.stat().st_size > MAX_FILE_SIZE:
                 continue
         except OSError:
             continue
-
         if not is_probably_text_file(fpath):
             continue
-
         try:
             content = fpath.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
-
         if old_username not in content and old_email not in content:
             continue
-
         new_content = content.replace(old_username, new_username).replace(old_email, new_email)
-
         old_lines = content.splitlines()
         new_lines = new_content.splitlines()
         diff_preview = []
         for i, (ol, nl) in enumerate(zip(old_lines, new_lines)):
             if ol != nl:
                 diff_preview.append((i + 1, ol, nl))
-
         to_change.append((fpath, content, new_content, diff_preview))
-
     if not to_change:
         logger.info(color("No files contain traces of the old identity.", C.GREEN))
         return
-
     logger.info(color(f"\nFound {len(to_change)} file(s) that would change:", C.YELLOW))
     for fpath, _, _, diff_preview in to_change:
         logger.info(color(f"\n  {fpath}", C.BLUE))
@@ -269,7 +268,6 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
             logger.info(color(f"      + {new_l.strip()}", C.GREEN))
         if len(diff_preview) > 5:
             logger.info(f"    ... and {len(diff_preview) - 5} more changed line(s)")
-
     if not apply_changes:
         logger.info(
             color(
@@ -278,7 +276,6 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
             )
         )
         return
-
     confirm = (
         input(
             color(
@@ -289,11 +286,9 @@ def preview_and_replace(home_dir, old_username, old_email, new_username, new_ema
         .strip()
         .lower()
     )
-
     if confirm != "y":
         logger.info("Aborted by user. No files were modified.")
         return
-
     for fpath, _, new_content, _ in to_change:
         backup_path = backup_file(fpath)
         fpath.write_text(new_content, encoding="utf-8")
@@ -304,19 +299,14 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
     logger.info(color("\n=== Step 3: Create new SSH key ===", C.BOLD))
     logger.info(f"Target key path: {key_path}")
     logger.info(f"Key type: ed25519, comment: {new_email}")
-
     if key_path.exists():
         logger.warning(f"Key already exists at {key_path}. Skipping generation.")
         return key_path.with_suffix(".pub")
-
     if not apply_changes:
         logger.info(color("[DRY-RUN] Would run ssh-keygen to create a new key.", C.YELLOW))
         return None
-
     key_path.parent.mkdir(parents=True, exist_ok=True)
-
     use_passphrase = input("Set a passphrase for the new SSH key? [y/N] (recommended): ").strip().lower()
-
     passphrase = ""
     if use_passphrase == "y":
         import getpass
@@ -326,7 +316,6 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
         if passphrase != confirm_pass:
             logger.error("Passphrases do not match. Aborting SSH key creation.")
             return None
-
     cmd = [
         "ssh-keygen",
         "-t",
@@ -342,21 +331,17 @@ def create_new_ssh_key(new_email, key_path: Path, apply_changes):
     if result.returncode != 0:
         logger.error("ssh-keygen failed. See log for details.")
         return None
-
     logger.info(color(f"[APPLIED] New SSH key created at {key_path}", C.GREEN))
-
     pub_path = key_path.with_suffix(".pub")
     if pub_path.exists():
         pub_content = pub_path.read_text(encoding="utf-8").strip()
         logger.info(color("\nYour new PUBLIC key (add this to GitHub):", C.BOLD))
         logger.info(color(pub_content, C.BLUE))
         logger.info("Add it at: https://github.com/settings/keys\n")
-
     add_agent = input("Add new key to ssh-agent now? [y/N]: ").strip().lower()
     if add_agent == "y":
         run_cmd(["ssh-add", str(key_path)])
         logger.info(color("[APPLIED] Key added to ssh-agent.", C.GREEN))
-
     return pub_path
 
 
@@ -364,26 +349,21 @@ def find_old_ssh_keys(ssh_dir: Path, old_username, old_email):
     matches = []
     if not ssh_dir.exists():
         return matches
-
     for pub_file in ssh_dir.glob("*.pub"):
         try:
             content = pub_file.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
-
         if old_username in content or old_email in content:
             private_key = pub_file.with_suffix("")
             matches.append((pub_file, private_key if private_key.exists() else None))
-
     return matches
 
 
 def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
     logger.info(color("\n=== Step 4: Find & remove old SSH keys ===", C.BOLD))
     logger.info(f"SSH directory: {ssh_dir}")
-
     matches = find_old_ssh_keys(ssh_dir, old_username, old_email)
-
     if not matches:
         logger.info(
             color(
@@ -392,7 +372,6 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
             )
         )
         return
-
     logger.info(color(f"Found {len(matches)} old key pair(s):", C.YELLOW))
     for pub, priv in matches:
         logger.info(f"  Public : {pub}")
@@ -400,11 +379,9 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
             logger.info(f"  Private: {priv}")
         else:
             logger.info("  Private: (not found)")
-
     if not apply_changes:
         logger.info(color("[DRY-RUN] Would remove the above key files.", C.YELLOW))
         return
-
     confirm = (
         input(
             color(
@@ -415,11 +392,9 @@ def remove_old_ssh_keys(ssh_dir: Path, old_username, old_email, apply_changes):
         .strip()
         .lower()
     )
-
     if confirm != "y":
         logger.info("Aborted by user. No SSH keys were deleted.")
         return
-
     for pub, priv in matches:
         try:
             if priv and priv.exists():
@@ -492,15 +467,12 @@ def main():
         action="store_true",
         help="Skip the home-directory file scan/replace step.",
     )
-
     args = parser.parse_args()
-
     logger.info(color("GitHub Identity Migration Tool", C.BOLD))
     logger.info(f"Mode: {'APPLY (changes will be written)' if args.apply else 'DRY-RUN (no changes)'}")
     logger.info(f"Old identity: {args.old_username} ")
     logger.info(f"New identity: {args.new_username} ")
     logger.info(f"Log file: {LOG_FILE}")
-
     update_global_git_config(args.new_username, args.new_email, args.apply)
     update_local_git_configs(
         args.home,
@@ -510,7 +482,6 @@ def main():
         args.new_email,
         args.apply,
     )
-
     if not args.skip_files:
         preview_and_replace(
             args.home,
@@ -522,13 +493,11 @@ def main():
         )
     else:
         logger.info(color("\n=== Step 2: Skipped (--skip-files) ===", C.YELLOW))
-
     if not args.skip_ssh:
         create_new_ssh_key(args.new_email, args.new_key_path, args.apply)
         remove_old_ssh_keys(args.ssh_dir, args.old_username, args.old_email, args.apply)
     else:
         logger.info(color("\n=== Steps 3/4: Skipped (--skip-ssh) ===", C.YELLOW))
-
     logger.info(color("\n=== Done ===", C.BOLD))
     if not args.apply:
         logger.info(

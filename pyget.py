@@ -10,7 +10,6 @@ Features -------- * Three interchangeable HTTP backends (`-b python|requests|pyc
 Usage ----- dl https://example.com/file.iso dl -b requests -j 4 url1 url2 url3 dl -f urls.txt -b pycurl dl -o movie.mp4 https://example.com/video"""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import os
@@ -31,17 +30,13 @@ from pathlib import Path
 from typing import Any, Iterator, Self
 
 __version__ = "2.0.0"
-
 CHUNK_SMALL: int = 64 * 1024
 CHUNK_MEDIUM: int = 256 * 1024
 CHUNK_LARGE: int = 1024 * 1024
 BIG_FILE_THRESHOLD: int = 10 * 1024 * 1024
 HUGE_FILE_THRESHOLD: int = 100 * 1024 * 1024
-
 USER_AGENT: str = f"dl/{__version__} (pip-style download manager)"
-
 FULL, HEAD, EMPTY = "━", "╸", " "
-
 STOP = threading.Event()
 
 
@@ -146,9 +141,7 @@ class Bar:
             el = self.elapsed
             rate = self.done / el if el > 0 else 0.0
             return f"{self.label}  {fmt_size(self.done)} in {fmt_time(el)} ({fmt_size(rate)}/s)"
-
         self._tick()
-
         if self.total:
             frac: float | None = self.done / self.total
             parts = [
@@ -159,7 +152,6 @@ class Bar:
         else:
             frac = None
             parts = [fmt_size(self.done), f"{fmt_size(self.speed)}/s"]
-
         tail = "  ".join(parts)
         room = width - len(tail) - 1
         prefix = ""
@@ -235,7 +227,6 @@ class Progress:
         if self._thread is not None:
             self._thread.join(timeout=1.0)
             self._thread = None
-
         with self.lock:
             if self.enabled and self._drawn:
                 out = [f"\x1b[{self._drawn}A"]
@@ -243,7 +234,6 @@ class Progress:
                 out.append(f"\x1b[{self._drawn}A")
                 self.stream.write("".join(out))
                 self._drawn = 0
-
             if self.final:
                 width = self._width()
                 for b in self.bars:
@@ -279,15 +269,12 @@ class PurePythonBackend(Backend):
         headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
         if offset:
             headers["Range"] = f"bytes={offset}-"
-
         req = urllib.request.Request(url, headers=headers)
         resp = urllib.request.urlopen(req, timeout=timeout)
-
         try:
             status = getattr(resp, "status", 200)
             length_hdr = resp.headers.get("Content-Length")
             total = int(length_hdr) if length_hdr is not None else None
-
             info = StreamInfo(
                 status=status,
                 total_length=total,
@@ -325,7 +312,6 @@ class RequestsBackend(Backend):
         headers = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
         if offset:
             headers["Range"] = f"bytes={offset}-"
-
         r = self._requests.get(
             url,
             headers=headers,
@@ -370,7 +356,6 @@ class PycurlBackend(Backend):
         q: "queue.Queue[bytes | None]" = queue.Queue()
         headers_ready = threading.Event()
         stop_flag = threading.Event()
-
         state: dict[str, Any] = {
             "status": None,
             "headers": {},
@@ -425,7 +410,6 @@ class PycurlBackend(Backend):
         t = threading.Thread(target=run, daemon=True)
         t.start()
         headers_ready.wait(timeout=timeout + 5)
-
         if state["error"] is not None and state["status"] is None:
             stop_flag.set()
             raise state["error"]
@@ -433,11 +417,9 @@ class PycurlBackend(Backend):
             stop_flag.set()
             msg = "no response received"
             raise RuntimeError(msg)
-
         hdrs = state["headers"]
         length_hdr = hdrs.get("content-length")
         total = int(length_hdr) if length_hdr is not None else None
-
         info = StreamInfo(
             status=state["status"],
             total_length=total,
@@ -540,45 +522,36 @@ def download_one(
 ) -> tuple[Path, bool]:
     bar = Bar(shorten(url))
     progress.add(bar)
-
     try:
         part = part_path(outdir, url)
         offset = part.stat().st_size if (resume and part.exists()) else 0
-
         with backend.open(url, offset, timeout) as response:
             info, chunks = response
-
             if not (200 <= info.status < 300):
                 msg = f"HTTP {info.status}"
                 raise RuntimeError(msg)
-
             if offset > 0 and info.status != 206:
                 offset = 0
                 with suppress(FileNotFoundError):
                     part.unlink()
-
             if dest_hint is not None:
                 final = dest_hint if dest_hint.is_absolute() else outdir / dest_hint
             else:
                 final = outdir / filename_from_info(info, url)
-
             if final.exists() and final.stat().st_size > 0:
                 bar.done = final.stat().st_size
                 bar.total = bar.done
                 bar.skipped = True
-
                 if part.exists() and offset > 0:
                     with suppress(FileNotFoundError):
                         part.unlink()
                 return final, True
-
             bar.label = final.name
             total = info.total_length
             if total is not None:
                 total += offset
             bar.total = total
             bar.done = offset
-
             mode = "r+b" if offset > 0 else "wb"
             with part.open(mode) as fh:
                 if offset > 0:
@@ -592,15 +565,12 @@ def download_one(
                     bar.done += len(chunk)
                 fh.flush()
                 os.fsync(fh.fileno())
-
             if total is not None and bar.done < total:
                 msg = f"truncated download ({bar.done}/{total} bytes)"
                 raise IOError(msg)
-
         part.replace(final)
         bar.finished = True
         return final, False
-
     except BaseException as exc:  # noqa: BLE001 - re-raised to the caller
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
@@ -693,7 +663,6 @@ def collect_urls(args: argparse.Namespace, parser: argparse.ArgumentParser) -> l
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     urls = collect_urls(args, parser)
     if not urls:
         parser.error("no URLs provided (give them positionally or with -f)")
@@ -701,9 +670,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("-o/--output can only be used with a single URL")
     if args.jobs < 1:
         parser.error("-j/--jobs must be >= 1")
-
     outdir = Path.cwd()
-
     dest_hint: Path | None = None
     if args.output:
         dest_hint = Path(args.output)
@@ -712,21 +679,17 @@ def main(argv: list[str] | None = None) -> int:
                 parser.error(f"output directory does not exist: {dest_hint.parent}")
         elif dest_hint.parent != Path() and not (outdir / dest_hint.parent).is_dir():
             parser.error(f"output directory does not exist: {dest_hint.parent}")
-
     backend = get_backend(args.backend)
     resume = not args.no_resume
-
     stream = sys.stdout
     progress = Progress(
         stream,
         enabled=(not args.quiet) and bool(getattr(stream, "isatty", lambda: False)()),
         final=not args.quiet,
     )
-
     results: list[tuple[str, Path | None, bool, BaseException | None]] = []
     interrupted = False
     t0 = time.monotonic()
-
     pool = ThreadPoolExecutor(max_workers=min(args.jobs, len(urls)))
     try:
         with progress:
@@ -759,9 +722,7 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         STOP.set()
         pool.shutdown(wait=True, cancel_futures=True)
-
     elapsed = time.monotonic() - t0
-
     if not args.quiet:
         downloaded = skipped = failed = 0
         total_bytes = 0
@@ -777,10 +738,8 @@ def main(argv: list[str] | None = None) -> int:
             if path is not None:
                 with suppress(OSError):
                     total_bytes += path.stat().st_size
-
         if interrupted:
             print("interrupted", file=sys.stderr)
-
         parts: list[str] = []
         if downloaded:
             parts.append(f"downloaded {downloaded}")
@@ -790,7 +749,6 @@ def main(argv: list[str] | None = None) -> int:
             parts.append(f"failed {failed}")
         if parts:
             print(f"{', '.join(parts)} ({fmt_size(total_bytes)} new) in {fmt_time(elapsed)}")
-
     if interrupted:
         return 130
     if any(exc is not None for _, _, _, exc in results):

@@ -3,10 +3,8 @@
 The script should take a PDF file path and output folder as inputs, generate images per page via convert_from_path with multithreading, rename the resulting JPEG files with a consistent naming pattern (e.g., filename_page_N.jpg), and handle errors gracefully by printing warnings for missing expected files and catching exceptions during conversion, returning a boolean indicating success or failure."""
 
 from __future__ import annotations
-
 import shutil
 from pathlib import Path
-
 from pdf2image import convert_from_path
 
 POPPLER_PATH = None

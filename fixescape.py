@@ -3,7 +3,6 @@
 It should use multiprocessing to process files in parallel, print colored (red/cyan ANSI) diagnostic messages showing the file, line, and offending string, and optionally auto-fix the issues in place by converting problematic strings to raw strings or properly escaping backslashes when a "fix" flag is passed via argparse."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import io
@@ -63,15 +62,13 @@ def check_and_fix_file(args):
                         if "r" not in prefix.lower():
                             prefix = prefix.replace("u", "").replace("U", "")
                             new_string = prefix + "r" + rest
-                            replacements.append(
-                                (
-                                    tok.start[0],
-                                    tok.start[1],
-                                    tok.end[0],
-                                    tok.end[1],
-                                    new_string,
-                                )
-                            )
+                            replacements.append((
+                                tok.start[0],
+                                tok.start[1],
+                                tok.end[0],
+                                tok.end[1],
+                                new_string,
+                            ))
                             issues.append((tok.start[0], tok.string, new_string))
     if not issues:
         return filepath_str, False, [], None

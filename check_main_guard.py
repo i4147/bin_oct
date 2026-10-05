@@ -2,7 +2,6 @@
 """Inspect .py files in the current folder and report ones missing the main guard."""
 
 from __future__ import annotations
-
 import ast
 import sys
 from pathlib import Path
@@ -14,18 +13,15 @@ def has_main_guard(filepath: Path) -> bool:
     except (UnicodeDecodeError, OSError) as e:
         print(f"  ! Could not read {filepath.name}: {e}", file=sys.stderr)
         return True
-
     try:
         tree = ast.parse(source, filename=str(filepath))
     except SyntaxError as e:
         print(f"  ! Syntax error in {filepath.name}: {e}", file=sys.stderr)
         return True
-
     for node in ast.walk(tree):
         if not isinstance(node, ast.If):
             continue
         test = node.test
-
         if not isinstance(test, ast.Compare):
             continue
         if len(test.ops) != 1 or not isinstance(test.ops[0], ast.Eq):
@@ -40,7 +36,6 @@ def has_main_guard(filepath: Path) -> bool:
 
         if (is_dunder_name(left) and is_main_string(right)) or (is_dunder_name(right) and is_main_string(left)):
             return True
-
     return False
 
 

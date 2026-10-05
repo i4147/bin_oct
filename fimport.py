@@ -4,7 +4,6 @@ It should define an ast.NodeVisitor subclass that tracks a nesting depth counter
 The script should take a file path as input, parse the file into an AST, run the visitor, and output or return the collected list of improperly nested import statements for further reporting or linting purposes."""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 from typing import TYPE_CHECKING

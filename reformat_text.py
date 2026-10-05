@@ -4,7 +4,6 @@ It should take a file path as input, first save a backup copy with a ".bak" suff
 The script reads the file using UTF-8 encoding with error tolerance and is intended to be run on a given file path, likely via command-line arguments using sys and pathlib."""
 
 from __future__ import annotations
-
 import re
 import sys
 from pathlib import Path

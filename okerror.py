@@ -4,7 +4,6 @@ It should create these directories if they don't exist, print progress messages 
 The script should exit with the return code of the `main()` function."""
 
 from __future__ import annotations
-
 import shutil
 import subprocess
 from pathlib import Path

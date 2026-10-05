@@ -4,12 +4,10 @@ It should accept command-line arguments to control optimization level (0, 1, or 
 The script should skip symlinks, nonexistent paths, and anything under a .git directory, recurse into directories to process all contained .py files, and set the PYTHONPYCACHEPREFIX environment variable to "__pycache__" before processing, printing an error and returning a nonzero status if an invalid optimize level is supplied."""
 
 from __future__ import annotations
-
 import compileall
 import os
 import sys
 from pathlib import Path
-
 from dh import get_pyfiles, mpf
 
 REMOVE_ORIG = False

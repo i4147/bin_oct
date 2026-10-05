@@ -3,7 +3,6 @@
 It should initialize curses color pairs (cyan for header, green/yellow/red for other UI states) with default background support, and render the preview text within the terminal's current width/height bounds, truncating lines that exceed the screen size."""
 
 from __future__ import annotations
-
 import curses
 from pathlib import Path
 

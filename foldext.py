@@ -4,11 +4,9 @@ It should recursively scan the target path, group files by extension while track
 After moving files, it should clean up by removing any now-empty directories left behind, processing them from deepest to shallowest so nested empty folders are properly removed."""
 
 from __future__ import annotations
-
 import contextlib
 import shutil
 from pathlib import Path
-
 from dh import gsz
 
 

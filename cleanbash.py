@@ -5,7 +5,6 @@ After stripping comments, runs of 2+ consecutive blank lines are collapsed to a 
 Files that would become invalid are left untouched and reported as errors."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing as mp
 import os
@@ -13,16 +12,13 @@ import re
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
-
 import tree_sitter_bash
 from tree_sitter import Language, Node, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
-
 BASH_LANGUAGE: Language = Language(tree_sitter_bash.language())
 PARSER: Parser = Parser(BASH_LANGUAGE)
-
 SHEBANG_PREFIXES: tuple[bytes, ...] = (
     b"#!/bin/bash",
     b"#!/bin/sh",
@@ -33,7 +29,6 @@ SHEBANG_PREFIXES: tuple[bytes, ...] = (
     b"#!/usr/bin/env zsh",
     b"#!/bin/zsh",
 )
-
 _BLANK_RUN_RE = re.compile(rb"(?:[ \t]*\n){3,}")
 
 
@@ -105,16 +100,12 @@ def process_file(path: Path) -> tuple[str, int, str]:
         source = path.read_bytes()
     except OSError as e:
         return rel, 0, f"read error: {e}"
-
     stripped, count = strip_comments(source)
     if count == 0:
         return rel, 0, ""
-
     normalized = normalize_blank_lines(stripped)
-
     if not validate_bash_source(normalized):
         return rel, 0, "validation error: result is not valid bash, skipped"
-
     try:
         path.write_bytes(normalized)
     except OSError as e:
@@ -156,7 +147,6 @@ def main() -> int:
     if not files:
         print("no bash scripts found", file=sys.stderr)
         return 1
-
     total_removed = 0
     files_touched = 0
     errors = 0
@@ -172,7 +162,6 @@ def main() -> int:
                     files_touched += 1
                 total_removed += count
                 print(f"{rel}: {count} comment(s) removed")
-
     print(
         f"\nDone: {files_touched}/{len(files)} file(s) modified, {total_removed} comment(s) removed, {errors} error(s)."
     )

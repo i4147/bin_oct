@@ -8,20 +8,17 @@ The generated script should: - Recursively discover "*.py" files under the curre
 - Include complete type hints and docstrings throughout."""
 
 from __future__ import annotations
-
 import sys
 from importlib.metadata import distributions
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 import tree_sitter_python as tsp
 from loguru import logger
 from tree_sitter import Language, Parser
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
 POOL_SIZE: Final[int] = 8
 OUTPUT_FILE: Final[str] = "importz.txt"
 VALID_NODE_TYPES: Final[frozenset[str]] = frozenset({"import_statement", "import_from_statement"})
@@ -78,7 +75,7 @@ def _get_installed_pkgs() -> set[str]:
         name: str | None = None
         try:
             name = dist.metadata["Name"]
-        except Exception:  # noqa: BLE001
+        except Exception:
             name = None
         if name:
             pkgs.add(name.replace("-", "_").lower())
@@ -114,20 +111,16 @@ def get_pyfiles(root: Path) -> list[Path]:
 
 def main(argv: Iterable[str] | None = None) -> int:
     _ = list(argv) if argv is not None else sys.argv[1:]
-
     outfile: Path = Path(OUTPUT_FILE)
     cwd: Path = Path.cwd()
     pyfiles: list[Path] = get_pyfiles(cwd)
     logger.info("{} python files found", len(pyfiles))
-
     all_imports: set[str] = process_files_parallel(pyfiles)
     filtered_imports: list[str] = filter_imports(all_imports)
-
     outfile.write_text("".join(filtered_imports), encoding="utf-8")
     imp: str
     for imp in filtered_imports:
         logger.info("{}", imp.strip())
-
     return 0
 
 

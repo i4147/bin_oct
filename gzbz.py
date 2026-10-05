@@ -3,7 +3,6 @@
 Merges three previously independent scripts: * bzr.py — bzip2 compression / decompression with tar support * gzr.py — gzip compression / decompression with tar support * gziper.py — recursive gzip file compression with a summary table Original-script → merged-CLI mapping ------------------------------------ bzr.py → python compress_tool.py bz2 [paths...] # compress python compress_tool.py bz2 -d [paths...] # decompress gzr.py → python compress_tool.py gz [paths...] # compress python compress_tool.py gz -d [paths...] # decompress gziper.py → python compress_tool.py gzip-files [dirs...] # compress only Usage examples -------------- # Same as running `bzr.py` (no args): compress everything in the cwd python compress_tool.py bz2 # Decompress every *.bz2 / *.tar.bz2 in the cwd python compress_tool.py bz2 -d # Same as running `gzr.py` on the current directory python compress_tool.py gz # Same as running `gziper.py` on two dirs with extra exclusions python compress_tool.py gzip-files ./src ./docs -e .pdf .jpg Dependencies ------------ loguru (third-party; the original scripts already required it)"""
 
 from __future__ import annotations
-
 import argparse
 import bz2
 import contextlib
@@ -17,7 +16,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Self, Sequence
-
 from loguru import logger
 
 DEFAULT_WORKERS: int = 8
@@ -28,7 +26,6 @@ DEFAULT_MIN_FILE_SIZE: int = 1_024
 DEFAULT_BZ2_LEVEL: int = 9
 DEFAULT_GZ_LEVEL: int = 9
 DEFAULT_GZIPER_LEVEL: int = 9
-
 EXCLUDE_BZ2: frozenset[str] = frozenset({".bz2", ".xz", ".gz", ".br", ".zst", ".7z", ".zip", ".rar"})
 EXCLUDE_GZ: frozenset[str] = frozenset({".gz", ".bz2", ".xz", ".br", ".zst", ".7z", ".zip", ".rar"})
 EXCLUDE_GZIPER: frozenset[str] = frozenset({".gz", ".zip", ".bz2", ".xz", ".7z", ".rar", ".tar"})
@@ -82,7 +79,7 @@ def _worker_gzip_file(args: tuple[str, int, int]) -> tuple[str, bool, int, int, 
         csize = dst.stat().st_size
         src.unlink()
         return (path_str, True, size, csize, "")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if dst.exists():
             with contextlib.suppress(OSError):
                 dst.unlink()
@@ -129,7 +126,7 @@ class Tool:
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *exc_info) -> None:  # noqa: D401
+    def __exit__(self, *exc_info) -> None:
         self.close()
 
     def _compress_small(self, src: Path, dst: Path) -> bool:
@@ -162,7 +159,7 @@ class Tool:
                 try:
                     idx, blob = fut.result()
                     outputs[idx] = blob
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logger.error(f"Chunk compression failed: {exc}")
                     return False
             with dst.open("wb", buffering=1 << 20) as out:
@@ -212,12 +209,10 @@ class Tool:
             if not self._create_tar(src_dir, tar_path) or not tar_path.exists():
                 logger.error("  Failed to create tar archive")
                 return False
-
             print(f"  Compressing tar archive with {self.cfg.algo} (level {self.cfg.level})...")
             size = tar_path.stat().st_size
             if not self._compress_file(tar_path, out_path, size):
                 return False
-
             if not out_path.exists():
                 return False
             csize = out_path.stat().st_size
@@ -288,7 +283,6 @@ class Tool:
 
     def decompress_archive(self, archive: Path) -> bool:
         tar_path = archive.with_suffix("")
-
         dest = archive.parent
         try:
             print(f"\n  Decompressing {archive.name}...")
@@ -338,14 +332,12 @@ class Tool:
 
     def compress(self, paths: Sequence[Path]) -> None:
         cwd = Path.cwd()
-
         if paths:
             dirs = [p for p in paths if p.is_dir()]
             files = [p for p in paths if p.is_file()]
         else:
             dirs = self.collect_dirs(cwd)
             files = self.collect_files(cwd)
-
         if dirs:
             print(f"\n📁 Compressing {len(dirs)} directories...")
             for d in sorted(dirs):
@@ -358,11 +350,9 @@ class Tool:
                     print(f"  ✓ Successfully compressed {rel} to {d.name}{self.cfg.tar_ext}")
                 else:
                     logger.error(f"  ✗ Failed to compress {rel}")
-
         if not files:
             print("\n📄 No files to compress")
             return
-
         print(f"\n📄 Compressing {len(files)} files with {self.cfg.algo} max compression...")
         orig = comp = ok = 0
         for i, f in enumerate(sorted(files), 1):
@@ -372,7 +362,6 @@ class Tool:
                 ok += 1
                 orig += o
                 comp += c
-
         if ok > 0:
             saved = orig - comp
             pct = saved / orig * 100 if orig else 0.0
@@ -387,17 +376,14 @@ class Tool:
 
     def decompress(self, paths: Sequence[Path]) -> None:
         cwd = Path.cwd()
-
         if paths:
             archives = [p for p in paths if p.is_file() and p.name.endswith(self.cfg.tar_ext)]
         else:
             archives = self.collect_archives(cwd)
-
         if archives:
             print(f"\n📦 Decompressing {len(archives)} archives...")
             for a in sorted(archives):
                 self.decompress_archive(a)
-
         if paths:
             singles = [
                 p
@@ -406,11 +392,9 @@ class Tool:
             ]
         else:
             singles = self.collect_compressed(cwd)
-
         if not singles:
             print(f"\n📄 No {self.cfg.file_ext} files to decompress")
             return
-
         print(f"\n📄 Decompressing {len(singles)} {self.cfg.algo} files...")
         total_in = total_out = ok = 0
         for i, f in enumerate(sorted(singles), 1):
@@ -422,7 +406,6 @@ class Tool:
                 dst = f.with_suffix("")
                 if dst.exists():
                     total_out += dst.stat().st_size
-
         if ok > 0:
             print(f"\n{'=' * 40}")
             print(f"✅ Decompressed {ok}/{len(singles)} files")
@@ -445,9 +428,7 @@ def run_gzip_files(
         if not e.startswith("."):
             e = "." + e
         exclude_set.add(e)
-
     resolved_dirs = [d.resolve() for d in directories]
-
     print("=" * 40)
     print("🔍 GZIP Compression Tool (Maximum Compression - Level 9)".center(70))
     print("-" * 40)
@@ -455,7 +436,6 @@ def run_gzip_files(
     for d in resolved_dirs:
         print("   •", d)
     print("🚫 Excluding extensions:", ",".join(sorted(exclude_set)))
-
     files: list[Path] = []
     for d in resolved_dirs:
         if not d.exists():
@@ -464,21 +444,17 @@ def run_gzip_files(
         for p in d.rglob("*"):
             if p.is_file() and p.suffix not in exclude_set:
                 files.append(p)
-
     if not files:
         logger.success("✅ No files found to compress!")
         return 0
-
     print("📊 Found", len(files), "file(s) to compress")
     print("-" * 40)
     print(f"{'File':<50} {'Original':>10} {'Compressed':>10} {'Ratio':>8} {'Status':>10}")
     print("-" * 40)
-
     total_files = ok = fail = 0
     total_orig = total_comp = 0
     start = time.time()
     cwd = Path.cwd()
-
     with ProcessPoolExecutor(max_workers=workers) as pool:
         futures = [pool.submit(_worker_gzip_file, (str(f), chunk_size, level)) for f in files]
         for fut in futures:
@@ -489,7 +465,6 @@ def run_gzip_files(
             except ValueError:
                 rel = path_str
             display = ("..." + rel[-44:]) if len(rel) > 47 else rel
-
             if success:
                 ok += 1
                 total_orig += o
@@ -501,9 +476,7 @@ def run_gzip_files(
                 print(f"{display:<50} {'N/A':>10} {'N/A':>10} {'N/A':>8} {'❌':>10}")
                 if err:
                     logger.warning(f"   ⚠ Error: {err}")
-
     elapsed = time.time() - start
-
     print("=" * 40)
     print("📊 COMPRESSION SUMMARY".center(70))
     print("-" * 40)
@@ -585,13 +558,10 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=False)
-
     bz2_p = sub.add_parser("bz2", help="bzip2 compression / decompression (bzr.py)")
     _add_pool_options(bz2_p, DEFAULT_BZ2_LEVEL, DEFAULT_CHUNK_SIZE)
-
     gz_p = sub.add_parser("gz", help="gzip compression / decompression with tar support (gzr.py)")
     _add_pool_options(gz_p, DEFAULT_GZ_LEVEL, DEFAULT_CHUNK_SIZE)
-
     gf_p = sub.add_parser("gzip-files", help="recursive gzip on files only (gziper.py)")
     gf_p.add_argument(
         "directories",
@@ -626,18 +596,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_GZIPER_LEVEL,
         help=f"gzip compression level (default: {DEFAULT_GZIPER_LEVEL})",
     )
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if not args.command:
         parser.print_help()
         return 0
-
     try:
         if args.command == "gzip-files":
             return run_gzip_files(
@@ -647,7 +614,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 chunk_size=args.chunk_size,
                 level=args.level,
             )
-
         algo = "bz2" if args.command == "bz2" else "gz"
         cfg = Config(
             algo=algo,
@@ -658,7 +624,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             min_file_size=args.min_file_size,
         )
         paths = [p.resolve() for p in (args.paths or [])]
-
         with Tool(cfg) as tool:
             if args.decompress:
                 tool.decompress(paths)
@@ -668,7 +633,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         logger.warning("\n\n⚠️  Interrupted by user")
         return 1
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"\n❌ Unexpected error: {exc}")
         return 1
 

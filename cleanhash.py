@@ -4,10 +4,8 @@ For each matched file, it reads the content line by line and strips trailing "#"
 It writes the cleaned content back and reports, per file and in total, how many comment-only lines or trailing comments were removed, printing the relative path of each modified file."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import should_skip
 from fastwalk import walk_files
 

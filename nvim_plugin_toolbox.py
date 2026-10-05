@@ -3,7 +3,6 @@
 Original name -> equivalent invocation ------------------------------------------------------------------------------- folderize_plugins.py -> python nvim_plugin_toolbox.py folderize [--dry-run] generate_lazy_lock.py -> python nvim_plugin_toolbox.py lock [--lazy-dir ~/.local/share/nvim/lazy] [--output ~/.config/nvim/lazy-lock.json] split_lua_plugins.py -> python nvim_plugin_toolbox.py split FILE --engine strict [-m] split_plugins.py -> python nvim_plugin_toolbox.py split FILE --engine simple [-o plugins] [--keep-input] (stdin: cat FILE | python nvim_plugin_toolbox.py split -) Standard library only."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import re
@@ -382,7 +381,6 @@ PLUGIN_PATTERNS: dict[str, list[str]] = {
     "vim-perl": [r"vim-perl", r"perl\.vim", r"vim_perl"],
     "vim-raku": [r"vim-raku", r"raku\.vim", r"vim_raku"],
 }
-
 RENAME_MAP: dict[str, str] = {
     "nvim-lspconfig": "lsp",
     "nvim-treesitter": "treesitter",
@@ -420,7 +418,6 @@ def find_plugin_refs(path: Path, patterns: dict[str, list[str]] = PLUGIN_PATTERN
     except OSError as exc:
         print(f"Error reading {path}: {exc}", file=sys.stderr)
         return found
-
     fname = path.name.lower()
     for name, pats in patterns.items():
         for pat in pats:
@@ -454,13 +451,10 @@ def cmd_folderize(args: argparse.Namespace) -> int:
     if not lua_files:
         print("No .lua files found in the current directory tree.")
         return 0
-
     print(f"Found {len(lua_files)} .lua files")
     print("Scanning for plugin references...\n")
-
     by_plugin: dict[str, list[Path]] = defaultdict(list)
     unclassified: list[Path] = []
-
     for path in lua_files:
         refs = find_plugin_refs(path)
         rel = path.relative_to(root)
@@ -471,7 +465,6 @@ def cmd_folderize(args: argparse.Namespace) -> int:
         else:
             unclassified.append(path)
             print(f"  {rel}: No plugins detected")
-
     print("\n" + "=" * 40)
     print("Organization Plan:")
     print("=" * 40)
@@ -484,19 +477,15 @@ def cmd_folderize(args: argparse.Namespace) -> int:
         print(f"\n📁 unclassified/ ({len(unclassified)} files)")
         for p in unclassified:
             print(f"  → {p.relative_to(root)}")
-
     if args.dry_run:
         print("\n[DRY RUN] No files were moved. Run without --dry-run to organize files.")
         return 0
-
     answer = input("\nProceed with moving files? (y/N): ").strip().lower()
     if answer not in ("y", "yes"):
         print("Operation cancelled.")
         return 0
-
     print("\nMoving files...")
     moved = 0
-
     for name, files in by_plugin.items():
         target_dir = root / name
         for src in files:
@@ -504,9 +493,8 @@ def cmd_folderize(args: argparse.Namespace) -> int:
                 dest = _safe_move(src, target_dir)
                 moved += 1
                 print(f"  ✓ {src.relative_to(root)} → {dest.relative_to(root)}")
-            except Exception as exc:  # noqa: BLE001 - report and continue
+            except Exception as exc:
                 print(f"  ✗ Failed to move {src}: {exc}")
-
     if unclassified:
         target_dir = root / "unclassified"
         for src in unclassified:
@@ -514,9 +502,8 @@ def cmd_folderize(args: argparse.Namespace) -> int:
                 dest = _safe_move(src, target_dir)
                 moved += 1
                 print(f"  ✓ {src.relative_to(root)} → {dest.relative_to(root)}")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"  ✗ Failed to move {src}: {exc}")
-
     print(f"\n✅ Completed! Moved {moved} files.")
     return 0
 
@@ -543,20 +530,16 @@ def _git_info(repo: Path) -> tuple[Optional[str], Optional[str]]:
 def cmd_lock_main(args: argparse.Namespace) -> int:
     lazy_dir = Path(args.lazy_dir).expanduser()
     output = Path(args.output).expanduser()
-
     print("Generating lazy-lock.json for Neovim plugins...")
     print(f"Scanning: {lazy_dir}")
     print(f"Output:   {output}")
     print("-" * 40)
-
     if not lazy_dir.exists():
         print(f"Error: Lazy directory not found at {lazy_dir}")
         print("\nFailed to generate lock file.")
         return 1
-
     output.parent.mkdir(parents=True, exist_ok=True)
     lock_data: dict[str, dict[str, str]] = {}
-
     for entry in sorted(lazy_dir.iterdir()):
         if not entry.is_dir():
             continue
@@ -570,7 +553,6 @@ def cmd_lock_main(args: argparse.Namespace) -> int:
             print(f"✓ {name}: {commit[:8]} ({branch})")
         else:
             print(f"✗ {name}: Failed to get git information")
-
     try:
         with open(output, "w", encoding="utf-8") as fh:
             json.dump(lock_data, fh, indent=2)
@@ -579,7 +561,6 @@ def cmd_lock_main(args: argparse.Namespace) -> int:
         print(f"Error writing lock file: {exc}")
         print("\nFailed to generate lock file.")
         return 1
-
     print(f"\n✓ Successfully wrote lock file to {output}")
     print(f"  Total plugins: {len(lock_data)}")
     print("\nDone! You can now use this lock file with lazy.nvim.")
@@ -633,7 +614,6 @@ def _split_top_level(body: str) -> list[str]:
                 entries.append(body[start:end].strip())
                 i = end
                 continue
-
         j = i
         depth = 0
         in_str = False
@@ -737,7 +717,6 @@ def _lua_syntax_valid(code: str) -> bool:
         return proc.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-
     try:
         wrapped = f"return (function() {code} end)()"
         proc = subprocess.run(
@@ -749,17 +728,14 @@ def _lua_syntax_valid(code: str) -> bool:
         return proc.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
-
     return _balanced_braces(code)
 
 
 def cmd_split(args: argparse.Namespace) -> int:
     strict = args.engine == "strict"
-
     do_validate = args.validate if args.validate is not None else strict
     use_rename_map = args.rename_map if args.rename_map is not None else strict
     sanitize_names = args.sanitize if args.sanitize is not None else (not strict)
-
     input_path: Optional[Path]
     if args.input == "-":
         if sys.stdin.isatty():
@@ -773,7 +749,6 @@ def cmd_split(args: argparse.Namespace) -> int:
             print(f"Error: File not found: {input_path}", file=sys.stderr)
             return 1
         source = input_path.read_text(encoding="utf-8")
-
     if args.output is not None:
         out_dir = Path(args.output)
     elif strict:
@@ -781,7 +756,6 @@ def cmd_split(args: argparse.Namespace) -> int:
     else:
         out_dir = Path("plugins")
     out_dir.mkdir(parents=True, exist_ok=True)
-
     ret_idx = source.find("return")
     if ret_idx == -1:
         ret_idx = 0
@@ -795,15 +769,12 @@ def cmd_split(args: argparse.Namespace) -> int:
         return 1
     _, end = span
     body = source[brace_idx + 1 : end - 1]
-
     specs = _split_top_level(body)
     created: list[Path] = []
     total = len(specs)
-
     for idx, spec in enumerate(specs, 1):
         if not spec.strip() or spec.strip() == "{}":
             continue
-
         url = _extract_plugin_url(spec)
         if not url:
             print(
@@ -811,28 +782,22 @@ def cmd_split(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             continue
-
         short = url.split("/")[-1].removesuffix(".nvim")
         if use_rename_map:
             short = RENAME_MAP.get(short, short)
         if sanitize_names:
             short = re.sub(r"[^a-zA-Z0-9\-_.]", "_", short)
-
         content = _format_plugin_block(spec)
-
         if do_validate and not _lua_syntax_valid(content):
             print(f"Error: Invalid Lua syntax for {url}, skipping", file=sys.stderr)
             print(f"Content:\n{content[:200]}...", file=sys.stderr)
             continue
-
         out_path = out_dir / f"{short}.lua"
         if strict:
             out_path = _unique_path(out_path)
-
         out_path.write_text(content, encoding="utf-8")
         created.append(out_path)
         print(f"[{idx}/{total}] Created: {out_path} <- {url}")
-
     if input_path is not None:
         if args.move:
             backup = _unique_path(input_path.with_suffix(input_path.suffix + ".bak"))
@@ -849,7 +814,6 @@ def cmd_split(args: argparse.Namespace) -> int:
         else:
             input_path.unlink()
             print(f"{input_path} removed.")
-
     print(f"\nTotal files created: {len(created)}")
     return 0
 
@@ -860,7 +824,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Unified Neovim plugin helper (folderize / lock / split).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_folder = sub.add_parser(
         "folderize",
         help="Move .lua files into per-plugin folders based on reference regexes.",
@@ -871,7 +834,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show the plan without moving files.",
     )
     p_folder.set_defaults(func=cmd_folderize)
-
     p_lock = sub.add_parser(
         "lock",
         help="Generate lazy-lock.json from installed lazy.nvim plugins.",
@@ -887,7 +849,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path of the lazy-lock.json file to write (default: ~/.config/nvim/lazy-lock.json).",
     )
     p_lock.set_defaults(func=cmd_lock_main)
-
     p_split = sub.add_parser(
         "split",
         help="Split a Lua plugin-spec table into one file per plugin.",
@@ -911,7 +872,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="strict = split_lua_plugins.py behavior (validation + rename map); "
         "simple = split_plugins.py behavior (no validation, sanitized names).",
     )
-
     p_split.add_argument(
         "--validate",
         dest="validate",
@@ -951,7 +911,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="Do not sanitize file names.",
     )
-
     p_split.add_argument(
         "-m",
         "--move",
@@ -969,7 +928,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Delete the input file after splitting (default for --engine simple).",
     )
     p_split.set_defaults(func=cmd_split)
-
     return parser
 
 

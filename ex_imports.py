@@ -4,9 +4,7 @@ It should process files in parallel via an mpf helper, aggregate the unique impo
 Finally, it should print "done." after writing the file."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 import tree_sitter_python as tsp
 from dh import get_files, mpf, unique_path
 from tree_sitter import Language, Parser

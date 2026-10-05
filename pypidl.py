@@ -8,7 +8,6 @@ Shared helpers live at module level.
 Third-party packages (optional — only imported by the modes that use them): requests basic, download, mirror(--backend requests) packaging (imported by pd.py; not required by the merged tool) pycurl mirror(--backend pycurl), scrape rich mirror (progress bar) beautifulsoup4 (bs4) scrape Only the standard library is imported unconditionally; any missing third- party package produces a friendly error when the relevant subcommand is run."""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import io
@@ -27,12 +26,10 @@ try:
     import requests
 except ImportError:  # pragma: no cover
     requests = None  # type: ignore[assignment]
-
 try:
     import pycurl
 except ImportError:  # pragma: no cover
     pycurl = None  # type: ignore[assignment]
-
 try:
     from rich.console import Console
     from rich.progress import (
@@ -48,24 +45,20 @@ try:
     _rich_console: Any = Console()
 except ImportError:  # pragma: no cover
     _rich_console = None
-
 try:
     from bs4 import BeautifulSoup
 except ImportError:  # pragma: no cover
     BeautifulSoup = None  # type: ignore[assignment]
-
 JSON_MIRRORS: tuple[str, ...] = (
     "https://pypi.org/pypi",
     "https://pypi.tuna.tsinghua.edu.cn/pypi",
     "https://mirror-pypi.runflare.com/pypi",
 )
-
 SIMPLE_MIRRORS: dict[str, str] = {
     "runflare": "https://mirror-pypi.runflare.com/simple",
     "pypi": "https://pypi.org/simple",
     "tsinghua": "https://pypi.tuna.tsinghua.edu.cn/simple",
 }
-
 MIRROR_RETRIES: int = 3
 HTTP_TIMEOUT: int = 30
 CHUNKED_THRESHOLD: int = 5 * 1024 * 1024
@@ -363,7 +356,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
     out_dir = Path(args.output).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Saving wheels to: {out_dir}\n")
-
     downloaded = 0
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = {pool.submit(_download_wheel_worker, pkg, out_dir, args.python): pkg for pkg in args.packages}
@@ -373,7 +365,6 @@ def cmd_wheels(args: argparse.Namespace) -> int:
                 downloaded += 1
             else:
                 print(f"  ⚠️  {pkg}: {err}")
-
     print(f"\n✅ Downloaded {downloaded}/{len(args.packages)} packages successfully.")
     return 0
 
@@ -543,13 +534,11 @@ def _mirror_process_spec(spec: str, backend: str, output_dir: Path) -> None:
 
 
 def cmd_mirror(args: argparse.Namespace) -> int:
-
     if args.backend == "pycurl":
         _require(pycurl, "pycurl", "mirror")
         _require(_rich_console, "rich", "mirror")
     elif args.backend == "requests":
         _require(requests, "requests", "mirror")
-
     specs: list[str] = list(args.packages)
     if args.file:
         try:
@@ -562,10 +551,8 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     if not specs:
         print("Error: No package name specified.")
         return 1
-
     output_dir = Path(args.output).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-
     for spec in specs:
         try:
             _mirror_process_spec(spec, args.backend, output_dir)
@@ -770,7 +757,6 @@ def _read_pkg_names_from_file(path: Path) -> list[str]:
 def cmd_scrape(args: argparse.Namespace) -> int:
     _require(pycurl, "pycurl", "scrape")
     _require(BeautifulSoup, "beautifulsoup4", "scrape")
-
     if args.pypi:
         mirror_name = "pypi"
     elif args.china:
@@ -781,7 +767,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
         mirror_name = "runflare"
     mirror_url = SIMPLE_MIRRORS[mirror_name]
     trailing_slash = mirror_name in ("pypi", "tsinghua")
-
     if args.directory:
         out_dir = Path(args.directory).expanduser().resolve()
         if not out_dir.is_dir():
@@ -789,7 +774,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
             return 1
     else:
         out_dir = Path.cwd()
-
     packages: list[str] = list(args.packages)
     if args.file:
         loaded = _read_pkg_names_from_file(Path(args.file))
@@ -807,17 +791,14 @@ def cmd_scrape(args: argparse.Namespace) -> int:
         seen.add(low)
         deduped.append(p)
     packages = deduped
-
     print(f"Mirror       : {mirror_name} ({mirror_url})")
     print(f"Download dir : {out_dir}")
     print(f"Processing {len(packages)} package(s)...\n")
-
     ok_list: list[str] = []
     skip_list: list[str] = []
     present_list: list[str] = []
     fail_list: list[str] = []
     start = time.time()
-
     for pkg in packages:
         print(f"[{pkg}]")
         try:
@@ -844,7 +825,6 @@ def cmd_scrape(args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"  Error: {exc}")
             fail_list.append(pkg)
-
     elapsed = time.time() - start
     if ok_list:
         print("\nSuccessfully downloaded:")
@@ -885,7 +865,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("basic", help="Simple API download, prefers py3-none-any wheel (pd.py)")
     p.add_argument("package", help="Package name")
     p.add_argument(
@@ -895,7 +874,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: current directory)",
     )
     p.set_defaults(func=cmd_basic)
-
     p = sub.add_parser("download", help="Version-aware streaming download (pdown.py)")
     p.add_argument("package", help="Package name")
     p.add_argument("-v", "--version", default=None, help="Specific version (default: latest)")
@@ -906,7 +884,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: current directory)",
     )
     p.set_defaults(func=cmd_download)
-
     p = sub.add_parser("wheels", help="Parallel wheel downloads scored by Python version (pdown2.py)")
     p.add_argument("packages", nargs="+", help="Package names")
     p.add_argument("--python", default="3.12", help="Target Python version (default: 3.12)")
@@ -918,7 +895,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: wheels)",
     )
     p.set_defaults(func=cmd_wheels)
-
     p = sub.add_parser("mirror", help="Multi-mirror + hash-verified downloads (pip_get.py)")
     p.add_argument(
         "packages",
@@ -944,7 +920,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: current directory)",
     )
     p.set_defaults(func=cmd_mirror)
-
     p = sub.add_parser("scrape", help="HTML /simple index scraper (pipget.py)")
     p.add_argument("packages", nargs="*", help="Package names")
     p.add_argument("-f", "--file", default=None, help="Read package names from file (one per line)")
@@ -966,7 +941,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Choose a named mirror (default: runflare)",
     )
     p.set_defaults(func=cmd_scrape)
-
     return parser
 
 

@@ -4,7 +4,6 @@ For each file, it should parse the JSON and extract the package name, checking e
 The script should print a status message for each file indicating whether it was renamed, already correctly named, or skipped due to a missing package name, and it must gracefully handle and report invalid JSON files or other exceptions without stopping execution on the remaining files."""
 
 from __future__ import annotations
-
 import json
 import os
 from pathlib import Path

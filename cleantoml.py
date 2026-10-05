@@ -6,13 +6,11 @@ The script should print a progress report listing each processed file name (alig
 It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
 
 from __future__ import annotations
-
 import sys
 import time
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final, Optional
-
 from dh import fsz
 
 _parser: Optional[Any] = None

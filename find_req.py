@@ -4,7 +4,6 @@ For each METADATA file, it reads and lowercases its content, then checks whether
 If a match is found, it prints the name of the parent directory of that METADATA file, effectively identifying which installed packages declare the given package as a dependency."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

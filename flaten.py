@@ -4,7 +4,6 @@ It should recursively scan for files, print progress messages including the tota
 If a filename collision occurs at the destination, it must automatically rename the incoming file by appending an incrementing numeric suffix (e.g., "_1", "_2") before the extension to avoid overwriting, logging each rename and move operation, and gracefully report any errors encountered during the move."""
 
 from __future__ import annotations
-
 import shutil
 import sys
 from pathlib import Path

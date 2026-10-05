@@ -4,7 +4,6 @@ The script should generate corresponding bash configuration lines (numbered vari
 It should also read an existing .bashrc file's contents, and locate/strip out any previously auto-generated PATH deduplication block delimited by specific "# === PATH DEDUPLICATION (AUTO-GENERATED) ===" and "# === END PATH DEDUPLICATION ===" marker comments, returning the cleaned content ready for a fresh block to be appended."""
 
 from __future__ import annotations
-
 import os
 from collections import OrderedDict
 from pathlib import Path

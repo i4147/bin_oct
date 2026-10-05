@@ -10,7 +10,6 @@ split5000.py -> split-chars --algorithm sentences --tokenizer nltk --max-chars 5
 This script falls back to stdlib behaviour if they are not installed."""
 
 from __future__ import annotations
-
 import argparse
 import concurrent.futures
 import logging
@@ -27,19 +26,15 @@ try:
     from loguru import logger as _loguru_logger
 except ImportError:
     _loguru_logger = None
-
 try:
     from binaryornot.check import is_binary as _is_binary
 except ImportError:
     _is_binary = None
-
 try:
     from nltk.tokenize import sent_tokenize as _sent_tokenize
 except ImportError:
     _sent_tokenize = None
-
 logger = logging.getLogger(__name__)
-
 PART_RE = re.compile(r"^(?P<prefix>.+)\.part(?P<num>\d+)$")
 SENTENCE_RE = re.compile(r"[.!?]\s+")
 WHITESPACE_RE = re.compile(r"\s+")
@@ -560,7 +555,6 @@ def build_parser() -> argparse.ArgumentParser:
         description="Unified text splitting and merging toolkit.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("split-chars", help="Split text files into character-based chunks.")
     p.add_argument(
         "inputs",
@@ -644,7 +638,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--extensions", nargs="+", help="Only process these extensions.")
     p.set_defaults(func=cmd_split_chars)
-
     p = sub.add_parser(
         "split-lines",
         help="Split a text file into N approximately equal line-based parts.",
@@ -652,7 +645,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("path", help="Input file.")
     p.add_argument("n", type=int, help="Number of parts.")
     p.set_defaults(func=cmd_split_lines)
-
     p = sub.add_parser("split-delimiter", help="Split a text file by a delimiter.")
     p.add_argument("path", help="Input file.")
     p.add_argument("delimiter", help="Delimiter string.")
@@ -674,12 +666,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Strip whitespace from parts. Default: both",
     )
     p.set_defaults(func=cmd_split_delimiter)
-
     p = sub.add_parser("split-by-letter", help="Split lines into files named by first letter.")
     p.add_argument("path", help="Input file.")
     p.add_argument("-o", "--output-dir", default="output", help="Output directory. Default: output")
     p.set_defaults(func=cmd_split_by_letter)
-
     p = sub.add_parser("merge-parts", help="Merge .partNNN files back into original files.")
     p.add_argument(
         "paths",
@@ -687,7 +677,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Files or directories to scan. Default: current directory.",
     )
     p.set_defaults(func=cmd_merge_parts)
-
     p = sub.add_parser("merge-text", help="Merge text files in current directory.")
     p.add_argument(
         "-e",
@@ -702,7 +691,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Group files by extension into separate output files in 'merged' directory.",
     )
     p.set_defaults(func=cmd_merge_text)
-
     return parser
 
 

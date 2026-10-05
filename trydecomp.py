@@ -4,7 +4,6 @@ Pipeline: STAGE 1 Magic-byte sniff (fast hint — no decoding) STAGE 2 libarchiv
 Usage: python this_script.py <filename>"""
 
 from __future__ import annotations
-
 import bz2
 import contextlib
 import gzip
@@ -22,62 +21,50 @@ try:
     import brotli as _brotli_mod
 except ImportError:
     _brotli_mod = None
-
 try:
     import zstandard as _zstd_mod
 except ImportError:
     _zstd_mod = None
-
 try:
     import py7zr as _py7zr_mod
 except ImportError:
     _py7zr_mod = None
-
 try:
     import cramjam as _cramjam_mod
 except ImportError:
     _cramjam_mod = None
-
 try:
     import pylzma as _pylzma_mod
 except ImportError:
     _pylzma_mod = None
-
 try:
     import rarfile as _rarfile_mod
 except ImportError:
     _rarfile_mod = None
-
 try:
     import libarchive as _libarchive_mod
 except ImportError:
     _libarchive_mod = None
-
 try:
     import pycdlib as _pycdlib_mod
 except ImportError:
     _pycdlib_mod = None
-
 try:
     import cabarchive as _cabarchive_mod
 except ImportError:
     _cabarchive_mod = None
-
 try:
     import acefile as _acefile_mod
 except ImportError:
     _acefile_mod = None
-
 try:
     import pyppmd as _pyppmd_mod
 except ImportError:
     _pyppmd_mod = None
-
 try:
     import bz3 as _bz3_mod
 except ImportError:
     _bz3_mod = None
-
 try:
     import lzo as _lzo_mod
 except ImportError:
@@ -206,7 +193,6 @@ def try_libarchive(filename: str) -> bool:
     if libarchive is None:
         print("  SKIP: libarchive-c not installed.\n")
         return False
-
     print("Trying libarchive (catch-all)...")
     try:
         with libarchive.file_reader(filename) as arc:
@@ -232,11 +218,9 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         "gzip": gzip.decompress,
         "lzma": lzma.decompress,
     }
-
     brotli = _brotli_mod
     if brotli is not None:
         methods["brotli"] = brotli.decompress  # type: ignore[misc]
-
     zstd = _zstd_mod
     if zstd is not None:
 
@@ -244,7 +228,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
             return zstd.ZstdDecompressor().decompress(data)  # type: ignore[union-attr]
 
         methods["zstandard"] = _zstd_dec
-
     cramjam = _cramjam_mod
     if cramjam is not None:
         snappy = cramjam.snappy
@@ -252,7 +235,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         cj_zstd = cramjam.zstd
         cj_brotli = cramjam.brotli
         cj_bzip2 = cramjam.bzip2
-
         methods["snappy (framed)"] = lambda d: bytes(snappy.decompress(d))
         methods["snappy (raw)"] = lambda d: bytes(snappy.decompress_raw(d))
         methods["lz4 (frame)"] = lambda d: bytes(lz4.decompress(d))
@@ -260,7 +242,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
         methods["cramjam-zstd"] = lambda d: bytes(cj_zstd.decompress(d))
         methods["cramjam-brotli"] = lambda d: bytes(cj_brotli.decompress(d))
         methods["cramjam-bzip2"] = lambda d: bytes(cj_bzip2.decompress(d))
-
     pylzma = _pylzma_mod
     if pylzma is not None:
 
@@ -269,7 +250,6 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
             return out if isinstance(out, (bytes, bytearray)) else bytes(out)
 
         methods["pylzma (raw lzma/lzma2)"] = _pylzma_dec
-
     pyppmd = _pyppmd_mod
     if pyppmd is not None:
 
@@ -283,15 +263,12 @@ def _build_decompressors() -> dict[str, Callable[[bytes], bytes]]:
             raise ValueError(msg)
 
         methods["ppmd7 (raw)"] = _ppmd_dec
-
     bz3 = _bz3_mod
     if bz3 is not None:
         methods["bzip3"] = bz3.decompress  # type: ignore[misc]
-
     lzo = _lzo_mod
     if lzo is not None:
         methods["lzo"] = lambda d: lzo.decompress(d, False, len(d) * 20)  # type: ignore[misc]
-
     return methods
 
 
@@ -301,7 +278,6 @@ def _hint_boost_order(
 ) -> dict[str, Callable[[bytes], bytes]]:
     if hint.kind == "unknown":
         return methods
-
     aliases = {
         "gzip": "gzip",
         "bzip2": "bz2",
@@ -318,7 +294,6 @@ def _hint_boost_order(
     key = aliases.get(hint.name)
     if not key:
         return methods
-
     preferred = {k: v for k, v in methods.items() if key in k.lower()}
     rest = {k: v for k, v in methods.items() if k not in preferred}
     return {**preferred, **rest}
@@ -650,7 +625,6 @@ def extract_stream(name: str, blob: bytes, src_name: str) -> None:
         stem = src_name[: -len(ext)]
     else:
         stem = src_name + ".out"
-
     target = Path.cwd() / stem
     target.write_bytes(blob)
     print(f"    WROTE: {target.name} ({len(blob)} bytes)")
@@ -681,7 +655,6 @@ def run_extraction(src: Path) -> None:
 def process(filename: str) -> bool:
     print(f"═══ Analyzing: {filename} ═══\n")
     _RECOGNIZED.clear()
-
     try:
         data = Path(filename).read_bytes()
     except FileNotFoundError:
@@ -690,14 +663,10 @@ def process(filename: str) -> bool:
     except Exception as exc:
         print(f"Error reading {filename}: {exc}\n")
         return False
-
     print(f"File size: {len(data)} bytes\n")
-
     hint = sniff_magic(data)
     print(f"[STAGE 1] Magic sniff → {hint.name} (kind={hint.kind}, mime={hint.mime}, confidence={hint.confidence})\n")
-
     success = False
-
     print("[STAGE 2] libarchive catch-all")
     if hint.kind == "stream":
         print(f"  SKIP: magic says {hint.name} is a raw stream, not a container.\n")
@@ -713,14 +682,11 @@ def process(filename: str) -> bool:
         success |= try_acefile(filename)
         success |= try_cabarchive(filename)
         success |= try_pycdlib(filename)
-
     print("[STAGE 3] Byte-stream decompressors")
     if try_stream_decompressors(data, hint):
         success = True
-
     if hint.kind == "serialized":
         success |= try_pickle(data)
-
     if success:
         print("✔ At least one format was successfully recognized.\n")
         run_extraction(Path(filename))

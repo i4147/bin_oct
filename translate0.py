@@ -4,7 +4,6 @@ The script should read files line by line, split lines into size-limited chunks 
 It should log progress and errors via the logging module, accept command-line arguments (via argparse) such as the target directory and file patterns to process, optionally track processed/skipped files using an SQLite database to avoid reprocessing, and use threading utilities to safely coordinate shared state across worker threads."""
 
 from __future__ import annotations
-
 import argparse
 import logging
 import os
@@ -16,7 +15,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Final
-
 from deep_translator import GoogleTranslator
 
 MAX_WORKERS: Final[int] = 16

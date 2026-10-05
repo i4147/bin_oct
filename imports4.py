@@ -11,11 +11,9 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
-
 from dh import STDLIB, PKG_MAPPING
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
@@ -41,7 +39,6 @@ DEFAULT_EXCLUDE_DIRS = {
     ".vscode",
 }
 OPTIONAL_EXC = ("ImportError", "ModuleNotFoundError")
-
 log = logging.getLogger("piplist")
 _MISSING = object()
 
@@ -53,7 +50,6 @@ def normalize(name):
 IMPORT_TO_PKG = {}
 for _pkg, _imp in PKG_MAPPING.items():
     IMPORT_TO_PKG.setdefault(_imp, _pkg)
-
 STDLIB_SET = set(STDLIB) if not isinstance(STDLIB, set) else STDLIB
 
 
@@ -261,20 +257,16 @@ def read_ignores(path):
 def init(args):
     level = logging.WARNING if args["quiet"] else (logging.DEBUG if args["verbose"] else logging.INFO)
     logging.basicConfig(level=level, format="%(message)s")
-
     root = args["path"] or os.curdir
     if not os.path.isdir(root):
         log.error("path does not exist: %s", root)
         return 2
-
     ignore_dirs = DEFAULT_EXCLUDE_DIRS | set(args["ignore_dir"] or [])
     exclude = {normalize(e) for e in (args["exclude"] or [])}
     if args["ignore_file"]:
         exclude |= {normalize(x) for x in read_ignores(args["ignore_file"])}
     include_only = {normalize(i) for i in (args["include"] or [])}
-
     raw = get_project_imports(root, ignore_dirs, include_optional=args["include_optional"])
-
     seen = {}
     for name, src in raw:
         if name in STDLIB_SET:
@@ -282,21 +274,17 @@ def init(args):
         if is_local_module(name, src):
             continue
         seen.setdefault(name, src)
-
     pkgs = []
     for name in sorted(seen):
         pkg = IMPORT_TO_PKG.get(name, name)
         if pkg not in pkgs:
             pkgs.append(pkg)
-
     if exclude:
         pkgs = [p for p in pkgs if normalize(p) not in exclude]
     if include_only:
         pkgs = [p for p in pkgs if normalize(p) in include_only]
-
     index = load_pypi_index()
     installed = get_installed_packages(args["python"])
-
     results = {}
     online = []
     for pkg in pkgs:
@@ -305,7 +293,6 @@ def init(args):
             results[pkg] = installed[norm]
         else:
             online.append(pkg)
-
     if online:
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
             futures = {ex.submit(resolve_online, p, index, args["proxy"]): p for p in online}
@@ -325,7 +312,6 @@ def init(args):
                     else:
                         log.warning("could not resolve version for %s", pkg)
                         results[pkg] = (pkg, None)
-
     lines = []
     for pkg in results:
         if args["strip_installed"] and normalize(pkg) in installed:
@@ -333,13 +319,10 @@ def init(args):
         name, version = results[pkg]
         lines.append(apply_pin(name, version, args["pin"]))
     lines = sorted(set(lines), key=str.lower)
-
     if args["stdout"] or args["dry_run"]:
         sys.stdout.write("\n".join(lines) + ("\n" if lines else ""))
         return 0
-
     target = os.path.join(args["path"], "requirements.txt") if args["path"] else "requirements.txt"
-
     if os.path.exists(target) and not args["overwrite"]:
         try:
             existing = [l.strip() for l in Path(target).read_text().splitlines() if l.strip() and not l.startswith("#")]
@@ -347,7 +330,6 @@ def init(args):
             existing = []
         merged = set(lines) | set(existing)
         lines = sorted(merged, key=str.lower)
-
     Path(target).write_text("\n".join(lines) + ("\n" if lines else ""))
     log.info("wrote %d entries to %s", len(lines), target)
     return 0

@@ -3,7 +3,6 @@
 It should define ctypes Structures mirroring the kernel's `statx_timestamp` and `statx` structs, load libc with `ctypes.util.find_library`, and implement a `get_creation_time_statx(path: str) -> datetime | None` function that calls `statx` with the `STATX_BTIME` mask on the given path, checks the call result and returned mask for success, and converts the resulting `stx_btime` seconds/nanoseconds into a timezone-aware UTC `datetime`, returning `None` if the creation time is unavailable or the call fails."""
 
 from __future__ import annotations
-
 import ctypes
 import ctypes.util
 from datetime import UTC, datetime

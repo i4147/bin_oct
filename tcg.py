@@ -5,7 +5,6 @@ It should place the resulting file into the correct script directory (such as ~/
 Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong."""
 
 from __future__ import annotations
-
 import shutil
 import subprocess
 import sys

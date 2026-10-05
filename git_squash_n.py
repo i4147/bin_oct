@@ -7,7 +7,6 @@ Notes: - The script requires a clean working tree by default (use --force to pro
 - It creates temporary backups and will attempt to restore the original HEAD on failure."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -78,7 +77,6 @@ class SubprocessBackend(Backend):
         self.repo_path = os.path.abspath(repo_path)
 
     def ensure_clean_worktree(self, force=False):
-
         st = run(["git", "status", "--porcelain"], cwd=self.repo_path, capture=True)
         dirty = bool(st.stdout.strip())
         stash_made = False
@@ -123,7 +121,6 @@ class SubprocessBackend(Backend):
         return shas
 
     def write_combined_diff(self, base_rev, head_rev, out_patch_path):
-
         with open(out_patch_path, "wb") as f:
             p = subprocess.Popen(
                 ["git", "diff", "--binary", f"{base_rev}..{head_rev}"],
@@ -139,7 +136,6 @@ class SubprocessBackend(Backend):
         return out_patch_path
 
     def write_commits_metadata(self, base_rev, head_rev, out_meta_path):
-
         git_log_fmt = "---%n%H|%an|%ae|%ad|%s"
         res = run(
             [
@@ -191,7 +187,6 @@ class SubprocessBackend(Backend):
         return True
 
     def apply_patch_index(self, patch_path):
-
         res = run(
             ["git", "apply", "--index", patch_path],
             cwd=self.repo_path,
@@ -200,11 +195,9 @@ class SubprocessBackend(Backend):
         )
         if res.returncode == 0:
             return True
-
         res2 = run(["git", "apply", patch_path], cwd=self.repo_path, capture=True, check=False)
         if res2.returncode == 0:
             return True
-
         msg = f"Failed to apply patch: git apply failed. stdout:\n{res.stdout}\nstderr:\n{res.stderr}"
         raise RuntimeError(msg)
 
@@ -225,7 +218,6 @@ class GenericBackend(Backend):
         self.repo_path = os.path.abspath(repo_path)
         self.subprocess = SubprocessBackend(self.repo_path)
         self._available = {}
-
         if name == "gitpython":
             try:
                 import git as gitpy
@@ -264,7 +256,6 @@ class GenericBackend(Backend):
         if not any(self._available.values()):
             self._announce_fallback("ensure_clean_worktree")
             return self.subprocess.ensure_clean_worktree(force)
-
         self._announce_fallback("ensure_clean_worktree")
         return self.subprocess.ensure_clean_worktree(force)
 
@@ -351,7 +342,6 @@ def main():
     parser.add_argument("--force", action="store_true", help="Stash uncommitted changes and proceed")
     parser.add_argument("--dry-run", action="store_true", help="Show actions without making changes")
     args = parser.parse_args()
-
     repo_path = "."
     if not is_git_repo(repo_path):
         print(
@@ -359,31 +349,24 @@ def main():
             file=sys.stderr,
         )
         sys.exit(2)
-
     backend = create_backend(args.backend, repo_path)
-
     try:
         _was_clean, stash_made = backend.ensure_clean_worktree(force=args.force)
     except Exception as e:
         print("Error: working tree check failed:", e, file=sys.stderr)
         sys.exit(1)
-
     orig_head = backend.get_head()
     print("Original HEAD:", orig_head)
-
     if args.N <= 0:
         print("N must be > 0", file=sys.stderr)
         sys.exit(2)
-
     try:
         commits = backend.get_last_n_commits(args.N)
     except Exception as e:
         print("Error getting last N commits:", e, file=sys.stderr)
-
         if stash_made:
             run(["git", "stash", "pop"], cwd=repo_path)
         sys.exit(1)
-
     head_rev = orig_head
     try:
         base_rev = backend.rev_parse(f"HEAD~{args.N}")
@@ -395,12 +378,10 @@ def main():
             if stash_made:
                 run(["git", "stash", "pop"], cwd=repo_path)
             sys.exit(1)
-
     print(f"Base rev (state before last {args.N} commits): {base_rev}")
     print("Commits to squash (oldest->newest):")
     for c in commits:
         print("  ", c)
-
     patch_path = os.path.abspath(args.patch_file)
     meta_path = os.path.abspath(args.meta_file)
     if args.dry_run:
@@ -420,25 +401,19 @@ def main():
             if stash_made:
                 run(["git", "stash", "pop"], cwd=repo_path)
             sys.exit(1)
-
     if args.dry_run:
         print("[dry-run] Would reset hard to", base_rev)
         print("[dry-run] Would apply patch and commit a single commit summarizing these commits")
         if stash_made:
             print("[dry-run] Would pop stash")
         return
-
     backup_head = orig_head
-
     try:
         print("Resetting repo to base_rev:", base_rev)
         backend.reset_hard(base_rev)
-
         print("Applying patch:", patch_path)
         backend.apply_patch_index(patch_path)
-
         backend.add_all()
-
         with open(meta_path, "r", encoding="utf-8") as f:
             meta = json.load(f)
         commit_msgs = []
@@ -448,7 +423,6 @@ def main():
         backend.commit(summary_msg, allow_empty=(len(commit_msgs) == 0))
         new_head = backend.get_head()
         print("Created new single commit:", new_head)
-
         if stash_made:
             print("Restoring stashed uncommitted changes (pop stash)")
             run(["git", "stash", "pop"], cwd=repo_path)

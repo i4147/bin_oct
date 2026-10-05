@@ -11,7 +11,6 @@ Requirements: - Use argparse to accept zero or more directory paths (default: cu
 - Verify ffmpeg and ffprobe are installed at startup and exit(1) if missing."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import multiprocessing as mp
@@ -20,7 +19,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
-
 import ffmpeg  # type: ignore[import-untyped]
 from dh import fsz
 from loguru import logger
@@ -80,17 +78,15 @@ def format_duration(seconds: float) -> str:
 
 def get_audio_info(mp3_file: Path) -> tuple[int | None, int | None]:
     try:
-        result = subprocess_run(
-            [
-                "ffprobe",
-                "-v",
-                "quiet",
-                "-print_format",
-                "json",
-                "-show_format",
-                str(mp3_file),
-            ]
-        )
+        result = subprocess_run([
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            str(mp3_file),
+        ])
         info: dict[str, object] = json.loads(result)
         format_info = info.get("format", {})
         if not isinstance(format_info, dict):
@@ -119,7 +115,6 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
     start_time = time.time()
     rel_path = mp3_file.relative_to(base_dir)
     original_bitrate, original_size = get_audio_info(mp3_file)
-
     if original_bitrate is None or original_size is None:
         return ConversionStats(
             path=rel_path,
@@ -131,7 +126,6 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
             error_message="Could not determine bitrate",
             duration=0.0,
         )
-
     new_bitrate = original_bitrate // 2
     if new_bitrate < MIN_BITRATE_KBPS:
         return ConversionStats(
@@ -144,7 +138,6 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
             error_message=f"Calculated bitrate too low ({new_bitrate} kbps)",
             duration=0.0,
         )
-
     temp_file = mp3_file.with_suffix(".tmp_convert.mp3")
     try:
         import subprocess
@@ -191,7 +184,7 @@ def convert_single_file(mp3_file: Path, base_dir: Path) -> ConversionStats:
             error_message=f"ffmpeg error: {result.stderr[:STDERR_PREVIEW_LEN]}",
             duration=duration,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         duration = time.time() - start_time
         temp_file.unlink(missing_ok=True)
         return ConversionStats(
@@ -228,7 +221,6 @@ def print_final_summary(stats: list[ConversionStats], total_duration: float) -> 
     total_original = sum(s.original_size for s in successful)
     total_new = sum(s.new_size for s in successful)
     total_saved = total_original - total_new
-
     print("─" * 40)
     print(f"<bold>Conversion Summary</bold>")
     print("─" * 40)
@@ -258,7 +250,6 @@ def find_mp3_files(directories: list[Path]) -> list[Path]:
             continue
         for ext in MP3_GLOBS:
             mp3_files.extend(directory.rglob(ext))
-
     seen: set[Path] = set()
     unique_files: list[Path] = []
     for f in mp3_files:
@@ -274,13 +265,10 @@ def process_directory(directory: Path) -> None:
     if not mp3_files:
         logger.warning(f"No MP3 files found in {directory}")
         return
-
     print(f"<bold>Found {len(mp3_files)} MP3 file(s) in {directory}</bold>\n")
-
     stats: list[ConversionStats] = []
     start_time = time.time()
     total = len(mp3_files)
-
     with mp.Pool(processes=NUM_WORKERS) as pool:
         async_results = [
             (i, pool.apply_async(convert_single_file, (mp3_file, directory))) for i, mp3_file in enumerate(mp3_files, 1)
@@ -289,7 +277,6 @@ def process_directory(directory: Path) -> None:
             stat = async_result.get()
             stats.append(stat)
             print_file_result(stat, i, total)
-
     total_duration = time.time() - start_time
     stats.sort(key=lambda s: str(s.path))
     failed = [s for s in stats if not s.success]
@@ -320,7 +307,6 @@ Examples:
     )
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     args = parser.parse_args()
-
     logger.remove()
     logger.add(
         sys.stderr,
@@ -328,18 +314,14 @@ Examples:
         format="<level>{message}</level>",
         level="INFO",
     )
-
     check_ffmpeg()
-
     print("<bold>MP3 Bitrate Halver</bold>")
     print(f"<dim>Using {NUM_WORKERS} parallel worker(s)</dim>\n")
-
     directories: list[Path] = args.directories
     for directory in directories:
         process_directory(directory)
         if len(directories) > 1:
             print()
-
     return 0
 
 

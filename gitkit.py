@@ -3,7 +3,6 @@
 Merges these originals into one tool: checkout_previous.py -> checkout-previous cut30.py -> cut delcomit.py -> del-remote-commits git-age-filter.py -> age-filter lastncommits.py -> list-added restore_all_historical_deletions.py -> restore-deleted rmcommits.py -> rm-commits squash_deletions.py -> squash-deletions stage_deleted_files.py -> stage-deleted Usage examples -------------- python git_kit.py checkout-previous -C ~/code --prefix 2026-08-29 python git_kit.py rm-commits -C ./repo --days 30 --yes python git_kit.py cut -C ./repo --days 30 --method orphan python git_kit.py del-remote-commits -C ./repo --branch main --days 7 python git_kit.py list-added -C ./repo -n 5 python git_kit.py restore-deleted -C ./repo --message "restore" python git_kit.py stage-deleted -C ./repo python git_kit.py squash-deletions -C ./repo python git_kit.py age-filter clean # reads stdin, writes stdout python git_kit.py age-filter smudge # Any subcommand accepts -b/--backend to switch how git calls are made: python git_kit.py rm-commits -b gitpython --days 14 -y python git_kit.py list-added -b libgit2 -n 10 Third-party packages (all optional, only needed for the matching backend): GitPython (backend: gitpython) pygit2 (backend: libgit2) dulwich (backend: dulwich) PyGithub (backend: pygithub) typer (backend: typer -- alias for subprocess)"""
 
 from __future__ import annotations
-
 import argparse
 import os
 import subprocess
@@ -414,9 +413,7 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Not a directory: {root}")
         return 1
-
     candidates = [root] + [p for p in root.iterdir() if p.is_dir() and not p.is_symlink()]
-
     found = False
     for candidate in candidates:
         be = make_backend(args.backend, candidate)
@@ -450,7 +447,6 @@ def cmd_checkout_previous(args: argparse.Namespace) -> int:
                 continue
         be.checkout(target)
         print(f"[done] {candidate.name}: now at {target[:8]}")
-
     if not found:
         print("No git repositories found.")
     return 0
@@ -462,50 +458,40 @@ def cmd_rm_commits(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     branch = be.current_branch()
     if branch is None:
         err("HEAD is detached — checkout a branch first")
         return 1
     print(f"Current branch: {branch}")
-
     cutoff = _cutoff(args.days)
     print(f"Cutoff: {cutoff:%Y-%m-%d %H:%M:%S UTC}")
-
     if be.is_dirty(untracked=True):
         err("Working directory is not clean — commit or stash first")
         return 1
-
     commits = be.log(ref=branch)
     if not commits:
         print("No commits found.")
         return 0
-
     keep = [c for c in commits if _parse_commit_ts(c.timestamp) > cutoff]
     old = [c for c in commits if _parse_commit_ts(c.timestamp) <= cutoff]
-
     if not old:
         print(f"No commits older than {args.days} days.")
         return 0
     if not keep:
         err("All commits would be deleted — aborting")
         return 1
-
     print(f"\nFound {len(old)} commit(s) to delete (older than {args.days} days)")
     print(f"Keeping {len(keep)} commit(s)")
     print("\nOldest commits to delete:")
     for c in old[-5:]:
         print(f"  {c.short} - {c.date:%Y-%m-%d %H:%M} - {c.subject}")
-
     new_head = keep[0]
     print(f"\nNew HEAD will be: {new_head.short} - {new_head.subject}")
-
     if not args.yes:
         ans = input("This will PERMANENTLY DELETE those commits. Continue? (yes/no): ").strip().lower()
         if ans != "yes":
             print("Cancelled.")
             return 0
-
     backup = f"backup-{branch}-{datetime.now():%Y%m%d%H%M%S}"
     print(f"\nCreating backup branch: {backup}")
     be.create_branch(backup)
@@ -522,54 +508,43 @@ def cmd_cut(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     cutoff = _cutoff(args.days)
     print(f"Cutoff date: {cutoff:%Y-%m-%d %H:%M:%S UTC}")
-
     commits = be.log(ref="HEAD")
     if not commits:
         print("No commits found.")
         return 0
-
     keep = [c for c in commits if _parse_commit_ts(c.timestamp) > cutoff]
     old = [c for c in commits if _parse_commit_ts(c.timestamp) <= cutoff]
     print(f"Commits to keep:   {len(keep)}")
     print(f"Commits to remove: {len(old)}")
-
     if not keep:
         err("No commits to keep — aborting")
         return 1
     if not old:
         print("No old commits to remove.")
         return 0
-
     oldest_kept = keep[-1]
     print(f"\nOldest kept: {oldest_kept.short} - {oldest_kept.subject}")
     print(f"Date:        {oldest_kept.date}")
-
     if not args.yes:
         ans = input("\nRewrite history? (yes/no): ").strip().lower()
         if ans != "yes":
             print("Cancelled.")
             return 0
-
     branch = be.current_branch()
-
     if args.method == "squash":
         be.reset(oldest_kept.sha, "hard")
         print(f"\n✓ Old commits removed (reset --hard to {oldest_kept.short}).")
         if branch:
             print(f"Force push needed: git push --force origin {branch}")
         return 0
-
     if branch is None:
         err("Cannot use orphan method on a detached HEAD")
         return 1
     new_branch = f"cleaned_{branch}"
     print(f"\nCreating orphan branch {new_branch}...")
-
     subprocess.run(["git", "checkout", "--orphan", new_branch], cwd=str(repo), check=True)
-
     for c in reversed(keep):
         try:
             be.cherry_pick(c.sha, allow_empty=True)
@@ -589,9 +564,7 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     branch = args.branch
-
     try:
         refs = subprocess.run(
             ["git", "for-each-ref", "--format=%(refname:short)", "refs/remotes/origin"],
@@ -603,35 +576,29 @@ def cmd_del_remote_commits(args: argparse.Namespace) -> int:
             branch = "main"
     except Exception:
         pass
-
     cutoff = _cutoff(args.days)
     commits = be.log(ref=branch)
     if not commits:
         err(f"No commits on {branch}")
         return 1
-
     keep = [c for c in commits if _parse_commit_ts(c.timestamp) >= cutoff]
     if not keep:
         err(f"No commits within {args.days} days — nothing to keep, aborting")
         return 1
-
     new_head = keep[0]
     print(f"Branch: {branch}")
     print(f"Cutoff: {cutoff:%Y-%m-%d %H:%M:%S UTC}")
     print(f"Resetting to: {new_head.short} - {new_head.subject}")
     print(f"              ({new_head.date:%Y-%m-%d %H:%M UTC})")
-
     if not args.yes:
         ans = input("Proceed with local reset and force-push? (yes/no): ").strip().lower()
         if ans != "yes":
             print("Cancelled.")
             return 0
-
     if be.current_branch() != branch:
         be.checkout(branch)
     be.reset(new_head.sha, "hard")
     print(f"✓ Local branch {branch} reset to {new_head.short}")
-
     if args.no_push:
         print("Skipping push (--no-push).")
     else:
@@ -650,7 +617,6 @@ def cmd_list_added(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     added = be.files_added_in_last(args.n)
     if not added:
         print(f"No files created in the last {args.n} commit(s).")
@@ -669,18 +635,15 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     print("🔍 Analyzing repository history for file deletions...")
     deletions = be.deleted_files_in_history()
     if not deletions:
         print("🎉 No deleted files found in this repository's history.")
         return 0
-
     missing = [(p, sha) for p, sha in deletions.items() if not (repo / p).exists()]
     if not missing:
         print("ℹ️  All historically deleted files are already present.")
         return 0
-
     print(f"⚠️  Found {len(missing)} missing file(s).\n")
     restored = 0
     for p, sha in missing:
@@ -711,7 +674,6 @@ def cmd_restore_deleted(args: argparse.Namespace) -> int:
                 restored += 1
             except subprocess.CalledProcessError as e2:
                 err(f"   could not restore {p}: {e2}")
-
     if restored:
         print(f"\n💾 Committing {restored} restored file(s)...")
         try:
@@ -745,20 +707,16 @@ def cmd_stage_deleted(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     pending = _pending_deletions_matching_history(be)
     if not pending:
         print("🎉 No pending historical file deletions need staging.")
         return 0
-
     print(f"⚠️  Found {len(pending)} deleted file(s) to stage:")
     for p in pending:
         print(f"  {p}")
-
     print("\n🛠️  Staging...")
     for p in pending:
         be.add(p)
-
     print(f'💾 Committing: "{args.message}"')
     try:
         be.commit(args.message)
@@ -775,20 +733,16 @@ def cmd_squash_deletions(args: argparse.Namespace) -> int:
     if not be.is_repo():
         err(f"{repo} is not a git repository")
         return 1
-
     pending = _pending_deletions_matching_history(be)
     if not pending:
         print("🎉 No pending historical file deletions to squash.")
         return 0
-
     print(f"⚠️  Found {len(pending)} deleted file(s) to squash:")
     for p in pending:
         print(f"  {p}")
-
     print("\n🛠️  Staging...")
     for p in pending:
         be.add(p)
-
     print("💾 Amending last commit (--amend --no-edit)...")
     try:
         be.amend_last_commit()
@@ -804,7 +758,6 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
     if not age_bin:
         default = Path.home() / ".." / "usr" / "bin" / "age"
         age_bin = str(default) if default.exists() else "age"
-
     if args.mode == "clean":
         pub_path = Path(args.public_key).expanduser()
         if not pub_path.exists():
@@ -821,7 +774,6 @@ def cmd_age_filter(args: argparse.Namespace) -> int:
             return 1
         sys.stdout.buffer.write(r.stdout)
         return 0
-
     data = sys.stdin.buffer.read()
     if not data.lstrip().startswith(b"-----BEGIN AGE ENCRYPTED FILE-----"):
         sys.stdout.buffer.write(data)
@@ -868,7 +820,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser(
         "checkout-previous",
         help="Checkout HEAD^ in repos whose HEAD subject matches a prefix",
@@ -887,7 +838,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-y", "--yes", action="store_true", help="Skip the interactive confirmation")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_checkout_previous)
-
     p = sub.add_parser(
         "rm-commits",
         help="Reset branch to drop commits older than N days (creates a backup branch)",
@@ -902,7 +852,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-y", "--yes", action="store_true")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_rm_commits)
-
     p = sub.add_parser("cut", help="Rewrite branch dropping commits older than N days")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
@@ -920,7 +869,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-y", "--yes", action="store_true")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_cut)
-
     p = sub.add_parser(
         "del-remote-commits",
         help="Reset branch and force-push (deletes commits on remote)",
@@ -941,13 +889,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-y", "--yes", action="store_true")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_del_remote_commits)
-
     p = sub.add_parser("list-added", help="List files added in the last N commits")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument("-n", type=int, default=10, help="Number of commits to look back (default: 10)")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_list_added)
-
     p = sub.add_parser("restore-deleted", help="Restore every file ever deleted in history")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
@@ -958,7 +904,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_backend_arg(p)
     p.set_defaults(func=cmd_restore_deleted)
-
     p = sub.add_parser("stage-deleted", help="Stage pending deletions that match history, then commit")
     p.add_argument("-C", "--repo", default=".")
     p.add_argument(
@@ -969,12 +914,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_backend_arg(p)
     p.set_defaults(func=cmd_stage_deleted)
-
     p = sub.add_parser("squash-deletions", help="Amend last commit with pending historical deletions")
     p.add_argument("-C", "--repo", default=".")
     _add_backend_arg(p)
     p.set_defaults(func=cmd_squash_deletions)
-
     p = sub.add_parser(
         "age-filter",
         help="age-based git clean/smudge filter (reads/writes stdin/stdout)",
@@ -992,7 +935,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Private key file (default: ~/.config/age/keys.txt)",
     )
     p.set_defaults(func=cmd_age_filter)
-
     return parser
 
 

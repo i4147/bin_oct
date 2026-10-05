@@ -4,9 +4,7 @@ The script should accept an image file path as a command-line argument, load it 
 It should include a helper function that maps RGB values to the nearest ANSI 256-color palette index, handling grayscale pixels as a special case, and exit gracefully with an error message if the specified image file cannot be found."""
 
 from __future__ import annotations
-
 import sys
-
 import numpy as np
 from PIL import Image
 

@@ -2,7 +2,6 @@
 """Convert camelCase identifiers to snake_case with reference renaming, undo, caching, and mmap I/O."""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import contextlib
@@ -19,30 +18,27 @@ import tokenize
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterator, NamedTuple
-
 import libcst as cst
 from loguru import logger
 
-SKIP_DIRS = frozenset(
-    {
-        ".git",
-        "__pycache__",
-        ".tox",
-        ".venv",
-        "venv",
-        "env",
-        "node_modules",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".eggs",
-        "build",
-        "dist",
-        ".idea",
-        ".vscode",
-        ".hg",
-        ".svn",
-    }
-)
+SKIP_DIRS = frozenset({
+    ".git",
+    "__pycache__",
+    ".tox",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".eggs",
+    "build",
+    "dist",
+    ".idea",
+    ".vscode",
+    ".hg",
+    ".svn",
+})
 CAMEL_RE = re.compile(r"^(?P<pre>_*)(?P<body>[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+)(?P<post>_*)$")
 PARTIAL_RE = re.compile(r"[a-z][A-Z]")
 SNAKE_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
@@ -562,7 +558,6 @@ def parse_targets(value: str) -> set[str]:
 def main() -> int:
     logger.remove()
     logger.add(sys.stderr, level="INFO", format="<level>{level}</level>: {message}")
-
     parser = argparse.ArgumentParser(description="Refactor camelCase identifiers to snake_case.")
     parser.add_argument("paths", nargs="*", type=Path, default=[Path.cwd()])
     parser.add_argument("-j", "--jobs", type=int, default=min(8, os.cpu_count() or 4))
@@ -577,11 +572,9 @@ def main() -> int:
     parser.add_argument("--undo-file", type=Path, default=None)
     parser.add_argument("--exclude", action="append", default=[], help="regex to exclude paths")
     args = parser.parse_args()
-
     root = args.paths[0].resolve() if args.paths else Path.cwd().resolve()
     cache_path = args.cache_file or (root if root.is_dir() else root.parent) / CACHE_FILE
     undo_path = args.undo_file or (root if root.is_dir() else root.parent) / UNDO_FILE
-
     if args.undo:
         store = load_undo(undo_path)
         if not store:
@@ -591,7 +584,6 @@ def main() -> int:
         logger.info("restored {} file(s) from {}", n, undo_path)
         undo_path.unlink(missing_ok=True)
         return 0
-
     files = gather(args.paths)
     if args.exclude:
         import re as _re
@@ -601,10 +593,8 @@ def main() -> int:
     if not files:
         logger.info("no python files found")
         return 0
-
     cache = {} if args.no_cache else load_cache(cache_path)
     undo_store = {} if args.no_undo else load_undo(undo_path)
-
     logger.info("collecting symbols from {} file(s)", len(files))
     combined: dict[str, str] = {}
     conflicts: set[str] = set()
@@ -628,22 +618,17 @@ def main() -> int:
                 combined.setdefault(k, v)
     for k in conflicts:
         combined.pop(k, None)
-
     module_renames = detect_module_renames(files) if args.rename_modules else {}
-
     if not combined and not module_renames:
         logger.info("nothing to rename")
         return 0
-
     logger.info(
         "applying {} symbol rename(s), {} module rename(s)",
         len(combined),
         len(module_renames),
     )
-
     apply = not args.dry_run
     payloads = [(f, combined, module_renames, cache.get(str(f)), apply, args.dry_run, args.diff) for f in files]
-
     total_files = 0
     total_edits = 0
     errors = 0
@@ -661,17 +646,14 @@ def main() -> int:
             if res.count:
                 total_files += 1
                 total_edits += res.count
-
     if module_renames and apply:
         moves = apply_module_file_renames(files, module_renames, apply)
         for old, new in moves:
             logger.info("module renamed {} -> {}", old, new)
-
     if not args.dry_run and not args.no_cache:
         save_json(cache_path, cache)
     if not args.dry_run and not args.no_undo and undo_store:
         save_json(undo_path, undo_store)
-
     logger.info(
         "done: {} file(s) modified, {} rename(s), {} error(s)",
         total_files,

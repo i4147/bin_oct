@@ -4,10 +4,8 @@ Group the extracted import statements by the relative folder path of the file th
 Handle per-file parsing errors gracefully without stopping the overall scan, and keep counters for the number of processed files and the set of folders containing imports for later reporting or output generation."""
 
 from __future__ import annotations
-
 from collections import defaultdict
 from pathlib import Path
-
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

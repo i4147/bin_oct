@@ -1,10 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """
 Merged JSON/text conversion toolkit.
-
 Third-party dependencies:
   pandas  - only required by the `ss2json` subcommand
-
 Usage examples:
   python merged.py custom2json magic.txt out.json
   python merged.py freeze2json
@@ -17,7 +15,6 @@ Usage examples:
   python merged.py sortdict data.txt
   python merged.py ss2json scores.csv
   python merged.py tojson words.txt "\\t"
-
 Mapping:
   custom2json.py  -> python merged.py custom2json FILE [OUT]
   freeze2json.py  -> python merged.py freeze2json
@@ -33,7 +30,6 @@ Mapping:
 """
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -659,23 +655,19 @@ def build_parser() -> argparse.ArgumentParser:
         description="Merged JSON/text conversion toolkit",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("custom2json")
     p.add_argument("file")
     p.add_argument("output", nargs="?", default=None)
     p.set_defaults(func=cmd_custom2json)
-
     p = sub.add_parser("freeze2json")
     p.add_argument("--input", default="pip.freeze")
     p.add_argument("--output", default="packages.json")
     p.set_defaults(func=cmd_freeze2json)
-
     p = sub.add_parser("jsonl2dict")
     p.add_argument("file")
     p.add_argument("--key", default=None)
     p.add_argument("--output", default=None)
     p.set_defaults(func=cmd_jsonl2dict)
-
     p = sub.add_parser("jsonl2json")
     p.add_argument("inputs", nargs="*")
     p.add_argument("-o", "--output-dir", default=None)
@@ -685,42 +677,34 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--overwrite", action="store_true")
     p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_jsonl2json)
-
     p = sub.add_parser("lowerkeys")
     p.add_argument("file")
     p.set_defaults(func=cmd_lowerkeys)
-
     p = sub.add_parser("merge-json")
     p.add_argument("inputs", nargs="*")
     p.add_argument("-o", "--output", default="merged.json")
     p.add_argument("--workers", type=int, default=8)
     p.set_defaults(func=cmd_merge_json)
-
     p = sub.add_parser("mergejson")
     p.add_argument("inputs", nargs="+")
     p.add_argument("-o", "--output", required=True)
     p.set_defaults(func=cmd_mergejson)
-
     p = sub.add_parser("mime2json")
     p.add_argument("directory", nargs="?", default=".")
     p.add_argument("--output", default="mime_to_ext.json")
     p.set_defaults(func=cmd_mime2json)
-
     p = sub.add_parser("sortdict")
     p.add_argument("file")
     p.set_defaults(func=cmd_sortdict)
-
     p = sub.add_parser("ss2json")
     p.add_argument("csv")
     p.add_argument("--score-column", default="score")
     p.set_defaults(func=cmd_ss2json)
-
     p = sub.add_parser("tojson")
     p.add_argument("file")
     p.add_argument("delimiter")
     p.add_argument("--words", default="words")
     p.set_defaults(func=cmd_tojson)
-
     return parser
 
 

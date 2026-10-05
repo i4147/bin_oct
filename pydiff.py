@@ -1,12 +1,42 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-from __future__ import annotations
+"""Create a Python command Android, using the shebang `/data/data/com.termux/files/usr/bin/python3.12`) that compares two text files line-by-line and reports the differences between them.
 
+**Purpose:**
+The script takes two file paths as input and determines which lines are unique to each file (i.e., lines present in file1 but not file2, and vice versa). It is intended for quickly diffing large line-based files (e.g., lists, logs, dictionaries) with attention to performance and optional file management actions.
+
+**Main behavior:**
+1. **Fast equality check first:** Before doing any line-level comparison, compute the SHA-256 hash of both files (reading in 1MB chunks for memory efficiency). If the hashes match, the files are identical, so the script can skip the diff entirely and report that the files are the same.
+2. **Parallel file reading:** If the files differ, read both files concurrently using a `ProcessPoolExecutor` (configurable number of workers, default 2) to speed up I/O-bound loading, using a shared helper `read_lines` from a local `dh` module.
+3. **Optional line stripping:** Support a `strip` option that trims whitespace from each line before comparison.
+4. **Line count reporting:** Report the number of lines in each file (counted by counting newline bytes, accounting for files without a trailing newline).
+5. **Diff computation:** Compute the set difference in both directions — lines only in file1, and lines only in file2 — supporting chunked/batched filtering logic (`filter_diff_chunk` with modes `only_in_first` and its complement) so the comparison can potentially be parallelized or processed in pieces.
+6. **Optional file organization:** Support a `move` option that, when enabled, creates a new sequential directory named `group_1`, `group_2`, etc. (auto-incrementing to avoid collisions) in the current working directory, and moves both compared files into that new group directory — useful for archiving/organizing files after comparison.
+7. **Colored console output:** Use a `cprint` helper (from the local `dh` module) to print status/result messages in color (e.g., magenta for the "moved to group_X/" message), making CLI output more readable.
+
+**Inputs:**
+- Two file paths (positional arguments) to compare.
+- Optional flags: whether to strip whitespace from lines, whether to move the files into a new group folder after comparison, and the number of parallel worker processes to use for reading.
+
+**Outputs:**
+- Console-printed report showing line counts for each file, whether the files are identical, and/or the lines that differ between the two files.
+- Side effect: if the move option is enabled and files differ, both files are relocated into a newly created `group_N` directory.
+
+**Implementation notes:**
+- Use `argparse` for CLI argument parsing.
+- Use `pathlib.Path` for all filesystem path handling.
+- Use `hashlib` (SHA-256) for the fast identity check.
+- Use `shutil.move` for relocating files.
+- Use `concurrent.futures.ProcessPoolExecutor` and `as_completed` for concurrent file reading.
+- Depend on a local module `dh` providing `cprint` (colored print) and `read_lines` (line-reading utility with a `ke` keyword argument controlling line-ending handling).
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/iPPRGahoGTvBu6WzKw6tXJ"""
+
+from __future__ import annotations
 import argparse
 import hashlib
 import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-
 from dh import cprint, read_lines
 
 
@@ -64,7 +94,6 @@ def report_diff_lines(
         if move:
             move_files_to_group(path1, path2)
         return
-
     lines1_count = count_lines(path1)
     lines2_count = count_lines(path2)
     use_mmap1 = lines1_count > 5000
@@ -88,10 +117,8 @@ def report_diff_lines(
         only_in_first = [p for p in lines1 if p not in set2]
     only_in_second = [p for p in lines2 if p not in set1]
     common_count = len(set1 & set2)
-
     if move and strip and not only_in_first and not only_in_second:
         move_files_to_group(path1, path2)
-
     if only_in_first:
         cprint(f"only in {path1.name}:", "cyan")
         for line in only_in_first[:5]:

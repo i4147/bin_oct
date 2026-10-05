@@ -8,7 +8,6 @@ Use ANSI 256/truecolor formatting, dataclasses for configuration, and handle bin
 Output complete, runnable code."""
 
 from __future__ import annotations
-
 import argparse
 import io
 import os
@@ -19,7 +18,6 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-
 from pygments import highlight as pyg_highlight
 from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
 from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer

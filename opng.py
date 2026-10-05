@@ -11,7 +11,6 @@ The original mode bits are preserved.
 External requirements: the ``fastwalk`` extension module and the ``optipng`` CLI (or a compatible path supplied via ``--optipng``)."""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import os
@@ -24,51 +23,38 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
-
 from fastwalk import walk_files
 
-SKIP_DIRS: Final[frozenset[str]] = frozenset(
-    {
-        ".git",
-        ".hg",
-        ".svn",
-        ".tox",
-        ".nox",
-        ".venv",
-        "venv",
-        "env",
-        "__pycache__",
-        "node_modules",
-        ".cache",
-        ".idea",
-        ".vscode",
-        "build",
-        "dist",
-        "target",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-    }
-)
-
+SKIP_DIRS: Final[frozenset[str]] = frozenset({
+    ".git",
+    ".hg",
+    ".svn",
+    ".tox",
+    ".nox",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    "node_modules",
+    ".cache",
+    ".idea",
+    ".vscode",
+    "build",
+    "dist",
+    "target",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+})
 PNG_SUFFIXES: Final[frozenset[str]] = frozenset({".png"})
-
 PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
-
 WALK_CHUNK: Final[int] = 512
-
 DEFAULT_WORKERS: Final[int] = 8
-
 IMAP_CHUNKSIZE: Final[int] = 4
-
 DEFAULT_TIMEOUT: Final[float] = 300.0
-
 COMPARE_CHUNK: Final[int] = 1 << 16
-
 DEFAULT_OPT_LEVEL: Final[int] = 7
-
 OPT_LEVELS: Final[range] = range(1, 8)
-
 OPTIPNG_SUCCESS: Final[int] = 0
 
 
@@ -92,7 +78,6 @@ def format_bytes(n: int) -> str:
                 return f"{sign}{int(value)} B"
             return f"{sign}{value:.2f} {unit}"
         value /= 1024.0
-
     return f"{sign}{value:.2f} TiB"
 
 
@@ -110,39 +95,32 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
         found = walk_files(str(root))
-    except Exception as exc:  # noqa: BLE001 - surface as a warning, keep going
+    except Exception as exc:
         print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
         return
-
     for start in range(0, len(found), WALK_CHUNK):
         for entry in found[start : start + WALK_CHUNK]:
             path = Path(entry)
-
             if path.suffix.lower() not in PNG_SUFFIXES:
                 continue
-
             try:
                 rel = path.relative_to(root)
             except ValueError:
                 rel = path
             if any(part in SKIP_DIRS for part in rel.parts[:-1]):
                 continue
-
             try:
                 if path.is_symlink():
                     continue
             except OSError:
                 continue
-
             if not _dedupe(path, seen):
                 continue
-
             yield path
 
 
 def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
-
     for raw_root in roots:
         try:
             if not raw_root.exists():
@@ -151,7 +129,6 @@ def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
                     file=sys.stderr,
                 )
                 continue
-
             if raw_root.is_file():
                 if raw_root.is_symlink():
                     print(
@@ -162,7 +139,6 @@ def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
                 if raw_root.suffix.lower() in PNG_SUFFIXES and _dedupe(raw_root, seen):
                     yield raw_root
                 continue
-
             if raw_root.is_dir():
                 try:
                     root = raw_root.resolve()
@@ -174,7 +150,6 @@ def iter_png_files(roots: Sequence[Path]) -> Iterator[Path]:
                     continue
                 yield from _iter_directory(root, seen)
                 continue
-
             print(
                 f"warning: not a file or directory: {raw_root}",
                 file=sys.stderr,
@@ -220,19 +195,16 @@ def process_file(
     timeout: float,
     dry_run: bool,
 ) -> ProcessResult:
-
     try:
         target = path.resolve(strict=True)
     except OSError as exc:
         return ProcessResult(path, 0, 0, "", "", False, False, f"cannot resolve: {exc}")
-
     try:
         st = target.stat()
     except OSError as exc:
         return ProcessResult(path, 0, 0, "", "", False, False, f"cannot stat: {exc}")
     original_size = st.st_size
     original_mode = stat.S_IMODE(st.st_mode)
-
     tmp_path: Path | None = None
     try:
         try:
@@ -255,7 +227,6 @@ def process_file(
                 False,
                 f"cannot create temp file: {exc}",
             )
-
         try:
             shutil.copy2(target, tmp_path)
         except OSError as exc:
@@ -269,14 +240,12 @@ def process_file(
                 False,
                 f"cannot stage temp copy: {exc}",
             )
-
         cmd: list[str] = [optipng, "-o", str(opt_level)]
         if strip:
             cmd += ["-strip", "all"]
         cmd.extend(extra_args)
         cmd.append("--")
         cmd.append(str(tmp_path))
-
         try:
             completed = subprocess.run(
                 cmd,
@@ -317,10 +286,8 @@ def process_file(
                 False,
                 f"failed to run optipng: {exc}",
             )
-
         stdout = completed.stdout.decode("utf-8", errors="replace")
         stderr = completed.stderr.decode("utf-8", errors="replace")
-
         if completed.returncode != OPTIPNG_SUCCESS:
             return ProcessResult(
                 path,
@@ -332,7 +299,6 @@ def process_file(
                 False,
                 f"optipng exited with status {completed.returncode}",
             )
-
         try:
             new_size = tmp_path.stat().st_size
         except OSError as exc:
@@ -346,7 +312,6 @@ def process_file(
                 False,
                 f"optipng produced no output: {exc}",
             )
-
         if new_size == 0:
             return ProcessResult(
                 path,
@@ -358,7 +323,6 @@ def process_file(
                 False,
                 "optipng produced an empty file",
             )
-
         ok, sig_err = _is_valid_png(tmp_path)
         if not ok:
             return ProcessResult(
@@ -371,7 +335,6 @@ def process_file(
                 False,
                 sig_err,
             )
-
         try:
             identical = _files_identical(target, tmp_path, original_size, new_size)
         except OSError as exc:
@@ -385,7 +348,6 @@ def process_file(
                 False,
                 f"cannot compare files: {exc}",
             )
-
         if identical:
             return ProcessResult(
                 path,
@@ -397,7 +359,6 @@ def process_file(
                 True,
                 None,
             )
-
         if new_size > original_size:
             return ProcessResult(
                 path,
@@ -409,7 +370,6 @@ def process_file(
                 False,
                 None,
             )
-
         if new_size == original_size:
             return ProcessResult(
                 path,
@@ -421,7 +381,6 @@ def process_file(
                 False,
                 None,
             )
-
         if dry_run:
             return ProcessResult(
                 path,
@@ -433,7 +392,6 @@ def process_file(
                 False,
                 None,
             )
-
         try:
             os.chmod(tmp_path, original_mode)
             os.replace(tmp_path, target)
@@ -448,7 +406,6 @@ def process_file(
                 False,
                 f"failed to replace original: {exc}",
             )
-
         tmp_path = None
         return ProcessResult(
             path,
@@ -460,7 +417,6 @@ def process_file(
             False,
             None,
         )
-
     finally:
         if tmp_path is not None:
             with contextlib.suppress(OSError):
@@ -496,7 +452,6 @@ def _print_status(result: ProcessResult, tag: str) -> None:
     path = result.path
     orig = result.original_size
     new = result.new_size
-
     if tag == "OK":
         saved = orig - new
         pct = (saved / orig * 100.0) if orig else 0.0
@@ -523,7 +478,6 @@ def _print_status(result: ProcessResult, tag: str) -> None:
 def _print_summary(counters: dict[str, int], total_before: int, total_after: int) -> None:
     total = sum(counters.values())
     skipped = counters["SAME"] + counters["SKIP"]
-
     print()
     print("-" * 66)
     print("Summary")
@@ -538,7 +492,6 @@ def _print_summary(counters: dict[str, int], total_before: int, total_after: int
         print(f"      same-size-different-bytes : {counters['SAME']}")
         print(f"      larger-output             : {counters['SKIP']}")
     print(f"  Errored   : {counters['ERROR']}")
-
     if total_before:
         saved = total_before - total_after
         pct = (saved / total_before * 100.0) if total_before else 0.0
@@ -616,9 +569,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-
     roots = [Path(p) for p in args.paths] if args.paths else [Path()]
-
     worker = partial(
         process_file,
         optipng=args.optipng,
@@ -628,7 +579,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         timeout=args.timeout,
         dry_run=args.dry_run,
     )
-
     counters: dict[str, int] = {
         "OK": 0,
         "DRY-RUN": 0,
@@ -639,29 +589,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
     total_before = 0
     total_after = 0
-
     files = iter_png_files(roots)
-
     try:
         with Pool(processes=DEFAULT_WORKERS) as pool:
             for result in pool.imap_unordered(worker, files, chunksize=IMAP_CHUNKSIZE):
                 if not args.quiet:
                     _emit_optipng_output(result)
-
                 tag = _classify(result, args.dry_run)
                 counters[tag] += 1
-
                 if tag in ("OK", "DRY-RUN"):
                     total_before += result.original_size
                     total_after += result.new_size
-
                 _print_status(result, tag)
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         return 130
-
     _print_summary(counters, total_before, total_after)
-
     return 1 if counters["ERROR"] else 0
 
 

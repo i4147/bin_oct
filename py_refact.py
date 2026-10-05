@@ -14,7 +14,6 @@ logging -> loguru.
 Usage: script.py # scan current directory recursively script.py -f merged.py # read from a "# File: relpath" merged file script.py -o mypkg.py # choose output filename (default out.py)"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import hashlib
@@ -23,9 +22,7 @@ import sys
 from pathlib import Path
 
 WORKERS: int = 6
-
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")
-
 SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.copyreg": "copyreg",
     "six.moves.urllib": "urllib",
@@ -36,7 +33,6 @@ SIX_MOVES_MAP: dict[str, str] = {
     "six.moves.map": "map",
     "six.moves.range": "range",
 }
-
 TEXT_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"^\s*from __future__ import [^\n]+\n", re.MULTILINE), ""),
     (
@@ -55,7 +51,6 @@ TEXT_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bdef __unicode__\b"), "def __str__"),
     (re.compile(r"^\s*@implements_to_string\s*\n", re.MULTILINE), ""),
 ]
-
 OS_PATH_REWRITES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\bos\.path\.exists\(([^()]*)\)"), r"Path(\1).exists()"),
     (re.compile(r"\bos\.path\.isdir\(([^()]*)\)"), r"Path(\1).is_dir()"),
@@ -75,24 +70,20 @@ OS_PATH_REWRITES: list[tuple[re.Pattern, str]] = [
         r"(Path(\1).stem, Path(\1).suffix)",
     ),
 ]
-
 AMBIGUOUS_MARKERS: list[re.Pattern] = [
     re.compile(r"\bos\.path\.join\("),
     re.compile(r"\bos\.path\.split\("),
 ]
-
 POOL_BLOCK_RE = re.compile(
     r"with\s+(?:ProcessPoolExecutor|ThreadPoolExecutor)\s*\(\s*(?:max_workers\s*=\s*[^)]*)?\)\s+as\s+(\w+)\s*:\s*\n"
     r"((?:[ \t]+.*\n)*?)"
     r"[ \t]*for\s+(\w+)\s+in\s+\1\.map\(([^,]+),\s*([^)]+)\)\s*:",
 )
-
 LOGGING_IMPORT_RE = re.compile(r"^import logging\n", re.MULTILINE)
 LOGGER_GETLOGGER_RE = re.compile(r"^\s*\w+\s*=\s*logging\.getLogger\([^)]*\)\n", re.MULTILINE)
 BASICCONFIG_RE = re.compile(r"logging\.basicConfig\([^)]*\)")
 WORKERS_ARG_RE = re.compile(r"(?:workers\s*=\s*[\w.]+\s*,?\s*)")
 WORKERS_CLI_LINE_RE = re.compile(r"^.*add_argument\(\s*['\"](-w|--workers)['\"].*\n", re.MULTILINE)
-
 PICKLE_METHOD_BLOCK_RE = re.compile(
     r"^\s*copyreg\.pickle\(types\.MethodType,.*?\)\s*\n"
     r"(?:^\s*def _(?:un)?pickle_method\b.*(?:\n(?:[ \t].*)?)*\n?)*",
@@ -127,7 +118,6 @@ def load_sources(args: argparse.Namespace) -> dict[str, str]:
         if not sources:
             sys.exit("error: no '# File: ...' sentinels found in -f input")
         return sources
-
     root = Path.cwd()
     py_files = find_source_files(root)
     if not py_files:
@@ -233,20 +223,16 @@ def collect_top_level_items(filename: str, text: str) -> tuple[list[str], list[C
             file=sys.stderr,
         )
         return [], []
-
     lines = text.splitlines()
     imports: list[str] = []
     items: list[CollectedItem] = []
-
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             imports.append(ast.unparse(node))
             continue
-
         start = node.lineno - 1
         end = getattr(node, "end_lineno", start + 1)
         source = "\n".join(lines[start:end])
-
         if isinstance(node, ast.ClassDef):
             items.append(CollectedItem(node.name, "class", source, filename, node))
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -262,7 +248,6 @@ def collect_top_level_items(filename: str, text: str) -> tuple[list[str], list[C
             items.append(CollectedItem(node.targets[0].id, "constant", source, filename, node))
         elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) and node.target.id.isupper():
             items.append(CollectedItem(node.target.id, "constant", source, filename, node))
-
     return imports, items
 
 
@@ -281,7 +266,6 @@ def resolve_name_collisions(items: list[CollectedItem]) -> list[CollectedItem]:
     by_name: dict[str, list[CollectedItem]] = {}
     for item in items:
         by_name.setdefault(item.name, []).append(item)
-
     resolved: list[CollectedItem] = []
     for name, group in by_name.items():
         if len(group) == 1:
@@ -311,20 +295,17 @@ def extract_referenced_names(source: str) -> set[str]:
 def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
     names = {item.name for item in items}
     by_name = {item.name: item for item in items}
-
     deps: dict[str, set[str]] = {}
     for item in items:
         refs = extract_referenced_names(item.source) & names
         refs.discard(item.name)
         deps[item.name] = refs
-
     in_degree = dict.fromkeys(by_name, 0)
     dependents: dict[str, list[str]] = {name: [] for name in by_name}
     for name, refs in deps.items():
         for ref in refs:
             in_degree[name] += 1
             dependents[ref].append(name)
-
     queue = sorted(name for name, deg in in_degree.items() if deg == 0)
     ordered: list[str] = []
     while queue:
@@ -335,21 +316,17 @@ def topo_sort_items(items: list[CollectedItem]) -> list[CollectedItem]:
             in_degree[dependent] -= 1
             if in_degree[dependent] == 0:
                 queue.append(dependent)
-
     if len(ordered) != len(by_name):
         remaining = sorted(set(by_name) - set(ordered))
         ordered.extend(remaining)
-
     return [by_name[name] for name in ordered]
 
 
 def optimize_imports(raw_imports: list[str]) -> str:
     unique = sorted({line for line in raw_imports if line.strip()})
     stdlib_modules = set(sys.stdlib_module_names) if hasattr(sys, "stdlib_module_names") else set()
-
     stdlib_lines: list[str] = []
     thirdparty_lines: list[str] = []
-
     for line in unique:
         if line.startswith("import "):
             top_module = line[len("import ") :].split(".")[0].split(" as ")[0].strip()
@@ -357,7 +334,6 @@ def optimize_imports(raw_imports: list[str]) -> str:
             top_module = line[len("from ") :].split(".")[0].split(" import")[0].strip()
         else:
             top_module = ""
-
         if top_module in stdlib_modules or top_module in {
             "os",
             "sys",
@@ -370,7 +346,6 @@ def optimize_imports(raw_imports: list[str]) -> str:
             stdlib_lines.append(line)
         else:
             thirdparty_lines.append(line)
-
     parts = []
     if stdlib_lines:
         parts.append("\n".join(sorted(stdlib_lines)))
@@ -395,9 +370,7 @@ def build_module_docstring(
         features.append(f"multiprocessing.Pool with WORKERS = {WORKERS} for any parallel work")
     if used_loguru:
         features.append("loguru for logging, configured via logger.remove()/logger.add()")
-
     feature_text = "; ".join(features) if features else "no additional infrastructure beyond the merged API"
-
     lines = [
         "TODO(manual-review): this docstring is a generated summary, not a verified",
         "original prompt. Replace it with an accurate description before relying on it",
@@ -416,7 +389,6 @@ def strip_docstrings_and_comments(source: str) -> str:
         tree = ast.parse(source)
     except SyntaxError:
         return source
-
     for node in ast.walk(tree):
         if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             body = node.body
@@ -429,7 +401,6 @@ def strip_docstrings_and_comments(source: str) -> str:
                 body.pop(0)
                 if not body:
                     body.append(ast.Pass())
-
     return ast.unparse(tree)
 
 
@@ -453,24 +424,19 @@ def build_output(sources: dict[str, str]) -> str:
     all_imports: list[str] = []
     all_items: list[CollectedItem] = []
     used_pool = used_loguru = used_pathlib = False
-
     for filename, raw_text in sorted(sources.items()):
         rewritten = apply_all_rewrites(raw_text)
         used_pool = used_pool or "mp.Pool" in rewritten
         used_loguru = used_loguru or "loguru" in rewritten
         used_pathlib = used_pathlib or "Path(" in rewritten
-
         file_imports, file_items = collect_top_level_items(filename, rewritten)
         all_imports.extend(file_imports)
         all_items.extend(file_items)
-
     all_items = dedup_by_hash(all_items)
     all_items = resolve_name_collisions(all_items)
-
     constants = sorted((i for i in all_items if i.kind == "constant"), key=lambda i: i.name)
     classes = topo_sort_items([i for i in all_items if i.kind == "class"])
     functions = topo_sort_items([i for i in all_items if i.kind == "function"])
-
     if used_pool:
         all_imports.append("import multiprocessing as mp")
     if used_pathlib:
@@ -478,26 +444,20 @@ def build_output(sources: dict[str, str]) -> str:
     if used_loguru:
         all_imports.append("from loguru import logger")
         all_imports.append("import sys")
-
     imports_block = optimize_imports(all_imports)
-
     body_sections = []
     if used_pool:
         body_sections.append(f"WORKERS: int = {WORKERS}\n")
-
     if constants:
         body_sections.append("\n".join(i.source.strip() for i in constants))
     if classes:
         body_sections.append("\n\n\n".join(i.source.strip() for i in classes))
     if functions:
         body_sections.append("\n\n\n".join(i.source.strip() for i in functions))
-
     public_names = sorted(i.name for i in constants + classes + functions)
     all_decl = "__all__ = [\n" + "".join(f'    "{n}",\n' for n in public_names) + "]\n"
-
     body = "\n\n\n".join(s for s in body_sections if s)
     stripped_body = strip_docstrings_and_comments(body) if body.strip() else body
-
     docstring = build_module_docstring(
         filenames=list(sources.keys()),
         n_constants=len(constants),
@@ -507,7 +467,6 @@ def build_output(sources: dict[str, str]) -> str:
         used_pool=used_pool,
         used_loguru=used_loguru,
     )
-
     return docstring + "\n" + imports_block.strip() + "\n\n\n" + all_decl + "\n\n" + stripped_body + "\n"
 
 
@@ -516,10 +475,8 @@ def main() -> None:
     parser.add_argument("-f", "--file", help="merged input file with '# File: relpath' sentinels")
     parser.add_argument("-o", "--output", help="output .py filename (default: out.py)")
     args = parser.parse_args()
-
     sources = load_sources(args)
     output_src = build_output(sources)
-
     try:
         ast.parse(output_src)
     except SyntaxError as exc:
@@ -527,7 +484,6 @@ def main() -> None:
             f"warning: generated output has a syntax issue and needs manual review: {exc}",
             file=sys.stderr,
         )
-
     out_path = determine_output_path(args.output)
     out_path.write_text(output_src, encoding="utf-8")
     print(

@@ -4,7 +4,6 @@ It should check if the file exists and print a message and exit if not, otherwis
 The script should then overwrite the history file with the deduplicated lines and print how many lines were removed, using UTF-8 encoding with error tolerance when reading the file."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 

@@ -2,7 +2,6 @@
 """->regenerates script"""
 
 from __future__ import annotations
-
 import argparse
 import shutil
 import subprocess
@@ -15,12 +14,10 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
-
 from loguru import logger
 
 if TYPE_CHECKING:
     import os
-
 WORKERS: int = 8
 PDF_SUFFIXES: frozenset[str] = frozenset({".pdf"})
 
@@ -46,7 +43,6 @@ def render_screen(part: ScreenPart, screen_index: int, screen_count: int) -> Non
         f"Page {part.page_number} | Part {part.part_number}/{part.part_count} "
         f"| Screen {screen_index + 1}/{screen_count}"
     )
-
     sys.stdout.write(f"{title}\n{'─' * min(len(title), terminal_size()[0])}\n")
     sys.stdout.write(part.text)
     sys.stdout.write("\n")
@@ -99,14 +95,11 @@ def configure_logging(level: str) -> None:
 
 def unique_paths(paths: Iterable[Path]) -> Iterator[Path]:
     seen: set[Path] = set()
-
     for raw_path in paths:
         path: Path = raw_path.expanduser()
-
         if path.is_symlink():
             logger.debug("Skipping symlink: {}", path)
             continue
-
         if path.is_file():
             if path.suffix.lower() in PDF_SUFFIXES:
                 resolved: Path = path.resolve()
@@ -114,11 +107,9 @@ def unique_paths(paths: Iterable[Path]) -> Iterator[Path]:
                     seen.add(resolved)
                     yield resolved
             continue
-
         if not path.is_dir():
             logger.warning("Ignoring missing or unsupported path: {}", path)
             continue
-
         iterator: Iterable[Path] = path.rglob("*")
         for child in iterator:
             if child.is_symlink():
@@ -133,24 +124,19 @@ def unique_paths(paths: Iterable[Path]) -> Iterator[Path]:
 def find_pdf_files(paths: Sequence[Path], recursive: bool) -> list[Path]:
     if not paths:
         paths = (Path.cwd(),)
-
     if not recursive:
         result: list[Path] = []
         seen: set[Path] = set()
-
         for raw_path in paths:
             path: Path = raw_path.expanduser()
-
             if path.is_symlink():
                 continue
-
             if path.is_file() and path.suffix.lower() in PDF_SUFFIXES:
                 resolved: Path = path.resolve()
                 if resolved not in seen:
                     seen.add(resolved)
                     result.append(resolved)
                 continue
-
             if path.is_dir():
                 for child in path.iterdir():
                     if not child.is_symlink() and child.is_file() and child.suffix.lower() in PDF_SUFFIXES:
@@ -158,9 +144,7 @@ def find_pdf_files(paths: Sequence[Path], recursive: bool) -> list[Path]:
                         if resolved not in seen:
                             seen.add(resolved)
                             result.append(resolved)
-
         return sorted(result)
-
     return sorted(unique_paths(paths))
 
 
@@ -178,14 +162,12 @@ def importable(module_name: str) -> bool:
 
 def usable_python_backends() -> list[str]:
     result: list[str] = []
-
     if importable("pdfminer"):
         result.append("pdfminer")
     if importable("pypdf"):
         result.append("pypdf")
     if importable("fitz"):
         result.append("pymupdf")
-
     return result
 
 
@@ -205,26 +187,20 @@ def resolve_backend(requested: str) -> str:
             "Install pdfminer.six, pypdf, or pymupdf; or install gs and tesseract."
         )
         raise RuntimeError(msg)
-
     if requested == "pdfminer" and importable("pdfminer"):
         return requested
-
     if requested == "pypdf" and importable("pypdf"):
         return requested
-
     if requested == "pymupdf" and importable("fitz"):
         return requested
-
     if requested == "system" and usable_system_backend():
         return requested
-
     if requested != "system" and usable_system_backend():
         logger.warning(
             "Requested backend '{}' is unavailable; using system OCR fallback.",
             requested,
         )
         return "system"
-
     msg = f"Backend '{requested}' is unavailable and no system OCR fallback exists."
     raise RuntimeError(msg)
 
@@ -258,21 +234,18 @@ def page_count_pdfinfo(path: Path) -> int:
     if not executable_exists("pdfinfo"):
         msg = "pdfinfo is required to count pages for system OCR."
         raise RuntimeError(msg)
-
     completed: subprocess.CompletedProcess[str] = subprocess.run(
         ["pdfinfo", str(path)],
         check=True,
         capture_output=True,
         text=True,
     )
-
     for line in completed.stdout.splitlines():
         key, separator, value = line.partition(":")
         if separator and key.strip().lower() == "pages":
             count: int = int(value.strip())
             if count > 0:
                 return count
-
     msg = f"pdfinfo did not report a valid page count for {path}"
     raise RuntimeError(msg)
 
@@ -292,13 +265,11 @@ def get_page_count(path: Path, backend: str) -> int:
 
 def extract_pdfminer_page(path: Path, page_number: int) -> str:
     from io import StringIO
-
     from pdfminer.high_level import extract_text_to_fp
     from pdfminer.layout import LAParams
     from pdfminer.pdfpage import PDFPage
 
     output: StringIO = StringIO()
-
     with path.open("rb") as handle:
         pages = PDFPage.get_pages(
             handle,
@@ -312,7 +283,6 @@ def extract_pdfminer_page(path: Path, page_number: int) -> str:
             page_numbers=[page_number - 1],
             codec="utf-8",
         )
-
     return output.getvalue()
 
 
@@ -341,10 +311,8 @@ def extract_system_page(path: Path, page_number: int) -> str:
     if missing:
         msg = f"System OCR backend requires missing tools: {', '.join(missing)}"
         raise RuntimeError(msg)
-
     with tempfile.TemporaryDirectory(prefix="pdf-screen-") as temporary_directory:
         image_path: Path = Path(temporary_directory) / "page.png"
-
         gs_command: list[str] = [
             "gs",
             "-q",
@@ -364,7 +332,6 @@ def extract_system_page(path: Path, page_number: int) -> str:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
-
         tesseract_command: list[str] = [
             "tesseract",
             str(image_path),
@@ -381,14 +348,12 @@ def extract_system_page(path: Path, page_number: int) -> str:
             text=True,
             errors="replace",
         )
-
     return completed.stdout
 
 
 def extract_page(task: tuple[str, int, str]) -> str:
     path_string, page_number, backend = task
     path: Path = Path(path_string)
-
     if backend == "pdfminer":
         return extract_pdfminer_page(path, page_number)
     if backend == "pypdf":
@@ -397,7 +362,6 @@ def extract_page(task: tuple[str, int, str]) -> str:
         return extract_pymupdf_page(path, page_number)
     if backend == "system":
         return extract_system_page(path, page_number)
-
     msg = f"Unknown backend: {backend}"
     raise RuntimeError(msg)
 
@@ -412,12 +376,10 @@ def terminal_size() -> tuple[int, int]:
 def wrap_text(value: str, width: int) -> list[str]:
     normalized: str = value.replace("\r\n", "\n").replace("\r", "\n")
     result: list[str] = []
-
     for line in normalized.split("\n"):
         if not line:
             result.append("")
             continue
-
         result.extend(
             textwrap.wrap(
                 line,
@@ -429,10 +391,8 @@ def wrap_text(value: str, width: int) -> list[str]:
             )
             or [""]
         )
-
     while result and result[-1] == "":
         result.pop()
-
     return result or [""]
 
 
@@ -445,13 +405,11 @@ def split_into_screen_parts(
     header_lines: int = 2
     usable_lines: int = max(1, rows - header_lines)
     wrapped: list[str] = wrap_text(text, columns)
-
     parts: list[ScreenPart] = [
         ScreenPart(page_number, index + 1, 0, "\n".join(chunk))
         for index, start in enumerate(range(0, len(wrapped), usable_lines))
         for chunk in [wrapped[start : start + usable_lines]]
     ]
-
     part_count: int = len(parts)
     return [
         ScreenPart(
@@ -467,7 +425,6 @@ def split_into_screen_parts(
 def make_screen_parts(page_text: Sequence[str]) -> list[ScreenPart]:
     columns, rows = terminal_size()
     result: list[ScreenPart] = []
-
     for page_number, text in enumerate(page_text, start=1):
         result.extend(
             split_into_screen_parts(
@@ -477,7 +434,6 @@ def make_screen_parts(page_text: Sequence[str]) -> list[ScreenPart]:
                 rows=rows,
             )
         )
-
     return result
 
 
@@ -487,34 +443,25 @@ def clear_screen() -> None:
 
 def read_key() -> str:
     character: str = sys.stdin.read(1)
-
     if character != "\033":
         return character
-
     sequence: str = character + sys.stdin.read(1)
     if sequence == "\033[":
         sequence += sys.stdin.read(1)
-
         if sequence.endswith("5"):
             sequence += sys.stdin.read(1)
             return "pageup"
-
         if sequence.endswith("6"):
             sequence += sys.stdin.read(1)
             return "pagedown"
-
         if sequence.endswith("A"):
             return "up"
-
         if sequence.endswith("B"):
             return "down"
-
         if sequence.endswith("H"):
             return "home"
-
         if sequence.endswith("F"):
             return "end"
-
     return "escape"
 
 
@@ -522,24 +469,19 @@ def pager(parts: Sequence[ScreenPart]) -> None:
     if not parts:
         logger.warning("No text was extracted.")
         return
-
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         for part in parts:
             print(f"\n=== Page {part.page_number} ===")
             print(part.text)
         return
-
     file_descriptor: int = sys.stdin.fileno()
     original_settings = termios.tcgetattr(file_descriptor)
-
     try:
         tty.setcbreak(file_descriptor)
         index: int = 0
-
         while True:
             render_screen(parts[index], index, len(parts))
             key: str = read_key().lower()
-
             if key in {"q", "\x03"}:
                 break
             if key in {"pagedown", "down", " "}:
@@ -563,9 +505,7 @@ def extract_file(path: Path, backend: str, workers: int) -> list[str]:
         path,
         backend,
     )
-
     tasks: list[tuple[str, int, str]] = [(str(path), page_number, backend) for page_number in range(1, page_count + 1)]
-
     with ProcessPoolExecutor(max_workers=workers) as executor:
         return list(executor.map(extract_page, tasks, chunksize=1))
 
@@ -573,7 +513,6 @@ def extract_file(path: Path, backend: str, workers: int) -> list[str]:
 def process_file(path: Path, requested_backend: str, workers: int) -> None:
     backend: str = resolve_backend(requested_backend)
     logger.info("Opening {} using backend {}", path, backend)
-
     try:
         page_text: list[str] = extract_file(path, backend, workers)
     except Exception:
@@ -586,11 +525,9 @@ def process_file(path: Path, requested_backend: str, workers: int) -> None:
             page_text = extract_file(path, "system", workers)
         else:
             raise
-
     if len(page_text) == 0:
         msg = f"No pages found in PDF: {path}"
         raise RuntimeError(msg)
-
     print(f"\n{path}\n")
     pager(make_screen_parts(page_text))
 
@@ -598,27 +535,22 @@ def process_file(path: Path, requested_backend: str, workers: int) -> None:
 def main(argv: Sequence[str]) -> int:
     arguments: argparse.Namespace = parse_arguments(argv)
     configure_logging(arguments.log_level)
-
     if arguments.workers < 1:
         msg = "--workers must be at least 1"
         raise ValueError(msg)
-
     paths: list[Path] = find_pdf_files(
         arguments.paths,
         recursive=not arguments.no_recursive,
     )
-
     if not paths:
         msg = "No PDF files were found."
         raise FileNotFoundError(msg)
-
     for path in paths:
         process_file(
             path=path,
             requested_backend=arguments.backend,
             workers=arguments.workers,
         )
-
     return 0
 
 

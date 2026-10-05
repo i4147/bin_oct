@@ -4,7 +4,6 @@ The script should accept three arguments—the file path, start line number, and
 It should read the file's lines, prepend the comment character to each line within the given range (clamping the end line to the file's actual length if needed), and handle edge cases such as missing arguments, invalid line numbers, or a start line beyond the file's total line count by printing clear error messages and exiting."""
 
 from __future__ import annotations
-
 import os
 import sys
 

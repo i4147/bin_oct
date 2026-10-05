@@ -16,7 +16,6 @@ Registers the age clean/smudge filters in the repo config.
 Prints next steps."""
 
 from __future__ import annotations
-
 import os
 import shutil
 import subprocess
@@ -31,14 +30,12 @@ FILTER_PATH = os.path.join(HOME, ".local", "bin", "git-age-filter")
 REPO_DIR = os.path.join(HOME, "dotfiles.git")
 GITATTRIBUTES = os.path.join(HOME, ".gitattributes")
 GITIGNORE = os.path.join(HOME, ".gitignore")
-
 SECRET_PATTERNS = [
     "secrets/**",
     "*.secret",
     ".env",
     "*.token",
 ]
-
 IGNORE_PATTERNS = [
     ".config/age/",
     "dotfiles.git/",
@@ -71,7 +68,6 @@ def ensure_age_key() -> str:
     os.makedirs(AGE_DIR, mode=0o700, exist_ok=True)
     if not os.path.exists(AGE_KEY):
         print("Generating age keypair...")
-
         out = subprocess.run(
             [which("age-keygen") or "age-keygen", "-o", AGE_KEY],
             capture_output=True,
@@ -80,7 +76,6 @@ def ensure_age_key() -> str:
             print(out.stderr.decode(), file=sys.stderr)
             sys.exit(1)
         os.chmod(AGE_KEY, 0o600)
-
     pubkey = None
     with open(AGE_KEY) as f:
         for line in f:
@@ -100,17 +95,12 @@ def ensure_age_key() -> str:
 FILTER_SOURCE = r'''#!/data/data/com.termux/files/usr/bin/python
 """Git clean/smudge filter using age. Managed by setup_dotfiles.py."""
 import os, subprocess, sys
-
 AGE_BIN = "age"
 AGE_KEY_FILE = os.path.expanduser("~/.config/age/keys.txt")
 AGE_PUBKEY_FILE = os.path.expanduser("~/.config/age/public.key")
-
-
 def die(msg, code=1):
     print(f"git-age-filter: {msg}", file=sys.stderr)
     sys.exit(code)
-
-
 def clean():
     if not os.path.exists(AGE_PUBKEY_FILE):
         die(f"missing public key: {AGE_PUBKEY_FILE}")
@@ -121,8 +111,6 @@ def clean():
     if p.returncode != 0:
         die(f"encrypt failed: {p.stderr.decode(errors='replace')}")
     sys.stdout.buffer.write(p.stdout)
-
-
 def smudge():
     data = sys.stdin.buffer.read()
     if not data.lstrip().startswith(b"-----BEGIN AGE ENCRYPTED FILE-----"):
@@ -136,8 +124,6 @@ def smudge():
     if p.returncode != 0:
         die(f"decrypt failed: {p.stderr.decode(errors='replace')}")
     sys.stdout.buffer.write(p.stdout)
-
-
 if __name__ == "__main__":
     if len(sys.argv) != 2 or sys.argv[1] not in ("clean", "smudge"):
         die("usage: git-age-filter {clean|smudge}")
@@ -184,7 +170,6 @@ def init_repo() -> None:
     if not os.path.isdir(REPO_DIR):
         run(["git", "init", "--bare", REPO_DIR])
         print(f"initialized bare repo: {REPO_DIR}")
-
     git("config", "filter.age.clean", FILTER_PATH + " clean")
     git("config", "filter.age.smudge", FILTER_PATH + " smudge")
     git("config", "filter.age.required", "true")
@@ -201,32 +186,23 @@ def main() -> None:
     write_gitattributes()
     write_gitignore()
     init_repo()
-
     print(
         textwrap.dedent(f"""
     ✅ Setup complete.
-
     Your repo is a bare repo at:
         {REPO_DIR}
     with work-tree = {HOME}
-
     Add this alias to ~/.bashrc (or ~/.zshrc):
-
         alias dot='git --git-dir=$HOME/dotfiles.git --work-tree=$HOME'
-
     Then:
-
         dot add .gitattributes .gitignore
         dot add .bashrc .zshrc .config/nvim secrets/api-keys.env
         dot commit -m "initial dotfiles (encrypted secrets)"
         dot remote add origin <your-repo-url>
         dot push -u origin main
-
     Verify a secret is encrypted before pushing:
-
         dot show HEAD:secrets/api-keys.env
         # should print -----BEGIN AGE ENCRYPTED FILE-----
-
     🔑 BACK UP {AGE_KEY} somewhere safe (password manager).
     Lose it and the encrypted files are unrecoverable.
     """)

@@ -6,7 +6,6 @@ Concurrency is provided by a multiprocessing.Pool with 8 workers via apply_async
 Use loguru for logging, pathlib for all path handling, full type annotations, and docstrings throughout."""
 
 from __future__ import annotations
-
 import sys
 import termios
 import tty
@@ -14,13 +13,11 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
-
 from dh import fsz
 from loguru import logger
 
 POOL_SIZE: Final[int] = 8
 BAR_WIDTH: Final[int] = 10
-
 RESET: Final[str] = "\x1b[0m"
 BOLD: Final[str] = "\x1b[1m"
 REVERSE: Final[str] = "\x1b[7m"
@@ -28,7 +25,6 @@ GREEN: Final[str] = "\x1b[32m"
 YELLOW: Final[str] = "\x1b[33m"
 MAGENTA: Final[str] = "\x1b[35m"
 CYAN: Final[str] = "\x1b[36m"
-
 KEY_UP: Final[str] = "\x1b[A"
 KEY_DOWN: Final[str] = "\x1b[B"
 KEY_RIGHT: Final[str] = "\x1b[C"
@@ -90,7 +86,6 @@ class DiskAnalyzer:
         except OSError:
             root_item.flag = "!"
             return root_item
-
         results: list[FSItem] = []
         with Pool(processes=POOL_SIZE) as pool:
             async_results = [pool.apply_async(_scan_recursive, (str(p),)) for p in top_level]
@@ -99,12 +94,10 @@ class DiskAnalyzer:
                     results.append(ar.get())
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("Worker failed: {}", exc)
-
         for child in results:
             child.parent = root_item
             root_item.children.append(child)
             root_item.size += child.size
-
         root_item.children.sort(key=lambda x: x.size, reverse=True)
         return root_item
 
@@ -165,12 +158,10 @@ def main() -> int:
     if not target_dir.is_dir():
         logger.error("{} is not a valid directory.", target_dir)
         return 1
-
     print("Scanning {} targets efficiently...", target_dir.resolve())
     analyzer = DiskAnalyzer(target_dir)
     current_node: FSItem = analyzer.scan()
     selected_idx: int = 0
-
     while True:
         draw_interface(current_node, selected_idx)
         key = get_key()

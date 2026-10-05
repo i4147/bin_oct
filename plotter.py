@@ -6,9 +6,7 @@ It should handle errors gracefully, such as missing arguments, malformed input w
 The plot should clip the y-axis range based on the 1st and 99th percentiles of finite y-values to avoid distortion from asymptotes or outliers, filtering out non-finite values before plotting."""
 
 from __future__ import annotations
-
 import sys
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np

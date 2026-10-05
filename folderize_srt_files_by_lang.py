@@ -3,9 +3,7 @@
 It should print progress messages with emojis for each step (scanning, files found, per-file detection results, and errors), gracefully handle unreadable files or undetectable languages by skipping them, and build a dictionary mapping language names/codes to lists of matching subtitle file paths."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 import pycld2 as cld2
 
 
@@ -24,7 +22,6 @@ def detect_language(file_path: Path):
         _is_reliable, _text_bytes_found, details = cld2.detect(subtitle_text)
         if not details or not details[0]:
             return None
-        # details[0] = (language_name, language_code, percent, score)
         lang_name, lang_code, _percent, _score = details[0]
         if lang_code == "un" or lang_name.lower() == "unknown":
             return None

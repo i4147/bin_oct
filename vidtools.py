@@ -4,7 +4,6 @@ Merges: * cutvid.py * reverse_video.py Dependencies: * cut subcommand: opencv-py
 Use --time-mode correct for standard hh:mm:ss behavior."""
 
 from __future__ import annotations
-
 import argparse
 import subprocess
 import sys
@@ -25,7 +24,6 @@ def parse_time(
     except ValueError as exc:
         msg = f"Invalid time format {time_str!r}; expected hh:mm:ss"
         raise ValueError(msg) from exc
-
     return (h * hour_factor + m * minute_factor + s * second_factor) * time_scale
 
 
@@ -50,7 +48,6 @@ def cut_video(
             file=sys.stderr,
         )
         raise SystemExit(1)
-
     if time_mode == "correct":
         if minute_factor is None:
             minute_factor = 60
@@ -61,7 +58,6 @@ def cut_video(
             minute_factor = 40
         if time_scale is None:
             time_scale = 400
-
     try:
         start_ms = parse_time(
             start_time,
@@ -80,36 +76,27 @@ def cut_video(
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return
-
     input_path_obj = Path(input_path)
-
     if not input_path_obj.exists():
         print(f"Error: Input file '{input_path}' not found.")
         return
-
     cap = cv2.VideoCapture(str(input_path_obj))
     if not cap.isOpened():
         print(f"Error: Could not open video file '{input_path}'.")
         return
-
     out = None
     try:
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
         start_frame = int(start_ms * fps / ms_per_second)
         duration_frames = int(duration_ms * fps / ms_per_second)
         end_frame = start_frame + duration_frames
-
         if end_frame > frame_count:
             end_frame = frame_count
             print("Warning: Duration exceeds video length. Cutting until the end of the video.")
-
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-
         if output is None:
             output = f"cut_{input_path_obj.name}"
-
         out = cv2.VideoWriter(
             output,
             fourcc,
@@ -119,30 +106,22 @@ def cut_video(
                 int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             ),
         )
-
         if not out.isOpened():
             print(f"Error: Could not create video writer for '{output}'.")
             return
-
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-
         processed = 0
         frames_to_process = end_frame - start_frame
-
         print(f"start_frame:{start_frame}/end_frame: {end_frame} -> {frames_to_process} frames to process")
-
         for _i in range(start_frame, end_frame):
             ret, frame = cap.read()
             if not ret:
                 break
-
             out.write(frame)
             processed += 1
             print(f"{processed}/{frames_to_process}")
-
         print(f"Video segment saved to '{output}'")
         print(f"Frames processed: {processed}")
-
     finally:
         cap.release()
         if out is not None:
@@ -159,21 +138,15 @@ def reverse_video(
     crf: Optional[int] = 23,
 ) -> None:
     cmd = ["ffmpeg", "-i", input_path, "-vf", "reverse"]
-
     if keep_audio:
         cmd += ["-af", "areverse"]
     else:
         cmd += ["-an"]
-
     cmd += ["-c:v", "libx264", "-preset", preset]
-
     if crf is not None:
         cmd += ["-crf", str(crf)]
-
     cmd += [output]
-
     print(f"Running: {' '.join(cmd)}")
-
     try:
         subprocess.run(cmd, check=True)
     except FileNotFoundError:
@@ -188,7 +161,6 @@ def reverse_video(
             file=sys.stderr,
         )
         raise SystemExit(exc.returncode)
-
     print(f"Saved to {output}")
 
 
@@ -197,9 +169,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="vidtools.py",
         description="Cut or reverse videos (merged cutvid.py + reverse_video.py).",
     )
-
     sub = parser.add_subparsers(dest="command", required=True)
-
     cut = sub.add_parser("cut", help="Cut a segment from a video (cutvid.py).")
     cut.add_argument("input", help="Input video file, e.g. input.mkv")
     cut.add_argument("start", help="Start time hh:mm:ss")
@@ -249,7 +219,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=1000,
         help="Advanced: milliseconds per second for frame conversion. Default: 1000",
     )
-
     rev = sub.add_parser(
         "reverse",
         help="Reverse a video with ffmpeg (reverse_video.py).",
@@ -282,14 +251,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Omit -crf (matches s() in reverse_video.py).",
     )
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     if args.command == "cut":
         cut_video(
             args.input,
@@ -304,7 +271,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             ms_per_second=args.ms_per_second,
         )
         return 0
-
     if args.command == "reverse":
         crf = None if args.no_crf else args.crf
         reverse_video(
@@ -315,7 +281,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             crf=crf,
         )
         return 0
-
     parser.print_help()
     return 2
 

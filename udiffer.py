@@ -4,7 +4,6 @@ It should accept two file path arguments via argparse, read each file's lines wi
 If any differences are found, the script should write them to stdout and exit with status code 1; otherwise it exits normally with status 0."""
 
 from __future__ import annotations
-
 import argparse
 import difflib
 import sys

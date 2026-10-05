@@ -4,7 +4,6 @@ It should accept two command-line arguments, a filename and a delimiter, reading
 The script must validate that exactly two arguments are provided and that the delimiter is non-empty, printing a usage or error message and exiting with status 1 otherwise, and it should print a confirmation message naming the updated file upon success."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

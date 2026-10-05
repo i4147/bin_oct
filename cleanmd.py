@@ -1,6 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 """remove_images.py — unified image-reference remover for Markdown, reStructuredText and HTML.
-
 Original-script mapping
 -----------------------
     clean_md.py                -> python remove_images.py --ext .md .markdown
@@ -8,9 +7,7 @@ Original-script mapping
     markdown_image_remover.py  -> python remove_images.py --ext .md .markdown --backup --aggressive-defs
     remove_image_refrences.py  -> python remove_images.py --remote-only --ext .html .htm .md .rst .txt
     rmimg.py                   -> python remove_images.py --ext .html .htm --html-parser bs4
-
 Optional third-party dependency: beautifulsoup4 (only required with --html-parser bs4).
-
 Examples
 --------
     python remove_images.py
@@ -21,7 +18,6 @@ Examples
 """
 
 from __future__ import annotations
-
 import argparse
 import logging
 import re
@@ -37,9 +33,7 @@ try:
     _HAS_BS4 = True
 except ImportError:
     _HAS_BS4 = False
-
 log = logging.getLogger("remove_images")
-
 _REMOTE_PREFIXES = ("http://", "https://", "//")
 _BADGE_PATTERNS = tuple(
     re.compile(p, re.IGNORECASE)
@@ -71,7 +65,6 @@ _BADGE_PATTERNS = tuple(
     )
 )
 _IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".bmp")
-
 RE_MD_BADGE = re.compile(r"\[!\[[^\]]*\]\(([^\)]+)\)\]\(([^\)]+)\)")
 RE_MD_INLINE = re.compile(r"!\[([^\[\]]*)\]\(([^\)]+)\)")
 RE_MD_REF_IMG = re.compile(r"!\[([^\[\]]*)\]\[([^\[\]]+)\]")
@@ -83,7 +76,6 @@ RE_HTML_IMG = re.compile(r"<img\b[^>]*>", re.IGNORECASE)
 RE_HTML_PICTURE = re.compile(r"<picture\b[^>]*>.*?</picture>", re.DOTALL | re.IGNORECASE)
 RE_HTML_FIGURE = re.compile(r"<figure\b[^>]*>.*?</figure>", re.DOTALL | re.IGNORECASE)
 RE_HTML_IMG_SRC = re.compile(r"<img\b[^>]*\bsrc\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
-
 RE_RST_IMAGE = re.compile(r"^\s*\.\.\s+image::\s+(\S+)")
 RE_RST_FIGURE = re.compile(r"^\s*\.\.\s+figure::\s+(\S+)")
 RE_RST_SUBST_IMAGE = re.compile(r"^\s*\.\.\s+\|[^|]+\|\s+image::\s+(\S+)")
@@ -92,7 +84,6 @@ RE_RST_SUBST_REPLACE = re.compile(
     re.IGNORECASE,
 )
 _RST_PATTERNS = (RE_RST_IMAGE, RE_RST_FIGURE, RE_RST_SUBST_IMAGE, RE_RST_SUBST_REPLACE)
-
 _RE_BLANKLINES = re.compile(r"\n{3,}")
 
 
@@ -143,7 +134,6 @@ def process_markdown(
 ) -> tuple[str, int]:
     removed = 0
     ends_nl = text.endswith("\n")
-
     if badges:
 
         def repl_badge(m: re.Match[str]) -> str:
@@ -157,7 +147,6 @@ def process_markdown(
             return m.group(0)
 
         text = RE_MD_BADGE.sub(repl_badge, text)
-
     remote_defs: set[str] = set()
     if remote_only:
         for m in RE_MD_IMAGE_DEF.finditer(text):
@@ -208,7 +197,6 @@ def process_markdown(
         return ""
 
     text = RE_HTML_IMG.sub(repl_img, text)
-
     if not remote_only:
 
         def repl_block(m: re.Match[str]) -> str:
@@ -218,7 +206,6 @@ def process_markdown(
 
         text = RE_HTML_PICTURE.sub(repl_block, text)
         text = RE_HTML_FIGURE.sub(repl_block, text)
-
     return _finalize(text, ends_nl), removed
 
 
@@ -270,7 +257,6 @@ def _process_html_regex(text: str, remote_only: bool) -> tuple[str, int]:
 def _process_html_bs4(text: str, remote_only: bool) -> tuple[str, int]:
     soup = BeautifulSoup(text, "html.parser")
     removed = 0
-
     for img in soup.find_all("img"):
         src = img.get("src", "")
         if isinstance(src, list):
@@ -279,7 +265,6 @@ def _process_html_bs4(text: str, remote_only: bool) -> tuple[str, int]:
             continue
         img.decompose()
         removed += 1
-
     for tag in soup.find_all(style=True):
         parts = [p.strip() for p in tag["style"].split(";") if p.strip()]
         kept: list[str] = []
@@ -296,7 +281,6 @@ def _process_html_bs4(text: str, remote_only: bool) -> tuple[str, int]:
             tag["style"] = "; ".join(kept)
         else:
             del tag["style"]
-
     return str(soup), removed
 
 
@@ -321,11 +305,9 @@ def process_file(
         text = path.read_text(encoding="utf-8", errors="ignore")
     except OSError as e:
         return Result(path, 0, 0, 0, 0, 0, str(e))
-
     lines_before = text.count("\n") + 1
     size_before = len(text.encode("utf-8"))
     ext = path.suffix.lower()
-
     try:
         if ext in (".md", ".markdown"):
             new_text, removed = process_markdown(text, remote_only, badges, aggressive_defs)
@@ -337,17 +319,14 @@ def process_file(
             return Result(path, 0, lines_before, lines_before, size_before, size_before)
     except Exception as e:
         return Result(path, 0, lines_before, lines_before, size_before, size_before, str(e))
-
     if removed == 0:
         return Result(path, 0, lines_before, lines_before, size_before, size_before)
-
     try:
         if backup:
             path.with_suffix(path.suffix + ".bak").write_text(text, encoding="utf-8")
         path.write_text(new_text, encoding="utf-8")
     except OSError as e:
         return Result(path, 0, lines_before, lines_before, size_before, size_before, str(e))
-
     lines_after = new_text.count("\n") + 1
     size_after = len(new_text.encode("utf-8"))
     return Result(path, removed, lines_before, lines_after, size_before, size_after)
@@ -435,18 +414,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         level=logging.DEBUG if args.verbose else logging.WARNING,
         format="%(levelname)s: %(message)s",
     )
-
     exts = args.ext or [".md", ".markdown", ".rst", ".html", ".htm"]
     paths = args.paths or [Path.cwd()]
     files = discover_files(paths, exts)
-
     if not files:
         print("No matching files found.")
         return 0
-
     if args.report != "none":
         print(f"Processing {len(files)} file(s) with {args.workers} worker(s)...")
-
     results: list[Result] = []
     try:
         with ProcessPoolExecutor(max_workers=args.workers) as ex:
@@ -474,10 +449,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         return 1
-
     if args.report == "detailed":
         print_summary(results)
-
     return 1 if any(r.error for r in results) else 0
 
 

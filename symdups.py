@@ -4,13 +4,11 @@ The script should use argparse to accept a target directory (defaulting to the c
 It should skip files smaller than a minimum size threshold and only hash files that share the same size to optimize performance."""
 
 from __future__ import annotations
-
 import argparse
 import json
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-
 from xxhash import xxh64
 
 BACKUP_FILE = ".symlink_backup.json"
@@ -76,14 +74,12 @@ def create_symlinks(duplicates, dry_run=False) -> int:
             get_size = Path(duplicate).stat().st_size
             print(f"  Symlinking: {duplicate} -> {keeper_abs}")
             if not dry_run:
-                backup_data["operations"].append(
-                    {
-                        "symlink": str(duplicate_abs),
-                        "target": str(keeper_abs),
-                        "original_existed": True,
-                        "size": get_size,
-                    }
-                )
+                backup_data["operations"].append({
+                    "symlink": str(duplicate_abs),
+                    "target": str(keeper_abs),
+                    "original_existed": True,
+                    "size": get_size,
+                })
                 try:
                     Path(duplicate).unlink()
                     Path(duplicate_abs).symlink_to(keeper_abs)

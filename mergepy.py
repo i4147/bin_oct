@@ -6,7 +6,6 @@ import x`, `from .module import x`, and `import .`) into absolute imports refere
 After merging, it should print a summary message stating how many files were merged and the output filename, and the script should run automatically when executed as the main module."""
 
 from __future__ import annotations
-
 import os
 import re
 from pathlib import Path

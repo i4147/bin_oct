@@ -5,12 +5,10 @@ Files are processed with a fixed multiprocessing.Pool of 8 workers.
 Logging via loguru."""
 
 from __future__ import annotations
-
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-
 import chardet  # type: ignore[import-untyped]
 from dh import get_nobinary, is_binary  # type: ignore[import-untyped]
 from loguru import logger
@@ -18,10 +16,8 @@ from loguru import logger
 if TYPE_CHECKING:
     from collections.abc import Generator
     from multiprocessing.pool import AsyncResult
-
 MAX_WORKERS: Final[int] = 8
 SAMPLE_SIZE: Final[int] = 100_000
-
 ConvertResult = tuple[Path, bool, str]
 
 
@@ -42,16 +38,13 @@ def convert_file(file_path: Path) -> ConvertResult:
     try:
         if is_binary(file_path):
             return file_path, False, "Skipped (binary/unsupported)"
-
         encoding: str = detect_encoding(file_path)
         if encoding.lower() == "utf-8":
             return file_path, True, "Already UTF8"
-
         with file_path.open("r", encoding=encoding, errors="replace") as f:
             content: str = f.read()
         with file_path.open("w", encoding="utf-8") as f:
             f.write(content)
-
         return file_path, True, f"Converted from {encoding}"
     except Exception as exc:
         return file_path, False, f"Error: {exc!s}"
@@ -93,25 +86,19 @@ def main() -> int:
         help="Show detailed output for each file",
     )
     args: argparse.Namespace = parser.parse_args()
-
     input_paths: list[str] = list(args.paths) if args.paths else ["."]
     cwd: Path = Path.cwd()
-
     if args.paths:
         files: list[Path] = list(collect_files(input_paths))
     else:
         files = list(get_nobinary(cwd))
-
     if not files:
         print("No files to process.")
         return 0
-
     print(f"Processing {len(files)} file(s) with {MAX_WORKERS} worker(s)...\n")
-
     converted: int = 0
     skipped: int = 0
     errors: int = 0
-
     with Pool(processes=MAX_WORKERS) as pool:
         async_results: list[AsyncResult[ConvertResult]] = [pool.apply_async(convert_file, (f,)) for f in files]
         for async_res in async_results:
@@ -130,14 +117,12 @@ def main() -> int:
                     converted += 1
             else:
                 errors += 1
-
     print("=" * 40)
     print("Summary:")
     print(f"  Converted: {converted}")
     print(f"  Skipped:   {skipped}")
     print(f"  Errors:    {errors}")
     print("=" * 40)
-
     return 0 if errors == 0 else 1
 
 

@@ -12,7 +12,6 @@ Mapping from the original scripts --------------------------------- clone_repos.
 Third-party packages (install the ones you need): requests, loguru (all subcommands) GitPython (`clone`, `fork`) -> `pip install gitpython` dulwich (`dulwich`) -> `pip install dulwich` PyGithub (`fork`, `get-zip`) -> `pip install PyGithub` python-dotenv (`fork`, `get-zip`)-> `pip install python-dotenv` tqdm (`get-zip`) -> `pip install tqdm`"""
 
 from __future__ import annotations
-
 import argparse
 import io
 import os
@@ -25,7 +24,6 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 from urllib.parse import urlparse
-
 import requests
 from loguru import logger
 
@@ -81,7 +79,7 @@ def _pool_consume(
         try:
             _, ok, msg = async_res.get()
             result_handler(slug, ok, msg)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(f"❌ {slug}: Unexpected error: {exc!s}")
 
 
@@ -127,7 +125,7 @@ def _gh_size_mb(owner: str, repo: str, token: Optional[str] = None) -> Optional[
             print(f"   Response: {exc.response.text}")
     except requests.exceptions.RequestException as exc:
         print(f"❌ Network Error: Could not connect to GitHub API: {exc}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"❌ An unexpected error occurred while fetching size: {exc}")
     return None
 
@@ -138,17 +136,14 @@ def _git_clone_one(slug: str, output_dir: Path) -> tuple[str, bool, str]:
 
     if not _is_valid_slug(slug):
         return slug, False, f"Invalid format: {slug} (expected user/repo)"
-
     owner, repo = slug.split("/")
     dest = output_dir / owner / repo
-
     if dest.exists():
         try:
             Repo(dest)
             return slug, True, f"Already exists: {dest}"
         except InvalidGitRepositoryError:
             return slug, False, f"Directory exists but is not a git repo: {dest}"
-
     dest.parent.mkdir(parents=True, exist_ok=True)
     url = f"https://github.com/{slug}.git"
     try:
@@ -158,7 +153,7 @@ def _git_clone_one(slug: str, output_dir: Path) -> tuple[str, bool, str]:
         if dest.exists():
             shutil.rmtree(dest, ignore_errors=True)
         return slug, False, f"Clone failed: {str(exc).strip()}"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if dest.exists():
             shutil.rmtree(dest, ignore_errors=True)
         return slug, False, f"Error: {exc!s}"
@@ -168,9 +163,7 @@ def cmd_clone(args: argparse.Namespace) -> int:
     repo_file = Path(args.file)
     out_dir = Path(args.output)
     repos = _load_repo_list(repo_file)
-
     print(f"Found {len(repos)} repositories to clone")
-
     if args.dry_run:
         print("\nDry run - would clone:")
         for slug in repos:
@@ -182,7 +175,6 @@ def cmd_clone(args: argparse.Namespace) -> int:
             else:
                 print(f"  [INVALID] {slug}")
         return 0
-
     counters = {"ok": 0, "existed": 0, "failed": 0}
 
     def handle(slug: str, ok: bool, msg: str) -> None:
@@ -198,11 +190,9 @@ def cmd_clone(args: argparse.Namespace) -> int:
 
     print(f"\nCloning with {args.workers} parallel workers to {out_dir.absolute()}")
     print("-" * 40)
-
     with Pool(processes=args.workers) as pool:
         jobs = [(slug, pool.apply_async(_git_clone_one, (slug, out_dir))) for slug in repos]
         _pool_consume(pool, jobs, handle)
-
     _print_summary(counters["ok"], counters["existed"], counters["failed"], len(repos))
     return 0
 
@@ -210,12 +200,10 @@ def cmd_clone(args: argparse.Namespace) -> int:
 def _zip_download_one(slug: str, output_dir: Path, timeout: int) -> tuple[str, bool, str]:
     if not _is_valid_slug(slug):
         return slug, False, f"Invalid format: {slug}"
-
     owner, repo = slug.split("/")
     dest = output_dir / owner / repo
     if dest.exists():
         return slug, True, f"Already exists: {dest}"
-
     dest.parent.mkdir(parents=True, exist_ok=True)
     url = f"https://api.github.com/repos/{slug}/zipball"
     try:
@@ -238,7 +226,7 @@ def _zip_download_one(slug: str, output_dir: Path, timeout: int) -> tuple[str, b
         return slug, False, f"Download failed: {exc!s}"
     except zipfile.BadZipFile:
         return slug, False, "Invalid ZIP file received"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if dest.exists():
             shutil.rmtree(dest, ignore_errors=True)
         return slug, False, f"Error: {exc!s}"
@@ -248,9 +236,7 @@ def cmd_zip(args: argparse.Namespace) -> int:
     repo_file = Path(args.file)
     out_dir = Path(args.output)
     repos = _load_repo_list(repo_file)
-
     print(f"Found {len(repos)} repositories to download")
-
     if args.dry_run:
         print("\nDry run - would download:")
         for slug in repos:
@@ -262,7 +248,6 @@ def cmd_zip(args: argparse.Namespace) -> int:
             else:
                 print(f"  [INVALID] {slug}")
         return 0
-
     counters = {"ok": 0, "existed": 0, "failed": 0}
 
     def handle(slug: str, ok: bool, msg: str) -> None:
@@ -278,13 +263,11 @@ def cmd_zip(args: argparse.Namespace) -> int:
 
     print(f"\nDownloading with {args.workers} parallel workers to {out_dir.absolute()}")
     print("-" * 40)
-
     with Pool(processes=args.workers) as pool:
         jobs = [(slug, pool.apply_async(_zip_download_one, (slug, out_dir, args.timeout))) for slug in repos]
         _pool_consume(pool, jobs, handle)
         pool.close()
         pool.join()
-
     _print_summary(
         counters["ok"],
         counters["existed"],
@@ -305,7 +288,7 @@ def _dulwich_size_check(slug: str, max_bytes: int) -> tuple[bool, int]:
             size_bytes = size_kb * 1024
             return size_bytes <= max_bytes, size_bytes
         return True, 0
-    except Exception:  # noqa: BLE001
+    except Exception:
         return True, 0
 
 
@@ -316,17 +299,14 @@ def _dulwich_clone_one(slug: str, output_dir: Path, max_bytes: int) -> tuple[str
 
     if not _is_valid_slug(slug):
         return slug, False, f"Invalid format: {slug} (expected user/repo)"
-
     owner, repo = slug.split("/")
     dest = output_dir / owner / repo
-
     if dest.exists():
         try:
             DulwichRepo(str(dest))
             return slug, True, f"Already exists: {dest}"
         except NotGitRepository:
             return slug, False, f"Directory exists but is not a git repo: {dest}"
-
     fits, size_bytes = _dulwich_size_check(slug, max_bytes)
     if not fits:
         return (
@@ -334,13 +314,12 @@ def _dulwich_clone_one(slug: str, output_dir: Path, max_bytes: int) -> tuple[str
             False,
             f"Too large ({_human_size(size_bytes)} > {max_bytes // (1024 * 1024)}MB)",
         )
-
     dest.parent.mkdir(parents=True, exist_ok=True)
     url = f"https://github.com/{slug}.git"
     try:
         porcelain.clone(url, str(dest), depth=1, bare=False)
         return slug, True, f"Successfully cloned to {dest} ({_human_size(size_bytes)})"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if dest.exists():
             shutil.rmtree(dest, ignore_errors=True)
         return slug, False, f"Clone failed: {exc!s}"
@@ -351,10 +330,8 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
     out_dir = Path(args.output)
     max_bytes = args.max_size * 1024 * 1024
     repos = _load_repo_list(repo_file)
-
     print(f"Found {len(repos)} repositories to clone")
     print(f"Max repo size: {args.max_size}MB")
-
     if args.dry_run:
         print("\nDry run - checking sizes:")
         for slug in repos:
@@ -371,7 +348,6 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
             else:
                 print(f"  [INVALID] {slug}")
         return 0
-
     counters = {"ok": 0, "existed": 0, "failed": 0}
     success_slugs: set[str] = set()
 
@@ -390,16 +366,13 @@ def cmd_dulwich(args: argparse.Namespace) -> int:
 
     print(f"\nCloning with {args.workers} parallel workers to {out_dir.absolute()}")
     print("-" * 40)
-
     with Pool(processes=args.workers) as pool:
         jobs = [(slug, pool.apply_async(_dulwich_clone_one, (slug, out_dir, max_bytes))) for slug in repos]
         _pool_consume(pool, jobs, handle)
-
     if not args.no_cleanup and success_slugs:
         remaining = [r for r in _load_repo_list(repo_file) if r not in success_slugs]
         repo_file.write_text("\n".join(remaining) + ("\n" if remaining else ""))
         print(f"\nRemoved {len(success_slugs)} repos from {repo_file}")
-
     _print_summary(counters["ok"], counters["existed"], counters["failed"], len(repos))
     if not args.no_cleanup and success_slugs:
         print(f"  📝 Remaining in {repo_file}: {len(_load_repo_list(repo_file))}")
@@ -478,10 +451,9 @@ def _clone_fork_and_link(fork, origin_slug: str):
     try:
         local = Repo.clone_from(clone_url, repo_name)
         print(f"✓ Cloned to: ./{repo_name}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error cloning: {exc}")
         sys.exit(1)
-
     upstream_url = f"https://github.com/{origin_slug}.git"
     print(f"Adding upstream remote: {upstream_url}")
     upstream = local.create_remote("upstream", upstream_url)
@@ -502,13 +474,11 @@ def cmd_fork(args: argparse.Namespace) -> int:
         print("Error: Use format 'user/repo'")
         print("Example: octocat/Hello-World")
         sys.exit(1)
-
     _ensure_env_template()
     token = _load_dotenv_token()
     gh, user = _gh_authenticate(token)
     fork = _gh_fork_repo(gh, user, slug)
     local_repo, default_branch = _clone_fork_and_link(fork, slug)
-
     print("\n✓ Setup complete!")
     print("\nRemotes configured:")
     for remote in local_repo.remotes:
@@ -536,7 +506,7 @@ def _parse_gh_slug(text: str) -> tuple[Optional[str], Optional[str]]:
             bits = [p for p in parsed.path.split("/") if p]
             if len(bits) == 2:
                 return bits[0], bits[1]
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     return None, None
 
@@ -553,7 +523,7 @@ def _cli_git_clone(owner: str, repo: str, destination: Path) -> bool:
     except FileNotFoundError:
         print("❌ Error: 'git' command not found. Please ensure Git is installed and in your PATH.")
         return False
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"❌ An unexpected error occurred during cloning: {exc}")
         return False
 
@@ -563,7 +533,6 @@ def cmd_gclone(args: argparse.Namespace) -> int:
     lines = repo_file.read_text(encoding="utf-8").splitlines(keepends=False)
     token = args.token or os.getenv("GITHUB_TOKEN")
     too_large: list[str] = []
-
     total = len(lines)
     for idx, line in enumerate(lines):
         print(f"{idx}/{total}")
@@ -572,7 +541,6 @@ def cmd_gclone(args: argparse.Namespace) -> int:
             print(f"❌ Invalid GitHub repository format: '{line}'")
             too_large.append(line)
             continue
-
         print(f"🔍 Analyzing repository: {owner}/{repo}")
         size_mb = _gh_size_mb(owner, repo, token)
         if size_mb is not None and size_mb <= args.max_size:
@@ -586,7 +554,6 @@ def cmd_gclone(args: argparse.Namespace) -> int:
             if size_mb is not None:
                 print(f"⏭️  Skipping (size {size_mb} MB > {args.max_size} MB)")
             too_large.append(line)
-
     remaining_file = Path(args.remaining_file)
     remaining_file.write_text("\n".join(too_large), encoding="utf-8")
     print(f"\n📝 Wrote {len(too_large)} remaining entries to {remaining_file}")
@@ -600,7 +567,6 @@ def _download_zip_with_progress(owner: str, repo: str, branch: str, output: Opti
     gh = Github(os.getenv("GITHUB_TOKEN"))
     gh_repo = gh.get_repo(f"{owner}/{repo}")
     zip_url = gh_repo.get_zipball_url(branch)
-
     token = os.getenv("GITHUB_TOKEN")
     headers = {
         "Authorization": f"token {token}",
@@ -608,10 +574,8 @@ def _download_zip_with_progress(owner: str, repo: str, branch: str, output: Opti
     }
     resp = requests.get(zip_url, headers=headers, stream=True)
     resp.raise_for_status()
-
     total = int(resp.headers.get("content-length", 0))
     print(f"📦 Download size: {total / (1024 * 1024):.2f} MB ({total:,} bytes)")
-
     out_name = output or f"{repo}-{branch}.zip"
     chunk = 8192
     with (
@@ -627,14 +591,12 @@ def _download_zip_with_progress(owner: str, repo: str, branch: str, output: Opti
 
 
 def cmd_get_zip(args: argparse.Namespace) -> int:
-
     try:
         from dotenv import load_dotenv
 
         load_dotenv(Path.home() / ".env")
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
-
     try:
         owner, repo = args.repo.split("/")
     except ValueError:
@@ -649,7 +611,6 @@ def _sparse_clone_one(url: str, output_dir: Path, extensions: list[str], timeout
         parsed = urlparse(url)
         name = Path(parsed.path).stem
         dest = output_dir / name
-
         subprocess.run(
             ["git", "clone", "--filter=blob:none", "--sparse", url, str(dest)],
             check=True,
@@ -668,7 +629,7 @@ def _sparse_clone_one(url: str, output_dir: Path, extensions: list[str], timeout
             capture_output=True,
         )
         return url, True, f"Successfully cloned {name}"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return url, False, f"Failed: {exc!s}"
 
 
@@ -681,17 +642,13 @@ def cmd_sparse(args: argparse.Namespace) -> int:
             urls.append(token)
         else:
             extensions.append(token)
-
     if not extensions or not urls:
         print("Error: Must provide at least one extension and one repository URL")
         return 1
-
     out_dir = Path(args.output)
     out_dir.mkdir(exist_ok=True)
-
     print(f"Extensions to clone: {', '.join(extensions)}")
     print(f"Repositories: {len(urls)}\n")
-
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = {pool.submit(_sparse_clone_one, url, out_dir, extensions): url for url in urls}
         for future in as_completed(futures):
@@ -717,7 +674,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_clone = sub.add_parser("clone", help="Parallel git clone (GitPython).")
     p_clone.add_argument(
         "file",
@@ -733,7 +689,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show what would be cloned without cloning",
     )
     p_clone.set_defaults(func=cmd_clone)
-
     p_zip = sub.add_parser("zip", help="Parallel ZIP download via GitHub API.")
     p_zip.add_argument("file", nargs="?", default="repos.txt")
     p_zip.add_argument("-o", "--output", default="repos")
@@ -741,7 +696,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_zip.add_argument("--timeout", type=int, default=30, help="HTTP timeout in seconds (default: 30)")
     p_zip.add_argument("--dry-run", action="store_true")
     p_zip.set_defaults(func=cmd_zip)
-
     p_dul = sub.add_parser("dulwich", help="Pure-Python clone via dulwich with size limit.")
     p_dul.add_argument("file", nargs="?", default="repos.txt")
     p_dul.add_argument("-o", "--output", default="repos")
@@ -754,11 +708,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_dul.add_argument("--dry-run", action="store_true")
     p_dul.set_defaults(func=cmd_dulwich)
-
     p_fork = sub.add_parser("fork", help="Fork a repo on GitHub and clone the fork.")
     p_fork.add_argument("repo", help="user/repo or full GitHub URL")
     p_fork.set_defaults(func=cmd_fork)
-
     p_gc = sub.add_parser("gclone", help="Size-filtered clone of every entry in repos.txt.")
     p_gc.add_argument("file", nargs="?", default="repos.txt")
     p_gc.add_argument(
@@ -774,7 +726,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Where to write entries that were skipped (default: remained)",
     )
     p_gc.set_defaults(func=cmd_gclone)
-
     p_gz = sub.add_parser("get-zip", help="Download one repo as a ZIP archive.")
     p_gz.add_argument("repo", help="user/repo")
     p_gz.add_argument("--branch", "-b", default="main", help="Branch name (default: main)")
@@ -785,7 +736,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output filename (default: <repo>-<branch>.zip)",
     )
     p_gz.set_defaults(func=cmd_get_zip)
-
     p_sp = sub.add_parser("sparse", help="Sparse checkout clone filtered by extensions.")
     p_sp.add_argument("items", nargs="+", help="Extensions (e.g. .py) and repository URLs, any order")
     p_sp.add_argument(
@@ -796,7 +746,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sp.add_argument("-w", "--workers", type=int, default=4, help="Parallel workers (default: 4)")
     p_sp.set_defaults(func=cmd_sparse)
-
     return parser
 
 

@@ -4,7 +4,6 @@ The script should load the file, remove duplicate quotes (case-insensitive, whit
 It should gracefully handle a missing file or invalid/empty JSON content by printing a descriptive error message instead of crashing, and print "Success: Sorted" upon successful completion."""
 
 from __future__ import annotations
-
 import json
 import os
 import sys

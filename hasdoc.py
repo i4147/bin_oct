@@ -4,7 +4,6 @@ For each file it should identify standalone comment lines (ignoring shebang line
 It should support multiprocessing to check multiple files in parallel for performance, take input paths via argparse, and print a per-file list of issues (comments/docstrings found) to help enforce a "no comments/docstrings" coding style policy."""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp

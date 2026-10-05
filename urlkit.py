@@ -5,7 +5,6 @@ file_urls.py -> python urlkit.py split --mode grouped -i urls.txt filter_jscss_l
 move_gitlinks.py -> python urlkit.py move-gitlinks urls.txt process_urls.py -> python urlkit.py prune -i urls.txt process_urls_aggresive.py -> python urlkit.py prune -i urls.txt --aggressive saveurl.py -> python urlkit.py save-page https://example.com split_urls.py -> python urlkit.py split --mode by-ext -i urls.txt urlzz.py -> python urlkit.py scan --append /path/to/dir xfile_urls.py -> python urlkit.py fetch-files -i urls.txt -d downloads Run `python urlkit.py <subcommand> -h` for per-command help."""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import os
@@ -21,12 +20,10 @@ from urllib.parse import unquote, urlparse
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
 try:
     from loguru import logger as _loguru_logger
 except ImportError:
     _loguru_logger = None
-
 try:
     from tqdm import tqdm as _tqdm
 except ImportError:
@@ -70,69 +67,64 @@ GITHUB_RE = re.compile(
 GITHUB_REPO_RE = re.compile(
     r"https?://(?:www\.)?github\.com/[a-zA-Z0-9\-]+/[a-zA-Z0-9\-]+",
 )
-
 DEFAULT_SKIP_DIRS = ".git,__pycache__,.venv,venv,node_modules,.env,dist,build"
 DEFAULT_GIT_HOSTS = "github.com,gitlab.com,gitea.io,bitbucket.org,git.sr.ht,codeberg.org,gitbucket.org,gogs.io"
-
 DEFAULT_FILE_EXTS = ",".join(
-    sorted(
-        {
-            ".txt",
-            ".md",
-            ".rst",
-            ".log",
-            ".csv",
-            ".tsv",
-            ".json",
-            ".xml",
-            ".yaml",
-            ".yml",
-            ".toml",
-            ".ini",
-            ".cfg",
-            ".conf",
-            ".html",
-            ".htm",
-            ".css",
-            ".js",
-            ".ts",
-            ".py",
-            ".rb",
-            ".go",
-            ".rs",
-            ".java",
-            ".c",
-            ".h",
-            ".cpp",
-            ".hpp",
-            ".sh",
-            ".bash",
-            ".zsh",
-            ".pdf",
-            ".zip",
-            ".tar",
-            ".gz",
-            ".xz",
-            ".7z",
-            ".whl",
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".gif",
-            ".svg",
-            ".webp",
-            ".ico",
-            ".bmp",
-            ".ttf",
-            ".woff",
-            ".woff2",
-            ".eot",
-            ".otf",
-            ".ttc",
-        }
-    )
+    sorted({
+        ".txt",
+        ".md",
+        ".rst",
+        ".log",
+        ".csv",
+        ".tsv",
+        ".json",
+        ".xml",
+        ".yaml",
+        ".yml",
+        ".toml",
+        ".ini",
+        ".cfg",
+        ".conf",
+        ".html",
+        ".htm",
+        ".css",
+        ".js",
+        ".ts",
+        ".py",
+        ".rb",
+        ".go",
+        ".rs",
+        ".java",
+        ".c",
+        ".h",
+        ".cpp",
+        ".hpp",
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".pdf",
+        ".zip",
+        ".tar",
+        ".gz",
+        ".xz",
+        ".7z",
+        ".whl",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".webp",
+        ".ico",
+        ".bmp",
+        ".ttf",
+        ".woff",
+        ".woff2",
+        ".eot",
+        ".otf",
+        ".ttc",
+    })
 )
-
 ZIP_SUFFIXES = (".zip", ".whl")
 TAR_SUFFIXES = (
     ".tar",
@@ -147,9 +139,7 @@ TAR_SUFFIXES = (
     ".tbz2",
 )
 SEVENZ_SUFFIXES = (".7z",)
-
 FETCH_EXTS = (".css", ".ttf", ".woff", ".woff2", ".pdf")
-
 BY_EXT_KNOWN = [
     "htm",
     "html",
@@ -331,13 +321,11 @@ def _scan_worker(task: tuple) -> set[str]:
         return urls
     if max_size and size > max_size:
         return urls
-
     kind = _archive_kind(path)
     if files_only and kind:
         return urls
     if archives_only and not kind:
         return urls
-
     if kind == "zip":
         urls |= _extract_from_zip(path)
     elif kind == "tar":
@@ -368,7 +356,6 @@ def cmd_clean(args: argparse.Namespace) -> int:
             if netloc == "github.com":
                 git_urls.append(line)
             domains.add(netloc)
-
     Path(args.domains_out).write_text(
         "".join(f"{d}\n" for d in domains),
         encoding="utf-8",
@@ -384,7 +371,6 @@ def cmd_scan(args: argparse.Namespace) -> int:
     inputs = [Path(p) for p in args.inputs] if args.inputs else [Path.cwd()]
     skip_dirs = {s for s in args.skip_dirs.split(",") if s}
     git_hosts = tuple(h for h in args.git_hosts.split(",") if h)
-
     files: list[Path] = []
     for inp in inputs:
         if not inp.exists():
@@ -395,10 +381,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     if not files:
         log_info("No files to scan.")
         return 0
-
     log_info(f"Scanning {len(files)} files…")
     tasks = [(str(f), args.max_size, args.archives_only, args.files_only) for f in files]
-
     all_urls: set[str] = set()
     if args.workers > 1 and len(tasks) > 1:
         with Pool(processes=args.workers) as pool:
@@ -411,10 +395,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     else:
         for t in _tqdm(tasks, desc="Scanning"):
             all_urls.update(_scan_worker(t))
-
     git_urls = {u for u in all_urls if _classify_git(u, git_hosts)}
     main_urls = all_urls - git_urls if args.exclude_git_from_output else all_urls
-
     _write_urls(Path(args.output), sorted(main_urls), append=args.append)
     _write_urls(Path(args.git_output), sorted(git_urls), append=args.append)
     log_info(f"Wrote {len(main_urls)} URLs -> {args.output}")
@@ -435,12 +417,10 @@ def _split_grouped(args: argparse.Namespace) -> int:
     if not src.exists():
         log_error(f"{src} not found")
         return 1
-
     groups: dict[str, list[str]] = defaultdict(list)
     other: list[str] = []
     seen: set[str] = set()
     known_exts = tuple(e for exts in group_map.values() for e in exts)
-
     with src.open(encoding="utf-8", errors="ignore") as f:
         for line in f:
             url = line.strip()
@@ -455,7 +435,6 @@ def _split_grouped(args: argparse.Namespace) -> int:
                     break
             else:
                 other.append(url)
-
     out_dir = Path(args.output_dir)
     for gname, urls in groups.items():
         if not urls:
@@ -463,7 +442,6 @@ def _split_grouped(args: argparse.Namespace) -> int:
         p = out_dir / f"{gname}_urls.txt"
         p.write_text("\n".join(urls), encoding="utf-8")
         log_info(f"{p.name}: {len(urls)} URLs")
-
     if other:
         Path(args.output).write_text(
             "\n".join(sorted(other)) + "\n",
@@ -478,7 +456,6 @@ def _split_by_ext(args: argparse.Namespace) -> int:
     if not src.exists():
         log_error(f"{src} not found")
         return 1
-
     buckets: dict[str, list[str]] = defaultdict(list)
     with src.open(encoding="utf-8", errors="ignore") as f:
         for line in f:
@@ -492,7 +469,6 @@ def _split_by_ext(args: argparse.Namespace) -> int:
             ext = name.rsplit(".", 1)[-1].lower()
             if ext in BY_EXT_KNOWN:
                 buckets[ext].append(url)
-
     if not buckets:
         log_info("No URLs with recognized extensions found.")
         return 0
@@ -638,15 +614,12 @@ def cmd_move_gitlinks(args: argparse.Namespace) -> int:
     lines = src.read_text(encoding="utf-8").splitlines()
     keep = [ln for ln in lines if "github.com" not in ln]
     moved = [ln for ln in lines if "github.com" in ln]
-
     with src.open("w", encoding="utf-8") as f:
         for ln in keep:
             f.write(f"{ln}\n")
-
     if not moved:
         log_info("No git links moved.")
         return 0
-
     out = Path(args.git_output)
     with out.open("a", encoding="utf-8") as f:
         f.write("\n")
@@ -722,7 +695,6 @@ def cmd_fetch_files(args: argparse.Namespace) -> int:
     if not src.exists():
         log_error(f"{src} not found")
         return 1
-
     found: set[str] = set()
     with src.open(encoding="utf-8", errors="ignore") as f:
         for line in f:
@@ -730,11 +702,9 @@ def cmd_fetch_files(args: argparse.Namespace) -> int:
                 url = _strip_url_punct(raw)
                 if _has_fetch_ext(url):
                     found.add(url)
-
     out_urls = sorted(found)
     Path(args.output).write_text("\n".join(out_urls) + ("\n" if out_urls else ""), encoding="utf-8")
     log_info(f"Extracted {len(out_urls)} matching URLs -> {args.output}")
-
     if args.download and out_urls:
         dest = Path(args.download)
         dest.mkdir(parents=True, exist_ok=True)
@@ -758,13 +728,11 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__.split("Original → merged mapping")[1] if "Original → merged mapping" in __doc__ else None,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     pc = sub.add_parser("clean", help="Dedupe domains; split github URLs.")
     pc.add_argument("--input", default="urls.txt")
     pc.add_argument("--domains-out", default="cleaned_urls")
     pc.add_argument("--git-out", default="git_urls")
     pc.set_defaults(func=cmd_clean)
-
     ps = sub.add_parser(
         "scan",
         help="Extract URLs from files/archives (exlinks + furl + urlzz).",
@@ -798,7 +766,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Remove git-host URLs from the main output (furl.py behavior).",
     )
     ps.set_defaults(func=cmd_scan)
-
     psp = sub.add_parser(
         "split",
         help="Split URLs by group or by file extension (file_urls + split_urls).",
@@ -818,12 +785,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated extensions considered when deciding which URLs to keep in grouped mode.",
     )
     psp.set_defaults(func=cmd_split)
-
     pj = sub.add_parser("filter-jscss", help="Keep only .js/.css URLs (filter_jscss_links.py).")
     pj.add_argument("-i", "--input", default="urls.txt")
     pj.add_argument("-o", "--output", default="filtered_urls.txt")
     pj.set_defaults(func=cmd_filter_jscss)
-
     pp = sub.add_parser(
         "prune",
         help="Normalize and prune redundant URLs (process_urls + process_urls_aggresive).",
@@ -835,7 +800,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Collapse every URL to its root (process_urls_aggresive.py).",
     )
     pp.set_defaults(func=cmd_prune)
-
     pm = sub.add_parser(
         "move-gitlinks",
         help="Move github.com lines from a file into gitlinks.txt (move_gitlinks.py).",
@@ -843,7 +807,6 @@ def build_parser() -> argparse.ArgumentParser:
     pm.add_argument("input")
     pm.add_argument("-g", "--git-output", default="gitlinks.txt")
     pm.set_defaults(func=cmd_move_gitlinks)
-
     psv = sub.add_parser("save-page", help="Save a webpage with pywebcopy (saveurl.py).")
     psv.add_argument("url")
     psv.add_argument("--project-folder", default="./saved_pages/")
@@ -859,7 +822,6 @@ def build_parser() -> argparse.ArgumentParser:
     psv.add_argument("--open-in-browser", action="store_true", default=True)
     psv.add_argument("--no-open-in-browser", dest="open_in_browser", action="store_false")
     psv.set_defaults(func=cmd_save_page)
-
     pf = sub.add_parser(
         "fetch-files",
         help="Extract css/font/pdf URLs and optionally download them (xfile_urls.py).",
@@ -877,7 +839,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pf.add_argument("-w", "--workers", type=int, default=os.cpu_count() or 4)
     pf.set_defaults(func=cmd_fetch_files)
-
     return p
 
 

@@ -3,7 +3,6 @@
 It should accept arguments for input/output/failed-chunk file paths, source/target languages, number of workers, delay, chunk size, and periodic save interval, writing successfully translated chunks incrementally to a JSON output file and logging failed chunks to a separate text file, while gracefully handling interrupts (e.g., SIGINT) to save progress before exiting, using loguru for logging throughout."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -14,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Optional
-
 import loguru
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound

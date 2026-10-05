@@ -4,10 +4,8 @@ The script should accept the requirements file path as a command-line argument, 
 After filtering out any names found in STDLIB, it should overwrite the original file with the remaining package names (one per line, newline-terminated) and print a message reporting how many packages were removed."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 from dh import STDLIB
 
 

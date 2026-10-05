@@ -4,11 +4,9 @@ It should take the video file path (and an optional output directory) as input, 
 The script should save the downloaded subtitle file into the specified or default output directory, log progress and errors via both print statements and the logging module, and gracefully handle exceptions such as missing files or provider errors, returning a boolean success status."""
 
 from __future__ import annotations
-
 import logging
 import sys
 from pathlib import Path
-
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.providers import ProviderError

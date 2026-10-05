@@ -4,7 +4,6 @@ Merges the behavior of 16 original scripts into a single CLI with subcommands.
 Migration map (original script -> new invocation): cext.py -> pyextract extract --parser treesitter --layout per-entity --imports-file --archives ex_const.py -> pyextract extract --parser ast --constants-only --dedupe --layout by-type ex_nodes.py -> pyextract nodes --kind func exconst.py -> pyextract extract --parser libcst --constants-only excst.py -> pyextract extract --parser libcst --layout per-entity --imports-file ext.py -> pyextract extract --parser ast --layout by-type --include-nested --skip-tests extcode.py -> pyextract extract --parser treesitter --layout per-folder extcst.py -> pyextract extract --parser libcst --layout per-entity --metadata extfc.py -> pyextract extract --parser treesitter --layout per-folder extt.py -> pyextract extract --parser treesitter --layout per-folder --toc gen_s_expr.py -> pyextract sexpr FILE getfuncnames.py -> pyextract funcnames FILE gext2.py -> pyextract extract --parser ast --layout per-entity --archives --clean gextco.py -> pyextract extract --parser ast --layout lists gextdb.py -> pyextract extract --parser ast --layout sqlite --sqlite-path /sdcard/ext.db tsext.py -> pyextract extract --parser treesitter --layout lists Third-party packages (all optional): tree-sitter, tree-sitter-python -> --parser treesitter, `nodes`, `sexpr` libcst -> --parser libcst zstandard -> .zst archive support"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import io
@@ -29,24 +28,20 @@ try:
     HAS_TS = True
 except Exception:  # pragma: no cover
     HAS_TS = False
-
 try:
     import libcst as cst
 
     HAS_LIBCST = True
 except Exception:  # pragma: no cover
     HAS_LIBCST = False
-
 try:
     import zstandard as zstd
 
     HAS_ZSTD = True
 except Exception:  # pragma: no cover
     HAS_ZSTD = False
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("pyextract")
-
 ARCHIVE_EXTS = (
     ".whl",
     ".zip",
@@ -151,7 +146,6 @@ def iter_archive_python(archive: Path) -> Iterator[tuple[str, str]]:
         except (zipfile.BadZipFile, OSError) as e:
             log.error("bad zip %s: %s", archive, e)
         return
-
     try:
         if n.endswith(".zst"):
             if not HAS_ZSTD:
@@ -338,7 +332,6 @@ def _extract_libcst_impl(
     except Exception as e:
         log.warning("libcst parse error in %s: %s", path, e)
         return [], []
-
     entities: list[Entity] = []
     imports: list[str] = []
 
@@ -462,7 +455,6 @@ def extract_treesitter(
     parser = _get_ts_parser()
     data = source.encode("utf-8", "replace")
     tree = parser.parse(data)
-
     entities: list[Entity] = []
     imports: list[str] = []
 
@@ -478,7 +470,6 @@ def extract_treesitter(
             t = child.type
             src_node = child
             def_node = child
-
             if t == "decorated_definition":
                 inner = next(
                     (c for c in child.children if c.type in ("function_definition", "class_definition")),
@@ -489,7 +480,6 @@ def extract_treesitter(
                     continue
                 src_node, def_node = child, inner
                 t = inner.type
-
             if t == "class_definition":
                 nm = name_of(def_node) or "<anon>"
                 parent = "_".join(class_stack)
@@ -507,7 +497,6 @@ def extract_treesitter(
                     )
                 walk(def_node, class_stack + [nm], func_stack)
                 continue
-
             if t == "function_definition":
                 nm = name_of(def_node) or "<anon>"
                 parent = "_".join(class_stack)
@@ -526,12 +515,10 @@ def extract_treesitter(
                     )
                 walk(def_node, class_stack, func_stack + [nm])
                 continue
-
             if t in ("import_statement", "import_from_statement"):
                 if not class_stack and not func_stack:
                     imports.append(text(child))
                 continue
-
             if t == "expression_statement" and ((not class_stack and not func_stack) or include_nested):
                 for sub in child.children:
                     if sub.type == "assignment":
@@ -549,7 +536,6 @@ def extract_treesitter(
                                     )
                                 )
                 continue
-
             walk(child, class_stack, func_stack)
 
     walk(tree.root_node, [], [])
@@ -604,7 +590,6 @@ def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool
         sub = out_dir / e.type
         sub.mkdir(parents=True, exist_ok=True)
         fp = _unique_path(sub, _safe_name(e.full_name), ".py")
-
         body = ""
         if e.imports and not e.parent:
             body += "\n".join(e.imports) + "\n\n"
@@ -617,7 +602,6 @@ def write_per_entity(entities: list[Entity], out_dir: Path, write_metadata: bool
             log.debug("generated file %s has parse warnings (kept)", fp)
         fp.write_text(body, encoding="utf-8")
         counts[e.type] += 1
-
         if write_metadata:
             meta = {
                 "name": e.name,
@@ -664,12 +648,10 @@ def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -
         except (ValueError, OSError):
             rel = Path(src.parent.name or ".")
         groups[rel].append(e)
-
     for rel, ents in groups.items():
         target_dir = out_dir / rel
         target_dir.mkdir(parents=True, exist_ok=True)
         parts: list[str] = ["#!/usr/bin/env python", ""]
-
         if toc:
             by_file: dict[str, list[Entity]] = defaultdict(list)
             for e in ents:
@@ -680,7 +662,6 @@ def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -
                 parts.append(f"#   Functions: {sum(1 for x in es if x.type == 'function')}")
                 parts.append(f"#   Classes:   {sum(1 for x in es if x.type == 'class')}")
                 parts.append("")
-
         for e in ents:
             parts += [
                 "",
@@ -690,7 +671,6 @@ def write_per_folder(entities: list[Entity], out_dir: Path, toc: bool = False) -
                 "#" + "=" * 76,
                 e.source,
             ]
-
         (target_dir / "definitions.py").write_text("\n".join(parts), encoding="utf-8")
 
 
@@ -774,14 +754,12 @@ def _worker(item: tuple) -> tuple:
 
 
 def cmd_extract(args: argparse.Namespace) -> int:
-
     if args.parser == "treesitter" and not HAS_TS:
         log.error("--parser treesitter requires tree-sitter & tree-sitter-python")
         return 2
     if args.parser == "libcst" and not HAS_LIBCST:
         log.error("--parser libcst requires libcst")
         return 2
-
     roots: list[Path] = []
     if args.paths:
         roots = [p for p in args.paths if p.exists()]
@@ -792,12 +770,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if not roots:
         log.error("no valid input paths")
         return 2
-
     out_dir = Path(args.output).resolve()
     if args.clean and out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-
     skip = set(DEFAULT_SKIP_DIRS) | set(args.exclude or [])
     py_files: list[Path] = []
     archives: list[Path] = []
@@ -815,13 +791,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if not py_files and not archives:
         log.warning("nothing to process")
         return 0
-
     work: list[tuple] = [(str(p), args.parser, args.include_nested, args.constants_only, False) for p in py_files]
     work += [(str(p), args.parser, args.include_nested, args.constants_only, True) for p in archives]
-
     all_entities: list[Entity] = []
     all_imports: list[str] = []
-
     if args.workers <= 1 or len(work) <= 1:
         for item in work:
             path_str, ents, imps, err = _worker(item)
@@ -840,15 +813,12 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     log.info("processed %s (%d entities)", path_str, len(ents))
                 all_entities.extend(ents)
                 all_imports.extend(imps)
-
     if args.dedupe:
         before = len(all_entities)
         all_entities = _dedupe_entities(all_entities)
         log.info("dedupe: %d -> %d", before, len(all_entities))
-
     all_entities.sort(key=lambda e: (e.type, e.full_name, e.path))
     log.info("total entities: %d", len(all_entities))
-
     if args.layout == "per-entity":
         write_per_entity(all_entities, out_dir, write_metadata=args.metadata)
     elif args.layout == "by-type":
@@ -859,10 +829,8 @@ def cmd_extract(args: argparse.Namespace) -> int:
         write_lists(all_entities, out_dir)
     elif args.layout == "sqlite":
         write_sqlite(all_entities, Path(args.sqlite_path))
-
     if args.imports_file and args.layout != "lists":
         write_imports_file(all_imports, out_dir)
-
     print("=" * 40)
     print("EXTRACTION SUMMARY")
     print("-" * 40)
@@ -894,7 +862,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     cwd = Path.cwd().resolve()
-
     paths = args.paths or [Path.cwd()]
     targets: list[Path] = []
     for p in paths:
@@ -912,7 +879,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
                 except OSError:
                     pass
                 targets.append(f)
-
     grouped: dict[Path, list[str]] = defaultdict(list)
     for py in targets:
         try:
@@ -927,7 +893,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
         ]
         if nodes:
             grouped[py.parent].append("\n".join(nodes))
-
     for folder, chunks in grouped.items():
         try:
             rel = folder.resolve().relative_to(cwd)
@@ -936,7 +901,6 @@ def cmd_nodes(args: argparse.Namespace) -> int:
         target = out / rel / "imports.py"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("\n\n".join(chunks), encoding="utf-8")
-
     print(f"✨ Wrote {len(grouped)} folder file(s) under {out}")
     return 0
 
@@ -986,7 +950,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__,
     )
     sub = p.add_subparsers(dest="command", required=True)
-
     e = sub.add_parser("extract", help="Extract code entities.")
     e.add_argument(
         "paths",
@@ -1079,7 +1042,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     e.add_argument("--exclude", nargs="*", default=[], help="Extra directory names to skip.")
     e.set_defaults(func=cmd_extract)
-
     n = sub.add_parser("nodes", help="Dump top-level tree-sitter nodes per folder.")
     n.add_argument("paths", nargs="*", type=Path, help="Files/dirs (default: current directory).")
     n.add_argument(
@@ -1095,16 +1057,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: ./output).",
     )
     n.set_defaults(func=cmd_nodes)
-
     s = sub.add_parser("sexpr", help="Print tree-sitter S-expression for a file.")
     s.add_argument("file", type=Path)
     s.set_defaults(func=cmd_sexpr)
-
     f = sub.add_parser("funcnames", help="List function names in a Python file.")
     f.add_argument("file", type=Path)
     f.add_argument("--skip-main", action="store_true", help="Skip the function named `main`.")
     f.set_defaults(func=cmd_funcnames)
-
     return p
 
 

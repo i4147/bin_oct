@@ -4,11 +4,9 @@ It should use the `ast` module with a custom `NodeTransformer` subclass to remov
 File processing should run in parallel via `joblib.Parallel`/`delayed` (with a configurable worker count), use `xxhash` to detect whether content actually changed before rewriting files, and print progress/status messages using a `cprint` helper, skipping files that fail to read or parse."""
 
 from __future__ import annotations
-
 import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
 from dh import cprint, get_pyfiles
 from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest

@@ -5,10 +5,8 @@ For each file, skip conversion if a same-named .md file already exists, otherwis
 When multiple files are processed, use a multiprocessing helper "mpf" to convert them in parallel, and process a single file directly without multiprocessing."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 import html2text
 from dh import get_files, mpf
 from readability import Document

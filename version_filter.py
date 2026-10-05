@@ -6,13 +6,11 @@ Drop ``py3-none-any`` wheels for packages in ``PY3_NONE_ANY_BLOCKLIST``.
 For date-stamped versions (``X.Y.Z-YYYYMMDD``), keep only the newest date per package; delete the rest."""
 
 from __future__ import annotations
-
 import os
 import re
 from pathlib import Path
 
 WHL_DIRECTORY = Path()
-
 WHL_PATTERN = re.compile(
     r"(?P<name>[\w\-]+)"
     r"-(?P<version>[\d\.]+(?:-\d{8})?)"
@@ -24,7 +22,6 @@ WHL_PATTERN = re.compile(
     r"|py3-none-linux_armv8l"
     r")\.whl"
 )
-
 PY3_NONE_ANY_BLOCKLIST: frozenset[str] = frozenset({"pycryptodome", "matplotlib"})
 
 
@@ -47,28 +44,21 @@ def _latest_dates(parsed: list[tuple[str, str, str, str]]) -> dict[str, str]:
 
 
 def cleanup_wheels(whl_files: list[str], directory: Path = WHL_DIRECTORY) -> int:
-
     parsed: list[tuple[str, str, str, str]] = []
     for filename in whl_files:
         info = _parse_wheel(filename)
         if info is not None:
             parsed.append((filename, *info))
-
     latest_versions = _latest_dates(parsed)
-
     deleted = 0
     for filename, name, version, python_variant in parsed:
         blocked_py3 = name in PY3_NONE_ANY_BLOCKLIST and python_variant == "py3-none-any"
-
         outdated = "-" in version and version.rsplit("-", 1)[-1] != latest_versions.get(name)
-
         if not (blocked_py3 or outdated):
             continue
-
         (directory / filename).unlink()
         print(f"Deleted: {filename}")
         deleted += 1
-
     return deleted
 
 

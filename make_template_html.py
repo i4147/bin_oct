@@ -3,9 +3,7 @@
 It should then parse each found file with BeautifulSoup to extract common structural elements from the document head and body—collecting unique meta tags, link tags, and script tags (only those with a src attribute) from the head, plus deduplicated body CSS classes joined into a single string—while gracefully catching and printing any per-file parsing errors, and finally return this aggregated structural data as a dictionary."""
 
 from __future__ import annotations
-
 from pathlib import Path
-
 from bs4 import BeautifulSoup
 
 

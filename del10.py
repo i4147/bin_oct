@@ -4,7 +4,6 @@ The script should read all lines from the specified file, filter out any lines w
 It must print a usage message and exit if no filename is provided, and gracefully handle a missing file with a clear error message as well as catch and report any other exceptions that occur during processing."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

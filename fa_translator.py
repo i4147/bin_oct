@@ -4,7 +4,6 @@ Merges the behavior of nine small scripts that each did one slice of the same jo
 Third-party packages (install what you need): pip install deep-translator # used by most backends pip install translate # only for --backend translate-package pip install tqdm # optional progress bar for `words` pip install loguru # NOT required (stdlib logging is used) Optional external tools: translate-cli # only for --backend translate-cli fzf # only used by `lookup` (auto-detected, safe if absent) ------------------------------------------------------------------------------- USAGE ------------------------------------------------------------------------------- python merged_translator.py file INPUT [options] python merged_translator.py words INPUT [options] python merged_translator.py lookup [WORD] [options] ------------------------------------------------------------------------------- ORIGINAL → MERGED MAPPING ------------------------------------------------------------------------------- fa_trans.py -> file IN --mode line --persian-only --in-place --workers 8 --source fa --target en transwords.py -> file IN --mode chunk --chunk-size 4500 --output-format chunks --workers 8 runtcli.py -> file IN --mode line --backend translate-cli --source en --target fa --output-format numbered tfa.py -> words words.txt --output dic.json --workers 1 --no-resume --no-dedupe tper.py -> words words.txt --output dic.json --workers 8 --resume --dedupe --save-every 1000 trans_fa_mp.py -> words words.txt --output dic.json --executor thread --workers 16 --no-resume tcli.py -> words words.txt --backend translate-package --source en --target fa --output words.fa.json fatrans.py -> lookup --dict /sdcard/isaac/dic.json --no-fzf fztrans.py -> lookup --dict ~/dic.json"""
 
 from __future__ import annotations
-
 import argparse
 import json
 import logging
@@ -21,20 +20,18 @@ from typing import Any, Iterable, Optional, Self, Sequence
 
 try:
     from deep_translator import GoogleTranslator
-except ImportError:  # pragma: no cover - optional dependency
+except ImportError:
     GoogleTranslator = None  # type: ignore[assignment]
-
 try:
     from translate import Translator as PyTranslator  # type: ignore
-except ImportError:  # pragma: no cover - optional dependency
+except ImportError:
     PyTranslator = None  # type: ignore[assignment]
-
 try:
     from tqdm import tqdm  # type: ignore
-except ImportError:  # pragma: no cover - optional dependency
+except ImportError:
 
     class _DummyTqdm:
-        def __init__(self, *_: Any, **__: Any) -> None:  # noqa: D401
+        def __init__(self, *_: Any, **__: Any) -> None:
             pass
 
         def update(self, _n: int = 1) -> None:
@@ -56,12 +53,11 @@ except ImportError:  # pragma: no cover - optional dependency
 
 
 try:
-    import readline  # noqa: F401  (side-effect import enables line editing)
+    import readline
 
     _HAVE_READLINE = True
-except ImportError:  # pragma: no cover - platform dependent
+except ImportError:
     _HAVE_READLINE = False
-
 log = logging.getLogger("merged_translator")
 
 
@@ -113,7 +109,7 @@ def translate_google(
             result = translator.translate(text)
             if result:
                 return result
-        except Exception as exc:  # noqa: BLE001 - we retry on any failure
+        except Exception as exc:
             log.warning(
                 "google translate failed for %r (attempt %d/%d): %s",
                 text[:40],
@@ -142,7 +138,7 @@ def translate_pypackage(
             result = translator.translate(text)
             if result:
                 return result
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.warning(
                 "translate-package failed for %r (attempt %d/%d): %s",
                 text[:40],
@@ -169,7 +165,7 @@ def translate_cli(
             proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         except FileNotFoundError:
             return "__ERROR__: translate-cli not found in PATH"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return f"__ERROR__: {exc}"
         if proc.returncode == 0:
             return proc.stdout.strip()
@@ -201,7 +197,7 @@ def _translate_item(
     try:
         backend = get_backend(backend_name)
         result = backend(text, source=source, target=target, retries=retries, delay=delay)
-    except Exception as exc:  # noqa: BLE001 - don't kill the whole pool
+    except Exception as exc:
         log.warning("worker error for %r: %s", text[:40], exc)
         result = None
     return text, result
@@ -236,44 +232,35 @@ def cmd_file(args: argparse.Namespace) -> int:
     if not input_path.is_file():
         log.error("Input file not found: %s", input_path)
         return 1
-
     try:
         raw_lines = input_path.read_text(encoding="utf-8").splitlines()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.error("Error reading %s: %s", input_path, exc)
         return 1
-
     lines = [ln.strip() for ln in raw_lines if ln.strip()]
     if not lines:
         print(f"No lines found in {input_path.name}")
         return 0
-
     if args.persian_only:
         pending = [ln for ln in lines if is_persian(ln)]
         skipped = len(lines) - len(pending)
     else:
         pending = list(lines)
         skipped = 0
-
     print(f"Loaded {len(lines)} lines: {len(pending)} to translate, {skipped} skipped")
     if not pending:
         print("Nothing to translate.")
         return 0
-
     backend_name = args.backend
     source, target = args.source, args.target
     retries, delay = args.retries, args.delay
-
     if args.mode == "line":
         work_units = list(pending)
     else:
         work_units = [text for _s, _e, text in split_into_chunks(pending, args.chunk_size)]
-
     print(f"Translating {len(work_units)} unit(s) with {args.workers} workers via {backend_name} ({args.executor})...")
-
     PoolClass = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
     packed = [(text, backend_name, source, target, retries, delay) for text in work_units]
-
     results: list[tuple[str, Optional[str]]] = []
     try:
         with PoolClass(max_workers=args.workers) as pool:
@@ -281,7 +268,7 @@ def cmd_file(args: argparse.Namespace) -> int:
             for i, fut in enumerate(futures, 1):
                 try:
                     results.append(fut.result())
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.error("Unexpected worker error: %s", exc)
                     results.append(("", None))
                 if args.progress and (i % 5 == 0 or i == len(futures)):
@@ -289,7 +276,6 @@ def cmd_file(args: argparse.Namespace) -> int:
     except KeyboardInterrupt:
         print("Interrupted by user.")
         return 130
-
     translations: dict[str, str] = {}
     if args.mode == "line":
         for orig, trans in results:
@@ -309,13 +295,10 @@ def cmd_file(args: argparse.Namespace) -> int:
                         "Line-count mismatch in chunk, missing translation for: %s",
                         src_line[:50],
                     )
-
     if not translations:
         log.error("No translations were produced.")
         return 1
-
     output_path = Path(args.output) if args.output else input_path.with_suffix(".json")
-
     if args.output_format == "chunks" and args.mode == "chunk":
         payload: Any = {
             "translations": [
@@ -339,22 +322,19 @@ def cmd_file(args: argparse.Namespace) -> int:
         ]
     else:
         payload = translations
-
     try:
         save_json(payload, output_path)
         print(f"Saved {len(translations)} translations to {output_path.name}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.error("Error saving JSON: %s", exc)
-
     if args.in_place:
         try:
             out_lines = [translations.get(ln, ln) for ln in lines]
             input_path.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
             print(f"Updated {input_path.name}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error("Error updating input file: %s", exc)
             return 1
-
     return 0
 
 
@@ -363,9 +343,7 @@ def cmd_words(args: argparse.Namespace) -> int:
     if not input_path.is_file():
         log.error("Input file not found: %s", input_path)
         return 1
-
     output_path = Path(args.output)
-
     seen: set[str] = set()
     words: list[str] = []
     for raw in input_path.read_text(encoding="utf-8").splitlines():
@@ -376,33 +354,26 @@ def cmd_words(args: argparse.Namespace) -> int:
             continue
         seen.add(w)
         words.append(w)
-
     if not words:
         print(f"No words found in {input_path}")
         return 0
-
     print(f"Loaded {len(words)} words from {input_path}")
-
     existing: dict[str, str] = {}
     if args.resume and output_path.exists():
         try:
             existing = load_json_dict(output_path)
             print(f"Loaded {len(existing)} existing translations from {output_path}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.warning("Could not load existing %s: %s", output_path, exc)
-
     pending = [w for w in words if w not in existing]
     print(f"{len(pending)} to translate (skipping {len(words) - len(pending)} already translated)")
     if not pending:
         print("Nothing to do.")
         return 0
-
     results: dict[str, str] = dict(existing)
     progress = tqdm(total=len(pending), desc="Translating", unit="word")
-
     PoolClass = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
     packed = [(w, args.backend, args.source, args.target, args.retries, args.delay) for w in pending]
-
     saved_count = 0
     try:
         with PoolClass(max_workers=args.workers) as pool:
@@ -410,11 +381,10 @@ def cmd_words(args: argparse.Namespace) -> int:
             for fut in as_completed(futures):
                 try:
                     word, trans = fut.result()
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     log.error("Worker error: %s", exc)
                     progress.update(1)
                     continue
-
                 is_error = isinstance(trans, str) and trans.startswith("__ERROR__")
                 if trans and not is_error:
                     results[word] = trans
@@ -422,14 +392,12 @@ def cmd_words(args: argparse.Namespace) -> int:
                     saved_count += 1
                 else:
                     log.error("Could not translate: %s", word)
-
                 progress.update(1)
-
                 if args.save_every and saved_count and (saved_count % args.save_every == 0):
                     try:
                         save_json(results, output_path)
                         log.info("Checkpoint: saved %d entries", len(results))
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         log.error("Checkpoint save failed: %s", exc)
     except KeyboardInterrupt:
         print("Interrupted by user. Saving progress...")
@@ -438,10 +406,9 @@ def cmd_words(args: argparse.Namespace) -> int:
         try:
             save_json(results, output_path)
             print(f"Saved {len(results)} entries to {output_path}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error("Error saving results: %s", exc)
             return 1
-
     failures = len(pending) - saved_count
     if failures:
         log.warning("%d entr(ies) failed.", failures)
@@ -468,7 +435,7 @@ def _load_dictionary(path: Path) -> tuple[dict[str, str], dict[str, str]]:
         sys.exit(1)
     try:
         fwd = load_json_dict(path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.error("Error loading dictionary: %s", exc)
         sys.exit(1)
     rev = {v: k for k, v in fwd.items()}
@@ -501,7 +468,7 @@ def _fzf_select(candidates: Iterable[str], prompt: str = "Select word: ") -> Opt
             capture_output=True,
             check=False,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         log.error("fzf execution error: %s", exc)
         return None
     out = proc.stdout.strip()
@@ -536,8 +503,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
     dict_path = Path(os.path.expanduser(args.dict))
     fwd, rev = _load_dictionary(dict_path)
     candidates = set(fwd) | set(rev)
-
-    # --prefix
     if args.prefix:
         matches = sorted(w for w in candidates if w.startswith(args.prefix))
         if matches:
@@ -545,8 +510,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
             return 0
         print(f"No matches found for prefix: {args.prefix}")
         return 1
-
-    # --fuzzy
     if args.fuzzy:
         matches = _fuzzy(args.fuzzy, candidates)
         if matches:
@@ -554,7 +517,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
             return 0
         print(f"No close matches found for: {args.fuzzy}")
         return 1
-
     if args.word:
         word = " ".join(args.word).strip()
         hit = fwd.get(word) or rev.get(word)
@@ -570,7 +532,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         else:
             print("Not found", file=sys.stderr)
         return 1
-
     if not args.no_fzf:
         selected = _fzf_select(candidates)
         if selected:
@@ -579,7 +540,6 @@ def cmd_lookup(args: argparse.Namespace) -> int:
             return 0
         if shutil.which("fzf"):
             return 0
-
     return _interactive_loop(fwd, rev)
 
 
@@ -599,7 +559,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging")
     sub = parser.add_subparsers(dest="command", required=True)
-
     p_file = sub.add_parser(
         "file",
         help="Translate a text file (line-by-line or chunked).",
@@ -667,7 +626,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_file.add_argument("--progress", action="store_true", help="Print periodic progress lines")
     p_file.set_defaults(func=cmd_file)
-
     p_words = sub.add_parser("words", help="Translate a word list into a JSON dictionary.")
     p_words.add_argument("input", help="Path to the words file")
     p_words.add_argument(
@@ -721,7 +679,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Checkpoint the output after N new translations (0 disables)",
     )
     p_words.set_defaults(func=cmd_words)
-
     p_lookup = sub.add_parser("lookup", help="Offline dictionary lookup (with optional fzf).")
     p_lookup.add_argument("word", nargs="*", help="Word(s) to translate")
     p_lookup.add_argument(
@@ -737,7 +694,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable the interactive fzf picker",
     )
     p_lookup.set_defaults(func=cmd_lookup)
-
     return parser
 
 

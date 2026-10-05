@@ -3,7 +3,6 @@
 Merges these originals into one tool: export_chat.py -> chat-export info2md.py -> info-to-md man2md.py -> man-to-md md2html.py -> md-to-html mk_html.py -> rst-to-html mobi2html.py -> mobi-to-html pptx2txt.py -> pptx-to-txt rst2md2.py -> rst-to-md Usage examples -------------- python doc_convert.py chat-export conversations.json -o exported python doc_convert.py info-to-md # current dir python doc_convert.py info-to-md -d ./docs -w 8 python doc_convert.py man-to-md /usr/share/man/man1/ls.1 python doc_convert.py md-to-html README.md python doc_convert.py md-to-html README.md --out-dir /sdcard/tmp python doc_convert.py rst-to-html -d ./docs -w 8 python doc_convert.py rst-to-html -d ./docs --force python doc_convert.py mobi-to-html book.mobi python doc_convert.py pptx-to-txt slides.pptx python doc_convert.py rst-to-md ./docs -r python doc_convert.py rst-to-md ./docs -r --remove-original Third-party packages (all optional — only needed by their subcommand): markdown, beautifulsoup4 -- md-to-html mobi -- mobi-to-html python-pptx -- pptx-to-txt pandoc (external binary) -- rst-to-md GNU info (external binary) -- info-to-md docutils (pip) -- rst-to-html"""
 
 from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -51,16 +50,13 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
     if not src.is_file():
         err(f"File not found: {src}")
         return 1
-
     out_dir = Path(args.output)
     out_dir.mkdir(exist_ok=True)
-
     try:
         data = json.loads(src.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         err(f"Invalid JSON: {e}")
         return 1
-
     for i, chat in enumerate(data):
         title = chat.get("title") or f"chat_{i}"
         dest = out_dir / f"{title}.md"
@@ -68,7 +64,6 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
             f.write(f"# {title}\n\n")
             for msg in chat.get("messages", []):
                 role = msg.get("author", {}).get("role", "unknown")
-
                 parts = msg.get("content", {}).get("parts", [""])
                 content = parts[0] if parts else ""
                 f.write(f"## {role.capitalize()}\n\n")
@@ -79,7 +74,6 @@ def cmd_chat_export(args: argparse.Namespace) -> int:
 
 
 def _convert_one_info(src: Path) -> Optional[Path]:
-
     stem = re.sub(r"\.info(-\d+)?$", "", src.name)
     dest = src.parent / f"{stem}.md"
     if dest.exists():
@@ -106,12 +100,10 @@ def cmd_info_to_md(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Not a directory: {root}")
         return 1
-
     files = list(root.glob("*.info*"))
     if not files:
         print("No .info files found.")
         return 0
-
     info(f"Converting {len(files)} .info file(s) with {args.workers} worker(s).")
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         futures = [pool.submit(_convert_one_info, f) for f in files]
@@ -133,7 +125,6 @@ def _render_roff(text: str) -> str:
     _cmd_word = re.compile(r"\b(ls|cat|grep|echo|pwd|cd|mkdir|rm|touch|man)\b")
     _prompt = re.compile(r"^\s*\$")
     _cmd_start = re.compile(r"^\s*(ls|cat|grep|echo|pwd|cd|mkdir|rm|touch|man)\b")
-
     for raw in lines:
         if raw.startswith(".TH"):
             continue
@@ -145,10 +136,8 @@ def _render_roff(text: str) -> str:
             name = raw[3:].strip()
             out.append(f"## {name.title()}")
             continue
-
         raw = _bold.sub(r"**\1**", raw)
         raw = _ital.sub(r"*\1*", raw)
-
         if raw.startswith(".BR"):
             parts = raw.split(maxsplit=1)
             if len(parts) > 1:
@@ -160,7 +149,6 @@ def _render_roff(text: str) -> str:
                     chunks.append(f"**{t.strip()}**" if i % 2 == 0 else t.strip())
                 out.append(" ".join(chunks))
                 continue
-
         if raw.startswith(".IR"):
             parts = raw.split(maxsplit=1)
             if len(parts) > 1:
@@ -172,11 +160,9 @@ def _render_roff(text: str) -> str:
                     chunks.append(f"*{t.strip()}*" if i % 2 == 0 else t.strip())
                 out.append(" ".join(chunks))
                 continue
-
         if raw.startswith(".PP"):
             out.append("")
             continue
-
         if raw.startswith(".IP"):
             parts = raw.split(maxsplit=2)
             if len(parts) >= 2 and parts[1].isdigit():
@@ -189,17 +175,14 @@ def _render_roff(text: str) -> str:
                 b = parts[2] if len(parts) > 2 else ""
                 out.append(f"-{a} {b}".strip())
                 continue
-
         if raw.startswith(".TP"):
             pending_tp = True
             continue
-
         if pending_tp:
             body = raw.strip()
             pending_tp = False
             out.append(f"-{body}:")
             continue
-
         if raw.startswith((".nf", ".RS", ".EX")):
             if not in_fence:
                 out.append("```sh")
@@ -210,24 +193,19 @@ def _render_roff(text: str) -> str:
                 out.append("```")
                 in_fence = False
             continue
-
         if raw.startswith("."):
             continue
-
         if _prompt.match(raw) or _cmd_start.match(raw):
             if not in_fence:
                 out.append("```sh")
                 in_fence = True
             out.append(raw)
             continue
-
         if in_fence:
             out.append("```")
             in_fence = False
-
         raw = _cmd_word.sub(r"`\1`", raw)
         out.append(raw)
-
     if in_fence:
         out.append("```")
     return "\n".join(out)
@@ -316,19 +294,16 @@ def cmd_md_to_html(args: argparse.Namespace) -> int:
     except ImportError:
         err("md-to-html requires: pip install markdown beautifulsoup4")
         return 2
-
     src = Path(args.input)
     if not src.is_file():
         err(f"File not found: {src}")
         return 1
-
     text = src.read_text(encoding="utf-8", errors="ignore")
     text = _replace_latex(text)
     stem = src.name.replace(".md", "")
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     tmp_html = out_dir / f"{stem}.html"
-
     rendered = markdown.markdown(
         text,
         extensions=[
@@ -341,14 +316,12 @@ def cmd_md_to_html(args: argparse.Namespace) -> int:
         ],
     )
     rendered = _apply_tailwind_classes(rendered)
-
     final_html = _HTML_TEMPLATE.format(
         title=stem,
         asset_base=args.asset_base,
         content=rendered,
     )
     tmp_html.write_text(final_html, encoding="utf-8")
-
     local = src.with_suffix(".html")
     shutil.copy(tmp_html, local)
     print(f"Output saved in {local}")
@@ -361,7 +334,6 @@ _MD_LINK = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 def _md_to_rst(text: str) -> str:
-
     def heading(match: re.Match) -> str:
         level = len(match.group(1))
         title = match.group(2).strip()
@@ -418,7 +390,6 @@ def _convert_one_to_html(
     dest = src.with_suffix(".html")
     if dest.exists() and dest.stat().st_mtime > src.stat().st_mtime:
         return src, dest
-
     text = src.read_text(encoding="utf-8")
     temp_rst: Optional[Path] = None
     try:
@@ -427,7 +398,6 @@ def _convert_one_to_html(
             temp_rst = src.with_suffix(".rst")
             temp_rst.write_text(rst_text, encoding="utf-8")
             src = temp_rst
-
         cmd = [sys.executable, "-m", "docutils.__main__", str(src), str(dest)]
         if stylesheet:
             cmd.extend(["--stylesheet", stylesheet, "--link-stylesheet"])
@@ -462,7 +432,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Not a directory: {root}")
         return 1
-
     stylesheet: Optional[str] = None
     style_src = root / "style.css"
     if style_src.exists():
@@ -471,7 +440,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
         if not style_dest.exists():
             shutil.copy(style_src, style_dest)
         stylesheet = hashed
-
     sources: list[Path] = []
     for ext in (".rst", ".txt", ".md"):
         sources.extend(root.rglob(f"*{ext}"))
@@ -480,12 +448,10 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
     if not sources:
         print(f"No source files found in {root}")
         return 0
-
     info(f"Found {len(sources)} file(s) to convert (workers={args.workers})")
     jobs = [(s, stylesheet) for s in sources]
     converted = 0
     failures = 0
-
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         futures = [pool.submit(_convert_one_to_html, j) for j in jobs]
         for fut in futures:
@@ -504,7 +470,6 @@ def cmd_rst_to_html(args: argparse.Namespace) -> int:
             except Exception as e:
                 failures += 1
                 err(f"Error processing file: {e}")
-
     print(f"\nConversion complete: {converted} converted, {failures} errors")
     return 0
 
@@ -515,22 +480,17 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
     except ImportError:
         err("mobi-to-html requires: pip install mobi")
         return 2
-
     src = Path(args.input)
     if not src.is_file():
         err(f"File not found: {src}")
         return 1
-
     temp_dir, extracted_path = mobi.extract(str(src))
     extracted_path = Path(extracted_path)
     print(f"Extracted to: {extracted_path}")
-
     html_content = extracted_path.read_text(encoding="utf-8")
-
     base_name = src.stem
     parent = src.parent
     dest_html = parent / f"{base_name}.html"
-
     if extracted_path.suffix.lower() == ".epub":
         epub_dir = extracted_path.parent
         files_dir = parent / f"{base_name}_files"
@@ -540,9 +500,7 @@ def cmd_mobi_to_html(args: argparse.Namespace) -> int:
         dest_html.write_text(html_content, encoding="utf-8")
     else:
         dest_html.write_text(html_content, encoding="utf-8")
-
     print(f"HTML saved to: {dest_html}")
-
     shutil.rmtree(temp_dir, ignore_errors=True)
     return 0
 
@@ -553,18 +511,15 @@ def cmd_pptx_to_txt(args: argparse.Namespace) -> int:
     except ImportError:
         err("pptx-to-txt requires: pip install python-pptx")
         return 2
-
     src = Path(args.input)
     if not src.is_file():
         err(f"File not found: {src}")
         return 1
-
     try:
         prs = Presentation(str(src))
     except Exception as e:
         err(f"Error opening file: {e}")
         return 1
-
     dest = src.with_suffix(".txt")
     with dest.open("w", encoding="utf-8") as f:
         for i, slide in enumerate(prs.slides, 1):
@@ -591,13 +546,11 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
     if src.suffix.lower() != ".rst":
         warn(f"Skipping {src}: not an .rst file")
         return False
-
     dest = src.with_suffix(".md")
     if backup and not remove_original:
         bak = src.with_suffix(".rst.bak")
         shutil.copy2(src, bak)
         print(f"Backup created: {bak}")
-
     try:
         subprocess.run(
             ["pandoc", "-f", "rst", "-t", "gfm", "-o", str(dest), str(src)],
@@ -608,7 +561,6 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
     except subprocess.CalledProcessError as e:
         err(f"Error converting {src}: {e.stderr}")
         return False
-
     if remove_original:
         src.unlink()
         print(f"Converted and removed original: {src} -> {dest}")
@@ -618,7 +570,6 @@ def _rst_to_md_one(src: Path, *, backup: bool, remove_original: bool) -> bool:
 
 
 def cmd_rst_to_md(args: argparse.Namespace) -> int:
-
     try:
         subprocess.run(["pandoc", "--version"], capture_output=True, check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -627,7 +578,6 @@ def cmd_rst_to_md(args: argparse.Namespace) -> int:
         print("  Ubuntu/Debian:  sudo apt install pandoc")
         print("  macOS:          brew install pandoc")
         return 1
-
     backup = not args.no_backup
     any_processed = False
     for raw in args.paths:
@@ -670,7 +620,6 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser("chat-export", help="JSON conversations -> per-chat Markdown files")
     p.add_argument("input", help="Input JSON file (list of conversations)")
     p.add_argument(
@@ -680,16 +629,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: exported)",
     )
     p.set_defaults(func=cmd_chat_export)
-
     p = sub.add_parser("info-to-md", help="Convert .info files to .md via `info` CLI")
     p.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
     p.set_defaults(func=cmd_info_to_md)
-
     p = sub.add_parser("man-to-md", help="Convert a man page (roff) to Markdown")
     p.add_argument("input", help="Man page file (e.g. /usr/share/man/man1/ls.1)")
     p.set_defaults(func=cmd_man_to_md)
-
     p = sub.add_parser("md-to-html", help="Markdown -> styled HTML (Tailwind/KaTeX)")
     p.add_argument("input", help="Input Markdown file")
     p.add_argument(
@@ -703,21 +649,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Base URL for CSS/JS assets (default: /sdcard/_static/katex)",
     )
     p.set_defaults(func=cmd_md_to_html)
-
     p = sub.add_parser("rst-to-html", help=".rst / .txt / .md -> HTML via docutils")
     p.add_argument("-d", "--directory", default=".", help="Root directory to process (default: .)")
     p.add_argument("-w", "--workers", type=int, default=8, help="Worker processes (default: 8)")
     p.add_argument("--force", action="store_true", help="Force re-conversion even if HTML is newer")
     p.set_defaults(func=cmd_rst_to_html)
-
     p = sub.add_parser("mobi-to-html", help="Extract a .mobi to HTML")
     p.add_argument("input", help="Input .mobi file")
     p.set_defaults(func=cmd_mobi_to_html)
-
     p = sub.add_parser("pptx-to-txt", help="Extract text from a .pptx")
     p.add_argument("input", help="Input .pptx file")
     p.set_defaults(func=cmd_pptx_to_txt)
-
     p = sub.add_parser("rst-to-md", help="Convert .rst files to .md via pandoc")
     p.add_argument("paths", nargs="+", help="Files or directories to convert")
     p.add_argument("-r", "--recursive", action="store_true", help="Recurse into directories")
@@ -728,7 +670,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Delete the original .rst files after conversion",
     )
     p.set_defaults(func=cmd_rst_to_md)
-
     return parser
 
 

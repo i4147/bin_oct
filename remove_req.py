@@ -4,7 +4,6 @@ The script should determine the current Python version to build the site-package
 For each METADATA file, it should check whether a line matching "Requires-Dist: <given text>" exists, and if so, remove that line, rewrite the file with the remaining content, and print a message indicating which package (parent directory name) was updated."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

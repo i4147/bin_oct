@@ -4,7 +4,6 @@ It should accept one or more file/directory paths as input, recursively process 
 It should log progress and errors with loguru, support small-file and large-file handling differently for efficiency, and expose command-line arguments (e.g., via argparse) to control the desired shebang/comment text and target paths."""
 
 from __future__ import annotations
-
 import argparse
 import shutil
 import sys
@@ -15,12 +14,10 @@ from multiprocessing import Pool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING
-
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
 POOL_SIZE: int = 8
 CHUNK_SIZE: int = 10_000
 SMALL_FILE_BYTES: int = 1 << 20

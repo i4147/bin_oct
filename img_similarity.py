@@ -3,7 +3,6 @@
 Merges the following original scripts into one CLI: dupimg.py -> scan --method dct-phash --threshold 4 find_sim_images.py <algo> <dir> -> scan --method <algo> --threshold 0 folderim.py -> organize --method phash --threshold 10 folderimg.py -> organize --method multihash --threshold 10 folderize_images.py -> organize --method phash --hash-size 16 --out _similar_groups folderize_images_by_similarity.py -> organize --method ahash --mode similarity --threshold 0.95 imgdedup.py <dir> [--remove] -> dedup --method dhash-custom [--no-dry-run] keeponeingroups.py -> keep-one --yes organize_images.py -> cluster -k 10 --threshold 0.7 Third-party packages (as used by the originals): Pillow, imagehash -- imagehash-based methods opencv-python (cv2) -- dct-phash, dhash-custom, hist features numpy -- array operations Only the packages needed by the chosen --method are imported."""
 
 from __future__ import annotations
-
 import argparse
 import re
 import shutil
@@ -27,7 +26,6 @@ SUPPORTED_EXTS = {
     ".raw",
     ".svg",
 }
-
 DEFAULT_THRESHOLDS: dict[str, float] = {
     "dct-phash": 4,
     "dhash-custom": 4,
@@ -40,11 +38,8 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
     "crop-resistant": 8,
     "multihash": 10.0,
 }
-
 METHODS = tuple(DEFAULT_THRESHOLDS.keys())
-
 MULTIHASH_W = {"phash": 0.5, "dhash": 0.3, "ahash": 0.2}
-
 _IMAGEHASH_METHODS = {
     "ahash",
     "phash",
@@ -281,7 +276,6 @@ def compute_features(paths: Sequence[Path], method: str, hash_size: int, workers
             if f is not None:
                 items.append((p, f))
         return items
-
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [(p, ex.submit(extract_feature, p, method, hash_size)) for p in paths]
         for p, fut in futures:
@@ -306,7 +300,6 @@ def group_items(
         dist_threshold = (1.0 - float(threshold)) * max_bits
     else:
         dist_threshold = float(threshold)
-
     groups: list[list[Path]] = []
     assigned: set = set()
     n = len(items)
@@ -353,19 +346,16 @@ def _pipeline(args: argparse.Namespace):
     if not root.is_dir():
         err(f"Not a directory: {root}")
         return None
-
     exclude = set()
     if getattr(args, "out", None):
         exclude.add(str(args.out).split("/")[0])
     for e in getattr(args, "exclude", None) or []:
         exclude.add(e)
-
     hash_size = resolve_hash_size(args)
     paths = collect_images(root, args.recursive, exclude)
     info(f"Found {len(paths)} image(s) under {root}")
     if not paths:
         return None
-
     info(f"Computing features (method={args.method}, hash_size={hash_size}, workers={args.workers})...")
     t0 = time.time()
     items = compute_features(paths, args.method, hash_size, args.workers)
@@ -373,14 +363,12 @@ def _pipeline(args: argparse.Namespace):
     if not items:
         warn("No readable images found.")
         return None
-
     threshold = resolve_threshold(args)
     try:
         groups = group_items(items, args.method, threshold, args.mode == "similarity", hash_size)
     except ValueError as e:
         err(str(e))
         return None
-
     multi = [g for g in groups if len(g) > 1]
     return root, multi, threshold
 
@@ -394,11 +382,9 @@ def cmd_scan(args: argparse.Namespace) -> int:
     if not multi:
         print("No duplicates (near-duplicates) found.")
         return 0
-
     print(f"\n{'=' * 44}")
     print(f"Found {len(multi)} similar group(s)  (method={args.method}, threshold={threshold}, mode={args.mode})")
     print(f"{'=' * 44}\n")
-
     for i, g in enumerate(sorted(multi, key=len, reverse=True), 1):
         print(f"Group #{i} ({len(g)} file(s)):")
         print("-" * 44)
@@ -421,13 +407,10 @@ def cmd_organize(args: argparse.Namespace) -> int:
     if not multi:
         print("No duplicates (near-duplicates) found.")
         return 0
-
     out_prefix = args.out
     dry = args.dry_run
     action = args.action
-
     print(f"\nOrganizing {len(multi)} group(s) into {out_prefix}_NNN/  (action={action}{', DRY RUN' if dry else ''})")
-
     created = 0
     moved = 0
     for i, g in enumerate(sorted(multi, key=len, reverse=True), 1):
@@ -438,7 +421,6 @@ def cmd_organize(args: argparse.Namespace) -> int:
         created += 1
         for p in g:
             dst = folder / p.name
-
             if dst.exists() and dst != p:
                 stem, suffix = p.stem, p.suffix
                 k = 1
@@ -457,7 +439,6 @@ def cmd_organize(args: argparse.Namespace) -> int:
                 moved += 1
             except Exception as e:
                 err(f"Failed to {action} {p}: {e}")
-
     print(f"\n{'=' * 44}")
     if dry:
         print(f"[DRY RUN] Would create {created} folder(s) and {action} {moved} file(s).")
@@ -476,7 +457,6 @@ def cmd_dedup(args: argparse.Namespace) -> int:
     if not multi:
         print("No duplicates (near-duplicates) found.")
         return 0
-
     dry = args.dry_run
     kept = 0
     deleted = 0
@@ -493,7 +473,6 @@ def cmd_dedup(args: argparse.Namespace) -> int:
                 deleted += 1
             except Exception as e:
                 err(f"Failed to delete {p}: {e}")
-
     print(f"\n{'=' * 44}")
     if dry:
         print(f"[DRY RUN] Would keep {kept} file(s), delete {deleted} duplicate(s).")
@@ -508,18 +487,15 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Not a directory: {root}")
         return 1
-
     try:
         pattern = re.compile(args.pattern)
     except re.error as e:
         err(f"Invalid pattern: {e}")
         return 1
-
     folders = [p for p in root.iterdir() if p.is_dir() and pattern.match(p.name)]
     info(f"Found {len(folders)} group folder(s) matching /{args.pattern}/")
     if not folders:
         return 0
-
     if not args.yes:
         print(f"WARNING: This will delete images from {len(folders)} folders in {root}.")
         print("Only ONE image will be kept per folder. This action cannot be undone!")
@@ -527,7 +503,6 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
         if ans not in ("yes", "y"):
             print("Operation cancelled.")
             return 1
-
     processed = 0
     for folder in folders:
         images = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in SUPPORTED_EXTS)
@@ -543,7 +518,6 @@ def cmd_keep_one(args: argparse.Namespace) -> int:
             except Exception as e:
                 err(f"  Error deleting {p.name}: {e}")
         processed += 1
-
     print(f"✅ Completed! Processed {processed} folder(s).")
     return 0
 
@@ -555,7 +529,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
         return 1
     if not (_require("cv2", "cluster") and _require("numpy", "cluster")):
         return 2
-
     import numpy as np  # type: ignore
 
     paths = collect_images(root, recursive=True, exclude_parts={"organized_by_similarity"})
@@ -564,7 +537,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
     if not paths:
         print("No images found!")
         return 0
-
     features: list[Any] = []
     valid: list[Path] = []
     for i, p in enumerate(paths):
@@ -578,7 +550,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
     if not features:
         print("No valid images to process!")
         return 1
-
     feats_arr = np.array(features)
     k = min(args.clusters, len(feats_arr))
 
@@ -613,18 +584,15 @@ def cmd_cluster(args: argparse.Namespace) -> int:
         centroids[ki] = np.mean(members, axis=0)
         del clusters[kj]
         del centroids[kj]
-
     labels = [0] * n
     for t, members in enumerate(clusters.values()):
         for idx in members:
             labels[idx] = t
-
     num_groups = len(clusters)
     out_dir = root / "organized_by_similarity"
     out_dir.mkdir(exist_ok=True)
     for g in range(num_groups):
         (out_dir / f"group_{g + 1}").mkdir(exist_ok=True)
-
     print("Organizing files...")
     for path, label in zip(valid, labels):
         dest_dir = out_dir / f"group_{label + 1}"
@@ -641,7 +609,6 @@ def cmd_cluster(args: argparse.Namespace) -> int:
                 shutil.copy2(str(path), str(dst))
         except Exception as e:
             err(f"Error copying {path}: {e}")
-
     print(f"\nDone! Photos organized in: {out_dir}")
     print(f"Organized {len(valid)} images into {num_groups} groups")
     return 0
@@ -702,11 +669,9 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     sp = sub.add_parser("scan", help="Find & report similar/duplicate groups (no file changes)")
     _add_pipeline_args(sp)
     sp.set_defaults(func=cmd_scan)
-
     sp = sub.add_parser("organize", help="Group similar images into folders")
     _add_pipeline_args(sp)
     sp.add_argument(
@@ -730,7 +695,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(dry_run=True)
     sp.set_defaults(func=cmd_organize)
-
     sp = sub.add_parser("dedup", help="Delete duplicates, keeping first per group")
     _add_pipeline_args(sp)
     grp = sp.add_mutually_exclusive_group()
@@ -743,7 +707,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.set_defaults(dry_run=True)
     sp.set_defaults(func=cmd_dedup)
-
     sp = sub.add_parser("keep-one", help="Keep one image per group_*/similar_*/duplicates_* folder")
     sp.add_argument(
         "-d",
@@ -764,7 +727,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip the interactive confirmation prompt",
     )
     sp.set_defaults(func=cmd_keep_one)
-
     sp = sub.add_parser("cluster", help="HSV-histogram agglomerative clustering into N groups")
     sp.add_argument("-d", "--directory", default=".", help="Directory to scan (default: .)")
     sp.add_argument("-k", "--clusters", type=int, default=10, help="Number of groups (default: 10)")
@@ -776,7 +738,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.add_argument("--move", action="store_true", help="Move files instead of copying")
     sp.set_defaults(func=cmd_cluster)
-
     return parser
 
 

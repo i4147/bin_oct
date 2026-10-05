@@ -4,13 +4,11 @@ It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging,
 The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt."""
 
 from __future__ import annotations
-
 import re
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
-
 from loguru import logger
 
 SECRET_PATTERNS: dict[str, str] = {
@@ -25,7 +23,6 @@ SECRET_PATTERNS: dict[str, str] = {
     "Google API Key": "AIza[0-9A-Za-z\\-_]{35}",
     "JWT Token": "eyJ[A-Za-z0-9_-]+\\.eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+",
 }
-
 SKIP_EXTENSIONS: set[str] = {
     ".pyc",
     ".so",
@@ -47,7 +44,6 @@ SKIP_EXTENSIONS: set[str] = {
     ".bin",
     ".class",
 }
-
 SKIP_PATTERNS: set[str] = {
     ".git",
     ".venv",
@@ -56,7 +52,6 @@ SKIP_PATTERNS: set[str] = {
     "node_modules",
     ".env.example",
 }
-
 SKIP_CONTENT_SIGNATURES: tuple[str, ...] = (
     "Optimized Zip Brute-Forcer for Python 3.12",
     "def brute_force_zip(",
@@ -68,9 +63,7 @@ SKIP_CONTENT_SIGNATURES: tuple[str, ...] = (
     "float_or_disabled",
     "pdfminer.high_level",
 )
-
 SCRIPT_PATH: Path = Path(__file__).resolve()
-
 POOL_SIZE: int = 8
 
 
@@ -105,7 +98,6 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
     content: str | None = _read_file_text(path)
     if content is None:
         return str(path), leaks
-
     for secret_name, pattern in SECRET_PATTERNS.items():
         matches = re.finditer(pattern, content, re.IGNORECASE)
         for match in matches:
@@ -113,14 +105,12 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
             lines: list[str] = content.split("\n")
             line_content: str = lines[line_num - 1] if line_num <= len(lines) else ""
             matched_text: str = match.group(0)
-            leaks.append(
-                {
-                    "secret_type": secret_name,
-                    "line_number": line_num,
-                    "matched_text": matched_text[:50] + "..." if len(matched_text) > 50 else matched_text,
-                    "line_content": line_content[:80] + "..." if len(line_content) > 80 else line_content,
-                }
-            )
+            leaks.append({
+                "secret_type": secret_name,
+                "line_number": line_num,
+                "matched_text": matched_text[:50] + "..." if len(matched_text) > 50 else matched_text,
+                "line_content": line_content[:80] + "..." if len(line_content) > 80 else line_content,
+            })
     return str(path), leaks
 
 
@@ -140,15 +130,11 @@ def check_secrets(root_dir: Path = Path()) -> tuple[int, int, int]:
     if not files:
         print("No files found to scan.")
         return 0, 0, 0
-
     print(f"Scanning {len(files)} files for secrets...\n")
-
     total_leaks: int = 0
     files_with_leaks: int = 0
-
     with Pool(processes=POOL_SIZE) as pool:
         async_results = [pool.apply_async(scan_file, (file,)) for file in files]
-
         for async_result in async_results:
             path, leaks = async_result.get()
             if leaks:
@@ -159,7 +145,6 @@ def check_secrets(root_dir: Path = Path()) -> tuple[int, int, int]:
                     logger.warning(f"     Matched: {leak['matched_text']}")
                     logger.warning(f"     Content: {leak['line_content']}\n")
                 total_leaks += len(leaks)
-
     return len(files), total_leaks, files_with_leaks
 
 

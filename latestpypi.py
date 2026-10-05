@@ -2,7 +2,6 @@
 """Fetch the latest packages added to PyPI and save their names to a file."""
 
 from __future__ import annotations
-
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -15,23 +14,18 @@ def fetch_latest_packages(url: str = RSS_URL) -> list[str]:
     req = urllib.request.Request(url, headers={"User-Agent": "pypi-latest-fetcher/1.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         data = resp.read()
-
     root = ET.fromstring(data)
     names: list[str] = []
-
     for item in root.findall("./channel/item"):
         title = item.findtext("title", default="").strip()
         link = item.findtext("link", default="").strip()
-
         name = ""
         if "/project/" in link:
             name = link.rstrip("/").rsplit("/project/", 1)[-1]
         elif title:
             name = title.rsplit(" ", 1)[0]
-
         if name:
             names.append(name)
-
     return names
 
 

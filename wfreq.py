@@ -1,18 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
 from __future__ import annotations
-
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
 from typing import Iterable, Iterator
-
 from spellchecker import SpellChecker
 
 WORD_RE = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*", re.UNICODE)
 _TEXT_CHARS = bytes({7, 8, 9, 10, 12, 13, 27} | (set(range(0x20, 0x100)) - {0x7F}))
 _OUTPUT_PATH = Path.home() / ".personal_dict"
-
 SKIP_DIRS = {
     ".git",
     ".hg",
@@ -54,7 +51,6 @@ SKIP_DIRS = {
     "DerivedData",
     ".terraform",
 }
-
 SKIP_FILE_SUFFIXES = {
     ".pyc",
     ".pyo",
@@ -221,11 +217,9 @@ def save_words(words: Iterable[str], output_path: Path) -> int:
     before = len(merged)
     merged.update(words)
     added = len(merged) - before
-
     text = "\n".join(sorted(merged))
     if text:
         text += "\n"
-
     output_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = output_path.with_suffix(output_path.suffix + ".tmp")
     tmp_path.write_text(text, encoding="utf-8")
@@ -236,25 +230,21 @@ def save_words(words: Iterable[str], output_path: Path) -> int:
 def main() -> int:
     root_dir = Path.cwd()
     output_path = _OUTPUT_PATH
-
     try:
         all_words = collect_words(root_dir, output_path)
     except Exception as exc:
         print(f"error while collecting words: {exc}", file=sys.stderr)
         return 1
-
     try:
         unknown_words = filter_unknown_words(all_words)
     except Exception as exc:
         print(f"error while filtering words: {exc}", file=sys.stderr)
         return 1
-
     try:
         added = save_words(unknown_words, output_path)
     except OSError as exc:
         print(f"error while writing output: {exc}", file=sys.stderr)
         return 1
-
     print(f"Total unique words found: {len(all_words)}")
     print(f"Words not in pyspellchecker dictionary: {len(unknown_words)}")
     print(f"New words added to dictionary: {added}")

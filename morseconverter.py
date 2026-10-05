@@ -4,7 +4,6 @@ It should implement text_to_morse and morse_to_text functions that convert strin
 Include a main block that parses command-line arguments to let the user choose encode/decode mode and specify input/output file paths."""
 
 from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path

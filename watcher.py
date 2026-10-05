@@ -9,7 +9,6 @@ wtmp.py watchdog-based watcher of the termux temp dir; copies archive files (.ta
 Usage examples -------------- Watch the current directory (print events only):: watch.py Watch a folder recursively and copy changed files to ~/tmp/tgz:: watch.py /some/folder -c Watch a folder, copy only images, batch every 2s:: watch.py /some/folder -c -e png,jpg,svg -i 2 Watch a single file and exit when "boostraped 100%" appears:: watch.py myfile.log -p "boostraped 100%" Watch the Tor log and exit on "100% (done)":: watch.py ~/.tor/tor.log -p "100% (done)" Reproduce wtmp.py (watch termux tmp for archives):: watch.py /data/data/com.termux/files/usr/tmp \ -e ".tar.gz,.whl,.tar.xz,.zip,.tar.bz2,.tgz,.txz,.tbz2" \ -c -d ~/tmp/tgz --initial-copy"""
 
 from __future__ import annotations
-
 import argparse
 import contextlib
 import shutil
@@ -18,7 +17,6 @@ import threading
 import time
 import traceback
 from pathlib import Path
-
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -87,7 +85,6 @@ class ChangeHandler(FileSystemEventHandler):
         self.pattern = pattern
         self.tail_n = tail_n
         self.stop_event = stop_event or threading.Event()
-
         self._pending: dict[Path, str] = {}
         self._last_flush = time.time()
         self._errors: list[str] = []
@@ -131,7 +128,6 @@ class ChangeHandler(FileSystemEventHandler):
         if not self._pending:
             self._last_flush = time.time()
             return
-
         for src_path, reason in list(self._pending.items()):
             try:
                 rel = self._rel(src_path)
@@ -141,14 +137,11 @@ class ChangeHandler(FileSystemEventHandler):
                     except OSError:
                         size_str = "?"
                     print(f"-  /{rel} | {reason} | {size_str}")
-
                     if self.copy_enabled and self.dest_dir is not None:
                         self._safe_copy(src_path, rel)
-
                     if self.pattern and self._pattern_found(src_path):
                         print(f"\n✓ Pattern {self.pattern!r} detected! Exiting...\n")
                         self.stop_event.set()
-
                 elif not src_path.exists():
                     print(f"-  /{rel} | {reason} | deleted")
                     if self.copy_enabled and self.dest_dir is not None:
@@ -159,13 +152,10 @@ class ChangeHandler(FileSystemEventHandler):
                                 print(f"  → removed from destination: /{rel}")
                             except OSError as e:
                                 self._errors.append(f"[delete-error] {dst_file}\n{e}")
-
             except Exception as e:  # noqa: BLE001 - we want to keep going
                 self._errors.append(f"[processing-error] {src_path}\n{e}")
-
         self._pending.clear()
         self._last_flush = time.time()
-
         if self._errors:
             print("\n[errors]")
             for msg in self._errors:
@@ -295,7 +285,6 @@ def do_initial_copy(
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-
     raw_paths = args.paths or [str(Path.cwd())]
     targets: list[Path] = []
     for raw in raw_paths:
@@ -304,16 +293,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: path does not exist: {p}", file=sys.stderr)
             return 2
         targets.append(p.resolve())
-
     allowed = parse_exts(args.extensions)
     excluded = parse_exts(args.exclude)
     interval = max(0.1, float(args.interval))
-
     dest_dir: Path | None = None
     if args.copy:
         dest_dir = Path(args.dest).expanduser().resolve() if args.dest else (Path.home() / "tmp" / "tgz")
         dest_dir.mkdir(parents=True, exist_ok=True)
-
     print(f"Watching ({'non-' if args.no_recursive else ''}recursive):")
     for t in targets:
         kind = "file" if t.is_file() else "dir"
@@ -330,14 +316,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Exit pattern: {args.pattern!r} (checked in last {args.tail} lines)")
     print(f"Flush interval: {interval}s")
     print("(Press Ctrl+C to exit)\n")
-
     if args.initial_copy and args.copy and dest_dir is not None:
         do_initial_copy(targets, allowed, excluded, dest_dir)
-
     stop_event = threading.Event()
     observer = Observer()
     handlers: list[ChangeHandler] = []
-
     for t in targets:
         single_file = t.is_file()
         if single_file:
@@ -348,7 +331,6 @@ def main(argv: list[str] | None = None) -> int:
             watch_dir = t
             display_root = t
             recursive = not args.no_recursive
-
         handler = ChangeHandler(
             root=t,
             display_root=display_root,
@@ -364,7 +346,6 @@ def main(argv: list[str] | None = None) -> int:
         )
         observer.schedule(handler, str(watch_dir), recursive=recursive)
         handlers.append(handler)
-
     observer.start()
     try:
         while not stop_event.is_set():
@@ -380,7 +361,6 @@ def main(argv: list[str] | None = None) -> int:
         observer.stop()
         observer.join()
         print("Watcher stopped.")
-
     return 0
 
 

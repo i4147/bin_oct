@@ -4,12 +4,10 @@ It should efficiently handle large files by using memory-mapped I/O when the fil
 The script should also use multiprocessing (leveraging available CPU cores via a Pool) to process chunks of lines in parallel for stripping and filtering blank lines, and should first check whether the file is binary (via an external is_binary helper) before treating it as text."""
 
 from __future__ import annotations
-
 import mmap
 import sys
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-
 from dh import is_binary
 
 THRESHOLD = 1024 * 1024

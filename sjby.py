@@ -5,7 +5,6 @@ Rebuild the dictionary in the resulting sorted order, serialize it back to JSON 
 If no file path argument is provided, the script should exit with a non-zero status code."""
 
 from __future__ import annotations
-
 import json
 import sys
 from pathlib import Path

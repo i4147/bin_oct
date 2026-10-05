@@ -3,13 +3,11 @@
 On startup it should perform an initial recursive scan of the target directory to copy any existing matching files, then continue watching for newly created or modified files in real time, printing the source path of each copied file or an error message if the copy fails."""
 
 from __future__ import annotations
-
 import os
 import pathlib
 import shutil
 import sys
 import time
-
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 

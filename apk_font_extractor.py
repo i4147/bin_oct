@@ -5,7 +5,6 @@ It reads each font's metadata using fontTools, renames the font to a canonical `
 Use a multiprocessing pool of 8 workers to process APKs in parallel."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing
 import re
@@ -13,7 +12,6 @@ import sys
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from fontTools.ttLib import TTFont
 from loguru import logger
 
@@ -69,7 +67,7 @@ class APKFontExtractor:
                         continue
                     try:
                         font_data: bytes = zip_ref.read(file_info.filename)
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         logger.warning(
                             "Failed to read {} from {}: {}",
                             internal_path,
@@ -77,13 +75,11 @@ class APKFontExtractor:
                             exc,
                         )
                         continue
-                    fonts.append(
-                        (
-                            internal_path,
-                            font_data,
-                            internal_path.suffix.lower(),
-                        )
-                    )
+                    fonts.append((
+                        internal_path,
+                        font_data,
+                        internal_path.suffix.lower(),
+                    ))
                     logger.debug(
                         "Extracted font candidate: {} from {}",
                         internal_path,
@@ -91,7 +87,7 @@ class APKFontExtractor:
                     )
         except zipfile.BadZipFile:
             logger.error("Invalid APK file: {}", apk_path)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Error processing {}: {}", apk_path, exc)
         return fonts
 
@@ -99,12 +95,10 @@ class APKFontExtractor:
         font: TTFont | None = None
         try:
             font = TTFont(io=None, fontData=font_data)  # type: ignore[arg-type]
-
             family_name: str = "Unknown"
             style_name: str = "Regular"
             weight: int = 400
             is_italic: bool = False
-
             if "name" in font:
                 name_table = font["name"]
                 best_family = name_table.getBestFamilyName()
@@ -114,7 +108,6 @@ class APKFontExtractor:
                 if style_record:
                     style_name = style_record.toStr()
                 is_italic = "italic" in style_name.lower()
-
             if "OS/2" in font:
                 weight = int(font["OS/2"].usWeightClass)
             else:
@@ -135,7 +128,6 @@ class APKFontExtractor:
                     weight = 800
                 elif "black" in weight_lower or "heavy" in weight_lower:
                     weight = 900
-
             if font_data[:4] == b"OTTO":
                 extension = ".otf"
             elif font_data[:4] == b"wOFF":
@@ -144,7 +136,6 @@ class APKFontExtractor:
                 extension = ".woff2"
             else:
                 extension = ".ttf"
-
             return FontInfo(
                 family_name=family_name,
                 style_name=style_name,
@@ -153,24 +144,22 @@ class APKFontExtractor:
                 extension=extension,
                 original_path=Path(),
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Failed to extract font metadata: {}", exc)
             return None
         finally:
             if font is not None:
                 try:
                     font.close()
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
 
     def _generate_font_filename(self, font_info: FontInfo) -> str:
         family_name = re.sub(r"[^\w\s-]", "", font_info.family_name)
         family_name = re.sub(r"\s+", "-", family_name.strip())
-
         style_str = font_info.style_name
         style_str = re.sub(r"[^\w\s-]", "", style_str)
         style_str = re.sub(r"\s+", "-", style_str.strip())
-
         if style_str.lower() in ("regular", "normal", "medium", ""):
             if font_info.weight <= 300:
                 style_str = "Light"
@@ -178,10 +167,8 @@ class APKFontExtractor:
                 style_str = "Bold"
             else:
                 style_str = "Regular"
-
         if font_info.is_italic and "italic" not in style_str.lower():
             style_str = f"{style_str}-Italic"
-
         return f"{family_name}-{style_str}{font_info.extension}"
 
     def _handle_duplicate_filename(self, filename: str, source_apk: Path, font_data: bytes) -> str:
@@ -216,7 +203,7 @@ class APKFontExtractor:
             print("Saved font: {}", final_filename)
             self.processed_fonts[f"{source_apk.name}-{len(font_data)}"] = output_path
             return output_path
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Failed to save font {}: {}", final_filename, exc)
             return None
 
@@ -224,20 +211,16 @@ class APKFontExtractor:
         print("Processing APK: {}", apk_path.name)
         fonts = self._extract_fonts_from_apk(apk_path)
         extracted_count = 0
-
         for original_path, font_data, extension in fonts:
             font_info = self._get_font_metadata(font_data)
             if font_info is not None:
                 font_info.original_path = original_path
-
                 font_info.extension = extension
                 filename = self._generate_font_filename(font_info)
             else:
                 filename = original_path.name
-
             if self._save_font(font_data, filename, apk_path) is not None:
                 extracted_count += 1
-
         print("Extracted {} font(s) from {}", extracted_count, apk_path.name)
         return extracted_count
 
@@ -246,12 +229,10 @@ class APKFontExtractor:
             input_paths = [Path.cwd()]
         else:
             input_paths = [Path(p) for p in input_paths]
-
         apk_files = self._find_apk_files(input_paths)
         if not apk_files:
             logger.warning("No APK files found to process")
             return 0
-
         total_extracted = 0
         try:
             with multiprocessing.Pool(processes=WORKERS) as pool:
@@ -259,18 +240,16 @@ class APKFontExtractor:
                 for apk_path in apk_files:
                     result = pool.apply_async(self._process_apk, (apk_path,))
                     async_results.append((apk_path, result))
-
                 for apk_path, async_result in async_results:
                     try:
                         count = async_result.get(timeout=APK_TIMEOUT_SECONDS)
                         total_extracted += count
                     except multiprocessing.TimeoutError:
                         logger.error("Timeout processing {}", apk_path.name)
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         logger.error("Error processing {}: {}", apk_path.name, exc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Error in parallel processing: {}", exc)
-
         print("Total fonts extracted: {}", total_extracted)
         return total_extracted
 
@@ -314,22 +293,18 @@ Examples:
 
 def main() -> int:
     args = parse_arguments()
-
     if args.verbose:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
     else:
         logger.remove()
         logger.add(sys.stderr, level="INFO")
-
     try:
         args.output.mkdir(parents=True, exist_ok=True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Cannot create output directory {}: {}", args.output, exc)
         return 1
-
     extractor = APKFontExtractor(output_dir=args.output)
-
     try:
         total_fonts = extractor.process(input_paths=list(args.inputs) if args.inputs else None)
         if total_fonts > 0:
@@ -340,7 +315,7 @@ def main() -> int:
     except KeyboardInterrupt:
         print("Interrupted by user")
         return 130
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Fatal error: {}", exc)
         return 1
 

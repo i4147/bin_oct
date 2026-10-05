@@ -3,21 +3,17 @@
 Uses dulwich (pure Python git implementation) - no subprocess."""
 
 from __future__ import annotations
-
 import json
 import sys
-
 from dulwich.repo import Repo
 
 
 def get_added_files_per_commit(repo_path: str) -> dict:
     repo = Repo(repo_path)
     result = {}
-
     try:
         walker = repo.get_walker()
         commits = list(walker)
-
         tree_files_cache = {}
 
         def tree_files(tree_sha):
@@ -42,34 +38,25 @@ def get_added_files_per_commit(repo_path: str) -> dict:
             commit = entry.commit
             commit_sha = commit.id.decode()
             short = commit_sha[:8]
-
             current_files = tree_files(commit.tree)
-
             parent_files = set()
             for parent_sha in commit.parents:
                 parent = repo[parent_sha]
                 parent_files |= tree_files(parent.tree)
-
             added = current_files - parent_files
             added_names = sorted({f.split("/")[-1] for f in added})
-
             result[short] = added_names
-
     finally:
         repo.close()
-
     return result
 
 
 def main():
     repo_path = sys.argv[1] if len(sys.argv) > 1 else "."
     output_path = sys.argv[2] if len(sys.argv) > 2 else "added_files.json"
-
     data = get_added_files_per_commit(repo_path)
-
     with open(output_path, "w") as f:
         json.dump(data, f, indent=2)
-
     print(f"Wrote {len(data)} commits to {output_path}")
 
 

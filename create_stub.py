@@ -5,11 +5,9 @@ For each file, it should skip generation if a corresponding .pyi stub already ex
 Processing should run in parallel across multiple files (via a helper mpf) unless only a single file is given, and after processing, the script should print a summary list of any files for which no stub file was successfully generated."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path
-
 from dh import get_files, mpf
 
 

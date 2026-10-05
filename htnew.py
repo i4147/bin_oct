@@ -5,7 +5,6 @@ The function should print a success message showing the created filename and cur
 The script should run the function automatically when executed directly."""
 
 from __future__ import annotations
-
 from pathlib import Path
 
 

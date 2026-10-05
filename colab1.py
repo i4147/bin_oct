@@ -4,12 +4,10 @@ It should skip "setuptools" and "pip" entries, copy top-level files directly, an
 Finally, it should print a summary reporting the source and output paths, the number of files copied, and the number of directories zipped."""
 
 from __future__ import annotations
-
 import shutil
 import site
 import zipfile
 from pathlib import Path
-
 from google.colab import drive
 
 drive.mount("/content/drive")

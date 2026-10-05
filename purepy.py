@@ -3,18 +3,15 @@
 Regenerate this script: read newline-separated package names from a file, query https://pypi.org/pypi/<name>/json with requests, decide "native" when any release filename suggests compiled wheels (.so/.pyd/.dll/win_amd64/manylinux/macosx) else "pure" or "not_found", use a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), and write pure_python.txt, native_extensions.txt, and not_found.txt, logging with loguru."""
 
 from __future__ import annotations
-
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, TypeAlias
-
 import requests
 from loguru import logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
     "map",
@@ -22,10 +19,8 @@ POOL_METHODS: Final[tuple[str, ...]] = (
     "imap_unordered",
     "apply_async",
 )
-
 PYPI_URL: Final[str] = "https://pypi.org/pypi/{name}/json"
 REQUEST_TIMEOUT: Final[int] = 10
-
 NATIVE_MARKERS: Final[tuple[str, ...]] = (
     ".so",
     ".pyd",
@@ -34,11 +29,9 @@ NATIVE_MARKERS: Final[tuple[str, ...]] = (
     "manylinux",
     "macosx",
 )
-
 PURE_OUTPUT: Final[Path] = Path("pure_python.txt")
 NATIVE_OUTPUT: Final[Path] = Path("native_extensions.txt")
 MISSING_OUTPUT: Final[Path] = Path("not_found.txt")
-
 PackageResult: TypeAlias = tuple[str, str]
 
 
@@ -46,7 +39,6 @@ def has_native_wheels(info: dict[str, Any]) -> bool:
     urls = info.get("urls", [])
     if not isinstance(urls, list):
         return False
-
     for entry in urls:
         if not isinstance(entry, dict):
             continue
@@ -81,19 +73,15 @@ def _run_pool(packages: Sequence[str], method: str) -> list[PackageResult]:
     with Pool(processes=POOL_WORKERS) as pool:
         if method == "map":
             return pool.map(_check_package_tuple, [(pkg,) for pkg in packages])
-
         if method == "starmap":
             return pool.starmap(check_package, [(pkg,) for pkg in packages])
-
         if method == "imap_unordered":
             return list(pool.imap_unordered(_check_package_tuple, [(pkg,) for pkg in packages]))
-
         if method == "apply_async":
             async_results: list[AsyncResult[PackageResult]] = [
                 pool.apply_async(check_package, (pkg,)) for pkg in packages
             ]
             return [result.get() for result in async_results]
-
     msg = f"Unsupported pool method: {method}"
     raise ValueError(msg)
 
@@ -129,20 +117,16 @@ def main() -> int:
     args: argparse.Namespace = parse_args()
     pool_method: str = args.pool_method
     infile: Path = Path(args.package_list)
-
     if not infile.exists():
         logger.error(f"Package list not found: {infile}")
         return 1
-
     packages = load_packages(infile)
     if not packages:
         logger.warning("No packages to check.")
         return 0
-
     pure: set[str] = set()
     native: set[str] = set()
     missing: set[str] = set()
-
     for pkg, result in _run_pool(packages, pool_method):
         if result == "pure":
             pure.add(pkg)
@@ -150,11 +134,9 @@ def main() -> int:
             native.add(pkg)
         else:
             missing.add(pkg)
-
     write_lines(PURE_OUTPUT, sorted(pure))
     write_lines(NATIVE_OUTPUT, sorted(native))
     write_lines(MISSING_OUTPUT, sorted(missing))
-
     logger.info("Done!")
     logger.info(f"Pure Python: {len(pure)}")
     logger.info(f"Native-required: {len(native)}")

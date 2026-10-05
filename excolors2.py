@@ -4,12 +4,10 @@ It should skip binary files (via an is_binary helper from a local "dh" module) w
 The script should use contextlib and dataclasses utilities, and is intended as a foundation for detecting, validating, or converting color values found across a codebase or set of files."""
 
 from __future__ import annotations
-
 import contextlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-
 from dh import is_binary
 
 HEX_RE = re.compile(

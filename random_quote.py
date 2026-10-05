@@ -5,7 +5,6 @@ The output should be formatted with horizontal divider lines sized to the curren
 Wrap the logic in a display_random_quote function and run it when the script is executed directly."""
 
 from __future__ import annotations
-
 import json
 import os
 import random

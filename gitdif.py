@@ -4,7 +4,6 @@ For each repository it should run "git status --porcelain" with a timeout, deter
 The script should use a process pool sized by CPU count to check repositories concurrently and then print or return the results, clearly distinguishing repositories with changes, clean repositories, and repositories that failed to check."""
 
 from __future__ import annotations
-
 import subprocess
 import sys
 from multiprocessing import Pool, cpu_count

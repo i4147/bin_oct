@@ -235,7 +235,6 @@ def process_file(path, backend_fn):
     except Exception as e:
         logger.error(f"{path}: cannot read: {e}")
         return "error"
-
     balance_errors = check_tags(raw)
     if balance_errors:
         logger.warning(f"{path}: {len(balance_errors)} unbalanced tag(s) detected in source")
@@ -243,30 +242,25 @@ def process_file(path, backend_fn):
             logger.warning(f"{path}: [balance] {err}")
     else:
         logger.debug(f"{path}: opening/closing tags balanced")
-
     try:
         fixed, errors = backend_fn(raw)
     except Exception as e:
         logger.error(f"{path}: backend exception: {e}")
         return "error"
-
     backend_errors = [e for e in errors if e not in balance_errors]
     for err in backend_errors:
         logger.warning(f"{path}: [backend] {err}")
-
     if fixed == raw:
         if balance_errors or backend_errors:
             logger.info(f"{path}: issues detected but output unchanged")
         else:
             logger.debug(f"{path}: OK")
         return "ok" if not balance_errors else "error"
-
     try:
         path.write_text(fixed, encoding="utf-8")
     except Exception as e:
         logger.error(f"{path}: cannot write: {e}")
         return "error"
-
     logger.success(f"{path}: repaired")
     return "fixed"
 
@@ -275,16 +269,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-b", "--backend", choices=sorted(BACKENDS), default="html.parser")
     args = ap.parse_args()
-
     backend_fn = BACKENDS[args.backend]
     logger.info(f"Using backend: {args.backend}")
-
     cwd = Path.cwd()
     files = sorted(set(cwd.rglob("*.html")) | set(cwd.rglob("*.htm")))
     if not files:
         logger.info(f"No HTML files under {cwd}")
         return
-
     logger.info(f"Found {len(files)} HTML file(s)")
     counts = {"ok": 0, "fixed": 0, "error": 0}
     for f in files:

@@ -4,7 +4,6 @@ It should define a ProcessResult dataclass to capture per-file outcomes (path, s
 File updates should verify the parent directory is writable, and the workload should be parallelized across multiple .gitignore files using multiprocessing.Pool with cpu_count-based worker allocation, with progress and errors reported via the logging module."""
 
 from __future__ import annotations
-
 import logging
 import os
 import sys

@@ -5,7 +5,6 @@ It should accept command-line arguments (via argparse) for the site-packages pat
 The tool should use temporary directories and zipfile operations to assemble each wheel, track already-processed packages to avoid duplicates, and write the resulting wheel files into the specified output directory, printing progress or errors to stdout/stderr as needed."""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import csv

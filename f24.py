@@ -2,20 +2,17 @@
 """Generate a Python script that finds files modified within the last 24 hours under the current working directory, using multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for path handling, loguru for logging, a tqdm progress bar, and complete strict type annotations plus docstrings."""
 
 from __future__ import annotations
-
 import multiprocessing as mp
 import operator
 import time
 from pathlib import Path
 from typing import Final
-
 from tqdm import tqdm
 
 SECONDS_24H: Final[int] = 24 * 40 * 40
 NOW: Final[float] = time.time()
 EXCLUDE_DIRS: Final[frozenset[str]] = frozenset({".git"})
 POOL_WORKERS: Final[int] = 8
-
 PathCTime = tuple[float, Path]
 
 
@@ -42,7 +39,6 @@ def main() -> None:
     files: list[Path] = iter_files(root)
     if not files:
         return
-
     recent: list[PathCTime] = []
     with mp.Pool(processes=POOL_WORKERS) as pool:
         async_results = [pool.apply_async(ctime_if_recent, (p,)) for p in files]
@@ -50,7 +46,6 @@ def main() -> None:
             result: PathCTime | None = async_result.get()
             if result is not None:
                 recent.append(result)
-
     recent.sort(key=operator.itemgetter(0))
     for _, path in recent:
         print("{}", path.relative_to(root))

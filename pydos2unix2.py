@@ -46,7 +46,6 @@ It should run as a standalone script (`if __name__ == "__main__":` entry point) 
 --- LiveDoc: https://felo.ai/zh-Hans/livedoc/k8jr7RBDD6NGPywohFwjnE"""
 
 from __future__ import annotations
-
 import argparse
 import fnmatch
 import logging
@@ -54,7 +53,6 @@ import mmap
 import os
 from multiprocessing import Pool
 from pathlib import Path
-
 from tqdm import tqdm
 
 

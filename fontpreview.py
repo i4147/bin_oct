@@ -4,7 +4,6 @@ Combines three standalone scripts into a single CLI with two subcommands.
 Original -> merged mapping -------------------------- fafontpreview.py -> python fontpreview.py simple --preset fa fontpreview.py -> python fontpreview.py simple --preset en fontpre.py -> python fontpreview.py rich [paths...] -o out.html Examples -------- # Persian preset (default 'simple' preset) python fontpreview.py simple python fontpreview.py simple --preset fa ./fonts # English preset python fontpreview.py simple --preset en ./fonts # Override text/sizes/output python fontpreview.py simple --text "Hello World" --sizes 12 18 32 -o test.html ./fonts # Rich preview with dark mode + metadata python fontpreview.py rich ./fonts ~/Downloads -o preview.html -v python fontpreview.py rich --max-fonts 200 ."""
 
 from __future__ import annotations
-
 import argparse
 import html
 import logging
@@ -15,18 +14,14 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 LOG = logging.getLogger("fontpreview")
-
-FONT_EXTS: frozenset[str] = frozenset(
-    {
-        ".ttf",
-        ".otf",
-        ".woff",
-        ".woff2",
-        ".eot",
-        ".svg",
-    }
-)
-
+FONT_EXTS: frozenset[str] = frozenset({
+    ".ttf",
+    ".otf",
+    ".woff",
+    ".woff2",
+    ".eot",
+    ".svg",
+})
 PRESETS: dict[str, dict] = {
     "fa": {
         "text": "هنر برتز از گوهر آمد پدید",
@@ -39,11 +34,9 @@ PRESETS: dict[str, dict] = {
         "output": "fonts_preview.html",
     },
 }
-
 RICH_TEXT_DEFAULT = "Lorem ipsum dolor sit amet\nهنر برتر از گوهر آمد پدید"
 RICH_OUTPUT_DEFAULT = "fontpreview.html"
 RICH_MAX_FONTS_DEFAULT = 10_000
-
 _FONT_FORMATS = {
     ".ttf": "TrueType",
     ".otf": "OpenType",
@@ -61,10 +54,8 @@ def find_fonts(
 ) -> list[Path]:
     if not paths:
         paths = [Path.cwd()]
-
     found: list[Path] = []
     seen: set[Path] = set()
-
     for raw in paths:
         try:
             p = Path(raw).expanduser().resolve()
@@ -74,14 +65,12 @@ def find_fonts(
         if not p.exists():
             LOG.warning("Path does not exist: %s", p)
             continue
-
         if p.is_file():
             if p.suffix.lower() in FONT_EXTS:
                 found.append(p)
             else:
                 LOG.debug("Skipping non-font file: %s", p)
             continue
-
         for f in p.rglob("*"):
             if f in seen:
                 continue
@@ -94,7 +83,6 @@ def find_fonts(
             if max_fonts is not None and len(found) >= max_fonts:
                 LOG.warning("Reached maximum font limit (%d)", max_fonts)
                 return found
-
     return sorted(found, key=lambda x: (x.parent, x.name))
 
 
@@ -158,15 +146,12 @@ def cmd_simple(args: argparse.Namespace) -> int:
     text: str = args.text if args.text is not None else preset["text"]
     sizes: list[int] = list(args.sizes) if args.sizes else list(preset["sizes"])
     output: Path = Path(args.output) if args.output else Path(preset["output"])
-
     paths = _parse_paths(args.paths)
     LOG.info("Searching for fonts in %d location(s)...", len(paths))
     fonts = find_fonts(paths)
-
     if not fonts:
         LOG.warning("No font files found. Supported: %s", ", ".join(sorted(FONT_EXTS)))
         return 1
-
     LOG.info("Found %d font(s)", len(fonts))
     doc = _generate_simple_html(fonts, text, sizes)
     output.write_text(doc, encoding="utf-8")
@@ -364,7 +349,6 @@ def _generate_rich_html(infos: Sequence[FontInfo], root: Path, text: str) -> str
     )
     if not infos:
         return head + "\n</style>\n" + _rich_footer()
-
     faces = "\n".join(_rich_font_face(f, root) for f in infos)
     sections = "\n".join(_rich_section(f, root, text) for f in infos)
     return head + faces + "\n</style>\n" + sections + _rich_footer()
@@ -394,22 +378,17 @@ def _atomic_write(text: str, dest: Path) -> bool:
 def cmd_rich(args: argparse.Namespace) -> int:
     root = Path.cwd()
     paths = _parse_paths(args.paths)
-
     LOG.info("Searching for fonts in %d location(s)...", len(paths))
     infos = _collect_font_infos(paths, max_fonts=args.max_fonts)
-
     if not infos:
         LOG.warning("No font files found. Supported formats: %s", ", ".join(sorted(FONT_EXTS)))
         return 1
-
     LOG.info("Found %d font(s)", len(infos))
     LOG.info("Generating preview HTML...")
     doc = _generate_rich_html(infos, root, RICH_TEXT_DEFAULT)
-
     output = Path(args.output)
     if not output.is_absolute():
         output = root / output
-
     LOG.info("Writing to %s...", output)
     if _atomic_write(doc, output):
         LOG.info("Successfully generated %s", output)
@@ -426,7 +405,6 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=__doc__.split("Examples", 1)[-1] if "Examples" in __doc__ else None,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     p = sub.add_parser(
         "simple",
         help="Simple one-font-per-block preview (fafontpreview.py / fontpreview.py)",
@@ -449,7 +427,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-o", "--output", default=None, help="Output HTML file (defaults to preset's)")
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_simple)
-
     p = sub.add_parser(
         "rich",
         help="Rich interactive preview with textareas + dark mode (fontpre.py)",
@@ -469,25 +446,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_rich)
-
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-
     logging.basicConfig(
         level=logging.DEBUG if getattr(args, "verbose", False) else logging.INFO,
         format="%(levelname)s: %(message)s",
     )
-
     try:
         return args.func(args)
     except KeyboardInterrupt:
         LOG.warning("Operation cancelled by user")
         return 130
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         LOG.error("Unexpected error: %s", e, exc_info=True)
         return 1
 

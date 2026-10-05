@@ -16,7 +16,6 @@ python renametools.py pnr -s "IMG_" "photo_" --recursive .
 python renametools.py pnr -t "chapter" --recursive ./books Optional third-party packages (used only where explicitly needed): * opencv-python — for the ``images`` subcommand (import cv2) * tqdm — for progress bars in ``images`` (falls back to no bar)"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import logging
@@ -235,7 +234,6 @@ def cmd_images(args: argparse.Namespace) -> int:
         return 0
     print(f"[SCAN] Found {len(files)} image file(s) under {root}")
     tasks = [(f, args.separator, args.dry_run) for f in files]
-
     renamed = skipped = failed = 0
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         for path, ok, msg in pool.map(_rename_image, tasks):
@@ -248,7 +246,6 @@ def cmd_images(args: argparse.Namespace) -> int:
             else:
                 failed += 1
                 print(f"✗ FAIL {path.name}: {msg}", file=sys.stderr)
-
     print("-" * 40)
     print(f"[SUMMARY] Renamed: {renamed} | Skipped: {skipped} | Failed: {failed} | Total: {len(files)}")
     return 0 if failed == 0 else 1
@@ -278,16 +275,13 @@ def cmd_clean_names(args: argparse.Namespace) -> int:
     if not files:
         print("No matching files found.")
         return 1
-
     names = [f.name for f in files]
     prefix = _common_prefix(names)
     suffix = _common_suffix(names)
-
     if args.apply:
         print("Preview & APPLY:")
     else:
         print("Preview (dry-run; use --apply to rename):")
-
     changed = 0
     for f in files:
         original = f.name
@@ -305,7 +299,6 @@ def cmd_clean_names(args: argparse.Namespace) -> int:
                 print(f"  SKIPPED (exists): {new_name}")
                 continue
             safe_rename(f, target, dry_run=False, verbose=False)
-
     if not args.apply:
         print("\nDry-run only. Use --apply to rename.")
     else:
@@ -339,7 +332,6 @@ def cmd_jscss(args: argparse.Namespace) -> int:
                     target = unique_path(target)
                 if safe_rename(path, target, dry_run=args.dry_run):
                     renamed += 1
-
         if args.also_html and path.suffix.lower() in {".html", ".htm", ".js"}:
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")
@@ -353,7 +345,6 @@ def cmd_jscss(args: argparse.Namespace) -> int:
             else:
                 path.write_text(new_text, encoding="utf-8")
                 print(f"✓ Updated HTML: {path}")
-
     print(f"\nProcessed {renamed} filename(s).")
     return 0
 
@@ -452,11 +443,9 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
     if not py_files:
         print("No Python files found.")
         return 1
-
     cwd = Path.cwd()
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         results = list(pool.map(_analyze, py_files))
-
     if args.apply:
         for s in results:
             if s.has_meaning or not s.suggestion:
@@ -472,18 +461,15 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
                 s.renamed = True
             except OSError as e:
                 s.error = f"Rename failed: {e}"
-
     meaningful = sum(1 for s in results if s.has_meaning)
     unnamed = sum(1 for s in results if not s.has_meaning)
     errors = sum(1 for s in results if s.error)
     renames = sum(1 for s in results if s.renamed)
-
     print("=" * 78)
     print(f"  Mode: {'APPLY' if args.apply else 'DRY RUN'}")
     print(f"  Total files: {len(results)} | Meaningful: {meaningful} | Unnamed: {unnamed}")
     print(f"  Errors: {errors} | Renamed: {renames}")
     print("=" * 78)
-
     if unnamed:
         print("\nUNNAMED FILES:")
         for s in results:
@@ -500,7 +486,6 @@ def cmd_suggest_names(args: argparse.Namespace) -> int:
                 print(f"     Error:   {s.error}")
             elif s.renamed:
                 print(f"     ✓ Renamed to: {s.suggestion}")
-
     if errors:
         print("\nFILES WITH ERRORS:")
         for s in results:
@@ -575,7 +560,6 @@ def _pnr_template(root: Path, prefix: str, *, dry_run: bool, recursive: bool) ->
     except PermissionError:
         print(f"Permission denied: {root}", file=sys.stderr)
         return 0
-
     if files:
         n = len(files)
         width = 1 if n < 10 else 2 if n < 100 else 3 if n < 1000 else 4
@@ -588,7 +572,6 @@ def _pnr_template(root: Path, prefix: str, *, dry_run: bool, recursive: bool) ->
                 target = unique_path(target)
             if safe_rename(f, target, dry_run=dry_run):
                 count += 1
-
     if recursive:
         try:
             subdirs = [d for d in root.iterdir() if d.is_dir() and not _is_skippable(d)]
@@ -631,7 +614,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable debug logging.")
     sub = parser.add_subparsers(dest="command", required=True)
-
     lc = sub.add_parser(
         "lowercase",
         help="Lowercase names, extensions, or file content.",
@@ -667,7 +649,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=8,
         help="Accepted for uniformity; unused by this subcommand.",
     )
-
     im = sub.add_parser(
         "images",
         help="Rename image files to include WxH dimensions.",
@@ -686,7 +667,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     im.add_argument("--dry-run", action="store_true", help="Preview only.")
     im.add_argument("--workers", type=int, default=8, help="Worker processes (default: 8).")
-
     cn = sub.add_parser(
         "clean-names",
         help="Strip common prefix/suffix and junk patterns from media files.",
@@ -701,7 +681,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Regex of junk to strip (repeatable; overrides defaults).",
     )
     cn.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
-
     js = sub.add_parser(
         "jscss",
         help="Normalize .js/.css filenames and optionally HTML content.",
@@ -716,7 +695,6 @@ def build_parser() -> argparse.ArgumentParser:
     js.add_argument("--also-html", action="store_true", help="Also rewrite .html/.js content.")
     js.add_argument("--dry-run", action="store_true", help="Preview only.")
     js.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
-
     sn = sub.add_parser(
         "suggest-names",
         help="Suggest meaningful names for .py files from their docstrings.",
@@ -724,7 +702,6 @@ def build_parser() -> argparse.ArgumentParser:
     _add_paths(sn)
     sn.add_argument("-a", "--apply", action="store_true", help="Rename files in place.")
     sn.add_argument("--workers", type=int, default=8, help="Worker processes (default: 8).")
-
     pnr = sub.add_parser("pnr", help="Remove / replace / template-number names.")
     group = pnr.add_mutually_exclusive_group(required=True)
     group.add_argument("-r", "--remove", metavar="STR", help="Remove STR from names.")
@@ -750,7 +727,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory to operate on (default: cwd).",
     )
     pnr.add_argument("--workers", type=int, default=8, help=argparse.SUPPRESS)
-
     return parser
 
 

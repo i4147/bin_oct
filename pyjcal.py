@@ -5,7 +5,6 @@ Implement static/class methods such as today(), today_with_time(), and from_greg
 Ensure the conversion logic correctly maps Gregorian dates to their Jalali year, month, and day equivalents."""
 
 from __future__ import annotations
-
 from datetime import datetime
 
 

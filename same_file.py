@@ -5,7 +5,6 @@ If either path does not exist, it should catch the FileNotFoundError and return 
 For any other OSError encountered during the check, it should print an error message to stderr (prefixed with "error:") and also return False."""
 
 from __future__ import annotations
-
 import sys
 from pathlib import Path
 

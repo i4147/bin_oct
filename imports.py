@@ -4,7 +4,6 @@ This script scans Python files in the current directory or its subdirectories, i
 Features: - Scans all .py files recursively - Identifies third-party imports (excludes stdlib and local packages) - Optionally generates separate requirements.txt for each subdirectory - Uses multiprocessing for faster processing - Provides progress feedback for large codebases"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import importlib.metadata
@@ -14,11 +13,9 @@ import time
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
-
 from dh import STDLIB, get_installed_pkgs
 
 NUM_WORKERS = 8
-
 SKIP_DIRS: set[str] = {
     ".git",
     "__pycache__",
@@ -97,74 +94,59 @@ def find_imports_for_directory(
             if any(part in SKIP_DIRS for part in py_file.relative_to(dir_path).parts):
                 continue
             files.append(py_file)
-
     if not files:
         return []
-
     all_imports: set[str] = set()
-
     with Pool(processes=NUM_WORKERS) as pool:
         results = pool.map(_process_file, files)
-
     for _path, imports, success, _error in results:
         if success:
             all_imports.update(imports)
-
     local_modules: set[str] = {p.stem for p in dir_path.glob("*.py") if not any(part in SKIP_DIRS for part in p.parts)}
     local_packages: set[str] = get_local_packages(dir_path)
     local_names: set[str] = local_modules | local_packages | all_local_packages
-
-    result: list[str] = sorted(
-        [
-            imp
-            for imp in all_imports
-            if imp not in std_libs and imp not in local_names and not imp.startswith(".") and imp != "__future__"
-        ]
-    )
+    result: list[str] = sorted([
+        imp
+        for imp in all_imports
+        if imp not in std_libs and imp not in local_names and not imp.startswith(".") and imp != "__future__"
+    ])
     return result
 
 
 def save_requirements_file(modules: list[str], output_path: Path, pkgz: set[str]) -> bool:
     modules = sorted(set(modules))
     results: list[str] = []
-
     for mod in modules:
         if mod.startswith("_"):
             continue
         ver = get_version(mod)
         if "Not Installed" in ver:
             results.append(f"{mod}=={ver}")
-
     if not results:
         return False
-
     output_path.write_text("\n".join(results), encoding="utf-8")
     cleaned: list[str] = []
-
     with output_path.open(encoding="utf-8") as fin:
         lines = fin.readlines()
         cleaned.extend(
-            line.rstrip()
+            line
+            .rstrip()
             .replace("Not Installed", "")
             .replace("==(NA)", "")
             .replace("==(unknown)", "")
             .replace("==", "")
             for line in lines
         )
-
     seen: set[str] = set()
     unique_cleaned: list[str] = []
-
     for p in cleaned:
         if p and p not in pkgz and not p.startswith("_") and p not in seen:
             seen.add(p)
             unique_cleaned.append(p)
-
     if not unique_cleaned:
         if output_path.exists():
             output_path.unlink()
         return False
-
     with output_path.open("w", encoding="utf-8") as f:
         f.write("\n".join(unique_cleaned))
     return True
@@ -175,7 +157,6 @@ def get_version(module_name: str) -> str:
         return importlib.metadata.version(module_name)
     except importlib.metadata.PackageNotFoundError:
         pass
-
     try:
         spec = importlib.util.find_spec(module_name)
         if spec is None:
@@ -186,7 +167,6 @@ def get_version(module_name: str) -> str:
                 return str(v)
     except Exception:
         return "Not Installed(unknown)"
-
     return "Not Installed(NA)"
 
 
@@ -215,7 +195,6 @@ def main() -> None:
         help="Save separate requirements.txt for each subdirectory",
     )
     args = parser.parse_args()
-
     overall_start = time.time()
     cwd = Path.cwd()
     output_file = cwd / "requirements.txt"
@@ -223,12 +202,10 @@ def main() -> None:
     pkgz: set[str] = set(get_installed_pkgs())
     all_local_packages: set[str] = get_local_packages(cwd)
     subdirs: list[Path] = get_valid_subdirs(cwd)
-
     if args.save_separate and subdirs:
         total_imports: set[str] = set()
         created_count: int = 0
         skipped_count: int = 0
-
         for idx, subdir in enumerate(subdirs, 1):
             dir_start = time.time()
             print(
@@ -237,17 +214,14 @@ def main() -> None:
                 flush=True,
             )
             modules = find_imports_for_directory(subdir, cwd, std_libs, all_local_packages)
-
             if not modules:
                 elapsed = time.time() - dir_start
                 print(f"⏭️  no third-party imports ({elapsed:.2f}s)")
                 skipped_count += 1
                 continue
-
             subdir_req = subdir / "requirements.txt"
             created = save_requirements_file(modules, subdir_req, pkgz)
             elapsed = time.time() - dir_start
-
             if created:
                 print(f"✅ created ({len(modules)} packages, {elapsed:.2f}s)")
                 total_imports.update(modules)
@@ -255,12 +229,10 @@ def main() -> None:
             else:
                 print(f"⏭️  all installed ({elapsed:.2f}s)")
                 skipped_count += 1
-
         if total_imports:
             print("\n📦 Generating root requirements.txt with all unique imports...")
             root_modules: list[str] = sorted(set(total_imports))
             root_created = save_requirements_file(root_modules, output_file, pkgz)
-
             if root_created:
                 print(f"✅ {output_file} ({len(root_modules)} unique packages)")
             else:
@@ -283,13 +255,11 @@ def main() -> None:
                 except ValueError:
                     pass
                 files.append(py_file)
-
         if not files:
             print("No Python files found.")
             if output_file.exists():
                 output_file.unlink()
             return
-
         files_by_dir: dict[str, list[Path]] = defaultdict(list)
         for f in files:
             try:
@@ -301,58 +271,43 @@ def main() -> None:
             except ValueError:
                 subdir = str(f.parent)
             files_by_dir[subdir].append(f)
-
         show_progress = len(files_by_dir) > 50
         if show_progress:
             print(f"Processing {len(files_by_dir)} directories with {len(files)} total files...")
             print("-" * 40)
-
         all_imports: set[str] = set()
         dir_count: int = 0
-
         for subdir, dir_files in sorted(files_by_dir.items()):
             dir_count += 1
             if show_progress:
                 start_time = time.time()
-
             with Pool(processes=NUM_WORKERS) as pool:
                 results = pool.map(_process_file, dir_files)
-
             for _path, imports, success, _error in results:
                 if success:
                     all_imports.update(imports)
-
             if show_progress:
                 elapsed = time.time() - start_time
                 print(f"[{dir_count}/{len(files_by_dir)}] {subdir:<30} ({len(dir_files):>4} files, {elapsed:.2f}s)")
-
         if show_progress:
             print("-" * 40)
-
         local_modules: set[str] = {p.stem for p in cwd.glob("*.py") if not any(part in SKIP_DIRS for part in p.parts)}
         local_names: set[str] = local_modules | all_local_packages
-
-        modules: list[str] = sorted(
-            {
-                imp
-                for imp in all_imports
-                if imp not in std_libs and imp not in local_names and not imp.startswith(".") and imp != "__future__"
-            }
-        )
-
+        modules: list[str] = sorted({
+            imp
+            for imp in all_imports
+            if imp not in std_libs and imp not in local_names and not imp.startswith(".") and imp != "__future__"
+        })
         if modules:
             print(f"\n{'Module':<20} | {'Version':<15}")
             print("-" * 40)
-
             for mod in modules:
                 if mod.startswith("_"):
                     continue
                 ver = get_version(mod)
                 line = f"{mod:<20} | {ver:<15}"
                 print(line)
-
             created = save_requirements_file(modules, output_file, pkgz)
-
             if created:
                 print(f"\n✅ Created {output_file} ({len(modules)} unique packages)")
             else:
@@ -363,7 +318,6 @@ def main() -> None:
             print("\n✅ No third-party imports found")
             if output_file.exists():
                 output_file.unlink()
-
     overall_elapsed = time.time() - overall_start
     if overall_elapsed > 1.0:
         print(f"\n⏱️  Total time: {overall_elapsed:.2f}s")

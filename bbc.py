@@ -5,7 +5,6 @@ Additionally, it should detect "setup.cfg" files whose content exactly matches a
 The script should print a confirmation message naming each removed item as it processes the directory tree, and it should run automatically when executed as the main module."""
 
 from __future__ import annotations
-
 import shutil
 from pathlib import Path
 

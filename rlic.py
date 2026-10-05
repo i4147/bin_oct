@@ -5,7 +5,6 @@ remove --block-mode comment --min-lines 2 tlic.py -> scan --block-mode segment -
 (Original tlic.py used joblib; replaced with stdlib ThreadPoolExecutor.)"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import sys
@@ -63,7 +62,6 @@ DEFAULT_TEXT_EXTS: set[str] = {
     ".groovy",
     ".sql",
 }
-
 BINARY_EXTS: set[str] = {
     ".pyc",
     ".pyo",
@@ -101,7 +99,6 @@ BINARY_EXTS: set[str] = {
     ".ppt",
     ".pptx",
 }
-
 COMMENT_EXCEPTIONS: tuple[str, ...] = (
     "#!",
     "# type",
@@ -161,7 +158,6 @@ def collect_files(root: Path, *, block_mode: str, extensions: Optional[set[str]]
         wanted = extensions
     else:
         wanted = extensions or DEFAULT_TEXT_EXTS
-
     out: list[Path] = []
     for p in root.rglob("*"):
         if not p.is_file() or p.is_symlink():
@@ -170,16 +166,13 @@ def collect_files(root: Path, *, block_mode: str, extensions: Optional[set[str]]
             continue
         if p.suffix.lower() in BINARY_EXTS:
             continue
-
         if block_mode == "segment":
             if (wanted is None or p.suffix.lower() in wanted) and not _is_binary(p):
                 out.append(p)
             continue
-
         if p.suffix.lower() in wanted:
             out.append(p)
             continue
-
         if block_mode == "paragraph" and "." not in p.name and _is_probably_text(p):
             out.append(p)
     return sorted(out)
@@ -290,7 +283,6 @@ def extract_blocks(path: Path, block_mode: str, min_lines: int, min_chars: int) 
     except OSError as e:
         warn(f"cannot read {path}: {e}")
         return []
-
     if block_mode == "paragraph":
         blocks = extract_paragraph_blocks(lines, min_lines, min_chars)
     elif block_mode == "comment":
@@ -300,7 +292,6 @@ def extract_blocks(path: Path, block_mode: str, min_lines: int, min_chars: int) 
     else:
         msg = f"Unknown block-mode: {block_mode!r}"
         raise ValueError(msg)
-
     for b in blocks:
         b.path = path
     return blocks
@@ -324,15 +315,12 @@ def scan_directory(
     if not files:
         info("No text files found.")
         return {}
-
     info(
         f"Scanning {len(files)} file(s) "
         f"(block-mode={block_mode}, min-lines={min_lines}, "
         f"min-chars={min_chars}, workers={workers})..."
     )
-
     groups: dict[str, list[Occurrence]] = defaultdict(list)
-
     if workers <= 1 or len(files) == 1:
         for f in files:
             _, blocks = _worker_scan((f, block_mode, min_lines, min_chars))
@@ -344,7 +332,6 @@ def scan_directory(
             for path, blocks in ex.map(_worker_scan, jobs):
                 for b in blocks:
                     groups[b.normalized].append(b)
-
     return {k: v for k, v in groups.items() if len(v) >= 2}
 
 
@@ -393,25 +380,21 @@ def _remove_lines(path: Path, line_indices: set[int], validate_python: bool) -> 
     except OSError as e:
         warn(f"cannot read {path}: {e}")
         return 0, False
-
     new_lines = [l for i, l in enumerate(lines) if i not in line_indices]
     if len(new_lines) == len(lines):
         return 0, True
-
     if validate_python and path.suffix.lower() == ".py":
         try:
             ast.parse("".join(new_lines))
         except SyntaxError as e:
             warn(f"{path}: removal would create invalid Python ({e}); skipping")
             return 0, False
-
     try:
         with path.open("w", encoding="utf-8") as f:
             f.writelines(new_lines)
     except OSError as e:
         err(f"Error writing {path}: {e}")
         return 0, False
-
     return len(lines) - len(new_lines), True
 
 
@@ -420,7 +403,6 @@ def remove_blocks(groups: dict[str, list[Occurrence]], validate_python: bool) ->
     for occ_list in groups.values():
         for o in occ_list:
             per_file[o.path].update(range(o.start, o.end + 1))
-
     total_files = 0
     total_lines = 0
     for path, idxs in per_file.items():
@@ -454,10 +436,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Directory {root} does not exist")
         return 1
-
     min_lines = args.min_lines if args.min_lines is not None else _default_min_lines(args.block_mode)
     extensions = _parse_extensions(args.extensions)
-
     groups = scan_directory(
         root,
         block_mode=args.block_mode,
@@ -466,16 +446,13 @@ def cmd_scan(args: argparse.Namespace) -> int:
         extensions=extensions,
         workers=args.workers,
     )
-
     if args.half and groups:
         scanned = collect_files(root, block_mode=args.block_mode, extensions=extensions)
         threshold = len(scanned) / 2
         before = len(groups)
         groups = {k: v for k, v in groups.items() if len({o.path for o in v}) >= threshold}
         info(f"--half filter: {before} → {len(groups)} block(s) (>= {int(threshold)} files)")
-
     print_report(groups)
-
     if not args.no_report and groups:
         report_path = Path(args.report)
         save_report(groups, report_path)
@@ -487,10 +464,8 @@ def cmd_remove(args: argparse.Namespace) -> int:
     if not root.is_dir():
         err(f"Directory {root} does not exist")
         return 1
-
     min_lines = args.min_lines if args.min_lines is not None else _default_min_lines(args.block_mode)
     extensions = _parse_extensions(args.extensions)
-
     groups = scan_directory(
         root,
         block_mode=args.block_mode,
@@ -499,16 +474,13 @@ def cmd_remove(args: argparse.Namespace) -> int:
         extensions=extensions,
         workers=args.workers,
     )
-
     if args.half and groups:
         scanned = collect_files(root, block_mode=args.block_mode, extensions=extensions)
         threshold = len(scanned) / 2
         groups = {k: v for k, v in groups.items() if len({o.path for o in v}) >= threshold}
-
     if not groups:
         print("No repeated multiline blocks to remove.")
         return 0
-
     print(
         f"Found {len(groups)} repeated block(s) across {len({o.path for occ in groups.values() for o in occ})} file(s)."
     )
@@ -517,7 +489,6 @@ def cmd_remove(args: argparse.Namespace) -> int:
         if ans not in ("yes", "y"):
             print("Operation cancelled.")
             return 1
-
     validate = not args.no_validate
     files, lines = remove_blocks(groups, validate_python=validate)
     print(f"\nDone. Removed {lines} line(s) across {files} file(s).")
@@ -588,7 +559,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--no-report", action="store_true", help="Don't write the report file")
     p.set_defaults(func=cmd_scan)
-
     p = sub.add_parser("remove", help="Find repeated blocks and remove them")
     add_common(p)
     p.add_argument(
@@ -603,7 +573,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip the interactive confirmation prompt",
     )
     p.set_defaults(func=cmd_remove)
-
     return parser
 
 

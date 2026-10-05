@@ -4,7 +4,6 @@ It should accept the ZIP file path and wordlist path (plus options like batch si
 While running, it should periodically print live progress statistics (passwords tested, elapsed time formatted as h/m/s, and passwords-per-second rate), and finally report whether the password was found, printing the result along with total attempts and elapsed time."""
 
 from __future__ import annotations
-
 import argparse
 import multiprocessing
 import sys
@@ -17,7 +16,6 @@ from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
     from collections.abc import Generator
-
 DEFAULT_BATCH_SIZE: Final[int] = 2000
 DEFAULT_UPDATE_INTERVAL: Final[float] = 5.0
 

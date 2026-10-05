@@ -11,7 +11,6 @@ Original script -> equivalent command ------------------------------------- gemc
 --workers 8 Third-party dependencies ------------------------ tree-sitter tree-sitter-python"""
 
 from __future__ import annotations
-
 import argparse
 import ast
 import multiprocessing as mp
@@ -31,9 +30,7 @@ except ImportError as _exc:  # pragma: no cover
         file=sys.stderr,
     )
     raise SystemExit(2)
-
 _LANGUAGE = Language(_tspython.language())
-
 _DOCSTRING_QUERY = """
 (comment) @comment
 (block
@@ -43,9 +40,7 @@ _DOCSTRING_QUERY = """
   . (expression_statement
     (string)) @docstring)
 """
-
 _BASE_KEEP_PREFIXES: tuple[str, ...] = ("#!", "# type:", "# fmt:")
-
 _TODO_KEEP_PREFIXES: tuple[str, ...] = ("# TODO", "# noqa")
 
 
@@ -112,37 +107,31 @@ def _edits_via_query(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int, 
     query = Query(_LANGUAGE, _DOCSTRING_QUERY)
     cursor = QueryCursor(query)
     captures = cursor.captures(tree.root_node)
-
     seen: set[tuple[int, int]] = set()
     edits: list[Edit] = []
     n_comments = n_docstrings = 0
-
     for node, tag in captures:
         key = (node.start_byte, node.end_byte)
         if key in seen:
             continue
         seen.add(key)
-
         if tag == "comment":
             text = source[node.start_byte : node.end_byte].decode("utf-8", "replace")
             if _comment_is_kept(text, cfg.keep_prefixes):
                 continue
             edits.append(Edit(node.start_byte, node.end_byte, b""))
             n_comments += 1
-
         elif tag == "docstring":
             parent = node.parent
             grandparent = parent.parent if parent is not None else None
             is_module_doc = grandparent is not None and grandparent.type == "module"
             if is_module_doc and cfg.keep_module_docstring:
                 continue
-
             if cfg.docstring_action == "pass" and parent is not None and parent.named_child_count == 1:
                 edits.append(Edit(node.start_byte, node.end_byte, b"pass"))
             else:
                 edits.append(Edit(node.start_byte, node.end_byte, b""))
             n_docstrings += 1
-
     return edits, n_comments, n_docstrings
 
 
@@ -150,7 +139,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
     parser = _make_parser()
     tree = parser.parse(source)
     root = tree.root_node
-
     module_doc: Node | None = None
     if root.child_count > 0:
         first = root.child(0)
@@ -158,21 +146,17 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
             inner = first.child(0)
             if inner is not None and inner.type == "string":
                 module_doc = first
-
     edits: list[Edit] = []
     n_comments = n_docstrings = 0
-
     walker = tree.walk()
     done = False
     while not done:
         node = walker.node
-
         if node.type == "comment":
             text = source[node.start_byte : node.end_byte].decode("utf-8", "replace")
             if not _comment_is_kept(text, cfg.keep_prefixes):
                 edits.append(Edit(node.start_byte, node.end_byte, b""))
                 n_comments += 1
-
         elif node.type == "expression_statement" and node != module_doc:
             inner = node.child(0)
             if inner is not None and inner.type == "string":
@@ -183,7 +167,6 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
                     else:
                         edits.append(Edit(node.start_byte, node.end_byte, b""))
                     n_docstrings += 1
-
         if walker.goto_first_child():
             continue
         if walker.goto_next_sibling():
@@ -194,14 +177,12 @@ def _edits_via_cursor(source: bytes, cfg: StripConfig) -> tuple[list[Edit], int,
                 break
             if walker.goto_next_sibling():
                 break
-
     if module_doc is not None and not cfg.keep_module_docstring:
         if cfg.docstring_action == "pass" and root.named_child_count == 1:
             edits.append(Edit(module_doc.start_byte, module_doc.end_byte, b"pass"))
         else:
             edits.append(Edit(module_doc.start_byte, module_doc.end_byte, b""))
         n_docstrings += 1
-
     return edits, n_comments, n_docstrings
 
 
@@ -238,7 +219,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
     edits = sorted(edits, key=lambda e: e.start)
     if not edits:
         return source
-
     if cfg.preserve_lines:
         buf = bytearray(source)
         for edit in edits:
@@ -249,7 +229,6 @@ def _apply_edits(source: bytes, edits: Iterable[Edit], cfg: StripConfig) -> byte
             else:
                 buf[edit.start : edit.end] = b" " * (edit.end - edit.start)
         return bytes(buf)
-
     out = bytearray()
     cursor = 0
     for edit in edits:
@@ -271,35 +250,26 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             error=f"read failed: {exc}",
             elapsed=time.perf_counter() - t0,
         )
-
     original_size = len(source)
     n_comments = n_docstrings = 0
-
     try:
         if cfg.engine in ("query", "cursor"):
             if cfg.engine == "query":
                 edits, n_comments, n_docstrings = _edits_via_query(source, cfg)
             else:
                 edits, n_comments, n_docstrings = _edits_via_cursor(source, cfg)
-
             if cfg.eat_trailing_newline:
                 _eat_trailing_newlines(source, edits)
-
             new_source = _apply_edits(source, edits, cfg)
-
             if cfg.remove_blank_lines:
                 new_source = _remove_blank_lines(new_source.decode("utf-8", "replace")).encode("utf-8")
-
         elif cfg.engine == "ast":
             new_source = _strip_via_ast_line(source)
-
         else:
             msg = f"unknown engine: {cfg.engine!r}"
             raise ValueError(msg)
-
     except Exception as exc:  # noqa: BLE001 — per-file robustness
         return FileResult(path=path, success=False, error=str(exc), elapsed=time.perf_counter() - t0)
-
     if new_source == source:
         return FileResult(
             path=path,
@@ -309,7 +279,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             new_size=original_size,
             elapsed=time.perf_counter() - t0,
         )
-
     try:
         ast.parse(new_source, filename=str(path))
     except SyntaxError as exc:
@@ -322,7 +291,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
             original_size=original_size,
             elapsed=time.perf_counter() - t0,
         )
-
     if write:
         try:
             path.write_bytes(new_source)
@@ -333,7 +301,6 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
                 error=f"write failed: {exc}",
                 elapsed=time.perf_counter() - t0,
             )
-
     return FileResult(
         path=path,
         success=True,
@@ -361,7 +328,6 @@ def _discover_python_files(paths: Sequence[str]) -> list[Path]:
 def _parallel_map(files: list[Path], cfg: StripConfig, write: bool, workers: int) -> list[FileResult]:
     if workers <= 1 or len(files) <= 1:
         return [_process_file(f, cfg, write) for f in files]
-
     ctx = mp.get_context("spawn")
     with ctx.Pool(processes=workers) as pool:
         return pool.starmap(_process_file, [(f, cfg, write) for f in files])
@@ -371,12 +337,10 @@ def _print_summary(results: list[FileResult], label: str, total_time: float) -> 
     ok = [r for r in results if r.success and r.error != "no changes"]
     unchanged = [r for r in results if r.success and r.error == "no changes"]
     failed = [r for r in results if not r.success]
-
     in_size = sum(r.original_size for r in results)
     out_size = sum(r.new_size for r in results)
     saved = max(in_size - out_size, 0)
     pct = (saved / in_size * 100.0) if in_size else 0.0
-
     print("=" * 52)
     print(f"Results ({label})")
     print("=" * 52)
@@ -396,7 +360,6 @@ def _build_keep_prefixes(args: argparse.Namespace) -> tuple[str, ...]:
         prefixes.extend(_TODO_KEEP_PREFIXES)
     if getattr(args, "keep_prefix", None):
         prefixes.extend(args.keep_prefix)
-
     seen: set[str] = set()
     unique: list[str] = []
     for p in prefixes:
@@ -416,19 +379,15 @@ def cmd_strip(args: argparse.Namespace) -> int:
         keep_module_docstring=args.keep_module_docstring,
         keep_prefixes=_build_keep_prefixes(args),
     )
-
     files = _discover_python_files(args.paths)
     if not files:
         print("No Python files found.", file=sys.stderr)
         return 0
-
     if not args.quiet:
         print(f"Processing {len(files)} file(s) [engine={cfg.engine}, workers={args.workers}, dry_run={args.dry_run}]")
-
     t0 = time.perf_counter()
     results = _parallel_map(files, cfg, write=not args.dry_run, workers=args.workers)
     elapsed = time.perf_counter() - t0
-
     failed = 0
     if not args.quiet:
         for r in results:
@@ -441,7 +400,6 @@ def cmd_strip(args: argparse.Namespace) -> int:
             else:
                 print(f"[OK]    {r.path}  comments={r.comments_removed} docstrings={r.docstrings_removed}")
         _print_summary(results, cfg.engine, elapsed)
-
     return 1 if failed else 0
 
 
@@ -450,10 +408,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
     if not files:
         print("No Python files found.", file=sys.stderr)
         return 0
-
     print(f"Comparing engines on {len(files)} file(s) (dry-run, no files will be written)")
     print("=" * 52)
-
     timings: dict[str, float] = {}
     for engine in ("query", "ast"):
         cfg = StripConfig(
@@ -465,10 +421,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
         results = _parallel_map(files, cfg, write=False, workers=args.workers)
         dt = time.perf_counter() - t0
         timings[engine] = dt
-
         ok = sum(1 for r in results if r.success)
         print(f"[{engine:<5}] ok={ok}/{len(results)}  time={dt:.3f}s")
-
     print("=" * 52)
     print("Performance comparison")
     print("=" * 52)
@@ -489,7 +443,6 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", required=True)
-
     sp = sub.add_parser("strip", help="Rewrite Python files to drop comments/docstrings.")
     sp.add_argument(
         "paths",
@@ -556,7 +509,6 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--quiet", action="store_true", help="Suppress per-file and summary output.")
     sp.add_argument("-v", "--verbose", action="store_true", help="Also report unchanged files.")
     sp.set_defaults(func=cmd_strip)
-
     cp = sub.add_parser("compare", help="Dry-run: compare tree-sitter vs AST engines.")
     cp.add_argument(
         "paths",
@@ -570,7 +522,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Number of worker processes (default: CPU count).",
     )
     cp.set_defaults(func=cmd_compare)
-
     return parser
 
 

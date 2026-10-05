@@ -4,11 +4,9 @@ It should retrieve candidate directories via a helper get_dirs function from a l
 Include a helper function to detect whether one path is nested inside another, and ensure results (e.g., serialized as JSON) can be reported when run as the main script."""
 
 from __future__ import annotations
-
 import json
 from collections import defaultdict
 from pathlib import Path
-
 from dh import get_dirs
 from xxhash import xxh64
 

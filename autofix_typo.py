@@ -4,7 +4,6 @@ It should expose a PatternLearner class that loads, updates, and persists learne
 Inputs are Python source file paths or directories plus CLI flags controlling learning/correction behavior, and outputs include corrected source files, console reports of detected typos, and an updated JSON pattern database with timestamps."""
 
 from __future__ import annotations
-
 import argparse
 import json
 import re
@@ -13,7 +12,6 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-
 from dh import PY_KEYWORDS
 
 COMMON_SUBSTITUTIONS = {

@@ -6,7 +6,6 @@
 - Use pathlib for all path handling, loguru for logging, full strict type hints, and no CLI args controlling parallelism."""
 
 from __future__ import annotations
-
 import argparse
 import asyncio
 import mmap
@@ -16,7 +15,6 @@ import tarfile
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
-
 import lz4.frame
 from loguru import logger
 

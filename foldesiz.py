@@ -3,13 +3,11 @@
 It should compute an appropriate number of range-based folders automatically based on the spread of file sizes (capped at 100 or the number of files), distribute files evenly across these folders, and then move each file into its corresponding size-range folder, using a helper to avoid filename collisions and formatting sizes into human-readable strings."""
 
 from __future__ import annotations
-
 import operator
 import os
 import shutil
 import sys
 from pathlib import Path
-
 from dh import fsz, should_skip, unique_path
 
 

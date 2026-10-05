@@ -6,7 +6,6 @@ Supported backends: - deepl - deep_translator - libretranslate_remote - translat
 No offline model is loaded; offline-style operation requires a LibreTranslate server elsewhere on the LAN or Internet."""
 
 from __future__ import annotations
-
 import argparse
 import importlib
 import json
@@ -33,7 +32,6 @@ class BackendError(Exception):
 
 TranslatorCallable = Callable[[str], str]
 Factory = Callable[[str, str, str], TranslatorCallable]
-
 _LANG_MAP: dict[str, dict[str, str]] = {
     "deepl": {
         "fr": "FR",
@@ -102,13 +100,11 @@ _LANG_MAP: dict[str, dict[str, str]] = {
         "zh": "zh-Hans",
     },
 }
-
 _SERIAL_LOCKS: dict[str, threading.Lock] = {
     "googletrans": threading.Lock(),
     "pygoogletranslation": threading.Lock(),
     "translators_bing": threading.Lock(),
 }
-
 _CONSOLE_LOCK = threading.Lock()
 _RESULTS_LOCK = threading.Lock()
 _FAILED_LOCK = threading.Lock()
@@ -480,14 +476,12 @@ def _fallback_order() -> list[str]:
     order.append("deep_translator")
     if os.getenv("LIBRETRANSLATE_URL"):
         order.append("libretranslate_remote")
-    order.extend(
-        [
-            "translate",
-            "translators_bing",
-            "googletrans",
-            "pygoogletranslation",
-        ]
-    )
+    order.extend([
+        "translate",
+        "translators_bing",
+        "googletrans",
+        "pygoogletranslation",
+    ])
     return order
 
 
@@ -499,7 +493,6 @@ def _select_backend(
 ) -> tuple[str, TranslatorCallable]:
     candidates = [preferred] if preferred else _fallback_order()
     failures: list[str] = []
-
     for name in candidates:
         if name not in _BACKEND_FACTORIES:
             raise SystemExit(f"Unknown backend '{name}'. Choose from: " + ", ".join(sorted(_BACKEND_FACTORIES)))
@@ -518,7 +511,6 @@ def _select_backend(
                     "Install its package and configure its environment variables."
                 )
                 raise SystemExit(msg) from exc
-
     msg = "No usable backend was found. Install deep_translator or configure one of the supported backends."
     raise SystemExit(msg)
 
@@ -622,7 +614,6 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--save-every", type=int, default=50)
     parser.add_argument("--no-continue", action="store_true")
     args = parser.parse_args()
-
     if args.workers < 1:
         parser.error("--workers must be at least 1")
     if args.save_every < 1:
@@ -638,19 +629,15 @@ def _run(args: argparse.Namespace) -> int:
     failed_path = Path(args.failed)
     words = _read_words(input_path)
     results = _load_results(output_path, not args.no_continue)
-
     if not args.no_continue:
         _print(f"Loaded {len(results)} existing translations from {output_path}")
-
     pending = [word for word in words if word not in results]
     total = len(words)
     completed = total - len(pending)
     _print(f"Processing {len(pending)} pending words out of {total}")
-
     if not pending:
         _atomic_save(output_path, results)
         return 0
-
     backend_name, translator = _select_backend(
         args.backend,
         args.source,
@@ -658,10 +645,8 @@ def _run(args: argparse.Namespace) -> int:
         str(Path(__file__).resolve()),
     )
     _print(f"Using backend: {backend_name}")
-
     executor = ThreadPoolExecutor(max_workers=min(args.workers, 2))
     futures: dict[Future[tuple[str, str | None]], str] = {}
-
     try:
         for word in pending:
             future = executor.submit(
@@ -672,7 +657,6 @@ def _run(args: argparse.Namespace) -> int:
                 failed_path,
             )
             futures[future] = word
-
         for future in as_completed(futures):
             word, translated = future.result()
             completed += 1
@@ -682,14 +666,12 @@ def _run(args: argparse.Namespace) -> int:
                 _print(f"[{completed}/{total}] ✓ {word} -> {translated}")
             else:
                 _print(f"[{completed}/{total}] ✗ {word} (failed → {failed_path})")
-
             with _PROGRESS_LOCK:
                 if completed % args.save_every == 0:
                     with _RESULTS_LOCK:
                         snapshot = dict(results)
                     _atomic_save(output_path, snapshot)
                     _print(f"Saved {len(snapshot)} translations to {output_path}")
-
         with _RESULTS_LOCK:
             _atomic_save(output_path, dict(results))
         _print(f"Completed. Saved {len(results)} translations to {output_path}")

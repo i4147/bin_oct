@@ -5,7 +5,6 @@ It should identify matching English/Farsi file pairs based on filename patterns 
 Print progress messages using emoji-prefixed status indicators (e.g., 📖, ⚠️) throughout the process to inform the user of loading and merging progress."""
 
 from __future__ import annotations
-
 import json
 from pathlib import Path
 
