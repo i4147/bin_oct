@@ -1,265 +1,458 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
-"""Write a Python 3.12 script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that automates pushing the current Git repository to GitHub while transparently injecting a GitHub personal access token for authentication.
-
-The script's main purpose and behavior:
-
-- Use `loguru` for logging, configured to remove the default handler and add a colorized stderr handler at INFO level.
-- Define a `GitBackend` class that:
-  - On initialization, sets `repo_path` to the current working directory (`Path.cwd()`).
-  - Loads a GitHub token from a `~/.env` file by reading it, scanning lines for one starting with `GITHUB_TOKEN=`, and extracting the value (stripping whitespace and surrounding single/double quotes).
-  - If `~/.env` does not exist, logs a warning and returns `None`.
-  - If reading the file fails, logs an error with the exception and returns `None`.
-  - If no valid token is found/loaded, logs an error (`GITHUB_TOKEN not found in ~/.env`) and exits the program immediately via `sys.exit(1)`.
-  - Provides a `run` method that executes an arbitrary shell command (given as a list of arguments) using `subprocess.run`, capturing stdout/stderr as text. It copies the current environment variables, injects/overrides `GITHUB_TOKEN` with the loaded token, and runs the command with that environment. Before running, it logs the command being executed at DEBUG level. If `check=True` (the default) and the command returns a non-zero exit code, it logs an error including the command's stderr output.
-
-Notable implementation details to preserve:
-- Uses `from __future__ import annotations`, and imports `os`, `re`, `subprocess as sp`, `sys`, `pathlib.Path`, `typing.Optional`, and `loguru.logger`.
-- Type hints are used throughout (e.g., `Optional[str]`, `list`, `sp.CompletedProcess`).
-- The token file path is resolved via `Path.home() / ".env"`.
-- The command list passed to `run` is joined with spaces for logging purposes.
-- Designed to be extended further (e.g., for actual git push/remote operations) but the core responsibility shown is secure token loading from a local dotfile and safely wrapping subprocess calls with the token injected into the environment rather than hardcoded or passed as a CLI argument (to avoid leaking it in process listings or shell history).
-- Error handling should be defensive: missing file, read errors, and missing token value should all be handled gracefully with appropriate log levels (warning for missing file, error for read failure or missing token), and a hard exit only occurs when no token could ultimately be loaded.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/KdPMoGXYBWNBrmyzEdCMfZ"""
+"""Create and push a new GitHub repo from current folder contents.
+Features: - Auto-detect repo name from dirname or use -n/--name - Copy .gitignore from ~ (unless --no-gitignore) - Handle existing repos (owned vs unowned) - GitHub API integration via GITHUB_TOKEN (env or ~/.env) - Non-interactive mode via -y/--yes or non-TTY stdin - Robust error handling, logging, and retries"""
 
 from __future__ import annotations
+import argparse
 import os
 import re
-import subprocess as sp
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+import requests
 from loguru import logger
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
+ENV_FILE = Path.home() / ".env"
+GITHUB_API_BASE = "https://api.github.com"
+GIT_LOCAL_TIMEOUT = 30
+GIT_NETWORK_TIMEOUT = 600
+HTTP_TIMEOUT = 15
+DEFAULT_BRANCH = "main"
+DEFAULT_COMMIT_MSG = "Initial commit"
 logger.remove()
-logger.add(sys.stderr, level="INFO", colorize=True)
+logger.add(
+    sys.stderr,
+    format="<level>{level: <8}</level> | <level>{message}</level>",
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+)
 
 
-class GitBackend:
-    def __init__(self):
-        self.repo_path = Path.cwd()
-        self.github_token = self._load_github_token()
-        if not self.github_token:
-            logger.error("GITHUB_TOKEN not found in ~/.env")
-            sys.exit(1)
-
-    def _load_github_token(self) -> Optional[str]:
-        env_file = Path.home() / ".env"
-        if not env_file.exists():
-            logger.warning(f"~/.env not found at {env_file}")
-            return None
-        try:
-            content = env_file.read_text()
-            for line in content.splitlines():
-                line = line.strip()
-                if line.startswith("GITHUB_TOKEN="):
-                    token = line.split("=", 1)[1].strip().strip("'\"")
-                    if token:
-                        logger.debug("Loaded GITHUB_TOKEN from ~/.env")
-                        return token
-        except Exception as e:
-            logger.error(f"Failed to read ~/.env: {e}")
-        return None
-
-    def run(self, cmd: list, check: bool = True) -> sp.CompletedProcess:
-        logger.debug(f"Running: {' '.join(cmd)}")
-        env = os.environ.copy()
-        env["GITHUB_TOKEN"] = self.github_token
-        result = sp.run(cmd, capture_output=True, text=True, env=env)
-        if check and result.returncode != 0:
-            logger.error(f"Command failed: {result.stderr}")
-            sys.exit(1)
-        return result
-
-    def is_git_repo(self) -> bool:
-        result = self.run(["git", "rev-parse", "--git-dir"], check=False)
-        return result.returncode == 0
-
-    def get_repo_name(self) -> str:
-        return self.repo_path.name
-
-    def init_repo(self):
-        logger.info("Initializing git repository...")
-        self.run(["git", "init"])
-
-    def copy_gitignore(self):
-        home_gitignore = Path.home() / ".gitignore"
-        local_gitignore = self.repo_path / ".gitignore"
-        if local_gitignore.exists():
-            logger.debug(".gitignore already exists locally")
-            return
-        if home_gitignore.exists():
-            logger.info(f"Copying .gitignore from {home_gitignore}")
-            try:
-                local_gitignore.write_text(home_gitignore.read_text())
-            except Exception as e:
-                logger.warning(f"Failed to copy .gitignore: {e}")
-        else:
-            logger.warning(f".gitignore not found at {home_gitignore}")
-
-    def handle_submodules(self):
-        gitmodules = self.repo_path / ".gitmodules"
-        if not gitmodules.exists():
-            logger.debug("No .gitmodules found")
-            return
-        logger.info("Found .gitmodules. Initializing submodules...")
-        self.run(["git", "submodule", "init"])
-        logger.info("Updating submodules recursively...")
-        self.run(["git", "submodule", "update", "--init", "--recursive"])
-
-    def get_remote_url(self) -> Optional[str]:
-        result = self.run(["git", "remote", "get-url", "origin"], check=False)
-        return result.stdout.strip() if result.returncode == 0 else None
-
-    def get_remote_owner(self, url: str) -> Optional[str]:
-        match = re.search(r"(?:github\.com[:/]|@github\.com:)([^/]+)", url)
-        return match.group(1) if match else None
-
-    def get_current_user(self) -> Optional[str]:
-        result = self.run(["gh", "auth", "status", "-t"], check=False)
-        if result.returncode == 0:
-            match = re.search(r"as\s+(\S+)", result.stdout)
-            return match.group(1) if match else None
-        return None
-
-    def remove_remote(self):
-        logger.info("Removing origin remote...")
-        self.run(["git", "remote", "remove", "origin"], check=False)
-
-    def add_remote(self, url: str):
-        logger.info(f"Adding remote: {url}")
-        self.run(["git", "remote", "add", "origin", url])
-
-    def create_github_repo(self, repo_name: str) -> str:
-        logger.info(f"Creating GitHub repository '{repo_name}' on your account...")
-        self.run(["gh", "repo", "create", repo_name, "--public", "--source=."])
-        result = self.run(["gh", "repo", "view", "--json", "url", "-q", ".url"], check=False)
-        if result.returncode == 0:
-            url = result.stdout.strip()
-            logger.info(f"Created repo: {url}")
-            return url
-        current_user = self.get_current_user()
-        if current_user:
-            url = f"git@github.com:{current_user}/{repo_name}.git"
-            logger.info(f"Inferred repo URL: {url}")
-            return url
-        msg = "Failed to create GitHub repo or fetch URL"
-        raise RuntimeError(msg)
-
-    def add_all_files(self):
-        logger.info("Staging all files...")
-        self.run(["git", "add", "-A"])
-
-    def has_changes(self) -> bool:
-        result = self.run(["git", "status", "--porcelain"], check=False)
-        return bool(result.stdout.strip())
-
-    def commit(self, message: str):
-        logger.info(f"Committing: {message}")
-        self.run(["git", "commit", "-m", message])
-
-    def get_current_branch(self) -> str:
-        result = self.run(["git", "branch", "--show-current"], check=False)
-        return result.stdout.strip() if result.returncode == 0 else "main"
-
-    def push_upstream(self, branch: str) -> tuple[bool, Optional[str]]:
-        logger.info(f"Pushing '{branch}' to origin...")
-        result = self.run(["git", "push", "--set-upstream", "origin", branch], check=False)
-        success = result.returncode == 0
-        error = result.stderr if result.returncode != 0 else None
-        return (success, error)
-
-    def pull_rebase(self, branch: str):
-        logger.info(f"Pulling '{branch}' with rebase...")
-        self.run(["git", "pull", "origin", branch, "--rebase"])
+def _build_session() -> requests.Session:
+    session = requests.Session()
+    retries = Retry(
+        total=3,
+        backoff_factor=0.5,
+        status_forcelist=(500, 502, 503, 504, 429),
+        allowed_methods=frozenset(["GET", "POST"]),
+        raise_on_status=False,
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
 
 
-class GitWorkflow:
-    def __init__(self, backend: GitBackend):
-        self.backend = backend
-
-    def handle_remote_and_auth(self):
-        current_url = self.backend.get_remote_url()
-        current_user = self.backend.get_current_user()
-        if not current_user:
-            logger.error("Failed to authenticate with GitHub (gh auth)")
-            sys.exit(1)
-        logger.info(f"Authenticated as: {current_user}")
-        if not current_url:
-            logger.info("No remote configured. Will create new repo.")
-            return False
-        remote_owner = self.backend.get_remote_owner(current_url)
-        logger.info(f"Current remote owner: {remote_owner}")
-        if remote_owner and remote_owner != current_user:
-            logger.warning(f"Remote configured for '{remote_owner}', but authenticated as '{current_user}'")
-            self.backend.remove_remote()
-            return False
-        logger.info("Remote matches current user. Proceeding normally.")
-        return True
-
-    def execute(self):
-        repo_name = self.backend.get_repo_name()
-        logger.info(f"Repository: {repo_name}")
-        if not self.backend.is_git_repo():
-            self.backend.init_repo()
-        else:
-            logger.info("Git repository already initialized.")
-        self.backend.copy_gitignore()
-        self.backend.handle_submodules()
-        keep_remote = self.handle_remote_and_auth()
-        if not keep_remote:
-            new_url = self.backend.create_github_repo(repo_name)
-            self.backend.add_remote(new_url)
-        self.backend.add_all_files()
-        if self.backend.has_changes():
-            self.backend.commit("initial: synced to new repo")
-        else:
-            logger.info("No changes to commit.")
-        branch = self.backend.get_current_branch()
-        success, error = self.backend.push_upstream(branch)
-        if not success:
-            logger.error(f"Push failed: {error}")
-            if self._is_transient_error(error):
-                logger.warning("Transient error detected. Retrying...")
-                success, error = self.backend.push_upstream(branch)
-            if not success:
-                logger.error("Push failed after retry. Manual intervention needed.")
-                sys.exit(1)
-        logger.info(f"✅ Success! Pushed '{repo_name}' to GitHub")
-        logger.info(f"   View at: https://github.com/{self.backend.get_current_user()}/{repo_name}")
-
-    @staticmethod
-    def _is_transient_error(error: Optional[str]) -> bool:
-        if not error:
-            return False
-        transient_patterns = [
-            "RPC failed",
-            "curl",
-            "HTTP2 framing",
-            "send-pack",
-            "disconnect",
-            "hung up",
-            "Connection reset",
-            "Connection refused",
-            "timeout",
-            "temporarily unavailable",
-        ]
-        error_lower = error.lower()
-        return any(pattern.lower() in error_lower for pattern in transient_patterns)
+SESSION = _build_session()
 
 
-def main():
+def _gh_headers(token: str) -> dict:
+    return {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "gh-create-repo/1.0",
+    }
+
+
+def load_github_token() -> str:
+    env_token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if env_token:
+        logger.info("Using GITHUB_TOKEN from environment")
+        return env_token
+    if not ENV_FILE.exists():
+        msg = f"~/.env not found at {ENV_FILE}. Create it with GITHUB_TOKEN=<token>, or export GITHUB_TOKEN."
+        raise FileNotFoundError(msg)
     try:
-        backend = GitBackend()
-        workflow = GitWorkflow(backend)
-        workflow.execute()
+        content = ENV_FILE.read_text(encoding="utf-8")
+    except OSError as e:
+        msg = f"Could not read {ENV_FILE}: {e}"
+        raise RuntimeError(msg) from e
+    for raw in content.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        if line.startswith("GITHUB_TOKEN="):
+            token = line.split("=", 1)[1].strip().strip("\"'")
+            if not token:
+                msg = "GITHUB_TOKEN is empty in ~/.env"
+                raise ValueError(msg)
+            logger.info("Loaded GITHUB_TOKEN from ~/.env")
+            return token
+    msg = "GITHUB_TOKEN not found in ~/.env"
+    raise ValueError(msg)
+
+
+_CURRENT_USER_CACHE: Optional[str] = None
+
+
+def get_current_user_login(token: str) -> str:
+    global _CURRENT_USER_CACHE
+    if _CURRENT_USER_CACHE:
+        return _CURRENT_USER_CACHE
+    try:
+        r = SESSION.get(
+            f"{GITHUB_API_BASE}/user",
+            headers=_gh_headers(token),
+            timeout=HTTP_TIMEOUT,
+        )
+    except requests.RequestException as e:
+        msg = f"Could not reach GitHub API: {e}"
+        raise RuntimeError(msg) from e
+    if r.status_code == 401:
+        msg = "GitHub token is invalid or expired (401)."
+        raise ValueError(msg)
+    if r.status_code != 200:
+        msg = f"GitHub API error {r.status_code}: {r.text[:200]}"
+        raise requests.RequestException(msg)
+    login = r.json().get("login")
+    if not login:
+        msg = "Could not determine GitHub login from /user"
+        raise ValueError(msg)
+    logger.info(f"Authenticated as GitHub user: {login}")
+    _CURRENT_USER_CACHE = login
+    return login
+
+
+def create_github_repo(
+    repo_name: str,
+    token: str,
+    user_login: str,
+    private: bool = False,
+    description: Optional[str] = None,
+) -> str:
+    payload: dict = {"name": repo_name, "private": private}
+    if description:
+        payload["description"] = description
+    r = SESSION.post(
+        f"{GITHUB_API_BASE}/user/repos",
+        headers=_gh_headers(token),
+        json=payload,
+        timeout=HTTP_TIMEOUT,
+    )
+    if r.status_code == 201:
+        data = r.json()
+        logger.info(f"✓ Created GitHub repo: {data['full_name']}")
+        return data.get("ssh_url") or data["clone_url"]
+    if r.status_code == 422:
+        logger.warning(f"Repo '{user_login}/{repo_name}' already exists on GitHub — reusing it.")
+        return f"git@github.com:{user_login}/{repo_name}.git"
+    if r.status_code == 401:
+        msg = "Invalid GitHub token (401 Unauthorized)."
+        raise ValueError(msg)
+    if r.status_code == 403:
+        msg = f"GitHub API forbidden (rate limit or insufficient scopes): {r.text[:200]}"
+        raise ValueError(msg)
+    msg = f"GitHub API error {r.status_code}: {r.text[:200]}"
+    raise requests.RequestException(msg)
+
+
+def run_git_command(
+    cmd: list,
+    cwd: Optional[Path] = None,
+    check: bool = True,
+    timeout: Optional[int] = None,
+) -> tuple[str, int]:
+    timeout = timeout or GIT_LOCAL_TIMEOUT
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd or Path.cwd(),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError as e:
+        msg = f"Command not found: {cmd[0]} (is git installed and on PATH?)"
+        raise RuntimeError(msg) from e
+    except subprocess.TimeoutExpired as e:
+        msg = f"Command timed out after {timeout}s: {' '.join(cmd)}"
+        raise RuntimeError(msg) from e
+    stdout = (result.stdout or "").strip()
+    stderr = (result.stderr or "").strip()
+    if check and result.returncode != 0:
+        detail = stderr or stdout or "(no output)"
+        msg = f"Command failed ({result.returncode}): {' '.join(cmd)}\n{detail}"
+        raise RuntimeError(msg)
+    return stdout, result.returncode
+
+
+def is_git_repo(cwd: Path) -> bool:
+    return (cwd / ".git").exists()
+
+
+def get_remote_url(cwd: Path, remote: str = "origin") -> Optional[str]:
+    url, rc = run_git_command(["git", "config", "--get", f"remote.{remote}.url"], cwd, check=False)
+    return url if rc == 0 and url else None
+
+
+_GH_SSH_RE = re.compile(r"^git@github\.com:([^/]+)/(.+?)(?:\.git)?/?$")
+_GH_HTTPS_RE = re.compile(r"^https?://(?:[^@/]+@)?github\.com/([^/]+)/(.+?)(?:\.git)?/?$")
+
+
+def parse_github_url(url: str) -> tuple[str, str]:
+    for rx in (_GH_SSH_RE, _GH_HTTPS_RE):
+        m = rx.match(url)
+        if m:
+            return m.group(1), m.group(2)
+    msg = f"Not a GitHub remote URL: {url}"
+    raise ValueError(msg)
+
+
+def validate_repo_name(name: str) -> None:
+    if not name:
+        msg = "Repository name is empty"
+        raise ValueError(msg)
+    if len(name) > 100:
+        msg = f"Repository name too long ({len(name)} > 100)"
+        raise ValueError(msg)
+    if name in (".", ".."):
+        msg = "Repository name cannot be '.' or '..'"
+        raise ValueError(msg)
+    if name.startswith("."):
+        msg = "Repository name cannot start with '.'"
+        raise ValueError(msg)
+    if name.endswith(".git"):
+        msg = "Repository name cannot end with '.git'"
+        raise ValueError(msg)
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
+        msg = f"Invalid repo name '{name}': use only letters, digits, '.', '-', '_'"
+        raise ValueError(msg)
+
+
+def copy_gitignore(cwd: Path) -> None:
+    source = Path.home() / ".gitignore"
+    target = cwd / ".gitignore"
+    if not source.exists():
+        logger.warning("~/.gitignore not found, skipping copy")
+        return
+    if target.exists():
+        logger.info(".gitignore already exists locally, preserving")
+        return
+    try:
+        shutil.copy2(source, target)
+        logger.info(f"✓ Copied .gitignore from ~ → {cwd}")
+    except OSError as e:
+        msg = f"Failed to copy .gitignore: {e}"
+        raise RuntimeError(msg) from e
+
+
+def _warn_if_missing_identity(cwd: Path) -> None:
+    _, rc_name = run_git_command(["git", "config", "user.name"], cwd, check=False)
+    _, rc_mail = run_git_command(["git", "config", "user.email"], cwd, check=False)
+    if rc_name != 0 or rc_mail != 0:
+        logger.warning(
+            "git user.name/user.email not configured — commit may fail.\n"
+            "Fix with:\n"
+            "  git config --global user.name  'Your Name'\n"
+            "  git config --global user.email 'you@example.com'"
+        )
+
+
+def initialize_git_repo(cwd: Path, remote_url: str) -> None:
+    if not is_git_repo(cwd):
+        logger.info("Initializing git repository...")
+        _, rc = run_git_command(["git", "init", "-b", DEFAULT_BRANCH], cwd, check=False)
+        if rc != 0:
+            run_git_command(["git", "init"], cwd)
+            run_git_command(
+                ["git", "symbolic-ref", "HEAD", f"refs/heads/{DEFAULT_BRANCH}"],
+                cwd,
+            )
+    _warn_if_missing_identity(cwd)
+    existing = get_remote_url(cwd)
+    if existing == remote_url:
+        logger.info(f"Remote already set to {remote_url}")
+    elif existing:
+        logger.info(f"Updating remote: {existing} → {remote_url}")
+        run_git_command(["git", "remote", "set-url", "origin", remote_url], cwd)
+    else:
+        run_git_command(["git", "remote", "add", "origin", remote_url], cwd)
+    logger.info(f"✓ Remote configured: {remote_url}")
+
+
+def commit_and_push(cwd: Path, commit_message: str = DEFAULT_COMMIT_MSG) -> None:
+    _, has_head = run_git_command(["git", "rev-parse", "--verify", "HEAD"], cwd, check=False)
+    if has_head != 0:
+        run_git_command(
+            ["git", "symbolic-ref", "HEAD", f"refs/heads/{DEFAULT_BRANCH}"],
+            cwd,
+            check=False,
+        )
+    logger.info("Staging files...")
+    run_git_command(["git", "add", "-A"], cwd)
+    status, _ = run_git_command(["git", "status", "--porcelain"], cwd)
+    _, has_head = run_git_command(["git", "rev-parse", "--verify", "HEAD"], cwd, check=False)
+    if not status and has_head != 0:
+        msg = "Nothing to commit and no prior commit exists (empty repository)."
+        raise RuntimeError(msg)
+    if status:
+        logger.info("Creating commit...")
+        run_git_command(["git", "commit", "-m", commit_message], cwd)
+    else:
+        logger.info("No changes to commit (working tree clean)")
+    current, _ = run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd)
+    if current != DEFAULT_BRANCH:
+        logger.info(f"Renaming branch '{current}' → '{DEFAULT_BRANCH}'")
+        run_git_command(["git", "branch", "-M", DEFAULT_BRANCH], cwd)
+    logger.info("Pushing to origin...")
+    try:
+        run_git_command(
+            ["git", "push", "-u", "origin", DEFAULT_BRANCH],
+            cwd,
+            timeout=GIT_NETWORK_TIMEOUT,
+        )
+    except RuntimeError as e:
+        logger.error(f"Push failed: {e}")
+        logger.info("Troubleshoot: ensure your SSH key is registered on GitHub, or run 'gh auth login'.")
+        raise
+    logger.info(f"✓ Pushed to origin/{DEFAULT_BRANCH}")
+
+
+def _sanity_check_environment(cwd: Path) -> Optional[int]:
+    if shutil.which("git") is None:
+        logger.error("`git` not found on PATH. Install git and retry.")
+        return 1
+    if cwd == Path.home():
+        logger.error("Refusing to run in home directory. cd into your project first.")
+        return 1
+    if cwd == Path(cwd.anchor):
+        logger.error("Refusing to run at filesystem root.")
+        return 1
+    if not os.access(cwd, os.W_OK):
+        logger.error(f"No write permission in {cwd}")
+        return 1
+    return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Create and push a new GitHub repo from current folder contents.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                          # repo name = current folder name
+  %(prog)s -n my-project            # repo name = my-project
+  %(prog)s -n my-project --private  # create private repo
+  %(prog)s -y                       # non-interactive (assume yes)
+""",
+    )
+    parser.add_argument(
+        "-n",
+        "--name",
+        default=None,
+        help="Repository name (default: current directory name)",
+    )
+    parser.add_argument(
+        "-p",
+        "--private",
+        action="store_true",
+        help="Create as private repo (default: public)",
+    )
+    parser.add_argument(
+        "-d",
+        "--description",
+        default=None,
+        help="Repository description",
+    )
+    parser.add_argument(
+        "-m",
+        "--message",
+        default=DEFAULT_COMMIT_MSG,
+        help=f"Initial commit message (default: '{DEFAULT_COMMIT_MSG}')",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Assume yes to prompts (non-interactive).",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Skip confirmation prompts (same as --yes).",
+    )
+    parser.add_argument(
+        "--no-gitignore",
+        action="store_true",
+        help="Do not copy ~/.gitignore.",
+    )
+    args = parser.parse_args()
+    non_interactive = args.yes or args.force or not sys.stdin.isatty()
+    cwd = Path.cwd().resolve()
+    rc = _sanity_check_environment(cwd)
+    if rc is not None:
+        return rc
+    try:
+        token = load_github_token()
+        current_user = get_current_user_login(token)
+        repo_name = args.name or cwd.name
+        validate_repo_name(repo_name)
+        logger.info(f"Target repo name: {repo_name}")
+        if not args.no_gitignore:
+            copy_gitignore(cwd)
+        remote_url: Optional[str] = None
+        if is_git_repo(cwd):
+            logger.info("Existing git repo detected")
+            remote_url = get_remote_url(cwd)
+            if remote_url:
+                logger.info(f"Remote URL: {remote_url}")
+                try:
+                    owner, _ = parse_github_url(remote_url)
+                except ValueError:
+                    logger.warning(f"Remote is not a GitHub URL; leaving it alone: {remote_url}")
+                    owner = None
+                if owner and owner.lower() == current_user.lower():
+                    logger.info("✓ You own this remote — proceeding")
+                elif owner:
+                    logger.warning(f"Remote belongs to '{owner}', not you ('{current_user}')")
+                    if non_interactive:
+                        logger.info("Non-interactive mode: keeping existing remote.")
+                    else:
+                        resp = input("Remove remote and create a new repo in your account? [y/N]: ").strip().lower()
+                        if resp != "y":
+                            logger.info("Aborted")
+                            return 1
+                        run_git_command(["git", "remote", "remove", "origin"], cwd)
+                        remote_url = None
+            else:
+                logger.info("Git repo exists but no remote configured")
+        if not remote_url:
+            logger.info(f"Creating GitHub repo: {current_user}/{repo_name}")
+            remote_url = create_github_repo(
+                repo_name,
+                token,
+                current_user,
+                private=args.private,
+                description=args.description,
+            )
+            initialize_git_repo(cwd, remote_url)
+        commit_and_push(cwd, args.message)
+        try:
+            owner, repo = parse_github_url(remote_url)
+        except ValueError:
+            owner, repo = current_user, repo_name
+        logger.info(f"✅ Success! https://github.com/{owner}/{repo}")
+        return 0
     except KeyboardInterrupt:
         logger.warning("Interrupted by user")
-        sys.exit(130)
+        return 130
+    except (FileNotFoundError, ValueError) as e:
+        logger.error(f"Configuration error: {e}")
+        return 1
+    except requests.RequestException as e:
+        logger.error(f"Network/GitHub API error: {e}")
+        return 1
+    except RuntimeError as e:
+        logger.error(str(e))
+        return 1
     except Exception as e:
-        logger.error(f"Fatal error: {e}", exc_info=True)
-        sys.exit(1)
+        logger.error(f"Unexpected error: {type(e).__name__}: {e}")
+        return 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

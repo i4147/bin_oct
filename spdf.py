@@ -1,4 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Create a command-line Python script (intended to run on Termux/Android under `/data/data/com.termux/files/usr/bin/python3.12`, but should work generally on Linux systems with Ghostscript installed) that batch-compresses PDF files using Ghostscript.
+
+**Purpose:**
+Compress one or more PDF files in parallel to reduce their file size, using Ghostscript's `/ebook` quality preset while also downsampling and compressing fonts/images for additional savings.
+
+**Main inputs:**
+- Accepts one or more PDF file paths as command-line arguments (via `argparse`).
+- Optionally support other reasonable CLI flags, such as number of parallel worker processes.
+
+**Main outputs:**
+- For each valid input PDF, the script compresses it with Ghostscript into a temporary output file first (using `tempfile.mkstemp`), using settings such as:
+  - `-sDEVICE=pdfwrite`
+  - `-dCompatibilityLevel=1.4`
+  - `-dPDFSETTINGS=/ebook`
+  - `-dNOPAUSE -dQUIET -dBATCH`
+  - `-dDetectDuplicateImages=true`
+  - `-dCompressFonts=true`
+  - `-dDownsampleColownsampleGrayImages=true -dGrayImageResolution=150`
+  - `-dDownsampleMonoImages=true -dMonoImageResolution=150` Compares the original file size against the compressed file size.
+- Only replaces the original file with the compressed version if the compressed version is actually smaller; otherwise keeps the original and discards the temporary file.
+- Logs progress, warnings, and errors using `loguru` (e.g., skipping non-PDF/missing files, Ghostscript failures, size comparison results).
+- Returns per-file results (e.g., a tuple of path, original size, compressed size) so a summary can be reported aftermultiprocessing.urrently for speed.
+- Validates that exists and has a `.pdf` extension (case-insensitive); skips and logs a warning otherwise instead of raising an error.
+- Invokes Ghostscript (`gs`) via `subprocess.run`, capturing stdout/stderr, and handles non-zero return codes gracefully by logging the Ghostscript error output and returning `None` for that file (not crashing the whole batch).
+- Uses `tempfile` for safe intermediate output and ensures temporary files are cleaned up (e.g., via `contextlib` or explicit cleanup) even on failure, using `shutil` to move/replace files when compression succeeds.
+- Designed to be safe to run on many files at once without one failure stopping the rest of the batch.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/gGCK3bMxJ5YRCXbdGRy39L"""
+
 from __future__ import annotations
 import argparse
 import contextlib

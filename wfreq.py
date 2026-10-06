@@ -1,4 +1,27 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Design a cross-platform Python 3.12 command-line tool (intended to run under Termux on Android, with a `/data/data/com.termux/files/usr/bin/python3.12` shebang) that scans one or more given directories recursively, extracts words from all readable text-like files, and builds a "personal dictionary" of words that are not recognized by a spellchecker — intended to be used as a custom/personal word list (e.g., for seeding a spellchecker's personal dictionary) at `~/.personal_dict`.
+
+Key requirements:
+
+1. **Purpose**: Walk a directory tree, read the textual content of files, tokenize words, check each unique word against a standard English spellchecker (using the `pyspellchecker` library's `SpellChecker` class), and collect/report wordsagged as misspelled/unknown — under the assumption that many of these are actually legitimate project-specific terms, names, identifiers, or jargon worth adding to a personal dictionary.
+
+2. **Word extraction**: Use a Unicode-aware regex to match words, defined as sequences of alphabetic characters (excluding digits and underscores) that may include internal apostrophes (both `'` and the Unicode `’` character) joining letter sequences (ctly capture contractions/possessives like "don't" or "O'Brien").
+
+3. **File filtering / binary detection**:
+   - Maintain a set of directory names to skip entirely during traversal (version control folders like `.git`, `.svn`, `.hg`, `.bzr`; editor/IDE folders like `.idea`, `.vscode`, `.vs`; caches like `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `.cache`, `.tox`; dependency/package folders like `node_modules`, `bower_components`, `vendor`, `site-packages`, `dist-packages`, `Pods`, `DerivedData`; virtual environments like `venv`, `.venv`, `env`, `.env`, `virtualenv`, `.virtualenv`; build output folders like `dist`, `build`, `target`, `out`, `.next`, `.nuxt`, `.svelte-kit`, `.parcel-cache`, `coverage`, `htmlcov`; and misc tool caches like `.gradle`, `.m2`, `.terraform`).
+   - Maintain a set of file extensions/suffixes to skip becausenon code (`.pyc`, `.pyo`, `.pyd`, `.so`, `.dylib`, `.dll`, `.exe`, `.bin`, `.o`, `.a`, `.lib`, `.class`, `.jar`, `.war`), archives (`.zip`, `.tar`, `.gz`, `.bz2`, `.xz`, `.7z`, `.rar`), images (`.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.webp`, `.ico`, `.tif`, `.tiff`, `.svg`), audio/video (`.mp3`, `.mp4`, `.m4a`, `.wav`, `.ogg`, `.flac`, `.avi`, `.mkv`, `.mov`, `.webm`), and documents/office formats (`.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`, and similarly other common office/binary formats).
+   - Additionally perform a content-based binary/text heuristic: define a set/table of byte values considered "text characters" (tab, newline, carriage return, form feed, escape, and printable byte range 0x20–0xFF excluding 0x7F) and use it to sniff a sample of a file's bytes to decide whether the file is text or binary, skipping binary files even if their extension wasn't already excluded.
+
+4. **Concurrency**: Use the `multiprocessing` module to parallelize scanning/reading of files across available CPU cores for performance on large directory trees, with appropriate type hints (`Iterable`, `Iterator`) for the generator/collection functions involved.
+
+5. **Output**: Write the resulting list of unknown/flagged words (deduplicated, likely sorted) to the file `~/.personal_dict` (one word similar simple format su file), also print relevant progress/summary information to standard output (and errors to standard error as appropriate).
+
+6. **CLI behavior**: Accept one or more paths via command-line arguments (`sys.argv`), validate that they exist and are directories, and process each; handle errors gracefully (e.g., unreadable files, permission errors) without crashing the whole scan.
+
+7. **Code style**: Use `from __future__ import annotations`, modern type hints, module-level constants for the skip-sets and regex, and organize logic into clear, reusable functions suitable for a single-file script distributed for Termux/Android but portable to any POSIX Python 3.12 environment.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/RqqBgwfA4Xnn8rdTg6JkLf"""
+
 from __future__ import annotations
 import multiprocessing as mp
 import re

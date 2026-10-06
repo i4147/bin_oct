@@ -1,4 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Write a Python 3.12 command-line script (designed to run under Termux on Android, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that validates HTML files for unbalanced or mismatched tags.
+
+**Purpose:**
+The script reads one or more HTML files, parses their markup, and reports any structural tag errors such as:
+- Unclosed tags (opened but never closed)
+- Stray/unexpected closing tags (a closing tag with no matching open tag)
+- Closing tags incorrectly applied to void/self-closing elements (e.g., `</br>`, `</img>`)
+
+**Implementation details:**
+- Use accept inputor supportading from stdin if no files are given, if applicable) as positional arguments.
+- Use the `loguru` library for logging/output (e.g., `logger.info`, `logger.error`, `logger.warning`) instead of plain `print`, to report progress and results.
+- Use Python's built-in `html.parser.HTMLParser` to build a custom subclass (a "tag checker") that:
+  - Maintains a stack of open tags along with their positionpos()`).
+  - DefENTS` set containing standself-closing elements: `area, base, br, col, embed, hr should beors if a closing tag is encountered for them.
+  - On `handle_starttag`: push the tag and its position onto the stack (unless it's a void element).
+  - On `handle_startendtag` (self-closing tags like `<br/>`): do nothing (no error, no stack push).
+  - On `handle_endtag`: search the stack from the top down for a matching open tag; if found, pop everything above it (reporting each popped tag as "unclosed" since it was implicitly left open), then pop the match itself; if not found, report a error with position info; if theag is a void element, report an a closing tag was found for a void element.
+  -called after parsing completags still on the stack as "unclosed" errors, and returns the full list of collected error messages.
+- Each error message should include its position (line and column) in a readable format like `"line {line}, col {col}: ..."`.
+- Include a `check_tags(raw)` function that takes raw HTML text, instantiates the tag checker, feeds the content through the parser (within a try/except to gracefully catch and log any parsing exceptions, using `escape` from the `html` module where needed to safely display problematic content), and returns the collected list of errors for that content.
+- The main flow should iterate over the given file(s), read their contents, run `check_tags` on each, and print/log a clear report per file: either confirming no errors were found, or listing each detected error with its location.
+- The script should use `pathlib.Path` for file handling.
+- Exit behavior should reflect whether errors were found (e.g., non-zero exit code if any file has errors), suitable for use in automated checks or CI pipelines.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/3xgVfruYSGnbGkKQnwgYAY"""
+
 import argparse
 from pathlib import Path
 from html.parser import HTMLParser

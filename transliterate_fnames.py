@@ -1,4 +1,32 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""Write a prompt for an AI coding agent to generate a Python 3 command-line script named `transliterate_names.py` Termux (Android) with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`, that recursively renames non-ASCII file and directory names to ASCII-safe equivalents in place.
+
+The script must behave as follows:
+
+**Purpose**: Walk a directory tree recursively and rename every file/directory whose name contains non-ASCII characters to an ASCII transliteration, so that the names become safe for filesystems/tools that don't handle Unicode well.
+
+**Dependencies**: Optionally use `pypinyin`, `pykakasi`, and `unidecode` (installside a `try/except ImportError` block are missing. `unidecode` is only a fallback transliterator.
+
+**CLI usage**:
+- `python transliterate_names.py` — operate on the current directory, actually performing renames.
+- `python transliterate_names.py -n` — dching the filesystem.
+- `python transliterate_/dified root directory instead of these` to parse an optional positional root directory argument ( dir) and a `-nry-run flag.
+
+**/language**:
+- **Russian (arusian a built-in hardcoded character mapping table followingN/PCGN-like romanization (e.g. ж→zh, щ→shch).
+- **Persian/Arabic**: use a built-in hardcoded mapping table. Since Persian doesn't write short vowels, output is a consonant skeleton (e.g. ف → fay). Strip diacritics,Arabic digits to : detect Han characters andinyin syscores (e.g. 文件 → wen_jian).
+- **Japanese**: detect kana characters (hiragana/katakana) in the name — if present, treat the whole name (including any kanji) as Japanese and use `pykakasi` to produce Hepburn romanization (e.g. ファイル → fairu). If a name contains only Han characters with no kana, treat it as Chinese instead (use the pinyin path).
+- **Any other non-ASCII text** (accented Latin, Greek, emoji, symbols, etc.): if `unidecode` is available, use it; otherwise fall back to stripping accents via `unicodedata` normalization and replacing any remaining non-ASCII characters with underscores.
+
+**Other required behavior**:
+- Process directory entries recursively, renaming deeper paths before their parents where necessary (so renaming a paralidate child paths), orle path-resolution order correctly during the control metadata directories (e.g. `.git`), since renaming filesry-run mode, print each planned old-name → new-name mapping without performing any filesystem changes.
+- In normal mode, actually perform the renames on disk, printing progress/results.
+- Handle name collisions sensibly (e.g. if the transliterated name already exists, avoid overwriting by appending a disambiguating suffix).
+- Use `re` and `unicodedata` as needed for character classification/normalization, and `pathlib.Path` for filesystem operations.
+- Include module-level comments documenting install instructions, usage examples, and the language/method mapping as shown above.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/aFmDxy8i93dEDrCKDbFUd9"""
+
 # transliterate_names.py: rename non-ASCII file/dir names to ASCII, in place, recursively.
 #
 # Install : pip install pypinyin pykakasi unidecode   (unidecode is only a fallback)

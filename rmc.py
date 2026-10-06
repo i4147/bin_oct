@@ -733,7 +733,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--exclude-dir",
         action="append",
-        default=[],
+        default=["lazy", "pip", "numpy", "pandas", "scipy", "setuptools", "numba"],
         metavar="NAME",
         help="additional directory basename to skip; repeatable",
     )

@@ -1,4 +1,40 @@
 #!/data/data/com.termux/files/usr/bin/python3.12
+"""I'll analyze this Python code to create a comprehensive prompt for an AI agent.
+
+Based on the code structure, imports, and patterns I can see (MHTML parsing, HTML conversion, multiprocessing pool patching, URL rewriting logic, icon/preload handling), here is the prompt:
+
+---
+
+Create a Python 3.12 command-line tool (designed to run under Termux on Android, with shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) named `mhtml-to-html` that converts MHTML/MHT archive files (`.mht`, `.mhtml`) into standalone, self-contained HTML files.
+
+**Purpose:**
+The script parses MIME-encoded MHTML documents (as produced by browsers' "Save as webpage, single file" feature) and extracts the embedded HTML along with all its associated resources (images, CSS, scripts, fonts, media, favicons, etc.). It then rewrites the HTML so that these resources are either inlined as data URIs or saved alongside the output file as separate assets, producing a clean, browser-renderable HTML document.
+
+**Main inputs:**
+- One or more MHTML file paths (supports glob patterns) passed via command-line arguments.
+- Optional CLI flags controlling: output destination/directory, whether to inline resources as base64 data URIs vs. extract them to disk, overwrite behavior, verbos multiprocessing/parallel batch con script should also expmatic API: `convert()TML bytes/content and `convert_file()` for converting a file on disk, plus a `main()` entry point for CLI usage.
+
+**Main outputs:**
+- A `.html` file (or returned HTML string/bytes from the API) for each input MHTML file, with all MIME parts resolved: embedded resources referenced via `src`/`href`/`poster`/etc. attributes in tags like `img`, `source`, `video`, `audio`, `track`, `embed`, `link`, `script` are rewritten to point to either inline data URIs or extracted files written next to the output.
+- Appropriate exit codes and logged status messages (via `loguru`) reflecting success/ a package `importlib.metadata.
+
+**Notable behavior/requirements:**
+- `compure of the MHTML file, extracting each part's `Content-Location`, `Content-Type`, and `Content-Transfer-Encoding` (handling quoted-printable/base64 decoding via `codecs`/`base64`).
+- Use `lxml.html` to parse and manipulate the main HTML document tree.
+- Identify the root HTML document among MIME parts by MIME type (`text/html`, `application/xhtml+xml`).
+- Build a mapping from each part's `Content-Location` URL to its decoded bytes/content, and resolve relative URLs found in the HTML against this mapping, using `urljoin` and `unquote` for normalization.
+- Skip r `data:`, `aboutob:`, `javascript:`.
+- Hand<link>` tags specially: recognize favicon/iconations-touch-icon`, for proper favicon handling, and dropstrip non-essential resource hulepreload`, `dns-prefetch`, `preconnect`, `prerender`) that are meaningless in a static offline copy.
+- Strip or neutralize problematic `<meta http-equiv>` tags such as `content-type`, `refresh`, and `content-security-policy` that could interfere with the standalone HTML's rendering.
+- Guess MIME types for resources without explicit content types using `mimetypes`, falling back sensibly when unknown.
+- If network-referenced resources are missing from the MHTML parts and a fallback fetch is desired, support optional HTTP(S) retrieval using `urllib.request.Request`/`urlopenom UserMozilla/5.0 (compatible; mhtml-to-html)parallel processing of multiple input files usinging` module, applying oneispatch methods (`map `starmap`, `apply`, `apply_async one failed file doesn't crash the whole batch.
+- Use `argparse` for CLI argument parsing, supporting glob expansion of input paths and sensible defaults for output naming (e.g., replacing the `.mht`/`.mhtml` suffix with `.html`).
+- Use `contextlib` for resource/context management (e.g., safe file writing, suppressing expected exceptions).
+- Provide robust error handling and logging throughout via `loguru`, with clear warnings/errors for malformed MIME parts, unresolvable resource references, or I/O failures, without crashing the entire run unnecessarily.
+- Define `__all__ = ["convert", "convert_file", "main"]` as the public API surface, and resolve `__version__` dynamically from installed package metadata with a safe fallback (`"0+unknown"`) when the package is not installed.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/NLQgmuZQCYZJkzU8hrqba4"""
+
 from __future__ import annotations
 
 import argparse

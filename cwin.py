@@ -31,6 +31,7 @@ WINDOWS_PATTERNS = {
     "*.scr",
     "*.lnk",
     "*.pyd",
+    "*.dylib",
     "Thumbs.db",
     "desktop.ini",
     "$RECYCLE.BIN",
@@ -116,17 +117,7 @@ def find_and_remove_files(root_dir: Path | None = None) -> dict:
 
 
 def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Remove Darwin and Windows related files recursively")
-    parser.add_argument(
-        "directory",
-        nargs="?",
-        default=".",
-        help="Directory to scan (default: current directory)",
-    )
-    args = parser.parse_args()
-    stats = find_and_remove_files(args.directory)
+    stats = find_and_remove_files(Path.cwd())
 
 
 if __name__ == "__main__":

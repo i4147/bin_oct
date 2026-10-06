@@ -1,1 +1,0 @@
-showcolor.py
