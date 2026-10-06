@@ -7,7 +7,6 @@ import glob
 import argparse
 from pathlib import Path
 
-# Third-party libraries (To be installed via: pip install openai google-genai)
 try:
     from openai import OpenAI
 except ImportError:
@@ -21,7 +20,6 @@ except ImportError:
 
 
 def load_env_file(env_path):
-    """Manually parses a .env file to extract API keys without needing python-dotenv."""
     if not env_path.exists():
         return
     with open(env_path, "r", encoding="utf-8") as f:
@@ -37,7 +35,7 @@ def load_env_file(env_path):
 
 class UniversalTranslator:
     def __init__(self):
-        # Load environment variables from ~/.env
+
         home_env = Path.home() / ".env"
         load_env_file(home_env)
 
@@ -56,7 +54,6 @@ class UniversalTranslator:
         return self.openai_client is not None or self.gemini_client is not None
 
     def translate_text(self, text, target_lang="English"):
-        """Translates incoming text string to the target language via OpenAI or Gemini."""
         if not text.strip():
             return text
 
@@ -68,7 +65,6 @@ class UniversalTranslator:
             f"Source Text:\n{text}"
         )
 
-        # 1. Primary Path: OpenAI
         if self.openai_client:
             try:
                 response = self.openai_client.chat.completions.create(
@@ -82,11 +78,10 @@ class UniversalTranslator:
                 return response.choices[0].message.content.strip()
             except Exception as e:
                 print(f"⚠️ OpenAI translation error: {e}. Falling back to alternative methods...", file=sys.stderr)
-                # Try fallback to Gemini if available on failure
+
                 if self.gemini_key and genai and not self.gemini_client:
                     self.gemini_client = genai.Client(api_key=self.gemini_key)
 
-        # 2. Secondary Path / Fallback: Gemini
         if self.gemini_client:
             try:
                 response = self.gemini_client.models.generate_content(
@@ -100,7 +95,6 @@ class UniversalTranslator:
 
 
 def process_file(file_path, translator, target_lang):
-    """Reads, translates, and overrides file contents inplace safely."""
     print(f"📄 Processing: {file_path}...")
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -112,7 +106,6 @@ def process_file(file_path, translator, target_lang):
 
         translated_content = translator.translate_text(content, target_lang=target_lang)
 
-        # Inplace overwrite
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(translated_content)
         print(f"   ✅ Done.")
@@ -134,7 +127,6 @@ def main():
     )
     args = parser.parse_args()
 
-    # Verify dependencies
     if OpenAI is None and genai is None:
         print("❌ Error: Missing required packages. Run: pip install openai google-genai", file=sys.stderr)
         sys.exit(1)
@@ -147,13 +139,11 @@ def main():
         )
         sys.exit(1)
 
-    # Inform user of active runtime engine
     if translator.openai_client:
         print("🚀 Primary Translation Engine Active: ChatGPT (gpt-4o-mini)")
     else:
         print("🚀 Fallback Translation Engine Active: Gemini (gemini-2.5-flash)")
 
-    # Scan for files matching given extensions in current working directory
     extensions = [ext.strip().lstrip(".") for ext in args.extensions.split(",")]
     files_to_translate = []
     for ext in extensions:
@@ -165,7 +155,6 @@ def main():
 
     print(f"Found {len(files_to_translate)} target file(s) for inplace translation.")
 
-    # Run loop
     for path in files_to_translate:
         process_file(path, translator, args.lang)
 

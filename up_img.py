@@ -13,7 +13,6 @@ from io import BytesIO
 from traceback import print_exc
 from urllib.parse import urljoin
 
-# Third-party dependencies (Requires: pip install Pillow pyperclip upyun)
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 import upyun
@@ -25,17 +24,12 @@ CONFIG_DEFAULTS = ["", "", "", "/", "https://test.upimg.com"]
 ConfigTuple = namedtuple("ConfigTuple", CONFIG_FIELDS)
 
 
-# ==========================================
-# SYSTEM NOTIFICATIONS (Cross-Platform)
-# ==========================================
 def send_notify(title="UpImg", message=""):
-    """Sends a system notification without heavy external libraries."""
     try:
-        if SYSTEM == "Darwin":  # macOS
+        if SYSTEM == "Darwin":
             cmd = f'display notification "{message}" with title "{title}"'
             subprocess.run(["osascript", "-e", cmd], check=True)
-        elif SYSTEM == "Windows":  # Windows
-            # Fallback to PowerShell to prevent installing complex Windows runtime wheels
+        elif SYSTEM == "Windows":
             ps_script = f'[void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms");$objNotifyIcon=New-Object System.Windows.Forms.NotifyIcon;$objNotifyIcon.Icon=[System.Drawing.SystemIcons]::Information;$objNotifyIcon.BalloonTipTitle="{title}";$objNotifyIcon.BalloonTipText="{message}";$objNotifyIcon.Visible=$True;$objNotifyIcon.ShowBalloonTip(5000);'
             subprocess.run(["powershell", "-Command", ps_script], capture_output=True)
         return True
@@ -43,15 +37,10 @@ def send_notify(title="UpImg", message=""):
         return False
 
 
-# ==========================================
-# CLIPBOARD MANAGEMENT (Cross-Platform)
-# ==========================================
 def get_clipboard_file_paths():
-    """Gets files paths copied directly to the clipboard."""
     paths = []
     if SYSTEM == "Darwin":
         try:
-            # Use AppleScript to cleanly query native file targets from the general pasteboard
             script = 'tell application "Finder" to set theFiles to selection\nreturn POSIX path of (theFiles as text)'
             proc = subprocess.run(["osascript", "-e", "clipboard info"], capture_output=True, text=True)
             if "file" in proc.stdout:
@@ -92,7 +81,6 @@ class ClipboardFile:
     def file_objects(self):
         file_paths = get_clipboard_file_paths()
 
-        # Handle explicit file selections copied to clipboard
         if file_paths:
             for path in file_paths:
                 if os.path.isfile(path):
@@ -101,7 +89,6 @@ class ClipboardFile:
                     yield fp, ext
             return
 
-        # Fallback to direct raw pixel screenshots/images on the clipboard
         image = ImageGrab.grabclipboard()
         if isinstance(image, Image.Image):
             image_bytes_io = BytesIO()
@@ -110,9 +97,6 @@ class ClipboardFile:
             yield image_bytes_io, ".png"
 
 
-# ==========================================
-# CONFIGURATION & RECOVERY
-# ==========================================
 def set_config():
     args = {}
     print("--- UpImg Configuration Setup ---")
@@ -124,7 +108,6 @@ def set_config():
     with open(CONFIG_PATH, "wb") as fp:
         pickle.dump(ConfigTuple(**args), fp)
 
-    # Optional: Configure Windows Global Shortcut Hook via Desktop shortcut
     if SYSTEM == "Windows":
         try:
             import winreg
@@ -144,9 +127,9 @@ def set_config():
             )
             shortcut.SetPath(sys.executable)
             shortcut.SetArguments(f'"{exe_path}"')
-            shortcut.SetHotkey((0x02 << 8) | 0x31)  # Ctrl + 1
+            shortcut.SetHotkey((0x02 << 8) | 0x31)
             shortcut.SetWorkingDirectory(os.path.dirname(exe_path))
-            shortcut.SetShowCmd(7)  # Minimized window focus
+            shortcut.SetShowCmd(7)
             shortcut.QueryInterface(pythoncom.IID_IPersistFile).Save(lnk_path, 0)
         except Exception:
             print("Notice: Desktop hotkey link shortcut could not be configured.")
@@ -157,9 +140,6 @@ def get_config():
         return pickle.load(fp)
 
 
-# ==========================================
-# UPLOAD CORE LOGIC
-# ==========================================
 class UpImage:
     def __init__(self, config):
         self.upyun = upyun.UpYun(config.service, config.username, config.password)
@@ -171,14 +151,11 @@ class UpImage:
         for file, ext in clipboard_file.file_objects:
             full_path = self.upload_path.rstrip("/") + "/" + datetime.now().strftime("%Y%m%d%H%M%S%f") + ext
             self.upyun.put(full_path, file)
-            file.close()  # Ensure IO descriptor gets cleanly recycled
+            file.close()
             path_list.append(full_path)
         return path_list
 
 
-# ==========================================
-# CLI MAIN ROUTINE ENTRYPOINT
-# ==========================================
 def parse_args():
     parser = argparse.ArgumentParser(description="Upload image from clipboard and return Markdown link.")
     parser.add_argument("-c", "--config", action="store_true", help="file upload config")

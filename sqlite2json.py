@@ -61,7 +61,6 @@ from typing import Any, Callable
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"
 
-# Rows fetched per round trip; keeps memory flat regardless of table size
 BATCH_SIZE = 5000
 
 
@@ -70,7 +69,7 @@ def quote_identifier(name: str) -> str:
 
 
 def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
-    # Resolve the encoder once instead of branching on every value
+
     encoders: dict[str, Callable[[bytes], Any]] = {
         "base64": lambda d: {BLOB_BASE64: base64.b64encode(d).decode("ascii")},
         "hex": lambda d: {BLOB_HEX: d.hex()},
@@ -87,7 +86,6 @@ def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
     if value is None or isinstance(value, (int, str)):
         return value
     if isinstance(value, float):
-        # NaN/Infinity are not valid JSON, so stringify them
         return value if math.isfinite(value) else str(value)
     if isinstance(value, (bytes, bytearray, memoryview)):
         return blob_fn(bytes(value))
@@ -95,10 +93,10 @@ def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:
 
 
 def open_readonly(db_path: str, text_errors: str) -> sqlite3.Connection:
-    # Read-only URI: never creates the file, never writes, takes only shared locks
+
     uri = Path(db_path).resolve().as_uri() + "?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
-    # Applies to TEXT values only; BLOBs are untouched
+
     conn.text_factory = lambda b: b.decode("utf-8", errors=text_errors)
     return conn
 
@@ -106,7 +104,6 @@ def open_readonly(db_path: str, text_errors: str) -> sqlite3.Connection:
 def get_tables(conn: sqlite3.Connection, include_internal: bool = False) -> list[str]:
     sql = "SELECT name FROM sqlite_master WHERE type = 'table'"
     if not include_internal:
-        # '_' is a LIKE wildcard, so it must be escaped to match a literal underscore
         sql += r" AND name NOT LIKE 'sqlite\_%' ESCAPE '\'"
     sql += " ORDER BY name"
     return [row[0] for row in conn.execute(sql)]
@@ -120,14 +117,14 @@ def write_table_array(
     indent: int,
     ensure_ascii: bool,
 ) -> None:
-    # Streams one table as a JSON array; the array sits at nesting level 1
+
     nl = "\n" if indent else ""
     pad1 = " " * indent
     pad2 = pad1 * 2
     separators = None if indent else (",", ":")
 
     cur = conn.execute(f"SELECT * FROM {quote_identifier(table)}")
-    # Plain tuples + cached column names are faster than sqlite3.Row lookups
+
     cols = [d[0] for d in cur.description]
 
     first = True
@@ -144,7 +141,6 @@ def write_table_array(
                 separators=separators,
             )
             if indent:
-                # Re-indent nested lines (safe: JSON strings never contain raw newlines)
                 text = text.replace("\n", "\n" + pad2)
             fp.write(("[" if first else ",") + nl + pad2 + text)
             first = False
@@ -153,7 +149,7 @@ def write_table_array(
 
 
 def export_table(args: tuple) -> tuple[str, str | None]:
-    # Top-level (picklable) worker: each table goes to its own fragment file
+
     db_path, table, frag_path, blob_encoding, text_errors, indent, ensure_ascii = args
     try:
         blob_fn = make_blob_encoder(blob_encoding)
@@ -164,7 +160,6 @@ def export_table(args: tuple) -> tuple[str, str | None]:
             write_table_array(conn, table, fp, blob_fn, indent, ensure_ascii)
         return table, None
     except Exception as exc:
-        # Discard any partial output so the final JSON stays valid
         with open(frag_path, "w", encoding="utf-8", newline="\n") as fp:
             fp.write("[]")
         return table, f"Error processing table {table!r}: {exc}"
@@ -182,8 +177,8 @@ def convert_sqlite_to_json(
     jobs: int = 1,
     fail_fast: bool = False,
 ) -> list[str]:
-    make_blob_encoder(blob_encoding)  # fail early on a bad encoding name
-    indent = max(0, indent)  # 0 means compact output
+    make_blob_encoder(blob_encoding)
+    indent = max(0, indent)
     warnings: dict[str, str] = {}
 
     with closing(open_readonly(str(db_path), text_errors)) as conn:
@@ -192,7 +187,6 @@ def convert_sqlite_to_json(
     output_path = output_path.resolve()
     out_dir = output_path.parent
 
-    # Fragments and the final file are created beside the output for cheap atomic rename
     with tempfile.TemporaryDirectory(dir=out_dir, prefix=".sqlite2json_") as tmp:
         tmp_dir = Path(tmp)
         frags = {t: tmp_dir / f"{i}.part" for i, t in enumerate(tables)}
@@ -222,7 +216,6 @@ def convert_sqlite_to_json(
                     if fail_fast:
                         raise RuntimeError(warning)
 
-        # Assemble the final JSON in deterministic (sorted) table order
         nl = "\n" if indent else ""
         pad1 = " " * indent
         colon = ": " if indent else ":"
@@ -241,10 +234,8 @@ def convert_sqlite_to_json(
                 out.write(nl + "}")
             out.write("\n")
 
-        # Atomic replace: an interrupted run never leaves a truncated output file
         os.replace(final_tmp, output_path)
 
-    # Report warnings in table order regardless of completion order
     return [warnings[t] for t in tables if t in warnings]
 
 
@@ -304,7 +295,6 @@ def main(argv: list[str] | None = None) -> int:
 
     output_path = args.output or args.database.with_name(args.database.name + ".json")
 
-    # Guard against clobbering the source database
     if output_path.resolve() == args.database.resolve():
         print("Error: output path must differ from the database path", file=sys.stderr)
         return 1

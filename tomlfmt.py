@@ -33,39 +33,6 @@
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/c2MXECCpteWq9jy46jZsto"""
 
-# tomlfmt.py: a taplo-style TOML formatter (formatter only), in place, single file.
-#
-# Requires Python 3.11+ (tomllib). On 3.10: pip install tomli
-# Usage   : python tomlfmt.py                 (no args: every *.toml under the current dir, recursively)
-#           python tomlfmt.py a.toml conf/    (files and/or directories, any mix)
-#           python tomlfmt.py --check         (write nothing, exit 3 if any file would change)
-#
-# Formatting rules (taplo defaults)
-#  - one space around "=", dotted keys and table headers lose inner spaces: [ a . b ] -> [a.b]
-#  - indentation is removed (indent_entries/indent_tables off), at most 2 blank lines in a row,
-#    no leading blank lines, exactly one trailing newline, trailing whitespace removed
-#  - arrays: collapsed to "[1, 2, 3]" when they fit in 80 columns, otherwise one element per line
-#    with 2-space indent and a trailing comma; arrays holding comments or multi-line strings
-#    always stay expanded
-#  - inline tables: "{ a = 1, b = 2 }", "{}" when empty
-#  - comments are kept verbatim (only trailing whitespace trimmed); consecutive trailing comments
-#    are aligned vertically (align_comments)
-#  - key order, values, strings and numbers are never touched; the file's BOM and dominant line
-#    ending (LF or CRLF) are kept
-#  - not implemented: reorder_keys, align_entries, .taplo.toml config
-#
-# Safety
-#  - The original must be valid TOML, otherwise the file is reported and left alone.
-#  - Before writing, the output is parsed again with tomllib and must equal the original data
-#    (NaN-aware, type-exact), and the comments found in the output must match the input's.
-#    Any mismatch aborts that file and nothing is written.
-#  - Writes are atomic (temp file + os.replace), keep permissions, and are refused if the file
-#    changed on disk while it was being processed.
-#
-# Concurrency: exactly 8 workers via mp.Pool.imap_unordered when more than one file is processed;
-# a single file is handled in-process. Workers never raise; they return a Result.
-#
-# Exit codes: 0 ok, 1 no files found, 2 errors, 3 --check found files that would change.
 import argparse
 import contextlib
 import functools
@@ -81,14 +48,14 @@ from typing import Iterator, Sequence
 
 try:
     import tomllib
-except ModuleNotFoundError:  # Python < 3.11
+except ModuleNotFoundError:
     import tomli as tomllib
-WORKERS = 8  # fixed, as requested
+WORKERS = 8
 COLUMN_WIDTH = 80
 INDENT = "  "
 ALLOWED_BLANK_LINES = 2
 CHUNK_MAX = 32
-# Junk directories pruned during discovery (explicit path arguments are never pruned).
+
 SKIP_DIRS = frozenset({
     ".git",
     ".hg",
@@ -106,16 +73,16 @@ SKIP_DIRS = frozenset({
     ".eggs",
     "site-packages",
 })
-# ----------------------------------------------------------------------------- lexical patterns
+
 WS_RE = re.compile(r"[ \t]*")
 BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
 BASIC_STRING_RE = re.compile(r'"(?:[^"\\\n]|\\.)*"')
 LITERAL_STRING_RE = re.compile(r"'[^'\n]*'")
-ML_BASIC_STOP_RE = re.compile(r'[\\"]')  # multi-line basic string: only backslash and quote matter
+ML_BASIC_STOP_RE = re.compile(r'[\\"]')
 ML_LITERAL_STOP_RE = re.compile(r"'")
-# Space-separated datetimes are the only values containing whitespace; match them before the generic atom.
+
 DATETIME_SPACE_RE = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:[Zz]|[+-]\d{2}:\d{2})?")
-# Numbers, booleans, inf/nan, dates, times: kept as raw text and never reformatted.
+
 ATOM_RE = re.compile(r"[^\s,\]\[{}#\"']+")
 
 
@@ -127,7 +94,6 @@ class FormatError(Exception):
     pass
 
 
-# ----------------------------------------------------------------------------- syntax tree
 @dataclass(slots=True)
 class Scalar:
     raw: str
@@ -136,20 +102,20 @@ class Scalar:
 @dataclass(slots=True)
 class Elem:
     value: "Value"
-    leading: list  # own-line trivia before the element: comment text, or None for a blank line
-    trailing: str | None = None  # comment on the same line as the element
+    leading: list
+    trailing: str | None = None
 
 
 @dataclass(slots=True)
 class Array:
     elems: list
-    open_comment: str | None  # comment right after "["
-    dangling: list  # trivia between the last element and "]"
+    open_comment: str | None
+    dangling: list
 
 
 @dataclass(slots=True)
 class Inline:
-    entries: list  # (key, value) pairs; TOML 1.0 inline tables hold no comments of their own
+    entries: list
 
 
 Value = Scalar | Array | Inline
@@ -163,7 +129,7 @@ class Comment:
 @dataclass(slots=True)
 class Header:
     key: str
-    double: bool  # [[array of tables]]
+    double: bool
     comment: str | None
 
 
@@ -176,13 +142,11 @@ class Entry:
 
 # ----------------------------------------------------------------------------- parser
 class Parser:
-    # Lossless-enough parser: keeps raw scalars and every comment, drops only insignificant whitespace.
-    # Input must already be valid TOML with "\n" line endings (guaranteed by format_text).
     def __init__(self, source: str) -> None:
         self.s = source
         self.n = len(source)
         self.i = 0
-        self.comments: list[str] = []  # every comment seen, used to verify none is lost
+        self.comments: list[str] = []
 
     def error(self, message: str):
         line = self.s.count("\n", 0, self.i) + 1
@@ -204,7 +168,7 @@ class Parser:
         return text
 
     def finish_line(self) -> str | None:
-        # After a header/entry: optional trailing comment, then end of line.
+
         self.skip_ws()
         comment = None
         if self.peek() == "#":
@@ -216,7 +180,7 @@ class Parser:
         return comment
 
     def parse(self) -> list:
-        items: list = []  # None marks a blank line
+        items: list = []
         while True:
             self.skip_ws()
             if self.i >= self.n:
@@ -253,7 +217,7 @@ class Parser:
         return Entry(key, value, self.finish_line())
 
     def parse_key(self) -> str:
-        # Whitespace around dots is dropped; quoted parts keep their exact spelling.
+
         parts: list[str] = []
         while True:
             self.skip_ws()
@@ -286,7 +250,7 @@ class Parser:
         return s[start:end]
 
     def scan_multiline(self, start: int, quote: str) -> int:
-        # Finds the closing triple quote; up to two extra quotes right before it belong to the content.
+
         s, n = self.s, self.n
         stop = ML_BASIC_STOP_RE if quote == '"' else ML_LITERAL_STOP_RE
         j = start + 3
@@ -296,7 +260,7 @@ class Parser:
                 self.error("unterminated multi-line string")
             p = match.start()
             if s[p] == "\\":
-                j = p + 2  # skip the escaped character
+                j = p + 2
                 continue
             if s.startswith(quote * 3, p):
                 end = p + 3
@@ -328,9 +292,9 @@ class Parser:
         self.i += 1
         elems: list[Elem] = []
         open_comment: str | None = None
-        trivia: list = []  # pending own-line comments / blank lines for the next element
-        slot = "open"  # who receives a comment found on the current line: "open", "elem" or None
-        line_has_content = True  # the line holding "[" is not blank
+        trivia: list = []
+        slot = "open"
+        line_has_content = True
         while True:
             if self.i >= self.n:
                 self.error("unterminated array")
@@ -355,7 +319,7 @@ class Parser:
                 slot = None
             elif c == ",":
                 self.i += 1
-                line_has_content = True  # slot is kept: "1, # note" still belongs to 1
+                line_has_content = True
             elif c == "]":
                 self.i += 1
                 return Array(elems, open_comment, trivia)
@@ -394,14 +358,13 @@ class Parser:
 # ----------------------------------------------------------------------------- printer
 @dataclass(slots=True)
 class Line:
-    text: str  # code part; may contain "\n" only inside multi-line strings
+    text: str
     comment: str | None = None
-    scope: int = 0  # comments are only aligned between neighbours that share a scope
+    scope: int = 0
 
 
 def flat_text(value: Value) -> str | None:
-    # Single-line spelling of a value, or None when it cannot be written on one line
-    # (it holds comments or a multi-line string).
+
     if isinstance(value, Scalar):
         return None if "\n" in value.raw else value.raw
     if isinstance(value, Array):
@@ -435,7 +398,7 @@ class Printer:
 
     @staticmethod
     def trivia_lines(items: list, pad: str, keep_trailing_blank: bool) -> list[Line]:
-        # Own-line comments and blank lines (runs capped) between array elements.
+
         out: list[Line] = []
         blanks = 0
         for item in items:
@@ -450,8 +413,7 @@ class Printer:
         return out
 
     def value(self, value: Value, depth: int, col: int, tail: int, expand: bool) -> list[Line]:
-        # col: column where the value starts; tail: characters that must still fit after it.
-        # expand=False (inside inline tables) keeps arrays on one line whenever that is possible.
+
         if isinstance(value, Scalar):
             return [Line(value.raw)]
         if isinstance(value, Array):
@@ -467,13 +429,13 @@ class Printer:
         lines = [Line("[", arr.open_comment, scope)]
         for elem in arr.elems:
             lead = self.trivia_lines(elem.leading, pad, True)
-            if len(lines) == 1:  # nothing emitted after "[" yet: no leading blank lines
+            if len(lines) == 1:
                 while lead and not lead[0].text:
                     lead.pop(0)
             lines.extend(lead)
             sub = self.value(elem.value, depth + 1, len(pad), 1, True)
             sub[0].text = pad + sub[0].text
-            sub[-1].text += ","  # array_trailing_comma: every element, including the last
+            sub[-1].text += ","
             sub[-1].comment = elem.trailing
             sub[-1].scope = scope
             lines.extend(sub)
@@ -488,7 +450,7 @@ class Printer:
         last = len(table.entries) - 1
         for index, (key, inner) in enumerate(table.entries):
             sub = self.value(inner, depth, 0, 0, False)
-            # Only the final line of acc ever receives more text, and it never holds a comment.
+
             acc[-1].text += f"{key} = " + sub[0].text
             if sub[0].comment is not None:
                 acc[-1].comment = sub[0].comment
@@ -500,7 +462,7 @@ class Printer:
 
     def header(self, header: Header) -> Line:
         text = f"[[{header.key}]]" if header.double else f"[{header.key}]"
-        return Line(text, header.comment, self.new_scope())  # own scope: never aligned with entries
+        return Line(text, header.comment, self.new_scope())
 
     def entry(self, entry: Entry) -> list[Line]:
         prefix = f"{entry.key} = "
@@ -516,7 +478,7 @@ def last_physical_width(text: str) -> int:
 
 
 def align_comments(lines: list[Line]) -> list[str]:
-    # Neighbouring lines that all carry a comment (same scope) get their comments in one column.
+
     out: list[str] = []
     i, n = 0, len(lines)
     while i < n:
@@ -543,7 +505,7 @@ def render(items: list) -> str:
         if item is None:
             blanks += 1
             continue
-        if lines:  # blank lines before the first item and after the last are dropped
+        if lines:
             lines.extend(Line("") for _ in range(min(blanks, ALLOWED_BLANK_LINES)))
         blanks = 0
         if isinstance(item, Comment):
@@ -557,7 +519,7 @@ def render(items: list) -> str:
 
 # ----------------------------------------------------------------------------- validation
 def same_data(a, b) -> bool:
-    # Strict structural equality: exact types, NaN equals NaN (plain == would say otherwise).
+
     if type(a) is not type(b):
         return False
     if isinstance(a, dict):
@@ -570,7 +532,7 @@ def same_data(a, b) -> bool:
 
 
 def format_text(text: str) -> str:
-    # text uses "\n" endings. Returns formatted text or raises FormatError; never returns unverified output.
+
     try:
         original = tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
@@ -587,7 +549,7 @@ def format_text(text: str) -> str:
         raise FormatError(f"formatter produced invalid TOML, file left untouched: {exc}") from None
     if not same_data(original, reparsed):
         raise FormatError("formatter would change the data, file left untouched")
-    # The data check cannot see comments, so verify them separately (order may differ, count may not).
+
     checker = Parser(output)
     try:
         checker.parse()
@@ -598,11 +560,10 @@ def format_text(text: str) -> str:
     return output
 
 
-# ----------------------------------------------------------------------------- file handling
 @dataclass(frozen=True, slots=True)
 class Result:
     path: str
-    status: str  # "changed" | "unchanged" | "error"
+    status: str
     message: str = ""
 
 
@@ -612,7 +573,7 @@ def atomic_write(path: Path, data: bytes, mode: int) -> None:
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(data)
         with contextlib.suppress(OSError):
-            os.chmod(temporary, mode)  # keep the original permissions
+            os.chmod(temporary, mode)
         os.replace(temporary, path)
     except BaseException:
         with contextlib.suppress(OSError):
@@ -624,7 +585,7 @@ def _process_file(path_str: str, check: bool) -> Result:
     path = Path(path_str)
     try:
         with open(path, "rb") as stream:
-            before = os.fstat(stream.fileno())  # remembered to detect concurrent edits
+            before = os.fstat(stream.fileno())
             raw = stream.read()
     except OSError as exc:
         return Result(path_str, "error", f"read error: {exc}")
@@ -636,9 +597,9 @@ def _process_file(path_str: str, check: bool) -> Result:
     if has_bom:
         text = text[1:]
     crlf_count = text.count("\r\n")
-    use_crlf = crlf_count > text.count("\n") - crlf_count  # keep whichever ending dominates
+    use_crlf = crlf_count > text.count("\n") - crlf_count
     text = text.replace("\r\n", "\n")
-    if not text.strip():  # empty or whitespace-only: nothing to format, leave untouched
+    if not text.strip():
         return Result(path_str, "unchanged")
     try:
         formatted = format_text(text)
@@ -665,16 +626,16 @@ def _process_file(path_str: str, check: bool) -> Result:
 
 
 def process_file(path_str: str, check: bool) -> Result:
-    # Workers must never raise: one bad file may not take down the whole run.
+
     try:
         return _process_file(path_str, check)
-    except Exception as exc:  # includes RecursionError from pathological nesting
+    except Exception as exc:
         return Result(path_str, "error", f"unexpected error: {type(exc).__name__}: {exc}")
 
 
 # ----------------------------------------------------------------------------- discovery
 def walk_toml(root: str) -> Iterator[str]:
-    # scandir + pruning: junk trees are never entered, symlinks are never followed.
+
     stack = [root]
     while stack:
         directory = stack.pop()
@@ -704,7 +665,7 @@ def collect_files(paths: Sequence[Path]) -> list[str]:
         if os.path.isdir(given):
             candidates: Sequence[str] | Iterator[str] = walk_toml(os.path.realpath(given))
         elif os.path.isfile(given):
-            candidates = (os.path.realpath(given),)  # a symlink argument edits its target, not the link
+            candidates = (os.path.realpath(given),)
         else:
             print(f"warning: skipping non-existent path: {given}", file=sys.stderr)
             continue
@@ -719,18 +680,18 @@ def collect_files(paths: Sequence[Path]) -> list[str]:
 def display_path(path: str) -> str:
     try:
         return os.path.relpath(path)
-    except ValueError:  # different drive on Windows
+    except ValueError:
         return path
 
 
 # ----------------------------------------------------------------------------- CLI
 def iter_results(files: list[str], check: bool) -> Iterator[Result]:
     worker = functools.partial(process_file, check=check)
-    if len(files) == 1:  # a pool would only add start-up cost
+    if len(files) == 1:
         yield worker(files[0])
         return
     chunk = max(1, min(CHUNK_MAX, len(files) // (WORKERS * 4)))
-    # Leaving the with-block (including via Ctrl-C) terminates the pool.
+
     with mp.Pool(processes=WORKERS) as pool:
         yield from pool.imap_unordered(worker, files, chunksize=chunk)
 

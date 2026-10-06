@@ -30,13 +30,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
 
-
 __version__ = "0.0.0"
-
-
-# ---------------------------------------------------------------------------
-# parameter parsing
-# ---------------------------------------------------------------------------
 
 DATE_FIELDS = [
     "CURRENT_DATE",
@@ -111,11 +105,6 @@ def parse_parameter(param_value, current_date, format_separator="|"):
         return _parse_formula(param_value, current_date)
 
 
-# ---------------------------------------------------------------------------
-# core sql2json
-# ---------------------------------------------------------------------------
-
-
 def _current_date(timezone: Optional[str] = None) -> datetime.date:
     if timezone:
         return datetime.datetime.now(ZoneInfo(timezone)).date()
@@ -169,15 +158,12 @@ def handle_run_query2json(
     **kwargs,
 ):
     try:
-        # Shorthand: `python sql2json.py data.sql`
-        # -> run data.sql against the "default" connection
-        # -> write results to data.json
         if isinstance(name, str) and name.endswith(".sql") and os.path.isfile(name):
             if query == "default":
-                query = "@" + name  # run_query_by_name already handles "@file"
+                query = "@" + name
             if output is None:
                 output = os.path.splitext(name)[0] + ".json"
-            name = "default"  # use the default connection
+            name = "default"
 
         if list_connections:
             config_path = kwargs.get("config")
@@ -493,11 +479,6 @@ def run_query2json(
         return apply_wrapper(result, wrapper)
 
     return apply_output_transforms(result, wrapper, first, key, value, jsonkeys)
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def _parse_filename_after_brackets(part, current_date):

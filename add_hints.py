@@ -27,7 +27,6 @@ import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
 
-
 NAME_HINTS: Dict[str, str] = {
     "name": "str",
     "path": "str",

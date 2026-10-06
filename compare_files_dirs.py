@@ -33,17 +33,6 @@ except ImportError:
     def cprint(*args, **kwargs):
         print(*args, **kwargs)
 
-# Mapping of original scripts to merged commands:
-# a-b.py -> python merged.py a-b FIRST SECOND [--encoding ENC]
-# compare_and_move.py -> python merged.py compare-move SOURCE TARGET [--common-dir DIR] [--yes]
-# compare_dirs.py -> python merged.py compare-dirs SOURCE TARGET [--common-file FILE] [--yes] [--hash-chunk-size N]
-# compare_dirz.py -> python merged.py compare-dirz DIR1 DIR2 [--dir1-output FILE] [--common-output FILE] [--only-in-dir1-output FILE] [--hash-chunk-size N]
-# fcmp.py -> python merged.py fcmp DIRECTORY [--base BASE]
-# pdif.py -> python merged.py pdif FILE1 FILE2 [--encoding ENC]
-# pycommon.py -> python merged.py pycommon FILE1 FILE2 [--encoding ENC]
-# same_file.py -> python merged.py same-file FILE1 FILE2
-# udiffer.py -> python merged.py udiffer FIRST SECOND [--encoding ENC]
-
 
 def _resolve(p: str) -> Path:
     return Path(os.path.expandvars(p)).expanduser().resolve()

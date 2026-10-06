@@ -60,7 +60,6 @@ from typing import Final, Literal, get_args
 import libcst as cst
 from loguru import logger
 
-
 NUM_WORKERS: Final[int] = 8
 """Exact number of worker processes in the pool (a hard requirement)."""
 

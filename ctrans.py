@@ -62,40 +62,31 @@ from typing import Callable, Deque, Dict, List, Optional, Tuple
 
 try:
     from loguru import logger
-except ImportError:  # loguru is the one hard dependency
+except ImportError:
     sys.exit("loguru is required:  pip install loguru")
 
-# --------------------------------------------------------------------------
-# Constants
-# --------------------------------------------------------------------------
-MAX_ATTEMPTS = 3  # attempts per word before giving up
-BACKOFF_BASE = 1.0  # seconds; doubles after each failed attempt
+MAX_ATTEMPTS = 3
+BACKOFF_BASE = 1.0
 LOG_FILE = "translate_words.log"
 
-# Console lock is module-level because the stderr log sink also needs it,
-# so loguru output can never interleave with progress lines.
 _CONSOLE_LOCK = threading.Lock()
 
 Translator = Callable[[str], str]
 
 
 class BackendError(Exception):
-    """A backend cannot be initialised on this machine (missing package, Node, ...)."""
+    pass
 
 
 class ConfigError(BackendError):
-    """A backend is installed but its required env var / credential is missing."""
+    pass
 
 
 class UserError(Exception):
-    """Fatal user mistake (bad path, bad backend name...); message is actionable."""
+    pass
 
 
-# --------------------------------------------------------------------------
-# Language-code mapping (per backend; unknown codes fall back to the raw value)
-# --------------------------------------------------------------------------
 _LANG_MAP: Dict[str, Dict[str, str]] = {
-    # DeepL wants upper case; target English/Portuguese must be regional variants.
     "deepl:source": {
         c: c.upper()
         for c in ("bg cs da de el en es et fi fr hu id it ja ko lt lv nb nl pl pt ro ru sk sl sv tr uk zh").split()
@@ -108,13 +99,11 @@ _LANG_MAP: Dict[str, Dict[str, str]] = {
         en="EN-US",
         pt="PT-PT",
     ),
-    # deep_translator / Google style codes
     "deep_translator": {"zh": "zh-CN", "zh-cn": "zh-CN", "zh-tw": "zh-TW"},
     "googletrans": {"zh": "zh-cn"},
     "pygoogletranslation": {"zh": "zh-cn"},
     "translators_bing": {"zh": "zh-Hans", "zh-cn": "zh-Hans", "zh-tw": "zh-Hant"},
     "boto3": {"zh": "zh", "zh-cn": "zh", "zh-tw": "zh-TW"},
-    # Baidu uses its own three-letter-ish codes
     "baidu": {
         "fr": "fra",
         "es": "spa",
@@ -138,23 +127,10 @@ _LANG_MAP: Dict[str, Dict[str, str]] = {
 
 
 def _map_lang(key: str, code: str) -> str:
-    """Map a user language code to the one a backend expects.
-
-    ``key`` is a backend name, or ``"deepl:source"`` / ``"deepl:target"``.
-    Codes absent from the table are returned unchanged.
-    """
     return _LANG_MAP.get(key, {}).get(code.lower(), code)
 
 
-# --------------------------------------------------------------------------
-# Small helpers shared by the backend factories
-# --------------------------------------------------------------------------
 def _import(module: str, hint: str):
-    """Lazily import ``module``; raise BackendError with an install hint.
-
-    Catches Exception (not just ImportError) because some scraper libraries
-    raise other errors during import.
-    """
     try:
         return importlib.import_module(module)
     except Exception as exc:
@@ -162,7 +138,6 @@ def _import(module: str, hint: str):
 
 
 def _require_env(name: str, backend: str) -> str:
-    """Return env var ``name`` or raise ConfigError naming the backend."""
     value = os.environ.get(name, "").strip()
     if not value:
         raise ConfigError("backend '%s' needs the %s environment variable" % (backend, name))
@@ -170,33 +145,26 @@ def _require_env(name: str, backend: str) -> str:
 
 
 def _as_text(value) -> str:
-    """Coerce whatever a backend returned into str ('' for None)."""
     return "" if value is None else str(value)
 
 
 async def _await(awaitable):
-    """Tiny coroutine wrapper so asyncio.run() can drive any awaitable."""
     return await awaitable
 
 
-# --------------------------------------------------------------------------
-# Backend factories: _make_<name>(source, target, script_path) -> callable
-# --------------------------------------------------------------------------
 def _make_deepl(source: str, target: str, script_path: str) -> Translator:
-    """DeepL API (pure Python).  Fresh client per call."""
     key = _require_env("DEEPL_API_KEY", "deepl")
     deepl = _import("deepl", "pip install deepl")
     src, tgt = _map_lang("deepl:source", source), _map_lang("deepl:target", target)
 
     def call(text: str) -> str:
-        client = deepl.Translator(key)  # not documented thread-safe -> new each call
+        client = deepl.Translator(key)
         return _as_text(client.translate_text(text, source_lang=src, target_lang=tgt).text)
 
     return call
 
 
 def _make_deep_translator(source: str, target: str, script_path: str) -> Translator:
-    """deep_translator (Google by default, MyMemory via DEEP_TRANSLATOR_SERVICE)."""
     mod = _import("deep_translator", "pip install deep_translator")
     service = os.environ.get("DEEP_TRANSLATOR_SERVICE", "google").lower()
     cls_name = {"google": "GoogleTranslator", "mymemory": "MyMemoryTranslator"}.get(service)
@@ -206,20 +174,19 @@ def _make_deep_translator(source: str, target: str, script_path: str) -> Transla
     src, tgt = _map_lang("deep_translator", source), _map_lang("deep_translator", target)
 
     def call(text: str) -> str:
-        return _as_text(cls(source=src, target=tgt).translate(text))  # fresh per call
+        return _as_text(cls(source=src, target=tgt).translate(text))
 
     return call
 
 
 def _make_libretranslate_remote(source: str, target: str, script_path: str) -> Translator:
-    """LibreTranslate server on the LAN, via deep_translator (pure Python)."""
     url = _require_env("LIBRETRANSLATE_URL", "libretranslate_remote")
     mod = _import("deep_translator", "pip install deep_translator")
-    # Current releases call the class LibreTranslator; accept the other name too.
+
     cls = getattr(mod, "LibreTranslator", None) or getattr(mod, "LibreTranslateTranslator", None)
     if cls is None:
         raise BackendError("this deep_translator has no LibreTranslate class; upgrade it")
-    base = url.rstrip("/") + "/"  # deep_translator concatenates endpoints
+    base = url.rstrip("/") + "/"
     api_key = os.environ.get("LIBRETRANSLATE_API_KEY", "")
 
     def build():
@@ -228,32 +195,31 @@ def _make_libretranslate_remote(source: str, target: str, script_path: str) -> T
             kwargs["api_key"] = api_key
         try:
             return cls(base_url=base, **kwargs)
-        except TypeError:  # older/newer releases name it api_url
+        except TypeError:
             return cls(api_url=base, **kwargs)
 
-    build()  # fail at start-up, not mid-run
+    build()
 
     def call(text: str) -> str:
-        return _as_text(build().translate(text))  # fresh per call
+        return _as_text(build().translate(text))
 
     return call
 
 
 def _make_translate(source: str, target: str, script_path: str) -> Translator:
-    """`translate` package: upstream Translator or fork GoogleTranslator."""
     mod = _import("translate", "pip install translate")
     mod_file = getattr(mod, "__file__", None)
-    # Footgun: a script named translate.py shadows the library.
+
     if mod_file and os.path.realpath(mod_file) == os.path.realpath(script_path):
         raise BackendError(
             "'import translate' resolved to this script itself; rename the script (e.g. translate_words.py) and retry"
         )
-    if hasattr(mod, "Translator"):  # upstream API: from_lang / to_lang
+    if hasattr(mod, "Translator"):
 
         def call(text: str) -> str:
             return _as_text(mod.Translator(from_lang=source, to_lang=target).translate(text))
 
-    elif hasattr(mod, "GoogleTranslator"):  # forks: source / target
+    elif hasattr(mod, "GoogleTranslator"):
 
         def call(text: str) -> str:
             return _as_text(mod.GoogleTranslator(source=source, target=target).translate(text))
@@ -264,35 +230,33 @@ def _make_translate(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_translators_bing(source: str, target: str, script_path: str) -> Translator:
-    """Bing through the `translators` package (needs Node.js; serialized)."""
     if shutil.which("node") is None:
         raise BackendError("Node.js not found. Install it with: pkg install nodejs")
     ts = _import("translators", "pip install translators")
     src, tgt = _map_lang("translators_bing", source), _map_lang("translators_bing", target)
-    lock = threading.Lock()  # JS runtime subprocess per call -> serialize
+    lock = threading.Lock()
     logger.warning("translators_bing spawns a JS subprocess per call: expect low throughput")
 
     def call(text: str) -> str:
         with lock:
-            fn = getattr(ts, "translate_text", None)  # translators >= 5
+            fn = getattr(ts, "translate_text", None)
             if fn is not None:
                 return _as_text(fn(text, translator="bing", from_language=src, to_language=tgt))
-            return _as_text(ts.bing(text, from_language=src, to_language=tgt))  # old API
+            return _as_text(ts.bing(text, from_language=src, to_language=tgt))
 
     return call
 
 
 def _make_googletrans(source: str, target: str, script_path: str) -> Translator:
-    """googletrans (unofficial endpoint).  One shared instance behind a lock."""
     mod = _import("googletrans", 'pip install "googletrans==4.0.0rc1"')
     instance = mod.Translator()
-    lock = threading.Lock()  # holds HTTP session state
+    lock = threading.Lock()
     src, tgt = _map_lang("googletrans", source), _map_lang("googletrans", target)
 
     def call(text: str) -> str:
         with lock:
             res = instance.translate(text, src=src, dest=tgt)
-            if inspect.isawaitable(res):  # 4.0.0 final is async; rc1 is sync
+            if inspect.isawaitable(res):
                 res = asyncio.run(_await(res))
             return _as_text(res.text)
 
@@ -300,7 +264,6 @@ def _make_googletrans(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Translator:
-    """pygoogletranslation (googletrans fork).  Shared instance behind a lock."""
     mod = _import("pygoogletranslation", "pip install pygoogletranslation")
     instance = mod.Translator()
     lock = threading.Lock()
@@ -315,7 +278,6 @@ def _make_pygoogletranslation(source: str, target: str, script_path: str) -> Tra
 
 
 def _make_boto3(source: str, target: str, script_path: str) -> Translator:
-    """AWS Translate.  Credentials come from the usual AWS env vars / files."""
     boto3 = _import("boto3", "pip install boto3")
     if boto3.Session().get_credentials() is None:
         raise ConfigError("backend 'boto3' found no AWS credentials (set AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)")
@@ -323,7 +285,7 @@ def _make_boto3(source: str, target: str, script_path: str) -> Translator:
     src, tgt = _map_lang("boto3", source), _map_lang("boto3", target)
 
     def call(text: str) -> str:
-        client = boto3.client("translate", region_name=region)  # fresh per call
+        client = boto3.client("translate", region_name=region)
         return _as_text(
             client.translate_text(Text=text, SourceLanguageCode=src, TargetLanguageCode=tgt)["TranslatedText"]
         )
@@ -332,7 +294,6 @@ def _make_boto3(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_baidu(source: str, target: str, script_path: str) -> Translator:
-    """Baidu machine translation via baidu-aip."""
     app_id = _require_env("BAIDU_APP_ID", "baidu")
     api_key = _require_env("BAIDU_API_KEY", "baidu")
     secret = _require_env("BAIDU_SECRET_KEY", "baidu")
@@ -340,7 +301,7 @@ def _make_baidu(source: str, target: str, script_path: str) -> Translator:
     src, tgt = _map_lang("baidu", source), _map_lang("baidu", target)
 
     def call(text: str) -> str:
-        client = aip.AipMachineTranslation(app_id, api_key, secret)  # fresh per call
+        client = aip.AipMachineTranslation(app_id, api_key, secret)
         res = client.translate(text, src, tgt)
         if "error_code" in res:
             raise RuntimeError("baidu error %s: %s" % (res.get("error_code"), res.get("error_msg")))
@@ -350,7 +311,6 @@ def _make_baidu(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_alibaba(source: str, target: str, script_path: str) -> Translator:
-    """Alibaba Cloud machine translation (general scene)."""
     key_id = _require_env("ALIBABA_ACCESS_KEY_ID", "alibaba")
     key_secret = _require_env("ALIBABA_ACCESS_KEY_SECRET", "alibaba")
     core = _import("aliyunsdkcore.client", "pip install aliyun-python-sdk-alimt")
@@ -358,7 +318,7 @@ def _make_alibaba(source: str, target: str, script_path: str) -> Translator:
     src, tgt = _map_lang("alibaba", source), _map_lang("alibaba", target)
 
     def call(text: str) -> str:
-        client = core.AcsClient(key_id, key_secret, "cn-hangzhou")  # fresh per call
+        client = core.AcsClient(key_id, key_secret, "cn-hangzhou")
         request = req_mod.TranslateGeneralRequest()
         request.set_SourceLanguage(src)
         request.set_TargetLanguage(tgt)
@@ -372,7 +332,6 @@ def _make_alibaba(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_watson(source: str, target: str, script_path: str) -> Translator:
-    """IBM Watson Language Translator."""
     api_key = _require_env("WATSON_API_KEY", "watson")
     url = _require_env("WATSON_URL", "watson")
     wat = _import("ibm_watson", "pip install ibm-watson")
@@ -380,7 +339,7 @@ def _make_watson(source: str, target: str, script_path: str) -> Translator:
     model = "%s-%s" % (_map_lang("watson", source), _map_lang("watson", target))
 
     def call(text: str) -> str:
-        service = wat.LanguageTranslatorV3(version="2018-05-01", authenticator=auth.IAMAuthenticator(api_key))  # fresh
+        service = wat.LanguageTranslatorV3(version="2018-05-01", authenticator=auth.IAMAuthenticator(api_key))
         service.set_service_url(url)
         res = service.translate(text=text, model_id=model).get_result()
         return _as_text(res["translations"][0]["translation"])
@@ -389,7 +348,6 @@ def _make_watson(source: str, target: str, script_path: str) -> Translator:
 
 
 def _make_azure(source: str, target: str, script_path: str) -> Translator:
-    """Azure Translator (key auth; no MSAL needed)."""
     key = _require_env("AZURE_TRANSLATOR_KEY", "azure")
     region = _require_env("AZURE_TRANSLATOR_REGION", "azure")
     endpoint = os.environ.get("AZURE_TRANSLATOR_ENDPOINT", "")
@@ -401,17 +359,16 @@ def _make_azure(source: str, target: str, script_path: str) -> Translator:
         kwargs = {"credential": cred_mod.AzureKeyCredential(key), "region": region}
         if endpoint:
             kwargs["endpoint"] = endpoint
-        client = text_mod.TextTranslationClient(**kwargs)  # fresh per call
+        client = text_mod.TextTranslationClient(**kwargs)
         try:
             res = client.translate(body=[text], to=[tgt], from_parameter=src)
-        except TypeError:  # newer keyword names
+        except TypeError:
             res = client.translate(body=[text], to_language=[tgt], from_language=src)
         return _as_text(res[0].translations[0].text)
 
     return call
 
 
-# Registry of every backend this script can run.
 _BACKEND_FACTORIES: Dict[str, Callable[[str, str, str], Translator]] = {
     "deepl": _make_deepl,
     "deep_translator": _make_deep_translator,
@@ -427,7 +384,6 @@ _BACKEND_FACTORIES: Dict[str, Callable[[str, str, str], Translator]] = {
     "azure": _make_azure,
 }
 
-# Order tried on Termux (Tier 3 providers are used only when requested with -b).
 _DEFAULT_CHAIN = [
     "deepl",
     "deep_translator",
@@ -438,7 +394,6 @@ _DEFAULT_CHAIN = [
     "pygoogletranslation",
 ]
 
-# Names refused with an explanation.  Never imported, only matched as strings.
 _FORBIDDEN: Dict[str, str] = {
     "argostranslate": "depends on ctranslate2 (no 32-bit ARM wheel)",
     "libretranslate": "self-hosting needs ctranslate2 + sentencepiece",
@@ -460,7 +415,6 @@ _FORBIDDEN: Dict[str, str] = {
 
 
 def _validate_backend_name(name: str) -> str:
-    """Normalise ``name`` and exit-worthy-fail if forbidden or unknown."""
     key = name.strip().lower().replace("-", "_")
     if key in _FORBIDDEN:
         raise UserError(
@@ -476,12 +430,11 @@ def _validate_backend_name(name: str) -> str:
 
 
 def _build_chain(preferred: Optional[str]) -> List[str]:
-    """Return the ordered list of backends to attempt to initialise."""
     chain: List[str] = [preferred] if preferred else []
     for name in _DEFAULT_CHAIN:
         if name in chain:
             continue
-        # Conditional entries are left out (not warned about) without their env var.
+
         if name == "deepl" and not os.environ.get("DEEPL_API_KEY"):
             continue
         if name == "libretranslate_remote" and not os.environ.get("LIBRETRANSLATE_URL"):
@@ -491,12 +444,6 @@ def _build_chain(preferred: Optional[str]) -> List[str]:
 
 
 def build_translator(preferred: Optional[str], source: str, target: str, script_path: str) -> Tuple[str, Translator]:
-    """Initialise the first working backend in the chain.
-
-    Returns ``(backend_name, callable)``.  Failures are logged at WARNING and
-    skipped, except a missing credential on the *explicitly requested* backend,
-    which is a user error and is fatal.
-    """
     failed: List[Tuple[str, str]] = []
     for name in _build_chain(preferred):
         try:
@@ -509,7 +456,7 @@ def build_translator(preferred: Optional[str], source: str, target: str, script_
         except BackendError as exc:
             logger.warning("backend {!r} unavailable: {}", name, exc)
             failed.append((name, str(exc)))
-        except Exception as exc:  # a broken backend must never crash the script
+        except Exception as exc:
             logger.warning("backend {!r} crashed during init: {!r}", name, exc)
             failed.append((name, repr(exc)))
         else:
@@ -525,18 +472,13 @@ def build_translator(preferred: Optional[str], source: str, target: str, script_
     )
 
 
-# --------------------------------------------------------------------------
-# Logging
-# --------------------------------------------------------------------------
 def _stderr_sink(message) -> None:
-    """Loguru sink that writes to stderr under the console lock."""
     with _CONSOLE_LOCK:
         sys.stderr.write(str(message))
         sys.stderr.flush()
 
 
 def setup_logging() -> None:
-    """Replace loguru's default sink with a rotating file + compact stderr sink."""
     logger.remove()
     logger.add(
         LOG_FILE,
@@ -549,11 +491,7 @@ def setup_logging() -> None:
     logger.add(_stderr_sink, level="ERROR", format="{level}: {message}\n")
 
 
-# --------------------------------------------------------------------------
-# File helpers
-# --------------------------------------------------------------------------
 def iter_words(path: str):
-    """Stream stripped, non-empty lines from ``path`` (never reads it all at once)."""
     with open(path, "r", encoding="utf-8-sig", errors="replace") as handle:
         for line in handle:
             word = line.strip()
@@ -562,7 +500,6 @@ def iter_words(path: str):
 
 
 def load_results(path: str) -> Dict[str, str]:
-    """Load an existing output JSON, or return {} if it does not exist."""
     if not os.path.exists(path):
         return {}
     try:
@@ -578,12 +515,6 @@ def load_results(path: str) -> Dict[str, str]:
 
 
 def atomic_save(path: str, data: Dict[str, str], lock: threading.Lock) -> bool:
-    """Write ``data`` to ``path`` via temp file + os.replace.
-
-    json.dump streams in chunks, so no giant string is built in memory.
-    Returns False (after logging) on I/O failure instead of raising, so a full
-    disk cannot kill a long job.
-    """
     directory = os.path.dirname(os.path.abspath(path))
     with lock:
         fd, tmp = tempfile.mkstemp(prefix=".tw_", suffix=".tmp", dir=directory)
@@ -592,31 +523,26 @@ def atomic_save(path: str, data: Dict[str, str], lock: threading.Lock) -> bool:
                 json.dump(data, handle, ensure_ascii=False, indent=1)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(tmp, path)  # atomic on the same filesystem
+            os.replace(tmp, path)
             return True
         except OSError as exc:
             logger.error("could not save {!r}: {}", path, exc)
             return False
         finally:
-            if os.path.exists(tmp):  # replace failed or interrupted
+            if os.path.exists(tmp):
                 try:
                     os.unlink(tmp)
                 except OSError:
                     pass
 
 
-# --------------------------------------------------------------------------
-# Translation worker
-# --------------------------------------------------------------------------
 class Shared:
-    """State shared by the workers; each concern has its own lock."""
-
     def __init__(self, fn: Translator, results: Dict[str, str], total: int, args: argparse.Namespace) -> None:
         self.fn = fn
-        self.results = results  # read by workers, written by main thread only
+        self.results = results
         self.total = total
         self.args = args
-        self.stop = threading.Event()  # set on interrupt; makes sleeps abortable
+        self.stop = threading.Event()
         self.counter = 0
         self.counter_lock = threading.Lock()
         self.failed_lock = threading.Lock()
@@ -624,14 +550,9 @@ class Shared:
 
 
 def translate_with_retries(sh: Shared, word: str) -> Tuple[Optional[str], object, bool]:
-    """Try up to MAX_ATTEMPTS times.  Returns ``(translation, last_raw, aborted)``.
-
-    An attempt fails if the backend raises, or returns empty / the source text
-    (casefold comparison).  ``aborted`` is True when interrupted via ``sh.stop``.
-    """
     last_raw: object = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        if sh.stop.wait(sh.args.delay):  # per-request delay; True means interrupted
+        if sh.stop.wait(sh.args.delay):
             return None, last_raw, True
         try:
             raw = sh.fn(word)
@@ -644,28 +565,24 @@ def translate_with_retries(sh: Shared, word: str) -> Tuple[Optional[str], object
                 return text, raw, False
             logger.warning("attempt {}/{} for {!r}: empty or identity result {!r}", attempt, MAX_ATTEMPTS, word, raw)
         if attempt < MAX_ATTEMPTS and sh.stop.wait(BACKOFF_BASE * 2 ** (attempt - 1)):
-            return None, last_raw, True  # gentle exponential backoff, interruptible
+            return None, last_raw, True
     return None, last_raw, False
 
 
 def worker(sh: Shared, word: str) -> Tuple[str, Optional[str]]:
-    """Translate one word, print live output, record failures.
-
-    Returns ``(word, translation_or_None)``.  Never raises.
-    """
     try:
-        if word in sh.results:  # duplicate line already translated
+        if word in sh.results:
             translation, raw, aborted = sh.results[word], sh.results[word], False
         else:
             translation, raw, aborted = translate_with_retries(sh, word)
         if aborted:
-            return word, None  # interrupted: neither success nor failure
+            return word, None
         with sh.counter_lock:
             sh.counter += 1
             n = sh.counter
         shown = raw if isinstance(raw, str) else ("<no result>" if raw is None else repr(raw))
         if translation is not None:
-            with _CONSOLE_LOCK:  # both lines together so they stay adjacent
+            with _CONSOLE_LOCK:
                 print("  %s => %s" % (word, shown))
                 print("[%d/%d] \u2713 %s -> %s" % (n, sh.total, word, translation))
         else:
@@ -680,23 +597,19 @@ def worker(sh: Shared, word: str) -> Tuple[str, Optional[str]]:
                 print("  %s => %s" % (word, shown))
                 print("[%d/%d] \u2717 %s (failed -> %s)" % (n, sh.total, word, sh.args.failed))
         return word, translation
-    except Exception as exc:  # defensive: a worker bug must not kill the run
+    except Exception as exc:
         logger.error("unexpected worker error for {!r}: {!r}", word, exc)
         return word, None
 
 
-# --------------------------------------------------------------------------
-# CLI
-# --------------------------------------------------------------------------
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    """Define and parse the command-line interface."""
     p = argparse.ArgumentParser(description="Translate a one-word-per-line file into a JSON map (Termux-friendly).")
     p.add_argument("-i", "--input", default="words.txt", help="input file (default: words.txt)")
     p.add_argument("-o", "--output", default="words.json", help="output JSON (default: words.json)")
     p.add_argument("--failed", default="failed.txt", help="failed words file (default: failed.txt)")
     p.add_argument("-s", "--source", default="fr", help="source language (default: fr)")
     p.add_argument("-t", "--target", default="en", help="target language (default: en)")
-    # default=None lets us tell "not given" (use the full default chain) from "given".
+
     p.add_argument(
         "-b",
         "--backend",
@@ -714,12 +627,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
 
 def _raise_interrupt(signum, frame) -> None:
-    """Turn SIGTERM/SIGHUP (Termux session close) into the Ctrl+C path."""
     raise KeyboardInterrupt
 
 
 def print_next_steps(failed_count: int, args: argparse.Namespace) -> None:
-    """Print what to do after the run (retry failures, offline option)."""
     with _CONSOLE_LOCK:
         print("\nNext steps:")
         if failed_count:
@@ -732,15 +643,14 @@ def print_next_steps(failed_count: int, args: argparse.Namespace) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    """Main logic.  Returns the process exit code."""
-    # Fail fast on user errors before touching anything.
+
     if not os.path.isfile(args.input):
         raise UserError("Input file '%s' not found. Create it with one word per line or pass -i." % args.input)
     if args.workers < 1 or args.save_every < 1 or args.delay < 0:
         raise UserError("--workers and --save-every must be >= 1 and --delay >= 0.")
     preferred = _validate_backend_name(args.backend) if args.backend else None
 
-    for name in ("stdout", "stderr"):  # Termux can start with a non-UTF-8 locale
+    for name in ("stdout", "stderr"):
         stream = getattr(sys, name)
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
@@ -755,18 +665,15 @@ def run(args: argparse.Namespace) -> int:
         % (name, args.source, args.target, args.workers, args.delay)
     )
 
-    # Resume: load previous results unless told otherwise.
     results: Dict[str, str] = {} if args.no_continue else load_results(args.output)
     if results:
         print("Loaded %d existing translation(s) from %s" % (len(results), args.output))
 
-    # Every non-loaded word is retried this run, so failed.txt is rebuilt from scratch.
     try:
         open(args.failed, "w", encoding="utf-8").close()
     except OSError as exc:
         raise UserError("Cannot write failed-words file '%s': %s" % (args.failed, exc))
 
-    # Single streaming pass; the only full-size list is `pending`.
     pending = [w for w in iter_words(args.input) if w not in results]
     total = len(pending)
     if total == 0:
@@ -780,8 +687,8 @@ def run(args: argparse.Namespace) -> int:
         signal.signal(signal.SIGHUP, _raise_interrupt)
 
     executor = ThreadPoolExecutor(max_workers=args.workers)
-    window: Deque = deque()  # bounded in-flight futures, kept in input order
-    max_inflight = args.workers * 4  # caps Future objects held in memory
+    window: Deque = deque()
+    max_inflight = args.workers * 4
     next_i = since_save = failed_count = 0
     interrupted = False
     try:
@@ -789,7 +696,7 @@ def run(args: argparse.Namespace) -> int:
             while next_i < total and len(window) < max_inflight:
                 window.append(executor.submit(worker, sh, pending[next_i]))
                 next_i += 1
-            # Consume strictly in submission order -> results dict stays in input order.
+
             word, translation = window.popleft().result()
             since_save += 1
             if translation is None:
@@ -801,12 +708,12 @@ def run(args: argparse.Namespace) -> int:
                 since_save = 0
     except KeyboardInterrupt:
         interrupted = True
-        sh.stop.set()  # wake sleeping workers
+        sh.stop.set()
         for fut in window:
-            fut.cancel()  # drop work that has not started
+            fut.cancel()
     finally:
         executor.shutdown(wait=not interrupted)
-        saved = atomic_save(args.output, results, sh.file_lock)  # final / interrupt save
+        saved = atomic_save(args.output, results, sh.file_lock)
 
     done = len(results)
     with _CONSOLE_LOCK:
@@ -822,7 +729,6 @@ def run(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    """Entry point: run and convert UserError into a clean message + exit code 2."""
     try:
         return run(parse_args())
     except UserError as exc:

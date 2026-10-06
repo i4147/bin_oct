@@ -6,7 +6,6 @@ import argparse
 
 
 def get_directory_size(path: Path) -> int:
-    """Calculate the total size of a directory in bytes recursively."""
     total_size = 0
     try:
         for entry in path.rglob("*"):
@@ -14,7 +13,6 @@ def get_directory_size(path: Path) -> int:
                 try:
                     total_size += entry.stat().st_size
                 except (PermissionError, FileNotFoundError):
-                    # Skip files that cannot be accessed due to permissions
                     continue
     except (PermissionError, FileNotFoundError):
         pass
@@ -24,7 +22,6 @@ def get_directory_size(path: Path) -> int:
 def folderize_directories(n_parts: int):
     current_dir = Path(".")
 
-    # Get all top-level subdirectories (excluding any existing 'group_' folders to avoid nesting loops)
     subdirs = [p for p in current_dir.iterdir() if p.is_dir() and not p.name.startswith("group_")]
 
     if not subdirs:
@@ -33,26 +30,21 @@ def folderize_directories(n_parts: int):
 
     print(f"Found {len(subdirs)} subdirectories. Calculating sizes...")
 
-    # Calculate sizes for each directory
     dir_sizes = {}
     for subdir in subdirs:
         size = get_directory_size(subdir)
         dir_sizes[subdir] = size
         print(f" - {subdir.name}: {size / (1024 * 1024):.2f} MB")
 
-    # Sort subdirectories by size in descending order (Greedy LPT algorithm for balanced bin packing)
     sorted_subdirs = sorted(subdirs, key=lambda x: dir_sizes[x], reverse=True)
 
-    # Initialize N bins
     bins = [{"size": 0, "items": []} for _ in range(n_parts)]
 
-    # Distribute each directory into the bin with the smallest current total size
     for subdir in sorted_subdirs:
         min_bin = min(bins, key=lambda b: b["size"])
         min_bin["items"].append(subdir)
         min_bin["size"] += dir_sizes[subdir]
 
-    # Create group directories and move the subdirectories
     for i, b in enumerate(bins, start=1):
         group_name = f"group_{i}"
         group_path = current_dir / group_name

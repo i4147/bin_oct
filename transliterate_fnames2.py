@@ -120,11 +120,9 @@ MULTIPLE_UNDERSCORES = re.compile(r"_+")
 
 
 def transliterate(text: str) -> str:
-    """Transliterate Persian/Arabic text into an ASCII filename."""
     result: list[str] = []
     i = 0
     while i < len(text):
-        # Handle multi-character mappings first.
         if text.startswith("لا", i):
             result.append("la")
             i += 2
@@ -134,12 +132,12 @@ def transliterate(text: str) -> str:
             result.append(PERSIAN_MAP[char])
             i += 1
             continue
-        # Preserve normal ASCII filename characters.
+
         if char.isascii() and (char.isalnum() or char in "._-"):
             result.append(char)
             i += 1
             continue
-        # Transliterate Latin characters with accents, etc.
+
         normalized = unicodedata.normalize("NFKD", char)
         ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
         if ascii_text:
@@ -155,7 +153,6 @@ def transliterate(text: str) -> str:
 
 
 def unique_path(path: pathlib.Path, reserved: set[pathlib.Path]) -> pathlib.Path:
-    """Return a collision-free destination path."""
     if path not in reserved and not path.exists():
         return path
     parent = path.parent
@@ -170,7 +167,6 @@ def unique_path(path: pathlib.Path, reserved: set[pathlib.Path]) -> pathlib.Path
 
 
 def collect_entries(root: pathlib.Path) -> list[pathlib.Path]:
-    """Collect files and directories below root, deepest paths first."""
     return sorted(
         root.rglob("*"),
         key=lambda path: len(path.parts),
@@ -179,7 +175,6 @@ def collect_entries(root: pathlib.Path) -> list[pathlib.Path]:
 
 
 def rename_tree(root: pathlib.Path, dry_run: bool) -> None:
-    """Transliterate and rename filenames/directories recursively."""
     entries = collect_entries(root)
     reserved: set[pathlib.Path] = set()
     for entry in entries:

@@ -42,14 +42,6 @@ except ImportError:
     def should_skip(path) -> bool:
         return False
 
-# Mapping of original scripts to merged commands:
-# c2h.py         -> python merged.py html INPUT OUTPUT
-# excolors.py    -> python merged.py extract [PATH] [--output FILE]
-# excolors2.py   -> python merged.py extract-show [PATH] [--max-colors N] [--max-size N]
-# hex2rgb.py     -> python merged.py hex2rgb HEX [--format tuple|dict] [--allow-short]
-# showcolor.py   -> python merged.py showcolor [--count N]
-# sortbyhue.py   -> python merged.py sorthue FILE
-
 
 HEX_RE = re.compile(r"#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})\b")
 FULL_HEX_RE = re.compile(r"^#([0-9a-fA-F]{6})$")
@@ -67,7 +59,6 @@ RESET = "\x1b[0m"
 
 
 def _walk_files(root: Path) -> Iterator[Path]:
-    """Yield files under ``root`` applying the standard skip filter."""
     if root.is_file():
         yield root
         return
@@ -105,8 +96,6 @@ def _text_color(r: int, g: int, b: int) -> Tuple[int, int, int]:
 
 @dataclass(frozen=True)
 class Color:
-    """A simple RGBA color container."""
-
     r: int
     g: int
     b: int
@@ -205,7 +194,6 @@ def _decode_file(path: Path, max_size: int) -> Optional[str]:
 
 
 def cmd_html(args: argparse.Namespace) -> int:
-    """Read a list of colors and write an HTML display page."""
     in_path = Path(args.input)
     out_path = Path(args.output)
     with in_path.open(encoding="utf-8") as f:
@@ -236,7 +224,6 @@ def cmd_html(args: argparse.Namespace) -> int:
 
 
 def cmd_extract(args: argparse.Namespace) -> int:
-    """Scan for hex colors and write the 6-digit lowercase values (no ``#``)."""
     root = Path(args.path)
     found: Set[str] = set()
     for f in _walk_files(root):
@@ -251,8 +238,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     expanded: List[str] = []
     for c in found:
         expanded.append(c * 2 if len(c) == 3 else c)
-    # Only 6-digit (or doubled 3-digit) values are written to output, matching
-    # the original's post-filter of `if len(k) == 3: continue`.
+
     result = sorted(set(c for c in expanded if len(c) != 3))
     Path(args.output).write_text("\n".join(result), encoding="utf-8")
     cprint(f"{count} colors found", "green")
@@ -260,7 +246,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 
 def cmd_extract_show(args: argparse.Namespace) -> int:
-    """Recursively scan for hex/rgb/rgba colors and print ANSI swatches."""
     root = Path(args.path)
     allowed_ext: Set[str] = set(args.ext or [])
     collected: List[Color] = []
@@ -283,7 +268,6 @@ def cmd_extract_show(args: argparse.Namespace) -> int:
 
 
 def cmd_hex2rgb(args: argparse.Namespace) -> int:
-    """Convert a hex color to a tuple or dict RGB representation."""
     h = args.hex.lstrip("#")
     if not args.allow_short and len(h) == 3:
         print("Error: short hex requires --allow-short", file=sys.stderr)
@@ -307,7 +291,6 @@ def cmd_hex2rgb(args: argparse.Namespace) -> int:
 
 
 def cmd_showcolor(args: argparse.Namespace) -> int:
-    """Print N ANSI color blocks with random RGB values."""
     n = args.count if args.count is not None else random.randrange(1000)
     for _ in range(1, n):
         r = random.randrange(256)
@@ -318,7 +301,6 @@ def cmd_showcolor(args: argparse.Namespace) -> int:
 
 
 def cmd_sorthue(args: argparse.Namespace) -> int:
-    """Sort ``#rrggbb`` lines in a file by HSV hue and rewrite them lowercased."""
     p = Path(args.file)
 
     def key(line: str) -> Tuple[float, float, float]:
