@@ -1,14 +1,14 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Report files added in every commit of a git repo as JSON.
-Uses dulwich (pure Python git implementation) - no subprocess."""
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import json
-import sys
+import argparse
+import subprocess
 from dulwich.repo import Repo
+import pygit2
+from git import Repo as GitRepo
 
 
-def get_added_files_per_commit(repo_path: str) -> dict:
+def get_added_files_per_commit_dulwich(repo_path: str) -> dict:
     repo = Repo(repo_path)
     result = {}
     try:
@@ -51,13 +51,143 @@ def get_added_files_per_commit(repo_path: str) -> dict:
     return result
 
 
+def get_added_files_per_commit_pygit2(repo_path: str) -> dict:
+    repo = pygit2.Repository(repo_path)
+    result = {}
+    tree_files_cache = {}
+
+    def tree_files(tree_id: str) -> set:
+        if tree_id in tree_files_cache:
+            return tree_files_cache[tree_id]
+        files = set()
+        tree = repo[tree_id]
+        stack = [("", tree)]
+        while stack:
+            prefix, t = stack.pop()
+            for entry in t:
+                name = entry.name
+                full = f"{prefix}{name}"
+                if entry.filemode == pygit2.GIT_FILEMODE_TREE:
+                    stack.append((full + "/", repo[entry.id]))
+                else:
+                    files.add(full)
+        tree_files_cache[tree_id] = files
+        return files
+
+    head = repo.revparse_single("HEAD")
+    for commit in repo.walk(head.id, pygit2.GIT_SORT_TIME):
+        commit_sha = str(commit.id)
+        short = commit_sha[:8]
+        current_files = tree_files(str(commit.tree_id))
+        parent_files = set()
+        for parent in commit.parents:
+            parent_files |= tree_files(str(parent.tree_id))
+        added = current_files - parent_files
+        added_names = sorted({f.split("/")[-1] for f in added})
+        result[short] = added_names
+    return result
+
+
+def get_added_files_per_commit_gitpython(repo_path: str) -> dict:
+    repo = GitRepo(repo_path)
+    result = {}
+    tree_files_cache = {}
+
+    def tree_files(tree) -> set:
+        key = tree.hexsha
+        if key in tree_files_cache:
+            return tree_files_cache[key]
+        files = set()
+        stack = [("", tree)]
+        while stack:
+            prefix, t = stack.pop()
+            for item in t:
+                name = item.name
+                full = f"{prefix}{name}"
+                if item.type == "tree":
+                    stack.append((full + "/", item))
+                else:
+                    files.add(full)
+        tree_files_cache[key] = files
+        return files
+
+    for commit in repo.iter_commits("HEAD"):
+        short = commit.hexsha[:8]
+        current_files = tree_files(commit.tree)
+        parent_files = set()
+        for parent in commit.parents:
+            parent_files |= tree_files(parent.tree)
+        added = current_files - parent_files
+        added_names = sorted({f.split("/")[-1] for f in added})
+        result[short] = added_names
+    return result
+
+
+def get_added_files_per_commit_gitcli(repo_path: str) -> dict:
+    result = {}
+    tree_files_cache = {}
+
+    def tree_files(tree_sha: str) -> set:
+        if tree_sha in tree_files_cache:
+            return tree_files_cache[tree_sha]
+        out = subprocess.run(
+            ["git", "-C", repo_path, "ls-tree", "-r", "--name-only", tree_sha],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        files = {line for line in out.splitlines() if line}
+        tree_files_cache[tree_sha] = files
+        return files
+
+    log = subprocess.run(
+        ["git", "-C", repo_path, "log", "--format=%H %T %P"], capture_output=True, text=True, check=True
+    ).stdout
+
+    for line in log.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        commit_sha = parts[0]
+        tree_sha = parts[1]
+        parents = parts[2:]
+        short = commit_sha[:8]
+        current_files = tree_files(tree_sha)
+        parent_files = set()
+        for parent_sha in parents:
+            parent_tree = subprocess.run(
+                ["git", "-C", repo_path, "rev-parse", f"{parent_sha}^{{tree}}"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            parent_files |= tree_files(parent_tree)
+        added = current_files - parent_files
+        added_names = sorted({f.split("/")[-1] for f in added})
+        result[short] = added_names
+    return result
+
+
+BACKENDS = {
+    "dulwich": get_added_files_per_commit_dulwich,
+    "pygit2": get_added_files_per_commit_pygit2,
+    "gitpython": get_added_files_per_commit_gitpython,
+    "gitcli": get_added_files_per_commit_gitcli,
+}
+
+
 def main():
-    repo_path = sys.argv[1] if len(sys.argv) > 1 else "."
-    output_path = sys.argv[2] if len(sys.argv) > 2 else "added_files.json"
-    data = get_added_files_per_commit(repo_path)
-    with open(output_path, "w") as f:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("repo_path", nargs="?", default=".")
+    parser.add_argument("output_path", nargs="?", default="added_files.json")
+    parser.add_argument("-b", "--backend", choices=list(BACKENDS), default="dulwich")
+    args = parser.parse_args()
+
+    data = BACKENDS[args.backend](args.repo_path)
+
+    with open(args.output_path, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"Wrote {len(data)} commits to {output_path}")
+    print(f"Wrote {len(data)} commits to {args.output_path} using {args.backend}")
 
 
 if __name__ == "__main__":
