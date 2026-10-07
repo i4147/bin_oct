@@ -1,4 +1,37 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
+"""Write a prompt for an AI coding agent that will generate a Python command-line script with the following specifications:
+
+**Purpose:** Build a PDF text extraction tool designed to run in a Termux) environment, capable of extracting text from PDF files using multiple interchangeable backend libraries.
+
+**Environment:** The script must use the Termux Python shebang (`#!/data/data/com.termux/files/usr/bin/python3.12`) and be a standalone executable CLI tool.
+
+**Core design:**
+- Implement an `Extractor` class that encapsulates all extraction logic, config-extraction library to use ( atitz` (PyMuPDF), `pypdf`, `pdfplumber`, and `pdfminer`, selectable via a string, case-insensitive)
+  - `password`: optional password for encrypted PDFs
+  - `encoding`: output text encoding (default `utf-8`)
+  - `normalize_spaces`: boolean flag to control whitespace normalization of extracted text
+
+- The class should have a method `extract_pages(pdf_path)` that:
+  - Accepts a path to a PDF file (convert to a `Path` object internally)
+  - Dynamically imports the required backend library only when that backend is selected (lazy imports, so users don't need all libraries installed, only the one they use)
+  - Opens the PDF with the chosen backend, applying the password if provided and supported by that backend's API
+  - Iterates through all pages of the PDF, extracting text per page
+  - Handles each backend's specific API differences correctly:
+    - `fitz` (PyMuPDF): open document, authenticate with password if given, call `get_text()` on each page, then close the document
+    - `pypdf`: use `PdfReader` with passwordided, call `extract_textallback to empty string if `None`)
+    - `pdfplumber`: open with `pdfplumber.open`, passing password as kwarg only if provided, call `extract_text()` on each page (fallback to empty string if `None`)
+    - `pdfminer`: use the low-level `pdfminer` API (`PDFResourceManager`, `PDFPageInterpreter`, `TextConverter`, `LAParams`, and an in-memory `StringIO` buffer) to extract text page by page
+  - Returns a list of strings, one per page, containing the raw/extracted text
+
+**Additional requirements:**
+- Use `argparse` to build a command-line interface around this functionality (accepting at least the PDF file path, backend choice, password, encoding, and an option to control space normalization; also support specifying anracted text)
+- Use the `re` module tosing multiple spaces/newlines when `normalize_spacesinclude a `mainarded by `if __name__ == "__main__":`)
+- Write cleanured Python code with appropriate error and backends that aren't installed.
+
+Generate the complete Python script implementing this behavior.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/7iF6vfHXZD4qmEgG8kPRMx"""
+
 import argparse
 import re
 from io import StringIO

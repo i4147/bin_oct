@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3 command-line script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that renames files and/or directories by transliterating Persian/Arabic (and related Unicode, e.g. Persian/Arabic digits and diacritics) characters in their names into ASCII-safe equivalents, producing clean, filesystem-safe filenames.
 
 Requirements and behavior:

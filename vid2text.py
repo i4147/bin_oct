@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Video-to-text OCR extractor.
 Third-party dependencies (must be installed): pip install opencv-python pytesseract Pillow (Tesseract OCR engine must also be on PATH.) Merges the two original scripts into a single CLI: vid2txt.py -> python video_ocr.py --mode threaded INPUT video2text.py -> python video_ocr.py --mode sequential INPUT Usage examples -------------- python video_ocr.py movie.mp4 python video_ocr.py movie.mp4 --mode sequential -o subs.txt python video_ocr.py movie.mp4 --workers 8 --queue-size 16 --psm 6 --oem 3 python video_ocr.py movie.mp4 --no-invert --min-chars 10 --lang eng"""
 

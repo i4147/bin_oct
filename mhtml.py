@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """I'll analyze this Python code to create a comprehensive prompt for an AI agent.
 
 Based on the code structure, imports, and patterns I can see (MHTML parsing, HTML conversion, multiprocessing pool patching, URL rewriting logic, icon/preload handling), here is the prompt:

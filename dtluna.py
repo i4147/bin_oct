@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that batch-translates subtitle or text files (e.g., JSON/SRT-like structures) using pluggable translator backends such as Google Translate and DeepL, with a language-code normalization table mapping common locale variants to each backend's expected codes.
 It should support concurrent translation via a thread pool for speed, use difflib's SequenceMatcher to detect and preserve near-duplicate or unchanged segments, and rely on argparse for CLI options (input/output paths, source/target languages, backend selection, concurrency level).
 Include logging via loguru for progress and error reporting, safe temporary file handling for atomic writes, and dynamic module loading (importlib) to allow optional/custom translator backend plugins to be loaded at runtime."""

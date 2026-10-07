@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python utility module that manages a persistent word-translation cache and a failed-words tracking file for a translation pipeline.
 It should provide a function to load existing translations from a JSON file into a dictionary, gracefully handling missing files, invalid JSON, or a non-dictionary top-level structure by logging warnings and returning an empty dictionary.
 It should also provide a function to load previously failed words from a plain text file (one word per line) into a set, stripping whitespace and skipping empty lines, while handling missing files or read errors via logging.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-converts local HTML files into Markdown using trafilatura, falling back to BeautifulSoup plus markdownify if trafilatura extracts no content.
 It should skip files that already have a corresponding .md file, save successful conversions alongside the source with a .md extension, and print a success or failure status line per file.
 Input files can be passed as command-line arguments or discovered automatically in the current directory via a helper (get_files/mpf from the dh module), and the script supports an optional "-r" flag to delete the original HTML file after a successful conversion.

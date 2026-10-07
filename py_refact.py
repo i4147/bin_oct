@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Merge a small multi-file Python package into a single, migrated module.
 Reads either a directory tree of .py files (default: current directory, recursive) or a merged-file produced with "# File: relpath" sentinels (-f flag).
 Consolidates all modules into one file, applying: 1.

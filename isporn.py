@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans the current working directory for image files (.jpg, .jpeg, .png, .webp) and classifies each one using the NudeDetector model from the nudenet library, printing the filename along with its predicted class and confidence score in cyan-colored output.
 It should create three output folders named "safe", "sexy", and "porn" if they don't already exist, presumably for later sorting of the images.
 Files whose paths contain the segments "porn", "nude", "safr", or "sexy" should be skipped during classification.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans a given directory (using fastwalk to walk files and folders) and automatically renames any file or folder whose name contains non-ASCII characters by translating that name into English via the deep_translator GoogleTranslator library, while preserving the file extension.
 It should detect non-English names using a regex check for non-ASCII characters, skip names that are already English, and avoid overwriting existing files by appending an incrementing numeric suffix when a naming collision occurs.
 The script should print a log line for each successful rename showing the old and new names, and gracefully handle and report translation errors without stopping execution."""

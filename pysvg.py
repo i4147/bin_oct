@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Optimize ``.svg`` files in place by shelling out to ``svgo``.
 The script discovers SVG files (case-insensitively) under the paths supplied on the command line, runs ``svgo`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is well-formed XML, not byte-identical, and strictly smaller — atomically replaces the original.
 Design highlights ----------------- * Discovery uses the Rust ``fastwalk`` extension (``walk_files``).

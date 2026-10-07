@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """xb_extract.py — unified extractor for shell functions.
 This module merges the two original scripts into a single pipeline with flags that reproduce every behavior of both.
 Original-script mapping ----------------------- xbash_functions.py -> python xb_extract.py --walker fastwalk --parallel --no-header --no-chmod xbash_functions2.py -> python xb_extract.py # (all defaults) Pipeline -------- 1.

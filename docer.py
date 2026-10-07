@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a file path as its single argument and moves that file into a fixed destination folder, /sdcard/doc, creating the folder first if it does not already exist.
 The script should read the source file's bytes, write them to a new file of the same name inside /sdcard/doc, then delete the original file, printing "done." on success.
 If a file with the same name already exists in the destination folder, it must not overwrite it; instead it should print a message stating the target file exists and instruct the user to remove it and try again, leaving the original file untouched.

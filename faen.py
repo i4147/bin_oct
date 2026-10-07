@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script implementing a bidirectional Persian-English dictionary backed by a JSON file (default path "/sdcard/dic/dic.json").
 The script should load the JSON mapping into two in-memory dictionaries (Persian-to-English and English-to-Persian, with English keys lowercased), print a success message with the entry count, and exit with an error message if the file is missing or contains invalid JSON.
 It should also support saving updates back to the JSON file, and provide an interactive interface allowing the user to look up translations in either direction, add new word pairs, and persist changes.

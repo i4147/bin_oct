@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """A Python script that transcribes a WAV audio file into text using speech recognition, processing the audio in fixed-length chunks (default 30 seconds) via pydub segmentation and Google's speech recognition API through SpeechRecognition.
 It takes an input WAV file path and writes recognized text incrementally to an output text file (default "out.txt"), printing progress information such as chunk count and durations as it works.
 The script gracefully handles Ctrl+C interruption via a SIGINT signal handler, saving already-transcribed progress before exiting, and it validates that the input file exists and warns if it lacks a .wav extension."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans the current working directory and its subdirectories to find all Git repositories (identified by the presence of a ".git" folder), then runs "git pull --ff-only" on each one found, printing progress messages for each repo it processes.
 The script should stop descending into a directory once a Git repo is found there, gracefully skip directories it lacks permission to read, and print a warning if any pull fails without halting the overall process.
 It takes no command-line inputs, operates on the current directory as the root, and outputs status messages to the console, finishing with a "Done." message."""

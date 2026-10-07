@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans the current directory using fastwalk for all PDF files, then renames each one by appending its total page count (as determined via pdfplumber) to the filename, skipping symlinks and files that already have the page count in their name or would collide with an existing filename.
 The script should use multiprocessing with a spawn-context pool of 8 workers to process files concurrently, printing progress messages for each rename, skip, or existing-file conflict.
 It should be structured as a standalone command-line utility with a main() entry point invoked via SystemExit."""

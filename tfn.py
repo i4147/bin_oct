@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans font files (e.g., TTF/OTF, using the extensions defined in a shared FONTEXT constant) and renames them based on metadata extracted from each font's internal "name" table via fontTools.
 It should read the family name and subfamily/style strings from the font, normalize the style using a STYLE_MAPPING dictionary (mapping variants like "bold italic", "semibold", "condensed", etc.
 to canonical suffixes), and construct a new filename combining the family name and mapped style.

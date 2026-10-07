@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dupeguru-ng: Modern duplicate file finder with Textual TUI Inspired by dupeGuru, rebuilt for Python 3.12+ with Textual 8.2.5"""
 
 from __future__ import annotations

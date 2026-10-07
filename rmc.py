@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a cross-platform (Termux/Linux) Python 3.12 command-line tool named "strip_comments" (version 2.1.0) that removes comments (and optionally docstrings/blank-line runs) from Python source files, using libcst for safe, syntax-preserving transformations.
 
 The script's purpose is to clean up `.py`, `.pyi`, and `.pyw` files by stripping inline and standalone comments while optionally also stripping docstrings and collapsing multiple consecutive blank lines, without breaking code structure, encoding declarations, or special "protected" comments (e.g. shebangs, coding declarations, `# noqa`, `# nosec`, `# pragma`, `# type:`, and formatter/linter directives like `# fmt`, `# isort`, `# mypy`, `# pyright`, `# pytype`, `# pylint`, `# ruff`, `# flake8`, `# yapf`). It must also correctly handle `# type: ignore` comments (which should still be stripped/treated as non-protected unless otherwise specified) versus other `# type:` comments (which are protected).

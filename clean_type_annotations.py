@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip type annotations from Python source files.
 The script rewrites ``.py`` files in place using libcst, removing: * parameter annotations, * return annotations, * PEP 695 type parameter lists on functions / classes, * annotated assignments (``x: int`` and ``x: int = 0``).
 Transformed source is validated with :func:`compile` before being written, so a broken transformation never clobbers the original file.

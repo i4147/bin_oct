@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """GitHub repository cloning utility with pluggable backends.
 Fetches repository information from GitHub, prompts for confirmation on large repositories, and clones the repository using one of several backends: ``gh``/``git`` subprocess calls (default), ``dulwich`` (pure Python), ``GitPython``, ``pygit2`` (libgit2 bindings), or ``typer`` (CLI wrapper).
 Backends that cannot perform a given operation fall back to subprocess calls.

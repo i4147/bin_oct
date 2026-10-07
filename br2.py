@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Compress each non-hidden subdirectory as `<name>.tar.br` and each regular file as `<name>.br` in the current directory: build tar archives in memory, Brotli-compress with quality 11 in chunks of 64 KiB, run both job types through `multiprocessing.pool.starmap` on a fixed pool of 8 workers, and log with loguru."""
 
 from __future__ import annotations

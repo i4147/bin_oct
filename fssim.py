@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a directory tree (defaulting to the current directory) to find files with similar content using fuzzy/context-triggered piecewise hashing via the ppdeep (ssdeep-compatible) library.
 It should walk all files recursively, compute a fuzzy hash for each file, then pairwise-compare the hashes against a given similarity threshold to cluster files into groups of near-duplicates, saving the pairwise match scores and file pairs to a "similars.json" file.
 Optionally use tabulate for formatted table output and colorama for colored console output if those libraries are available, falling back gracefully to plain output otherwise."""

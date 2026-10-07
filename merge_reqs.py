@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merge_reqs.py — unified requirements.txt generator.
 Combines the behaviour of 10 original scripts (imports2.py, imports3.py, imports4.py, imz.py, imz2.py, imz3.py, imz_plex.py, imzzz.py, mkreq.py, reqr.py) into a single CLI.
 Third-party (all optional): tqdm — progress bars (silently ignored if missing) xxhash — faster cache hashing (falls back to hashlib) zstandard — needed only for .tar.zst archives Usage ----- python merge_reqs.py scan [options] python merge_reqs.py metadata [options] Examples -------- python merge_reqs.py scan -d ./myproj -o requirements.txt python merge_reqs.py scan -d .

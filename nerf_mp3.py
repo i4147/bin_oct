@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python CLI tool that halves the bitrate of MP3 files.
 Requirements: - Use argparse to accept zero or more directory paths (default: current working directory).
 - Provide a --no-color flag to disable ANSI colored output.

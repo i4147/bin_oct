@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that validates HTML tag balance in or more files by subclassing html.parser.HTMLParser (as TagBalanceChecker)ened tags, recognize void/self-closing elements (br, img, input, hr, meta, link, etc.) that need no closing tag, and detect mismatched, unexpected, or unclosed closing/opening tags, recording each issue with its line/column position.
 The script should accept file paths via argparse, read and parse each file's contents, report any tag-balance errors found (including an optional auto-fix mode indicated by a fix_needed flag), and exit with a non-zero status code if problems are detected, while gracefully handling parsing exceptions."""
 

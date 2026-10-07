@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip comments and docstrings from Python source files, in place, using libcst.
 
 What is removed

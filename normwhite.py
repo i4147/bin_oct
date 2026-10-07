@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a file path as its single argument, reads the file's text content using UTF-8 encoding (ignoring decode errors), and normalizes irregular whitespace and invisible Unicode characters within it.
 It should replace various Unicode space-like characters (such as non-breaking spaces, line/paragraph separators, and other special spacing marks) with a regular ASCII space, and it should strip out zero-width characters (like zero-width space, zero-width joiner/non-joiner, and the byte-order mark) entirely by removing them.
 The cleaned text should then overwrite the original file in place, encoded as UTF-8.

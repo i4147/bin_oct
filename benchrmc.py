@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Small repeatable benchmark that never modifies the source tree."""
 
 from __future__ import annotations

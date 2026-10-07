@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python commandes exactly one argument, a filename, and exits with usage instructions and a nonzero status code if the argument is missing or extra arguments are given.
 The script should read the file's entire text content as UTF-8, replace every actual newline character with the literal two-character sequence backslash-n, and then overwrite the same file with this modified content.
 Use pathlib.Path for file reading and writing, and structure the code with a main() function invoked via SystemExit under the standard __main__ guard."""

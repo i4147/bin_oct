@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Termux-compatible Python 3.12 script (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that automates migrating a developer's local Git/SSH identity from an old GitHub account to a new one on an Android/Termux environment.
 
 The script should define constants at the top for:

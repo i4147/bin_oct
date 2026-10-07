@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a command-line Python script (intended to run on Termux/Android under `/data/data/com.termux/files/usr/bin/python3.12`, but should work generally on Linux systems with Ghostscript installed) that batch-compresses PDF files using Ghostscript.
 
 **Purpose:**

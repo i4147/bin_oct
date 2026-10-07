@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that fetches the PyPI package updates RSS feed (https://pypi.org/rss/updates.xml) via HTTP request, parses the XML with ElementTree to extract each item's title, link, description, publication date, and GUID, and splits the title into package name and version.
 The script should handle missing fields gracefully by defaulting to empty strings, and export the collected package update records to CSV and/or JSON output formats.
 It should use standard libraries (csv, json, xml.etree.ElementTree, datetime) alongside the requests library, and include basic error handling for network failures during the fetch operation."""

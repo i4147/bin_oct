@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans the current working directory recursively to find duplicate files based on content hashing.
 It should skip empty files, symlinks, and anything under ".git" directories, compute a hash for each remaining file in parallel using a helper function (get_xorhash via an mpf multiprocessing utility), and group file paths that share the same hash.
 The script should print each group of duplicates with their hash and file paths, report the total number of duplicate groups found, and exit with status 1 if no duplicates exist.

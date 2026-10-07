@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that moves one or more files into a fixed destination folder (~/isaac/may/scripts).
 It should accept file paths and/or glob patterns as command-line arguments, expanding each pattern via glob.glob (recursively) and filtering to existing files, printing a warning to stderr for any argument that matches nothing.
 For each resolved file it should move it into the destination directory using shutil.move, relying on a helper function unique_path (imported from a module named dh) to rename the target if a file with the same name already exists there, and print a line showing the original filename and the final destination filename.

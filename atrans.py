@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """translate_words.py ================== Translate a word-list file (one word per line) into a JSON mapping, using the first *usable* translation backend from a priority list.
 Features -------- * Backends tried in order: ``translate`` -> ``deep_translator`` -> ``googletrans``.
 If the preferred backend cannot be imported or initialized, the script automatically falls back to the next one and prints which backend was used.

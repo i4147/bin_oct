@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """[Tool: think]
   Params: {"content":"The user wants a prompt for an AI agent that can produce the given Python code. I need to analyze the code snippet (it's truncated but I can infer enough) and write a descriptive prompt covering purpose, inputs/outputs, and notable behavior. This is a single straightforward task - no need for multiple tools, just need to output the prompt text directly as my final answer. No tool calls needed."}
 Write a Python 3.12 command-line automation script designed to run on Termux (Android) at `/data/data/com.termux/files/usr/bin/python3.12` that migrates GitHub author identity information across a local Git repository and its working tree files.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Download URLs from a file (one per line) using pycurl with a multiprocessing pool of fixed 8 workers.
 On success, the URL is removed from the input file.
 On failure, the URL stays in the input file.

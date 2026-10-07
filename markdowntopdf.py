@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that converts Markdown files into styled PDF documents using the `markdown` and `weasyprint` libraries.
 
 The script's purpose is to batch-convert one or more Markdown files into PDF files, applying a custom CSS stylesheet (which may optionally be stored compressed as `.xz`) for styling, and supporting extended Markdown syntax via extensions.

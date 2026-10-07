@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """zstd_toolkit.py — unified zstandard compression / decompression CLI.
 Merged from the following scripts (all preserved via CLI flags/subcommands): compress_big_files_with_zstd.py -> compress -t files --min-size N -r csubzstd.py -> compress -t dirs pytrr.py -> archive-cwd [--verify] [--no-remove] split_tzstd.py -> split <file.tar.zst> <N> z5r.py -> compress -t both --min-size 5MB zcompressor.py -> compress -t files --level 19 zser.py -> compress -t both --level 21 zsr.py -> compress -t both --level 22 (output identical) zstd_compressor.py -> compress -t both zstder.py (compress) -> compress -t files -r [--dry-run] zstder.py (decompress) -> decompress -r Third-party dependencies (same as originals): * zstandard (required) * loguru (optional — falls back to stdlib logging)"""
 

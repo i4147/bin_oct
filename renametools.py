@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """renametools.py — unified file / directory renaming & normalization toolkit.
 Subcommands ----------- lowercase Lowercase file/dir names, extensions, or file contents.
 images Rename image files to include their dimensions.

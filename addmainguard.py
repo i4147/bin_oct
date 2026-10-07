@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """add_main_guard — detect and add ``if __name__ == "__main__":`` guards to Python files.
 This script merges two previously separate tools: * ``addmain.py`` — AST-based detection and refactoring.
 * ``addmainguard.py`` — regex-based detection and template insertion, with multiprocessing and directory exclusions.

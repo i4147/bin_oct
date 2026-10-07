@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans the current working directory for subdirectories containing a ".git" folder, identifying them as git repositories.
 For each such repository found, it should delete all other files and subdirectories inside it (keeping only the ".git" folder itself), using shutil.rmtree for directories and unlink for files.
 After processing, the script should print the relative paths of all top-level items remaining in the current working directory."""

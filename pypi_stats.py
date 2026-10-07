@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt instructing an AI coding agent to create a Python 3.12 command-line tool (for Termux on Android) called "pypistats" that queries the PyPI Stats API (https://pypistats.org/api/) to retrieve and display download statistics for PyPI packages.
 
 The tool must support the following subcommands/endpoints, mirroring the official PyPI Stats API:

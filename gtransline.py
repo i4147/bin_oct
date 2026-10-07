@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that recursively scans a directory of source files (skipping folders like .git, __pycache__, lazy, etc.) to find and translate embedded Chinese text into English, using either the googletrans or deep-translator library as the backend (exiting with an error if neither is installed).
 It should detect non-English text via a Unicode regex matching CJK character ranges with a configurable density threshold, process files in parallel using multiprocessing for speed, and log progress and results via the logging module.
 The script should accept command-line arguments (via argparse) to specify the target path and translation options, then rewrite the matched Chinese strings in place with their translated English equivalents."""

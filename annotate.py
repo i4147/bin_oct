@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """batch_annotate.py — Add OR remove type annotations on Python files.
 Two modes: annotate (default) Add annotations using a sibling .pyi stub via LibCST.
 A .pyi stub is REQUIRED beside each .py file.

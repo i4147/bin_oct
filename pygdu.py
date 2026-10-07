@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a terminal-based interactive disk usage analyzer.
 The script scans a target directory recursively, computes the total size of each entry, and displays a navigable TUI with per-item size, a proportional bar, status flags, and directory/file names.
 Use arrow keys or hjkl to navigate, Enter/l/Right to descend into directories, h/Left/Esc to go back up, and q or Ctrl-C to quit.

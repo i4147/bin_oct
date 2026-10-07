@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Recursively hash files with ssdeep and report similar pairs."""
 
 from __future__ import annotations

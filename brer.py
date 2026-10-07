@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a multi-threaded (multiprocessing-based) Brotli compression/decompression CLI tool.
 The script should: - Provide a command-line interface with mutually exclusive `-c/--compress` (default) and `-d/--decompress` modes.
 - Use a fixed pool of 8 worker processes via `multiprocessing.Pool.apply_async` (no `concurrent.futures`).

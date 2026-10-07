@@ -1,4 +1,26 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
+"""Write a Python 3.12 command-line script designed to run in a Termux environment (using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that organizes subdirectories of the current working directory into a specified number of balanced-size "group" folders.
+
+The script's purpose is to help distribute many subdirectories into N groups (e.g., for balanced storage, archiving, or splitting data across drives/uploads) such that the total size of each group is as evenly balanced as possible, using a greedy bin-packing approach based on directory size.
+
+Main behavior and requirements:
+
+1. **Command-line interface**: Use `argparse` to accept a required argument specifying the number of groups/parts (`n_parts`) to split the subdirectories into (e.g., via a positional or `-n`/`--parts` argument).
+
+2. **Directory size calculation**: Implement a helper function `get_direct` that recursively walks a directory (usingums the size bytes of all files within it, and gracefully handles `PermissionError` and `FileNotFoundError` by skipping inaccessible files/directories without crashing.
+
+3. **Subdirectory discovery**: Scan the current directory (`.`) for immediate subdirectories, excluding any directories whose names already start with `group_` (so re-running the script doesn't include previously created group If no subdirectories are found, print a message and exit gracefully.
+
+4. **Size reporting**: For each disc calculate and print its sizeabytes (formal places) in` - ribution algorithm**: Sort subdirectoriesbins" each and listories; for each directory (largest first), assignently having the smallest total size, and that bin's size.
+
+6. **Groupder creation and moving**: For each bin, create a folder named `group_1`, `group_2`, ..., `group_N` in the current directory (using `mkdir(exist_ok=True)`), print a header showing the group name and its total size in MB, then move each assigned subdirectory into that group folder (e.g., using `shutil.move`), printing progress for each moved item.
+
+7. **Output**: The script should print informative progress messages throughout — number of subdirectories found, individual directory sizes, group headers with total sizes, and confirmation of each directory being moved — so the user can follow the grouping and moving process in the terminal.
+
+8. Use `pathlib.Path` for all filesystem path operations, and import `os`, `shutil`, `Path` from `pathlib`, and `argparse` at the top of the script. Wrap the main logic in a function (e.g., `folderize_directories(n_parts: int)`) and call it from a `if __name__ == "__main__":` block after parsing arguments.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/26HV6fb987beusRwxWie6K"""
+
 import os
 import shutil
 from pathlib import Path

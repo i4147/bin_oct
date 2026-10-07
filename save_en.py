@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a JSON file path as its first argument, reads the file as a list of records, and extracts the "en" field from each record.
 It should write these English strings, one per line, into a new text file that shares the same base name as the input but with a ".txt" extension.
 After writing, the script should print a confirmation message indicating where the output was saved."""

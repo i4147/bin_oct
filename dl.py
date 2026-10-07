@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dl.py - Unified downloader toolbox.
 Merged from 10 related scripts; every original behavior is preserved behind a subcommand.
 See mapping below.

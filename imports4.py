@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Termux-targeted Python 3.12 command-line utility script (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) named something like `piplist` that scans Python source files to discover third-party import dependencies and checks their availability/installation status, cross-referencing a local PyPI index file.
 
 Purpose and behavior:ependency sc walk a directory (or single file) for `.py` files, skipping common irrelevant directories by default (`.git`, `.hg`, `.svn`, `.tox`, `.venv`, `venv`, `env`, `build`, `dist`, `__pycache__`, `node_modules`, `.mypy_cache`, `.pytest_cache`, `site-packages`, `.eggs`, `.idea`, `.vscode`), with an option to customize excluded directories via CLI args.

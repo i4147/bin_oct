@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """wheel_cleaner.py ================ Unified tool for finding "empty" Python wheels (wheels that ship only metadata / ``*.dist-info`` and no importable code) and for finding broken installations whose ``.dist-info`` directory contains only itself.
 Standard library only -- no third-party dependencies.
 Subcommands ----------- ``wheels`` Scan a directory for ``*.whl`` files, classify them and optionally move the empty ones into a destination subdirectory.

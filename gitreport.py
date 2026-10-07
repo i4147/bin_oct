@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Report files added in every commit of a git repo as JSON.
 Uses dulwich (pure Python git implementation) - no subprocess."""
 

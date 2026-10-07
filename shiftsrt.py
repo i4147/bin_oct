@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """srt_shift.py — unified SRT subtitle timestamp shifter.
 Shifts the start/end timestamps of SRT cues in place.
 One file, one command, all original behaviours reachable via flags.

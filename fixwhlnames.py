@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that fixes batch-renamed .whl files by reading the METADATA inside each wheel to recover the true package name and version, then renames files to the canonical PEP 427 wheel filename format.
 Use loguru for logging, pathlib for all path handling, multiprocessing.Pool.apply_async with a fixed pool of 8 workers for parallel info extraction, and full strict type annotations throughout.
 Support CLI flags: directory, --apply, --no-backup, --info-only.

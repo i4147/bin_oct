@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Clone a repo as a bare, single-branch mirror of its default branch, including all submodules (recursively).
 Usage: g2 <repo-url> [target-dir]"""
 

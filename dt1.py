@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Translate a text file in independent character-limited chunks.
 The script is designed for Termux and uses only lightweight, optional translation libraries.
 Translation libraries are imported lazily, so only the selected backend must be installed.

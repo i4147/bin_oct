@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Minify ``.js`` / ``.mjs`` / ``.cjs`` files in place using ``terser``.
 The script discovers JavaScript files (case-insensitively, across ``.js``, ``.mjs`` and ``.cjs`` extensions) under the paths supplied on the command line, runs ``terser`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is non-empty, not byte-identical, and strictly smaller by at least ``MIN_SAVINGS_BYTES`` — atomically replaces the original.
 ``--mangle`` and ``--compress`` are on by default and can be turned off with ``--no-mangle`` / ``--no-compress``.

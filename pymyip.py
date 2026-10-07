@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """A rooted-Android network utility script that runs the device's `ip addr` command via subprocess, parses its output with regex to extract network interfaces and their IPv4 addresses along with up/down state, and selects the most relevant active interface based on a defined priority order (wlan, eth, rmnet, tun, ppp) while excluding loopback.
 It then takes that interface's public IP and queries the ip-api.com geolocation web service to retrieve and display location details (country, region, city, ISP, coordinates).
 The script uses dataclasses to structure interface and location data, supports command-line arguments via argparse, and logs status/errors through the logging module."""

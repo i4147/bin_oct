@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3 command-line automation script (intended to run under Termux on Android, shebang `/data/data/com.termux/files/usr/bin/python3.12`) named `build_all.py` whose purpose is to discover and build every Python packaging project found under the current working directory, in parallel, and report which ones succeeded, failed, or were skipped.
 
 Functional requirements:

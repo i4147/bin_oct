@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merged_search.py - unified file-search toolkit.
 Combines nine standalone scripts into a single CLI with subcommands.
 Original -> merged mapping -------------------------- exnames.py -> python merged_search.py names <names_file> [directory] fdrg.py -> python merged_search.py fast <pattern> [-c] [-d DIR] pfind.py -> python merged_search.py find <pattern> [dirs...] prg.py -> python merged_search.py grep <pattern> [paths...] pyrg.py -> python merged_search.py grep <pattern> [paths...] -i -F ...

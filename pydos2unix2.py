@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Build a Python command-line utility that recursively scans a target directory and normalizes line endings in text files, converting Windows-style CRLF ("\r\n") to Unix-style LF ("\n") in place.
 Requirements and behavior: 1.
 **CLI interface** (via `argparse`): - A positional argument for the root directory to scan.

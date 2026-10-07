@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans every file under the current directory to detect environment variable assignment lines matching the pattern of an uppercase name followed by an equals sign (e.g., VAR_NAME=), extracting the variable name portion.
 It should read each file as UTF-8 text, gracefully catch and print an error for any file that cannot be processed, and collect all unique matched variable names into a set.
 Finally, it must write the sorted, unique variable names line by line to an output file named env_vars.txt and print a summary message stating how many unique environment variable names were found and saved."""

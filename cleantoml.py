@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """[Tool: think] Params: {"content":"The user wants a prompt describing the code, not code generation.
 This is a simple single-response task, no tools needed."} Write a Python script that recursively finds all TOML files under a given directory and strips comments from each using a tree-sitter TOML parser, trimming trailing spaces/tabs left before removed comments while preserving valid UTF-8 content.
 It should process files concurrently using a multiprocessing Pool with a fixed worker count (8), overwrite each file in place with the cleaned content, and track per-file timing along with original and resulting byte sizes (leveraging a helper like dh.fsz for size formatting).

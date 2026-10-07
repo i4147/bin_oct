@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Split PDFs into per-page PDFs, or extract per-page text to .txt files with --text.
 Regenerate this script: parse positional inputs plus -t/--text and --pool-method, resolve PDF files from files/directories (or CWD when empty) with pathlib, default output dir to ./output, then for each PDF either write ``<stem>_<padded>.pdf`` per page via pypdf or write ``<stem>_<padded>.txt`` per page when --text is set; run across files with a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async) and log with loguru."""
 

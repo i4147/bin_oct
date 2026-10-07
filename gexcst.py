@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Python Entity Extractor This module provides functionality to extract Python entities (functions, classes, and constants) from various sources including: - Python source files (.py) - Python files without extensions (detected by shebang or content) - Archive files (.whl, .zip, .tar.gz, .tgz, .tar.zst, .tar.xz, .tar, .zst) The extracted entities are saved to an output directory, organized by entity type.
 Usage: python entity_extractor.py The script will scan the current directory recursively for Python files and archives, extract top-level functions, classes, and constants, and save them to the 'output' directory organized by type."""
 

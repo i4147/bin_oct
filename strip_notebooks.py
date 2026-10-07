@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip outputs and execution counts from Jupyter notebook (.ipynb) files.
 Accepts files or directories as positional arguments (defaults to the current directory), recursively discovering notebooks while skipping ``.ipynb_checkpoints``.
 Uses a fixed multiprocessing.Pool of 8 workers for parallelism and loguru for logging."""

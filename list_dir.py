@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """listpy — unified directory and file listing toolkit.
 Subcommands ----------- stems Print the stem of each file in a directory, truncated at the first '-'.
 (from cls.py) dirs Print the name of each subdirectory, prefixed with '-'.

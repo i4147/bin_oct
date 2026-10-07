@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3.12 command-line utility script (intended to run under Termux on Android, using a shebang of `#!/data/data/com.termux/files/usr/bin/python3.12`) that scans Python files for syntax errors and quarantines the broken ones. The prompt should specify the following requirements:
 
 **Purpose**: The script recursively discovers `.py` files (using a helper `get_pyfiles` function imported from a local module named `dh`), parses each file with Python's `ast` module to detect syntax errors, and for every file that fails to parse, copies (or optionally moves) it into an `error` subfolder created inside that file's parent directory, preserving per-directory organization. Use `loguru` for logging progress, warnings, and errors throughout.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """bash2py.py Convert a bash script that contains one or more Python heredocs (e.g.
 `python - <<PY ...
 PY`) into standalone .py file(s), saved in the current working directory.

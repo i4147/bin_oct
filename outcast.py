@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a given source directory (defaulting to the Telegram app's cache folder on Android, `/sdcard/Android/data/org.telegram.messenger/cache`), finds the single largest file within it by size, and copies its contents to a destination file.
 The destination file should be placed in `/sdcard/Download/` and named with a random 6-letter lowercase string plus a `.mkv` extension, generated via a helper function.
 After copying, the script should print the destination filename along with the copied file's size in megabytes.

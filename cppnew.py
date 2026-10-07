@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a new C++ file with a starter template and open it in an editor.
 Usage: cppnew <filename.cpp>"""
 

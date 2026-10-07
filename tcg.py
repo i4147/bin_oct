@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Termux-focused Python CLI utility that reads script source code from the Android clipboard via termux-clipboard-get and saves it as a new executable script file.
 The script should take a target filename as an argument, infer the scripting language (python, bash, sh, or rust) from the file extension, and replace or insert the appropriate Termux-specific shebang line at the top of the clipboard content.
 It should place the resulting file into the correct script directory (such as ~/bin, ~/bashbin, or ~/.cargo/bin depending on language), make it executable, and also keep an archived copy under ~/isaac/may/scripts.
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 TERMUX_SHEBANGS = {
-    "python": "#!/data/data/com.termux/files/usr/bin/python3.12",
+    "python": "#!/data/data/com.termux/files/usr/bin/python",
     "bash": "#!/data/data/com.termux/files/usr/bin/bash",
     "sh": "#!/data/data/com.termux/files/usr/bin/sh",
     "rust": "#!/data/data/com.termux/files/home/.cargo/bin/rust-script",

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3 command-line script named `transliterate_names.py` Termux (Android) with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`, that recursively renames non-ASCII file and directory names to ASCII-safe equivalents in place.
 
 The script must behave as follows:

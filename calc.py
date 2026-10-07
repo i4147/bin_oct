@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a terminal-based calculator application using the Textual TUI framework.
 The script defines a Display widget for showing the current numeric value with right-aligned, bold styling, and a Calculator widget containing a grid of buttons (digits 0-9, decimal point, basic arithmetic operators, clear, and equals) styled with distinct colors for operator, equals, and clear buttons.
 It should handle button press events to build up numeric input, store the left operand and pending operator, perform the arithmetic calculation when equals is pressed, and reset state when clear is pressed, updating the display accordingly.

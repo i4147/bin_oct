@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a prompt that would instruct an AI coding agent to generate the following Python script.
 
 **Prompt to produce:**

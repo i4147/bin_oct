@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Smart Archiver - Intelligent compression and archiving utility.
 Automatically selects optimal compression algorithms based on file types, sizes, and content analysis.
 Supports multiple compression formats including zstd, brotli, lz4, lzma, gzip, and bz2 with parallel processing capabilities."""

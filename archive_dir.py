@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Archive a directory as .tar or .tar.gz and optionally clean up the source.
 Usage:
     python folder_archiver.py tar <folder_path> [--output PATH] [--keep] [--quiet]

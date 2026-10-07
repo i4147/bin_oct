@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that recursively removes comments and docstrings from Python files.
 The script should: - Walk files/directories given on the command line (or current directory by default).
 - Skip .git and __pycache__ directories, and symlinks.

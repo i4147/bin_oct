@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans two directories, ~/bashbin and ~/bin, for files with .sh and .py extensions respectively, and creates an extensionless symlink in the same directory pointing to each matching file.
 For each script, the symlink name should be the file's stem (filename without extension), resolved to the absolute path of the target file.
 If a non-symlink file already exists at the target symlink path, the script should delete it and replace it with the symlink; if a symlink already exists there, it should be left untouched; otherwise a new symlink is created.

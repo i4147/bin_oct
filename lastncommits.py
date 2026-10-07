@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that inspects the most recent N Git commits in the current repository and lists all files that were newly created (added) within them.
 It should accept N as a command-line argument, validate that it is a positive integer, and print usage instructions with examples if the argument is missing or invalid.
 Internally, it should run `git log` with `--diff-filter=A` and `--name-status` to detect added files, skip any that are symlinks, and return the results as a list of Path objects.

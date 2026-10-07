@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively finds all Rust (.rs) source files under a given directory, strips out all line and block comments from each file using tree-sitter's Rust grammar for accurate parsing, and writes the cleaned code back (either in place or to an output location).
 The script should use a multiprocessing pool (e.g., 8 workers) to process files in parallel for speed, print progress and timing information, and gracefully handle the case where the tree-sitter or tree-sitter-rust packages are missing by printing an installation hint and exiting.
 It should expose a RustCommentStripper class that parses source code into an AST, collects all comment nodes, and reconstructs the file content with those comment spans removed while preserving the surrounding code and line structure."""

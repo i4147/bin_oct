@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that scans a directory tree for .py files (excluding utils.py), parses each file's AST to extract top-level objects (functions, classes, and constants) along with their source code, and computes fuzzy hashes (using ssdeep) for each extracted object to detect near-duplicate or similar code across the codebase.
 The script should support multiprocessing to speed up file parsing and hashing, use rapidfuzz for similarity scoring between hashes, and group or report clusters of similar objects (.g., via a defaultdict keyed by hash or similarity threshold).
 It should accept command-line arguments (via argparse) for configuring the target directory and other options, gracefully handle missing dependencies by printing an install hint and exiting, and output results as structured data such as JSON."""

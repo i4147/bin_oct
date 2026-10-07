@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """wheel_tools.py ============== Unified command-line toolkit for inspecting, validating and cleaning Python wheel files (``*.whl``).
 Subcommands ----------- ``check`` Recursively scan a directory for wheels that dump importable files (``.py``/``.pyc``/``.pyd``/``.so``/``.dll``) directly into the root of ``site-packages``.
 Such wheels are moved into a "suspicious" folder.

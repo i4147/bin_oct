@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a local directory tree to find all existing Git repositories (folders containing a .git directory), then for each repository found, automatically creates a corresponding remote repository on GitHub using the GitHub REST API and a personal access token loaded from environment variables via dotenv.
 The script should handle the case where a GitHub repository with the same name already exists by detecting the 422 status code and printing a warning instead of failing.
 It should use recursive directory traversal to locate repos, and use requests for HTTP calls and GitPython (git.Repo) to interact with local repositories, presumably to add the new GitHub remote and push the code, printing progress and status messages with emoji indicators along the way.

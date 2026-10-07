@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Set up an encrypted dotfiles repo in $HOME using git + age + a Python filter.
 What it does: 1.
 Verifies age + git are installed.

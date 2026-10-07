@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """web2pdf — URL/HTML → PDF via WeasyPrint (Termux/ARM32-friendly)."""
 
 from __future__ import annotations

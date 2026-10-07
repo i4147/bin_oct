@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """
 translate_words.py -- translate a one-word-per-line file into a JSON map.
 

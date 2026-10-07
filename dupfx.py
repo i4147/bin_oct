@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Duplicate File Finder and Remover Scan a directory (recursively by default) for duplicate files by content, using a multi-phase approach (size grouping -> quick hash -> full hash) with multiprocessing.Pool.apply_async for parallelism.
 The script: - Skips .git directories unless --all/-a is given.
 Symlinks are always skipped.

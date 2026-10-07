@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip comments from JS/TS/JSX/TSX files using tree-sitter: gather target files, parse them in parallel with a multiprocessing pool of 8 workers, remove comment nodes, validate the cleaned output by re-parsing, and log via loguru."""
 
 from __future__ import annotations

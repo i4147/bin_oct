@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pybat.py — a Python port of the Rust `bat` crate.
 A `cat` clone with syntax highlighting, line numbers, Git modification markers, and pretty file headers.
 Install dependencies: pip install pygments Usage: python pybat.py [OPTIONS] [FILE...] Examples: python pybat.py main.py python pybat.py -n -r 10:40 app.rs python pybat.py --plain README.md python pybat.py -H 12 -H 20 config.yaml cat file.py | python pybat.py -l python - python pybat.py --list-languages python pybat.py --list-themes"""

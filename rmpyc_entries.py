@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scory for all `*.dist-info` folders and, for each one containing a `RECORD` file, rewrites that file by stripping out lines referencing compiled `.pyc` files as well as license-related entries (lines containing "licenses", "license.md", or "license.txt", case-insensitively).
 The script should use `sysconfig` to locate the purelib path, read and rewrite each RECORD file in place with UTF-8 encoding, print a confirmation message naming the cleaned file and its parent package folder, and finally print a summary message once all RECORD files have been processed."""
 

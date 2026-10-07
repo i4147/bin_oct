@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that strips leading shebang lines (e.g.
 "#!/...") from Python source files to reduce clutter/disk usage.
 It should accept file paths as command-line arguments, or if none are given, recursively discover all ".py" files in the current working directory using a helper "get_files" function.

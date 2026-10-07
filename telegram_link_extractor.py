@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Telegram Link Extractor (Merged Utility) Third-Party Dependencies: - telethon - python-dotenv Usage Examples: # 1.
 Replicate t.me1.py (Clash of Clans links, top 100 messages): python merged.py username_of_the_channel --pattern-preset coc --limit 100 # 2.
 Replicate telextractor.py (General links, search for 'pdf', save to file):  --search pdf --pattern-preset general --output links.txt --phone +989051708322

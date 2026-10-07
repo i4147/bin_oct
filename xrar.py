@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Termux-compatible Python 3.12 command-line script for extracting RAR archives (including multi-part/split RAR archives) on Android/Termux systems.
 
 Purpose:

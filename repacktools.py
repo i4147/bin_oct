@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """repack_tool.py — unified Python package → wheel repacker.
 This module merges the behaviour of eleven ad-hoc scripts that all do "take some installed/unpacked Python package and produce a .whl file".
 It exposes two subcommands: repack Repack installed packages discovered inside a site-packages directory (or the user/system site-packages, or a specific directory) into wheels.

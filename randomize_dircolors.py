@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that defines a large list of file extension strings (covering a wide variety of common and uncommon extensions, e.g.
 ".py", ".js", ".mp3", ".zip", etc.) and imports Path from pathlib along with random.choice, presumably to later select or generate random filenames/extensions.
 The script's main purpose is to serve as a reference dataset of file extensions for use in file-related utilities such as random file generation, extension filtering, or testing.

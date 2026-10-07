@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """chmodnorm.py — unified file/directory permission normalizer.
 Merges the behavior of five scripts: chmodi.py -> python chmodnorm.py all --parallel [--use-binary-check] dirperm.py -> python chmodnorm.py all [--dirs-only | --files-only] [--dry-run] [--show-examples] fileperm.py -> python chmodnorm.py files [--dry-run] [--show-examples] nchmod.py -> python chmodnorm.py addx (new) -> python chmodnorm.py deexec [PATTERN ...] # strip x bits Common conventions ------------------ Directories are normalized to 0o775 unless told otherwise.
 Files are normalized to 0o644, except: * already-executable files -> preserved * files with a `#!` shebang -> 0o755 * files inside an "exec dir" -> 0o755 * files with configured suffixes -> 0o755 (addx mode) The `deexec` mode strips execute bits from files matching one or more glob patterns.

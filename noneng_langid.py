@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Termux-targeted Python 3.12 command-line script that scans the current working directory tree for non-English text lines in source/text files, using language detection to flag likely-English content with a confidence score.
 
 The script should:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that renders an image directly in the terminal using ANSI truecolor escape codes.
 The script should accept an image file path as a command-line argument, open it with Pillow, resize it to fit the current terminal width (auto-detected via shutil.get_terminal_size), and adjust the height to compensate for character aspect ratio.
 It should iterate over pairs of pixel rows, using each pixel pair to set the background and foreground color of a half-block character (▀) so two vertically stacked pixels are displayed per printed character cell, resetting the color codes after each line.

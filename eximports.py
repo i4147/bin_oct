@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python CLI script that scans a directory tree for Python files, extracts every top-level import statement using tree-sitter, filters out imports that belong to the standard library or to already-installed packages, and writes the remaining third-party module names to "importz.txt".
 The generated script should: - Recursively discover "*.py" files under the current working directory.
 - Parse each file with tree_sitter_python and collect the text of any top-level node whose type is "import_statement" or "import_from_statement".

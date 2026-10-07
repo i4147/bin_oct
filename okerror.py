@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans all `.py` files in the current directory (excluding itself), runs `black --check` on each to verify formatting compliance, and sorts them into two subfolders: `ok/` for files that pass the check and `error/` for files that fail.
 It should create these directories if they don't exist, print progress messages showing the check result for each file, and avoid overwriting existing files at the destination by appending a numeric suffix (e.g., `_1`, `_2`) when a name collision occurs.
 The script should exit with the return code of the `main()` function."""

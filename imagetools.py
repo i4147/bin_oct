@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """imgtool.py — Unified image / HTML conversion toolkit.
 This single script merges the behaviour of 13 small scripts into one CLI with subcommands.
 Every original script's behaviour is reachable.

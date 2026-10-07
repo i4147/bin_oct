@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that loads a GitHub personal access token from a .env file in the user's home directory, then queries the GitHub Search API for Python-language repositories sorted by most recently updated, retrieving the top 50 results.
 It should authenticate the request using the token, parse the JSON response, and write a formatted report to a local file named ghpy.txt containing each repository's full name, URL, last updated timestamp, and star count.
 Finally, it should print a confirmation message indicating the output file location."""

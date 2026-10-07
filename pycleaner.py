@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pycleaner.py — unified Python cleanup toolkit.
 Merges behaviour from 10 scripts into a single argparse-driven CLI.
 Mapping (original -> merged): afk2.py -> pycleaner.py imports PATHS...

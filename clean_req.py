@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a requirements.txt file path as its single argument, reads its lines, and cleans each entry by stripping comments, environment markers (after ";"), extras (e.g.
 "[extra]"), and version specifiers (==, >=, <=, ~=, !=, ===, <, >), leaving only the bare package name.
 It should remove empty lines and duplicate entries, then sort the resulting package names case-grouped (uppercase-starting names first, lowercase-starting next, others last, alphabetically within each group).

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3.12 command-line script (intended to run under Termux on Android, using shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that cleans terminal/log text files by stripping ANequences and otherifacts, rewriting each file in place with the cleaned text.
 
 Purpose and behavior:

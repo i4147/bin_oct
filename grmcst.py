@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip comments and docstrings from Python source files using libcst.
 Preserves shebang lines, `# type:` directives, and `# fmt:` pragmas while removing all other comments and module/function/class docstrings.
 Discovers targets from CLI path arguments (defaults to CWD), processes them in a fixed multiprocessing.Pool of 8 workers, validates the result with ast.parse, and reports per-file status via loguru."""

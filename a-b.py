@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that removes lines from a first text file if they also appear as lines in a second text file.
 The script takes two file paths as command-line arguments: the file to filter and the file containing lines to exclude.
 It reads all lines from the second file into a set for comparison, then filters the first file's lines, keeping only those not present in that set.

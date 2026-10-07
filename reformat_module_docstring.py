@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line utility script (targeted to run under Termux's Python 3.12 interpreter, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that scans Python source files and reformats their module-level docstrings.
 
 The script's purpose:

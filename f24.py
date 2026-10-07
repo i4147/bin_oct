@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that finds files modified within the last 24 hours under the current working directory, using multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for path handling, loguru for logging, a tqdm progress bar, and complete strict type annotations plus docstrings."""
 
 from __future__ import annotations

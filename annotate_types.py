@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that applies type stub (.pyi) annotations from a typeshed-style file onto a target Python source file using libcst's ApplyTypeAnnotationsVisitor, then outputs or writes back the annotated source.
 It should include a CSTTransformer (TypeshedSanitizer) that sanitizes references to the internal "_typeshed" module by rewriting imports and attribute accesses to use "typing" (e.g., "Any") instead, so the stub types remain valid outside typeshed.
 The script should accept file paths via argparse, parse both source and stub files with libcst/ast, apply the annotation visitor with a CodemodContext, and likely support showing a diff (via difflib) of the changes, optionally invoking subprocess/tempfile for formatting or validation steps before finalizing output."""

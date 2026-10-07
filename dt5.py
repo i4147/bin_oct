@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """translate_chunks.py — Robust multi-backend text-file translator for Termux.
 Reads a text file, splits into word-boundary-preserving chunks, translates via pluggable backends (deep_translator, deepl, translate, googletrans, etc.), resumes from saved state, and writes JSON output with atomic saves.
 Features: - 2500-char chunks with word-boundary preservation - Multiple translation backends with fallback order - Retry logic (3 attempts, exponential backoff) - Thread-safe concurrent translation (≤2 workers) - Resume from existing JSON, skip translated chunks - Atomic writes (temp → rename every 10 chunks) - Failed chunks logged to separate file - Graceful Ctrl+C handling - Full debug logging to file, errors to stderr - Identity-translation detection (triggers retry) Platform: Termux (Android 7, armv8l 32-bit), Python 3.12 Author: Coding Coach Date: 2026-09-23"""

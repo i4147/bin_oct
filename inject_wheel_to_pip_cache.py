@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that populates the local pip wheel cache with pre-built wheel files so pip can install them offline without hitting the network.
 For each given wheel path, it should open the .whl as a zip archive, parse the dist-info/METADATA file to extract package fields (name, version, summary, author, license, requirements, etc.), and compute the file's size and SHA-224 hash.
 It should then locate pip's cache directory via `pip cache dir`, construct the appropriate cache subdirectory/filename (mirroring pip's own cache key scheme), copy the wheel file there, and write a JSON metadata sidecar file describing its origin and attributes.

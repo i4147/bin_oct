@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that reinstalls a list of APT packages on a Debian/Ubuntu system.
 It should take a file path as a command-line argument, where the file contains one package name per line, and validate that the file exists before proceeding.
 For each package, it should run "apt install --reinstall -y" via subprocess, printing progress with an index counter and a short delay between installs, while logging any package names that fail (non-zero exit code) to a reset file named "reinstall_failed.txt" in the user's home directory.

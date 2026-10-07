@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Remove obsolete or unwanted wheel files from a directory.
 Rules: 1.
 Drop ``py3-none-any`` wheels for packages in ``PY3_NONE_ANY_BLOCKLIST``.

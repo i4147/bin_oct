@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dataconv.py — universal data container converter.
 Convert between: csv, tsv, json, jsonl/ndjson, sqlite (.db), sql dump (.sql), excel (.xlsx/.xls/.xlsm), parquet, feather, orc, arrow, yaml, toml, xml, pickle, msgpack, avro, dbf, hdf5, netcdf, zarr, ods, xlsb, rds, dta, sav, sas7bdat, geojson, shapefile, bson, lua-like, ini, fixed-width, and more.
 Design ------ * Every loader returns a common in-memory model: Tables = {table_name: [ {col: value, ...}, ...

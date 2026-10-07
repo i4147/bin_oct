@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that reads a text file of URLs (passed as the first argument) where each line contains a URL with a "series" segment followed by a movie name, and groups these URLs by that extracted movie name.
 For each URL, it should decode and sanitize the movie name into a safe filename, skip and report lines with invalid or malformed URLs (missing the "series" segment), and write each group's URLs into a separate text file named after the movie inside a "split_movies" subdirectory created next to the input file.
 The script should handle missing/invalid input file arguments by printing usage instructions and exiting with an error code."""

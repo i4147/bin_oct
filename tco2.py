@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Translate one-word-per-line files on Termux Android 7 ARMv8l.
 This script targets Python 3.12 on 32-bit ARM Termux with limited memory.
 It uses only the standard library, loguru, and the selected backend package.

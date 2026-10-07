@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Refactor MicroPython .py sources to standard Python.
 Two transformations are applied: 1.
 Filenames Strip a leading 'u' from a .py filename when the remainder is a standard-library module name (e.g.

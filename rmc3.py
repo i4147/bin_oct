@@ -1,4 +1,37 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
+"""Prompt your AI agent to write:
+
+Create a Python 3.12 command-line utility (intended to run under Termux, with shebang `#!/data/data/com.termux/filesr/bin/python3.12`) named "strip_comments" (version "2.0.0") that strips comments, docstrings, type annotations, and/or commented-out code from Python source files (`.py` and `.pyi`), using `libcst` for parsing/transformation.
+
+Functional requirements:
+
+1. **CLI interface** (via `argparse`): accept one or more file or directory paths to process. When a directory is given, recursively walk it and collect all `.py`/`.pyi` files, skipping common non-source directories by default (`.git`, `.hg`, `.svn`, `.tox`, `.nox`, `.venv`, `venv`, `env`, `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `node_modules`, `build`, `dist`, `.eggs`).
+
+2. **Trans options** (exposed as CransformOptions`ields:
+   - `removeenience flag that forces both comment removal and docstring removal on.
+   - `remove_all_comments` — strip regular `#` comments.
+   - `remove_docstrings` — strip module/class/function docstrings.
+   - `remove_type_annotations` — strip variable/parameter/return type annotations.
+   - `remove_commented_code` — detect and remove comments that look like disabled/dead code (as opposed to prose comments).
+   - `collapse_blank_lines` — collapse resulting runs of multiple blank lines into a single blank line.
+   - `make_backup` — before modifying a file, save a backup copy using suffix `.pystripbak`.
+   - `overwrite_backup` — allow overwriting an existing backup file instead of refskipping. report what would change without writing any files.
+    that when `remove_all`ments` and `remove_docstrings` to true as well (d so use `object.__setattr__`ected comments**: certain comments`#!`), encoding declarations (`# -*- coding: ... -*-` / `coding:`/`coding=`), and tool directives such as `# fmt`, `# type`, `# noqa`, `# pylint`, `# ruff`, `# isort`, `# mypy`, `# pyright`, `# pragma` (case-insensitive, with optional trailing text/colons a regex constant for this detection.
+
+4. **Comment vs. commented-code heuristic**: when `remove_commented_code` is enabled, analyze comural-ines of Python code (e.g. byying to tokenize/parse the comment body so-like comments get removed whileserved ( also strips everything).
+
+5. **Process theokenize` module and/or `libcst` tra (Cove commentove docstring expression annotations from function par- optionally collapse multiple consecutive blank lines into one,
+   while preserving valid Python syntax and formatting as much as possible in the output.
+
+6. **File handling and results**: for each processed file, read the source, apply the requested transforms, and if content changed (and not a dry run): optionally write a `.pystripbak` backup first (respecting `overwrite_backup`/refusing to clobber existing backups unless allowed), then write the modified source back to the original path. Track per-file results with a `FileResult` dataclass storing `path`, `old_size`, and `new_size` (byte sizes), used later for reporting.
+
+7. **Parallel processing**: use the `multiprocessing` module to process multiple files concurrently, with a configurable number of worker processes (default max of 8) and a configurable chunk size (default 8) for distributing work, to speed up processing of large directory trees.
+
+8. **Output/reporting**: print a per-file or summary report of results (e.g., old size vs. new size, bytes/lines saved) to stdout, using ANSI green color codes (`\\x1b[32m` ... `\\x1b[0m`) to highlight sizes or savings in terminal output. Respry-run mode by clearly indRobustness**: hand parse failures per the errorue with other files r run), use `tempfileropriate for safe writely on `/`libcst` as needed for correctness.
+
+Structure the code with clear separation between CLI argument parsing, option dataclasses, CST transformer logic, file discovery/filtering, the parallel processing driver, and the reporting/output logic. Include the module-level constants shown (`PROGRAM`, `VERSION`, `DEFAULT_MAX_PROCESSES`, `DEFAULT_CHUNK_SIZE`, `PY_SUFFIXES`, `BACKUP_SUFFIX`, `GREEN`, `RESET`, `DEFAULT_SKIP_DIR_NAMES`, `PROTECTED_COMMENT_RE`) exactly as specified.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/d9fhChRKUVhYaKgZieU9rN"""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Build a command-line Python 3.12 web article/content extractor tool (designed to run under Termux on Android, using the shebang `#!/data/data/com.termr/bin/python3.12`) named `auto_extract` (version-tagged, e.g. "0.1.3"). The script should:
 
 **Purpose**: Fetch a web page from a given URL, respect robots.txt rules, extract the main readable content (title, body text, publication date, language, domain info) similar to a "readability"/boilerplate-removal tool, cache results on disk to avoid redundant network requests, and output the extracted article data (e.g. as JSON) to in a browser for preview.

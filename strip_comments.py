@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Strip comments from source files recursively.
 Prompt: Write a Python CLI that recursively strips comments from Rust, TOML, JavaScript/TypeScript, Python, Shell, and Lua files.
 Use multiprocessing.Pool with a fixed pool of 8 workers via apply_async.

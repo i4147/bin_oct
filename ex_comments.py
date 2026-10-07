@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans all ".py" files under the current directory (skipping hidden directories, "site-packages", and its own "output" folder), and uses tree-sitter with the tree-sitter-python grammar to parse each file and extract its top-level comment and expression-statement nodes.
 For each source folder containing such extracted snippets, it should group the results by relative folder path and write them into a corresponding "imports.py" file under an "output" directory, mirroring the original folder structure, joining multiple files' extracted content with blank lines.
 Finally, it should print a short completion message showing how many folders were processed."""

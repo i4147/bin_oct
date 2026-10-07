@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that merges all `.py` files in the current working directory into a single output file named after the folder (e.g., `foldername.py`).
 It should scan the directory for Python files, excluding the output file itself, sort them alphabetically, and concatenate their contents into the merged file.
 Before writing each file's content, the script must rewrite relative import statements (such as `from .

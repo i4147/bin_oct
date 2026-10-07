@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python CLI script that beautifies and reformats CSS files in place using the "cleancss" command-line tool.
 It should accept specific file paths as command-line arguments, or if none are given, automatically discover all .css and .min.css files in the current directory.
 For each file, it records the size before and after processing, prints per-file status (no change, success with bytes saved and percentage reduction, or error) using colored console output, and processes files in parallel via a multiprocessing helper.

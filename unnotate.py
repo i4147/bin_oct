@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that uses tree-sitter with the tree_sitter_languages Python grammar to parse Python source files and strip out static type annotations and "# type:" comments, effectively converting typed Python back into plain untyped Python.
 The tool should accept file or directory paths via command-line arguments, walk the filesystem to locate .py files, and process them safely (e.g., writing changes via temporary files while preserving file permissions).
 It should support multiprocessing for parallel processing of multiple files, report per-file results including whether content changed, any warnings, or errors encountered, and provide a Result dataclass summarizing each file's outcome.

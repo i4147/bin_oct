@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that builds a combined PDF with a hierarchical bookmark/outline structure from multiple HTML files listed in a table-of-contents input.
 It should parse an HTML/TOC file to extract nested section titles and their source file references (building a tree of Section objects with parent/child relationships and computed numbered paths), verify each referenced HTML file exists and that its title matches expectations (optionally auto-fixing titles), then merge the corresponding PDFs (using pypdf) into one output PDF while adding nested outline/bookmark entries reflecting the section hierarchy.
 It should use argparse for CLI options such as input/output paths and an overwrite flag, and use lxml.html for parsing HTML titles/content."""

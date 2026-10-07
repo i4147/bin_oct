@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that merges multiple PDF files into a single output PDF using pypdf.
 It should accept command-line arguments specifying individual PDF file paths and/or directories (from which it will collect all PDFs); if no arguments are given, it should default to all PDF files in the current working directory.
 Files must be sorted by a numeric index extracted from filenames matching a trailing "_<number>.pdf" pattern, placing files without that pattern at the end.

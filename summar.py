@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 command-line script intended to run in a Termux environment (using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that summarizes the text content of a file using the `summa` library's TextRank-based summarizer.
 
 The script should:

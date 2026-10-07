@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merge.py — unified base64 / data-URI extractor and converter.
 Consolidates 9 standalone scripts into a single CLI with subcommands.
 Original -> new invocation mapping ---------------------------------- cleanuri.py -> python merge.py extract-cleanuri --root .

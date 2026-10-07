@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that organizes files in the current working directory by moving each file into a subfolder named after its lowercase extension (files without an extension go into a folder called "no_extension").
 It should iterate over all entries in the current directory, skip anything that isn't a regular file, create the destination folder if it doesn't already exist, and then move the file into that folder using shutil.move, preserving the original filename.
 The script should run as a standalone executable module via a main() function invoked through the standard __main__ guard."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """git_squash_n.py Usage: python git_squash_n.py N [-b backend] [--patch-file PATCH] [--meta-file META] [--force] [--dry-run] Description: - Save the combined changes of the last N commits to a patch file and metadata JSON.
 - Reset the repo to the state before those N commits.
 - Apply the saved patch at once and create a single commit that reproduces the net effect.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a single-file, in-place TOML formatter script for Termux/Python (Python 3.11+, shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), named `tomlfmt.py`, that mimics the default formatting behavior of the `taplo` CLI formatter (format-only, no linting/validation beyond safety checks).
 
 **Purpose**: Reformat TOML files to a canonical, consistent style matching taplo's defaults, modifying files in place.

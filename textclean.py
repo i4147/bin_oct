@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """textclean.py — unified text-file cleaning toolkit.
 Merges the behaviour of ten small scripts into one CLI.
 Standard library only.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that in-place preprocesses all supported images under the current working directory using OpenCV (or Pillow fallback), runs OCR with pytesseract, writes .txt sidecar files, and processes images concurrently with a fixed multiprocessing.Pool of 8 workers using apply_async, logging progress via loguru, using pathlib for all path operations, and including full type annotations and docstrings throughout."""
 
 from __future__ import annotations

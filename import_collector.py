@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans the current directory for Python source files (using a helper `is_python_file` from a local `dh` module), parses each file's AST to collect top-level imported module/package names, and determines whether each one is actually installed by checking `importlib.metadata` and falling back to `importlib.util.find_spec`.
 It should use a predefined mapping (PACKAGE_MAPPING) to translate import names that differ from their PyPI package names (e.g.
 "cv2" to "opencv-python", "PIL" to "Pillow").

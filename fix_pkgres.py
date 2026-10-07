@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that recursively scans all .py files in the current directory for deprecated usages of the pkg_resources module, such as pkg_resources.get_distribution().version, pkg_resources.parse_version, pkg_resources.resource_filename, pkg_resources.Requirement.parse, and plain import statements.
 It should use regular expressions to detect these patterns, report the files where matches are found, and optionally support an autofix mode that rewrites the code to use modern equivalents (e.g., importlib.metadata.version and packaging.version.parse), inserting the necessary import statements while removing the old pkg_resources import.
 The script should accept a command-line flag to toggle autofix behavior and print a summary of how many occurrences or files were found/modified."""

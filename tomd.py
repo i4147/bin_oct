@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-converts HTML files into Markdown using readability-lxml to extract the main article content and markdownify to convert it to Markdown.
 It should accept file paths as command-line arguments, or if none are given, discover all HTML/HTM/XHTML files in the current directory via a helper function, skipping any file that already has a corresponding .md output.
 For each file it should read the HTML, extract the readable main content, convert it to Markdown, write the result next to the original with a .md extension, delete the original source file after a successful conversion, and print a success or failure message per file; a single file should be processed directly while multiple files should be processed in parallel via a multiprocessing helper."""

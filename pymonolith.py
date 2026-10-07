@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """monolith.py — Unified single-file webpage archiver.
 Merges the behaviours of ``monolithei.py`` and ``pymonolith.py`` into a single, well-structured CLI.
 Given a URL or a local HTML file, it downloads the page and produces one self-contained HTML document with external CSS / JS / images / fonts embedded.

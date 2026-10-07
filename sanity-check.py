@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that uses a custom "dh" module's runcmd helper to perform a system package sanity check on a Debian/Ubuntu-based machine.
 It should list all installed packages via dpkg-query, then for each package run "dpkg -l" to verify its status is "ii" (properly installed), printing warnings for any package not in a healthy state and tracking an issue count.
 It should also include a function that runs "apt-get -s upgrade" (simulated upgrade) to check for available updates, returning the raw output.

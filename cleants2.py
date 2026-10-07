@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python tool that recursively scans a directory tree, identifies source code files by extension across dozens of programming languages (JS, TS, Ruby, PHP, Java, C/C++, C#, Go, Rust, Swift, Kotlin, Scala, Lua, R, Julia, Dart, Elixir, Erlang, Haskell, Clojure, F#, Nim, etc.), and strips comments from each file using the appropriate tree-sitter grammar/parser for that language, dynamically importing the correct tree-sitter language module based on a file-extension-to-module mapping.
 It should process files in parallel using multiprocessing, track per-file results (success/failure, number of comments removed, processing time, file size, error messages) in a dataclass, and report overall statistics after the run.
 Include robust error handling so that unsupported file types or parsing failures for a single file don't crash the whole batch job."""

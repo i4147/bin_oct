@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dupe_tool.py — find, delete, or symlink duplicate files.
 Merges these originals into one CLI: dupf.py -> report findupy.py -> report --algorithm sha256 --json out.json xordup.py -> report --algorithm xorhash (or delete --algorithm xorhash) dupefix.py -> delete dupfx.py -> delete --keep newest --quick-hash fsimz.py -> delete --algorithm ppdeep dedupsym.py -> symlink --stash-dir ~/dups symdups.py -> symlink (and restore ) Usage examples -------------- python dupe_tool.py report -d ./photos python dupe_tool.py report --algorithm sha256 --json dups.json python dupe_tool.py delete -d ./downloads --dry-run python dupe_tool.py delete -d ./downloads --keep newest --quick-hash --trash python dupe_tool.py symlink -d ./data --stash-dir ~/dups python dupe_tool.py restore --manifest ~/.symlink_backup.json Third-party packages (all optional — fall back to stdlib): xxhash, tqdm, ppdeep, xorhash, loguru"""
 

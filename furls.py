@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that recursively scans a directory tree—including inside nested archive files (tar, zip, gz, xz, bz2, zst, whl, 7z, etc.)—to extract and collect all HTTP/HTTPS URLs found in text content, skipping excluded directories like .git and __pycache__ and enforcing a configurable maximum file size (default 15MB) to avoid scanning huge files.
 It should decode byte content using multiple fallback encodings (utf-8, latin-1, utf-16), apply a regex to detect URLs while stripping trailing punctuation, and optionally filter by file extension.
 Found URLs should be validated and categorized (e.g., git links vs.

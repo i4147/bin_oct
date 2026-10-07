@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Swap ``import re`` with ``import regex as re`` (or reverse) across all Python files in CWD.
 Regenerate this script: parse --reverse (and optional --pool-method), recursively find *.py files under CWD with pathlib, replace the first matching import line in each file using a regex pattern, run the update with a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), and log modified/errored files with loguru."""
 

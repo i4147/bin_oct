@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """HTML Formatter using Tree-sitter Formats HTML files so every tag starts on a new line."""
 
 from __future__ import annotations

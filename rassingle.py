@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """refactor_single_file.py — consolidate a small multi-file Python package into a single annotated module.
 Automates the mechanical parts of the refactor prompt: 1.
 merge every module into one file 2.

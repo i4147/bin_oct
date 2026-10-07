@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that performs a find-and-replace operation across all .py files in the current working directory.
 It should accept exactly two command-line arguments, the text to search for and the text to replace it with, decoding escape sequences (like \n) in both so multi-line snippets can be passed as strings.
 For each Python file found, it should read the content, check whether the old text is present, and if so replace all occurrences and write the file back, printing a checkmark and filename for each modified file while catching and reporting any read/write errors per file.

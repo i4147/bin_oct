@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """tpv - a terminal PDF viewer that needs no Python PDF bindings.
 Pages are rasterised by shelling out to one of the native PDF renderers that Termux ships as prebuilt 32-bit ARM binaries: * Ghostscript `gs` (pkg install ghostscript) * poppler `pdftoppm` (pkg install poppler) * MuPDF tools `mutool` (pkg install mupdf-tools) Every one of them can emit a binary PPM (P6) image, which is just an ASCII header followed by raw RGB bytes -- so the parser below is pure Python and needs no Pillow/numpy.
 Each page is then painted into the terminal using 24-bit-colour "half block" characters (U+2580): the foreground colour paints the upper pixel of a cell, the background colour the lower one, doubling the vertical resolution.

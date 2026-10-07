@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Detect (and optionally remove) unused imports from Python source files.
 Two detection engines are available: * **Built-in AST analyzer** (default) — fast, in-process, no external dependencies.
 Understands ``from __future__ import ...``, ``if TYPE_CHECKING:`` blocks, ``__all__ = [...]`` re-exports, and ``import *``.

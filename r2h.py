@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 script (intended to run as a Termux executable on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that batch-converts reStructuredText (.rst) files into Markdown (.md) files, replacing the originals.
 
 Requirements:

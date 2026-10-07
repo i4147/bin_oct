@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively removes comments from Vim script (.vim) files using the tree-sitter-vim grammar for accurate parsing.
 It should define a VimCommentRemover class that parses each file's content into a syntax tree, locates all comment nodes, and strips them from the byte content while preserving the rest of the code.
 The script should process files in parallel using multiprocessing, track per-file results (success status, number of comments removed, processing time, and error messages) via a ProcessResult dataclass, and accept file or directory paths as input, writing the cleaned content back to disk.

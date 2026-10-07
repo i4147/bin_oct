@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 script intended to run under Termux (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a custom directory listing utility (an `ls`-like tool) for the current working directory.
 
 Purpose and behavior:

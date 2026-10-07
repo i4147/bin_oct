@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pytokei_merged.py — count lines of code, comments, and blanks by language.
 Merged from: - pytokei.py - pytokei2.py Original mapping ---------------- pytokei.py -> python pytokei_merged.py [root] pytokei2.py -> python pytokei_merged.py [root] --no-report Both scripts count lines of code, comment lines, and blank lines for a set of languages.
 pytokei.py prints a final report; pytokei2.py computes the same statistics but does not print the final report (it still prints binary-file warnings).

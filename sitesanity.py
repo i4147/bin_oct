@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a command-line Python script that sanity-checks all installed Termux Python packages by verifying their recorded distribution files actually exist on disk and by validating their declared dependencies against the set of currently installed packages.
 It should use importlib.metadata to enumerate installed distributions, log results via the logging module to stdout with INFO-level formatting, and accept a repeatable "-i/--ignore" command-line argument for specifying glob patterns or filenames (e.g., "*.md") to skip during the missing-file check, always excluding ".pyc" files automatically.
 The script should report which package files are missing and which dependencies are broken or unsatisfied, helping identify corrupted or incomplete package installations."""

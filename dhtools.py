@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dh_tools.py — unified CLI for working with the ``dh`` package.
 Subcommands ----------- reverse Replace locally-copied dh function definitions with imports (i.e.
 "de-duplicate" your file against the dh package).

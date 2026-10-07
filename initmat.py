@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Initialize a maturin mixed Rust/Python project in the current directory.
 Usage: python init_maturin_project.py [pkgname] If pkgname is omitted, the current directory name is used."""
 

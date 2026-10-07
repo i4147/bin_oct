@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that takes a file path as a command-line argument and moves it into a "sbin" directory located in the user's home folder.
 Before moving, if a file with the same name already exists at the destination, the script must compute and compare the SHA-256 hashes (read in 32768-byte chunks) of both the source and destination files.
 If the hashes match, it should print messages indicating the target exists and the hashes are equal, delete the source file, and exit with status code 1 instead of moving it.

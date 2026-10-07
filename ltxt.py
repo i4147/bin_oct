@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Deduplicate lines across files grouped by extension in the current directory.
 Regenerate this script: use pathlib to walk CWD, skip hidden files and BIN_EXT extensions, group files by suffix, count stripped non-empty lines per extension with a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), then write lines occurring >=2 times to <extension>.txt using loguru for logging."""
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Design a Python 3 command-line utility (intended to run under Termux on Android, using the `/data/data/com.termux/files/usr/bin/python3.12` interpreter) that exports the contents of a SQLite database into JSON. script's purpose is to open a given SQLite database file in read-only mode, enumerate all user tables (and optionally other object types), and dump each table's rows into one or more JSON files, handling large tables efficiently and encoding binary (BLOB) data in a JSON-safe way.
 
 Key requirements and behavior:

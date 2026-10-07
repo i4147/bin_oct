@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dl — a small pip-style download manager for the command line.
 Features -------- * Three interchangeable HTTP backends (`-b python|requests|pycurl`).
 * Resumable downloads via `.part` files + HTTP `Range`.

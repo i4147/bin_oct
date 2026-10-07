@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """summarizer.py — Unified text summarization CLI.
 Combines three original scripts into one argparse-driven tool with a pluggable "backend" concept.
 Backends -------- nltk Frequency-based summarizer using NLTK (from `summa.py`).

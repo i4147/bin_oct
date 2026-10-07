@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Search PyPI packages by name (case-insensitive substring) using SQLite FTS5.
 Data flow: /sdcard/data/pip.db -- prebuilt SQLite database (read-only) The script auto-detects the table name and column names at runtime.
 It assumes the table has exactly two columns: the first is the package name (searchable), the second is the download count (sortable).

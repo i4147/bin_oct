@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """GitHub repository toolkit — one CLI for all the original scripts.
 Subcommands ----------- clone Parallel `git clone` (GitPython) of a repo list file.
 zip Parallel ZIP download via GitHub's /zipball API (requests).

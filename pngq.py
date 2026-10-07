@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Optimize ``.png`` files in place by shelling out to ``pngquant``.
 The script discovers PNG files (case-insensitively) under the paths supplied on the command line, runs ``pngquant`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is a well-formed PNG, not byte-identical, and strictly smaller — atomically replaces the original.
 Design highlights ----------------- * Discovery uses the Rust ``fastwalk`` extension (``walk_files``).

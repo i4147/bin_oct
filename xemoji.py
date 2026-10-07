@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3 script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that scans the current working directory recursively for emoji characters used in text files and exports all unique emojis found to a JSON file.
 
 Requirements and behavior:

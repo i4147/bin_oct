@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that beautifies HTML files in place using BeautifulSoup's prettify method.
 It should accept a list of file paths as command-line arguments, or if none are provided, recursively discover all ".html" files in the current working directory via a helper "get_files" function from a local "dh" module.
 Each file should be read, parsed, and prettified, only rewriting the file if the formatted content differs from the original, with any errors during processing caught and printed without stopping the script.

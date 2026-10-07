@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt instructing an AI coding agent to generate a single-file Python 3 (3+) commandility named for Termux (`#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a reusable OCR helper/library module (in version 0.8 The script must:
 
 **Purpose**: Provide a andes/ions for runningifically Tesseract and filesounding-box coordinates), and converincluding building well-formed XHTML/hOCR documents and XML tports/d standules — `argparse`, `codes`, `locale`, `log `types.SimpleN the with a Python version check thatImportError` if running under Python older than 3.4, with the message "PyOCR requ a module-level `ogger(__name__)`ERSION = (0, ple and `__version__ = "0.8.5"` string constants.

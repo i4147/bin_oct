@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """shebang_tool.py - unified shebang inspection and editing.
 Usage examples
 --------------

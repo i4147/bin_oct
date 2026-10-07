@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a command-line Python script that reads a file path from the first command-line argument, loads its full text content, and compresses it using the Compressor class from a compression_prompt module.
 The script should instantiate the Compressor, call its compress method with the file's text as input, and extract the compressed_text from the returned result.
 Finally, it should write the compressed output to a new file with the same name as the input but with a ".compressed" extension, placed alongside the original file."""

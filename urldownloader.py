@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """alone Python 3.12 script designed to run under Termux (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a reusable URL downloader utility module named `url_downloader` (version "1.0.5"), exposing exactly three public names via `__all__`: `get_resource`, `save_file`, and `SaveToDisk`.
 
 Purpose:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans archive files (wheels, zip, tar, tar.gz/tgz/xz/zst) for Python source files and extracts top-level entities such as functions and classes using the ast module, outputting each extracted entity's code and metadata (name, type, original file path) into an "output" directory.
 It should recursively walk through nested archives if needed, filter files by allowed Python extensions, and use multiprocessing (via Pool and cpu_count) to process multiple archives or files in parallel for performance.
 The script should handle file I/O robustly with shutil for temporary extraction and cleanup, and use regex where needed for auxiliary text parsing."""

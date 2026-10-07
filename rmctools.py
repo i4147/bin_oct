@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merged.py — unified Python source cleaner.
 Merges the behaviour of 11 near-duplicate scripts: aremci.py clean_py.py cleanpy2.py cormc.py grmc.py jtc.py jtc2.py pyjtc.py rmco.py rmmc.py rrmc.py Usage: python merged.py <command> [options] [paths...] Commands: libcst Strip comments/docstrings with libcst.
 ast Strip comments/docstrings using ast + ast.unparse (or astor).

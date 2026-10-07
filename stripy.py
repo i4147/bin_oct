@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Recursively strip comments and docstrings from Python files in-place.
 Uses :mod:`libcst` so that only comments / docstrings are removed without reformatting the rest of the file.
 * If stripping a docstring leaves a function/class body empty, a ``pass`` statement is inserted so the result stays valid Python.

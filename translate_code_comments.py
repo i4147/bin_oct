@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Translate comments, docstrings, print strings, and optionally arbitrary files.
 This script merges the behavior of five related scripts: pytrans.py -> python merged_translator.py scan [OPTIONS] pytranslator.py -> python merged_translator.py detect [OPTIONS] trans_py.py -> python merged_translator.py ast [OPTIONS] transjap.py -> python merged_translator.py japanese [OPTIONS] ultralinetrans.py -> python merged_translator.py batch [OPTIONS] Third-party dependencies: pip install deep-translator pycld2 langdetect Examples: # Translate comments, print strings, and docstrings using pycld2.
 python merged_translator.py scan .

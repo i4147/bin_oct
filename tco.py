@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Text file translator using the `translate` library.
 Modes: default : translate the input file in CHUNKS (~450 chars, split at line boundaries), save to <input>.<target> -l : line-by-line interactive mode — prints each translation immediately and saves {"<src>": ..., "<tgt>": ...} pairs to JSON.
 Lines longer than the query limit are split and re-joined.

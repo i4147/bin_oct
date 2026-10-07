@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pkg_toolkit.py — merged toolkit for Debian/Termux package and /system/bin inspection.
 Usage: python pkg_toolkit.py <subcommand> [options] Subcommands: check-system-bin Scan /system/bin and move same-name matching files from CWD.
 missing-files Audit installed dpkg packages for missing files.

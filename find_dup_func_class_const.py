@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans a directory tree of Python source files to detect duplicate top-level definitions (functions, classes, and module-level constant assignments) that are byte-for-byte identical across multiple files, using the ast module to parse each file and building a mapping keyed by (definition type, name, unparsed source code) to the file paths containing it, processing files concurrently for performance.
 For each set of duplicates found, the script should report the affected files and support automatically rewriting the duplicate files (via modify_affected_file, which reads and edits the source text) to remove or replace the redundant definitions, presumably consolidating them into a shared location.
 It should accept command-line arguments to configure input paths and behavior, and print a summary of duplicates detected and files modified."""

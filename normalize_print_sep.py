@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that scans one or more given paths (defaulting to the current directory) for .py files, using a regex to find calls like print or cprint that output a repeated single-character separator line (e.g.
 print('-'*42)) and normalizes them all to a consistent format.
 It should support recursive directory scanning, process files in parallel via multiprocessing.Pool, and take an autofix flag to decide whether to actually rewrite matching files or just report how many replacements would be made.

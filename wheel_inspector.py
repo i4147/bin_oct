@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python class named WheelInspector that inspects Python wheel (.whl) package files using zipfile, with an optional verbose logging mode (printing "[INSPECT]" prefixed messages) and using loguru as an import.
 It should implement an inspect_wheel method that takes a wheel file Path, returns an error dict if the file doesn't exist, and otherwise opens the zip archive to collect the filename, size in MB, total file count, list of all contained files, and a breakdown of file types.
 It must also parse the METADATA file (if present) into a key-value dictionary by splitting lines on the first colon, and read the WHEEL file's content for further processing.

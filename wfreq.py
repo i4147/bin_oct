@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Design a cross-platform Python 3.12 command-line tool (intended to run under Termux on Android, with a `/data/data/com.termux/files/usr/bin/python3.12` shebang) that scans one or more given directories recursively, extracts words from all readable text-like files, and builds a "personal dictionary" of words that are not recognized by a spellchecker — intended to be used as a custom/personal word list (e.g., for seeding a spellchecker's personal dictionary) at `~/.personal_dict`.
 
 Key requirements:

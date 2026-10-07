@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """extract_subs.py - extract embedded subtitle tracks from a video file.
 Merged from: ex_srt.py, ex_srt2.py, exsrt.py, exsrt2.py, exsrt3.py, getsrt.py, xsub.py.
 Requires the ffmpeg/ffprobe executables on PATH.

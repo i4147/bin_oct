@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """This script is a static dependency analyzer for Python projects that scans a directory tree to build a module dependency graph based on import statements, using AST parsing (with multiprocessing for performance) to resolve both absolute and relative imports into fully-qualified module names.
 It takes a root directory path (and optional exclusion path, package mode/name settings, and a maximum results limit defaulting to 10) as input via command-line arguments, then analyzes each Python file's imports and their transitive dependencies, likely using a BFS/queue-based traversal to compute dependency relationships.
 The output is a report identifying modules with the most dependencies or dependents, helping developers understand coupling and complexity within the codebase.

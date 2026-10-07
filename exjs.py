@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that extracts inline `<script>` blocks from HTML files and saves each one as a separate `.js` file inside a local `js/` directory (created if missing).
 It should use BeautifulSoup to parse each HTML file, find all script tags, and write their contents to randomly named files (via a `get_random_filename` helper), skipping the save and printing a colored warning if a filename collision occurs.
 Input files come from command-line arguments if provided, otherwise the script should automatically discover all `.html`/`htm` files in the current working directory using a `get_files` helper.

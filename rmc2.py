@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3.12 command-line tool (designed to run under Termux on Android, using the `/data/data/com.term/usr/bin/python3.12` shebang) that strips comments, docstrings, and/or type annotations from Python source files using `libcst` for safe, format-preserving parsing and transformation.
 
 **Purpose:**

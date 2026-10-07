@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """
 Write a Python script that recursively scans the current working directory for broken symbolic links (symlinks pointing to nonexistent targets), skipping any files inside ".git" directories.
 For each broken symlink found, it should either delete it and print a confirmation message, or, if the script is run with a "-d" command-line flag (dry-run mode), simply print the file name without deleting it.

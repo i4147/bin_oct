@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Design a Python command-line/library script (intended to run under Termux's Python 3.12, with a `#!/data/data/com.termux/files/usr/bin/python3.12` shebang) that implements a complete **TOML tokenizer, parser, and formatter/pretty-printer**.
 
 The script should include:

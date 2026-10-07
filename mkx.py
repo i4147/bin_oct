@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """mkx.py — make files in the current directory tree executable.
 Behaviors merged from two original scripts and applied in a single pass: * suffix mode (from make_executable.py): files whose suffix is in {.py,.sh,.bash,.pl,.rb,.pyw,.txt}, or files with no suffix, AND that start with a shebang ("#!").
 * heuristic mode (from mkx.py): files inside a bin/sbin/.bin directory, *.so* libraries, shebang files, or binary files with no suffix.

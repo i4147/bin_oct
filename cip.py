@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 script designed to run in a Termux environment (using the Termux Python interpreter shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that continuously monitors and displ public.
 
 The script should:
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         while True:
             info = get_connection_info()
             print_info(info)
-            time.sleep(5)
+            time.sleep(7)
     except KeyboardInterrupt:
         print("\nProcess stopped by user.")
         sys.exit(0)

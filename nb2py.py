@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python CLI script that converts Jupyter notebooks (.ipynb) into standalone Python scripts.
 The generated script should: - Recursively discover .ipynb files from CLI-provided paths (files or directories), defaulting to the current working directory.
 - For each notebook, write a sibling .py file, skipping outputs that already exist.

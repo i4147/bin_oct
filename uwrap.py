@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Universal command wrapper with: - Glob expansion for arguments - Colored output (auto-disables when not a TTY) - Logging to ~/tmp/log/apps/ - Exit code preservation - Optional timestamp prefix - Clipboard support via termux-clipboard-set (max 1MB) — ENABLED BY DEFAULT"""
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Find duplicate files under the current directory using size + xxhash64.
 Regenerate this script: recursively scan files with pathlib, skip symlinks, empty files, and cache directories, group candidates by size, hash them in a fixed 8-worker multiprocessing Pool chosen by --pool-method (map, starmap, imap_unordered, apply_async), then log duplicate groups and total bytes with loguru."""
 

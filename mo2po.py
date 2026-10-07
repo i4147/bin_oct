@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that converts GNU gettext binary .mo files into .po text files using the msgunfmt utility.
 It should first verify that msgunfmt is installed and accessible on the system, exiting with an error if not.
 Given one or more .mo file paths (via argparse), it should run msgunfmt on each, write the output to a corresponding .po file, validate that the result is non-empty, and optionally delete the original .mo file after a successful conversion.

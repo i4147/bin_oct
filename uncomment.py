@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3.12 command-line tool (designed to run under Termux on Android, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that strips comments from source code files across a codebase using `tree-sitter` for accurate, language-aware parsing.
 
 The tool must meet the following requirements:

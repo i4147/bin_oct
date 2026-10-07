@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python CLI script that optimizes PDF files by running qpdf with linearization and object-stream generation to reduce file size.
 It should accept file paths as command-line arguments, or if none are given, automatically discover all PDF files in the current directory; each file is processed by creating a temporary linearized copy, comparing its size to the original, replacing the original only if the new version is smaller, and printing before/after sizes and space saved (using helper functions fsz, get_files, gsz, mpf, and runcmd from a local dh module).
 Multiple files should be processed concurrently using a multiprocessing/thread pool helper with a worker limit of 4, while a single file is processed directly, and the script should report total directory space freed at the end when processing multiple files."""

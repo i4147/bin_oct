@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a filename as its first argument, reads the file line by line stripping whitespace, and wraps each line in double quotes (or single quotes if the line already contains a double quote).
 It should join these quoted items with commas into a single brace-enclosed set-like string, e.g.
 {"a", "b", "c"}, then overwrite the original file with this formatted content.

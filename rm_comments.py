@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Remove comments from non-binary text files by scanning a directory tree.
 This module scans a directory for non-binary files, removes Python-style ``#`` comments from each file (preserving strings and multi-line string literals), and writes the modified content back.
 It uses a fixed-size ``multiprocessing.Pool`` of 8 workers for parallelism, ``loguru`` for logging, and ``pathlib`` for all path handling.

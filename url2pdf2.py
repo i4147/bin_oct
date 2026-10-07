@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script designed to run in a Termux environment (using the Termux Python 3.12 interpreter shebang) that converts a given webpage into a downloaded PDF file.
 
 The script's purpose:

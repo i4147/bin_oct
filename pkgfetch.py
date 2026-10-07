@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pkgfetch.py - Resolve and download Python packages from PEP 503/691 indexes.
 Features: - Resolves PEP 508 requirements from PyPI-compatible simple indexes.
 - Falls back to Tsinghua and Yandex mirrors when PyPI/index mirrors fail.

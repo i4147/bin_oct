@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans the ~/.local/lib directory for shared library files (.so and versioned .so.* files) and automatically creates ".0" and ".1" versioned symlinks pointing to the base library, mimicking common SONAME symlink conventions.
 It should skip files that are already symlinks or already have numeric version suffixes matching a version pattern, deduplicate by base library name so each base is only processed once, and use regex to extract the base ".so" name from versioned filenames.
 For each expected symlink, it should check whether a correct symlink already exists (comparing either the link target string or resolved absolute path) and print a message indicating it already exists and is correct, skipping recreation in that case; if the lib directory doesn't exist, it should print an error and exit gracefully."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Convert camelCase identifiers to snake_case with reference renaming, undo, caching, and mmap I/O."""
 
 from __future__ import annotations

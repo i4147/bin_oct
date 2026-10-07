@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that takes a text file path, backs it up (creating a ".bak" copy), then restructures its content by splitting each paragraph into sentences using a regex-based sentence boundary detector (avoiding false splits on abbreviations like "Mr." or single-letter initials), and rewrapping each sentence's words onto lines within a maximum line-length constraint, preserving blank lines between paragraphs.
 It should handle missing files and read/write errors gracefully by printing descriptive error messages, and print a confirmation message showing the backup file's location before performing the restructuring."""
 

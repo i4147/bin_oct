@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python terminal application using the Textual framework that displays a side-by-side (or unified) diff between two text files.
 The script should accept two file path arguments via argparse, read their contents, compute line-by-line differences using Python's difflib, and render each line in a scrollable widget with color-coded backgrounds and text (e.g., dark gray for unchanged lines, red tones for removed lines, and presumably green tones for added lines), each prefixed with its line number and a marker character (" ", "-", "+", "?").
 It should include a custom DiffLine widget that escapes special markup characters, formats the line with proper padding, and applies styling based on the diff line type, with the overall app providing a Header, Footer, and horizontally/scrollably arranged containers for navigation."""

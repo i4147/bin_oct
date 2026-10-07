@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that removes duplicate top-level functions from Python files by comparing them against a reference file.
 The script should: - Use argparse to accept a reference .py file, zero or more target files/dirs (defaulting to the current directory), and an -a/--apply flag for dry-run vs actual removal.
 - Parse each file with the ast module, extract top-level FunctionDef nodes, and compute an MD5 hash of each function's normalized body plus its argument and return annotations.

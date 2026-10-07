@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Merge a small multi-file Python package into a single annotated module.
 Usage: script.py # scan current directory recursively script.py -f merged_input.py # read from a merged-file with # "# filename: relpath" sentinels script.py -o mypkg.py # choose output filename"""
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 command-line script designed to run in a Termux environment (using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that converts a web page into a PDF file using the `weasyprint` library.
 
 The script must define a function `convert_url_to_pdf(url: str, output_filename: str)` that:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merged_font_converter.py Merged refactor of fco.py and fontconverter.py.
 Features kept: - TTF / OTF / WOFF / WOFF2 conversion via fontTools.
 - Recursive directory input.

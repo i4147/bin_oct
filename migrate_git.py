@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """github_identity_migrate.py Automates migrating a local machine's GitHub identity: - Updates git config (global + local repos found under home dir) - Finds & replaces old username/email in text/config files under home dir - Generates a new SSH key pair - Finds and removes old SSH keys matching the old identity SAFETY: Defaults to DRY-RUN.
 Nothing is written/deleted until --apply is passed.
 IMPORTANT MANUAL STEPS (this script cannot do these for you): 1.

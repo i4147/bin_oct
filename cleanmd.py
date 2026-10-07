@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """remove_images.py — unified image-reference remover for Markdown, reStructuredText and HTML.
 Original-script mapping
 -----------------------

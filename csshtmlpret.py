@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a directory of HTML/CSS files, extracts and validates CSS property names by comparing them against a known reference list of valid CSS properties (parsed from an embedded text block), and reports any unrecognized or misspelled properties found.
 It should use BeautifulSoup for HTML parsing, support multiprocessing for scanning multiple files in parallel, and accept command-line arguments (via argparse) to specify the target path and other options.
 The script should print a summary of findings, including timing information from start to finish, and gracefully handle the case where BeautifulSoup4 is not installed by printing an installation hint."""

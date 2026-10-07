@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Minify and compress Python source code.
 Pipeline (per file): 1.
 Parse into an AST.

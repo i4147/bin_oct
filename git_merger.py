@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Design a prompt for an AI coding agent to generate a Termux-targeted Python 3.12 CLI tool that automates common Git branch-comparison and cherry-pick workflows using an interactive terminal UI.
 
 The prompt should specify the following:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Prompt:
 
 "Create a Python 3.12 command-line script intended to run under Termux (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that recursively scans the current working directory for text/source files and builds a word-frequency index, intended to help populate or update a personal spell-check dictionary.

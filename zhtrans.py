@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """merged_translate.py — unified Chinese→English translation utility.
 This single file replaces four scripts that overlapped heavily: chintrans.py -> python merged_translate.py chunked <input_file> transchin.py -> python merged_translate.py line <input_file> dtransline_chinese.py -> python merged_translate.py walk [paths ...] tchin.py -> python merged_translate.py whole <input_path> Common behaviour (line-oriented translation via Google Translate) is factored into shared helpers; each subcommand preserves its original script's distinctive logic.
 Third-party dependencies (install before running): pip install deep-translator loguru Examples -------- # Translate a single file in place, batching lines into ≤5000-char chunks.

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """unified_compress.py =================== Unified recursive compressor/decompressor for zstd and xz.
 Third-party dependencies used by the original scripts: - zstandard - loguru - lzma_mt - dh (only for fsz; a fallback is provided) Usage ----- python unified_compress.py zstd [options] [directory] python unified_compress.py xz [options] [directory] Original script mapping ----------------------- fast_compress.py -> python unified_compress.py zstd -c --dir .
 --threads 1 --chunk-size 131072 --pool-workers 8 --progress simple --tar-zst-skip-decompress --no-skip-so --legacy-extra-skips --stats-scale 100 fast_compress2.py -> python unified_compress.py zstd -c --dir .

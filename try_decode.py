@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that attempts to decode a binary file at a given path using a broad list of common and extra text encodings (UTF-8, UTF-16/32 variants, Latin-1, Windows codepages, GBK, Big5, Shift-JIS, KOI8, Mac encodings, etc.), reporting which encodings succeed and showing a truncated preview (default 500 characters) of the decoded text for verification.
 It should accept a file path, an optional output path to save the successfully decoded text, and an optional preview chunk size, printing a clear error if the input file does not exist.
 The script is intended to help users identify the correct character encoding of an unknown text file by trying multiple candidates and displaying readable samples of each successful decode."""

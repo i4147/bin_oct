@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-converts TTF/OTF font files into the WOFF format using fontTools.
 It should accept file paths as command-line arguments, or if none are given, automatically collect all .ttf and .otf files in the current working directory.
 For each font, it loads it with TTFont, sets its flavor to "woff", saves it under the same name with a .woff extension (generating a unique filename if one already exists), deletes the original source file on success, and prints a confirmation or error message.

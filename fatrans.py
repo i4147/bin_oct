@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Unified translation toolkit.
 Merged from four scripts that all wrap `deep_translator.GoogleTranslator` with slightly different pipelines.
 Every original behaviour is still reachable as a subcommand; the differing knobs are CLI flags.

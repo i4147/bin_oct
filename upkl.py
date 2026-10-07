@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that takes a file path as a command-line argument, loads the file's contents using pickle deserialization, and writes the resulting raw bytes to a new file sharing the same base name but with a ".raw" extension.
 The script should also print the deserialized data to standard output for inspection.
 It should use pathlib for path handling and read the input file in binary mode."""

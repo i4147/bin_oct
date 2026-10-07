@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """List the packages published by a PyPI user (or organisation) and, optionally, download the latest release of each of them.
 The list of package names is always saved to ``<user>.txt`` in the current working directory, one package per line.
 Examples -------- python pypi_user_packages.py micropython-lib python pypi_user_packages.py https://pypi.org/user/micropython-lib/ python pypi_user_packages.py micropython-lib -d python pypi_user_packages.py micropython-lib -d -b requests -o ./pkgs python pypi_user_packages.py micropython-lib -d -b pycurl -m 5 python pypi_user_packages.py micropython-lib -d -b aria2c -m 5 python pypi_user_packages.py micropython-lib -d -m 5 # httpx, 8 jobs Backends -------- * ``httpx`` (default) - uses the third-party ``httpx`` library.

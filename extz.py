@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """
 File extension reporter with colorization, smart directory filtering, and size tracking.
 Recursively scan current directory, report extension statistics with terminal-width-aware

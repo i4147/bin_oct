@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/data/data/com.termux/files/usr/bin/env python
 """
 add_hints.py — add simple, safe type hints to Python files using libcst.
 

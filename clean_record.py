@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans the current directory for all `*.dist-info` folders and cleans up their `RECORD` files.
 For each `RECORD` file found, it should parse each line as a CSV-style entry with the file path as the first field, and remove any entries pointing to files inside a `.dist-info` directory whose filename is not in an allowed whitelist (METADATA, RECORD, WHEEL, entry_points.txt, top_level.txt).
 Skipped/removed entries should be printed to stdout with a message indicating the removed path, and after processing each RECORD file the script should overwrite it with the filtered lines and print a confirmation message naming the dist-info folder.

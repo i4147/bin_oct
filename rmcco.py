@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python utility that strips comments and docstrings from Python source files and .whl archives.
 The script should: - Accept a file or directory path as a positional argument (default: current directory).
 - Recursively discover .py files and .whl archives, skipping common cache and virtualenv directories.

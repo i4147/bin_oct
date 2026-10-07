@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python image-processing command-line tool that uses PIL/Pillow, OpenCV, and NumPy to load, transform, and export images.
 It should provide argparse-based utilities for parsing custom values like colors (via ImageColor), ImageMagick-style geometry strings (WxH with optional !%^<> flags for resizing behavior), and positional offsets, then apply operations such as resizing with configurable resampling filters (nearest, box, bilinear, hamming, bicubic, lanczos), color adjustments, filtering, and compositing.
 The script should accept input/output file paths and processing options as command-line arguments, validating and converting them through dedicated parser functions, and raise clear argparse errors for malformed inputs."""

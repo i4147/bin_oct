@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that translates a large text file by splitting it into chunks (configurable chunk size) and translating each chunk via deep_translator (supporting multiple backend engines and language code mappings like Google, DeepL, MyMemory), using a thread pool with configurable worker count, retry-with-backoff logic, and inter-request delay to avoid rate limits.
 It should accept arguments for input/output/failed-chunk file paths, source/target languages, number of workers, delay, chunk size, and periodic save interval, writing successfully translated chunks incrementally to a JSON output file and logging failed chunks to a separate text file, while gracefully handling interrupts (e.g., SIGINT) to save progress before exiting, using loguru for logging throughout."""
 

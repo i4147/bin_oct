@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 script (intended to run under Termux on Android, using the Termux usr/bin/python3.12 interpreter) that acts as a thin command-line wrapper/launcher for a Node.js-based "felo" search/agent tool.
 
 Purpose:

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """
 Merged Python source code formatting/rewriting tool.
 Third-party dependencies (all optional, per-subcommand):

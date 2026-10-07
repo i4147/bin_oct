@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (intended to run under Termux, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a TOML file formatter/pretty-printer built on `tree-sitter`.
 
 The prompt should specify the following requirements:

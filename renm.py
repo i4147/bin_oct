@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Translate non-English filenames under a directory to English and rename each file.
 Regenerate this script: walk a directory with fastwalk.walk_files, collect unique filenames whose stem contains non-ASCII characters, translate stems via deep_translator.GoogleTranslator(auto->en) using a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), rename files deepest-first with dh.unique_path for collision safety, show tqdm progress, and log with loguru."""
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate requirements.txt files by inspecting Python source files for third-party imports.
 This script scans Python files in the current directory or its subdirectories, identifies third-party imports, and generates requirements.txt files listing packages that need to be installed.
 Features: - Scans all .py files recursively - Identifies third-party imports (excludes stdlib and local packages) - Optionally generates separate requirements.txt for each subdirectory - Uses multiprocessing for faster processing - Provides progress feedback for large codebases"""

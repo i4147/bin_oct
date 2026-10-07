@@ -1,4 +1,25 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
+"""Create a Termux-targeted Python 3.12 (using the `click` library for the command-line interface and the `ecstasy` library for colored/styled terminal text) that generates an open-source LICENSE file in the current directory (or a specified location) based on license templates stored in a sibling "files" directory relative to the script's location.
+
+**Purpose:**
+The tool should let a user quickly generate a license file (e.g., MIT, Apache-2.0, GPL, et specifying a license "kind" and an author name, while supporting a caching mechanism so the user doesn't have to repeatedly type the same author name or license kind on every invocation.
+
+**Behavior details:**
+1. **License discovery**: On startup, scan a `files` directory located one level up from the script's directory, treat each file's name (without extension) as alicense kind" (e.git`), and build a set of valid kinds validation.
+2. **Caching**: Maintain a cache file at `~/.license` storing the last-used `author` and `kind` as simple `key = value` lines (similar to an INI-style snippet).
+   - Provide a `read_cache()` function that reads the raw cache file content, raising a custom `LicenseError` (with a red "<Error>:" prefix styled via `ecstasy`) if the file can't be read.
+   - Provide a `read_author(cache)` function that uses a regex to extract the `author` value from the cached content. If found, print a green styled "Cache-Hit for author: '<value>'." message to stderr and return it. If not found, raise a `LicenseError` with a red styled "Cache-Miss for author." message instructing the user to supply an author via the `-a` switch.
+   - Provide an analogous `read_kind(cache)` function that does the same for the `kind` value (extracting it via regex, emitting Cache-Hit/Cache-Miss messages styled with `ecstasy`, and raising `LicenseError` with instructions to use the appropriate switch when missing).
+3. **Command-line interface**: Use `click` to define options such as an `-a/--author` option to explicitly pass the author name and a similar option to pass the license kind, overriding or supplementing the cache. Validate the supplied kind against the discovered `LICENSE_KINDS` set, erroring out (via `LicenseError`) if it's invalid.
+4. **License rendering**: Load the chosen template text file from the `files` directory, substitute placeholders (such as author name and current year, obtained via `datetime.date`) into the template, and write the final result to a `LICENSE` file.
+5. **Cache update**: After successfully resolving/validating the author and kind (whether from CLI flags or cache), update `~/.license` with the latest values for future runs.
+6. **Error handling & styling**: All error messages should go through the custom `LicenseError` exception (prefixed with a red "<Error>:" tag via `ecstasy.beautify`), and informational cache hit/miss messages should be printed to stderr with green/red `ecstasy`-styled text respectively.
+7. **Shebang**: The script should be written for Termux on Android, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`, and should rely only on standard library modules (`os`, `re`, `sys`, `datetime`, `typing`) plus the third-party `click` and `ecstasy` packages.
+
+Ensure the generated code is self-contained, well-typed (using `typing.Final` and type hints throughout), and follows the structure of: constants/messages defined at module level, small single-purpose helper functions (`get_license_kinds`, `read_cache`, ` etc.), and a final `click`-decorated command function that ties everything together to produce the LICENSE file.
+---
+LiveDoc: https://felo.ai/zh-Hans/livedoc/4MFMRobLUkFbPpNVZrBnqF"""
+
 import os
 import re
 import sys

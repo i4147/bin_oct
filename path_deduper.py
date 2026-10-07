@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that deduplicates the entries of the current PATH environment variable while preserving their original order, using an OrderedDict-based approach to filter out empty or repeated segments.
 The script should generate corresponding bash configuration lines (numbered variable assignments like P1, P2, etc., plus a combined export PATH statement) from the deduplicated path list.
 It should also read an existing .bashrc file's contents, and locate/strip out any previously auto-generated PATH deduplication block delimited by specific "# === PATH DEDUPLICATION (AUTO-GENERATED) ===" and "# === END PATH DEDUPLICATION ===" marker comments, returning the cleaned content ready for a fresh block to be appended."""

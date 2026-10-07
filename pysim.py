@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Similarity check script for Python files in the current directory.
 Detects shared functions, classes, and constants across files using content hashing."""
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """dedup_tool.py — Unified Python duplicate-object detector and refactorer.
 Merges the behavior of four standalone scripts into a single CLI: * dedupfunc.py — intra-file duplicate-function finder * dup_detector.py — recursive exact + fuzzy duplicate scanner * find_dup_func_class_const.py — recursive exact duplicate consolidator * remove_duplicate_functions.py — reference-driven duplicate remover Subcommands ----------- single Find / interactively remove duplicate functions in ONE file.
 scan Recursively scan a tree; save exact (and optionally fuzzy) duplicate reports as JSON; optionally refactor heavy duplicates into a shared module.

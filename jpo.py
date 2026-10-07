@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Optimize ``.jpeg`` / ``.jpg`` files in place by shelling out to ``jpegoptim``.
 The script discovers JPEG files (case-insensitively, across both ``.jpeg`` and ``.jpg`` extensions) under the paths supplied on the command line, runs ``jpegoptim`` on each of them through a bounded ``multiprocessing.Pool``, validates the result, and — only when the result is a well-formed JPEG, not byte-identical, and strictly smaller — atomically replaces the original.
 Design highlights ----------------- * Discovery uses the Rust ``fastwalk`` extension (``walk_files``).

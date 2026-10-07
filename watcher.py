@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Unified file & folder watcher.
 Merges the behaviour of your previous scripts: dw.py poll-based recursive folder watcher; optional copy to ~/tmp/tmp; exits when "boostraped 100%" appears in the tail of a modified file.
 fwatcher.py watches ~/.tor/tor.log; exits on "100% (done)".

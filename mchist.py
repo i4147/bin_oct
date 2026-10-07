@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that reads the Midnight Commander history file located at /data/data/com.termux/files/home/.local/share/mc/history, locates the "[cmdline]" section, and extracts each command line entry by stripping any leading "key=" prefix before the "=" sign.
 The script should deduplicate the collected commands using a set, then append each unique command as a new line to the bash history file at /data/data/com.termux/files/home/.bash_history, creating the file if it does not exist.
 It should stop parsing the cmdline section once it encounters an empty line, and all file operations should use UTF-8 encoding."""

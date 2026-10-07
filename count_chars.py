@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that counts the total number of characters in a text file specified as a command-line argument.
 The script should accept exactly one argument, the path to the input file, and print a usage message and exit with an error code if the argument count is incorrect.
 It should open the file using UTF-8 encoding, read its full contents, compute the character count, and print a message showing the filename and the count.

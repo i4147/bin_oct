@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that automatically translates the comments, docstrings, and print-statement string literals found in a given Python source file into another language (e.g., using an external translation API), while leaving actual code logic untouched.
 The script should use the ast module combined with a NodeVisitor to precisely locate translatable targets (print call string arguments, and docstrings of functions, async functions, classes, and modules), and use tokenize/regex to safely parse and reconstruct string and comment tokens including their quote styles and prefixes.
 It should support concurrent translation requests via ThreadPoolExecutor for speed, persist progress in a local JSON state file (.translation_state.json) to allow resuming interrupted runs, and accept command-line arguments (via argparse) for specifying the input file and other options.

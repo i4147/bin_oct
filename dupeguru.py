@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that scans one or more directory trees to find duplicate files by content, using a multi-stage approach for efficiency: first group files by exact size, then by a partial hash of the first 64KB, and finally confirm true duplicates with a full hash (e.g., MD5/BLAKE2), using multiprocessing to parallelize hashing.
 It should skip symlinks and common irrelevant directories (like .git, node_modules, venv, __pycache__, build/dist folders, and OS/IDE cache directories), and provide a helper to format byte sizes into human-readable strings (B, KiB, MiB, etc.).
 The script should accept root paths via argparse, walk the filesystem recursively while handling OSErrors gracefully, and output groups of duplicate files along with reclaimable space statistics."""

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans a given directory (skipping .git, __pycache__, node_moduleseles, and symlinks) to find image files with a specified extension list, then uses Tesseract OCR (via pytesseract and Pillow) to extract English text from each image using page segmentation mode 6, printing each result to stdout separated by dashed lines.
 The script should process files concurrently using joblib's Parallel with 2 jobs for efficiency, and include helper functions for breadth-first directory traversal (get_files) and parallel task execution (mpf) that can be reused with arbitrary processing functions."""
 

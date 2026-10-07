@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that recursively finds and compiles .py files into bytecode (.pyc) using the compileall module, relying on a helper module "dh" (with get_pyfiles and mpf) to enumerate target Python files.
 It should accept command-line arguments to control optimization level (0, 1, or 2 via -o/--optimize), whether to use legacy pyc placement (removing/replacing any old-style .pyc next to the source), and whether to delete the original .py source file after successful compilation.
 The script should skip symlinks, nonexistent paths, and anything under a .git directory, recurse into directories to process all contained .py files, and set the PYTHONPYCACHEPREFIX environment variable to "__pycache__" before processing, printing an error and returning a nonzero status if an invalid optimize level is supplied."""

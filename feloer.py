@@ -1,8 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
-"""Prepend an AI-generated "how to reproduce this" prompt as a module docstring to one or more self-contained .py files."""
-
+#!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
 import argparse
+import asyncio
 import fnmatch
 import os
 import re
@@ -36,6 +35,7 @@ PREAMBLE_RE = re.compile(
     r"^(?:sure[,!.]?|certainly[,!.]?|here(?:'s| is)[^\n]*|of course[,!.]?)\s*\n",
     re.IGNORECASE,
 )
+LIVEDOC_RE = re.compile(r"^\s*LiveDoc\s*:.*$", re.MULTILINE | re.IGNORECASE)
 
 
 def clean_response(text: str) -> str:
@@ -56,6 +56,7 @@ def clean_response(text: str) -> str:
     text = FENCE_RE.sub("", text)
     text = SHELL_PROMPT_RE.sub("", text)
     text = PREAMBLE_RE.sub("", text)
+    text = LIVEDOC_RE.sub("", text)
     text = text.strip()
     if not text:
         return ""
@@ -89,7 +90,24 @@ def has_module_docstring(body: str) -> bool:
     return s.startswith((DOC_TH1, DOC_TH2))
 
 
-def ask_felo(code: str) -> str:
+def strip_module_docstring(body: str) -> str:
+    s = body.lstrip()
+    quote = None
+    if s.startswith(DOC_TH1):
+        quote = DOC_TH1
+    elif s.startswith(DOC_TH2):
+        quote = DOC_TH2
+
+    if not quote:
+        return body
+
+    end_idx = s.find(quote, len(quote))
+    if end_idx != -1:
+        return s[end_idx + len(quote) :].lstrip("\r\n")
+    return body
+
+
+async def ask_felo(code: str) -> str:
     prompt = PROMPT_TEMPLATE.format(code=code)
     cmd = [
         "node",
@@ -102,57 +120,75 @@ def ask_felo(code: str) -> str:
         "300",
         "--verbose",
     ]
-    proc = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=FELO_TIMEOUT,
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
-    if proc.returncode != 0:
-        msg = f"felo exited {proc.returncode}: {proc.stderr.strip()[:300]}"
-        raise RuntimeError(msg)
-    return proc.stdout
-
-
-def annotate(path: str, dry_run: bool) -> None:
-    if path.endswith(("__init__.py", "__main__.py", "setup.py", "main.py", "test.py", "conf.py", "tests.py")):
-        return
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-    header, body = split_header(content)
-    if has_module_docstring(body):
-        print(f"[skip] {path}: module docstring already present")
-        return
-    print(f"[ask ] {path}")
     try:
-        raw = ask_felo(content)
-    except FileNotFoundError:
-        sys.exit(f"ERROR: '{FELO_CMD}' CLI not found in PATH.")
-    except subprocess.TimeoutExpired:
-        print(f"[time] {path}: felo timed out after {FELO_TIMEOUT}s")
-        return
-    except RuntimeError as e:
-        print(f"[err ] {path}: {e}")
-        return
-    if os.environ.get("FELO_DEBUG"):
-        print("----- RAW RESPONSE -----")
-        print(raw)
-        print("----- END RAW ----------")
-    cleaned = clean_response(raw)
-    if not cleaned:
-        print(f"[none] {path}: empty response after cleaning")
-        return
-    docstring = make_docstring(cleaned)
-    new_content = header + docstring + body
-    if dry_run:
-        print(f"--- would prepend to {path} ---")
-        print(docstring, end="")
-        print("--- end ---\n")
-        return
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    print(f"[ok  ] {path}")
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=float(FELO_TIMEOUT))
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        raise subprocess.TimeoutExpired(cmd, FELO_TIMEOUT)
+
+    if proc.returncode != 0:
+        msg = f"felo exited {proc.returncode}: {stderr.decode('utf-8', errors='replace').strip()[:300]}"
+        raise RuntimeError(msg)
+    return stdout.decode("utf-8", errors="replace")
+
+
+async def annotate(path: str, dry_run: bool, force: bool, sem: asyncio.Semaphore) -> None:
+    async with sem:
+        if path.endswith((
+            "__init__.py",
+            "__main__.py",
+            "setup.py",
+            "main.py",
+            "test.py",
+            "conf.py",
+            "tests.py",
+        )):
+            return
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        header, body = split_header(content)
+
+        if has_module_docstring(body):
+            if not force:
+                print(f"[skip] {path}: module docstring already present")
+                return
+            body = strip_module_docstring(body)
+
+        print(f"[ask ] {path}")
+        try:
+            raw = await ask_felo(content)
+        except FileNotFoundError:
+            sys.exit("ERROR: node CLI not found in PATH.")
+        except subprocess.TimeoutExpired:
+            print(f"[time] {path}: felo timed out after {FELO_TIMEOUT}s")
+            return
+        except RuntimeError as e:
+            print(f"[err ] {path}: {e}")
+            return
+        if os.environ.get("FELO_DEBUG"):
+            print("----- RAW RESPONSE -----")
+            print(raw)
+            print("----- END RAW ----------")
+        cleaned = clean_response(raw)
+        if not cleaned:
+            print(f"[none] {path}: empty response after cleaning")
+            return
+        docstring = make_docstring(cleaned)
+        new_content = header + docstring + body
+        if dry_run:
+            print(f"--- would prepend to {path} ---")
+            print(docstring, end="")
+            print("--- end ---\n")
+            return
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"[ok  ] {path}")
 
 
 def collect_files(inputs: list[str], pattern: str) -> list[str]:
@@ -182,9 +218,18 @@ def collect_files(inputs: list[str], pattern: str) -> list[str]:
     return sorted(out)
 
 
+async def process_paths(paths: list[str], dry_run: bool, force: bool, concurrency: int, delay: float) -> None:
+    sem = asyncio.Semaphore(concurrency)
+    tasks: list[asyncio.Task[None]] = []
+    for p in paths:
+        tasks.append(asyncio.create_task(annotate(p, dry_run, force, sem)))
+        if delay > 0:
+            await asyncio.sleep(delay)
+    await asyncio.gather(*tasks)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument(
@@ -194,23 +239,32 @@ def main() -> None:
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force overwrite existing module docstrings.",
+    )
+    ap.add_argument(
         "--pattern",
         default="*.py",
         help="Glob pattern used when expanding directories (default: *.py).",
     )
     ap.add_argument("--delay", type=float, default=0.0)
+    ap.add_argument(
+        "-j",
+        "--concurrency",
+        type=int,
+        default=4,
+        help="Number of concurrent workers.",
+    )
     args = ap.parse_args()
     inputs = args.paths or ["."]
     paths = collect_files(inputs, args.pattern)
     if not paths:
         print(f"No matching files found (pattern={args.pattern!r}).")
         return
-    print(f"Found {len(paths)} file(s). dry_run={args.dry_run}")
-    for i, p in enumerate(paths, 1):
-        print(f"\n=== [{i}/{len(paths)}] {p} ===")
-        annotate(p, args.dry_run)
-        if args.delay and i < len(paths):
-            time.sleep(args.delay)
+    print(f"Found {len(paths)} file(s). dry_run={args.dry_run} force={args.force}")
+    asyncio.run(process_paths(paths, args.dry_run, args.force, args.concurrency, args.delay))
 
 
 if __name__ == "__main__":

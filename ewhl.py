@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans a directory for .whl (Python wheel) files and detects which ones are "empty" (containing no actual .py files or code directories, only metadata like dist-info).
 It should open each wheel as a zip archive, inspect its file listing to classify it as empty or valid, print progress and results for each file checked, and move all detected empty wheels into a subdirectory (default name "empty_wheels") created inside the source directory, leaving valid wheels untouched.
 It should handle errors gracefully, such as invalid zip files or unreadable wheels, and accept the source directory and optional destination folder name as command-line arguments via argparse."""

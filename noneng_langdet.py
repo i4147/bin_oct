@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that recursively scans a directory for text files and detects non-English content line by line using the langdetect-hc library.
 The script should: - Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers for parallel file processing (no concurrent.futures, no configurable worker count).
 - Define dataclasses `DetectionResult` (path, non_english_lines, total_lines, error) and `ScanConfig` (confidence_threshold, min_line_length, max_line_length, chunk_size, encoding, text_extensions, ignore_dirs, ignore_files, batch_size).

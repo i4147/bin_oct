@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python class named JalaliDate that represents dates in the Persian (Jalali) calendar and provides conversion to and from the Gregorian calendar.
 It should store year, month, and day as attributes, and include class-level lists of Jalali month names and weekday names in both English and Farsi.
 Implement static/class methods such as today(), today_with_time(), and from_gregorian(year, month, day) that use Python's datetime module to get the current Gregorian date and convert it into a corresponding JalaliDate instance (with today_with_time() also returning the original datetime object alongside the JalaliDate).

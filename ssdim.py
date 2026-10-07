@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans a directory for files, computes fuzzy hashes using ssdeep, and groups files together based on a similarity threshold using pairwise ssdeep comparison scores.
 The script should support optional pretty-printed table output via tabulate and colorized console output via colorama when those libraries are available, gracefully degrading if not installed.
 It should also provide a function to copy each group of similar files into separate subfolders under an output directory, and be able to export results (such as grouped file paths and similarity data) to CSV and/or JSON formats.

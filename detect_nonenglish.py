@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """detect_nonenglish.py — unified multi-backend non-English text detector.
 Scans files and directories for non-English content using one of several pluggable language-detection backends.
 Usage ----- python detect_nonenglish.py --backend <name> [options] <path> [<path> ...] Backends -------- gcld3 Google's Compact Language Detector v3 (pip: gcld3) pycld2 Compact Language Detector v2 (pip: pycld2) langdetect Port of Google's language-detection library (pip: langdetect) lingua High-accuracy language detector (pip: lingua-language-detector) fast_langdetect fast, small language detector (pip: fast-langdetect) Examples -------- python detect_nonenglish.py --backend langdetect ./src python detect_nonenglish.py --backend lingua -l -o report.json ./src python detect_nonenglish.py --backend gcld3 --min-confidence 0.6 file.py The script writes either a human-readable text report (`*.txt`) or a structured JSON report (`*.json`) depending on the chosen output extension."""

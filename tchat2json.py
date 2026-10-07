@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Build a Termux-compatible Python 3.12 command-line script (shebang targeting `/data/data/com.termux/files/usr/bin/python3.12`) that parses plain-text chat log exports and converts them into structured data in JSON, CSV, or SQLite format.
 
 Core requirements:

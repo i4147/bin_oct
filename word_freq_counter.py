@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Word frequency counter: scan text files in a directory, count lowercase words in parallel using multiprocessing.Pool with 8 workers, and save sorted results to counter.json with loguru logging."""
 
 from __future__ import annotations

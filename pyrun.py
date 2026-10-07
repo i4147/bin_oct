@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python CLI tool that recursively finds and executes all .py files in a given directory, running each with a per-file timeout in parallel using a fixed multiprocessing.Pool of 8 workers via apply_async.
 Classify failures by error type (ModuleNotFoundError, SyntaxError, ImportError, AttributeError, TypeError, ValueError, KeyboardInterrupt, TimeoutError, etc.), print(a summary with loguru,) use pathlib exclusively for paths, provide full strict type annotations and docstrings, and expose CLI flags for directory, --no-recursive, --timeout, and --verbose."""
 

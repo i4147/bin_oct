@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that obfuscates a shell script by splitting its source code into small chunks (3 characters each) and assigning each chunk to a uniquely generated variable name, produced via a generator that yields single letters, then letter+"z" combinations, then two-letter+"z" combinations.
 The script should read the input shell script's path from the first command-line argument, generate shell variable assignment statements for each chunk (properly escaping single quotes), and finally output an `eval` statement that concatenates all the variable references to reconstruct and execute the original script.
 The obfuscated result is printed to stdout."""

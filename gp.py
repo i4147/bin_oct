@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script using GitPython that automates committing and pushing all changes in the current git repository.
 It should locate the repository (searching parent directories), copy a global ~/.gitignore into the project root if no local .gitignore exists, then stage all changes, create a timestamped commit message like "Auto-commit at YYYY-MM-DD HH:MM:SS", and push to the "origin" remote on the current active branch.
 The script should handle and report errors gracefully, such as not being inside a git repository, a detached HEAD state preventing branch detection, and Git command failures during push, exiting with a non-zero status and printing messages to stderr in these cases."""

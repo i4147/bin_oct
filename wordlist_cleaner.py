@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """wordlist_cleaner.py - A unified CLI tool for cleaning and filtering wordlists.
 This script merges the functionality of two different wordlist cleaning utilities: 1.
 'similar' mode: Finds and isolates words that differ by a single character.

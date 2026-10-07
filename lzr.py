@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a multi-threaded LZ4 compression/decompression CLI tool with the following spec: - Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers for parallel chunk compression.
 - Provide compress mode (default) that compresses files >=1KB and non-compressed extensions in CWD, and tars+compresses directories to .tar.lz4.
 - Provide decompress mode that extracts .tar.lz4 archives and decompresses .lz4 files.

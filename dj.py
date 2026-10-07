@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python cleanup utility that recursively scans the current working directory (skipping any paths under ".git" or "var") to find and delete known junk or license/metadata files by matching their lowercase filenames against a hardcoded list (e.g., "copyrightnotice.txt", "history.rst", ".ds_store", "gpl-2.0-only.txt", etc.), as well as files with junk extensions like .tmp, .bak, .log, .pyc.
 The script should support command-line flags "-e" to empty matched files (truncate content instead of deleting) and "-r" to remove/delete them, using shutil.rmtree for directories and unlink for files, printing errors to stderr on failure.
 It should also track and report a count of removed items, and include helper functions to detect files with multiple suffixes and to check whether a path should be skipped based on the exclusion directories."""

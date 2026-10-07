@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line utility that strips comments (both full-line and inline "#" comments, while preserving shebang lines) and blank lines from source files to reduce their size.
 It should accept one or more file or directory paths as arguments (via sys.argv), skip Markdown files, binary files, and files whose extensions are in a defined SOURCE_CODE_EXT exclusion list, and for Python files validate that the resulting cleaned code still parses correctly with ast.parse before overwriting the file.
 It relies on helper functions from a local "dh" module (cprint, fsz, get_nobinary, gsz, is_binary, mpf, remove_blank_lines) for colored console output, file size formatting/measurement, and binary detection, and should print per-file progress showing the filename, size reduction, and counts of removed full-line versus inline comments, using colored output to report success or invalid-code failures."""

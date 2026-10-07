@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Split a text file into fixed-size, word-boundary-respecting chunks, translate each chunk through a pluggable backend, and write results to a resumable JSON file.
 Designed for Termux on Android 7 / armv8l (32-bit ARM), Python 3.12.
 Avoids any backend or dependency that requires torch, ctranslate2, sentencepiece, grpcio, pydantic-core, or an LLM SDK without pydantic<2, since none of those reliably build/run on 32-bit ARM Termux.

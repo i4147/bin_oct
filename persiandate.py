@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that converts the current system date and time into the Persian (Jalali/Shamsi) calendar format.
 It should implement a Gregorian-to-Jalali date conversion algorithm, then build a formatted string containing the Persian weekday name, day, month name, year, and current time (HH:MM), all expressed using Persian-Farsi numerals instead of Arabic digits.
 The output should combine these elements into a single human-readable string similar to how date/time is displayed in Persian locale contexts."""

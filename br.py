@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python command-line utility script (targeting Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that compresses and decompresses files/directories using Brotli compression, with the following characteristics:
 
 **Purpose:**

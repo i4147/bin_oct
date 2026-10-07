@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that scans a directory tree for files whose extensions do not match their detected MIME type (using the `file` command) or shebang, then interactively or automatically renames them to the correct extension.
 Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for logging, pathlib for all path operations, complete type annotations, and a MIME-to-extension mapping table with skip lists."""
 

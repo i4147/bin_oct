@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that displays the contents of all files in the current working directory using a pager, similar to the Unix "more" or "less" command.
 It should accept an optional "-r/--recursive" flag to include files in subdirectories, sorting all discovered file paths case-insensitively.
 For each file, read its text content with UTF-8 encoding (replacing invalid characters) and prepend a header showing the file's relative path surrounded by lines of equal signs, gracefully handling unreadable files by inserting an error message instead of crashing.

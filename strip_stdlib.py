@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that cleans up a requirements.txt-style file by removing entries that correspond to Python standard library modules, using a predefined STDLIB set imported from a module named "dh".
 The script should accept the requirements file path as a command-line argument, read the file line by line while skipping blank lines and comments (lines starting with "#"), and normalize each package name by trimming whitespace, converting to lowercase, and replacing hyphens with underscores.
 After filtering out any names found in STDLIB, it should overwrite the original file with the remaining package names (one per line, newline-terminated) and print a message reporting how many packages were removed."""

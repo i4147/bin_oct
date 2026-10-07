@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 command-line script designed to run under Termux (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that finds and deletes empty files in the current working directory tree.
 
 Main behavior and requirements:

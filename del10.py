@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that accepts a filename as a required argument and an optional minimum line length (default 10) as a second argument.
 The script should read all lines from the specified file, filter out any lines whose stripped length is shorter than the given threshold, and overwrite the original file with only the remaining lines.
 It must print a usage message and exit if no filename is provided, and gracefully handle a missing file with a clear error message as well as catch and report any other exceptions that occur during processing."""

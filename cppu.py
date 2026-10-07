@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line utility that recursively formats source code files (Java, C/C++/headers, JS, JSON) in the current directory using clang-format with the LLVM style, in-place.
 It should accept optional file path arguments on the command line to format specific files instead of auto-discovering them via a helper function, and print the number of files found before processing.
 Processing should run in parallel across multiple files using a multiprocessing helper, each file's size before/after formatting should be compared and reported, and the script should print the total disk space change (in human-readable size) for the working directory after formatting completes.

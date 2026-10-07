@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python 3.12 command-line utility (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that analyzes and reports on "merged" Python source files — i.e., files that were produced by concatenating multiple original Python modules together, where each original file's content is preceded by a header comment line in the form `# File: <original_relative_path>`.
 
 The script's purpose is to:

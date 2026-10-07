@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
 This single script merges the behaviour of four earlier tools (gemc.py, t5.py, grmc_ts.py, tsrmc.py) behind one argparse CLI.
 Subcommands ----------- strip Remove comments (and optionally docstrings) from Python files.

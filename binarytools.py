@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """binarytoolkit.py — unified binary / executable utility toolkit.
 Merges four scripts that each manipulate binary / shared-object files: binortxt.py -> sort binsanity.py -> sanity soverify.py -> verify-so stripsofiles.py -> strip {size,ext,exclude,retry} Usage examples -------------- # Move every non-text file in ./downloads into ./downloads/binary/ python binarytoolkit.py sort ./downloads # Test every ELF executable under cwd; failed ones go to ./err/ python binarytoolkit.py sanity .
 --workers 4 # Verify every .so under /usr/lib loads via ctypes python binarytoolkit.py verify-so /usr/lib --verbose # Strip .so files >= 2 MB, verifying each still loads afterwards python binarytoolkit.py strip size /data/lib --min-mb 2.0 # Strip specific extensions python binarytoolkit.py strip ext ./lib --extensions .so .so.1 # Strip everything except files matching test/debug/profile python binarytoolkit.py strip exclude ./lib # Strip with up to 5 retries on failure python binarytoolkit.py strip retry ./lib --max-retries 5 Dependencies ------------ Standard library only.

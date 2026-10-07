@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """pkg_latest_tool.py Unified package/version cleanup and ARMv7 wheel URL filtering tool.
 Usage examples: python pkg_latest_tool.py urls urls.txt --output latest.txt --download python pkg_latest_tool.py clean --type wheel --dir .
 --dry-run --verbose python pkg_latest_tool.py clean --type all --recursive --workers 8 python pkg_latest_tool.py metadata .

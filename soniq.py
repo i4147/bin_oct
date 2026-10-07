@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line utility that reads a text file (given as a Path) and returns a de-duplicated, whitespace-stripped, sorted list of its non-empty lines, optionally restricted to a specific line range (start/end, 1-indexed) while preserving the rest of the file untouched.
 It should efficiently handle large files by using memory-mapped I/O when the file size exceeds a 1MB threshold, falling back to a simple read for smaller files, and gracefully handle decoding errors by skipping unreadable files with a warning.
 The script should also use multiprocessing (leveraging available CPU cores via a Pool) to process chunks of lines in parallel for stripping and filtering blank lines, and should first check whether the file is binary (via an external is_binary helper) before treating it as text."""

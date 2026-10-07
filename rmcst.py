@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """strip_inline_comments.py Remove inline (trailing) comments from Python source files using libcst.
 An "inline" comment is one that appears on the same physical line as code: DOWNLOAD_DIR = Path.cwd() # Overwritten by -d / --dir ^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^ removed # A standalone comment on its own line is preserved.
 x = 1 Files are rewritten in place, but only when at least one inline comment was removed *and* the transformed source still parses as valid Python.

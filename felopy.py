@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """
 Wrapper for `felo superagent` that saves the returned code as a Python file.
 Usage:

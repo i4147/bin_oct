@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Python equivalent of: for f in *.whl; do unzip $f rm -v $f done Behavior: * Iterate over every .whl file (a .whl is just a ZIP archive) in the target directory.
 * Extract each archive into the same directory that contains it.
 * Delete the original .whl **only if extraction succeeded**.

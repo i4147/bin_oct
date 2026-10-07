@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a filename as an argument and removes invisible or control Unicode characters from the file's text, while preserving newline, carriage return, and tab characters.
 The script should read the file as UTF-8, filter out characters whose Unicode category starts with "C" (control/format/other invisible categories), and overwrite the original file with the cleaned content.
 It should print a success message when done, and handle errors gracefully by printing a friendly message if the file is not found or if any other exception occurs.

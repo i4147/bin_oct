@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a prompt for an AI coding agent to generate a Python 3 command-line script with the following purpose and behavior:
 
 **Purpose**: A BibTeX bibliography cleaning and enrichment tool designed for Termux/Android (shebang pointing to `/data/data/com.termux/files/usr/bin/python3.12`) that validates, corrects, and normalizes entries in a `.bib` file by cross-referencing them against known citation anthologies and online metadata sources (suchBLP, CrossRefD APIs).

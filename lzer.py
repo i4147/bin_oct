@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively walks a given directory (defaulting to the current directory) and compresses each file in place using LZ4 frame compression at maximum compression level, saving each output as the original filename with an added ".lz4" extension and then deleting the original file.
 It should skip directories, files already ending in ".lz4", and files with other common archive/compressed extensions (like .gz, .br, .xz, .zst, .bz2, .zip, .whl) to avoid recompressing already-compressed data.
 For large files above a defined size threshold, it should compress in streaming chunks to limit memory usage, while smaller files are read and compressed all at once.

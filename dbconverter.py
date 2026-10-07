@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Convert data container file formats to each other.
 Supported formats: .json .jsonl/.ndjson .csv .tsv .pkl/.pickle .sqlite/.db/.sqlite3 .parquet/.pq .xlsx/.xls Usage: python convert.py input.json -d csv python convert.py data.sqlite -d jsonl python convert.py table.csv -d sqlite -o out.db"""
 

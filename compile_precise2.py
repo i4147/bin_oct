@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that builds a self-contained CSS string with embedded web fonts for a WeasyPrint PDF/HTML rendering pipeline.
 It should read TrueType font files (Inter Regular, Bold, Italic, BoldItalic, and JetBrains Mono Regular) from the current directory, base64-encode their binary contents, and inject them into corresponding @font-face rules using data URIs, skipping and warning (without failing) for any font file that is missing so WeasyPrint falls back to default system fonts for that style.
 The main output is an assembled CSS string containing only the @font-face blocks for fonts that were successfully found and encoded, with helper functions handling file reading, base64 conversion, and console status/warning messages throughout the process."""

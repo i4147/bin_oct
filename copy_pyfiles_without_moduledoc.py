@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Copy .py files without module docstrings to ~/tmp/notannotated."""
 
 from __future__ import annotations

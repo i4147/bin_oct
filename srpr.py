@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 script intended to run under Termux (on Android) using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`. The script's purpose is to iterate over every lowercase letter of the English alphabet (a–z) and, for each letter, execute an external command named `srp` passing that letter as its single argument, using a helper function `runcmd` imported from a local module named `dh`.
 
 Main requirements and behavior:

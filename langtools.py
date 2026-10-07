@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """langtool.py — unified language-detection / filtering toolkit.
 Subcommands ----------- move-chinese Move files containing Chinese (CJK) characters into a folder.
 filter-lines Filter non-English lines out of a single file (gcld3, or gcld3+NLTK with --strict).

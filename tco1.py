@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Translate a one-word-per-line file into a JSON mapping on Termux.
 Target platform --------------- This script is designed for Termux on Android 7 running Python 3.12 on 32-bit ARM (armv8l).
 It uses only the Python standard library, loguru, and the backend selected by the user.

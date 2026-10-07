@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Fix string literals in a (possibly invalid) JSON file.
 Usage: python fix_json.py <json-file> Per string literal we: 1.
 Convert any [ ] { } (escaped or not) into ( ).

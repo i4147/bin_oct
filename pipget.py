@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Download Python packages from a PyPI mirror.
 Backend ------- All network I/O goes through ``httpx.AsyncClient`` (async, connection-pooled, supports streaming).
 Packages are processed concurrently, bounded by an ``asyncio.Semaphore``.

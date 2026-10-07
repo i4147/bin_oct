@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """urlkit.py — unified URL extraction / cleaning / processing toolkit.
 Merges the behavior of: clean_urls.py, exlinks.py, file_urls.py, filter_jscss_links.py, furl.py, move_gitlinks.py, process_urls.py, process_urls_aggresive.py, saveurl.py, split_urls.py, urlzz.py, xfile_urls.py Third-party packages (imported lazily / optionally per subcommand): requests — required by fetch-files --download py7zr — required to scan .7z archives pywebcopy — required by save-page chardet — optional; used for encoding auto-detection loguru — optional; falls back to stdlib logging tqdm — optional; falls back to no-op progress Original → merged mapping ------------------------- clean_urls.py -> python urlkit.py clean --input urls.txt exlinks.py -> python urlkit.py scan --archives-only .
 file_urls.py -> python urlkit.py split --mode grouped -i urls.txt filter_jscss_links.py -> python urlkit.py filter-jscss -i urls.txt furl.py -> python urlkit.py scan --exclude-git-from-output .

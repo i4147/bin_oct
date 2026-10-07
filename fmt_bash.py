@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Format shell scripts under CWD with shfmt -w.
 Behavior: * If exactly one file path is given on the command line, format it directly (no multiprocessing Pool).
 The file does NOT need a ``.sh`` extension or a shebang -- it is treated as a shell script as long as it is not binary.

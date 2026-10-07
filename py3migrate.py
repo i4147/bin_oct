@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """py3migrate.py — unified Python 2 → 3 migration toolbox.
 Subcommands ----------- detect Report whether files look like Python 2 or Python 3.
 refactor Rewrite Py2 code to Py3 using lib2to3 fixers.

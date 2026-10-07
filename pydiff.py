@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Create a Python command Android, using the shebang `/data/data/com.termux/files/usr/bin/python3.12`) that compares two text files line-by-line and reports the differences between them.
 
 **Purpose:**

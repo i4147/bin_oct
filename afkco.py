@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that scans Python source files (including inside zip/tar archives, with optional zstandard support) to detect unused imports using the ast module, tracking special cases like TYPE_CHECKING blocks, __future__ imports, __all__ exports, and star imports.
 It should support recursive directory scanning, multiprocessing for parallel file analysis, and colored terminal output that can be disabled, producing a report of unused imports per file along with file size and any errors encountered.
 The script should accept command-line arguments (via argparse) to configure input paths, output format, and processing options, and output results in a human-readable format for developers to clean up unused imports in their codebase."""

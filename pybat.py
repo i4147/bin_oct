@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a complete Python 3 script pybat.py that reimplements the core features of the Rust bat command.
 Use Pygments for syntax highlighting.
 Support multiple files and stdin (-).

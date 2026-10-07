@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that reads a text file and rewraps its content so each line fits within a given width, preserving paragraph breaks (splitting on blank lines) while leaving empty lines untouched.
 It should use argparse to accept a file path, an optional "-i/--inplace" flag to overwrite the original file instead of printing to stdout, and an optional "-w/--width" argument to override the wrap width, defaulting to the current terminal width when not specified.
 The wrapping logic should use textwrap.fill per line with break_long_words and break_on_hyphens disabled, then rejoin wrapped lines and paragraphs, and the script should handle file reading/writing and output appropriately based on the in-place flag."""

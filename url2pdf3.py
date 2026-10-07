@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/python3.12
+#!/data/data/com.termux/files/usr/bin/env python
 """Write a Python 3.12 command-line script designed to run under Termux on Android (shebang: `#!/data/data/com.termux/files/usr/bin/python3.12`) that converts a given webpage URL into a saved PDF file.
 
 Main behavior and requirements:
