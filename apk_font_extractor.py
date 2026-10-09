@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Extract .ttf, .woff, and .woff2 fonts from APK files recursively.
-This script scans APK files (or directories of APK files) for embedded TrueType (.ttf), WOFF (.woff), and WOFF2 (.woff2) font files.
-It reads each font's metadata using fontTools, renames the font to a canonical ``Family-Style.ext`` filename, and writes the fonts to an output directory.
-Use a multiprocessing pool of 8 workers to process APKs in parallel."""
 
 from __future__ import annotations
 import argparse

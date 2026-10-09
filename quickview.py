@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a terminal-based (curses) interactive file browser for Python that lists all regular files in the current directory alphabetically and lets the user page through them one at a time, displaying a colored header showing the current file's index and name along with a preview of the first 20 lines (reading up to LINES_PER_FILE lines via readline, replacing decode errors, and gracefully catching file-read exceptions to show an error message in red).
-It should initialize curses color pairs (cyan for header, green/yellow/red for other UI states) with default background support, and render the preview text within the terminal's current width/height bounds, truncating lines that exceed the screen size.
-"""
 
 from __future__ import annotations
 import curses

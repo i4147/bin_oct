@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Detect (and optionally remove) unused imports from Python source files.
-Two detection engines are available: * **Built-in AST analyzer** (default) — fast, in-process, no external dependencies.
-Understands ``from __future__ import ...``, ``if TYPE_CHECKING:`` blocks, ``__all__ = [...]`` re-exports, and ``import *``.
-Used for both detection and in-place autofix.
-* **autoflake** (``--autoflake``) — delegates to the external ``autoflake`` program.
-Requires ``autoflake`` on ``$PATH`` (``pip install autoflake``).
-Detection works on real files *and* archive members; autofix is only possible on real files.
-The tool understands plain ``.py`` files, wheel archives (``.whl``), and zstd-compressed tarballs (``.tar.zst``).
-When the optional ``zstandard`` package is not installed, a plain ``tarfile`` fallback is attempted for ``.tar.zst`` inputs.
-Autofix caveats --------------- The built-in rewriter re-parses each affected line individually so that it can strip only the unused aliases from a comma-separated import.
-Lines that do not parse on their own (e.g.
-continuations of a multi-line import) are skipped, which is why archive-member pseudo-paths (``archive::member``) are never autofixed by the AST engine.
-"""
 
 from __future__ import annotations
 import ast

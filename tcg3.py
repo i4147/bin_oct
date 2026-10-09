@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Termux utility script that reads the current clipboard content via termux-clipboard-get, automatically detects whether it is a Python or shell (bash/sh) script by inspecting the shebang line or scanning for language-specific keywords/syntax patterns in the first portion of the text, and prepends the appropriate Termux shebang line if one is missing or needs correction.
-The script should then save the resulting content as an executable file into one of the standard Termux script directories (e.g., ~/bin, ~/bashbin, ~/.local/bin), handling errors gracefully such as missing clipboard tool or failed clipboard reads by printing informative messages to stderr and exiting with a non-zero status.
-"""
 
 from __future__ import annotations
 import subprocess

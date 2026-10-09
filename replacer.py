@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively searches text files under a given directory for an exact substring and either removes it or replaces it with a specified replacement string, writing changes back in place unless a dry-run mode is requested.
-In dry-run mode it should report how many matches were found per file and print a short surrounding-context snippet for up to three matches, plus a count of any remaining matches.
-It should skip binary files using an external is_binary helper, gracefully handle unicode decoding and permission errors by printing a skip message to stderr, and use argparse to accept the target path, search text, optional replacement text, a remove flag, and a dry-run flag.
-"""
 
 from __future__ import annotations
 import argparse

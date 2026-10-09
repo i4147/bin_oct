@@ -1,27 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Python 3 command-line script with the following purpose and behavior:
-
-**Purpose**: A BibTeX bibliography cleaning and enrichment tool designed for Termux/Android (shebang pointing to `/data/data/com.termux/files/usr/bin/python3.12`) that validates, corrects, and normalizes entries in a `.bib` file by cross-referencing them against known citation anthologies and online metadata sources (suchBLP, CrossRefD APIs).
-
-**Main Inputs**:
-- One or more BibTeX anthology files (trusted reference databases) loaded via `--anthology`/similar argument, used to build an in-memory lookup dictionary keyed by normalized paper titles (lowercased, whitespace and brace-stripped).
-- A target `.bib` file to be checked/cleaned, passed as a positional or named argument via `argparse`.
-- Optional flags controlling behavior such as verbosity, wh external services lookups), outputether to overwrite the input file in place.
-
-**Main Outputs**:
-- A corrected/cleaned BibTeX file (written via `bibtexparser`'s `BibTexWriter`), with normalized fields (e.g., consistent journal/venue names using a cache dictionary `CACHED_JOURNALS`, corrected titles, author names, years, DOIs, ISBNs, pages, etc.).
-- Colored console/st messages (using `termcolor`) reporting-entry statusches found in, f warring manual review.
-- Progress/status messages writtenstology files (e.g., "Loading} ... done, {ior**:
-- Uses `difatcher` to entry's title/fields and anthology entries, to catch near-duplicate or slightly misspelled titles.
-- Normalizes titles by lowercasing and stripping whitespace and curly braces before using them as dictionary keys for comparison.
-- Integrates with external metadata services: `SPARQLWrapper` (querying e.g. Wikidata/DBLP end) for bibliographic metadata, `isbnlib` for validating/normalizing ISBNs, and `pycountry` for normalizing country/language possis address fields.
-- Parses from web l (BeautifulSoup) when scer structured APIs.
--error`, handling errors gracefully (timeouts, H without crashing the whole runipping orning on individail lches (`CITATION_DATABASE`, `CACHED_JOURNALS`) to avoid redundant filename lookups within a single runParser` configured with `ignore_nonstandard_types=False`, `homogenize_enient,istent parsing of potentially messes type annotations throughout (using `from __future__ import annotations`, `typing.Any`, `typing.Optional`) and uses `pyparsing` for any custom text-pattern parsing needs (e.g., parsing author name formats or special field syntax).
-- Designed to run as a CLI tool via `argparse`, accepting file paths and option flags, intended for interactive use in a terminal with colorized output to clearly distinguish successful corrections from warnings/errors.
-
-Generate the complete script implementing this functionality, including the `get_bibparser`, `normalize_title`, `load_anthologies`, and `log_message` helper functions as described, plus the full argument parsing, main processing loop over bib entries, external lookup/correction logic, and file output.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/BPMs9kvRw3Y7s8UvreqWyZ"""
 
 from __future__ import annotations
 

@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""->regenerates script"""
 
 from __future__ import annotations
 import argparse

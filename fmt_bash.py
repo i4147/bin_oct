@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Format shell scripts under CWD with shfmt -w.
-Behavior: * If exactly one file path is given on the command line, format it directly (no multiprocessing Pool).
-The file does NOT need a ``.sh`` extension or a shebang -- it is treated as a shell script as long as it is not binary.
-* Otherwise, collect shell files under CWD (``*.sh`` files plus extension-less files whose first 256 bytes start with a bash/sh shebang), skip binaries via ``dh.is_binary``, and run ``shfmt -w`` on each using a fixed 8-worker ``multiprocessing.Pool`` selected by ``--pool-method`` (starmap by default, plus map, imap_unordered, apply_async).
-* Log progress and list failures with loguru.
-* Optionally move failed files into an ``error`` subdirectory under CWD via -m/--move.
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that runs `pip check` via subprocess to detect missing package dependencies in the current environment, then parses its output with a regex to identify which required packages are not installed, excluding any packages listed in a predefined blacklist (e.g., pandas, torch, scipy, tensorflow, etc.).
-It should build a mapping of each missing dependency to the list of packages that require it, print this as a formatted dependency tree, and provide a helper function to write a list of package names into a requirements.txt file.
-The script should gracefully handle a non-zero exit code from pip check by still capturing and processing its stdout output.
-"""
 
 from __future__ import annotations
 import re

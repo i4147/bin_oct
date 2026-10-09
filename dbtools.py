@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""merged.py — Unified SQLite / JSON / SQL-dump conversion toolkit.
-Merges the following original tools into a single CLI: original add2db.py -> python merged.py add-files --text-only --db /sdcard/pkg.db original add7db.py -> python merged.py add-files --compress original coverage2json.py -> python merged.py sqlite-to-json .coverage -o coverage.json --blob-format prefixed original md2sqlite.py -> python merged.py md-to-sqlite original mdb2json.py -> python merged.py mdb-to-json .
-original search_rule.py -> python merged.py search-rule TRY400 original sql2json.py -> python merged.py sql-to-json .
-original sqlite2json.py -> python merged.py sqlite-to-json db.sqlite --mode per-table original sqlite2json2.py -> python merged.py sqlite-to-json db.sqlite original sqlite2json3.py -> python merged.py sqlite-to-json db.sqlite # stub, same as above original sqlitetojson.py -> python merged.py sqlite-to-json db.sqlite --indent 4 Third-party packages (optional, only required for specific subcommands): py7zr - required for `add-files --compress` pyodbc - required for `mdb-to-json`
-"""
 
 from __future__ import annotations
 import argparse

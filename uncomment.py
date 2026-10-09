@@ -1,32 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line tool (designed to run under Termux on Android, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that strips comments from source code files across a codebase using `tree-sitter` for accurate, language-aware parsing.
-
-The tool must meet the following requirements:
-
-**Purpose**
-A CLI utility that recursively scans a directory (or specific files) for source code files in multiple programming languages, parses each file with the appropriate `tree-sitter` grammar, and removes comment nodes (and optionally other non-essential nodes like plain text in template languages) while preserving code semantics — except it must *not* strip comments that look important (e.g., license/copyright headers, SPDX identifiers, auto-generated markers, linter directives like `# noqa`, `# type: ignore`, `# pragma`, shebangs) unless explicitly forced to.
-
-**Inputs**
-- Positional arguments: one or more file or directory paths to process.
-- Options to control behavior: recursive directory traversal with configurable skip-directories (default skip set should include common VCS/build/cache folders like `.git`, `node_modules`, `__pycache__`, `dist`, `build`, `.venv`, etc.), include/exclude glob or extension filters, a dry-run mode that reports what would change without writing, an option to force-remove "protected" comments (license headers, SPDX, generated markers, linter pragmas) that are normally preserved via a built-in regex of common protected-comment patterns (covering keywords like "copyright", "(c)", "©", "spdx-", "all rights reserved", "licensed under/to", "@license", "@preserve", "@generated", "auto-generated", "do not edit", etc.), options to control parallelism (number of worker processes and which `multiprocessing.Pool` dispatch method to use — e.g. `imap_unordered`, `imap`, `map`, `starmap`, `apply_async`, `apply`), an option to also strip stray whitespace-only text nodes in markup/template languages, backup creation before modifying files, and verbosity/logging controls (via `loguru`).
-- Should auto-detect language per file via file extension mapping to the correct tree-sitter grammar/parser, dynamically loading compiled language grammars (building them if needed/available).
-
-**Processing behavior**
-- For each file: read bytes, parse with tree-sitter, walk the syntax tree to find comment nodes (and relevant text nodes depending on language/config), filter out nodes whose content matches the "protected" regex unless force mode is enabled, compute the new file content with comments removed while keeping correct byte offsets (process removals in a way that doesn't corrupt positions, e.g., sorting/removing from the end), and only write back if content actually changed.
-- Must support multiprocessing to process many files concurrently across worker processes, with the selected pool dispatch method configurable.
-- Must classify and report the result of each file as one of: `stripped` (comments removed), `unchanged` (no comments found or nothing removable), `skipped` (e.g., binary file, unsupported language, protected-only content, excluded by filters), or `error` (parse/read/write failure), aggregating counts into a final summary printed/logged at the end.
-- Should use caching (e.g., `functools.cache`) where appropriate to avoid redundant work such as repeated language-loading or regex compilation.
-- Should handle errors per-file gracefully (catching exceptions so one bad file doesn't crash the whole batch) and log them with `loguru` at appropriate levels.
-- Should support safe temporary file writes (e.g., via `tempfile`) and atomic replacement of the original file, optionally keeping a `.bak` backup copy via `shutil`.
-
-**Outputs**
-- Modifies source files in place (removing comments) unless running in dry-run mode, in which case it only reports what would be changed.
-- Prints/logs a per-file status and a final summary table/counts (number stripped/unchanged/skipped/errored).
-- Exits with an appropriate process exit code reflecting whether errors occurred.
-
-Implement this as a single, well-structured Python script using `argparse` for the CLI, `dataclasses` and `NamedTuple`/`Literal` types for clear internal data modeling, type hints throughout (`from __future__ import annotations`), and idiomatic use of `tree_sitter.Language`, `tree_sitter.Parser`, and `tree_sitter.Node` for parsing and tree traversal.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/XCnhgqRWPMWGwdjCXMVWpD"""
 
 from __future__ import annotations
 import argparse

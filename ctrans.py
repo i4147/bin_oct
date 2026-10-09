@@ -1,47 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-translate_words.py -- translate a one-word-per-line file into a JSON map.
-
-TARGET PLATFORM
-    Termux on Android 7 (bionic libc), 32-bit ARM (``armv8l``), Python 3.12.
-    Only pure-Python packages are used.  The code is written to stay
-    Python 3.8+ compatible (typing.List/Dict/Optional, no ``match``, no
-    ``X | Y`` annotations).  Only stdlib + loguru + the user-selected
-    backends are needed, and every backend import is lazy.
-
-OUTPUT
-    ``{"source_word": "translated_word"}`` written atomically (temp file +
-    os.replace), resumable, with failures collected in a separate file.
-
-SUPPORTED BACKENDS (all pure Python on armv8l)
-    Tier 1: deep_translator (default), deepl (needs DEEPL_API_KEY)
-    Tier 2: translate, googletrans, pygoogletranslation, translators_bing
-            (``translators`` + Node.js)
-    Tier 3: boto3, baidu, alibaba, watson, azure (API-key cloud providers,
-            only used when requested with -b)
-    Remote: libretranslate_remote (LIBRETRANSLATE_URL env var; a LibreTranslate
-            server on another machine, called through deep_translator)
-
-EXCLUDED BACKENDS (no 32-bit ARM wheels / source builds fail on Termux)
-    argostranslate, libretranslate (self-hosted), opus_mt, nllb, m2m100,
-    transformers, torch, sentencepiece, ctranslate2  -> need torch/ctranslate2
-    google-cloud-translate, yandex_cloud              -> need grpcio/protobuf
-    pydantic-core                                     -> Rust build
-    openai, anthropic, mistralai                      -> pull pydantic>=2
-    Asking for one of them with -b exits with an explanation.
-
-OFFLINE ALTERNATIVE
-    No local MT engine runs on this platform.  Run a LibreTranslate server on
-    a LAN machine (PC / VPS / Raspberry Pi), then::
-
-        export LIBRETRANSLATE_URL=http://192.168.1.50:5000
-        python translate_words.py -b libretranslate_remote
-
-DEFAULT FALLBACK ORDER (when -b is not given)
-    deepl (if DEEPL_API_KEY) -> deep_translator -> libretranslate_remote
-    (if LIBRETRANSLATE_URL) -> translate -> translators_bing -> googletrans
-    -> pygoogletranslation.  With -b X, X is tried first, then the rest.
-"""
 
 import argparse
 import asyncio

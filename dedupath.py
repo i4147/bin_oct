@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that reads the current PATH environment variable, splits it into individual entries, and removes duplicate entries while preserving their original order, printing each unique entry as it processes them.
-It should report the count of original entries, unique entries, and how many duplicates were removed.
-If duplicates existed, the script should locate the user's ~/.bashrc file, read its contents, and update or append an "export PATH=" line with the deduplicated PATH string, replacing an existing export line if found or appending a new one otherwise.
-"""
 
 from __future__ import annotations
 import os

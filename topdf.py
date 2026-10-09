@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""pdfkit.py — Unified document-to-PDF converter.
-Merges 10 original scripts into one argparse CLI: cairosvg2pdf.py -> pdfkit.py svg <input.svg> chm2pdf.py -> pdfkit.py chm <input.chm> -b weasyprint chm2pdf_reportlab.py -> pdfkit.py chm <input.chm> -b reportlab compile_precise.py -> pdfkit.py compile-css print-style.css dic2pdf.py -> pdfkit.py dict dictionary.txt --font custom.ttf html2pdf.py -> pdfkit.py html <input.html> --css <css> md2pdf.py -> pdfkit.py md <input.md> md2pdf2.py -> pdfkit.py md <input.md> --pygments --toc --css /sdcard/_static/css/book.css md_to_pdf.py -> pdfkit.py md <input.md> --converter markdown --inline-css default md_to_pdf2.py -> pdfkit.py md <input.md> --converter markdown --inline-css local-fonts Third-party packages (install only the ones you need): cairosvg # svg subcommand weasyprint, markdown2, markdown # chm/html/md/dict subcommands pygments # md --pygments pychm (import chm.chm) # chm --backend weasyprint chm # chm --backend reportlab reportlab # chm --backend reportlab Examples -------- pdfkit.py svg logo.svg pdfkit.py chm manual.chm -b weasyprint -o manual.pdf pdfkit.py chm manual.chm -b reportlab pdfkit.py html page.html --css /sdcard/_static/css/markdown.css pdfkit.py md notes.md pdfkit.py md notes.md --pygments --toc --css book.css pdfkit.py md notes.md --converter markdown --inline-css local-fonts pdfkit.py dict dictionary.txt --font custom.ttf pdfkit.py compile-css print-style.css --font-dir ./fonts
-"""
 
 from __future__ import annotations
 import argparse

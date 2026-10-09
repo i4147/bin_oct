@@ -1,34 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (intended to run under Termux, with the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a TOML file formatter/pretty-printer built on `tree-sitter`.
-
-The prompt should specify the following requirements:
-
-**Purpose:**
-Build a TOML formatter that parses TOML source files using a `tree-sitter` grammar and re-emits clean, consistently formatted TOML output, based on walking the concrete syntax tree rather than naive text manipulation.
-
-**Tree-sitter integration:**
-- Initialize the TOML `tree-sitter` `Language` and `Parser` in a dedicated setup function.
-- Attempt to load a precompiled shared grammar library first (e.g. `build/my-languages.so` with language name `"toml"`), and if that fails, fall back to importing a `tree_sitter_toml` Python package and using its provided `language()` function.
-- If neither method succeeds, raise a clear `ImportError` instructing the user to install the `tree-sitter-toml` package via pip.
-
-**Formatting configuration:**
-- Define a configuration data class (e.g. `FormatConfig`) with fields such as: indentation size (default 2 spaces), maximum column width (default 80), and a boolean flag controlling whether values should be vertically aligned (default enabled).
-
-**Tree traversal / visitor:**
-- Implement a visitor class that takes the raw source bytes tree, and the format configuration.
-- The visitor should maintain internal state: an in-memory string buffer (e.g. `StringIO`) for building output, current indentation level, tracking of the last processed line (for blank-line/spacing preservation), and whether currently inside a table context.
-- Implement a generic dispatch method that inspects each node's `type` (e.g. `"document"`, `"table"`, array, inline table, key-value pair, comment, string/number/boolean/date values, etc.) and routes to specialized per-node-type handler methods that recursively visit children and write properly indented, aligned, and spaced output.
-- Include a finalization step that cleans up the accumulated output (e.g. trimming trailing whitespace, ensuring a single trailing newline, normalizing blank lines) before returning the final formatted string.
-
-**CLI behavior:**
-- Use `argparse` to build a command-line interface accepting one or more input TOML file paths (using `pathlib.Path`), plus options for indentation size, column width, enabling/disabling value alignment, and whether to format files in place versus printing to stdout/writing to new output file(s).
-- Support processing multiple files efficiently in parallel using `multiprocessing.Pool` sized by available CPU cores (`cpu_count()`), with each worker parsing and formatting one file independently.
-- Handle errors per file gracefully (e.g. parse failures, missing files) and report them without crashing the whole batch, exiting with a non-zero status code if any file failed.
-- Print clear success/failure feedback to the user for each processed file.
-
-Specify that the implementation should use idiomatic modern Python (type hints via `typing`/`dataclasses`, `from __future__ import annotations`) and should be structured with clear separation between tree-sitter setup, the visitor/formatting logic, and the CLI entry point (`main` guarded by `if __name__ == "__main__":`).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/7ZuuxYnmN2M4jx74RC53xt"""
 
 from __future__ import annotations
 import argparse

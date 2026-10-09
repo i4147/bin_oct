@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that validates C/C++ source files for syntax errors using clang and clang++.
-It should accept file paths as command-line arguments, or if none are given, recursively discover files with common C/C++ extensions (.c, .cc, .cpp, .cxx, .h, .hh, .hpp, .hxx, .inc, hpp11) in the current working directory via a helper `get_files` function.
-For each file, run `clang -fsyntax-only` (for C files) or `clang++ -fsyntax-only` (for C++ files) in parallel using a multiprocessing Pool (spawn context, 8 workers) with a bounded pending-task queue, collecting the return code, stdout, and stderr for each.
-Finally, iterate over the results and print a colored error message (using a `cprint` helper) for each file whose validation return code equals 2, indicating a syntax error.
-"""
 
 from __future__ import annotations
 import sys

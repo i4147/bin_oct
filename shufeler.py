@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a command-line Python script that shuffles the lines of a large text file efficiently without loading the whole file into memory.
-It should use mmap to index the byte offsets of each line, then reorder those offsets using one of several selectable shuffling strategies (a cryptographically secure Fisher-Yates shuffle via secrets, a random.SystemRandom-based shuffle, or a weighted double-pass shuffle), and finally write the lines out to a new file in the shuffled order using the recorded offsets.
-The script should accept an input file path and an output file path via argparse, apply an mmap-size threshold constant to decide when to use the memory-mapped approach, and handle errors gracefully, returning a success/failure status.
-"""
 
 from __future__ import annotations
 import argparse

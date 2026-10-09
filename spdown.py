@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""Download a package (with optional version constraint) from PyPI."""
 
 import argparse
 import hashlib

@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that cleans a requirements.txt file by removing entries for packages that are already installed in the current environment or that belong to the standard library, using helper utilities `STDLIB` and `get_installed_pkgs` from a local `dh` module.
-It should read the requirements file (defaulting to "requirements.txt" or a path given as a command-line argument), normalize package names by lowercasing and replacing hyphens with underscores, filter out matches against installed packages and stdlib modules, then write the remaining unique package names back to the same file in sorted order, one per line.
-Finally, it should print how many packages were removed."""
 
 from __future__ import annotations
 import sys

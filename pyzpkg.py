@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python maintenance script that scans a user's local site-packages directory to identify and safely remove unnecessary bytecode cache files and metadata for installed packages.
-The script should use `compileall`, `csv`, `shutil`, and `pathlib` to locate the user site-packages folder, then inspect each package's `.dist-info` directory by reading `top_level.txt` and `RECORD` files to detect risky packages—such as those spanning multiple top-level modules, containing compiled C-extensions (`.so` files), or including `.pth` path configuration files—and flag them as unsafe to modify.
-It should print warnings when metadata files can't be read and report the specific reason a package is considered unsafe (e.g., multi-folder structure, compiled binaries, or path config files).
-The overall goal is to clean up or process only the packages that are safe, while skipping and logging any that pose a risk of breaking the Python environment.
-"""
 
 from __future__ import annotations
 import compileall

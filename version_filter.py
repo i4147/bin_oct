@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Remove obsolete or unwanted wheel files from a directory.
-Rules: 1.
-Drop ``py3-none-any`` wheels for packages in ``PY3_NONE_ANY_BLOCKLIST``.
-2.
-For date-stamped versions (``X.Y.Z-YYYYMMDD``), keep only the newest date per package; delete the rest.
-"""
 
 from __future__ import annotations
 import os

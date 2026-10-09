@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Recursively convert tar/zip archives under given paths to brotli-compressed .tar.br, or decompress .tar.br back to .tar with -d."""
 
 from __future__ import annotations
 import argparse

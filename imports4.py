@@ -1,28 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Termux-targeted Python 3.12 command-line utility script (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) named something like `piplist` that scans Python source files to discover third-party import dependencies and checks their availability/installation status, cross-referencing a local PyPI index file.
-
-Purpose and behavior:ependency sc walk a directory (or single file) for `.py` files, skipping common irrelevant directories by default (`.git`, `.hg`, `.svn`, `.tox`, `.venv`, `venv`, `env`, `build`, `dist`, `__pycache__`, `node_modules`, `.mypy_cache`, `.pytest_cache`, `site-packages`, `.eggs`, `.idea`, `.vscode`), with an option to customize excluded directories via CLI args.
-
-2. **Import extraction**: Use Python's `ast` module to parse each source file and extract all top-level import statements (`import x x.y` capturing the rootports that are wrapped in `try/except `try/except ModuleNotFoundError` blocks (treat these as "optional" dependencies, since the code already handles their absence gracefully), tracking line numbers and file paths for reporting.
-
-3. **Module classification**: For each discovered root module name:
-   - Check if it belongs to the Python standard library using a `STDLIB` set (imported from a local `dh` module).
-   - Map import names to actual PyPI package names using a `PKG_MAPPING` dictionary (also from `dh`), building a reverse lookup table (`IMPORT_TO_PKG`) since `yaml` → `PyYAML`).
-   - Normalize package names for comparison by lowercasing and collapsing `-`, `_`, `.` characters into a single `-` (PEP 503 style normalization).
-
-4. **PyPI/local index lookup**: Check whether each non-stdlib package is already listed/installed by consulting a local JSON index file at `/sdcard/data/pip.json` (`PYPI_INDEX_PATH`). If a package is not found locally and needs remote verification, query PyPI's JSON API using the `yarg` library (`json2package`, handling `HTTPError` exceptions) to confirm the package exists and f: Implement a dis `~/.cache/piplist` avoid repeated network/API lookups. Cache keys are derived from a SHA-256 hash (truncated to 16 hex chars) of the module name. Each cache entry is a JSON file containing a timestamp (`ts`) and a `value`; entries older than `CACHE_TTL` (86400 seconds / 1 day) are treated as expired/missing. Provide `read_cache`/`write_cache` a sentinel object) to distinguish "notached" from leg cached `None`sy values.
-
-6. **ures` (e.g., `ThreadPoolExecutor`) to parallelize network lookups for multiple packages to speed up scanning of projects with many dependencies.
-
-7. **CLI interface**: Use `argparse` to accept arguments such as the target path(s) to scan, options to show only missing/uninstalled packages, flags to ignore optional (try/except-guarded) imports, custom exclude directories, verbosity/logging level, and possibly output format (e.g., plain text or JSON).
-
-8. **Output/logging**: Use the `logging` module (logger named `"piplist"`) to report progress and results — e.g., listing missing third-party packages, their mapped PyPI names, and locations (file:line) where they were imported, distinguishing required vs. optional imports. Exit with an appropriate status code (e.g., non-zero if required dependencies are missing).
-
-9. **Dependencies**: Relies on `requests` for HTTP calls, `yarg` for PyPI API package objects, and a local helper module `dh` providing `STDLIB` (collection of standard library module names) and `PKG_MAPPING` (dict mapping PyPI package names to their primary import name).
-
-The final script should be self-contained, runnable directly in Termux on Android, and help developers quickly audit a Python project's directory tree for missing or unmapped third-party dependencies before packaging or deployment.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/fbMa7rQ4bXXteY5eMd5KUf"""
 
 import argparse
 import ast

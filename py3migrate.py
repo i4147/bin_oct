@@ -1,18 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""py3migrate.py — unified Python 2 → 3 migration toolbox.
-Subcommands ----------- detect Report whether files look like Python 2 or Python 3.
-refactor Rewrite Py2 code to Py3 using lib2to3 fixers.
-fixprint Line-based fixes for `print x` (and optionally `except X, e:`, `xrange`, `raw_input`).
-run2to3 Shell out to the external `2to3` CLI.
-strip-tag Strip a `Tag:py2-none-any` line from WHEEL files inside wheels/zips/tarballs.
-Mapping from original scripts ----------------------------- 223.py -> py3migrate.py refactor --apply 2232.py -> py3migrate.py refactor --diff-mode full --show-errors my2to3.py -> py3migrate.py refactor --apply --print-function f23.py -> py3migrate.py fixprint --apply f23.py -a -> py3migrate.py fixprint --apply --all f23.py -f -a -> py3migrate.py fixprint --apply --all --no-backup 2to3ruff.py -> py3migrate.py fixprint --apply --with-ruff --no-backup is2or3.py -> py3migrate.py detect run223.py -> py3migrate.py run2to3 nopy2.py -> py3migrate.py strip-tag Examples -------- # Detect version of all .py files in the current directory: python py3migrate.py detect # Preview the lib2to3 rewrite of a directory: python py3migrate.py refactor src/ # Apply the rewrite in place (223.py behaviour): python py3migrate.py refactor src/ --apply # 2232.py behaviour (verbose diff, refactor log): python py3migrate.py refactor .
---diff-mode full --show-errors # my2to3.py behaviour (enable print_function flag): python py3migrate.py refactor .
---apply --print-function # f23.py-style print fixing, with backups (default): python py3migrate.py fixprint .
---apply # f23.py -f -a equivalent: python py3migrate.py fixprint .
---apply --all --no-backup # 2to3ruff.py equivalent: python py3migrate.py fixprint .
---apply --with-ruff --no-backup Requires Python 3.9–3.12 (uses ``lib2to3``, removed in 3.13).
-Only the standard library is used; ``ruff`` is invoked if ``--with-ruff`` is passed and the binary is on ``$PATH``.
-"""
 
 from __future__ import annotations
 import argparse

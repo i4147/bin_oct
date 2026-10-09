@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans a given directory tree to find and report OS-specific junk files, such as macOS metadata files (e.g.
-.DS_Store, ._* AppleDouble files, .Spotlight-V100) and Windows system/executable files (e.g.
-Thumbs.db, desktop.ini, *.exe, *.dll).
-It should walk the directory using a recursive generator that gracefully handles permission or OS errors, match each file or folder name against predefined Darwin and Windows pattern sets (supporting wildcard suffixes and prefix-based matches), and for each matched path compute its size using a helper (fsz) from the dh module.
-The final output should be a report listing the matched file paths along with their sizes, using a tuple of (path string, size in bytes) as the per-item result format.
-"""
 
 from __future__ import annotations
 import sys

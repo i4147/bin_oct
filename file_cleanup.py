@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""file_cleanup.py — unified text/JSON line-cleaning toolkit.
-Merges these original scripts into one CLI: detect_repeated_lines.py -> dedupe-seq samecharlines.py -> drop-same-char sonic.py -> sort-dedupe (+ analyze subcommand) soniq.py -> sort-dedupe --start-line N --end-line M [--quiet] soniq2.py -> sort-dedupe juniq.py -> dedupe-json --key src sort_quotes.py -> dedupe-json --key quote --lower --sort-by author Usage examples -------------- python file_cleanup.py analyze input.txt python file_cleanup.py sort-dedupe input.txt --report stats.json python file_cleanup.py sort-dedupe input.txt --no-sort --skip-empty python file_cleanup.py sort-dedupe input.txt --start-line 100 --end-line 500 --quiet python file_cleanup.py sort-dedupe input.txt -o out.txt --backup --reverse python file_cleanup.py dedupe-seq mycode.py --dry-run python file_cleanup.py dedupe-seq mycode.py --yes --include-blanks python file_cleanup.py drop-same-char notes.txt python file_cleanup.py dedupe-json data.json --key src python file_cleanup.py dedupe-json quotes.json --key quote --lower --sort-by author Third-party packages: none.
-(Original soniq2.py used loguru; replaced with print.)"""
 
 from __future__ import annotations
 import argparse

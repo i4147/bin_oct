@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Scan .tar.gz / .whl / .zip archives under the current directory (recursively) and report (or, with -a/--apply, move) "empty" / "useless" ones into ./empty/ .
-By default this is a DRY RUN: it prints what would be moved but changes nothing.
-Pass -a / --apply to actually move the archives.
-Heuristics that flag an archive as useless: * invalid archive – cannot be opened / truncated / not a tarball/zip * no files – archive contains only dirs / symlinks * no .py files – nothing that could be a real package * only setup.py – a lone setup.py with no code next to it * all non-setup .py empty – every real .py file is 0 bytes / whitespace * only metadata – README/LICENSE/PKG-INFO/pyproject.toml … only * only compiled files – .pyc / __pycache__, no source * only docs/tests/examples – no production code shipped * imports-only – .py files parse but contain just imports, docstrings or `pass` * too small – total uncompressed size below a threshold
-"""
 
 from __future__ import annotations
 import argparse

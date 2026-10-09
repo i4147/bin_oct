@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt instructing an AI coding agent to generate a single-file Python 3 (3+) commandility named for Termux (`#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a reusable OCR helper/library module (in version 0.8 The script must:
-
-**Purpose**: Provide a andes/ions for runningifically Tesseract and filesounding-box coordinates), and converincluding building well-formed XHTML/hOCR documents and XML tports/d standules — `argparse`, `codes`, `locale`, `log `types.SimpleN the with a Python version check thatImportError` if running under Python older than 3.4, with the message "PyOCR requ a module-level `ogger(__name__)`ERSION = (0, ple and `__version__ = "0.8.5"` string constants.
-
-**Constants**: Include a multi-line `_XHTML_HEADER` string constant containing a valid XHTML 1.1 DOCTYPE declaration and opening `<html>`/`<head>` tags with a UTF-8 content-type meta tag and a `<title>OCR output</title>`, ending right before the body/content would be appended, so it can be concatenated with generated hOCR body content to form a complete valid XHceptions**: Define a base exception class `PyocrException(Exception)`. Define two subclasses, `TesseractError``, each accepting `status` and `message` in their constructor, calling the parent constructor with the message, storing `self.status` and `self.message`, and setting `self.args = (status, message)` for proper exception representation.
-
-**Helement `digits_only(string uses a regex (`\\D*(?P<digits>\\d+)`) to extract the first run of digits from a string and return it as an integer, or return 0 if no digits are found.
-
-**Box class**: Implement a `Box` class representing an OCR-detected text box, with an `__init__(self, content, position, confidence=0)` storing content (recognized text), position (bounding box coordinates), and an optional confidence score. Include a method `get_xml_tag(self, parent_doc)` that builds and returns an XML element (using `xml.dom.minidom`, given a parent document) representing this box as a titable for embedding in aned for a compl files via `tempfile`, reading/parsing engine output (plain text, hTML via into `aries on the system (posing an `argparse` user invoke OCR on an input image file and choose the engine and output format from the command line. Preserve consistent coding style, docstrings, and logging usage throughout, matching the PyOCR library's conventions.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/UxfhCZCcWphe2nwPECu6Ng"""
 
 import argparse
 import codecs

@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Remove comments from non-binary text files by scanning a directory tree.
-This module scans a directory for non-binary files, removes Python-style ``#`` comments from each file (preserving strings and multi-line string literals), and writes the modified content back.
-It uses a fixed-size ``multiprocessing.Pool`` of 8 workers for parallelism, ``loguru`` for logging, and ``pathlib`` for all path handling.
-Files with known binary extensions, hidden files/directories, common VCS/build directories, and files larger than 10 MiB are skipped by default.
-A ``--dry-run`` mode lists candidate files without modifying them, and ``--include-hidden``, ``--no-ignore-extensions``, and ``--exclude-dirs`` control filtering.
-Example: python remove_comments.py /path/to/project --verbose"""
 
 from __future__ import annotations
 import argparse

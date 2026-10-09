@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Wrapper for `felo superagent` that saves the returned code as a Python file.
-Usage:
-    python felo_wrapper.py --timeout 300 'your query here'
-"""
 
 import argparse
 import os

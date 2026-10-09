@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Termux-friendly C / C++ runner using the `sh` library.
-Usage: cpprun <file.c|file.cpp|file.cc> [args...] Install: pip install sh"""
 
 from __future__ import annotations
 import os

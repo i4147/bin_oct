@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""find_elf64.py - Recursively detect 64-bit ELF binaries.
-Features: * Uses pyelftools for robust ELF parsing.
-* Uses binaryornot to quickly skip text files.
-* Uses pathlib for filesystem operations.
-* Parallel scan via multiprocessing.Pool.imap_unordered (8 workers).
-* Optional -r flag to remove found files (executed in main process).
-Usage: python3 find_elf64.py [directory] [-r|--remove]"""
 
 from __future__ import annotations
 import argparse

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python CLI script that recursively finds Python (.py) files in a given directory (via a helper get_pyfiles from a local "dh" module) and reformats/cleans each file's source code in place using a selectable code-formatting backend controlled by a MODE constant or CLI argument, supporting "autoflake" (remove unused imports), "isort" (sort imports), "black" (format with target Python versions 3.10/3.13 and 120 line length), "autopep8" (aggressive PEP8 fixes), and "yapf" as interchangeable modes.
-It should use argparse to accept options such as target directory/files and formatting mode, read each file's original text, apply the chosen formatter's transformation function to produce new code, and write the result back to disk, while tracking each file's before/after size in bytes and processing time using perf_counter.
-It should leverage utility functions from the "dh" module (cprint for colored console output, format_time and fsz for human-readable time/size formatting, and mpf, presumably for multiprocessing/parallel file handling) to report progress and results, such as filenames, size changes, and elapsed time, for each processed file and likely a final summary across all files.
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,46 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Design a Python 3 command-line utility (intended to run under Termux on Android, using the `/data/data/com.termux/files/usr/bin/python3.12` interpreter) that exports the contents of a SQLite database into JSON. script's purpose is to open a given SQLite database file in read-only mode, enumerate all user tables (and optionally other object types), and dump each table's rows into one or more JSON files, handling large tables efficiently and encoding binary (BLOB) data in a JSON-safe way.
-
-Key requirements and behavior:
-
-1. **CLI interface (via `argparse`)**:
-   - Positional argument: path to the source SQLite database file.
-   - Option to specify an output directory (default could be current directory or a derived name),.
-   - Option to select which tables to export (default: all tables), e.g. an include/exclude list or pattern.
-   - Option to control BLOB encoding, supporting at least four modes: `base64`, `hex`, `base64-plain`, `hex-plain` — where the non-"plain" variants wrap the encoded string in a small object with a marker key (`__blob_base64` or `__blob_hex`) so consumers can distinguish encoded blobs from plain strings, while the "-plain" variants just emit the raw encoded string.
-   - Option to control parallelism (number of worker processes) for exporting multiple tables concurrently.
-   - Option to control batch size / rows per fetch (default 5000) to keep memory usage flat regardless of table size, using `cursor.fetchmany()`-style batched reads.
-   - Option for pretty-printing vs. compact JSON output, and/or indentation level.
-   - Option to overwrite existing output files or skip/skip-existing behavior.
-
-2. **Database handling**:
-   - Open the SQLite file strictly read-only (e.g. via a `file:` URI with `mode=ro`), failing gracefully with a clear error message if the file doesn't exist or isn't a valid SQLite database.
-   - Query `sqlite_master` (or `sqlite_schema`) to list tables (excluding internal `sqlite_*` tables unless explicitly requested). identifiers (table double-`quidentifier` style) to safely handle names
-
-3. **Value/version for `str` pass through unchanged.
-   - `float` values are pass they are N in which case they are stringified (since stand support them).
-   - `bytes`/`bytearray`/`memoryview` (SQLite BLOBs) are converted using the selected blob encoder function.
-   - Any other/unexpected type is converted via `str()` as a fallback.
-
-4. **Export process**:
-   - For each table, stream rows in batches (using the configurable batch size) rather than loading the entire table into memory at once.
-   - Convert each row into a JSON-serializable structure (e.g., list of dicts keyed by column name, or list of row arrays plus a column-name list) using the value-conversion logic above.
-   - Write each table's data to its own JSON output file named after the table (sanitized for filesystem safety), inside the specified output directory.
-   - Use parallel processing (`ProcessPoolExecutor` with `as_completed`) to export multiple tables concurrently when more than one worker is requested, reporting progress/ table as they complete.
-   - Use temporary files (`tempfile`) and atomic rar safe-write technaving partiallySON files ifrupted.
-
-5. **Error handling and output**:
-   - Handle missing files, corrupt databases, permission errors, and invalid CLI arguments gracefully, printing clear error messages to stderr and exiting with non-zero status codes.
-   - Print a summary to stdout/stderr indicating which tables were exported, how many rows each contained, and where the output files were written, including any tables that failed and why.
-
-6. **Code structure**:
-   - Use type hints throughout (`from __future__ import annotations`, `Any`, `Callable`, etc.).
-   - Keep helper functions small and composable (e.g., `quote_identifier`, `make_blob_encoder`, `encode_value`, a read-only DB opener, a per-table export function suitable for use as a worker in a process pool).
-   - Use `contextlib.closing` to ensure database connections/cursors are properly closed.
-   - Use `pathlib.Path` for filesystem path handling and `shutil` for any file operations (like moving temp files into place).
-   - The script should be self-contained, relying only on the Python standard library (`argparse`, `base64`, `json`, `math`, `os`, `shutil`, `sqlite3`, `sys`, `tempfile`, `concurrent.futures`, `contextlib`, `pathlib`, `typing`).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/NLfg7xEcezESTtnxdzoitQ"""
 
 from __future__ import annotations
 

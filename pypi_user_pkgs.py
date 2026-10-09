@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""List the packages published by a PyPI user (or organisation) and, optionally, download the latest release of each of them.
-The list of package names is always saved to ``<user>.txt`` in the current working directory, one package per line.
-Examples -------- python pypi_user_packages.py micropython-lib python pypi_user_packages.py https://pypi.org/user/micropython-lib/ python pypi_user_packages.py micropython-lib -d python pypi_user_packages.py micropython-lib -d -b requests -o ./pkgs python pypi_user_packages.py micropython-lib -d -b pycurl -m 5 python pypi_user_packages.py micropython-lib -d -b aria2c -m 5 python pypi_user_packages.py micropython-lib -d -m 5 # httpx, 8 jobs Backends -------- * ``httpx`` (default) - uses the third-party ``httpx`` library.
-Downloads run through an async parallel downloader with 8 concurrent transfers (matching an 8-core machine).
-* ``urllib`` - pure Python, stdlib only.
-* ``requests`` - uses the third-party ``requests`` library.
-* ``pycurl`` - uses ``pycurl`` (libcurl bindings).
-* ``aria2c`` - shells out to the ``aria2c`` command-line downloader.
-Notes ----- * The profile URL is followed through redirects, so both https://pypi.org/user/<name>/ and https://pypi.org/org/<name>/ work.
-* File sizes are read from the JSON API (https://pypi.org/pypi/<pkg>/json) and any file larger than the limit (10 MiB by default) is skipped.
-A streaming guard in each backend aborts a download that turns out to be too large.
-* Parallelism is only applied for the ``httpx`` backend.
-All other backends run sequentially."""
 
 from __future__ import annotations
 import argparse

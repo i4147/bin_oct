@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Convert each page of a PDF file to a PNG image using pdftoppm (Poppler).
-Usage:
-    python pdf_to_png.py input.pdf [output_dir] [dpi]
-"""
 
 import sys
 import os

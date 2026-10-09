@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""font_toolkit.py — merged font conversion utilities.
-Original scripts and their equivalents: font_convert.py -> python font_toolkit.py convert --to <fmt> [paths...] [--rm] otf2ttf.py -> python font_toolkit.py otf2ttf [paths...] [--workers N] [--keep-source] otf_to_ttf.py -> python font_toolkit.py otf2ttf-fontforge [paths...] [--keep-source] tottf.py -> python font_toolkit.py tottf [paths...] [--remove-source] woff22ttf.py -> python font_toolkit.py woff22ttf [paths...] [--workers N] [--keep-source] Third-party dependencies: fontTools (pip install fonttools) — required for convert, otf2ttf, woff22ttf fontforge (system package) — required for otf2ttf-fontforge and tottf Usage examples: # Convert all fonts in current dir to woff2, remove originals python font_toolkit.py convert --to woff2 --rm # Convert specific OTF files to TTF with 8 workers, keep originals python font_toolkit.py otf2ttf font1.otf font2.otf --workers 8 --keep-source # Convert OTF to TTF using FontForge (keeps originals) python font_toolkit.py otf2ttf-fontforge ./fonts # Convert svg/woff/eot/otf/ttc to TTF using FontForge CLI, remove source python font_toolkit.py tottf --remove-source ./assets # Decompress WOFF2 to TTF, remove originals python font_toolkit.py woff22ttf ./webfonts
-"""
 
 from __future__ import annotations
 import argparse

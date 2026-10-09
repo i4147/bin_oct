@@ -1,32 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""[Tool: think]
-  Params: {"content":"The user wants a prompt for an AI agent that can produce the given Python code. I need to analyze the code snippet (it's truncated but I can infer enough) and write a descriptive prompt covering purpose, inputs/outputs, and notable behavior. This is a single straightforward task - no need for multiple tools, just need to output the prompt text directly as my final answer. No tool calls needed."}
-Write a Python 3.12 command-line automation script designed to run on Termux (Android) at `/data/data/com.termux/files/usr/bin/python3.12` that migrates GitHub author identity information across a local Git repository and its working tree files.
-
-Purpose: The script should rewrite both Git commit history authorship and any hardcoded references to an old username/email found in project files, replacing them with a new username/email, so a repository can be safely re-attributed to a different GitHub identity.
-
-Main inputs:
-- Command-line arguments (via argparse) allowing the user to specify old username, old email, new username, and new email, each defaulting to predefined constants (default old username "i4147", default old email "yesnacoc@gmail.com", default new username "i4147", default new email "yesnacoc@gmail.com").
-- The target repository path (likely current directory or an argument).
-- Possibly flags for dry-run mode, verbosity, or whether to rewrite git history vs. just scan files.
-
-Main outputs:
-- Modified files on disk with old username/email strings replaced by new ones, scanning only files with recognized text-based extensions (e.g., .py, .toml, .cfg, .ini, .json, .md, .yml, .yaml, .txt, .rst, .env, .sh, .bash, .zshrc, .gitconfig, .gitmodules, .npmrc, .yarnrc) or specific known filenames (setup.py, pyproject.toml, package.json, config, .gitconfig, README.md, README, .npmrc, Makefile).
-- Rewritten Git commit author/committer metadata (likely using `git filter-branch`, `git filter-repo`, or similar subprocess calls to `git`) so that historical commits reflect the new identity.
-- A log file named "github_identity_migrate.log" capturing detailed debug-level activity with timestamps and log levels, while the console only shows concise INFO-level messages.
-- Colorized console output (using ANSI escape codes defined in a class `C` with constants like RESET, RED, etc., for GREEN, YELLOW, BLUE, etc.) to visually distinguish success, warning, and error messages.
-
-Notable behavior:
-- Skip certain directories entirely during file scanning to avoid touching irrelevant or generated content: node_modules, .venv, venv, env, __pycache__, dist, build, .tox, site-packages, .git, .mypy_cache, .pytest_cache, .idea, .vscode, target, .cache.
-- Enforce a maximum file size limit (5 MB) when scanning/processing files, skipping files larger than this threshold to avoid performance issues or binary file corruption.
-- Use Python's `logging` module with two handlers: a StreamHandler to stdout showing only the message text at INFO level, and a FileHandler writing to the log file with full timestamp/level/message formatting at DEBUG level, enabling both user-friendly console feedback and detailed audit trails.
-- Use `subprocess` to invoke Git commands (e.g., to check repository status, rewrite history, or update git config) and `shutil`/`pathlib.Path` for file system operations such as copying, traversing directories, and reading/writing text files safely with proper encoding handling.
-- Include timestamp handling (via `datetime`) for logging or backup naming purposes.
-- Designed to be idempotent and safe to re-run, ideally supporting detection of whether a file actually contains the old identity before attempting a write, to minimize unnecessary disk writes.
-- Should handle errors gracefully (e.g., permission issues, non-U files, missing git repository) and log them appropriately without crashing the entire migration process.
-- The script should be structured with clear functions/sections for: configuration/constants setup, logging setup, color definitions, argument parsing, file-content replacement logic, and Git history rewriting logic, following `from __future__ import annotations` for type hint compatibility.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/5EeLpnzxpCFKidjtZecLfw"""
 
 from __future__ import annotations
 import argparse

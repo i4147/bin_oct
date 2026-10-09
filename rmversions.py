@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that takes a requirements.txt file path as a command-line argument and cleans it up.
-The script should read the file, skip blank lines and comments, and strip version specifiers (such as >, <, =, ~) from each package entry to extract just the package name.
-It should deduplicate the package names, write them back to the same file sorted alphabetically one per line, and print a message showing the file name and the count of unique packages written.
-"""
 
 from __future__ import annotations
 import sys

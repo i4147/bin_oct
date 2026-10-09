@@ -1,33 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Design a Python command-line/library script (intended to run under Termux's Python 3.12, with a `#!/data/data/com.termux/files/usr/bin/python3.12` shebang) that implements a complete **TOML tokenizer, parser, and formatter/pretty-printer**.
-
-The script should include:
-
-1. **Imports and setup**: Use `from __future__ import annotations`, `re`, `dataclasses` (`dataclass`, `field`), `enum` (`Enum`, `auto`), `io.StringIO`, `typing` (`TYPE_CHECKING`, `Any`), and `loguru` for logging. Use `TYPE_CHECKING` to conditionally import `pathlib.Path` for type hints only. Enable the `loguru` logger for the `__main__` module.
-
-2. **TokenType enum**: An `Enum` listing all TOML lexical token kinds, including `EOF`, `NEWLINE`, `COMMENT`, `LBRACKET`, `RBRACKET`, `LBRACE`, `RBRACE`, `LSQUARE`, `RSQUARE`, `COMMA`, `DOT`, `EQUALS`, `KEY`, `STRING`, `INTEGER`, `FLOAT`, `BOOLEAN`, `DATETIME`, and `WHITESPACE`.
-
-3. **Token dataclass**: An immutable (`frozen=True`) dataclass representing a single token, storing its `type` (`TokenType`), `value` (`str`), and its `line` and `col` position (both `int`) in the source for error reporting and formatting purposes.
-
-4. **FormatConfig dataclass**: A configuration object controlling output formatting style, with fields such as:
-   - `indent_size` (default 2)
-   - `sort_keys` (default True, whether to alphabetically sort table keys)
-   - `spaces_around_equals` (default True)
-   - `spaces_in_braces` (default True, spacing inside inline tables `{ }`)
-   - `array_trailing_comma` (default False)
-   - `column_align_equals` (default False, align `=` signs in columns)
-   - `max_inline_table_width` (default 120, width threshold before wrapping inline tables)
-
-5. **Tokenizer class**: A hand-written lexer that scans a raw TOML source string character by character and produces a list of `Token` objects. It should:
-   - Store the `source` string, current `pos` (character index), `line` and `col` counters, and the accumulated `tokens` list.
-   - Provide `current_char()` to return the character at the current position (or `None` at end of input).
-   - Provide `peek_char(offset=1)` to look ahead without consuming.
-   - Provide `advance()` to move the position forward one character, correctly updating `line` and `col` counters (incrementing `line` and resetting `col` on newline characters).
-   - (Continue implementing the rest of the tokenizer's scanning methods for TOML constructs — comments, brackets/braces/square brackets, commas, dots, equals signs, bare/quoted keys, basic and literal strings including multi-line variants, integers, floats, booleans, datetimes/dates/times, whitespace, and newlines — along with a parser that consumes the token stream into an in-memory representation of TOML tables/arrays/values, and a formatter that re-serializes that representation back into TOML text according to the `FormatConfig` options, writing output via `StringIO`/to a file given a `Path`.)
-
-The overall purpose of the script is to read a TOML file (or string), tokenize and parse it into a structured representation, and then re-emit a consistently and configurably formatted version of the TOML content (e.g., as a TOML formatter/linter utility), preserving comments where possible and applying style rules such as key sorting, spacing, and alignment as defined in `FormatConfig`.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/5MaU34KfWeweEAhdQShbgc"""
 
 from __future__ import annotations
 import re

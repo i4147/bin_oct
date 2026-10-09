@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""pyclean.py - unified Python source cleaner (docstrings + comments).
-Combines eight standalone scripts into one CLI with three subcommands.
-Original -> merged mapping -------------------------- brmc.py -> python pyclean.py strip --engine ast-rewrite brmc2.py -> python pyclean.py strip --engine ast-unparse remc.py -> python pyclean.py strip --engine text-fallback --tidy rmccst.py -> python pyclean.py strip --engine libcst --remove-comments --no-preserve-fmt-type rmcst.py -> python pyclean.py strip --engine libcst --remove-comments check_rmc.py -> python pyclean.py check [dir] [-a] [-w N] rm_moduledoc.py -> python pyclean.py clean-module-doc [dir] [-w N] [--top N] Examples -------- # Find but don't modify python pyclean.py check ./src # Remove only docstrings (keep comments), preserving module docstring python pyclean.py strip ./src # Aggressive: also remove comments and disable fmt/type preservation python pyclean.py strip ./src --remove-comments --no-preserve-fmt-type # Text-based (also strips module docstrings, collapses blank lines) python pyclean.py strip .
---engine text-fallback --no-preserve-module-docstring --tidy python pyclean.py clean-module-doc ./src --top 5 Optional third-party packages: libcst (required only for --engine libcst)
-"""
 
 from __future__ import annotations
 import argparse

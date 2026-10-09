@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""dir_tools.py — unified directory analysis & folderization toolkit.
-Merges the following original scripts into one CLI: dirinfo.py -> info dirinfo2.py -> subdirs --chart bar visdir.py -> subdirs --chart pie --top-n 0 --min-kb 0 pddd.py -> list pytree.py -> tree foldesiz.py -> split-range foldesize.py -> split-count foldsize.py -> split-greedy foldsize2.py -> split-even Third-party packages (only needed for chart output): matplotlib Usage examples -------------- python dir_tools.py info ./mydir --save-report .dirinfo --chart sizes.png python dir_tools.py subdirs ./mydir --chart pie --top-n 15 --min-kb 50 python dir_tools.py list python dir_tools.py tree ./mydir -s -H --dirs-only python dir_tools.py split-range ./downloads python dir_tools.py split-count ./downloads --dirs 6 python dir_tools.py split-count ./downloads --max-mb 100 python dir_tools.py split-greedy ./downloads python dir_tools.py split-even ./downloads --dirs 5
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,35 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Provide a comprehensive specification for a Python module that implements a `furl`-style URended to run as a standalone script under Termux's Python 3.12 interpreter (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), using `from __future__ import annotations`.
-
-**Purpose**: Build a robust, chainable URL parsing and manipulation library (modeled after the real-world `furl` package) that allows users to easily get and set every component of a URL—scheme, username/password, host, port, path, query, and fragment—and to encode/decode/normalize them correctly per RFC 3986 and WHATWG URL rules, while remaining forgiving of malformed or unusual input.
-
-**Module metadata**: Define dunder constants `__title__`, `__version__` ("2.1.4"), `__license__` ("Unlicense"), `__author__`, `__contact__`, `__url__`, `__copyright__`, `__description__`.
-
-**Dependencies/fallbacks**:
-- Try to import `ic` from `icecream` for debug printing; if unavailable, define a no-op fallback `ic()` that returns `None` if no args, the single arg if one,
-- Import `omD query-argument multidict.
-- Use `abc`, `re`, `urllib.parse`, `warnings`, `copy.deepcopy`, `posixpath.normpath`, and typing utilities (`Any`, `Callable`, `Final`, `Self`).
-
-**Key module-level data**:
-- A sentinel object `absent` used to distinguish "not provided" from `None`/empty in method signatures.
-- A `DEFAULT_PORTS` dictionary mapping ~45 URL schemes (e.g. `http`, `https`, `ftp`, `ssh`, `redis`, `rtsp`, `ldap`, `nntp`, `sip`, `smb`, `wais`, etc.) to their standard default port numbers, used to decide when a port should be omitted from a UR it mationality to implement** (continue the file beyond the shown excerpt):
-- Low-level helper functions for percent-encoding/decoding strings for different URL contexts (path segments, query keys/values, fragment path/query, userinfo, host), including quoting rules that differ per RFC 3986 safe-character sets.
-- A `Path` class representing URL path segments, supporting par a string, serialization back to a string, segment list access, absolute/leading-slash and trailing-slash flags, and norm.`/`..` segments via `posixpath.normp
-- A `Query` class wrapping an ordered multD`) of query parameters, supporting par enc operations, and handeated keys, blank values, and custencoding.
-- A `Fragment` class containing its own `Path` and `Query` for fragment strings that themselves look like `path?query`.
-- An abstract base or mixin (using `abc`) defining a common interface for URL-path-like components shared between `Path` and `Fragment`.
-- The main `furl` class that:
-  - Parses a full URL string (scheme, username, password, host, port, path, query, fragment) in its constructor, and also accepts keyword arguments to set individual components directly.
-  - Exposes properties/getters-and-setters for `scheme`, `username`, `password`, `host`, `port` (auto-resolving/omitting default ports based on `DEFAULT_PORTS`), `netloc`, `path`, `query`, `args` (alias for query params), `fragment`, and full `url`.
-  - Supports fluent/chainable methods such as `set()`, `add()`, `()`, `copy()`ance to allow method chaining.
-  - Implstr__`/`__onical URL string fromctly re-assembling scheme, authority (userinfo@host:port), path, query, and fragment with proper percent-encoding.
-  - Handles edge cases: IPv6 host brackets, missing scheme, scheme-relative URLs, empty paths, trailing slashes, malformed or partially-encoded input, and raises or warns (via the `warnings` module) on invalid operations where appropriate.
-  - Supports equality comparison and deep copying (`copy.deepcopy`) of `furl` instances and their sub-components.
-- Use the `absent` sentinel throughout method/property signatures to differentiate "argument not passed" from an explicit `None` or empty value, allowing methods like `set(path=absent, query=absent, fragment=absent, ...)` to selectively update only the provided components.
-
-The output should be a single self-contained `.py` file with no external runtime dependencies beyond `orderedmultidict` (and optional `icecream`), suitable for use both as an importable library (`from furl import furl`) and potentially as a quick interactive/debugging script.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/WDZsmXut6Rh2vPrjVKYm66"""
 
 from __future__ import annotations
 

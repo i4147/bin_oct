@@ -1,33 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Merged Python source code formatting/rewriting tool.
-Third-party dependencies (all optional, per-subcommand):
-  astor     - astor subcommand
-  black     - format --style black (default)
-  isort     - format --style isort
-  autoflake - format --style autoflake
-  autopep8  - format --style autopep
-  yapf      - format --style yapf
-  ruff      - external binary for ruff subcommand
-Usage examples:
-  python merged.py fixcode FILE.py
-  python merged.py fixindent FILE.py --indent 4
-  python merged.py tokenformat FILE.py
-  python merged.py reflow FILE.py --width 35
-  python merged.py astor FILE.py --backup
-  python merged.py ruff ./mydir
-  python merged.py sort FILE.py
-  python merged.py format --style black
-Mapping:
-  fixcode.py        -> python merged.py fixcode FILE.py
-  fixindent.py      -> python merged.py fixindent FILE.py
-  format_py_code.py -> python merged.py tokenformat FILE.py
-  p45.py            -> python merged.py reflow FILE.py
-  rrw.py            -> python merged.py astor FILE.py
-  rufbin.py         -> python merged.py ruff [DIR]
-  sort_pyfile.py    -> python merged.py sort FILE.py
-  yap.py            -> python merged.py format --style black
-"""
 
 from __future__ import annotations
 import argparse

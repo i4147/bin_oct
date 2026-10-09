@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that minifies JavaScript files (.js, .jsx, .jsm, .jsc) in place using the external "terser" tool with compress and mangle options.
-It should accept optional file or directory arguments (defaulting to the current working directory when none are given), skip already-minified files (ending in ".min.js") and files under "site-packages"/"notebook" paths, and skip single-line files.
-For each qualifying file it should record the size before and after minification (via helper functions gsz and rrs from a local "dh" module), overwrite the file with the minified output, and process multiple files in parallel using the "mpf" helper, while handling terser errors gracefully by printing them to stderr.
-"""
 
 from __future__ import annotations
 import sys

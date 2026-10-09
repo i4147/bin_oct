@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""imgtool.py — merged image/media optimization toolkit.
-Original script mapping ----------------------- auto_enhance.py -> python imgtool.py auto-enhance [inputs ...] [-v] [--parallel] [-j N] downimg.py -> python imgtool.py downscale [scale_factor] [--root .] [-j N] embed_optimizer.py -> python imgtool.py embed-optimize [inputs ...] [-j N] [--dry-run] [-v] opng.py -> python imgtool.py optimize-png --tool optipng -j 4 [inputs ...] optimpng.py -> python imgtool.py optimize-png --tool optipng -j 8 oxip.py -> python imgtool.py optimize-png --tool oxipng -j 8 pilenhancer.py -> python imgtool.py pil-enhance [inputs ...] [--contrast 1.1 ...] resizeimg.py -> python imgtool.py resize [inputs ...] [--scale 0.75] [--quality 85] strip_exif.py -> python imgtool.py strip-exif [paths ...] [-b] [--no-recursive] [-j 8] upimg.py -> python imgtool.py upscale [inputs ...] Third-party dependencies used by the original scripts: - opencv-python, numpy - Pillow - tqdm - joblib - loguru - rich External command-line tools used by some subcommands: - optipng - oxipng - pngq / pngquant-like command (embed-optimize) - jpegoptim - to_jpg - svgo - ter_ser / terser-like command - ccss / clean-css-like command This merged script keeps all original behaviors reachable.
-Where the originals differed only by defaults, the defaults are preserved in the matching subcommand and can be overridden by flags.
-"""
 
 from __future__ import annotations
 import argparse

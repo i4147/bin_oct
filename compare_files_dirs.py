@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Merged file/directory comparison utilities.
-
-Usage examples:
-    python merged.py a-b first.txt second.txt
-    python merged.py compare-move ./src ./dst --yes
-    python merged.py compare-dirs ./a ./b --common-file common.txt
-    python merged.py compare-dirz ./a ./b --hash-chunk-size 65536
-    python merged.py fcmp ./dir
-    python merged.py pdif file1.txt file2.txt
-    python merged.py pycommon file1.txt file2.txt
-    python merged.py same-file file1.txt file2.txt
-    python merged.py udiffer file1.txt file2.txt
-
-Optional third-party package:
-    dh (for cprint). If unavailable, a plain print fallback is used.
-"""
 
 import argparse
 import difflib

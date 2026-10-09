@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-add_hints.py — add simple, safe type hints to Python files using libcst.
-
-The file is rewritten IN PLACE, but only after the new source:
-  1. parses successfully with ast.parse(), and
-  2. is semantically identical to the original once annotations are stripped.
-
-Usage:
-    python add_hints.py FILE.py [FILE2.py ...] [--dry-run] [--diff] [--backup]
-                                [--no-returns] [--name-heuristics]
-
-Requires:  pip install libcst
-"""
 
 from __future__ import annotations
 

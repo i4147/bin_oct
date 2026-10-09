@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes a file path (output of "pip freeze") as an argument and rewrites it in place to contain only bare package names, one per line.
-It should strip comments, blank lines, VCS/URL-based requirements (git+, http://, https://), version specifiers, and editable install markers ("-e "), while also handling "@"-style direct references by keeping only the name before the "@".
-The script must preserve the first-seen order of packages while removing duplicates, and raise an error if the given file does not exist.
-"""
 
 from __future__ import annotations
 import argparse

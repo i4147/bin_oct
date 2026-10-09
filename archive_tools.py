@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""archive_tool.py — Unified archive extractor / fixer / checker.
-Merges these original scripts: ar_extract.py auto_extract.py ex_tar.py extar.py fixextract.py subdir.py subdir2.py u7z.py uxr.py uzz.py xtar.py xxx.py Third-party dependencies (all optional; script degrades gracefully): pip install py7zr zstandard brotli lz4 Mapping of every original script to its equivalent invocation: ar_extract.py -> extract --engine external --organize stem --single-file-subdir -j 8 <cwd> auto_extract.py -> extract --engine python -r <cwd> ex_tar.py -> extract --engine python -r --formats .zst,.tar.zst,.tar.xz <target> extar.py -> extract --engine python -r --formats .zst,.tar.zst,.tar.xz <cwd> fixextract.py -> fix [--fix] [-v] <dir> subdir.py -> extract --engine python --organize stem --subdir-truncate 8 <cwd> subdir2.py -> extract --engine external --organize stem <cwd> u7z.py -> extract --engine python --formats .tar,.7z <cwd> uxr.py -> extract --engine python -r -k <dir> uzz.py -> whl <cwd> xtar.py -> extract --engine python --integrity-check --formats .tar.gz,.tar.xz,.tar.zst,.tar.br <cwd> xxx.py -> extract --engine python --integrity-check --formats .tar.gz,.tar.xz,.tar.zst,.zip,.whl <cwd>
-"""
 
 from __future__ import annotations
 import argparse

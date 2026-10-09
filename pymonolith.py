@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""monolith.py — Unified single-file webpage archiver.
-Merges the behaviours of ``monolithei.py`` and ``pymonolith.py`` into a single, well-structured CLI.
-Given a URL or a local HTML file, it downloads the page and produces one self-contained HTML document with external CSS / JS / images / fonts embedded.
-Third-party dependencies (already required by the originals): * requests * beautifulsoup4 Usage ----- python monolith.py <source> [options] Examples -------- # URL, monolithei-style (defaults) python monolith.py https://example.com -o page.html # URL, pymonolith-style (data-URI CSS, prettified, no meta-charset) python monolith.py https://example.com --css-mode data-uri --prettify --no-meta-charset -o page.html # Local file python monolith.py ./index.html -o bundle.html Original → merged mapping ------------------------- monolithei.py <source> [-e] [-i] [-o OUT] → python monolith.py <source> [-e] [-i] [-o OUT] (defaults match: --css-mode inline, no --prettify, meta-charset injected) pymonolith.py <url> [-o OUT] [-t TIMEOUT] → python monolith.py <url> --css-mode data-uri --prettify --no-meta-charset [-o OUT] [-t TIMEOUT] (pymonolith never crashed on sub-resource errors; emulate lenient mode with -e if you want monolithei's --ignore-errors behaviour too.)
-"""
 
 from __future__ import annotations
 import argparse

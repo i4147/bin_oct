@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans all files in the current directory tree (skipping any paths inside a .git folder) to detect environment variable declarations formatted as UPPERCASE_NAME=value at the start of a line.
-For each file, it should read line by line with UTF-8 encoding, gracefully catching and printing any read errors without stopping the scan, and collect all unique matched variable names into a set.
-Finally, it should write the sorted list of unique variable names, one per line, to an output file named env_vars.txt, and print a summary message showing how many unique variable names were found, handling any file-write errors gracefully as well.
-"""
 
 from __future__ import annotations
 import builtins

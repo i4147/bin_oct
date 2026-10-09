@@ -1,33 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Merged JSON/text conversion toolkit.
-Third-party dependencies:
-  pandas  - only required by the `ss2json` subcommand
-Usage examples:
-  python merged.py custom2json magic.txt out.json
-  python merged.py freeze2json
-  python merged.py jsonl2dict data.jsonl --key id
-  python merged.py jsonl2json data.jsonl -o out/ --indent 2
-  python merged.py lowerkeys data.json
-  python merged.py merge-json a.json b.json -o merged.json
-  python merged.py mergejson a.json b.json -o merged.json
-  python merged.py mime2json ./mime-dir --output mime_to_ext.json
-  python merged.py sortdict data.txt
-  python merged.py ss2json scores.csv
-  python merged.py tojson words.txt "\\t"
-Mapping:
-  custom2json.py  -> python merged.py custom2json FILE [OUT]
-  freeze2json.py  -> python merged.py freeze2json
-  jsonl2dict.py   -> python merged.py jsonl2dict FILE [--key FIELD]
-  jsonl2json.py   -> python merged.py jsonl2json IN... [-o DIR] [--indent N]
-  lower_keys.py   -> python merged.py lowerkeys FILE
-  merge_json.py   -> python merged.py merge-json IN... [-o OUT] [--workers N]
-  mergejson.py    -> python merged.py mergejson IN IN [...] -o OUT
-  mime2json.py    -> python merged.py mime2json [DIR] [--output F]
-  sort_dict.py    -> python merged.py sortdict FILE
-  ss2json.py      -> python merged.py ss2json CSV
-  tojson.py       -> python merged.py tojson FILE DELIMITER
-"""
 
 from __future__ import annotations
 import argparse

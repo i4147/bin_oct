@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line utility that reads a text file (using mmap for files larger than 5MB, falling back to standard reading otherwise) and shuffles its lines using multiple selectable shuffling methods, such as "basic" (random.shuffle), "crypto" (secure random via secrets), and "shuffle3", each applied a configurable number of repeat passes.
-The script should accept the input file path, an optional output filename prefix, a list of shuffle methods, and a repeat count as parameters, print progress information like file size and line counts, and write the shuffled results to separate output files named according to the method used, preserving the original line count and encoding (UTF-8).
-It should be structured with argparse for CLI usage and use pathlib for file handling.
-"""
 
 from __future__ import annotations
 import argparse

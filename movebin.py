@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans all files in the current working directory, detects which ones are binary files (using an is_binary helper function), and moves each detected binary file into a subfolder named "binary" (created if it doesn't already exist).
-For every file moved, it should print a message showing the source and destination path, and gracefully catch and report any errors encountered during the move.
-At the end, it should print a summary stating either the total number of binary files moved or that no binary files were found.
-"""
 
 from __future__ import annotations
 import shutil

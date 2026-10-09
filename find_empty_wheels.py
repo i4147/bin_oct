@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans the current working directory for `.whl` files and checks each one to determine whether it is "empty," meaning its ZIP contents contain no `.py`, `.so`, or `.pyi` files.
-For each wheel,raises BadZipFile), print a warning and treat it as not empty.
-After scanning, print the total count of empty wheels found, create an `empty_wheels` subdirectory in the current directory if needed, print each empty wheel's relative path, and move it into that subdirectory; if none are found, print a message stating so.
-Structure the code with a helper function `is_empty_wheel` returning `bool | None` and a `main` function, and run `main` via `raise SystemExit(main())` in the `__main__` block.
-"""
 
 from __future__ import annotations
 import zipfile

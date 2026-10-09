@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that automates scaffolding and publishing a new GitHub repository/package for a given package name, using a GitHub token loaded from a .env file in the home directory via python-dotenv and calls to the GitHub REST API (urllib).
-It should generate standard project files (pyproject.toml, setup.py, .gitignore, __init__.py, and package source templates for both pure-Python and Cython variants) stamped with a fixed version number, initialize a local git repository, create the corresponding GitHub repo through the API, and push the initial commit to the default branch using subprocess calls to git.
-The script should accept command-line arguments (via argparse) to specify the package name and any relevant options, and should handle errors such as missing tokens, failed API requests, or git command failures by printing informative messages and exiting appropriately.
-"""
 
 from __future__ import annotations
 import argparse

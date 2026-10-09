@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively searches the current working directory for all files matching a given extension (passed as a single command-line argument) and copies them into a newly created subfolder named after that extension, skipping files already inside the destination folder to avoid recursion.
-The script should resolve filename collisions by appending an incrementing numeric suffix to the file stem before copying, using shutil.copy2 to preserve metadata.
-It should print each copy operation as it happens, catch and report per-file copy errors without stopping, and finally print a summary with the total number of files copied.
-If the extension argument is missing or the wrong number of arguments is supplied, it should print a usage message and exit with a non-zero status.
-"""
 
 from __future__ import annotations
 import shutil

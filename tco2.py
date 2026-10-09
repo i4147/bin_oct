@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Translate one-word-per-line files on Termux Android 7 ARMv8l.
-This script targets Python 3.12 on 32-bit ARM Termux with limited memory.
-It uses only the standard library, loguru, and the selected backend package.
-Supported backends: - deepl - deep_translator - libretranslate_remote - translate - translators_bing - googletrans - pygoogletranslation - boto3 - baidu - alibaba - watson - azure The implementation deliberately excludes native machine-learning runtimes, local model-serving stacks, and cloud SDKs that require native extensions or large compiled dependency trees unsuitable for this platform.
-No offline model is loaded; offline-style operation requires a LibreTranslate server elsewhere on the LAN or Internet.
-"""
 
 from __future__ import annotations
 import argparse

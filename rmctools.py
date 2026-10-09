@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""merged.py — unified Python source cleaner.
-Merges the behaviour of 11 near-duplicate scripts: aremci.py clean_py.py cleanpy2.py cormc.py grmc.py jtc.py jtc2.py pyjtc.py rmco.py rmmc.py rrmc.py Usage: python merged.py <command> [options] [paths...] Commands: libcst Strip comments/docstrings with libcst.
-ast Strip comments/docstrings using ast + ast.unparse (or astor).
-regex Regex-based comment/string stripping (multi-language).
-unused Remove unused functions/classes/variables/imports.
-jtc Wrapper around the external 'just-the-code' CLI.
-Original-script -> invocation mapping ------------------------------------- aremci.py -> python merged.py libcst --no-shebang --no-file-comments --no-module-docstring --backup cleanpy2.py -> python merged.py libcst --preserve-module-docstring grmc.py -> python merged.py libcst rrmc.py -> python merged.py libcst cormc.py -> python merged.py ast --unparser ast rmco.py -> python merged.py ast --unparser astor --keep-noqa clean_py.py -> python merged.py unused [--dry-run] pyjtc.py -> python merged.py regex --lang py --inplace rmmc.py -> python merged.py regex --hash-only --inplace jtc.py -> python merged.py jtc --language python jtc2.py -> python merged.py jtc --language auto <single-file> Third-party dependencies (only required by the subcommands that use them): * libcst – required by `libcst` subcommand * astor – required by `ast --unparser=astor` * loguru – optional; falls back to stdlib logging * just-the-code CLI – required by the `jtc` subcommand
-"""
 
 from __future__ import annotations
 import argparse

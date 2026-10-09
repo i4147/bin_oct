@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a cross-platform (Linux-focused) command-line security auditing script in Python that recursively walks specified directory trees to detect filesystem and permission risks, such as world-writable files/directories, SUID/SGID binaries, files with unusual ownership, orphaned symlinks, or overly permissive configuration files.
-It should use argparse for options (e.g., target paths, checks to run, symlink-following behavior), leverage os.walk, stat, pwd/grp lookups, and hashlib for file inspection, and optionally shell out via subprocess for supplementary checks.
-Output should be organized into colorized (ANSI, TTY-aware), formatted console sections with helper functions for headers, findings, success, and warning/error messages, printing warnings to stderr.
-The tool is meant to help administrators quickly spot suspicious or insecure file configurations across a system.
-"""
 
 from __future__ import annotations
 import argparse

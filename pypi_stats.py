@@ -1,46 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt instructing an AI coding agent to create a Python 3.12 command-line tool (for Termux on Android) called "pypistats" that queries the PyPI Stats API (https://pypistats.org/api/) to retrieve and display download statistics for PyPI packages.
-
-The tool must support the following subcommands/endpoints, mirroring the official PyPI Stats API:
-- recent download counts for a package, with an optional period filter (day, week, month)
-- overall: overall download counts for a package, with an optional "mirrors" filter (true/false/with_mirrors/without_mirrors)
-- python_major: downloads broken down by major Python version
-- python_minor: downloads broken down by minor Python version
-- system: downloads broken down by operating system
-
-Each subcomm accept a mandatory package name arg notior:
-
-1. **CLI argument parsing**sers for each endpoint/command. Support global options:
-   - `--start-date` and `--end-date` (ISO format YYYY-MM-DD) to filter results by date range.
-   - `--format` (or `-f`) to choose output format: options should include at least "pretty" (human-readable table), "markdown"/"md", "rst", "html", "json", "numpy", "pandas" (handle "md" as an alias for "markdown").
-   - `--total` to control aggregation granularity, restricted to one of "daily", "monthly", "all"; raise a validation error if an invalid value is given (helper function to validate this` /no-sort` flag to toggle sorting of the output data.
-   - `--color` option.g. "yes"/"no"/"auto") to controlminal output.
-   - `ose diyPI Stats URL, the actual API URL being called, and the cache file path being used.
-   - A version flag that prints the package version (expose `__version__` as a module-level string, e.g. "1.14.0", with an accompanying version tuple).
-
-2. **HTTP requests with local caching**:
-   - Build the API URL by joining a base URL constant with the lowercased endpoint path and any query string parameters.
-   - Construct a cache file path deterministically derived from the full request URL (e.g., hashed or sanitized filename) and use a cache directory suitable for Termux (e.g., under the user's cache/config directory).
-   - Before HTTP request, check whether a valid cache file exists for that URL; if so, load and reuse the cached JSON no valid cache exists, perform the Hllib3, im the form `pypistats/se the JSON response, and Includeat cache entries as stexpired after a cert same-day or config that data refreshes peri verbose logging should indicate whether the cache was used or a live request was made.
-
-3. **Data processing and output formatting**:
-   - Parse the JSON API response into a tabular/structured form (e.g., list of dicts or rows with columns like date, category, downloads).
-   - Support date filtering between start_date and end_date.
-   - Support aggregation by day, month, or total based on the `total` parameter, including correctly summing/rolling up download counts per period (use calendar utilities for month-end calculations).
-   - Support sorting rows (e.g., by date or downloads) when sort Render the final in the requested outputcolprinted table for terminal display ( optional ggled by the colorTML table, raw JS--friendly structures (NumPy array / pandas programmatic use.
-
-4. **Configu Read optsuch as default formatavior) from a config file (using ConfigParser) so users can override defaults without passing CLI flags every time.
-
-5. **Error handling and cleanup**:
-   - Validate inputs (like the `total` granularity) and raise clear errors (e.g., ValueError) with descriptive messages on invalid values.
-   - Use `atexit` to ensure any necessary cleanup (such as closing resources or flushing cache) happens on program exit.
-   - Suppress or manage non-critical warnings appropriately.
-
-6. **Code structure**:
-   - Target Python 3.12, with a shebang line for Termux (`#!/data/data/com.termux/files/us12from __future__ import annotations` for forward-compatible type hints.
-   - Organize functionality into small, testable helper functions (e.g., a helper, a totalularity validator, cename/load/ main API--level `__version__`, `version__version_tuple__`, and `version_tupleributes for version introifying the sub and optional filters/formatting options. The main output is downded package statistics from pypistats.org rendered to stdout in the user-selected format, with optional verbose diagnostic messages written to stderr and API responses cached locally to speed up repeated queries and reduce network calls.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/caDo8LfYouJMgNCiHXJAhe"""
 
 from __future__ import annotations
 

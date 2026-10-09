@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that converts a Jupyter notebook file into a Markdown file.
-The script should accept the notebook file path as the first command-line argument, read it using nbformat, and iterate through its cells in order.
-Markdown cells should be written directly as plain text, while code cells should be wrapped in triple-backtick Python code fences.
-The output should be saved to a new file with the same name as the input but with a ".md" extension, and the script should print a confirmation message showing the export destination once complete.
-"""
 
 from __future__ import annotations
 import sys

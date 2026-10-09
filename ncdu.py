@@ -1,23 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""[Tool: think]
-  Params: {"content":"The user wants a prompt describing the code, not the code. I have only partial code (it's truncated), but I have enough: it's a Termux Python script, ncdu2.py, a disk usage analyzer with curses TUI similar to ncdu, using multiprocessing with 8 workers, logging setup with verbosity levels and logfile redirection, argparse for CLI args. I should infer typical ncdu-like features: scanning directories, computing sizes, displaying interactive curses UI, sorting, delete functionality, etc. I need to write a single prompt text describing purpose, inputs/outputs, notable behaviors based on evidence in the code (imports: curses, json, multiprocessing, shutil, stat, dataclasses, Path, argparse). This is a single-tool task (just producing text), no need for actual tool calls - this is a text generation task I can answer directly without invoking any tools."}
-Create a Python 3.12 command-line script named `ncdu2.py` designed to run on Termux (Android) that functions as an interactive, multi-process disk usage analyzer similar to the classic `ncdu` tool, built on top of the `curses` library for its terminal UI.
-
-The script must:
-
-- Use `argparse` to parse command-line arguments, including at least: the target directory/path to scan, a verbosity flag (supporting multiple levels, e.g. `-v`/`-vv` mapping to WARNING/INFO/DEBUG logging levels), and an optional log file path to redirect logging output instead of stderr.
-- Implement a `setup_logging(verbosity, logfile)` function that configures the root logger with a consistent timestamped format (`%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s`, time format `%H:%M:%S`), writing either to a given log file (overwrite mode) or to stderr, and logs a startup banner including program name, version, verbosity, PID, and Python version.
-- Implement a `redirect_logging_to_file(path)` helper that can dynamically tear down existing logging handlers and reattach a new `FileHandler` (append mode) with the same formatter, useful for switching log output once the curses UI takes over the terminal.
-- Use the `multiprocessing` module with a configurable worker pool (default `WORKERS = 8`) to scan the filesystem in parallel, walking directories, reading file metadata via `os`/`stat`/`pathlib.Path`, and aggregating sizes recursively to build a tree of directory/file entries.
-- Represent scanned filesystem entries using `dataclasses` (e.g., a node class with fields such as name, path, size, type, children) to build an in-memory tree representing the scanned directory structure.
-- Present an interactive full-screen `curses`-based UI allowing the user to navigate the directory tree (drill into subdirectories, go back up), view entries sorted by size, and see human-readable sizes, similar to standard `ncdu` behavior.
-- Support exporting/importing the scan results as JSON (via the `json` module), allowing scan data to be saved to a file and later reloaded without rescanning.
-- Include file management capabilities (using `shutil` and `os`) such as deleting selected files or directories directly from the UI.
-- Define a module-level `PROGNAME` constant (`"ncdu2.py"`) and `__version__` string (`"2.0.0"`) used in logging and/or help output.
-- Be structured with `from __future__ import annotations` and modern type hints (`Path | None`, `list[...]`, etc.) targeting Python 3.12, with a shebang pointing to the Termux Python interpreter (`#!/data/data/com.termux/files/usr/bin/python3.12`).
-- Be runnable as a standalone script (with a `if __name__ == "__main__":` entry point) that initializes logging, parses arguments, spawns the worker processes to scan the given path, and then launches the curses interface to browse the results, printing errors gracefully and exiting with appropriate status codes on failure (e.g., invalid path, permission errors).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/DstgdA7TwNJD8kHVPj4gRM"""
 
 from __future__ import annotations
 import argparse

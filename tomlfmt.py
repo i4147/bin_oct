@@ -1,37 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a single-file, in-place TOML formatter script for Termux/Python (Python 3.11+, shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), named `tomlfmt.py`, that mimics the default formatting behavior of the `taplo` CLI formatter (format-only, no linting/validation beyond safety checks).
-
-**Purpose**: Reformat TOML files to a canonical, consistent style matching taplo's defaults, modifying files in place.
-
-**Inputs (CLI usage)**:
-- No arguments: recursively format every `*.toml` file under the current directory.
-- One or more arguments: a mix of individual file paths and/or directory paths; directories are searched recursively for `*.toml` files.
-- `--check` flag: dry-run mode — write nothing to disk, but exit with status code 3 if any file's formatted output would differ from its current content (useful for CI).
-
-**Output**: Files are rewritten in place with formatted content (unless `--check` is used). Print which files were changed/would change, and report any files that failed validation (left untouched).
-
-**Formatting rules to implement (taplo defaults)**:
-- Exactly one space around `=`.
-- Dotted keys and table headers have inner spaces removed (e.g., `[ a . b ]` → `[a.b]`).
-- Indentation of entries and tables is removed entirely.
-- Collapse runs of 3+ blank lines down to at most 2 consecutive blank lines.
-- Strip any leading blank lines at the start of the file.
-- Ensure exactly one trailing newline at end of file.
-- Strip trailing whitespace from every line.
-- Arrays: render on a single line as `[1, 2, 3]` if the result fits within 80 columns; otherwise expand to one element per line with 2-space indentation and a trailing comma after the last element. Arrays containing comments or multi-line strings must always stay expanded regardless of width.
-- Inline tables: format as `{ a = 1, b = 2 }`, or `{}` when empty.
-- Comments are preserved verbatim except for trailing whitespace trimming; consecutive trailing (end-of-line) comments on adjacent lines are vertically aligned (align_comments behavior).
-- Key order, values, string contents, and number formatting must never be altered.
-- Preserve the original file's byte-order mark (BOM), if present, and preserve the file's dominant line ending style (LF vs CRLF).
-- Explicitly NOT implemented: key reordering (reorder_keys), entry alignment (align_entries), and support for `.taplo.toml` configuration files — the script only applies the fixed default ruleset described above.
-
-**Safety behavior**:
-- Before formatting, validate that the original file is syntactically valid TOML; if not, report the file as invalid/failed and leave it untouched (no write).
-- After generating formatted output, re-parse it (using `tomllib`, or `tomli` as a fallback on Python 3.10) and verify the resulting data structure is exactly equal to the data parsed from the original file (comparison must be type-exact and NaN-aware, so that `nan == nan` is treated as equal where appropriate) before writing. If the round-trip data does not match, do not write the file and report it as a failure instead, to guarantee the formatter never silently corrupts data.
-
-**Dependencies**: Use `tomllib` from the standard library (Python 3.11+); note that on Python 3.10 the `tomli` package must be installed as a substitute. The script must be self-contained in a single file with no other external dependencies.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/c2MXECCpteWq9jy46jZsto"""
 
 import argparse
 import contextlib

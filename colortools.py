@@ -1,19 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Merged color-tooling utilities.
-
-Usage examples:
-    python merged.py html /sdcard/colors /sdcard/colors.html
-    python merged.py extract . --output colors
-    python merged.py extract-show . --max-colors 200
-    python merged.py hex2rgb '#ff0088' --format dict
-    python merged.py hex2rgb '#f08' --format tuple --allow-short
-    python merged.py showcolor --count 20
-    python merged.py sorthue colors.txt
-
-Optional third-party package: ``dh`` (for ``cprint``, ``is_binary``,
-``should_skip``).  If it is not installed, standard-library fallbacks are
-used instead.
-"""
 
 import argparse
 import colorsys

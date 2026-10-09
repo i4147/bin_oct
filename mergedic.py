@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that merges multiple JSON dictionary files containing English-to-Persian (or Persian-to-English) translation key-value pairs into two unified output files, one per direction, while detecting each input file's language direction automatically by checking whether the majority of its keys match an English-word regex pattern.
-It should accept input file paths as command-line arguments or, if none are given, auto-discover all "*.json" files in the current directory, raising an error for empty files or files with an ambiguous mix of English and non-English keys (not clearly ≥90% or ≤10% English).
-Merged entries should be accumulated per direction using a dict-of-dicts structure (e.g., via defaultdict), later written out as JSON files with randomly generated filenames (using a "get_random_filename" helper) that avoid overwriting existing files via a uniquification helper.
-Throughout the process it should log progress, warnings, and errors using the "loguru" logger, and exit gracefully with a clear error message if something goes wrong (e.g., invalid JSON, non-dict content, or empty input list).
-"""
 
 from __future__ import annotations
 import json

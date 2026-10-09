@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Advanced Python 3.14 Duplicate Code Detector
-----------------------------------------------
-Target Runtime: Python 3.14+
-Features:
-  - Uses Python 3.14 `concurrent.futures.InterpreterPoolExecutor` (subinterpreters with per-interpreter GIL).
-  - Parallel AST normalization and fuzzy variable alpha-renaming.
-  - Detects objects differing in type annotations across instances.
-  - Strips docstrings & trivial AST structures.
-  - Generates JSON outputs and an interactive HTML report in `./output/`.
-"""
 
 import ast
 import argparse

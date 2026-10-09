@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes an image file path as its single argument and classifies the image's overall brightness.
-It should open the image with Pillow, convert it to RGB, compute the perceived brightness of every pixel using the standard luminance formula, and calculate the ratio of "dark" pixels (below a brightness threshold, default 50) to total pixels.
-Based on configurable thresholds, it should label the image as "Mostly Dark", "Mostly Bright", or "Mixed", then print the image filename with its classification and the dark pixel ratio.
-If no image path argument is provided, the script should print a usage message and exit with a nonzero status code.
-"""
 
 from __future__ import annotations
 import sys

@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that strips leading shebang lines (e.g.
-"#!/...") from Python source files to reduce clutter/disk usage.
-It should accept file paths as command-line arguments, or if none are given, recursively discover all ".py" files in the current working directory using a helper "get_files" function.
-Using a multiprocessing Pool (spawn context, 8 workers, with a bounded pending queue of 16 tasks), it should process each file concurrently: read its content, check if the first line starts with "#!/", and if so, remove that line and rewrite the file, printing a confirmation message with the filename.
-Before and after processing, it should measure the total size of the current directory via a "gsz" helper, compute the difference, and print the space saved using a "fsz" formatting helper, with all directory-size and file-listing utilities imported from a local "dh" module.
-"""
 
 from __future__ import annotations
 import sys

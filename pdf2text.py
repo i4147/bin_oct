@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""pdf_text_extractor.py Merge of the original scripts: pdf2text.py -> python pdf_text_extractor.py concat input.pdf pdftotxt.py -> python pdf_text_extractor.py split input.pdf Third-party dependencies used by the original scripts: PyPDF2 pdfplumber Install them with: pip install PyPDF2 pdfplumber Usage examples: # Concatenate all pages into one text file, using PyPDF2 (original pdf2text.py behavior) python pdf_text_extractor.py concat input.pdf # Concatenate all pages into one text file, using pdfplumber python pdf_text_extractor.py concat input.pdf --engine pdfplumber -o output.txt # Split each page into its own text file, using pdfplumber (original pdftotxt.py behavior) python pdf_text_extractor.py split input.pdf # Split each page, choosing a different output directory and engine python pdf_text_extractor.py split input.pdf --output-dir out --engine pypdf2 # Split each page, allowing nested output directories python pdf_text_extractor.py split input.pdf --output-dir out/book --parents"""
 
 from __future__ import annotations
 import argparse

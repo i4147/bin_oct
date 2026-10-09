@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that scans a directory tree (including inside common archive formats like zip, tar variants, gz, bz2, xz, zst, and br) to discover Python source files, extracts functions, classes, and other code entities from them, and deduplicates or filters them—likely by computing SHA256 hashes of normalized file contents and using AST (and optionally tree-sitter) parsing to analyze code structure such as function/class/assignment definitions.
-It should support multiprocessing for parallel processing of many files/archives, skip common non-source directories (.git, __pycache__, venv, site-packages, etc.), and use loguru for logging progress and errors.
-The script should accept command-line arguments (via argparse) to configure input paths and output behavior, safely read/write text files with UTF-8 encoding and newline normalization, and handle malformed or unreadable files gracefully without crashing the whole run.
-"""
 
 from __future__ import annotations
 import argparse

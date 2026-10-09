@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Scan Lua files recursively and move files with syntax errors to an 'error' subdirectory in their parent folder."""
 
 from __future__ import annotations
 from pathlib import Path

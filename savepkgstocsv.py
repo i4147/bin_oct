@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that inventories all Debian packages installed on the system via dpkg-query, extracting fields such as Package, Version, Architecture, Status, Priority, Section, Installed-Size, Maintainer, Homepage, Description, Source, Essential, Multi-Arch, Origin, and Bugs using a custom tab-separated format string.
-The script should run the dpkg-query subprocess, parse and validate each output line against the expected field count, sort the resulting rows by Installed-Size in descending order, and then save the data to both a TSV file and a CSV file inside /sdcard/backups (named installed.tsv and installed.csv).
-It should handle errors gracefully, exiting with an informative message if dpkg-query is missing (non-Debian system) or if the subprocess call fails.
-"""
 
 from __future__ import annotations
 import csv

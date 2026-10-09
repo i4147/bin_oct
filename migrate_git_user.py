@@ -1,26 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Termux-compatible Python 3.12 script (shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that automates migrating a developer's local Git/SSH identity from an old GitHub account to a new one on an Android/Termux environment.
-
-The script should define constants at the top for:
-- OLD_USERNAME, OLD_EMAIL (the account being replaced)
-- NEW_USERNAME, NEW_EMAIL (the account to switch to)
-- Paths: HOME (user home directory), SSH_DIR (`~/.ssh`), GIT_CONFIG (`~/.gitconfig`), SSH_KEY_NAME ("id_ed25519"), SSH_KEY_PATH (full path to the key)
-- A list of target filenames/glob patterns to scan/update in project files (e.g. "setup.py", "pyproject.toml", "setup.cfg", "package.json", "*.cfg", "*.ini", "*.toml", "*.md", "*.txt", "*.yml", "*.yaml")
-- A set of directory names to exclude from any recursive file search (e.g. ".git", "node_modules", "venv", ".venv", "__pycache__", "site-packages", ".cache", ".local", ".npm", ".cargo")
-
-Implement the following functionality using `os`, `re`, `subprocess`, `shutil`, and `pathlib.Path`:
-
-1. A helper `run(cmd, check=True, capture_output=False, input_text=None)` that wraps `subprocess.run`, auto-detecting whether `cmd` is a string (use `shell=True`) or a list (use `shell=False`), always returning text output, and supporting optional stdin input and output capture.
-
-2. `update_git_global_config()` — sets the global git `user.name` and `user.email` to the new username/email using `git config --global`.
-
-3. `remove_old_ssh_keys()` — if the `.ssh` directory exists, iterates over its contents and deletes any file whose name starts with `id_` or equals `known_hosts`, silently ignoring deletion errors.
-
-4. `generate_new_ssh_key()` — ensures the `.ssh` directory exists with permissions `0700`, generates a new ed25519 SSH key pair via `ssh-keygen -t ed25519 -C <new_email> -f <key_path> -N ""` (no passphrase), then sets the private key file permissions to `0600` and the public key file (`<key_path>.pub`) permissions to `0644`.
-
-The script should be structured so these functions can be called in sequence (and likely extended with additional functions, e.g., for scanning/replacing old username/email occurrences in project files matching the target filename patterns, and re-adding the new SSH key to the ssh-agent or displaying it for upload to GitHub) to fully automate switching the machine's git identity and SSH credentials from the old account to the new one, while avoiding scanning irrelevant directories like dependency/cache folders.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/hjAki4EWVgtcN8yNz4jc7x"""
 
 import os
 import re

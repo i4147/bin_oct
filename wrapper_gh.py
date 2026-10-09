@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python wrapper script for the "gh" (GitHub CLI) command that transparently logs every invocation before executing the real binary.
-It should locate the actual gh executable by checking a hardcoded Termux path or searching the PATH directories (while excluding itself to avoid recursive calls), then create a timestamped, uniquely-named log file under ~/tmp/log/apps.
-Before running the real command, it should write a header to the log containing the timestamp, current working directory, and the invoked command arguments.
-It should then execute the real gh binary with the original arguments, forwarding stdout/stderr and exit code appropriately.
-"""
 
 from __future__ import annotations
 import datetime

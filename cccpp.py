@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Remove comments from C/C++ source files in place using tree-sitter.
-This script walks the given files/directories (default: current directory), parses each C/C++ file with tree-sitter, and strips out comment nodes.
-It can operate in a parallel batch mode using a fixed multiprocessing pool of 8 workers, or in an interactive mode where each comment is shown together with its surrounding context and the user decides whether to remove it.
-CLI: script.py [paths ...] [-i|--interactive] Behavior: - Non-interactive: every C/C++ file found under the given paths has all comments removed in place; a summary is logged at the end.
-- Interactive: for each comment the user is prompted with y/n/q.
-Dependencies: tree_sitter, tree_sitter_c, tree_sitter_cpp, loguru."""
 
 from __future__ import annotations
 import argparse

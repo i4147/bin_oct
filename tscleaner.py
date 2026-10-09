@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans the current working directory for source code files (based on file suffix mappings such as .ts, .tsx, .js, .cpp, etc.) and parses each one using the appropriate tree-sitter language grammar, skipping common build/dependency/VCS directories like .git, node_modules, __pycache__, dist, and build.
-It should use a multiprocessing Pool (with a configurable worker count) to parse files in parallel for performance, and load the correct tree-sitter language module dynamically per file extension via a dataclass-based language specification table.
-The script should handle file access safely (checking file type/permissions via os and stat), collect and report parsing results or errors for each processed file, and exit with an appropriate status code reflecting overall success or failure.
-"""
 
 from __future__ import annotations
 import os

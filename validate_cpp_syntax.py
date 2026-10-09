@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Auto syntax-checker for C/C++/header files in Termux (or any Unix with clang).
-Usage: ./syntax_check.py [files_or_dirs ...] If no paths are given, scans the current directory (non-recursive) for *.c, *.cpp, *.h, *.hpp files.
-Reports only files that fail.
-Uses multiprocessing with 8 workers."""
 
 from __future__ import annotations
 import multiprocessing as mp

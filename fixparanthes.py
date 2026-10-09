@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Fix string literals in a (possibly invalid) JSON file.
-Usage: python fix_json.py <json-file> Per string literal we: 1.
-Convert any [ ] { } (escaped or not) into ( ).
-2.
-Un-escape \( \) into ( ) (those are invalid JSON escapes anyway).
-3.
-Balance parentheses (add missing ones on the proper side).
-Then we validate by json.loads + re-dump so the file is valid JSON."""
 
 from __future__ import annotations
 import json

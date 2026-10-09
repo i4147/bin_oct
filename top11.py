@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans the current working directory recursively (using helper functions `get_files` and `fsz` from a local `dh` module) to find and display the largest files.
-It should accept an optional command-line argument specifying how many top files to show, defaulting to 11 if not provided.
-The script should collect each file's relative path and size, sort them by size in descending order, and print a formatted table with columns for rank number, truncated file path (capped at 80 characters, with a leading "..." if truncated), and human-readable file size.
-If no files are found, it should print a message indicating so instead of the table."""
 
 from __future__ import annotations
 import operator

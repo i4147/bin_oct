@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes a file path as its argument, reads the text file's contents, and filters its lines to keep only non-empty lines containing either "mkv" or "mp4" along with a resolution marker, preferring "480" if present in the file, otherwise falling back to 720.
-If any matching lines are found, overwrite the original file with just those filtered lines (joined by newlines); if none are found, leave the file unchanged.
-Finally, print the count of matching lines found in the format "{count} links found."""
 
 from __future__ import annotations
 import sys

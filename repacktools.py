@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""repack_tool.py — unified Python package → wheel repacker.
-This module merges the behaviour of eleven ad-hoc scripts that all do "take some installed/unpacked Python package and produce a .whl file".
-It exposes two subcommands: repack Repack installed packages discovered inside a site-packages directory (or the user/system site-packages, or a specific directory) into wheels.
-pack-dirs Take a directory full of already-unpacked wheel trees (each containing a ``*.dist-info`` sub-directory) and pack each one back into a .whl.
-Optional third-party packages used when available: * ``wheel`` — required only for --mode library / --builder wheellib * ``tqdm`` — used for progress bars when available * ``packaging`` — used for accurate current-platform wheel tags Everything else is standard library.
-Usage examples -------------- Repack everything in the current site-packages using the "simple" method:: python repack_tool.py repack --all --source current -v Rebuild wheels accurately from RECORD (recommended for accurate wheels):: python repack_tool.py repack --all --method record --on-missing warn Repack specific packages, storing a JSON report:: python repack_tool.py repack --packages requests numpy \ --output ~/tmp/whl --report report.json Pack all unpacked wheel dirs in ./unpacked/:: python repack_tool.py pack-dirs --directory ./unpacked --output ./wheels Original-script equivalents --------------------------- repack_pkgs.py -> repack --source current --method simple --report repack_report.json -v rpack.py -> repack --source auto --method simple --packages PKG...
-rwheel.py -a -> repack --source auto --method simple --all --parallel siter.py -> repack --source current --method record --parallel sr.py -> repack --source system --method record --on-missing abort usrpack.py -> repack --source user --method record --parallel --output ~/tmp/whl vsr3.py -> repack --source current --method record --on-missing copy \ --missing-dir ~/tmp/not_repacked wheelpackdirs.py -> pack-dirs --mode subprocess --parallel wpack.py -> pack-dirs --mode library --parallel wrepack.py -> pack-dirs --mode library
-"""
 
 from __future__ import annotations
 import argparse

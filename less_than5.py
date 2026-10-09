@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans a given directory (defaulting to the current directory) for files created within the last 320 seconds, based on file creation timestamps.
-It should move each qualifying file into a "5min" subfolder created at the root of the scanned directory, preserving the original relative subdirectory structure, while skipping files already located inside the "5min" folder to avoid reprocessing.
-When a destination file with the same name already exists, the script must generate a unique filename by appending an incrementing numeric suffix before the extension.
-The script should track and report counts of moved, skipped, and errored files, and raise a ValueError if the specified starting directory does not exist.
-"""
 
 from __future__ import annotations
 import shutil

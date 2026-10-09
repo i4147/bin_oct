@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-extract_py.py
-
-Scan Markdown files for fenced Python code blocks (```python ... ```) and
-write each block to its own file in the current directory:
-
-    ex01.py, ex02.py, ex03.py, ...
-
-Usage:
-    python extract_py.py                # process every *.md in the current dir
-    python extract_py.py notes.md       # process specific file(s)
-    python extract_py.py *.md           # shell expansion also works
-"""
 
 import re
 import sys

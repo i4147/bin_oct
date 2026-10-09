@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that scans a directory (optionally recursively) for image files—including PNG, JPG, JPEG, WEBP, BMP, GIF, TIFF, and SVG (rendered via cairosvg if available)—and displays them directly in the terminal using Pillow for loading/conversion and a custom renderer that scales images to fit within given terminal width/height constraints (accounting for character cell aspect ratio by doubling the height in pixels).
-It should accept command-line arguments via argparse for the target directory, recursion toggle, and max display dimensions, then iterate through discovered image paths and print each one to the console.
-Include error handling for missing dependencies (like cairosvg for SVG support) and invalid or corrupted image files, using pathlib for filesystem operations and typing hints for clarity.
-"""
 
 from __future__ import annotations
 import argparse

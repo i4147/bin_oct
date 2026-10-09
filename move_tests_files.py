@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Generate a Python script that moves Python test files (files whose stem contains "_test" or "test_") from a base directory into ~/tmp/tests while preserving their relative directory structure, logging moved files to ~/tmp/moved_files.json and supporting a --reverse flag to undo the operation.
-The script must use pathlib for all filesystem paths, multiprocessing.Pool.apply_async with a fixed pool of 8 workers for concurrency, loguru for logging, complete strict type annotations (mypy/pyright clean), docstrings on all functions and the module, and argparse for a --reverse flag, --dir base directory, and --log log path.
-Clean up empty directories under the destination after a reverse."""
 
 from __future__ import annotations
 import argparse

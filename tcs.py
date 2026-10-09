@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line utility that reads a text file and copies a specified portion of its lines to the system clipboard using Termux's `termux-clipboard-set` command (for use on Android/Termux environments).
-It should accept a file path along with either a start/end line range or a list of specific line numbers (via a "-s" flag for selective mode) to extract, join the selected lines, and pipe them to the clipboard command through a subprocess.
-The script must handle and report errors gracefully, including missing files, out-of-range line numbers, the `termux-clipboard-set` binary not being found (e.g., Termux:API not installed), and any non-zero exit codes or exceptions from the clipboard subprocess, printing descriptive messages to stderr and exiting with a non-zero status on failure.
-"""
 
 from __future__ import annotations
 import subprocess

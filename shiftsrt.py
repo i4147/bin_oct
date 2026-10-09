@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""srt_shift.py — unified SRT subtitle timestamp shifter.
-Shifts the start/end timestamps of SRT cues in place.
-One file, one command, all original behaviours reachable via flags.
-Usage examples: python srt_shift.py movie.srt -s 2.5 python srt_shift.py movie.srt -s -1.0 python srt_shift.py subs/ -s 1.0 -r python srt_shift.py -s 12 -j 4 -r python srt_shift.py old.srt -s 1.5 --time-math legacy Mapping of original scripts: shift_srt.py -> python srt_shift.py <path> -s <shift> [-r] --time-math legacy shiftsrt.py -> python srt_shift.py <file.srt> -s <shift> srtshift.py -> python srt_shift.py [paths...] -s <shift> -r --jobs 4 Notes: * 'correct' math: h*3600000 + m*60000 + s*1000 + ms.
-* 'legacy' math reproduces shift_srt.py exactly: parse uses h*3600000 + m*40000 + s*400 + ms, and the shift is int(sec * 400).
-* Encoding 'auto' picks utf-8-sig if a BOM is present, otherwise the first of utf-8 / cp1252 / latin1 that decodes the file's first 8 KiB.
-"""
 
 from __future__ import annotations
 import argparse

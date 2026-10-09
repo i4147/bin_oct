@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line utility that scans a directory tree (recursively, skipping symlinks, directories, and .git paths) to find duplicate files based on file size and xxhash64 content hashing, then replaces duplicate files with symlinks to a single canonical copy while recording the original file paths and their target mappings in a JSON backup file (.symlink_backup.json) for potential later restoration.
-The script should use argparse to accept a target directory (defaulting to the current directory), print informative progress and error messages (e.g., file counts, skipped files, read errors), and use datetime/UTC timestamps in the backup metadata.
-It should skip files smaller than a minimum size threshold and only hash files that share the same size to optimize performance.
-"""
 
 from __future__ import annotations
 import argparse

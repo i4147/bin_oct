@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that takes a target webpage URL as input, fetches its HTML using a requests Session configured with browser-like headers (User-Agent, Accept, Accept-Language, etc.) to avoid basic blocking, and parses it with BeautifulSoup to extract all absolute HTTP/HTTPS links found in anchor tags and other elements (such as scripts or media) with URL attributes, resolving relative URLs via urljoin and filtering out fragments and javascript: links.
-It should use argparse to accept the URL (and likely options like output file or timeout) from the command line, deduplicate discovered links into a set, and output the resulting list of links, handling request errors gracefully with appropriate exit behavior via sys.
-"""
 
 from __future__ import annotations
 import argparse

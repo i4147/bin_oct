@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""merged_search.py - unified file-search toolkit.
-Combines nine standalone scripts into a single CLI with subcommands.
-Original -> merged mapping -------------------------- exnames.py -> python merged_search.py names <names_file> [directory] fdrg.py -> python merged_search.py fast <pattern> [-c] [-d DIR] pfind.py -> python merged_search.py find <pattern> [dirs...] prg.py -> python merged_search.py grep <pattern> [paths...] pyrg.py -> python merged_search.py grep <pattern> [paths...] -i -F ...
-pyrgtxt.py -> python merged_search.py grep -F <pattern> --extensions .txt ...
-pyfinfo.py -> python merged_search.py info [directory] pygrex.py -> python merged_search.py regex <filename> stringr.py -> python merged_search.py strings [files...] Examples -------- python merged_search.py names male_names.txt /sdcard/data python merged_search.py fast TODO -c -d ./src -w 4 python merged_search.py find ".py" ./projects python merged_search.py grep "def main" .
--i -g "*.py" python merged_search.py info /sdcard/data -t 50 --min-count 3 python merged_search.py regex names.txt python merged_search.py strings ./bin/* -o strings_out.txt Optional third-party packages (features degrade gracefully if absent): py7zr, brotli, zstandard, keyboard
-"""
 
 from __future__ import annotations
 import argparse

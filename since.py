@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that implements a PersianDateConverter class to convert dates from the Persian (Jalali/Solar Hijri) calendar to the Gregorian calendar.
-It should include a static method to determine whether a given Persian year is a leap year using the 33-year cycle algorithm, along with month name and month-length definitions for the twelve Persian months.
-The core conversion method should take a Persian year, month, and day, validate that the month is between 1 and 12 and the day is valid for that month (accounting for the leap-year adjustment in Esfand), then compute the total number of elapsed days since the start of the Persian calendar by summing days from prior years and prior months before adding the remaining days, ultimately producing the corresponding Gregorian date.
-The script should raise descriptive ValueError exceptions for invalid month or day inputs and rely on Python's datetime and sys modules for supporting functionality.
-"""
 
 from __future__ import annotations
 import datetime

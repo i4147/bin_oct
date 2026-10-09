@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively finds all JSON files in the current working directory, reformats each one by parsing it and rewriting it with indent=2 and ensure_ascii=False (effectively pretty-printing/normalizing it), and processes the files in parallel using a helper multiprocessing function.
-For each file it should print the filename along with the file size change (before vs after) as a colored percentage, skip or report unchanged/empty files, and catch and report JSON parse errors in a distinct color.
-At the end it should print the total directory size change before and after processing, and exit with status code 1 if no JSON files were found or if the total size did not change.
-"""
 
 from __future__ import annotations
 import json

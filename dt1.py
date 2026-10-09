@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Translate a text file in independent character-limited chunks.
-The script is designed for Termux and uses only lightweight, optional translation libraries.
-Translation libraries are imported lazily, so only the selected backend must be installed.
-Example: pip install loguru deep_translator python translate_chunks.py --input input.txt --output chunks.json --source en --target fr The output JSON has this form: { "0": "Translated first chunk", "1": "Translated second chunk" }
-"""
 
 from __future__ import annotations
 import argparse

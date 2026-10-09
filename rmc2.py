@@ -1,45 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Python 3.12 command-line tool (designed to run under Termux on Android, using the `/data/data/com.term/usr/bin/python3.12` shebang) that strips comments, docstrings, and/or type annotations from Python source files using `libcst` for safe, format-preserving parsing and transformation.
-
-**Purpose:**
-Build a script that recursively scans a target path (a single file or a directory tree) for Python source files (`.py`, `.pyi`, `.pyw`) and removes selected categories of "noise" from the code — standalone/inline comments, docstrings (function/class and optionally module-level), and/or variable/parameter/return type annotations — while preserving the rest of the code's structure and formatting as as possible via CST (Concrete Syntax T than naive text used for smallasks like detecting encoding cookies, and encoding detection).
-
-**Key behaLI arguments** (via `argparse`):
-   - Positional `path`: file or directory to process.
-   - Flags to select what to strip: comments, docstrings, module-level docstring (only effective if docstrings are also stripped), type annotations.
-   - An option to control whether removed comments/docstrings should be replaced by own-line placeholders or removed inline.
-   - A flag to preserve "special" com `:`, encoding c being stripped.
-   - for dry-run (pre writshow unation (e.g., `.bak` in-place writing toggle, verging level, include/exclude glob patterns, and number of parallel worker processes.ool's
-
-2. **File**
-   - If theCS/virtualenv/cache directypy_cache`, `.ruff_cache` etc.).
-   - Filter files by the Python suffixes and any encoding by checking for a PEP 263 coding cookie (regex) in the first two lines, falling back to UTF-8 (with BOM handling via `codecs`).
-
-4. **Transformation logic (using `libcst`):**
-   - Parse each file into a CST.
-   - A transformer class walks the tree and:
-     - Removes comments (leading/trailing trivia) unless they match "special" patterns (type/fmt directives) when preservation is enabled, optionally leaving an own-line placeholder depending on mode.
-     - Removes docstrings from function and class bodies (replacing the expression statement), and optionally the module-level docstring, when enabled.
-     - Removes parameter, variable, and return type annotations when enabled, while keeping default values and other code intact.
-   - Track counts of how many comments, docstrings, and annotations were removed/modified per file (via a `Counts` dataclass).
-
-5. **Per-file processing pipeline:**
-   - Read file content, detect encoding, parse with libcst, apply the transformer according to the configured `Mode` (a frozen dataclass of boolean flags: own_line, docstrings,ations, strip_special). DetermStatus` for the fileODIFIED`, `, `SKIPPED (e.g., non-matching, binors), or `FAILEDexpected errors), recorded in a `FileResult` dataclass (path, status, original size, and presumably new size, counts, error message, diff text).
-   - If changes were made and not in dry-run mode: optionally create a `.bak` backup, then write the modified source back to the file (respecting original encoding/line endings), unless an in-place write is disabled in favor of just reporting.
-   - If diff mode is enabled, generate a unified diff (via `difflib`) between original and modified source for reporting/preview.
-
-6. **Parallelism:**
-   - Use `multiprocessing` with a configurable number of worker processes (default 4) and a selectable pool iteration method (`imap_unordered`, `imap`, or `map`) to process multiple files concurrently, with graceful handling of interrupt signals (`SIGINT`) to allow clancellation.
-
-7. **Logging andveled logging (configurable
-   - After processing all fileslog of files modified, unchanged, skipped, failed, comments/docstrings/ionally print. **Output:**
-    script's main "output" is the set of mod.py` back to with optional backups diff/porting — it does not print the cleaned code to stdexceptdiff mode).
-
-9. syntax errors (sk file) versceptions (mark as failed) without crashing the whole batch run, continuing to process remaining files.
-
-The tool should expose a `VERSION` constant ("1.0.0") and target Python feature level 3.12, and should be implemented as a single, self-contained, well-typed script using modern Python typing constructs (`Final`, `Literal`, dataclasses with `slots`/`frozen`, `enum.StrEnum`).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/3LyVbWAZuH7vwTthHQBGsh"""
 
 import argparse
 import ast

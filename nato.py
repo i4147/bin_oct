@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Replace letters with NATO phonetic alphabet words."""
 
 from __future__ import annotations
 import argparse

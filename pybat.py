@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a complete Python 3 script pybat.py that reimplements the core features of the Rust bat command.
-Use Pygments for syntax highlighting.
-Support multiple files and stdin (-).
-Display optional line numbers, a box-drawing grid, file headers, and git diff markers (+ added, ~ modified, ‾ removed) by shelling out to git diff -U0.
-Provide CLI flags for --language, --theme, --plain, --style (full/plain/numbers/grid/header/changes), --line-range, --highlight-line, --paging, --color, --tabs, --list-languages, and --list-themes.
-Use ANSI 256/truecolor formatting, dataclasses for configuration, and handle binary files gracefully.
-Output complete, runnable code."""
 
 from __future__ import annotations
 import argparse

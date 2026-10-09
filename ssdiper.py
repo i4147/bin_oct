@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively collect files via a helper `get_files` function from module `dh`) and computes ssdeep fuzzy hashes for each file, skipping files smaller than a configurable minimum size and gracefully handling missing/unreadable files.
-It should then pairwise-compare all computed hashes using ssdeep.compare, collect pairs whose similarity score meets or exceeds a configurable threshold (default 70), and record these similar file pairs with their scores, using relative paths where possible.
-The script should output the results as JSON, sorted by similarity score in descending order using operator for sorting.
-Pass -g/--group-similar to move paired files, into subdirs group001, group002, ...
-in the current directory."""
 
 from __future__ import annotations
 import argparse

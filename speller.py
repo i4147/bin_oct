@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that spell-checks a text file using the pyspellchecker library, processing the file line by line in parallel with a multiprocessing Pool for performance.
-For each line, it should scan words (including handling apostrophes and preserving original casing such as title-case or all-caps) and either report misspelled words with suggested corrections to the console, or, if an autofix flag is enabled, automatically replace misspelled words with the best correction while preserving the original word's capitalization style.
-It should accept input via argparse (e.g., file path and an autofix option), track counts of misspelled and fixed words, and output the corrected text (if autofixing) or a report of misspellings and suggestions.
-"""
 
 from __future__ import annotations
 import argparse

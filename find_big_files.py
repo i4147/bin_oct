@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively scans the current working directory (or a single given path) for files larger than a size threshold and prints each qualifying file's path (relative to the current directory) along with its human-readable size, using a helper `fsz` function from a local `dh` module for formatting.
-The threshold defaults to 1MB but can be overridden by passing a number of megabytes as the first command-line argument.
-The script should walk directories using `os.walk`, skip symlinked files/directories and any paths matched by a `should_skip` filter function, and avoid revisiting already-processed directories by tracking their resolved paths in a set.
-It should be structured with a generator function to yield candidate file paths and a separate function to check and report oversized files, executed via a `main()` entry point.
-"""
 
 from __future__ import annotations
 import sys

@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Download a GitHub repository snapshot as a ZIP, similar to GitHub's Code -> Download ZIP.
-Usage: python gh_zip.py <repo> [-b BACKEND] Where <repo> is: - owner/repo - https://github.com/owner/repo - https://github.com/owner/repo.git Backends: subprocess (default): uses gh or git/curl/wget via subprocess pygithub: uses PyGithub if available, otherwise falls back to subprocess gitpython: uses GitPython if available, otherwise falls back to subprocess dulwich: uses Dulwich if available, otherwise falls back to subprocess typer: only for CLI parsing if installed; archive download still falls back as needed Notes: - The ZIP is saved in the current working directory.
-- The script tries to read GITHUB_TOKEN from ~/.env via python-dotenv.
-- It attempts to estimate repo size before download.
-- If size is under 5 MB, it downloads immediately.
-- If size is 5 MB or larger, it asks for confirmation when interactive.
-- If prompting is not possible, it continues."""
 
 from __future__ import annotations
 import argparse

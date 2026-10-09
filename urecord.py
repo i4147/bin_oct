@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that cleans up pip-installed package RECORD files (from *.dist-info directories) by removing entries for .pyc files, direct_url.json, INSTALLER, and LICENSE files.
-The script should locate site-packages directories (falling back to the user site-packages if the standard ones aren't available), then scan and rewrite each RECORD CSV file found, printing a summary of how many entries were removed from each file and reporting any errors encountered during processing.
-It should accept command-line arguments via argparse and support running against the discovered site-packages paths.
-"""
 
 from __future__ import annotations
 import argparse

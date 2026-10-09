@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Python String Literal Translator
-================================
-Translates non-English string literals in Python (.py) files in-place.
-
-Features:
-- Accepts multiple files or directories as input arguments.
-- Recursively searches current folder if no input arguments are provided.
-- Uses `translate` library as default translation backend with fallback to `deep-translator`.
-- Precise AST byte-to-char offset mapping for UTF-8 non-ASCII characters.
-- In-place file updates using `pathlib.Path`.
-"""
 
 import argparse
 import ast

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Remove comments from bash/shell scripts in place, using tree-sitter for accurate parsing (so '#' inside strings, parameter expansions, etc.
-is never mistaken for a comment).
-After stripping comments, runs of 2+ consecutive blank lines are collapsed to a single blank line, and the resulting source is re-parsed and checked for syntax errors before it is written back to disk.
-Files that would become invalid are left untouched and reported as errors."""
 
 from __future__ import annotations
 import argparse

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line refactoring tool that scans a project directory for `.py` source files and reorganizes top-level definitions—constants, classes, and functions—into separate target files (default `consts.py`, `classes.py`, `funcs.py`) using AST parsing to detect and relocate declarations.
-It should support single-file or batch/multiprocessing modes (using a worker pool), optional automatic backup creation (with a `.bak` suffix) and an undo mode to restore from backups, optional code formatting after refactoring, and a verbose flag for logging progress.
-The script should be driven by command-line arguments (parsed via argparse) mapped onto an immutable `Options` dataclass with sensible defaults, and it should locate `.py` files recursively or non-recursively while excluding existing backup files.
-"""
 
 from __future__ import annotations
 import argparse

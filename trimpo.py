@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that verifies whether installed packages can be successfully imported.
-It should use importlib.metadata.distributions() to enumerate all installed packages when no command-line arguments are given, attempting to import each one, printing a checkmark with the package name on success, and logging a debug-level traceback (via loguru, writing to /sdcard/allimport.log) on failure.
-If package names are passed as command-line arguments, it should instead attempt to import only those specific packages using the same success/failure reporting logic.
-The script should always exit with status code 0 regardless of import failures."""
 
 from __future__ import annotations
 import sys

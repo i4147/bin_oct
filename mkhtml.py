@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that generates a basic HTML boilerplate file using a predefined template string containing links to "style.css" and "script.js" and a simple heading.
-The script should accept a file path as its first command-line argument, defaulting to "index.html" if none is provided, and write the HTML template content to that file using UTF-8 encoding via pathlib.
-Use sys.argv to read the argument and Path.write_text to perform the file writing."""
 
 from __future__ import annotations
 import sys

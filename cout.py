@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that adds a shebang line (or a comment-based marker) to the top of files if it's missing, choosing the correct comment syntax based on file extension via a predefined mapping (Python, Shell, JS/TS, C-family, Ruby, SQL, INI, LaTeX, etc.).
-It should accept one or more file/directory paths as input, recursively process files (using a chunked, multiprocessing pool for performance), and safely rewrite each file in place using a temporary file plus atomic replace, skipping unsupported extensions and files that already contain the marker.
-It should log progress and errors with loguru, support small-file and large-file handling differently for efficiency, and expose command-line arguments (e.g., via argparse) to control the desired shebang/comment text and target paths.
-"""
 
 from __future__ import annotations
 import argparse

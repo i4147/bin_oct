@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Compress Python source files into a compact representation suitable for LLM input.
-Features: - Removes shebangs, comments, docstrings, type annotations, future imports, and standard-library imports.
-- Renames local/global variables, functions, classes, constants, parameters, and keyword argument names where safe.
-- Performs several AST-level simplifications.
-- Processes files/directories recursively.
-- Writes output to compressed.txt."""
 
 from __future__ import annotations
 import argparse

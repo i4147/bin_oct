@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""translate_files.py — a single CLI that merges four sibling translation scripts.
-Third-party dependencies (must be installed): pip install deep-translator tenacity loguru Original script -> merged equivalent ------------------------------------ vitrans.py -> python translate_files.py vi tkor.py -> python translate_files.py ko <input_file> [--game GAME] tchn.py -> python translate_files.py zh [--root DIR] trans_ru.py -> python translate_files.py ru <input_file> Every hardcoded constant from the originals is exposed as a CLI flag whose default matches the original value, so default invocations reproduce the original behavior exactly.
-"""
 
 from __future__ import annotations
 import argparse

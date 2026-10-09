@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that automatically regenerates an `__init__.py` file for a package by scanning all top-level `.py` modules (excluding `__init__.py` and files starting with underscore) in a given directory, using the `ast` module to parse each file and extract public function and class names (those not starting with underscore).
-It should build a mapping of module names to their public symbols, opt merging with an existing `__init__.py`'s current imports and `__all__` list by parsing it with `ast` as well.
-The script should support parallel processing of modules via `multiprocessing` for speed, use `shutil` for any file backup/copy operations, and write out updated `from .module import Name` statements plus a sorted `__all__` list, printing warnings to stderr for files that fail to parse.
-"""
 
 from __future__ import annotations
 import ast

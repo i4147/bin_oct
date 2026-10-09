@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that converts a raw CodePen HTML snippet into a complete standalone HTML document.
-It should read an input file path from command-line arguments, wrap the snippet's body content inside a full HTML5 boilerplate (doctype, head with meta charset/viewport, title, and links to "style.css" and "script.js"), and write the result either back to the same file or to an optional output path also given via arguments.
-The document title should default to a title-cased version of the input filename (with hyphens replaced by spaces) unless explicitly overridden.
-The script must handle missing files or read/write errors gracefully by printing descriptive error messages and returning a success/failure status, and print confirmation messages with checkmarks upon successful conversion.
-"""
 
 from __future__ import annotations
 import sys

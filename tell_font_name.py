@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that renames font files (e.g., TTF/OTF) based on their embedded metadata.
-It should use fontTools to open each font, extract the family and subfamily/style names from the name table (preferring the Windows/US-English record, falling back to ASCII-printable entries), sanitize these strings into safe filename components, and rename each file to a "Family-Style" pattern, appending "Regular" when no distinct style is found or when style duplicates the family.
-It should process one or more input files or directories (via a helper that enumerates font files), skip or report files where a family name cannot be determined, avoid overwriting existing files by generating a unique path, and print colored status/error messages for each processed file while tracking and returning an overall error count.
-"""
 
 from __future__ import annotations
 import re

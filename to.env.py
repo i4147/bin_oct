@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans source files for environment-variable-style API token names (as defined in a hictionary, MODEL_MAPPINGS, mapping token names like "CLAUDE_TOKEN" to their corresponding model identifiers such as "claude-opus-4-7") and reports where each token is referenced.
-It should use the `re` module to search file contents for occurrences of these token names, `pathlib.Path` to walk through the target directory and read files, and `collections.defaultdict` to group the findings (e.g., by file or by token).
-The output should summarize which model tokens are used and in which files, aiding in auditing or documenting API token usage across a codebase.
-"""
 
 from __future__ import annotations
 import re

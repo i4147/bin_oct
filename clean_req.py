@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes a requirements.txt file path as its single argument, reads its lines, and cleans each entry by stripping comments, environment markers (after ";"), extras (e.g.
-"[extra]"), and version specifiers (==, >=, <=, ~=, !=, ===, <, >), leaving only the bare package name.
-It should remove empty lines and duplicate entries, then sort the resulting package names case-grouped (uppercase-starting names first, lowercase-starting next, others last, alphabetically within each group).
-The script should overwrite the original file with the cleaned, sorted list (one package per line) and also print the cleaned list to stdout under a "=== Cleaned Requirements ===" header.
-Handle missing file errors and incorrect usage by printing a helpful message to stderr and exiting with status code 1.
-"""
 
 from __future__ import annotations
 import re

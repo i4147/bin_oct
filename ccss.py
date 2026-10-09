@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that minifies CSS files using the external "cleancss" tool with duplicate-rule removal enabled.
-It should accept file paths as arguments, or if none are given, recursively find all ".css" and ".min.css" files in the current directory, skipping files that don't exist or contain only a single line.
-For each file it should run cleancss in place, print the filename plus a colored status ("NO CHANGE", "OK" with size reduction and percentage, or "ERROR"), process files in parallel, and finally report the total disk space freed.
-"""
 
 from __future__ import annotations
 import sys

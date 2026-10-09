@@ -1,49 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Python 3 command-line automation script (intended to run under Termux on Android, shebang `/data/data/com.termux/files/usr/bin/python3.12`) named `build_all.py` whose purpose is to discover and build every Python packaging project found under the current working directory, in parallel, and report which ones succeeded, failed, or were skipped.
-
-Functional requirements:
-
-1. **Project discovery**
-   - Recursively walk the current directory.
-   - A "project" is any directory that contains a `setup.py` and/or a `pyproject.toml`.
-   - While walking, prune (do not descend into) junk directories so they are never scanned: virtual environments, version-control directories (e.g. `.git`), cache directories, `build`/`dist` directories, `node_modules`, and `*.egg-info` directories.
-   - For directories that only have a `pyproject.toml`: parse the TOML. If it contains neither a `[project]` table nor a `[build-system]` table (i.e., it only has tool-specific config like `[tool.ruff]`) and there is no `setup.py` present, treat this as a non-buildable project and report it as **SKIPPED** rather than attempting a build or counting it as a failure.
-   - If the TOML is invalid/unparseable, do NOT skip it — still attempt the build so the real error from the build tool is surfaced to the user.
-
-2. **Building**
-   - Use the `build` package (`python -m build`) to build each discovered project in a subprocess.
-   - Support an `--out DIR` option: when provided, keep the resulting build artifacts, placing each project's output in a subdirectory of `DIR` named after the project's relative path with path separators replaced by `__` (so art When not provided, build into a temporary directory that is discarded afterward.
-   - Support a `--no-isolation` flag: when set, pass the equivalent "no build isolation" option to `build` so it uses the current Python environment and does not try to download build dependencies from the network.
-   - Run builds with a reasonable timeout; each build should run in its own process session/group so that on timeout the entire process tree (pip, build backends, etc.) can be killed, not just the top-level process.
-   - Note (document only, not something to "fix"): a `setup.py`-based build may create a `*.egg-info` directory inside the source folder as a side effect of setuptools; this is expected setuptools behavior.
-
-3. **Concurrency**
-   - Build exactly 4 projects at a time using a multiprocessing pool (`multiprocessing.Pool(4)` with `imap_unordered`).
-   - Worker processes must only perform the build and return a structured result object (e.g., project path, status, duration, captured output/error) — workers must NOT perform any logging themselves, to avoid logging-handler issues under the "spawn" multiprocessing start method on Windows/macOS.
-   - The parent/main process receives results from the pool and performs all logging/reporting using `loguru`.
-
-4. **CLI usage**
-   - `python build_all.py` — build everything found, discarding artifacts afterward.
-   - `python build_all.py --out dist_all` — build everything, keeping artifacts under `dist_all/`.
-   - `python build_all.py --no-isolation` — build using the current environment without isolation/network access for build dependencies.
-   - Use `argparse` for argument parsing.
-
-5. **Output / reporting**
-   - Use `loguru` for all progress and result logging (per-project start/success/failure/skip messages and a final summary of how many projects were built, skipped, and failed).
-   - Handle `Ctrl-C` (KeyboardInterrupt) gracefully, terminating the pool/workers cleanly.
-
-6. **Exit codes**
-   - `0` — everything built successfully or was legitimately skipped.
-   - `1` — one or more builds failed, or a setup/discovery error occurred.
-   - `130` — interrupted by Ctrl-C.
-
-7. **Dependencies**
-   - Requires the `build` and `loguru` Python packages (document this, e.g. `pip install build loguru`).
-   - Likely needed standard-library modules: `argparse`, `contextlib`, `functools`, `importlib.util`, `multiprocessing`, `os`/`pathlib`, `shutil`, `subprocess`, `sys`, `tempfile`, `time`, and a TOML parser (e.g. `tomllib`/`tomli`).
-
-Include a module-level docstring/header comment summarizing the script's purpose, usage examples, and the design notes above (project detection rules, pruning rules, skip-vs-fail logic for `pyproject.toml`, the 4-worker no-logging-in-workers design, per-build process-group timeout handling, and the egg-info side effect note), matching the style of inline documentation at the top of the file.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/RU4EaLnuGkVoAwKQYjAXcN"""
 
 import argparse
 import contextlib

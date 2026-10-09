@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that reformats a text file by splitting its content on a user-specified delimiter string.
-It should accept two command-line arguments, a filename and a delimiter, reading the file's full text, splitting it into parts using the delimiter, stripping whitespace from each part, and rewriting the same file so each part is followed by the delimiter and a newline.
-The script must validate that exactly two arguments are provided and that the delimiter is non-empty, printing a usage or error message and exiting with status 1 otherwise, and it should print a confirmation message naming the updated file upon success.
-"""
 
 from __future__ import annotations
 import sys

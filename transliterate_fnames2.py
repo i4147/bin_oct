@@ -1,34 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Python 3 command-line script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that renames files and/or directories by transliterating Persian/Arabic (and related Unicode, e.g. Persian/Arabic digits and diacritics) characters in their names into ASCII-safe equivalents, producing clean, filesystem-safe filenames.
-
-Requirements and behavior:
-
-1. **Transliteration mapping**: Define a dictionary (e.g. `PERSIAN_MAP`) that maps Persian/Arabic letters, digits, diacritical marks, and special characters (including zero-width non-joiner/joiner, Arabic diacritics like fatha/kasra/damma/shadda/tanwin, Persian/Arabic-Indic digits 0-9, and variant letter forms such as "ك"/"ک", "ي"/"ی", "ۀ", "ہ", "ے") to their closest ASCII Latin-letter phonetic equivalents (e.g. "ب"→"b", "ش"→"sh", "گ"→"g", "خ"→"kh", "ژ"→"zh", "غ"→"gh"). Include at least one multi-character key (e.g. the combination "لا"→"la") to demonstrate handling of multi-character sequences. Map whitespace to underscore, and map characters with no phonetic value (like hamza) to an empty string.
-
-2. **Transliteration function**: Implement a `transliterate(text: str) -> str` function that:
-   - Iterates through the input string character by character (supporting lookahead for multi-character keys in the map, checking longer sequences first before falling back to single characters).
-   - Replaces each matched Persian/Arabic character or sequence using the mapping dictionary.
-   - Passes through unmapped characters, applying Unicode normalization (e.g. NFKD decomposition and stripping combining marks/diacritics) to convert accented Latin or other Unicode characters into plain ASCII where possible.
-   - Removes or replaces any remaining unsafe characters using a regex (e.g. `SAFE_CHARS` pattern matching anything not in `[A-Za-z0-9._-]`), and collapses multiple consecutive underscores into a single underscore (e.g. via a `MULTIPLE_UNDERSCORES` regex), trimming leading/trailing underscores or separators.
-   - Returns a clean ASCII string suitable for use as a filename.
-
-3. **Command-line interface**: Use `argparse` to accept:
-   - One or more file/directory paths (or a target directory to scan) as positional arguments.
-   - An option to recurse into subdirectories.
-   - A dry-run / preview flag that shows what the new names would be without actually renaming.
-   - Possibly an option to skip or confirm overwriting if a target filename already collides with an existing file.
-
-4. **File system operations**: Using `pathlib`, the script should:
-   - Walk through the specified paths (and subdirectories if recursion is enabled).
-   - For each file/directory whose name contains non-ASCII (Persian/Arabic or other transliterable) characters, compute the new transliterated name while preserving the file extension.
-   - Rename the file/directory in place (using `Path.rename`), handling name collisions gracefully (e.g. by appending a numeric suffix).
-   - Print a log of each rename action (original name → new name), and report dry-run results without modifying the filesystem if that flag is set.
-
-5. **Robustness**: Handle edge cases such as empty strings, names that are entirely non-transliterable, already-ASCII names (skip or leave unchanged), and ensure the script does not crash on permission errors or missing files, printing a clear error message instead.
-
-The overall purpose of the script is to batch-rename Persian/Arabic-named files and folders into readable, portable ASCII-only filenames suitable for cross-platform compatibility and use in Unix-like environments such as Termux.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/VKLr6XKBfiKZuZPrnUu7XW"""
 
 from __future__ import annotations
 import argparse

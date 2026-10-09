@@ -1,33 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Create aility script (intended to run on Termg" tool whose purpose is to quickly upload an image to a UpYun (又拍云) cloud storage bucket and copy the resulting public URL to the system clipboard.
-
-The script should behave as follows:
-
-**Purpose:**
-A command-line image-upload helper that takes an image from a file path, the system clipboard (either an actual image or a file path copipboard image data configured UpYun stor, and returns/copies the final acc
-
-**Main inifying the image file path to upload.
-- If no path is given, the script should attempt to read an image directly from the system clipboard (screenshot/copied image) using `PIL.ImageGrab`, or alternatively detect a file path copied to the clipboard (supporting macOS via AppleScript/Finder, Windows, and Linux/Termux clipboard file references).
-- Configuration is persally in a pickle file at `~/.upimg_config.pkl`, storing: `service` (UpYun bucket/service name), `username`, `password`, `upload_path` (remote directory prefix, default `/`), and `url_base` (public domain used to build the final URL, default `https://test.upimg.com`).
-- Support a command-line flag/subcommand to set or update these configuration values (service, username, password, upload_path, url_base), persisting them via `pickle`.
-
-**Main outputs:**
-- Uploads the resolved image file to UpYun using the `upyun` Python SDK, placing it under the configured `upload_path`, typically naming the remote file using a timestamp (e.g., based on `datetime.now()`) to avoid collisions.
-- Constructs the final public URL by joining `url_base` with the uploaded file's remote path (using `urljoin`).
-- Copies the resulting URL to the system clipboard using `pyperclip.copy`.
-- Sends a desktop/system notification (title "UpImg") indicating success or failure of the upload, using `osascript` on macOS and a PowerShell balloon-tip notification on Windows (withallback/no-op if notification isn't supported, e.g., on Termux/Linux).
-
-**Notable behavior / requirements:**
-- Must detect the current OS via `platform.system()` and branch logic for Darwin (macOS), Windows, and other (Linux/Termux) platforms, particularly for clipboard file-path detection and system notifications.
-- Must handle both image-binary clipboard content and clipboard content that is a plain file path string, converting/loading it appropriately via `PIL.Image` and `io.BytesIO` where needed.
-- Should validate that required configuration fields areempting an upload, prompting the user to configure the tool if settings are missing or incomplete.
-- Should catch and report errors gracefully (e.g., using `traceback.print_exc()`), printing clear error messages to the console and/or sending a failure notification, rather than crashing silently.
-- Use `argparse` to parse command-line arguments/options (e.g., image path positional argument, a flag to enter configuration/setup mode).
-- The script should be aneting Termux's Python 3.12 (`#!/data/data/com.termux/files/usr/bin/python3.12`) with UTF-8 encoding declaration, usable as a quick CLI tool for grabbing a screenshot or file and instantly getting a shareable hosted image URL on the clipboard.
-- Define a `ConfigTuple` namedtuple (fields: service, username, password, upload_path, url_base) with sensible defaults for `upload_path` ("/") and `url_base` ("https://test.upimg.com") to structure and validate the loaded/saved configuration.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/EML4UYv7jbxTG3riWa9Jv9"""
 
 import argparse
 import os

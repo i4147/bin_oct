@@ -1,18 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Merge a small multi-file Python package into a single, migrated module.
-Reads either a directory tree of .py files (default: current directory, recursive) or a merged-file produced with "# File: relpath" sentinels (-f flag).
-Consolidates all modules into one file, applying: 1.
-Single-file consolidation with dependency-ordered sections (imports, constants, classes, functions), deduplicated by content hash, with 'main' functions dropped.
-2.
-Python 2 compatibility removal (six, __future__, xrange, etc).
-3.
-os.path -> pathlib.Path migration.
-4.
-concurrent.futures -> multiprocessing.Pool(WORKERS).imap_unordered, WORKERS = 6.
-5.
-logging -> loguru.
-Usage: script.py # scan current directory recursively script.py -f merged.py # read from a "# File: relpath" merged file script.py -o mypkg.py # choose output filename (default out.py)
-"""
 
 from __future__ import annotations
 import argparse

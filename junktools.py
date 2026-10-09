@@ -1,28 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Merged filesystem cleanup toolkit.
-Usage examples:
-  python merged.py os-junk --auto-remove
-  python merged.py darwin ./some/dir --verbose
-  python merged.py caches
-  python merged.py empty-files
-  python merged.py empty-files --delete --timeout 5
-  python merged.py empty-dirs --dry-run --verbose
-  python merged.py empty-dirs --exclude-mode pdmp
-  python merged.py twins --ext1 .json --ext2 .txt --apply
-  python merged.py twins --ext1 .json --ext2 .txt --interactive
-Mapping:
-  clean_os_files.py  -> python merged.py os-junk [--auto-remove]
-  cleanup_darwin.py  -> python merged.py darwin [DIR] [--verbose]
-  cnn.py             -> python merged.py caches
-  find_empty.py      -> python merged.py empty-files
-  rmempty.py         -> python merged.py empty-files --delete [--timeout N]
-  pdmp.py            -> python merged.py empty-dirs --exclude-mode pdmp [--dry-run] [--verbose]
-  pydmp.py           -> python merged.py empty-dirs
-  pydmp2.py          -> python merged.py empty-dirs
-  twin_files.py      -> python merged.py twins --ext1 .json --ext2 .txt [--apply]
-  twinfiles.py       -> python merged.py twins --ext1 X --ext2 Y --interactive
-"""
 
 from __future__ import annotations
 import argparse

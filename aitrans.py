@@ -1,38 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (shebang targeting Termux's Python interpreter at `/data/data/comtermux/files3.12`, UTF-8 encoded) that acts as a universal subtitle (SRT) translator powered by LLMs.
-
-Describe the following requirements clearly:
-
-**Purpose**: The script translates `.srt` subtitle files into a target language using either the OpenAI API or Google Gemini API as the translation backend, automatically choosing whichever provider is configured (OpenAI takes priority if both keling back to Gemini otherwise).
-
-**Configuration / startup, the script should load environment variables from a `. home directory (`~/.ple `KEY=VALUE` lines, skipping blank lines and comments (`#`), and stripping surrounding quotes from values. These loaded variables should populate `os.environ` without overwriting variables already set.
-- It should read `OPENAI_API_KEY` and `GEMINI_API_KEY` from the environment.
-- It should gracefully handle missing SDKs: import `openai` and `google.genai` inside try script doesn't crash if one package isn't installed; onlyantiate a client for provider if both its API key is and its SDK is importable. to check whether at least one provider is properly configured, and exit with a clear error message if neither is available.
-
-**Core translation logic**:
-- Implement a class (e.g., `UniversalTranslator`) encapsulating the configuration and translation behavior.
-- A method to translate a single piece of text to a target language (default "English"), which:
-  - Returns the input unchanged if it's empty/whitespace-only.
-  - Builds a carefully worded prompt instructing the model to act as a professional, high-fidelity translation engine, preserving meaning, tone, and formatting, and to return only the translated text without- Sends the prompt to whichever client isured (OpenAI chat/completions API using a for each provider.
-  - Returns the translated string, handling API errors gracefully (e.g., logging the error and returning the original text or a fallback).
-
-**SRT file handling**:
-- Parse `.srt` subtitle files (index numbers, timestamp lines, and multi-line subtitle text blocks separated by blank lines).
-- Translate only the subtitle text content, leaving indices and timestamps untouched, and reconstruct the file in valid SRT format.
-- Support processing a single file or a directory of `.srt` files (using `glob`/`Path` to discover files), writing translated output to new file(s) (e.g., with a suffix or in an output directory), preserving original filenames where sensible.
-
-**CLI interface**:
-- Use `argparse` to accept arguments such as: input file or directory path, target language, optional output path/directory, and anye.g., overwrite flag, verdebug flag).
-- Print clear progress/status messages to ste.g., which file is being processed, success file) and useit codes on fe API keys configured, inval).
-
-**Notable behavserve**:
-- Lai` so the script runs even if only one SDK is installed.
-- Environment variable loading from `~/.env` as a lightweight dotenv replacement (no external dependency).
-- Provider selection logic: prefer OpenAI if its key and SDK are both available, otherwise fall back to Gemini.
-- Designed to run specifically within a Termux (Android Linux environment) Python installation, as reflected by the shebang path.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/TtrvfNQ4bP5X464G8XXBLr"""
 
 import os
 import sys

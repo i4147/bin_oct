@@ -1,24 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Unified PyPI package update checker.
-Third-party dependencies:
-  requests
-  packaging
-  pycurl (optional; required only for --backend pycurl)
-Usage examples:
-  python merged.py c4u
-  python merged.py c4u2
-  python merged.py check4update
-  python merged.py checkforupdate
-  python merged.py check --backend requests --workers 8 --normalize pypi \
-      --output requirements.txt --output-format requirements
-Mapping:
-  c4u.py             -> python merged.py c4u
-  c4u2.py            -> python merged.py c4u2
-  check4update.py    -> python merged.py check4update
-  checkforupdate.py  -> python merged.py checkforupdate
-  generic            -> python merged.py check [options]
-"""
 
 from __future__ import annotations
 import argparse

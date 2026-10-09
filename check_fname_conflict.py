@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Check .py filenames for conflicts with stdlib or installed 3rd-party packages."""
 
 import sys
 from pathlib import Path

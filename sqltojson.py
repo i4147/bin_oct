@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-sql2json - single-file CLI
-
-Refactored from the `sql2json` PyPI package into one standalone script.
-
-Usage examples:
-    sql2json --help
-    sql2json --name default --query default
-    sql2json --list-connections
-    sql2json --list-queries
-    sql2json --output "report-{CURRENT_DATE}.json"
-"""
 
 from __future__ import absolute_import
 

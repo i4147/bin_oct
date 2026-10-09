@@ -1,11 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""pycleaner.py — unified Python cleanup toolkit.
-Merges behaviour from 10 scripts into a single argparse-driven CLI.
-Mapping (original -> merged): afk2.py -> pycleaner.py imports PATHS...
-[--autofix|--dry-run] afk_autoflake.py -> pycleaner.py imports --backend autoflake PATHS...
-detect_unused.py -> pycleaner.py defs --scope global [--extract] rmunused_funcs.py -> pycleaner.py defs --scope file --remove --dry-run rmunusedfuncs.py -> pycleaner.py defs --scope file --remove [--backup] fixvul.py -> pycleaner.py vulture FILE --mode skip-dirs fixvulture.py -> pycleaner.py vulture FILE --mode remove-all [--yes] vulcomment.py -> pycleaner.py vulture FILE --mode comment-vars --apply remove_func.py -> pycleaner.py replace func [--inspect] replace_func.py -> pycleaner.py replace block FILES...
-[--block-file ~/lic] Usage examples: pycleaner.py imports src/ pycleaner.py imports src/ --autofix pycleaner.py imports mypkg.whl --ignore-init -v pycleaner.py imports file.py --backend autoflake --diff pycleaner.py defs --dir src --extract pycleaner.py defs --remove --dry-run pycleaner.py defs --scope file --remove --backup pycleaner.py vulture vulture.txt --mode comment-vars --apply pycleaner.py vulture vulture.txt --mode remove-all --yes pycleaner.py vulture vulture.txt --mode skip-dirs --summary pycleaner.py replace func --dir src --inspect pycleaner.py replace block file1.py file2.py --block-file ~/lic Optional third-party packages: zstandard -- to scan .tar.zst archives (imports command) autoflake -- for `imports --backend autoflake`
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-For every top-level subdirectory of the current folder:
-  1. Check if there is a .whl file (usually inside a `dist/` folder).
-  2. If a .whl file exists:
-       - move it to the subdir root (if it isn't already there)
-       - delete everything else inside the subdir
-  3. If no .whl file exists: do nothing.
-"""
 
 import shutil
 from pathlib import Path

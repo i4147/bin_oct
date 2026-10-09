@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line utility that parses ASCII/Unicode "tree"-style directory listings (using markers like ├──, └──, |--, `--, or pipe/indent based layouts) from a text file or stdin and reconstructs the actual directory and file structure on disk.
-It should intelligently infer nesting depth from indentation width (using a median-based heuristic when marker styles are inconsistent), strip decorative characters, comments, and footer summary lines like "N directories, N files", detect explicit directories (trailing slash) versus files, and treat entries with common image extensions specially.
-Provide command-line arguments for selecting the input source, the output root directory, and options such as dry-run preview or overwrite behavior, printing a summary of created paths or errors encountered.
-The script should be resilient to malformed or mixed-style tree text and skip or warn on unparseable lines rather than failing outright.
-"""
 
 from __future__ import annotations
 import argparse

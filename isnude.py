@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans the current working directory for image files (.jpg, .jpeg, .png, .webp) and uses the "nude" library to detect nudity in each one, optionally resizing images larger than 800x800 pixels before analysis when a "-r" command-line flag is passed.
-For each detected image, it should load it with OpenCV to check its dimensions, run the nudity detection, print the result, and if nudity is detected, move the file into a "nude" subdirectory (created if it doesn't exist), skipping files already inside that subdirectory.
-The script should process files concurrently using a multiprocessing/multithreading helper (mpf) and rely on shared utility functions (cprint, get_files, mpf) imported from a local "dh" module.
-"""
 
 from __future__ import annotations
 import sys

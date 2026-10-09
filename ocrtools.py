@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""ocr_toolkit.py — unified OCR and image pre-processing toolkit.
-Merges the behaviour of seven scripts: image2text.py -> python ocr_toolkit.py enhance [paths...] ocr_prepare.py -> python ocr_toolkit.py prepare [paths...] [-r] [-v] ocrgrid.py -> python ocr_toolkit.py grid-variants IMAGE [-o DIR] ocrgrid2.py -> python ocr_toolkit.py grid-search [paths...] [-o DIR] pyocr.py -> python ocr_toolkit.py ocr IMAGE ruimg.py -> python ocr_toolkit.py ocr DIR...
--l rus+eng -w N [-j rep.json] transocr.py -> python ocr_toolkit.py translate INPUT [--lang auto] Third-party packages used by the originals (install only what you need): pip install opencv-python scikit-image Pillow numpy pytesseract loguru deep-translator langdetect Every original behaviour remains reachable; the exact invocation for each original script is listed above and in `--help`.
-"""
 
 from __future__ import annotations
 import argparse

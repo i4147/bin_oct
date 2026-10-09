@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Move every `tests` directory out of `~/.local/lib/python3.12/site-packages` into `~/tmp/tests_dirs` while preserving relative structure: discover candidates, process them via `multiprocessing.pool.starmap` on a fixed pool of 8 workers, skip excluded packages, support a `-d` dry-run flag, and log with loguru."""
 
 from __future__ import annotations
 import shutil

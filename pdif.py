@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that compares the contents of two text files given as arguments.
-It should read both files line by line (handling missing files gracefully with an error message), then determine how many lines are common between them and identify the line numbers in each file whose content does not appear in the other file.
-The script should print the total line counts for each file, the number of common lines, and the count plus line numbers of differing lines for both files.
-It must require exactly two command-line arguments (the file paths) and show a usage message if the argument count is wrong.
-"""
 
 from __future__ import annotations
 import sys

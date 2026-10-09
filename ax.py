@@ -1,30 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Build a command-line Python 3.12 web article/content extractor tool (designed to run under Termux on Android, using the shebang `#!/data/data/com.termr/bin/python3.12`) named `auto_extract` (version-tagged, e.g. "0.1.3"). The script should:
-
-**Purpose**: Fetch a web page from a given URL, respect robots.txt rules, extract the main readable content (title, body text, publication date, language, domain info) similar to a "readability"/boilerplate-removal tool, cache results on disk to avoid redundant network requests, and output the extracted article data (e.g. as JSON) to in a browser for preview.
-
-**Main ined as a command-line argument) to fetch and extract content from.
-- Optional flags/options controlling behavior such as cache usage, output format, timeout, or browser preview.
-
-**Main outputs**:
-- Structured extracted data: page title, main text content, detected language, estimated/parsed publication date, and domain/subdomain/suffix breakdown of the URL.
-- Output printed as JSON (using `ujson`) to stdout, and/or rendered as a temporary HTML file opened via `webbrowser` for manual inspection.
-
-**Notable behavior/requirements**:
-- Use `requests`/`urllib.request` to download the page, with a reasonable User-Agent and timeout handling, and honor `robots.txt` via `urllib.robotparser` before fetching.
-- Parse HTML using `lxml.html` (`fromstring`) and use `justext` for boilerplate removal/main-content extraction, combined with custom heuristics.
-- Implement a `lazy_property` descriptor class to cache expensive per-instance computed properties ( parsed t they are Implement a text F1-like score between two token sequences/sets, safely handling division-by-zero by returning 0.
-- Implement a `normalize` helper that collapses whitespace runs into single spaces while preserving newlines, and strips leading/trailing whitespace.
-- Implement helpers (`get_text_and_tail`, `get_full_text`) to walk an lxml tree and concatenate text and tail content of all nodes into a normalized full-text string.
-- Usedetect` to detect the language of the extracted text.
-- Use `metadate.parse_date` to attempt to parse/extract a publication date from the page content or metadata.
-- Use `tldextract` to split the URL's domain into subdomain, registered domain, and suffix components via an `extract_domain` helper returning a tuple.
-- Use `diskcache` to persist fetched pages and/or extraction results in a local cache directory (e.g., under a temp directory) keyed by a hash (via `hashlib`) of the URL, to speed up repeated runs and avoid re-fetching.
-- Use `html` module utilities for unescaping HTML entities` for regex-based cup of extracted text.
-- Handle errors gracefully (network failures, parsing failures, missing dates) and avoid crashing the script, printing informative messages to stderr when appropriate.
-- Keep the code self-contained in a single script, importable as a module (guarded by `__project__`/`__version__` metadata) but also runnable directly from the command line.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/nx5nNpppbTGdRtCKmbXuaC"""
 
 from __future__ import annotations
 

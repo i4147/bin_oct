@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans all subdirectories of the current working directory and uses a helper function from a custom "dh" module to detect whether each subdirectory contains any Lua (.lua) files.
-For every subdirectory that does not contain Lua files, print its name prefixed with " - ".
-Also include a helper function that moves a given plugin directory into the Vim start-plugins directory at "/data/data/com.termux/files/home/.vim/pack/plugins/start" (creating the destination if it doesn't exist) by copying the directory tree there and then deleting the original source directory.
-"""
 
 from __future__ import annotations
 from pathlib import Path

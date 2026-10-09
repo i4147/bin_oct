@@ -1,31 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a prompt that would instruct an AI coding agent to generate the following Python script.
-
-**Prompt to produce:**
-
-"Write a Python 3.12 script intended to run under Termux on Android (using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`). The script's purpose is to convert HTML content into Markdown-formatted text, likely for use as a command-line or Termux utility that processes HTML input (e.g., from clipboard, file, or stdin) and outputs clean Markdown.
-
-The script should rely on Python's built-in `html.parser.HTMLParser` to parse HTML elements,html.unescape` to decode HTML entities. It type hints throughout (via `typing` module features like `Final`, `Optional`, `Union`, `cast`), dataclasses (`@dataclass`, `field`) to model parsed elements or conversion state, and `ABCMeta` to define an abstract base class for extensible tag handlers/converters. Use the `re` module for text cleanup/pattern matching during conversion, and `sys` for command-line argument handling or stdin/stdout I/O.
-
-Include two module-level constant lists annotated with `Final[list[str]]`:
-1. `SELF_CLOSING_TAGS` — a list of standard HTML void/self-closing element names (e.g., area, base, br, col, embed, hr, img, input, keygen, link, meta, param, source, track, wbr), used to correctly handle tags that have no closing tag during parsing.
-2. `HIGHLIGHT_LANGUAGES` — a large, comprehensive list of language identifiers supported by the highlight.js syntax highlighter (covering languages such as bash, python, cpp, csharp, css, dockerfile, erlang, fortran, go, groovy, haskell, http, and many more). This list should be used to validate or map the `class` attribute of `<code>`/`<pre>` elements (e.g., `class="language-xxx"` or `hljs` classes) so that fenced code blocks in the Markdown output can include the correct language identifier.
-
-The script should define an HTML-to-Markdown converter class (subclassing `HTMLParser`) that overrides parser callback methods (`handle_starttag`, `handle_endtag`, `handle_data`, etc.) to build Markdown output by:
-- Converting headings (`h1`-`h6`) to `#` syntax
-- Converting `strong`/`b`, `em`/`i` to `**bold**`/`*italic*`
-- Converting `a` tags to `[text](href)` links
-- Converting `img` tags to `![alt](src)`
-- Converting `ul`/`ol`/`li` to Markdown lists (with nested indentation support)
-- Converting `pre`/`code` blocks to fenced code blocks, using the detected language from the `class` attribute (cross-referenced against `HIGHLIGHT_LANGUAGES`) in the opening fence
-- Converting `blockquote` to `>` prefixed lines
-- Converting `table`/`tr`/`td`/`th` to Markdown table syntax
-- Properly handling self-closing tags listed in `SELF_CLOSING_TAGS` without expecting a matching end tag
-- Collapsing/normalizing whitespace andescaping HTML entities nodes
-
-Thefrom a path argropriate for a Termux environment), run through the converter, and print or return the resulting Markd Include a `ry point that w) to the conversion logic and handles basic errors gracefully (e.g., missing input, invalid file path)."
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/Lbx83GtCrmnAEsR5kPgbYi"""
 
 from __future__ import annotations
 

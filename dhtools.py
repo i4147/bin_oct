@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""dh_tools.py — unified CLI for working with the ``dh`` package.
-Subcommands ----------- reverse Replace locally-copied dh function definitions with imports (i.e.
-"de-duplicate" your file against the dh package).
-inline The opposite: take ``from dh import X`` and paste X's source back into the file, together with any local imports it needs.
-usage Scan a directory of Python scripts and report dh usage.
-Mapping from original scripts ----------------------------- dh_reverse.py -> dh_tools.py reverse --match normalized fixdh.py -> dh_tools.py reverse --match raw --prune-imports --apply reverse_inline.py -> dh_tools.py reverse --match raw --import-style module inline_dh.py -> dh_tools.py inline --apply dh_usage.py -> dh_tools.py usage Examples -------- # Dry-run: which functions in ./src could be replaced by dh imports?
-python dh_tools.py reverse src/ # Actually rewrite the files (flat import style).
-python dh_tools.py reverse src/ --apply # fixdh.py-style run: raw matching + prune unused imports, writes in place.
-python dh_tools.py reverse ~/bin --match raw --prune-imports --apply # reverse_inline.py-style: keep per-module import paths.
-python dh_tools.py reverse ~/bin --match raw --import-style module --apply # Inline dh imports back into the code.
-python dh_tools.py inline script.py --apply # Usage report.
-python dh_tools.py usage --bin-dir ~/bin Requires Python 3.9+ (uses ``ast.unparse``)."""
 
 from __future__ import annotations
 import argparse

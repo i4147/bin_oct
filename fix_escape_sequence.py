@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans .py files under given paths for string literals containing invalid backslash escape sequences (which trigger DeprecationWarning/SyntaxWarning) and automatically fixes them by doubling the offending backslashes, using the tokenize module to accurately locate string and f-string tokens while skipping raw strings and common directories like __pycache__ and .venv.
-It should support multiprocessing for scanning multiple files in parallel, accept command-line arguments (e.g., target paths, a dry-run/check-only mode, verbosity), and output a summary report listing which files were modified along with the line/column positions and counts of fixed escape sequences.
-The script must exclude itself (SELF_PATH) from processing and handle both regular strings and f-strings differently depending on whether the running Python version exposes FSTRING_START tokens.
-"""
 
 from __future__ import annotations
 import argparse

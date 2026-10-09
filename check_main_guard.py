@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Inspect .py files in the current folder and report ones missing the main guard."""
 
 from __future__ import annotations
 import ast

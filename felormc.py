@@ -1,19 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""You are an expert python developer.
-generate a complete robust python script to strip comments and docstring from python files using libcst - add support for python files without extension - preserve shebang, module docstring and # type and # fmt - if docstring is the only node in a function/class body replace it with pass -> to avoid syntax error - validate result code before writing to file redult code should be a valid python code - python version=3.12 - Path handling: with pathlib - for concurrency use mp.pool.apply_async with fixed 8 workers - the script should accept multiple files/dirs as input (if no input is provided, the script should process files in current dir recursively) - consider following factors in implementation: Speed / performance Code clarity / maintainability Memory efficiency Production-ready robustness Feature set (streaming, adaptive, edge cases) - Type annotations and docstrings: your response code should be completely type annotated and documented - Loggin: log any errors with loguru Return the full script.
-================================ SuperAgent: creating conversation...
-Received: You are an expert python developer.
-generate a complete robust python script to strip comments and docstring from python files using libcst - add support for python files without extension - preserve shebang, module docstring and # type and # fmt - if docstring is the only node in a function/class body replace it with pass -> to avoid syntax error - validate result code before writing to file redult code should be a valid python code - python version=3.12 - Path handling: with pathlib - for concurrency use mp.pool.apply_async with fixed 8 workers - the script should accept multiple files/dirs as input (if no input is provided, the script should process files in current dir recursively) - consider following factors in implementation: Speed / performance Code clarity / maintainability Memory efficiency Production-ready robustness Feature set (streaming, adaptive, edge cases) - Type annotations and docstrings: your response code should be completely type annotated and documented - Loggin: log any errors with loguru Return the full script.
-Here's the complete, production-ready script: strip_comments.py - Strip comments and docstrings from Python files using LibCST.
-Features: - Removes comments (except `# type:` and `# fmt:` pragma comments).
-- Removes docstrings (module, class, function) while preserving the module-level docstring.
-- Replaces a now-empty class/function body (docstring was the sole statement) with `pass` to keep the code syntactically valid.
-- Preserves shebang lines (`#!/usr/bin/env python3`).
-- Supports extension-less Python files (detected via shebang / heuristics).
-- Validates the transformed source by compiling it before writing to disk.
-- Processes files concurrently using a fixed-size multiprocessing pool.
-Usage: python strip_comments.py [paths ...] [--dry-run] [--workers N] If no paths are given, the current directory is scanned recursively.
-Python: 3.12+"""
 
 from __future__ import annotations
 import argparse

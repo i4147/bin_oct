@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""faedit - edit Persian text files in the terminal with a live faprint preview.
-
-Usage: python faedit.py file.txt [-b urwid|curses|prompt_toolkit|textual]
-Ctrl+Q saves and quits.
-
-Top pane: raw (logical) text you edit.  Bottom pane: the lines around the
-cursor rendered through faprint's format_persian (what you'd see with faprint).
-"""
 
 import argparse
 import os

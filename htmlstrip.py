@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""htmlstrip.py - unified HTML tag / meta tag remover.
-Combines three standalone scripts into one CLI with three subcommands.
-Original -> merged mapping -------------------------- remove_tag.py -> python htmlstrip.py tag <tagname> [directory] rmeta.py -> python htmlstrip.py meta [directory] strip_tags.py -> python htmlstrip.py all <file> [-w] Examples -------- # Remove every <script> tag from .html/.txt under cwd (BeautifulSoup) python htmlstrip.py tag script python htmlstrip.py tag script ./public --extensions .html .htm .txt # Remove all <meta ...> tags from every .html file under ./site python htmlstrip.py meta ./site python htmlstrip.py meta ./site --pattern '<meta[^>]*name="author"[^>]*>' # Preview which lines would be stripped from one file (dry-run) python htmlstrip.py all index.html # Do it python htmlstrip.py all index.html -w Dependencies: beautifulsoup4 (required for the 'tag' subcommand) Standard library (regex) is used for 'meta' and 'all'.
-"""
 
 from __future__ import annotations
 import argparse

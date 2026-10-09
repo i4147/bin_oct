@@ -1,27 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Merged requirements.txt generator (imp1 + imp2 + pipreqs + pr2).
-Modes
------
-offline   Use a local PyPI package list (no network). Mirrors imp1.py / imp2.py.
-online    Resolve imports via PyPI JSON API. Mirrors pipreqs.py / pr2.py.
-Examples
---------
-python merged.py offline -p ./project -l /sdcard/data/pip.txt
-python merged.py offline -p ./project --detect-local
-python merged.py online  -p ./project --mode compat
-python merged.py online  -p ./project --print --scan-notebooks
-python merged.py online  -p ./project --use-local
-python merged.py online  -p ./project --pypi-server https://mirrors.tuna.tsinghua.edu.cn/pypi/
-Only the Python standard library is used.
-Original-script mappings:
-    imp1.py     -> python merged.py offline -p . -l /sdcard/data/pip.txt
-    imp2.py     -> python merged.py offline -p . --detect-local
-    pipreqs.py  -> python merged.py online -p .
-    pr2.py      -> python merged.py online -p . --pypi-server https://mirrors.tuna.tsinghua.edu.cn/pypi/
-Assumption: imp1/imp2 parse imports line-by-line; pipreqs/pr2 use AST.
-Pass --ast to offline to switch to AST parsing.
-"""
 
 import argparse
 import ast

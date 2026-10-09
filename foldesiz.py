@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""I need a Python script that recursively scans a directory for files (skipping certain files/folders via a helper), sorts them by file size, and organizes them into subfolders named by size ranges (e.g., "1KB-5MB") so that files of similar sizes end up grouped together.
-It should compute an appropriate number of range-based folders automatically based on the spread of file sizes (capped at 100 or the number of files), distribute files evenly across these folders, and then move each file into its corresponding size-range folder, using a helper to avoid filename collisions and formatting sizes into human-readable strings.
-"""
 
 from __future__ import annotations
 import operator

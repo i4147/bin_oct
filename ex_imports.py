@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that scans all .py files under the current working directory (using a helper get_files function) and, using tree-sitter with the tree_sitter_python grammar, parses each file to extract its top-level import_statement and import_from_statement nodes as source text.
-It should process files in parallel via an mpf helper, aggregate the unique import lines across all files while excluding relative imports starting with "from .", sort them alphabetically, and write the result to a file named "{current_dir_name}_importz.py" inside ~/tmp/output, using a unique_path helper to avoid overwriting an existing output file.
-Finally, it should print "done." after writing the file."""
 
 from __future__ import annotations
 from pathlib import Path

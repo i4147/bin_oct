@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""merged_archive_tools.py ======================= Unified archive/compression conversion toolkit.
-Merges the following original scripts into one CLI with subcommands: original -> merged equivalent --------------------------- -------------------------------------- archive_convert.py -> tar-codec <codec> archive_converter.py -> archive-convert -t <fmt> [inputs] br2zst.py -> br2zst gz2xz.py -> gz2xz [--legacy-percent] xz2gz.py -> xz2gz [--legacy-percent] txz2whl.py -> whl-txz --to whl whl2txz.py -> whl-txz (auto-detects direction) Usage examples -------------- # Change every *.tar.gz under cwd to *.tar.xz python merged_archive_tools.py tar-codec xz # Convert a whl and a tar.zst to tar.7z python merged_archive_tools.py archive-convert -t .tar.7z a.whl b.tar.zst # Convert all .json.br under cwd to .json.zst python merged_archive_tools.py br2zst # .gz -> .xz in cwd python merged_archive_tools.py gz2xz # Bidirectional whl <-> tar.xz (default: in current directory) python merged_archive_tools.py whl-txz --recursive --remove-original Third-party dependencies (already required by the originals): brotli, cramjam, lz4, py7zr, zstandard, loguru
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,31 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Python command-line utility script (targeting Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that compresses and decompresses files/directories using Brotli compression, with the following characteristics:
-
-**Purpose:**
-A high-performance, multi-core Brotli-based archiving tool that can compress a single file or an entire directory tree into a `.br` (or `.tar.br`) archive, and decompress such archives back to their original form, with rich progress reporting and integrity verification.
-
-**Main Inputs:**
-- A source path (file or directory) to compress, or an existing `.br`/`.tar.br` archive to decompress, provided via command-line arguments (using `argparse`).
-- Optional parameters such as: Brotli compression quality/level, chunk size for streaming reads/writes (default 1MB, minimum 4KB), number of worker processes for parallel compression (defaulting to CPU count via `multiprocessing`), output path/filename, and flags to control behavior (e.g., overwrite existing output, verify checksums after operation, verbose/quiet output).
-- A mode flag or subcommand indicating whether to compress or decompress.
-
-**Main Outputs:**
-- A compressed `.br` archive (using `tarfile` to bundle directories before Brotli-compressing the stream) when compressing, or the restored original file(s)/directory tree when decompressing.
-- Console output showing progress bars, spinners, elapsed time, and summary tables (using the `rich` library if available, with a graceful fallback plain-text message if `rich` is not installed, printing a tip to install it via pip).
-- A final summary panel/table showing statistics such as original size, compressed size, compression ratio, time elapsed, and throughput.
-
-**Notable Behavior:**
-- Uses the `brotli` library for the actual compression/decompression work, performed in a streaming/chunked fashion to handle large files without excessive memory usage.
-- Leverages `concurrent.futures.ProcessPoolExecutor` and `multiprocessing` to parallelize compression work across multiple files/chunks for speed, tracking futures with `as_completed`.
-- Maintains an `EXCLUDED_EXTENSIONS` set containing a large list of file extensions that are already compressed or are binary media/document/executable formats (e.g., `.zip`, `.gz`, `.xz`, `.7z`, `.mp3`, `.mp4`, `.jpg`, `.png`, `.pdf`, `.docx`, `.exe`, `.dll`, etc.) — files with these extensions should be skipped or stored without re-compression to avoid wasting time/CPU on already-compressed or incompressible data.
-- Computes and optionally verifies file checksums (using `hashlib`) before/after compression or decompression to ensure data integrity.
-- Handles directory trees by first creating a `tar` archive (via the `tarfile` module) in memory or as a temporary file, then streaming that tar data through the Brotli compressor.
-- Uses `shutil` for file/directory operations such as copying, removing temporary files, and moving final output into place.
-- Defines a `dataclass` to encapsulate per-file or per-task metadata/results (e.g., filename, original size, compressed size, checksum, status) that gets returned from worker processes and aggregated in the main process.
-- Prints user-friendly emoji-prefixed status/tip messages (e.g., "💡 Tip: ...") for better CLI UX, especially when optional dependencies are missing.
-- Designed to run specifically within a Termux (Android terminal emulator) Python environment, as reflected in the shebang path.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/khrwtpVHJU8ywkB9PDuDXe"""
 
 import argparse
 import hashlib

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that converts a plain .py source file into a Jupyter .ipynb notebook using nbformat.
-It should read the input file's text, split it into logical code cells by heuristically detecting boundaries such as function/class definitions, grouped import blocks, and blank lines followed by unindented code, then build a notebook object with those cells.
-The script should accept the input file path and an optional output file path via argparse, print an error and return False if the input file doesn't exist, and otherwise write the resulting notebook as JSON to the output path (defaulting to the input filename with a .ipynb extension) and report success.
-"""
 
 from __future__ import annotations
 import argparse

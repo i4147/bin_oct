@@ -1,36 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Python 3.12 command-line utility (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that analyzes and reports on "merged" Python source files — i.e., files that were produced by concatenating multiple original Python modules together, where each original file's content is preceded by a header comment line in the form `# File: <original_relative_path>`.
-
-The script's purpose is to:
-
-1. **Parse command-line arguments** (using `argparse`) to accept at least:
-   - One or more input paths (files and/or directories to scan, recursively finding merged Python files).
-   - Options to control behavior such as verbosity/logging level, number of worker threads/processes (default should be 8, matching a `WORKERS` constant), output format or destination, and possibly a flag to actually split/restore the merged file back into separate files on disk (vs. just reporting/analyzing).
-
-2. **Detect and split merged files** by scanning file content line-by-line (or via regex) for the header marker pattern `# File: <path>` (matched with a case-sensitive regex anchored per line, allowing trailing whitespace to be trimmed), and partitioning the rest of the content into per-original-file chunks.
-
-3. **Parse each resulting chunk as Python source using the `ast` module** to validate syntax, extract structural information (e.g., detect syntax errors, count definitions/imports, or otherwise analyze each embedded file), and report any parsing failures gracefully without crashing the whole run.
-
-4. **Process multiple files concurrently** using a thread/process pool sized by the `WORKERS` constant (or a user-supplied override) to speed up scanning of many files/directories.
-
-5. **Write out results**, which may include:
-   - Reconstructing each embedded original file at its proper relative path under an output directory (creating parent directories as needed, using `shutil`/`pathlib`/`os` for file system operations), optionally backing up or overwriting existing files.
-   - Printing a human-readable, richly formatted report to the terminal.
-
-6. **Produce colorized, styled terminal output** via an internal `Style` helper class that:
-   - Detects whether ANSI colors should be enabled (respecting `NO_COLOR` and `FORCE_COLOR` environment variables, and falling back to checking `sys.stdout.isatty()`).
-   - Detects whether the terminal supports Unicode (by inspecting `sys.stdout.encoding`), to decide between Unicode symbols/box-drawing characters and plain ASCII fallbacks.
-   - Provides helper methods (e.g., `bold`, and color helpers for red/green/yellow/blue/magenta/cyan/white, plus 256-color support via a `_fg256` helper) to wrap text in ANSI escape codes, and a `visible_len` utility that strips ANSI codes (via a precompiled regex) to correctly compute the visible/display width of styled strings for alignment purposes (e.g., in tables or progress indicators).
-
-7. **Use `loguru`-style logging** with a custom log format constant (`LOGURU_LOGFORMAT`) showing timestamp with milliseconds, log level, source filename, line number, and message — for diagnostic/debug output controllable via a verbosity flag.
-
-8. **Handle warnings and errors defensively**, using `warnings` suppression where appropriate and `contextlib` (e.g., context managers for suppressing exceptions or redirecting output) so that malformed input files or individual failures don't abort the entire batch run.
-
-9. Be structured with a `Style` class and likely one or more `@dataclass` definitions (using `field` for mutable defaults) to represent discovered files, split results, or report entries in a clean, typed way.
-
-The main input is one or more file/directory paths pointing to merged Python source file(s) (plus CLI flags for options like worker count, verbosity, output directory, color/unicode preferences). The main output is either: (a) the set of individual Python files reconstructed from the merged file(s) and written to disk, and/or (b) a colorized terminal report summarizing what files were found inside each merged file, their validity (parseable as Python), and any errors encountered — depending on the mode selected via CLI flags. The tool should run entirely offline, be dependency-light (standard library plus `loguru`), and be robust to large numbers of files via concurrent processing.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/QR7iVcNCpet2pVCmbmn7Cw"""
 
 from __future__ import annotations
 import argparse

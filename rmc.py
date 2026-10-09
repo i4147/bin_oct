@@ -1,44 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a cross-platform (Termux/Linux) Python 3.12 command-line tool named "strip_comments" (version 2.1.0) that removes comments (and optionally docstrings/blank-line runs) from Python source files, using libcst for safe, syntax-preserving transformations.
-
-The script's purpose is to clean up `.py`, `.pyi`, and `.pyw` files by stripping inline and standalone comments while optionally also stripping docstrings and collapsing multiple consecutive blank lines, without breaking code structure, encoding declarations, or special "protected" comments (e.g. shebangs, coding declarations, `# noqa`, `# nosec`, `# pragma`, `# type:`, and formatter/linter directives like `# fmt`, `# isort`, `# mypy`, `# pyright`, `# pytype`, `# pylint`, `# ruff`, `# flake8`, `# yapf`). It must also correctly handle `# type: ignore` comments (which should still be stripped/treated as non-protected unless otherwise specified) versus other `# type:` comments (which are protected).
-
-Key requirements:
-
-1. **CLI interface (argparse-based)**:
-   - Accept one or more input paths (files and/or directories) as positional arguments.
-   - Recursively walk directories, only processing files with the recognized Python suffixes (`.py`, `.pyi`, `.pyw`), while skipping common non-source directories by default (e.g. `.git`, `.hg`, `.svn`, `.tox`, `.nox`, `.venv`, `venv`, `env`, `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `node_modules`, `build`, `dist`, `.eggs`).
-   - Support an option to also remove docstrings in addition to comments (a "remove all" / aggressive mode).
-   - Support an option to collapse runs of multiple blank lines into a single blank line.
-   - Support a dry-run / check mode that reports what would change without writing files.
-   - Support writing `.pystripbak` backup files before modifying originals, and/or an option to disable backups.
-   - Support verbose/quiet output modes, with colorized (green) terminal output for status messages where appropriate, and a way to disable color.
-   - Support a `--version` flag that prints the program name and version.
-   - Allow control over parallelism: process multiple files concurrently using multiprocessing when the number of files meets a minimum threshold, with a configurable max number of worker processes (default 8) and chunk size (default 8) for distributing work; otherwise process sequentially for small file counts (fewer than 4 files).
-
-2. **Core transformation logic**:
-   - Parse each file with `libcst` to build a CST, then transform it to remove comment trivia (and docstring expression statements, if requested) while preserving code semantics, indentation, and formatting of retained code.
-   - Protect special comments using a regex that matches shebang lines (`#!`), coding declarations (`-*- coding ... -*-` or `coding[:=]`), and directive comments such as `noqa`, `nosec`, `pragma`, `type:`, `fmt:`, `isort:`, `mypy:`, `pyright:`, `pytype:`, `pylint:`, `ruff:`, `flake8:`, `yapf:` — these must never be stripped.
-   - Treat `# type: ignore` specially so it is eligible for removal (not protected) even though other `# type:` comments are protected, using a dedicated regex distinguishing `# type:` not followed by `ignore`.
-   - Preserve a leading encoding comment/declaration correctly (via a dedicated regex for `# coding:`/`# coding=` style comments) so files remain valid Python with correct encoding after stripping.
-   - When collapsing blank lines, use a regex that matches runs of blank/whitespace-only lines and reduces them appropriately.
-   - Use Python's `tokenize` module (including handling of `FSTRING_START`/`FSTRING_END`/`TSTRING_START`/`TSTRING_END` tokens when present in the running Python version) to correctly account for f-string/t-string internals so comments inside expressions aren't mishandled, and so line tracking for blank-line collapsing is accurate.
-   - Use `ast` as needed for validation (e.g., confirming the transformed source still parses correctly) to avoid producing invalid Python output.
-
-3. **File handling behavior**:
-   - Read and write files using appropriate encoding detection/handling.
-   - When processing a directory tree, gather all eligible files first, then decide sequential vs. parallel processing based on file count thresholds.
-   - For each file: parse, transform, and only rewrite the file if the content actually changed; optionally create a `.pystripbak` backup of the original before overwriting; report per-file status (e.g., modified, unchanged, skipped, error) respecting verbosity settings.
-   - Handle errors gracefully per file (e.g., syntax errors, I/O errors) without crashing the entire batch; collect and report a summary of successes/failures at the end, and set the process exit code to reflect whether any errors occurred.
-   - Support being interrupted gracefully (e.g., handle `SIGINT`) during batch/parallel processing, terminating worker processes cleanly.
-
-4. **Output/reporting**:
-   - Print a concise summary at the end (e.g., number of files scanned, modified, skipped, errored), using colorized text for emphasis when color is enabled and the output stream is a terminal.
-   - In dry-run mode, clearly indicate that no files were actually written, while still showing what would have changed.
-
-Implement this entirely in a single self-contained Python 3.12 script (with the Termux-style shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), using only the standard library plus `libcst`, structured with dataclasses (e.g., a frozen `TransformOptions` dataclass holding flags like whether to remove all/docstrings) and clear helper functions/classes for the CST transformation, file discovery, parallel execution, and CLI entry point (`main`).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/EJWXwAyvC6CqsaN8aFXgma"""
 
 import argparse
 import ast

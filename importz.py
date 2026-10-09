@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans the current directory for Python files—identified either by a .py suffix or, for extensionless files, by checking if the first line contains "python"—and parses each with the ast module to collect all top-level imported module names (from both Import and ImportFrom statements, ignoring relative imports).
-It should then distinguish third-party packages by excluding names that match local .py files or local packages (directories containing __init__.py) in the current directory, as well as excluding standard library modules obtained via sys.stdlib_module_names.
-The script should handle file reading errors and syntax errors gracefully by skipping problematic files, and finally write the resulting set of third-party import names to an output file named importz.txt in the current working directory.
-"""
 
 from __future__ import annotations
 import ast

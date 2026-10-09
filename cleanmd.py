@@ -1,21 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""remove_images.py — unified image-reference remover for Markdown, reStructuredText and HTML.
-Original-script mapping
------------------------
-    clean_md.py                -> python remove_images.py --ext .md .markdown
-    doclin.py                  -> python remove_images.py --ext .rst .md --badges --report detailed
-    markdown_image_remover.py  -> python remove_images.py --ext .md .markdown --backup --aggressive-defs
-    remove_image_refrences.py  -> python remove_images.py --remote-only --ext .html .htm .md .rst .txt
-    rmimg.py                   -> python remove_images.py --ext .html .htm --html-parser bs4
-Optional third-party dependency: beautifulsoup4 (only required with --html-parser bs4).
-Examples
---------
-    python remove_images.py
-    python remove_images.py docs/ README.md --ext .md .markdown
-    python remove_images.py --remote-only --ext .html .md .rst .txt
-    python remove_images.py docs/ --html-parser bs4 --ext .html .htm
-    python remove_images.py --badges --report detailed --ext .rst .md
-"""
 
 from __future__ import annotations
 import argparse

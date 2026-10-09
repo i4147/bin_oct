@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Fetch the latest packages added to PyPI and save their names to a file."""
 
 from __future__ import annotations
 import urllib.request

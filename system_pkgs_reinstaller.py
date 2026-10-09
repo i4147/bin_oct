@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Reinstall Termux packages listed in keys.txt Usage: python reinstall_pkgs.py <pkg_file> [--reset] Progress is saved to <pkg_file>.progress.
-If the script is interrupted, re-run it to continue from where it left off.
-Use --reset to start over.
-Cached .deb files under the apt archives dir are deleted after each package to save disk space.
-"""
 
 from __future__ import annotations
 import glob

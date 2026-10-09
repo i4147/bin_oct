@@ -1,18 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Python Source Code Stripper
-===========================
-A production-ready Python 3.14 tool to strip comments, docstrings, and type
-annotations from Python source files using libcst, tree-sitter, or standard ast.
-
-Features:
-  - Multi-backend architecture (libcst, tree-sitter, ast) with dynamic fallback
-  - Multiprocessing file processing with fixed pool of 8 workers
-  - Atomic file operations to prevent file corruption
-  - Independent AST verification before writing transformed source
-  - Automatic Python file discovery (including shebang-based script detection)
-  - Rich error reporting via loguru
-"""
 
 from __future__ import annotations
 

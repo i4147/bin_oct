@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Download URLs from a file (one per line) using pycurl with a multiprocessing pool of fixed 8 workers.
-On success, the URL is removed from the input file.
-On failure, the URL stays in the input file.
-Per-URL timeout: 50 seconds.
-Usage: python download.py urls.txt"""
 
 from __future__ import annotations
 import multiprocessing as mp

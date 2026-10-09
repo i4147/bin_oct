@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively scans a given root directory for all .py files and runs a configurable set of static analysis/type-checking tools (such as ty, pyright, pylint, mypy, and pyrefly) against each file in parallel using multiprocessing.
-For each Python file, capture the stdout/stderr output of every tool invocation, then append the results to the end of that same file as commented-out sections labeled with the tool name, handling missing tools or execution errors gracefully.
-The script should accept command-line arguments (via argparse) to control which root directory to scan and likely which tools to run, and it should efficiently distribute the checking work across multiple processes using a Pool.
-"""
 
 from __future__ import annotations
 import argparse

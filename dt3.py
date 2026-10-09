@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that batch-translates the text values in one or more JSON localization/sub Google Translate or De (selectable via CLI argument), while supporting a wide range of language codes mapped to each provider's expected format.
-It should load and validate the JSON structure, translate strings concurrently with a thread pool for speed, and write the translated results to output file(s), pre original JSON layout.
-Include logging via loguru for progress/errors, support for a dry-run or similarity check (using SequenceMatcher) to detect unchanged/near-duplicate translations, and safe file writing through temporary files.
-The script should be runnable as a standalone CLI using argparse, accepting inputs such as source file paths, target language, API key/credentials, and concurrency settings.
-"""
 
 from __future__ import annotations
 import argparse

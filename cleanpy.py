@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Generate a Python script that recursively removes comments and docstrings from Python files.
-The script should: - Walk files/directories given on the command line (or current directory by default).
-- Skip .git and __pycache__ directories, and symlinks.
-- Use libcst to parse Python source and preserve original code structure/formatting.
-- Remove comments except shebang (line 1), "# fmt", and "# type" comments.
-- Remove docstrings from functions, classes, and modules (module docstring removal toggled by -r/--remove-module-docstring).
-- Replace a docstring that is the sole body statement with `pass`.
-- Remove blank lines that become comment-only or whitespace-only.
-- Verify the transformed source still parses via ast.parse before writing.
-- Process files concurrently using multiprocessing.Pool.apply_async with a fixed pool of 8 workers.
-- Use loguru for logging and pathlib for all path handling.
-- Expose a CLI via argparse with -r/--remove-module-docstring and positional paths."""
 
 from __future__ import annotations
 import argparse

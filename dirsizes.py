@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Find top directory footprints or largest files recursively.
-Optimized with pathlib, os.scandir caching, and formatted with Rich.
-"""
 
 import argparse
 import heapq

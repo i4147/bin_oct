@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""htmltool.py - Multi-purpose HTML / CSS standalone bundler.
-Third-party dependencies (install what you need): pip install requests beautifulsoup4 loguru pycurl Subcommands and their original-script equivalents: bundle <- build_single_page.py inline <- inline_assets.py, mkst.py isolate <- isolate_html.py standalone <- mkstand.py mhtml <- pymht.py, pymhtml.py css <- standalone_css.py Quick usage: python htmltool.py bundle python htmltool.py inline ./site --timeout 15 --workers 8 python htmltool.py isolate index.html -o index_standalone.html -v python htmltool.py standalone ./pages python htmltool.py mhtml page.mhtml python htmltool.py css style.css
-"""
 
 from __future__ import annotations
 import argparse

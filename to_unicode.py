@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes a single filename argument and converts escaped hexadecimal byte sequences within the file into their corresponding readable characters.
-The script should read the file as bytes, decode it using UTF-8 (falling back to Latin-1 if needed), then use a regular expression to find patterns like "backslash xNN" and replace them with the actual character represented by that hex value.
-The converted text should be written back to the same file, overwriting its original content.
-It must handle a missing file by printing a "File not found" error, catch any other exceptions gracefully, and print a usage message if the filename argument is not provided.
-"""
 
 from __future__ import annotations
 import re

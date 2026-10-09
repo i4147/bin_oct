@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Scan recursively supplied files and directories for non-English text using a selectable language-detection backend, print matches immediately, and optionally save matching relative paths to noneng.txt."""
 
 from __future__ import annotations
 import argparse

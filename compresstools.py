@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that benchmarks and/or batch-compresses files and directories using multiple compression algorithms (zstd, xz, py7zr, gzip, bz2, brotli, lz4), each configured with its own file extension, tar-archive pattern, and compression settings (e.g., level 22 for zstd, preset 9 for xz).
-The script should use argparse for CLI options, asyncio with a worker pool (MAX_WORKERS=4) to process files concurrently in chunks (CHUNK_SIZE=1MB), and helper functions from a local "dh" module (fsz, get_dirs, get_files) to determine file sizes and enumerate directory/file inputs.
-It should support selecting which compressor(s) to use, process input paths recursively, and report or output compression results (such as output archive files and/or size comparisons) to standard output.
-"""
 
 from __future__ import annotations
 import argparse

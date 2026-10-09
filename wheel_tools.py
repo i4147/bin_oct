@@ -1,21 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""wheel_tools.py ============== Unified command-line toolkit for inspecting, validating and cleaning Python wheel files (``*.whl``).
-Subcommands ----------- ``check`` Recursively scan a directory for wheels that dump importable files (``.py``/``.pyc``/``.pyd``/``.so``/``.dll``) directly into the root of ``site-packages``.
-Such wheels are moved into a "suspicious" folder.
-``entry-points`` List wheels that contain an ``entry_points.txt`` file (which declares console scripts, GUI scripts, or plugin entry points).
-``pypi`` Query the PyPI JSON API for one or more package names.
-Requires the third-party ``requests`` package.
-``prune`` Delete wheels whose distribution is already installed in the current environment at the same or a newer version.
-``strip`` Run the system ``strip`` binary over loose ``.so`` files found on disk to shrink them.
-Requires ``strip`` on ``PATH``; uses ``rich`` if available for nicer progress output.
-``validate`` Validate that wheel filenames match PEP 427.
-Requires ``packaging``.
-``size`` Report the total *unpacked* size of ``*.whl`` files (sum of the uncompressed sizes of every archive member).
-Original-script mapping ----------------------- check_wheels.py -> python wheel_tools.py check [DIR] have_script.py -> python wheel_tools.py entry-points [DIR] ispure.py -> python wheel_tools.py pypi PKG [PKG ...] mip.py -> python wheel_tools.py prune [DIR] strep.py -> python wheel_tools.py strip [FILES ...] valwheel.py -> python wheel_tools.py validate [DIR] whl_unpacked_size.py -> python wheel_tools.py size [-d DIR] Optional third-party dependencies --------------------------------- packaging - used by the ``validate`` subcommand requests - used by the ``pypi`` subcommand rich - used by the ``strip`` subcommand (nicer progress) Examples -------- # Find misconfigured wheels that dump into site-packages root python wheel_tools.py check ./wheels # List wheels that declare entry points python wheel_tools.py entry-points .
-# Query PyPI for a package python wheel_tools.py pypi requests numpy # Delete wheels whose package is already installed python wheel_tools.py prune .
-# Strip debug symbols from all .so files under ./native python wheel_tools.py strip -d ./native # Validate every wheel in the current directory python wheel_tools.py validate .
-# Report unpacked sizes of every wheel in ./wheels recursively python wheel_tools.py size -d ./wheels -r -v
-"""
 
 from __future__ import annotations
 import argparse

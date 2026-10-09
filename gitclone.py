@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Clone a repo as a bare, single-branch mirror of its default branch, including all submodules (recursively).
-Usage: g2 <repo-url> [target-dir]"""
 
 from __future__ import annotations
 import re

@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""doc_convert.py — unified document conversion CLI.
-Merges these originals into one tool: export_chat.py -> chat-export info2md.py -> info-to-md man2md.py -> man-to-md md2html.py -> md-to-html mk_html.py -> rst-to-html mobi2html.py -> mobi-to-html pptx2txt.py -> pptx-to-txt rst2md2.py -> rst-to-md Usage examples -------------- python doc_convert.py chat-export conversations.json -o exported python doc_convert.py info-to-md # current dir python doc_convert.py info-to-md -d ./docs -w 8 python doc_convert.py man-to-md /usr/share/man/man1/ls.1 python doc_convert.py md-to-html README.md python doc_convert.py md-to-html README.md --out-dir /sdcard/tmp python doc_convert.py rst-to-html -d ./docs -w 8 python doc_convert.py rst-to-html -d ./docs --force python doc_convert.py mobi-to-html book.mobi python doc_convert.py pptx-to-txt slides.pptx python doc_convert.py rst-to-md ./docs -r python doc_convert.py rst-to-md ./docs -r --remove-original Third-party packages (all optional — only needed by their subcommand): markdown, beautifulsoup4 -- md-to-html mobi -- mobi-to-html python-pptx -- pptx-to-txt pandoc (external binary) -- rst-to-md GNU info (external binary) -- info-to-md docutils (pip) -- rst-to-html
-"""
 
 from __future__ import annotations
 import argparse

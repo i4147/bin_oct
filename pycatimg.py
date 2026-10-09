@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line utility that renders an image (including SVG files, converted via cairosvg) as ANSI-colored ASCII/block art directly in the terminal.
-It should accept a file path argument along with optional width/height or max-width/max-height parameters, automatically detect terminal size when dimensions aren't specified, and resize the image proportionally using PIL's LANCZOS resampling while preserving aspect ratio.
-The script should handle SVG-to-PNG conversion, load and process the resulting image, and output errors to stderr (e.g., exiting if cairosvg is unavailable) while printing the final rendered result to standard output.
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively scans the current working directory and lists files and folders whose creation time falls before a given time threshold.
-The script accepts an optional command-line argument specifying a number of minutes (default 60), converts it into a cutoff timestamp, and skips symlinks and anything inside a ".git" directory.
-Matching paths should be sorted by creation time ascending, then printed with their relative path (left-padded to at least 20 characters) followed by the formatted creation timestamp ("%Y/%m/%d-%H:%M:%S") shown in yellow using a custom "cprint" function from a "dh" module.
-If the minutes argument cannot be parsed as a float, the script should print a usage error and exit with a non-zero status.
-"""
 
 from __future__ import annotations
 import operator

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""repeated_blocks.py — find & remove repeated multiline blocks in text files.
-Merges these originals into one CLI: mlic.py -> scan --block-mode paragraph --min-lines 3 --min-chars 100 remove --block-mode paragraph --min-lines 3 --min-chars 100 mlic2.py -> scan --block-mode paragraph --min-lines 3 --min-chars 10 pylic.py -> scan --block-mode comment --min-lines 2 -d .
-remove --block-mode comment --min-lines 2 tlic.py -> scan --block-mode segment --min-lines 2 remove --block-mode segment --min-lines 2 Usage examples -------------- python repeated_blocks.py scan python repeated_blocks.py scan --block-mode comment python repeated_blocks.py scan --block-mode segment -d ./src -o report.txt python repeated_blocks.py scan --half --min-chars 100 python repeated_blocks.py remove --block-mode paragraph --min-lines 3 --yes python repeated_blocks.py remove --block-mode comment --no-validate Third-party packages: none.
-(Original tlic.py used joblib; replaced with stdlib ThreadPoolExecutor.)"""
 
 from __future__ import annotations
 import argparse

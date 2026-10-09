@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that takes an audio file path as its first argument and extracts the final portion of that audio using moviepy's AudioFileClip.
-It should compute the clip's total duration, determine a start time roughly 230 seconds before the end (clamped to 0 if the file is shorter), and extract the subclip from that start time to the end.
-The resulting audio segment should be exported as "last_5_minutes.mp3" at 320k bitrate and 44100 fps, with console messages printed before and after processing to indicate progress and completion.
-"""
 
 from __future__ import annotations
 import sys

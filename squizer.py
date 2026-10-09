@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Minify and compress Python source code.
-Pipeline (per file): 1.
-Parse into an AST.
-2.
-Strip docstrings, type hints, and annotated assignments.
-3.
-Strip stdlib imports, including `__future__` (recorded for a trailing notice).
-`__future__` must be stripped unconditionally because the minified output concatenates files and is later `exec`ed mid-stub — its import would no longer be at the top.
-4.
-Shorten user-defined identifiers (a, b, ..., z, a1, ...).
-5.
-Peephole optimize: augmented assigns, nested-if merge, dead code removal, else-after-terminator flattening, constant folding, `if x: return True / return False` -> `return bool(x)`.
-6.
-`ast.unparse` and join adjacent simple statements with `;`.
-Output: * One input file -> <stem>_compressed.py (zlib+base85 runnable stub) <stem>_compressed.txt (readable minified) * Multiple inputs -> compressed.txt (readable minified) compressed_stub.py (zlib+base85 runnable stub)
-"""
 
 from __future__ import annotations
 import ast

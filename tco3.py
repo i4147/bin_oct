@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that translates chunked text files (e.g., JSON or text chunks produced by a text-splitting pipeline) into a target language using a selectable translation backend such as googletrans or pygoogletranslation, with language code normalization and alias handling to reconcile different backend naming conventions (e.g., zh vs zh-CN, pt vs pt-BR).
-The script should support concurrent translation via a thread pool with rate-limiting locks to avoid overwhelming translation APIs, read input chunk files from a directory, write translated output to corresponding files, and log progress/errors via loguru to both a rotating log file and stderr.
-It should be driven by command-line arguments (e.g., input/output paths, source/target languages, backend choice, concurrency level) parsed with argparse, and handle retries or failures gracefully for individual chunks without stopping the entire batch job.
-"""
 
 from __future__ import annotations
 import argparse

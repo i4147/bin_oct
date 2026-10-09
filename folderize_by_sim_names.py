@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that recursively scans a directory tree for .lua files and groups them into subfolders based on normalized base names (stripping ".lua" extensions, trailing "_<number>" suffixes, lowercasing, and replacing spaces/special characters with hyphens).
-It should accept a "--root" argument for the directory to scan and an "--apply" flag, where omitting the flag only previews the planned file moves while including it actually moves the files into their grouped folders, using a helper to avoid overwriting existing files by appending an incrementing counter to duplicate destination filenames.
-The script must exclude itself from the collected Lua files when scanning."""
 
 from __future__ import annotations
 import argparse

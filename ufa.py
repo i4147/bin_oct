@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that accepts file and/or directory paths as arguments (defaulting to the current working directory if none are given), and gathers a list of text files to process using helper functions `get_nobinary` and `is_binary` from a local module named `dh` to skip binary files.
-For each collected file, read it line by line, strip whitespace, prepend the string backslash u to each line to form a unicode escape sequence, decode it into the actual unicode character using UTF-8 bytes and the "unicode_escape" codec, and print both the raw escaped string and its decoded result to standard output.
-The script should be runnable as a module with `sys.exit`/`SystemExit` returning the result of a `main()` function.
-"""
 
 from __future__ import annotations
 import sys

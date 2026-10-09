@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""tpv - a terminal PDF viewer.
-Each PDF page is rasterised with PyMuPDF and painted into the terminal using 24-bit-colour "half block" characters (U+2580), which packs two vertical pixels into every character cell.
-Usage: python tpv.py document.pdf [-p PAGE] [-z ZOOM] Keys: q / Esc / Ctrl-C quit j / Down scroll down one line k / Up scroll up one line h / Left scroll left l / Right scroll right Space / PgDn / f next screen (next page when already at the bottom) b / PgUp prev screen (prev page when already at the top) n / N next / previous page g / Home top of page G / End bottom of page + / - zoom in / out 0 reset zoom and scroll Requires PyMuPDF: pip install pymupdf
-"""
 
 from __future__ import annotations
 import argparse

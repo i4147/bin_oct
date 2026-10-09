@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-File extension reporter with colorization, smart directory filtering, and size tracking.
-Recursively scan current directory, report extension statistics with terminal-width-aware
-column formatting. Optionally show total size per extension instead of example files.
-"""
 
 from pathlib import Path
 from collections import defaultdict

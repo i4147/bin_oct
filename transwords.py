@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Translate Persian text in ``words.txt`` into English, chunk by chunk, and write the results to ``fa_en.json``.
-Text is split into ``CHUNK_SIZE``-character line-ranges, each chunk is translated via deep-translator's GoogleTranslator in a fixed multiprocessing.Pool of 8 workers, and the successful translations are sorted by starting line before serialization.
-Logging via loguru."""
 
 from __future__ import annotations
 import json

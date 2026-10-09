@@ -1,28 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""shebang_tool.py - unified shebang inspection and editing.
-Usage examples
---------------
-    python shebang_tool.py check-double
-    python shebang_tool.py check ./
-    python shebang_tool.py fix-sh --shebang '#!/data/data/com.termux/files/usr/bin/bash' .
-    python shebang_tool.py fix-ext --dry-run --verbose
-    python shebang_tool.py fix --workers 8 --shebang '#!/usr/bin/env python3'
-    python shebang_tool.py rename --dry-run
-    python shebang_tool.py rm --workers 8
-    python shebang_tool.py add
-    python shebang_tool.py to-cloud --workers 8
-Original-script mapping
------------------------
-    check_double_shebang.py  ->  python shebang_tool.py check-double
-    checkshebang.py          ->  python shebang_tool.py check
-    fix_bash_shebang.py      ->  python shebang_tool.py fix-sh
-    fixext_by_shebang.py     ->  python shebang_tool.py fix-ext
-    fixshebang.py            ->  python shebang_tool.py fix
-    rename_by_shebang.py     ->  python shebang_tool.py rename
-    rmshebang.py             ->  python shebang_tool.py rm
-    sheb.py                  ->  python shebang_tool.py add
-    toshellcloud.py          ->  python shebang_tool.py to-cloud
-"""
 
 from __future__ import annotations
 import argparse

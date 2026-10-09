@@ -1,13 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Generate a Python CLI script that converts Jupyter notebooks (.ipynb) into standalone Python scripts.
-The generated script should: - Recursively discover .ipynb files from CLI-provided paths (files or directories), defaulting to the current working directory.
-- For each notebook, write a sibling .py file, skipping outputs that already exist.
-- Convert markdown cells into comment blocks; lift top-level `import ...` / `from ...` statements into a header; hoist `os.environ` and `sys.path` lines immediately after their matching `import os` / `import sys` statements; and comment out IPython magics and shell escapes (`%`, `!`, `%%`) as `# [MAGIC] ...` lines, honoring backslash continuations.
-- Wrap the remaining body inside an `if __name__ == '__main__':` block.
-- Process files concurrently with multiprocessing.Pool.apply_async using a fixed pool of 8 workers (no CLI flag controls parallelism).
-- Use loguru for all logging output.
-- Include complete type annotations, docstrings on all functions, and this module-level docstring.
-"""
 
 from __future__ import annotations
 import sys

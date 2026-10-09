@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a stripping sequence numbers, timestamp lines, and HTML/formatting tags, leaving only the spoken dialogue lines.
-It should take the input SRT file path as the first argument and an optional output text file path as the second (defaulting to the same filename with a .txt extension), then write the cleaned text to that output file using UTF-8 encoding.
-If no input file is provided, it should print a usage message and exit with an error code.
-After successful conversion, it should print a confirmation message showing the source and destination file paths.
-"""
 
 from __future__ import annotations
 import re

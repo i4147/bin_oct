@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that parses a vCard (.vcf) file into structured contact records and exports them as JSON.
-The script should read the input file line by line, correctly unfold folded lines (continuation lines starting with a space or tab), and group entries between BEGIN:VCARD and END:VCARD markers into separate card dictionaries.
-It must handle vCard property parameters such as ENCODING and CHARSET, decoding quoted-printable encoded values into readable text using the specified charset (falling back to UTF-8 if the charset is invalid).
-The final output should be a list of parsed contact cards saved or printed as JSON, suitable for further processing or inspection.
-"""
 
 from __future__ import annotations
 import json

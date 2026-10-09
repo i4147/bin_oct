@@ -1,26 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Termux-targeted Python 3.12 command-line script that scans the current working directory tree for non-English text lines in source/text files, using language detection to flag likely-English content with a confidence score.
-
-The script should:
-
-1. Use a shebang pointing to the Termux Python interpreter (`#!/data/data/com.termux/files/usr/bin/python3.12`).
-2. Recursively walk all files starting from the current working directory (`Path.cwd()`), implemented via a generator function `walk_files(root)` that:
-   - Skips common non-source directories: `.git`, `.hg`, `.svn`, `__pycache__` `.venv`, `venv`, `env`, `dist`, `build`.
-   - Skips any directory whose name starts with a dot (hidden directories).
-   - Skips files whose extension (case-insensitive) is in a defined skip list covering compiled/binary/media/archive formats (e.g., `.pyc`, `.pyo`, `.so`, `.dll`, `.dylib`, `.exe`, `.bin`, `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.pdf`, `.z`, `.rar`, `.mp3`, `.mp4`, ``).
-   - Recurses into subdirectories and yields eligible file paths.
-3. Implement a `decode_text(path)` function that:
-   - Reads the file as bytes, returning `None` on any `OSError`.
-   - Treats the file as binary (returns `None`) if a null byte (`\\x00`) is found in the first 4096 bytes.
-   - Attempts to decode the bytes trying encodings in this order: `utf-8`, `utf-16`, `latin-1`, returning the first successful decode, or `None` if all fail.
-4. Implement an `iter_lines(text)` generator that splits the text into lines, strips whitespace, and yields `(line_number, line)` pairs (1-indexed) only for lines with length >= a `MIN_LEN` constant (set to 12) and containing at least one alphabetic character.
-5. Implement a `detect(text)` function that uses the `py3langid` library's `rank()` function to get ranked language pred determines whether the text should be flagged (e.g., by checking if the top-ranked language is not English, or computing/returning a confidence score), using a `MIN_CONF` constant (set to 0.65) as the confidence threshold. Handle the case where `rank()` returns no results.
-6. Define module-level constants exactly as described: `ROOT` (current working directory), `SKIP_DIRS`, `SKIP_EXTS`, `MIN_LEN`, `MIN_CONF`, and ANSI color code constants for terminal output formatting: `RESET`, `BOLD`, `YELLOW`, `MAGENTA`.
-7. The overall program (main logic, to be completed) should walk through all eligible files, decode them, extract qualifying lines, run language detection on each line (or accumulate text per file), and print out findings with the file path, line number, and the detected line highlighted/colored using the ANSI codes, so a user can quickly spot non-English (or low-confidence-English) text scattered across a codebase.
-
-The purpose of the script is to help developers audit a codebase for stray non-English strings (e.g., comments, log messages, string literals left in another language) that may have been accidentally left in during development, using lightweight per-line language identification rather than full NLP processing. It should use only the standard library plus `py3langid` Android, no command Importys` as needed for anyatting andling logic.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/Pdbgp2LCf3zySUK9VnQi8k"""
 
 from pathlib import Path
 import math

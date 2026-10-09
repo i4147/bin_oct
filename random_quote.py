@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that reads a JSON file of quotes located at /sdcard/data/quotes/quotes.json, where each entry contains a "quote" and an "author" field, and selects one entry at random to display in the terminal.
-It should gracefully do nothing if the file is missing, contains invalid JSON, or is empty.
-The output should be formatted with horizontal divider lines sized to the current terminal width, with the quote and author printed in colored, blinking ANSI text.
-Wrap the logic in a display_random_quote function and run it when the script is executed directly.
-"""
 
 from __future__ import annotations
 import json

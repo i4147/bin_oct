@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""
-Merged 7-Zip compression tool.
-Third-party dependencies:
-  py7zr
-  loguru  (only required for the `full` subcommand)
-Usage:
-  python merged.py basic
-  python merged.py named
-  python merged.py full --mode compress
-  python merged.py full --mode decompress
-Mapping:
-  7zer.py   -> python merged.py basic
-  7zer2.py  -> python merged.py named
-  7zr.py    -> python merged.py full --mode compress
-               python merged.py full --mode decompress
-"""
 
 from __future__ import annotations
 import argparse

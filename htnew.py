@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that generates a basic HTML5 boilerplate file.
-It should define a function accepting an optional filename parameter (defaulting to "index.html") and write a standard HTML template—including doctype, charset meta tag, viewport meta tag, title, and a simple "Hello, World!" heading in the body—to that file using UTF-8 encoding via pathlib.
-The function should print a success message showing the created filename and current working directory, or print an error message if the file write fails due to an exception.
-The script should run the function automatically when executed directly."""
 
 from __future__ import annotations
 from pathlib import Path

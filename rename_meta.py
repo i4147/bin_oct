@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that batch-processes metadata files by extracting package name and version information and saving renamed copies to a fixed output directory.
-It should retrieve a list of input files using a helper function, read each file's second and third lines to parse "name:" and "version:" fields (case-insensitive), and then write the file's full content to a new file in "/data/data/com.termux/files/home/tmp/metadata" named using the pattern "name-version.metadata" or just "name.metadata" if the version is missing, avoiding overwrites by generating a unique path when a filename collision occurs.
-It should print color-coded status messages (green for name+version success, yellow for name-only success, and another color for missing data or nonexistent files) using a custom print helper, and iterate over all files in the input source, returning True or False/None depending on whether processing succeeded for each file.
-"""
 
 from __future__ import annotations
 from pathlib import Path

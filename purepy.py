@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Classify PyPI packages from a list file as pure-Python, native-extension, or not-found.
-Regenerate this script: read newline-separated package names from a file, query https://pypi.org/pypi/<name>/json with requests, decide "native" when any release filename suggests compiled wheels (.so/.pyd/.dll/win_amd64/manylinux/macosx) else "pure" or "not_found", use a fixed 8-worker multiprocessing Pool selected by --pool-method (map, starmap, imap_unordered, apply_async), and write pure_python.txt, native_extensions.txt, and not_found.txt, logging with loguru.
-"""
 
 from __future__ import annotations
 import argparse

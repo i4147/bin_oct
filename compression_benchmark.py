@@ -1,5 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Compression benchmark: tries stdlib and 3rd-party codecs at multiple levels and keeps the smallest archive."""
 
 from __future__ import annotations
 import bz2

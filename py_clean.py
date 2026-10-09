@@ -1,25 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""pyclean: strip comments, docstrings and type hints from Python sources.
-
-The tool is built on LibCST, so formatting and every character that is not
-explicitly removed survives the round trip.  It is organised in four layers:
-
-1. Configuration   -- ``CleanerConfig`` / ``RunOptions`` (immutable dataclasses).
-2. Transformers    -- ``SourceCleaner`` and ``_UnusedTypingImportRemover``
-                      (LibCST code; no I/O).
-3. File pipeline   -- decode -> transform -> ``ast.parse`` validation ->
-                      optional backup -> atomic write (``process_file``).
-4. Orchestration   -- file discovery, ``.ignore`` handling, the 8-worker
-                      ``multiprocessing.Pool`` executor and the CLI.
-
-Requirements: Python >= 3.12, ``libcst``, ``loguru``, ``tqdm``.
-
-Known semantic caveats of ``--strip-type-hints``: dataclasses, NamedTuple,
-TypedDict, pydantic and similar libraries read class-level annotations at
-runtime, so stripping them changes behaviour.  PEP 695 ``type`` aliases and
-type parameters are left untouched.  Workers never log; they return messages
-that the parent process logs through loguru.
-"""
 
 from __future__ import annotations
 

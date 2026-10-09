@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that takes a file path as a command-line argument, reads all lines from that file, and joins the non-empty lines together into a single continuous line by stripping their newline characters.
-The script should then overwrite the original file with this concatenated content, appending a single trailing newline at the end.
-It should use pathlib for file handling and read/write the file using UTF-8 encoding."""
 
 from __future__ import annotations
 from pathlib import Path

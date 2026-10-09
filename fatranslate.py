@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Merged Persian/English translation tool.
-This single script combines the behavior of: - fa_trans.py -> `lines` subcommand - tfa.py -> `words` subcommand with --processes 1 and --output dic.json - trans_fa_mp.py -> `words` subcommand with --processes 8 Dependencies (third-party): pip install deep-translator loguru Usage examples: python fa_translate.py lines input.txt python fa_translate.py words words.txt --output dic.json --processes 1 python fa_translate.py words input.txt --processes 8 Original-to-merged mapping: fa_trans.py -> python fa_translate.py lines <input_file> tfa.py -> python fa_translate.py words words.txt --output dic.json --processes 1 trans_fa_mp.py -> python fa_translate.py words <input_file> --processes 8
-"""
 
 from __future__ import annotations
 import argparse

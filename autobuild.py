@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Auto-build .whl files from extracted PyPI .tar.gz packages in the current directory.
-Each subdirectory containing a setup.py or pyproject.toml is treated as a package."""
 
 from __future__ import annotations
 import subprocess

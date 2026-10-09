@@ -1,24 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line utility script (intended to run under Termux on Android, using a shebang of `#!/data/data/com.termux/files/usr/bin/python3.12`) that scans Python files for syntax errors and quarantines the broken ones. The prompt should specify the following requirements:
-
-**Purpose**: The script recursively discovers `.py` files (using a helper `get_pyfiles` function imported from a local module named `dh`), parses each file with Python's `ast` module to detect syntax errors, and for every file that fails to parse, copies (or optionally moves) it into an `error` subfolder created inside that file's parent directory, preserving per-directory organization. Use `loguru` for logging progress, warnings, and errors throughout.
-
-**CLI arguments** (via `argparse`):
-- `paths`: positional, `nargs="*"`, type `Path`, defaulting to a list containing the current working directory (`Path.cwd()`), representing files or directories to process.
-- `-n` / `--dry-run`: flag (`store_true`) to only report intended actions without touching the filesystem.
-- `-m` / `--move`: flag (`store_true`) to move invalid files instead of copying them (default behavior is copy).
-- `--pool-method`: choice argument with options `map`, `imap_unordered`, `starmap`, `apply_async`, defaulting to `starmap`, controlling which `multiprocessing.Pool` method is used to parallelize the syntax-checking work across files.
-
-**Notable behavior**:
-- Use `multiprocessing.Pool` with `functools.partial` to bind extra arguments to a worker function that performs the per-file syntax check, selecting the pool invocation method dynamically based on the `--pool-method` argument.
-- Implement a `unique_destination(dest_dir, filename)` helper that returns a non-colliding destination `Path` inside the target directory: if a file with the same name already exists, append an incrementing numeric suffix (e.g., `name_1.py`, `name_2.py`, etc.) to the stem until a free path is found.
-- When a syntax error is detected, ensure the `error` directory exists (create if needed), compute a unique destination path via `unique_destination`, and use `shutil.copy2` (or `shutil.move` if `--move` is specified) to relocate the file, unless `--dry-run` is active, in which case only log what would have happened.
-- Handle the case where `paths` contains either individual files or directories, expanding directories into their contained Python files via `get_pyfiles`.
-- Provide a `parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace` function for argument parsing that can be tested independently, and a standard `if __name__ == "__main__":` entry point.
-- Include appropriate type hints throughout (using `from __future__ import annotations`), structured logging via `loguru`'s `logger`, and graceful handling/reporting of errors (e.g., file access issues, failed parses) without crashing the whole run.
-- The script should exit with an appropriate status code (e.g., via `sys.exit`) reflecting whether any syntax errors were found/processed.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/K7omdspHfu6NJQHULHWqfn"""
 
 from __future__ import annotations
 import argparse

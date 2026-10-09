@@ -1,12 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Archive a directory as .tar or .tar.gz and optionally clean up the source.
-Usage:
-    python folder_archiver.py tar <folder_path> [--output PATH] [--keep] [--quiet]
-    python folder_archiver.py tgz [<folder_path>] [--output PATH] [--workers 8] [--keep] [--cleanup-scope {contents,folder,none}]
-Mappings:
-    tar_folder.py <folder_path> -> python folder_archiver.py tar <folder_path>
-    tgzr.py [folder_path]       -> python folder_archiver.py tgz [folder_path]
-"""
 
 from __future__ import annotations
 import argparse

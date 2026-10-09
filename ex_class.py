@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that recursively scans all .py files under the current directory (skipping hidden directories, site-packages, and its own output folder) and uses tree-sitter with the tree_sitter_python grammar to parse each file and extract top-level class_definition nodes as source text.
-For each folder containing files with extracted class definitions, concatenate the extracted code from all files in that folder and write it into a corresponding "imports.py" file under an "output" directory, preserving the relative folder structure.
-Finally, print a summary message showing how many folders were processed."""
 
 from __future__ import annotations
 from collections import defaultdict

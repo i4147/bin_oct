@@ -1,39 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Strip comments and docstrings from Python source files, in place, using libcst.
-
-What is removed
----------------
-* Every comment, except:
-    - the shebang line (``#!``) when it is the very first line of the file,
-    - ``# type:`` comments (``# type: ignore``, ``# type: int`` ...),
-    - ``# fmt:`` comments (``# fmt: off``, ``# fmt: skip`` ...).
-* Every function / class docstring.  If the docstring is the only statement in
-  the body, it is replaced with ``pass`` so the code stays syntactically valid.
-
-What is kept
-------------
-* The module-level docstring.
-* All code, formatting, blank lines and line endings (libcst is lossless).
-
-Safety
-------
-* The new source is validated with ``ast.parse`` (Python 3.12 grammar) before
-  anything is written; invalid output is never written.
-* Files are replaced atomically (temp file in the same directory + rename), so
-  an interrupted run can never leave a half-written file.
-* ``--backup`` copies ``file.py`` to ``file.py.bak`` first, ``--dry-run`` never
-  touches the disk and ``--diff`` prints a unified diff of every change.
-* Files that are not valid UTF-8 are skipped (or processed and written back in
-  their own encoding with ``--fallback-encoding``).
-
-Requires: Python >= 3.12, ``libcst >= 1.1``, ``loguru``.
-
-Examples
---------
-    strip_comments.py src/ tests/ script_without_extension
-    strip_comments.py --dry-run --diff .
-    strip_comments.py -n --backup --pool-method imap_unordered src/
-"""
 
 import argparse
 import ast

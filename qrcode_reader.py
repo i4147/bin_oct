@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line script that reads and decodes QR codes from an image file specified as a command-line argument, using PIL for image loading and pyzbar for QR detection.
-For each QR code found, it should print the decoded data, code type, and bounding box position (left, top, width, height), then print the first decoded value separately as a summary.
-The script must handle missing arguments by printing usage instructions, and gracefully handle errors such as a missing image file or other processing exceptions by printing an error message and exiting with a non-zero status code.
-"""
 
 from __future__ import annotations
 import sys

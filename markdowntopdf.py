@@ -1,31 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt for an AI coding agent to generate a Python 3.12 command-line script (intended to run under Termux on Android, using the shebang `#!/data/data/com.termux/files/usr/bin/python3.12`) that converts Markdown files into styled PDF documents using the `markdown` and `weasyprint` libraries.
-
-The script's purpose is to batch-convert one or more Markdown files into PDF files, applying a custom CSS stylesheet (which may optionally be stored compressed as `.xz`) for styling, and supporting extended Markdown syntax via extensions.
-
-Core requirements:
-
-1. **Core conversion function** `md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_config=None)`:
-   - Accepts either raw Markdown text (`raw`) or a path to a Markdown file (`md`, a `Path` object); if `md` is provided, read its text content (log this action at debug level).
-   - Raise a custom `ValidationError` exception if there is no markdown content to process `raw` and `md`
-   - Conv Python's `markdown` library, always including a base set of extensions: `markdown.extensions.tables`, `pymdownx.magiclink`, `pymdownx.betterem`, `pymdownx.superfences`, plus any additional extensions passed via `extras`, with optional per-extension configuration via `extras_config`.
-   - Build a `weasyprint.HTML` object from the generated HTML string, using `base_url` (defaulting to the current working directory if not provided) for resolving relative resource paths (images, etc.).
-   - If a `css` path is provided: if the file has a `.xz` suffix, decompress it in-memory using `lzma` (read as UTF-8 text) and construct a `weasyprint decory as its_url; otherwise load the CSS file directly by filename.
-   - Render and write the final PDF to the given `pdf` output path, applying the collected stylesheet(s).
-
-2. **Default CSS**: Define a default compressed stylesheet path constant pointing to `/sdcard/_static/css/markdown.css.xz` (for Termux/Android environments).
-
-3. **CLI interface** (using `argparse`):
-   - Accept one or more input Markdown file paths (positional arguments).
-   - Support an option to specify an output PDF path or om extension with `.pdf`).
-   - Support an option to specify a custom Cdefaulting to the default Cass extension configuration (e.g., Support a ver configures the `logging` module accordingly.
-   - Process multiple input files concurrently using a `Threance.
-   - Measure and log/print the total processing time using `time()`.
-   - Handle errors gracefully (e.g., catch `ValidationError` and other exceptions per file) and report failures without crashing the whole batch, exiting with an appropriate non-zero status code via `sys.exit` when errors occur.
-
-Use standard library modules (`argparse`, `json`, `logging`, `lzma`, `sys`, `pathlib.Path`, `concurrent.futures.ThreadPoolExecutor`, `time.time`) alongside the third-party `markdown` and `weasyprint` packages. Structure the code cleanly with a `logger` instance named after the module, clear function separation, and a `if __name__ == "__main__":` entry point that parses arguments and drives the batch conversion process.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/Cc3u7xeNnCnzLFfcPC83KL"""
 
 import argparse
 import json

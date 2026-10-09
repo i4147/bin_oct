@@ -1,16 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Duplicate File Finder and Remover Scan a directory (recursively by default) for duplicate files by content, using a multi-phase approach (size grouping -> quick hash -> full hash) with multiprocessing.Pool.apply_async for parallelism.
-The script: - Skips .git directories unless --all/-a is given.
-Symlinks are always skipped.
-- Uses xxhash.xxh64 for hashing (quick hash reads head/tail, full hash reads entire file).
-- Deduplicates hardlinks (same inode/device) by reporting one representative per inode.
-- Chooses which duplicate to keep via --keep {first,oldest,newest} (default oldest).
-- Only deletes when --remove/-r is passed; otherwise it reports only.
-- Supports --dry-run to list what would be deleted without deleting.
-- Uses loguru for warnings/errors and plain print() for user-facing progress.
-- Uses pathlib exclusively for path operations.
-- Includes full type annotations and docstrings on all functions and module constants.
-- Deletes duplicates via Path.unlink() and prints a summary including bytes freed."""
 
 from __future__ import annotations
 import argparse

@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""check_conflicts.py Detect (and optionally fix) files in the current directory that would shadow a Python standard-library module or an installed PyPI package.
-- stdlib names come from `dh.STDLIB` (a frozenset) - PyPI names come from /sdcard/data/pip.json, a list of [package_name, download_count] records Usage: python check_conflicts.py # report only python check_conflicts.py -a # rename to fix python check_conflicts.py -a -o report.json # custom report path python check_conflicts.py -i # only installed PyPI pkgs Exit codes: 0 = no conflicts 1 = conflicts found (fixed or not) 2 = error
-"""
 
 from __future__ import annotations
 import argparse

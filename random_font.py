@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that randomly selects a Termux font from WOFF2 files stored in "/sdcard/font", excluding italic variants and files smaller than 400KB, using the secrets module for random selection.
-It should print the chosen index, total candidate count, and filename, then look for a corresponding .ttf file with the same base name and rename it to "~/.termux/font.ttf", removing any existing destination file first.
-Include a helper function using fontTools' woff2.decompress to convert a WOFF2 file to TTF, silently ignoring any conversion errors.
-The script should be runnable as a standalone module with a main entry point."""
 
 from __future__ import annotations
 import secrets

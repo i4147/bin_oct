@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that recursively scans a directory (or a list of specified files) for Python source files, tokenizes each one using the tokenize module, and detects occurrences of the "is not" comparison operator pattern.
-For each file it should report the file path, the count and line numbers of matches, and optionally support an auto-fix mode that rewrites "is not" token pairs into "!=" and writes the modified source back to disk.
-The script should use argparse to accept input paths and an auto-fix flag, process files concurrently with concurrent.futures for performance, and gracefully capture and report any read/tokenize/write errors per file without crashing the whole run.
-"""
 
 from __future__ import annotations
 import argparse

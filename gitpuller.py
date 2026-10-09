@@ -1,9 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python script that uses GitPython to recursively scan the current working directory for all Git repositories (identifying them by the presence of a ".git" folder) and automatically runs "git pull" on each one it finds.
-For every repository it should print progress information such as the relative path, current active branch, and remote used, then attempt to pull from the first configured remote, skipping and reporting repositories that have no remote configured.
-It should track and distinguish successfully pulled repositories from failed ones (capturing error messages, e.g.
-from GitCommandError or pull result flags indicating errors), and finally print a summary report listing which repositories were successfully updated and which ones failed along with their error reasons.
-"""
 
 from __future__ import annotations
 from pathlib import Path

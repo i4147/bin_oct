@@ -1,6 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""A lightweight Python implementation of termimage.
-Displays images directly in the terminal using ANSI escape codes."""
 
 from __future__ import annotations
 import argparse

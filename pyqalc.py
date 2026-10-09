@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a command-line unit conversion tool in Python that supports converting values between units of length, mass, and volume (e.g., nm/mm/cm/m/km/in/ft/mile/ly for length, mg/g/kg/ton/oz/lb for mass, and ml/l/cl/dl/fl oz/pint/quart for volume), using dictionaries that map each unit's abbreviation and full name to its base-unit conversion factor (meters, kilograms, or liters respectively).
-It should use argparse to accept inputs such as the value, source unit, and target unit from the command line, use regex to parse or validate unit strings, and leverage Python's decimal module with increased precision for accurate numeric conversions.
-The output should be the converted value printed to the console, with the script structured around a UnitConverter class containing the conversion tables and logic to look up units and compute the converted result.
-"""
 
 from __future__ import annotations
 import argparse

@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""merged_tools.py — unified CLI for a collection of scraper / package utilities.
-Original-script equivalents --------------------------- cforyou.py -> pkg-updates checksite.py -> import-check coc_link.py -> coc-links coclink.py -> coc-youtube crawler.py -> movie-crawl --engine basic scrap_site.py -> movie-crawl --engine simple scrapr.py -> movie-crawl --engine parallel download_images.py -> image-hunt saveimages.py -> image-save ex_video_link.py -> video-info findlinks.py -> link-crawl --mode ext findpdflinks.py -> link-crawl --mode pdf search_site.py -> link-crawl --mode keyword gcli.py -> google-search get_websize.py -> web-size Usage examples -------------- python merged_tools.py pkg-updates python merged_tools.py import-check python merged_tools.py coc-links -l links.txt -o th18_bases.html python merged_tools.py coc-youtube --api-key KEY python merged_tools.py movie-crawl --engine parallel -u URL python merged_tools.py image-hunt https://example.com -p -d python merged_tools.py image-save https://example.com out/ python merged_tools.py link-crawl https://example.com --mode pdf python merged_tools.py video-info URL1 URL2 python merged_tools.py google-search "python argparse" python merged_tools.py web-size https://example.com --crawl Third-party dependencies (same as originals): requests, beautifulsoup4, packaging, loguru, python-dotenv, google-api-python-client, Pillow, googlesearch-python
-"""
 
 from __future__ import annotations
 import argparse

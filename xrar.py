@@ -1,30 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a Termux-compatible Python 3.12 command-line script for extracting RAR archives (including multi-part/split RAR archives) on Android/Termux systems.
-
-Purpose:
-The script should locate a RAR archive (or the first part of a multi-volume RAR set), determine all related volume files belonging to the same archive, compute a destination extraction directory derived from the archive's filename, and extract the archive's contents into that directory safely.
-
-Main inputs:
-- A path to a RAR archive file (e.g., "archive.rar", "archive.part1.rar", or "archive.part01.rar") provided as a command-line argument.
-
-Main outputs:
-- A new directory created next to the archive (named after the archive without its RAR/part suffix) containing the extracted files.
-- Console output/logging indicating progress, success, or errors during extraction.
-- Appropriate process exit codes reflecting success or failure.
-
-Notable behavior and requirements:
-1. Try to import the optional `libarchive` Python binding; if unavailable, gracefully fall back to using external command-line extraction tools. Track availability with a boolean flag (e.g., HAVE_LIBARCHIVE).
-2. Define a fix  search for onATH: "unrar", "7z", "7za", "7zz", "bsdtar" (in that priority order).
-3. Implement a function to find the first available extractor executable path on the system using `shutil.which`, returning None if none are found.
-4. Implement a function that, given an archive Path, detects whether it is part of a multi-volume split RAR set by checking for filename suffixes ".part1.rar" or ".part01.rar" (case-insensitive). If so, scan the archive's parent directory and return a sorted list of all sibling files that share the same base name (case-insensitive) and end with ".rar", representing all volume parts. If the archive is not part of a detected multi-part set, return a single-element list containing just that archive.
-5. Implement a function that computes the destination extraction directory from the archive path: strip known suffixes (".part1.rar", ".part01.rar", ".rar") case-insensitively from the filename to form the output directory name (sibling directory to the archive); if none of those suffixes match, fall back to using the path's stem (removing just the last suffix).
-6. Implement a safe path-joining helper that prevents path traversal / zip-slip style vulnerabilities: given a destination directory and a relative entry name from the archive, resolve the combined path and verify it still lies within the resolved destination directory (using `relative_to`), returning None if the entry would escape the destination directory, or the resolved safe target Path otherwise.
-7. Implement an extraction routine that uses the `libarchive` binding (when available) to read entries from the archive and extract them into the destination directory, creating the destination directory (with parents) if it doesn't exist, and applying the safe-join check to each entry before writing it to disk.
-8. Include a fallback extraction path that invokes one of the external extractor executables (via `subprocess`) when `libarchive` is not available or fails, using the first extractor found by the extractor-search function.
-9. Use `pathlib.Path` throughout for all filesystem path handling, and `sys` for command-line argument handling and exit codes.
-10. The script should be structured as a standalone executable with a Termux-specific shebang line (`#!/data/data/com.termux/files/usr/bin/python3.12`) and use `from __future__ import annotations` for type hint compatibility.
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/PEt6HkE3cu4H4PSVaw3jCv"""
 
 from __future__ import annotations
 import shutil
