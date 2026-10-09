@@ -1,5 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import argparse
 from collections import defaultdict
@@ -11,6 +10,7 @@ from xxhash import xxh64
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
+
 QUICK_READ: int = 4096
 CHUNK_SIZE: int = 65536
 POOL_WORKERS: int = 8
@@ -97,6 +97,17 @@ def choose_keep(files: list[Path], policy: str = "oldest") -> Path:
         return min(files, key=str)
 
 
+def format_size(n: int) -> str:
+    if n < 1024:
+        return f"{n} B"
+    elif n < 1024 * 1024:
+        return f"{n / 1024:.2f} KiB"
+    elif n < 1024 * 1024 * 1024:
+        return f"{n / 1024 / 1024:.2f} MiB"
+    else:
+        return f"{n / 1024 / 1024 / 1024:.2f} GiB"
+
+
 def main() -> None:
     cwd = Path.cwd()
     p = argparse.ArgumentParser(description="Find and delete duplicate files by content.")
@@ -142,7 +153,7 @@ def main() -> None:
     )
     args = p.parse_args()
     root = Path.cwd()
-    print("Phase 1: Scanning files and grouping by size...")
+
     size_groups: defaultdict[int, list[Path]] = defaultdict(list)
     total_files = 0
     for f in iter_files(
@@ -161,9 +172,7 @@ def main() -> None:
     if not candidates:
         print(f"Scanned {total_files} files. No potential duplicates found.")
         return
-    candidate_count = sum(len(v) for v in candidates.values())
-    print(f"Phase 1 complete: {candidate_count} files in {len(candidates)} size-groups to examine.")
-    print("Phase 2: Quick hash comparison...")
+
     quick_groups: defaultdict[tuple[int, str], list[Path]] = defaultdict(list)
     with Pool(processes=POOL_WORKERS) as pool:
         futures: list[tuple[Path, object]] = []
@@ -179,11 +188,9 @@ def main() -> None:
                 logger.warning(f"Skipping {fpath}: {e}")
     need_full: list[list[Path]] = [group for group in quick_groups.values() if len(group) > 1]
     if not need_full:
-        print("No duplicates found after quick hash comparison.")
+        print(f"Scanned {total_files} files. No duplicates found.")
         return
-    full_candidates = sum(len(g) for g in need_full)
-    print(f"Phase 2 complete: {full_candidates} files in {len(need_full)} groups need full hash.")
-    print("Phase 3: Full hash comparison...")
+
     full_groups: defaultdict[str, list[tuple[Path, tuple[int, int] | None]]] = defaultdict(list)
     with Pool(processes=POOL_WORKERS) as pool:
         futures2: list[tuple[Path, tuple[int, int] | None, object]] = []
@@ -198,8 +205,8 @@ def main() -> None:
                     full_groups[h].append((fpath, st_key))
             except Exception as e:
                 logger.warning(f"Skipping {fpath}: {e}")
-    print("Phase 4: Processing results...")
-    to_delete: list[Path] = []
+
+    deletion_groups: list[tuple[int, list[tuple[Path, Path]]]] = []
     for entries in full_groups.values():
         if len(entries) < 2:
             continue
@@ -210,55 +217,64 @@ def main() -> None:
         if len(group_reps) < 2:
             continue
         keep_file = choose_keep(group_reps, policy=args.keep)
-        for rep in group_reps:
-            if rep != keep_file:
-                to_delete.append(rep)
-    if not to_delete:
-        print("No duplicate files found.")
-        return
-    print(f"\nFound {len(to_delete)} duplicate files.")
-    for p_del in to_delete:
+        deletes = [rep for rep in group_reps if rep != keep_file]
+        if not deletes:
+            continue
         try:
-            rel_path = p_del.relative_to(cwd)
-        except ValueError:
-            rel_path = p_del
-        print(f"  {rel_path}")
+            group_size = keep_file.stat().st_size
+        except OSError:
+            group_size = 0
+        pairs = [(keep_file, d) for d in deletes]
+        deletion_groups.append((group_size, pairs))
+
+    if not deletion_groups:
+        print(f"Scanned {total_files} files. No duplicates found.")
+        return
+
+    total_deletes = sum(len(pairs) for _, pairs in deletion_groups)
+    for idx, (group_size, pairs) in enumerate(deletion_groups, start=1):
+        print()
+        print(f"[Group {idx}]  {format_size(group_size)} each")
+        for keep_file, del_file in pairs:
+            try:
+                keep_rel = keep_file.relative_to(cwd)
+            except ValueError:
+                keep_rel = keep_file
+            try:
+                del_rel = del_file.relative_to(cwd)
+            except ValueError:
+                del_rel = del_file
+            print(f"  KEEP     {keep_rel}")
+            print(f"  REMOVE   {del_rel}")
+
+    print()
     if not args.remove:
-        print(
-            f"\nReport-only mode. {len(to_delete)} files would be deleted.\n"
-            "Run with -r/--remove to actually delete them."
-        )
+        print(f"Report-only mode. Re-run with -r/--remove to delete {total_deletes} file(s)")
         return
     if args.dry_run:
-        print(f"\nDry-run complete. {len(to_delete)} files would be deleted.")
+        print(f"Dry run complete. Re-run with -a/--apply to delete {total_deletes} file(s)")
         return
+
     removed = 0
     failed = 0
     freed_space = 0
-    for p_del in to_delete:
-        try:
-            size = p_del.stat().st_size
-            p_del.unlink()
-            freed_space += size
-            removed += 1
+    for _, pairs in deletion_groups:
+        for _, del_file in pairs:
             try:
-                print(f"Deleted: {p_del.relative_to(cwd)} ({size:,} bytes)")
-            except ValueError:
-                print(f"Deleted: {p_del} ({size:,} bytes)")
-        except OSError as e:
-            failed += 1
-            try:
-                logger.error(f"Failed: {p_del.relative_to(cwd)} - {e}")
-            except ValueError:
-                logger.error(f"Failed: {p_del} - {e}")
-    print("\nSummary:")
-    print(f"  Files scanned: {total_files}")
-    print(f"  Duplicates found: {len(to_delete)}")
-    print(f"  Successfully deleted: {removed}")
+                size = del_file.stat().st_size
+                del_file.unlink()
+                freed_space += size
+                removed += 1
+            except OSError as e:
+                failed += 1
+                logger.error(f"Failed: {del_file} - {e}")
+
+    print()
+    print(f"Deleted {removed} file(s)")
     if failed:
-        print(f"  Failed to delete: {failed}")
+        print(f"Failed: {failed}")
     if freed_space:
-        print(f"  Space freed: {freed_space:,} bytes ({freed_space / 1024 / 1024:.2f} MB)")
+        print(f"Space freed: {format_size(freed_space)}")
 
 
 if __name__ == "__main__":

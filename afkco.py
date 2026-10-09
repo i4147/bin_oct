@@ -119,7 +119,7 @@ class NameVisitor(ast.NodeVisitor):
 
     def visit_Constant(self, node):
         if isinstance(node.value, str):
-            identifiers = re.findall("\\b[a-zA-Z_][a-zA-Z0-9_]*\\b", node.value)
+            identifiers = re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", node.value)
             self.used_names.update(identifiers)
         self.generic_visit(node)
 

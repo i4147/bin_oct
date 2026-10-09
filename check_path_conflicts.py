@@ -115,7 +115,7 @@ def is_wrapper_alias(alias_name: str, alias_target: str) -> bool:
       - alias rg="rg 2>/dev/null"
       - alias ls='ls --color=auto'
       - alias grep='command grep -i'
-      - alias cat='\cat -v'
+      - alias cat='\\cat -v'
     """
     if not alias_target:
         return False

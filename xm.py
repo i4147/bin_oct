@@ -1,21 +1,22 @@
 #!/data/data/com.termux/files/usr/bin/python
-
 from __future__ import annotations
 
 import argparse
 import ast
+import concurrent.futures as cf
 import json
 import re
 import textwrap
 from pathlib import Path
 
-OUTPUT_DIR = Path.home() / "isaac" / "may" / "q1" / "prompts"
-MAX_LINE = 80
-LIVEDOC_RE = re.compile(r"^LiveDoc:\s*https?://\S+\s*$")
+OUTPUT_DIR: Path = Path.home() / "isaac" / "may" / "q1" / "prompts"
+MAX_LINE: int = 80
+WORKERS: int = 4
+LIVEDOC_RE: re.Pattern[str] = re.compile(r"^LiveDoc:\s*https?://\S+\s*$")
+JSON_INDEX_NAME: str = "modules.json"
 
 
 def strip_quotes(doc: str) -> str:
-    """Strip leading/trailing triple or single quotes from a docstring."""
     doc = doc.strip()
     for quote in ('"""', "'''", '"', "'"):
         if doc.startswith(quote) and doc.endswith(quote) and len(doc) > 2 * len(quote):
@@ -25,43 +26,39 @@ def strip_quotes(doc: str) -> str:
 
 
 def extract_module_docstring(path: Path) -> str | None:
-    """Parse the given Python file and return its module-level docstring, if any."""
     try:
-        source = path.read_text(encoding="utf-8")
+        source: str = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return None
     try:
-        tree = ast.parse(source)
+        tree: ast.Module = ast.parse(source)
     except SyntaxError:
         return None
-    doc = ast.get_docstring(tree, clean=False)
+    doc: str | None = ast.get_docstring(tree, clean=False)
     if not doc:
         return None
     return strip_quotes(doc)
 
 
 def strip_trailing_livedoc(doc: str) -> str:
-    """Drop a trailing '---' + 'LiveDoc: <url>' block if present."""
-    lines = doc.rstrip().splitlines()
+    lines: list[str] = doc.rstrip().splitlines()
     if len(lines) >= 2 and lines[-2].strip() == "---" and LIVEDOC_RE.match(lines[-1].strip()):
         lines = lines[:-2]
     return "\n".join(lines).rstrip()
 
 
 def split_sentences(text: str) -> list[str]:
-    """Naive sentence splitter: break after . ! ? followed by whitespace + capital."""
     text = re.sub(r"\s+", " ", text).strip()
     if not text:
         return []
-    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text)
+    parts: list[str] = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text)
     return [p.strip() for p in parts if p.strip()]
 
 
 def format_docstring(doc: str, width: int = MAX_LINE) -> str:
-    """One sentence per line, wrapped to `width` on word boundaries."""
     lines: list[str] = []
     for sentence in split_sentences(doc):
-        wrapped = textwrap.wrap(
+        wrapped: list[str] = textwrap.wrap(
             sentence,
             width=width,
             break_long_words=False,
@@ -71,30 +68,42 @@ def format_docstring(doc: str, width: int = MAX_LINE) -> str:
     return "\n".join(lines)
 
 
+def unique_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+    stem: str = path.stem
+    suffix: str = path.suffix
+    parent: Path = path.parent
+    counter: int = 1
+    while True:
+        candidate: Path = parent / f"{stem}_{counter}{suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
 def remove_module_docstring(path: Path) -> bool:
-    """Remove the module-level docstring from `path` in place. Returns True on success."""
     try:
-        source = path.read_text(encoding="utf-8")
+        source: str = path.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError):
         return False
     try:
-        tree = ast.parse(source)
+        tree: ast.Module = ast.parse(source)
     except SyntaxError:
         return False
     if not tree.body:
         return False
-    first = tree.body[0]
+    first: ast.stmt = tree.body[0]
     if not (
         isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str)
     ):
         return False
 
-    lines = source.splitlines(keepends=True)
-    start = first.lineno - 1
-    end = first.end_lineno  # exclusive slice endpoint
-    new_source = "".join(lines[:start] + lines[end:])
+    lines: list[str] = source.splitlines(keepends=True)
+    start: int = first.lineno - 1
+    end: int = first.end_lineno
+    new_source: str = "".join(lines[:start] + lines[end:])
 
-    # A module that contained only the docstring must remain valid Python.
     if not new_source.strip():
         new_source = "pass\n"
 
@@ -102,38 +111,85 @@ def remove_module_docstring(path: Path) -> bool:
     return True
 
 
-def process(root: Path, out_dir: Path, fmt: str, remove: bool) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    for py_file in sorted(root.rglob("*.py")):
-        doc = extract_module_docstring(py_file)
-        if doc:
-            doc = strip_trailing_livedoc(doc)
-        if doc:
-            formatted = format_docstring(doc)
-            stem = py_file.stem
-            if fmt == "json":
-                out_path = out_dir / f"{stem}.json"
-                payload = {py_file.name: formatted}
-                out_path.write_text(
-                    json.dumps(payload, indent=2, ensure_ascii=False),
-                    encoding="utf-8",
-                )
-            else:
-                out_path = out_dir / f"{stem}.txt"
-                out_path.write_text(formatted + "\n", encoding="utf-8")
-            print(f"[+] {py_file} -> {out_path}")
+def process_one(
+    py_file: Path,
+    out_dir: Path,
+    remove: bool,
+) -> tuple[Path, Path | None, dict[str, str] | None, bool]:
+    doc: str | None = extract_module_docstring(py_file)
+    if doc:
+        doc = strip_trailing_livedoc(doc)
 
-        if remove and remove_module_docstring(py_file):
-            print(f"[-] removed module docstring from {py_file}")
+    out_path: Path | None = None
+    json_entry: dict[str, str] | None = None
+
+    if doc:
+        formatted: str = format_docstring(doc)
+
+        target: Path = out_dir / f"{py_file.stem}.txt"
+        out_path = unique_path(target)
+        out_path.write_text(formatted + "\n", encoding="utf-8")
+
+        one_line: str = " ".join(formatted.split())
+        json_entry = {py_file.name: one_line}
+
+    removed: bool = False
+    if remove:
+        removed = remove_module_docstring(py_file)
+
+    return py_file, out_path, json_entry, removed
+
+
+def process(
+    root: Path,
+    out_dir: Path,
+    json_out: bool,
+    remove: bool,
+    workers: int = WORKERS,
+) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    files: list[Path] = sorted(root.rglob("*.py"))
+    if not files:
+        return
+
+    json_entries: dict[Path, dict[str, str]] = {}
+
+    with cf.InterpreterPoolExecutor(max_workers=workers) as ex:
+        futures: dict[cf.Future[tuple[Path, Path | None, dict[str, str] | None, bool]], Path] = {
+            ex.submit(process_one, f, out_dir, remove): f for f in files
+        }
+        for fut in cf.as_completed(futures):
+            py_file: Path = futures[fut]
+            try:
+                _, out_path, json_entry, removed = fut.result()
+            except Exception as exc:
+                print(f"[!] {py_file.name}: {exc!r}")
+                continue
+
+            if out_path is not None:
+                print(f"[+] {py_file.name} -> {out_path.name}")
+            if json_entry is not None:
+                json_entries[py_file] = json_entry
+            if removed:
+                print(f"[-] removed module docstring from {py_file.name}")
+
+    if json_out and json_entries:
+        ordered: list[dict[str, str]] = [json_entries[p] for p in sorted(json_entries)]
+        json_path: Path = unique_path(out_dir / JSON_INDEX_NAME)
+        json_path.write_text(
+            json.dumps(ordered, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        print(f"[+] wrote {json_path.name} ({len(ordered)} entries)")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--format",
-        choices=("text", "json"),
-        default="text",
-        help="Output format (default: text).",
+        "-j",
+        "--json",
+        action="store_true",
+        help="Additionally write a single aggregated modules.json.",
     )
     parser.add_argument(
         "-r",
@@ -153,8 +209,21 @@ def main() -> None:
         default=OUTPUT_DIR,
         help=f"Output directory (default: {OUTPUT_DIR}).",
     )
-    args = parser.parse_args()
-    process(args.root.resolve(), args.out_dir, args.format, args.remove)
+    parser.add_argument(
+        "-w",
+        "--workers",
+        type=int,
+        default=WORKERS,
+        help=f"Interpreter-pool workers (default: {WORKERS}).",
+    )
+    args: argparse.Namespace = parser.parse_args()
+    process(
+        args.root.resolve(),
+        args.out_dir,
+        args.json,
+        args.remove,
+        args.workers,
+    )
 
 
 if __name__ == "__main__":

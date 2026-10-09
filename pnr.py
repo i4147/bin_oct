@@ -4,9 +4,7 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from dh import unique_path
-
-SKIP_DIRS = {".git"}
+from dh import unique_path, SKIP_DIRS
 
 
 def remove_string_from_names(
