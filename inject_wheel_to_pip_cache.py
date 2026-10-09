@@ -5,14 +5,15 @@ It should then locate pip's cache directory via `pip cache dir`, construct the a
 The script should handle missing METADATA gracefully by raising a clear error, and should be usable for batch-processing multiple wheel files via a Path-based interface."""
 
 from __future__ import annotations
-import hashlib
-import json
-import shutil
-import subprocess
-import zipfile
 from email import policy
 from email.parser import Parser
+import hashlib
+import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
+import zipfile
 
 
 def extract_wheel_metadata(wheel_path: Path) -> dict:

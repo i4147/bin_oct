@@ -4,15 +4,18 @@ Regenerate this script: walk a directory with fastwalk.walk_files, collect uniqu
 
 from __future__ import annotations
 import argparse
-import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import re
+import sys
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from dh import unique_path  # type: ignore[import-untyped]
 from fastwalk import walk_files  # type: ignore[import-untyped]
 from loguru import logger
 from tqdm import tqdm
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -4,14 +4,16 @@ It should accept file paths as arguments, or if none are given, recursively disc
 The script must use the "rich" library to display a formatted summary showing the total count and total size (via a fsz helper) of the files processed, along with a progress bar during processing, and it should run external "strip" commands via a runcmd helper, showing their output."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
 import tempfile
-from pathlib import Path
 from zipfile import ZipFile
+
 from dh import fsz, runcmd
 from rich.console import Console
 from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
+
 
 SO_PATTERN = re.compile(r"\.so(\.\d+)*$")
 console = Console()

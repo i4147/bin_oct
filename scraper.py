@@ -4,27 +4,29 @@ Original-script equivalents --------------------------- cforyou.py -> pkg-update
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict, deque
 import contextlib
+from datetime import UTC, datetime, timedelta
 import hashlib
+from importlib.machinery import SourceFileLoader
+from io import BytesIO
 import json
 import multiprocessing as mp
 import os
+from pathlib import Path
 import random
 import re
 import signal
 import string
 import sys
 import time
-from collections import defaultdict, deque
-from datetime import UTC, datetime, timedelta
-from importlib.machinery import SourceFileLoader
-from io import BytesIO
-from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
-import requests
+
 from bs4 import BeautifulSoup
+import requests
+
 
 DEFAULT_UA = "Mozilla/5.0 (compatible; MergedTools/1.0)"
 _COLORS = {
@@ -213,6 +215,7 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
+
     from loguru import logger
 
     logger.remove()

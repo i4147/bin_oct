@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 import ast
-import sys
 from pathlib import Path
+import sys
 
 
 def has_main_guard(filepath: Path) -> bool:

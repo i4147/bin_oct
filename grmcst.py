@@ -6,11 +6,13 @@ Discovers targets from CLI path arguments (defaults to CWD), processes them in a
 from __future__ import annotations
 import argparse
 import ast
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
+
 import libcst as cst
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

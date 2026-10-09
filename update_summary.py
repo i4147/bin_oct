@@ -5,6 +5,7 @@ After writing the updated file, it should print a message stating how many chapt
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 
 def find_md_files():

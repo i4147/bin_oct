@@ -5,9 +5,9 @@ It should print each copy operation as it happens, catch and report per-file cop
 If the extension argument is missing or the wrong number of arguments is supplied, it should print a usage message and exit with a non-zero status."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def unique_destination_path(dest_dir: Path, filename: str) -> Path:

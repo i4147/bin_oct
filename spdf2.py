@@ -4,9 +4,11 @@ It should accept file paths as command-line arguments, or if none are given, aut
 Multiple files should be processed concurrently using a multiprocessing/thread pool helper with a worker limit of 4, while a single file is processed directly, and the script should report total directory space freed at the end when processing multiple files."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import fsz, get_files, gsz, mpf, runcmd
+
 
 MAX_WORKERS = 4
 

@@ -4,6 +4,7 @@ The script should read the input shell script's path from the first command-line
 The obfuscated result is printed to stdout."""
 
 from __future__ import annotations
+from pathlib import Path
 import string
 import sys
 

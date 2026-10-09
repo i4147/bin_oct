@@ -1,62 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Create a cross-platform (Termux/Linux) Python 3.12 command-line tool named "strip_comments" (version 2.1.0) that removes comments (and optionally docstrings/blank-line runs) from Python source files, using libcst for safe, syntax-preserving transformations.
 
-The script's purpose is to clean up `.py`, `.pyi`, and `.pyw` files by stripping inline and standalone comments while optionally also stripping docstrings and collapsing multiple consecutive blank lines, without breaking code structure, encoding declarations, or special "protected" comments (e.g. shebangs, coding declarations, `# noqa`, `# nosec`, `# pragma`, `# type:`, and formatter/linter directives like `# fmt`, `# isort`, `# mypy`, `# pyright`, `# pytype`, `# pylint`, `# ruff`, `# flake8`, `# yapf`). It must also correctly handle `# type: ignore` comments (which should still be stripped/treated as non-protected unless otherwise specified) versus other `# type:` comments (which are protected).
-
-Key requirements:
-
-1. **CLI interface (argparse-based)**:
-   - Accept one or more input paths (files and/or directories) as positional arguments.
-   - Recursively walk directories, only processing files with the recognized Python suffixes (`.py`, `.pyi`, `.pyw`), while skipping common non-source directories by default (e.g. `.git`, `.hg`, `.svn`, `.tox`, `.nox`, `.venv`, `venv`, `env`, `__pycache__`, `.mypy_cache`, `.pytest_cache`, `.ruff_cache`, `node_modules`, `build`, `dist`, `.eggs`).
-   - Support an option to also remove docstrings in addition to comments (a "remove all" / aggressive mode).
-   - Support an option to collapse runs of multiple blank lines into a single blank line.
-   - Support a dry-run / check mode that reports what would change without writing files.
-   - Support writing `.pystripbak` backup files before modifying originals, and/or an option to disable backups.
-   - Support verbose/quiet output modes, with colorized (green) terminal output for status messages where appropriate, and a way to disable color.
-   - Support a `--version` flag that prints the program name and version.
-   - Allow control over parallelism: process multiple files concurrently using multiprocessing when the number of files meets a minimum threshold, with a configurable max number of worker processes (default 8) and chunk size (default 8) for distributing work; otherwise process sequentially for small file counts (fewer than 4 files).
-
-2. **Core transformation logic**:
-   - Parse each file with `libcst` to build a CST, then transform it to remove comment trivia (and docstring expression statements, if requested) while preserving code semantics, indentation, and formatting of retained code.
-   - Protect special comments using a regex that matches shebang lines (`#!`), coding declarations (`-*- coding ... -*-` or `coding[:=]`), and directive comments such as `noqa`, `nosec`, `pragma`, `type:`, `fmt:`, `isort:`, `mypy:`, `pyright:`, `pytype:`, `pylint:`, `ruff:`, `flake8:`, `yapf:` — these must never be stripped.
-   - Treat `# type: ignore` specially so it is eligible for removal (not protected) even though other `# type:` comments are protected, using a dedicated regex distinguishing `# type:` not followed by `ignore`.
-   - Preserve a leading encoding comment/declaration correctly (via a dedicated regex for `# coding:`/`# coding=` style comments) so files remain valid Python with correct encoding after stripping.
-   - When collapsing blank lines, use a regex that matches runs of blank/whitespace-only lines and reduces them appropriately.
-   - Use Python's `tokenize` module (including handling of `FSTRING_START`/`FSTRING_END`/`TSTRING_START`/`TSTRING_END` tokens when present in the running Python version) to correctly account for f-string/t-string internals so comments inside expressions aren't mishandled, and so line tracking for blank-line collapsing is accurate.
-   - Use `ast` as needed for validation (e.g., confirming the transformed source still parses correctly) to avoid producing invalid Python output.
-
-3. **File handling behavior**:
-   - Read and write files using appropriate encoding detection/handling.
-   - When processing a directory tree, gather all eligible files first, then decide sequential vs. parallel processing based on file count thresholds.
-   - For each file: parse, transform, and only rewrite the file if the content actually changed; optionally create a `.pystripbak` backup of the original before overwriting; report per-file status (e.g., modified, unchanged, skipped, error) respecting verbosity settings.
-   - Handle errors gracefully per file (e.g., syntax errors, I/O errors) without crashing the entire batch; collect and report a summary of successes/failures at the end, and set the process exit code to reflect whether any errors occurred.
-   - Support being interrupted gracefully (e.g., handle `SIGINT`) during batch/parallel processing, terminating worker processes cleanly.
-
-4. **Output/reporting**:
-   - Print a concise summary at the end (e.g., number of files scanned, modified, skipped, errored), using colorized text for emphasis when color is enabled and the output stream is a terminal.
-   - In dry-run mode, clearly indicate that no files were actually written, while still showing what would have changed.
-
-Implement this entirely in a single self-contained Python 3.12 script (with the Termux-style shebang `#!/data/data/com.termux/files/usr/bin/python3.12`), using only the standard library plus `libcst`, structured with dataclasses (e.g., a frozen `TransformOptions` dataclass holding flags like whether to remove all/docstrings) and clear helper functions/classes for the CST transformation, file discovery, parallel execution, and CLI entry point (`main`).
----
-LiveDoc: https://felo.ai/zh-Hans/livedoc/EJWXwAyvC6CqsaN8aFXgma"""
-
+from __future__ import annotations
 import argparse
 import ast
 import contextlib
 import dataclasses
+from dataclasses import dataclass
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import signal
 import sys
 import tempfile
 import textwrap
 import tokenize
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable, Iterable, Iterator, Sequence
+
 import libcst as cst
+
 
 PROGRAM = "strip_comments"
 VERSION = "2.1.0"
@@ -86,8 +49,7 @@ DEFAULT_SKIP_DIR_NAMES = frozenset({
     ".eggs",
 })
 PROTECTED_COMMENT_RE = re.compile(
-    r"#(?:!|\s*(?:-\*-.*coding|coding[:=]|noqa\b|nosec\b|pragma\b|"
-    r"(?:type|fmt|isort|mypy|pyright|pytype|pylint|ruff|flake8|yapf):))",
+    r"(?:type|fmt|ruff):))",
     re.IGNORECASE,
 )
 TYPE_COMMENT_RE = re.compile(r"#\s*type:\s*(?!ignore\b)", re.IGNORECASE)
@@ -416,7 +378,7 @@ def multiline_string_lines(source: str) -> frozenset[int] | None:
 def collapse_repeated_blank_lines(source: str) -> str:
     if BLANK_RUN_RE.search(source) is None:
         return source
-    if '"""' in source or "'''" in source:
+    if DOC_TH1 in source or DOC_TH2 in source:
         protected = multiline_string_lines(source)
         if protected is None:
             return source
@@ -465,7 +427,8 @@ def backup_path_for(path: Path) -> Path:
 def write_backup(path: Path, data: bytes, overwrite: bool, fsync: bool) -> None:
     backup = backup_path_for(path)
     if backup.exists() and not overwrite:
-        raise FileExistsError(f"backup already exists: {backup} (use --overwrite-backup)")
+        msg = f"backup already exists: {backup} (use --overwrite-backup)"
+        raise FileExistsError(msg)
     atomic_replace(backup, data, fsync, mode_source=path)
 
 
@@ -559,7 +522,6 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
         return FileResult(path, error=f"unexpected error: {type(exc).__name__}: {exc}")
 
 
-# ----------------------------------------------------------------------------- discovery
 def has_python_shebang(path: str) -> bool:
     try:
         with open(path, "rb") as stream:
@@ -654,7 +616,6 @@ def iter_backup_targets(paths: Iterable[Path], extra_excludes: Sequence[str]) ->
             warn(f"cannot access {given}: {exc}")
 
 
-# ----------------------------------------------------------------------------- CLI
 def default_jobs() -> int:
     try:
         count = len(os.sched_getaffinity(0))
@@ -756,7 +717,6 @@ def validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> 
         parser.error("--reverse cannot be combined with --backup")
 
 
-# ----------------------------------------------------------------------------- execution
 _WORKER_OPTIONS: TransformOptions | None = None
 
 

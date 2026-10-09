@@ -6,13 +6,15 @@ For each folder it should compute and report the original size versus compressed
 from __future__ import annotations
 import argparse
 import io
-import os
-import shutil
-import tarfile
 from multiprocessing import Pool, cpu_count
+import os
 from pathlib import Path
-import lz4.frame
+import shutil
+import sys
+import tarfile
+
 from dh import fsz
+import lz4.frame
 
 
 def get_folder_size(folder_path):

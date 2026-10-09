@@ -13,17 +13,18 @@ from __future__ import annotations
 import argparse
 import ast
 import contextlib
+from dataclasses import dataclass, field
 import difflib
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import stat
 import subprocess
 import sys
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
+
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

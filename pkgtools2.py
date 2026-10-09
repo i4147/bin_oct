@@ -16,19 +16,20 @@ All other subcommands use only the Python standard library."""
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
+from datetime import datetime
 import hashlib
 import json
+from multiprocessing import Pool, freeze_support
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from datetime import datetime
-from multiprocessing import Pool, freeze_support
-from pathlib import Path
 from typing import Any, Iterable, List, Optional, Sequence
+
 
 DEFAULT_CHUNK_SIZE = 8192
 DEFAULT_DEB_EXCLUDES = frozenset({

@@ -9,9 +9,12 @@ It should use recursive directory traversal to locate repos, and use requests fo
 from __future__ import annotations
 import os
 from pathlib import Path
-import requests
+import sys
+
 from dotenv import load_dotenv
 from git import GitCommandError, Repo
+import requests
+
 
 load_dotenv()
 

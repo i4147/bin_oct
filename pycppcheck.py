@@ -5,11 +5,13 @@ For each file, run `clang -fsyntax-only` (for C files) or `clang++ -fsyntax-only
 Finally, iterate over the results and print a colored error message (using a `cprint` helper) for each file whose validation return code equals 2, indicating a syntax error."""
 
 from __future__ import annotations
-import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+import sys
+
 from dh import cprint, get_files
+
 
 c_files = {".c", ".h", ".inc"}
 cpp_files = {".cpp", ".cc", ".cxx", ".hpp", ".hpp11", ".hh", ".hxx"}

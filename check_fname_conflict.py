@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Check .py filenames for conflicts with stdlib or installed 3rd-party packages."""
 
-import sys
+from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 PIP_LIST = Path("/sdcard/data/pip.txt")
 TARGET_DIR = Path.cwd()

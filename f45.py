@@ -5,10 +5,10 @@ The wrapping logic should use textwrap.fill per line with break_long_words and b
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import shutil
 import sys
 import textwrap
-from pathlib import Path
 
 
 def wrap_text_content(content: str, width: int) -> str:

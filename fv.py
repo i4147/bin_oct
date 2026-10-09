@@ -4,9 +4,9 @@ The script should expose a main() function guarded by the standard "if __name__ 
 Use pathlib.Path to handle the file reading and sys.argv to access the command-line argument."""
 
 from __future__ import annotations
+from pathlib import Path
 import pydoc
 import sys
-from pathlib import Path
 
 
 def main() -> None:

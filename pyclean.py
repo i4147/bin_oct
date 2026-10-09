@@ -7,13 +7,14 @@ Original -> merged mapping -------------------------- brmc.py -> python pyclean.
 from __future__ import annotations
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
 import io
 import logging
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Optional, Sequence
+
 
 try:
     import libcst as cst

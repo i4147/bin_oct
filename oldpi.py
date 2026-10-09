@@ -4,12 +4,14 @@ Additionally include helper functions that open a source file efficiently (using
 The script should rely on tokenize and an internal module `dh.mpf_joblib`, and is intended as part of a code-scanning or linting tool that inspects Python source files for legacy print usage."""
 
 from __future__ import annotations
-import mmap
-import re
-import tokenize
 from collections import deque
+import mmap
 from mmap import mmap
 from pathlib import Path
+import re
+import sys
+import tokenize
+
 from dh import mpf_joblib
 
 

@@ -21,10 +21,12 @@ Main behavior and requirements:
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/26HV6fb987beusRwxWie6K"""
 
-import os
-import shutil
-from pathlib import Path
+from __future__ import annotations
 import argparse
+import os
+from pathlib import Path
+import shutil
+import sys
 
 
 def get_directory_size(path: Path) -> int:
@@ -42,7 +44,7 @@ def get_directory_size(path: Path) -> int:
 
 
 def folderize_directories(n_parts: int):
-    current_dir = Path(".")
+    current_dir = Path()
 
     subdirs = [p for p in current_dir.iterdir() if p.is_dir() and not p.name.startswith("group_")]
 

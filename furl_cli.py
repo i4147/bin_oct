@@ -32,14 +32,16 @@ The output should be a single self-contained `.py` file with no external runtime
 LiveDoc: https://felo.ai/zh-Hans/livedoc/WDZsmXut6Rh2vPrjVKYm66"""
 
 from __future__ import annotations
-
 import abc
+from copy import deepcopy
+from pathlib import Path
+from posixpath import normpath
 import re
+import sys
+from typing import Any, Callable, Final, Self
 import urllib.parse
 import warnings
-from copy import deepcopy
-from posixpath import normpath
-from typing import Any, Callable, Final, Self
+
 
 try:
     from icecream import ic  # type: ignore
@@ -50,6 +52,7 @@ except ImportError:
 
 
 from orderedmultidict import omdict1D
+
 
 __title__: Final[str] = "furl"
 __version__: Final[str] = "2.1.4"
@@ -250,8 +253,7 @@ def get_scheme(url: str) -> str | None:
 def strip_scheme(url: str) -> str:
     scheme = get_scheme(url) or ""
     url = url[len(scheme) :]
-    if url.startswith(":"):
-        url = url[1:]
+    url = url.removeprefix(":")
     return url
 
 
@@ -471,10 +473,10 @@ class Path:
         copy = deepcopy(self)
         return copy.add(path)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self == other
 
     def __bool__(self) -> bool:
@@ -490,7 +492,7 @@ class Path:
         return self._path_from_segments(segments)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self)}')"
+        return f"{self.__class__.__name__}('{self!s}')"
 
     def _segments_from_path(self, path: str) -> list[str]:
         segments: list[Any] = []
@@ -654,10 +656,10 @@ class Query:
             "params": list(self.params.allitems()),
         }
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self == other
 
     def __bool__(self) -> bool:
@@ -667,7 +669,7 @@ class Query:
         return self.encode()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self)}')"
+        return f"{self.__class__.__name__}('{self!s}')"
 
     def _items(self, items: Any) -> list[tuple[Any, Any]]:
         if not items:
@@ -770,12 +772,11 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
                 self._query.load(fragment)
             else:
                 self._path.load(fragment)
+        elif "=" in toks[1]:
+            self._path.load(toks[0])
+            self._query.load(toks[1])
         else:
-            if "=" in toks[1]:
-                self._path.load(toks[0])
-                self._query.load(toks[1])
-            else:
-                self._path.load(fragment)
+            self._path.load(fragment)
 
     def add(self, path: Any = absent, args: Any = absent) -> Self:
         if path is not absent:
@@ -810,10 +811,10 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
             "query": self.query.asdict(),
         }
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return str(self) == str(other)
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self == other
 
     def __setattr__(self, attr: str, value: Any) -> None:
@@ -836,7 +837,7 @@ class Fragment(FragmentPathCompositionInterface, QueryCompositionInterface):
         return path + separator + query
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self)}')"
+        return f"{self.__class__.__name__}('{self!s}')"
 
 
 class FragmentCompositionInterface(abc.ABC):
@@ -974,7 +975,8 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
         elif is_valid_port(port):
             self._port = int(str(port))
         else:
-            raise ValueError(f"Invalid port '{port}'.")
+            msg = f"Invalid port '{port}'."
+            raise ValueError(msg)
 
     @property
     def netloc(self) -> str:
@@ -1010,7 +1012,8 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
             if "]" in netloc:
                 colonpos, bracketpos = netloc.rfind(":"), netloc.rfind("]")
                 if colonpos > bracketpos and colonpos != bracketpos + 1:
-                    raise ValueError(f"Invalid netloc '{netloc}'.")
+                    msg = f"Invalid netloc '{netloc}'."
+                    raise ValueError(msg)
                 elif colonpos > bracketpos and colonpos == bracketpos + 1:
                     host, port = netloc.rsplit(":", 1)
                 else:
@@ -1204,12 +1207,12 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface, FragmentCompo
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.tostr()}')"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
             return self.tostr() == other
         elif isinstance(other, furl):
             return self.tostr() == other.tostr()
         return False
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self == other

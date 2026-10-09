@@ -6,6 +6,7 @@ The main output is an assembled CSS string containing only the @font-face blocks
 from __future__ import annotations
 import base64
 from pathlib import Path
+import sys
 
 
 def get_font_b64_or_fallback(filename):

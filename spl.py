@@ -12,15 +12,16 @@ This script falls back to stdlib behaviour if they are not installed."""
 from __future__ import annotations
 import argparse
 import concurrent.futures
+from dataclasses import dataclass
 import logging
 import multiprocessing
+from pathlib import Path
 import re
 import string
 import sys
-import uuid
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional, Sequence
+import uuid
+
 
 try:
     from loguru import logger as _loguru_logger

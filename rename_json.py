@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import sys
 
 
 def rename_pypi_metadata_files() -> None:

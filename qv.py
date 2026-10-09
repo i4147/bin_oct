@@ -6,8 +6,9 @@ If no files are found, print "No files found." and exit; otherwise combine all f
 
 from __future__ import annotations
 import argparse
-import pydoc
 from pathlib import Path
+import pydoc
+import sys
 
 
 def collect_files(root: Path, recursive: bool) -> list[Path]:

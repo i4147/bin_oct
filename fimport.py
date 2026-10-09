@@ -6,7 +6,9 @@ The script should take a file path as input, parse the file into an AST, run the
 from __future__ import annotations
 import ast
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

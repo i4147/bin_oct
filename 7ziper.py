@@ -18,17 +18,19 @@ Mapping:
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import logging
 import mmap
 import multiprocessing
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 import py7zr
+
 
 try:
     from loguru import logger as _log

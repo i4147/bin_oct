@@ -5,8 +5,10 @@ After processing, it should print a formatted summary showing the total size fre
 The size/formatting helper functions `gsz` and `fsz` should be imported from a local module named `dh`, and the script should run the cleanup on the current directory when executed as the main program."""
 
 from __future__ import annotations
-import shutil
 from pathlib import Path
+import shutil
+import sys
+
 from dh import fsz, gsz
 
 

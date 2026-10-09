@@ -5,9 +5,10 @@ A find_empty_packages function should iterate over the site-packages directory, 
 
 from __future__ import annotations
 import csv
+from pathlib import Path
+import sys
 import sysconfig
 import zipfile
-from pathlib import Path
 
 
 def is_empty_package(dist_info_path) -> bool:

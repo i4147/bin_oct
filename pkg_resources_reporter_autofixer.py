@@ -5,13 +5,15 @@ It uses a ``multiprocessing.Pool`` with 8 workers, ``pathlib`` for all path hand
 
 from __future__ import annotations
 import argparse
-import re
-import sys
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

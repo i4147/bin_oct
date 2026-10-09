@@ -6,9 +6,12 @@ from __future__ import annotations
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from loguru import logger
 from pypdf import PdfReader, PdfWriter  # type: ignore[import-untyped]
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

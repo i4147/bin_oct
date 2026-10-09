@@ -5,16 +5,18 @@ The script uses argparse for CLI options, faprint for formatted output, and subp
 
 from __future__ import annotations
 import argparse
+from difflib import get_close_matches
 import json
 import logging
+from pathlib import Path
 import readline
 import shutil
 import subprocess
 import sys
-from difflib import get_close_matches
-from pathlib import Path
 from typing import Final
+
 from faprint import faprint
+
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

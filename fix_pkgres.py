@@ -6,8 +6,10 @@ The script should accept a command-line flag to toggle autofix behavior and prin
 from __future__ import annotations
 import argparse
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 
 PATTERNS = {
     "import_stmt": re.compile(r"^(import pkg_resources|from pkg_resources import .*)", re.MULTILINE),

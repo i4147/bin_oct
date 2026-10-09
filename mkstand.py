@@ -5,16 +5,18 @@ from __future__ import annotations
 import argparse
 import base64
 import mimetypes
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
-import requests
+
 from bs4 import BeautifulSoup
 from loguru import logger
+import requests
+
 
 logger.remove()
 logger.add(sys.stderr, level="WARNING", format="<red>{level}</red> | <cyan>{message}</cyan>")

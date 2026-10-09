@@ -20,10 +20,12 @@ Ensure the generated code is self-contained, well-typed (using `typing.Final` an
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/4MFMRobLUkFbPpNVZrBnqF"""
 
+from __future__ import annotations
+from datetime import date
 import os
+from pathlib import Path
 import re
 import sys
-from datetime import date
 from typing import Final
 
 import click
@@ -60,7 +62,8 @@ def read_cache() -> str:
         with open(CACHE_PATH, "rt") as source:
             return source.read()
     except OSError:
-        raise LicenseError("Could not read from cache.")
+        msg = "Could not read from cache."
+        raise LicenseError(msg)
 
 
 def read_author(cache: str) -> str:
@@ -83,7 +86,8 @@ def read_kind(cache: str) -> str:
 
 def read(author: str | None, kind: str | None) -> tuple[str, str]:
     if not os.path.exists(CACHE_PATH):
-        raise LicenseError("No cache found. You must supply at least -a and -k.")
+        msg = "No cache found. You must supply at least -a and -k."
+        raise LicenseError(msg)
     cache_data = read_cache()
     if author is None:
         author = read_author(cache_data)
@@ -115,9 +119,11 @@ def validate(author: str, year: str, kind: str) -> None:
     author_pattern = r"^[a-zA-Z -]+$"
     year_pattern = r"^\d{4}$"
     if not re.match(author_pattern, author):
-        raise LicenseError(f"Invalid author: {author}. Must match '{author_pattern}'.")
+        msg = f"Invalid author: {author}. Must match '{author_pattern}'."
+        raise LicenseError(msg)
     if not re.match(year_pattern, year):
-        raise LicenseError(f"Invalid year: {year}. Must match '{year_pattern}'.")
+        msg = f"Invalid year: {year}. Must match '{year_pattern}'."
+        raise LicenseError(msg)
     if kind not in LICENSE_KINDS:
         raise LicenseError(f"Invalid license kind: {kind}. Must be one of: " + ", ".join(LICENSE_KINDS))
 

@@ -5,6 +5,7 @@ It should use pathlib for file handling and read/write the file using UTF-8 enco
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 from sys import argv
 
 

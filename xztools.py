@@ -7,18 +7,19 @@ Optional (matching the originals, gracefully degraded if missing): loguru — ni
 from __future__ import annotations
 import argparse
 import contextlib
+from dataclasses import dataclass
+from datetime import datetime
 import io
 import lzma
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import time
-from dataclasses import dataclass
-from datetime import datetime
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any, Optional, Sequence
+
 
 try:
     import lzma_mt  # type: ignore

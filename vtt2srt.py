@@ -4,8 +4,8 @@ It should take a VTT file path as a command-line argument, read its contents, st
 The converted subtitle text should be written to a new file with the same name but a ".srt" extension, and the script should print a confirmation message once the file is saved."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 
 
 def convert_vtt_to_srt(vtt_content: str) -> str:

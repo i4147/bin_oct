@@ -5,15 +5,16 @@ If missing, the CLI prints a warning and falls back to regex tokenization and/or
 
 from __future__ import annotations
 import argparse
-import json
-import mimetypes
-import re
-import sys
 from collections import Counter
 from datetime import datetime
+import json
+import mimetypes
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any, Sequence
+
 
 try:  # pragma: no cover
     import nltk

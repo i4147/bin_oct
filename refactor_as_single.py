@@ -5,10 +5,11 @@ Usage: script.py # scan current directory recursively script.py -f merged_input.
 from __future__ import annotations
 import argparse
 import ast
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Iterable
+
 
 WORKERS: int = 6
 FILENAME_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")

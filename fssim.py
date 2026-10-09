@@ -7,11 +7,13 @@ from __future__ import annotations
 import csv
 import json
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
-import ssdeep
+
 from ppdeep import compare, hash_from_file
+import ssdeep
+
 
 try:
     from tabulate import tabulate

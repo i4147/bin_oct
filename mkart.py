@@ -5,6 +5,8 @@ Handle letters not present in the dictionary gracefully (e.g., skipping or subst
 
 from __future__ import annotations
 import os
+from pathlib import Path
+import sys
 
 
 def create_english_style_art(word):

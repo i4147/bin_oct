@@ -5,10 +5,11 @@ The script should read each target file's source as UTF-8, apply the comment/doc
 
 from __future__ import annotations
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
+
 from dh import get_pyfiles, mpf
 
 

@@ -4,8 +4,9 @@ It should accept a file path, an optional output path to save the successfully d
 The script is intended to help users identify the correct character encoding of an unknown text file by trying multiple candidates and displaying readable samples of each successful decode."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 COMMON_ENCODINGS = [
     "utf-8",

@@ -24,26 +24,28 @@ Generate the complete script implementing this functionality, including the `get
 LiveDoc: https://felo.ai/zh-Hans/livedoc/BPMs9kvRw3Y7s8UvreqWyZ"""
 
 from __future__ import annotations
-
 import argparse
+import contextlib
 import datetime
+from difflib import SequenceMatcher
+from pathlib import Path
 import re
 import string
 import sys
+from typing import Any, Optional
 import urllib.error
 import urllib.request
-from difflib import SequenceMatcher
-from typing import Any, Optional
 
 import bibtexparser
+from bibtexparser.bparser import BibTexParser
+from bibtexparser.bwriter import BibTexWriter
 import bs4
 import isbnlib
 import pycountry
 import pyparsing
-from bibtexparser.bparser import BibTexParser
-from bibtexparser.bwriter import BibTexWriter
 from SPARQLWrapper import JSON, SPARQLWrapper
 from termcolor import colored
+
 
 CITATION_DATABASE: dict[str, dict] = {}
 CACHED_JOURNALS: dict[str, str] = {}
@@ -86,26 +88,8 @@ def similarity(str_1: str, str_2: str) -> float:
 NUM_REGEX = re.compile(r"[0-9]+(st|nd|rd|th)?")
 ORDINALS = re.compile(
     "("
-    + "|".join([
-        "First",
-        "Second",
-        "Third",
-        "Fourth",
-        "Fifth",
-        "Sixth",
-        "Seventh",
-        "Eighth",
-        "Ninth",
-        "Tenth",
-        "Eleventh",
-        "Twelfth",
-        "Thirteenth",
-        "Fourteenth",
-        "Fifteenth",
-        "Sixteenth",
-        "Seventeenth",
-    ])
-    + ")"
+    "First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth|Eleventh|Twelfth|Thirteenth|Fourteenth|Fifteenth|Sixteenth|Seventeenth"
+    ")"
 )
 PAPERS_VOLUME = re.compile("(Long|Short|Research|Shared Task) Papers")
 
@@ -175,7 +159,7 @@ PAGE_REGEX = re.compile(r"^([1-9][0-9]*)[\W_]+([1-9][0-9]*)$")
 
 def check_pages(entry: dict, _: bool) -> bool:
     pages = entry["pages"]
-    if pages == "Online" or pages == "In Press":
+    if pages in {"Online", "In Press"}:
         return True
     pages_match = PAGE_REGEX.match(pages)
     if pages_match:
@@ -354,7 +338,7 @@ US_STATES = [
 def check_address(entry: dict, _: bool) -> bool:
     address = entry["address"]
     tokens = address.split(", ")
-    if address == "Online" or address == "Singapore":
+    if address in {"Online", "Singapore"}:
         return True
     if len(tokens) != 2 and (len(tokens) != 3 or tokens[-1] != "USA"):
         err_message(entry, "Adrress should be comma-separated city and country, was '{}'".format(address))
@@ -368,16 +352,14 @@ def check_address(entry: dict, _: bool) -> bool:
             err_message(entry, "'{}' is not existing U.S. state abreviation.".format(tokens[1]))
             return False
         return True
-    if country == "Taiwan" or country == "Czech Republic" or country == "South Korea":
+    if country in {"Taiwan", "Czech Republic", "South Korea"}:
         return True
     if country == "Czechia":
         err_message(entry, "Use 'Czech Republic' instead of 'Czechia'.")
         return False
     country_lookup = None
-    try:
+    with contextlib.suppress(LookupError):
         country_lookup = pycountry.countries.lookup(country)
-    except LookupError:
-        pass
     if country_lookup is None:
         err_message(entry, "Unknown country: '{}'".format(country))
         return False
@@ -707,7 +689,7 @@ def look_for_misspellings(values: dict, name: str, threshold: float = 0.8) -> No
                     collision_groups[value1] = collision_groups[value1].union(collision_groups[value2])
                     collision_groups[value2] = collision_groups[value1]
                 else:
-                    new_group = set([value1, value2])
+                    new_group = {value1, value2}
                     collision_groups[value1] = new_group
                     collision_groups[value2] = new_group
     used_values: set = set()

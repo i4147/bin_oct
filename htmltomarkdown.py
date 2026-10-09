@@ -28,14 +28,15 @@ Thefrom a path argropriate for a Termux environment), run through the converter,
 LiveDoc: https://felo.ai/zh-Hans/livedoc/Lbx83GtCrmnAEsR5kPgbYi"""
 
 from __future__ import annotations
-
-import re
-import sys
 from abc import ABCMeta
 from dataclasses import dataclass, field
 from html import unescape
 from html.parser import HTMLParser
+from pathlib import Path
+import re
+import sys
 from typing import Final, Optional, Union, cast
+
 
 SELF_CLOSING_TAGS: Final[list[str]] = [
     "area",
@@ -265,7 +266,7 @@ class Tag(metaclass=ABCMeta):
 
     def attr(self, attr_name: str) -> str:
         attr_value = self.attrs.get(attr_name, "")
-        return cast(str, attr_value)
+        return cast("str", attr_value)
 
     def append_child(self, child: Element) -> None:
         self.children.append(child)
@@ -409,9 +410,11 @@ class Ul(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if child.name not in ["li", "ul", "ol"]:
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if isinstance(child, Li):
             child.mark = "-"
         self.children.append(child)
@@ -429,9 +432,11 @@ class Ol(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if child.name not in ["li", "ul", "ol"]:
-            raise ValueError("")
+            msg = ""
+            raise ValueError(msg)
         if isinstance(child, Li):
             child.mark = "1."
         self.children.append(child)
@@ -483,9 +488,9 @@ class Table(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError()
+            raise ValueError
         if child.name not in ["tr", "thead", "tbody", "caption", "colgroup"]:
-            raise ValueError()
+            raise ValueError
         if isinstance(child, Tr):
             if self.head is None:
                 head = Thead(child.attrs)
@@ -510,8 +515,8 @@ class Table(Tag):
             self.create_body_from_tr()
         if not self.head and not self.body:
             return ""
-        head = cast(Thead, self.head)
-        body = cast(Tbody, self.body)
+        head = cast("Thead", self.head)
+        body = cast("Tbody", self.body)
         caption = f"{self.caption.inner()}\n" if self.caption else ""
         table = "\n".join(elem.to_str() for elem in [head, body])
         return caption + table + "\n"
@@ -542,9 +547,9 @@ class Thead(Tag):
 
     def append_child(self, child: Element) -> None:
         if isinstance(child, Content):
-            raise ValueError()
+            raise ValueError
         if not isinstance(child, Tr):
-            raise ValueError()
+            raise ValueError
         self.children.append(child)
 
     def to_str(self) -> str:

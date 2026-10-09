@@ -5,9 +5,9 @@ The converted text should be written back to the same file, overwriting its orig
 It must handle a missing file by printing a "File not found" error, catch any other exceptions gracefully, and print a usage message if the filename argument is not provided."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def convert_to_readable(filename: str) -> None:

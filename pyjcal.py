@@ -6,6 +6,8 @@ Ensure the conversion logic correctly maps Gregorian dates to their Jalali year,
 
 from __future__ import annotations
 from datetime import datetime
+from pathlib import Path
+import sys
 
 
 class JalaliDate:

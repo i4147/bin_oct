@@ -6,12 +6,13 @@ Handle inaccessible files gracefully by treating unreadable file sizes as zero r
 
 from __future__ import annotations
 import argparse
-import operator
-import sys
 from collections import defaultdict
+import operator
 from pathlib import Path
-import matplotlib.pyplot as plt
+import sys
+
 from dh import fsz
+import matplotlib.pyplot as plt
 
 
 def scan_directory(path: str = "."):

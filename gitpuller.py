@@ -6,6 +6,8 @@ from GitCommandError or pull result flags indicating errors), and finally print 
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from git import GitCommandError, Repo
 
 

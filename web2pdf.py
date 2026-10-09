@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
+import sys
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+
 from rich.console import Console
 from weasyprint import CSS, HTML
+
 
 console = Console(stderr=True)
 # millimetres (width, height)

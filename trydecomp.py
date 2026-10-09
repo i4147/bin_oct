@@ -6,16 +6,17 @@ Usage: python this_script.py <filename>"""
 from __future__ import annotations
 import bz2
 import contextlib
+from dataclasses import dataclass
 import gzip
 import lzma
+from pathlib import Path
 import pickle
 import sys
 import tarfile
+from typing import Callable
 import zipfile
 import zlib
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable
+
 
 try:
     import brotli as _brotli_mod

@@ -16,8 +16,9 @@ Main behavior and requirements:
 LiveDoc: https://felo.ai/zh-Hans/livedoc/iaekmefFKiheR6sfwhcrh4"""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     Path(sys.argv[1].strip()).write_text("")

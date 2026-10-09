@@ -4,8 +4,9 @@ Since the TTS command likely has input length limits, the script should split th
 Implement this with separate functions for speaking text, reading the file, chunking the text, and orchestrating the whole process."""
 
 from __future__ import annotations
-import subprocess
 from pathlib import Path
+import subprocess
+import sys
 
 
 def speak_text(text: str) -> None:

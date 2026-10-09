@@ -6,14 +6,17 @@ Features: - Scans all .py files recursively - Identifies third-party imports (ex
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
 import importlib.metadata
 import importlib.util
-import numbers
-import time
-from collections import defaultdict
 from multiprocessing import Pool
+import numbers
 from pathlib import Path
+import sys
+import time
+
 from dh import STDLIB, get_installed_pkgs
+
 
 NUM_WORKERS = 8
 SKIP_DIRS: set[str] = {

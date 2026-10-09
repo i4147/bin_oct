@@ -4,10 +4,12 @@ It should read each file as UTF-8, only rewrite the file if content actually cha
 
 from __future__ import annotations
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 from dh import get_nobinary
+
 
 HTML_ENTITIES = {
     "&lt;": "<",

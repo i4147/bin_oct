@@ -4,10 +4,12 @@ Usage: cpprun <file.c|file.cpp|file.cc> [args...] Install: pip install sh"""
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import stat
 import sys
-from pathlib import Path
+
 import sh
+
 
 COMPILERS = {
     ".c": ("clang", ("clang", "gcc")),

@@ -7,8 +7,11 @@ Wrap the logic in a display_random_quote function and run it when the script is 
 from __future__ import annotations
 import json
 import os
+from pathlib import Path
 import random
 from shutil import get_terminal_size
+import sys
+
 
 FILE_NAME = "/sdcard/data/quotes/quotes.json"
 

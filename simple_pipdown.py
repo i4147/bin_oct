@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 """Download a package (with optional version constraint) from PyPI."""
 
+from __future__ import annotations
 import argparse
-import hashlib
-import sys
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
+import sys
 from urllib.parse import unquote, urljoin, urlparse
 
 import httpx
@@ -21,6 +22,7 @@ from packaging.utils import (
     parse_wheel_filename,
 )
 from packaging.version import InvalidVersion, Version
+
 
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"
@@ -139,7 +141,8 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
                     f.write(chunk)
                     sha.update(chunk)
         if link.sha256 and sha.hexdigest() != link.sha256:
-            raise ValueError(f"sha256 mismatch for {link.filename}")
+            msg = f"sha256 mismatch for {link.filename}"
+            raise ValueError(msg)
         tmp.replace(dest)
     except Exception:
         tmp.unlink(missing_ok=True)
@@ -152,7 +155,7 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Download a package from PyPI.")
     ap.add_argument("requirement", help="e.g. requests or 'requests==2.31.0'")
-    ap.add_argument("-d", "--dest", type=Path, default=Path("."), help="destination directory (default: .)")
+    ap.add_argument("-d", "--dest", type=Path, default=Path(), help="destination directory (default: .)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 

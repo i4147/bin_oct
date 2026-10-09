@@ -6,11 +6,13 @@ Uses a fixed multiprocessing.Pool of 8 workers for parallelism and loguru for lo
 from __future__ import annotations
 import argparse
 import json
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

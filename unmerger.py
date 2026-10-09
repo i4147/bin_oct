@@ -5,9 +5,9 @@ For each extracted file, it must create any necessary parent directories, and if
 The script takes the merged file path as a single command-line argument, writes out each reconstructed file, and prints a status line for each ("Created" or "Renamed to") showing the final path used."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def parse_merged_file(path):

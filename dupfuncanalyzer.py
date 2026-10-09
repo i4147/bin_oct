@@ -9,7 +9,9 @@ import ast
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import Any
+
 
 POOL_SIZE: int = 8
 DEFAULT_OUTPUT_NAME: str = "repeated_functions.py"

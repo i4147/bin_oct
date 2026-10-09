@@ -8,15 +8,18 @@ Report per-file results and a summary with line and byte savings using loguru an
 
 from __future__ import annotations
 import argparse
-import io
-import re
-import tokenize
 from dataclasses import dataclass
+import io
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
+import tokenize
 from typing import TYPE_CHECKING, Final
+
 from dh import fsz
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -15,7 +15,6 @@ Features:
 """
 
 from __future__ import annotations
-
 import argparse
 import ast
 import dataclasses
@@ -28,6 +27,7 @@ import tempfile
 from typing import Any, Callable
 
 from loguru import logger
+
 
 # Optional dependency imports with explicit availability flags
 try:
@@ -246,7 +246,7 @@ if HAS_LIBCST:
         def _is_special_comment(comment_text: str) -> bool:
             """Identify `# type:` and `# fmt:` comment pragmas."""
             clean = comment_text.strip()
-            return clean.startswith("# type:") or clean.startswith("# fmt:") or clean.startswith("# type :")
+            return clean.startswith(("# type:", "# fmt:", "# type :"))
 
         @staticmethod
         def _is_docstring_stmt(node: cst.CSTNode) -> bool:
@@ -364,7 +364,8 @@ if HAS_LIBCST:
 def transform_libcst(source: str, options: StripOptions) -> str:
     """Transform Python source using LibCST."""
     if not HAS_LIBCST:
-        raise RuntimeError("libcst library is not installed.")
+        msg = "libcst library is not installed."
+        raise RuntimeError(msg)
     cst_tree = cst.parse_module(source)
     stripper = LibCSTStripper(options)
     transformed_tree = cst_tree.visit(stripper)
@@ -384,7 +385,8 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
     and parsing speed.
     """
     if not HAS_TREESITTER:
-        raise RuntimeError("tree-sitter or tree-sitter-python library is not installed.")
+        msg = "tree-sitter or tree-sitter-python library is not installed."
+        raise RuntimeError(msg)
 
     parser = Parser(Language(tspython.language()))
     source_bytes = source.encode("utf-8")
@@ -395,7 +397,7 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
 
     def is_special_comment(text: str) -> bool:
         s = text.strip()
-        return s.startswith("# type:") or s.startswith("# fmt:") or s.startswith("# type :")
+        return s.startswith(("# type:", "# fmt:", "# type :"))
 
     def walk(node: Any, parent: Any = None, is_first: bool = False) -> None:
         if node.type == "comment":
@@ -538,7 +540,7 @@ def discover_files(targets: list[Path]) -> list[Path]:
     found: list[Path] = []
 
     if not targets:
-        targets = [Path(".")]
+        targets = [Path()]
 
     for target in targets:
         if target.is_file():

@@ -5,9 +5,10 @@ It should take the bash script path as a command-line argument, read the file, f
 The script should also handle basic error cases such as a missing command-line argument or a nonexistent input file, printing usage/error messages to stderr and exiting appropriately."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^\n]*?)"

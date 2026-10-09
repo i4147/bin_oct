@@ -43,17 +43,17 @@ Each subcomm accept a mandatory package name arg notior:
 LiveDoc: https://felo.ai/zh-Hans/livedoc/caDo8LfYouJMgNCiHXJAhe"""
 
 from __future__ import annotations
-
 import argparse
 import atexit
 import calendar
+from configparser import ConfigParser
 import datetime as dt
 import json
+from pathlib import Path
 import re
 import sys
 import warnings
-from configparser import ConfigParser
-from pathlib import Path
+
 
 __version__ = version = "1.14.0"
 __version_tuple__ = version_tuple = (1, 14, 0)
@@ -327,7 +327,7 @@ def _prettytable(headers, data, format_, color="yes"):
         return header
 
     for header in headers:
-        col_data = [row[header] if header in row else "" for row in data]
+        col_data = [row.get(header, "") for row in data]
         table.add_column(h(header), col_data)
     table.align[h("last_day")] = "r"
     table.align[h("last_month")] = "r"
@@ -352,12 +352,12 @@ def _dataframe(headers, data, format_):
         data = [data]
     rows = [[row.get(header, "") for header in headers] for row in data]
     if format_ == "numpy":
-        import numpy
+        import numpy as np
 
-        return numpy.array(rows, dtype=object)
-    import pandas
+        return np.array(rows, dtype=object)
+    import pandas as pd
 
-    return pandas.DataFrame(rows, columns=headers)
+    return pd.DataFrame(rows, columns=headers)
 
 
 def _paramify(param_name, param_value):
@@ -398,8 +398,11 @@ def system(package, os=None, **kwargs):
     return pypi_stats_api(endpoint, params, **kwargs)
 
 
+import contextlib
+
 from platformdirs import user_cache_dir
 from slugify import slugify
+
 
 CACHE_DIR = Path(user_cache_dir("pypistats"))
 
@@ -522,14 +525,10 @@ def _valid_yyyy_mm_dd(date_string):
 
 
 def _valid_yyyy_mm(date_string):
-    try:
+    with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%b")
-    except ValueError:
-        pass
-    try:
+    with contextlib.suppress(ValueError):
         date_string = _month_name_to_yyyy_mm(date_string, "%B")
-    except ValueError:
-        pass
     return _valid_date(date_string, "%Y-%m")
 
 
@@ -771,15 +770,11 @@ def main():
         cli.print_help()
     else:
         if hasattr(args, "start_date") and args.start_date:
-            try:
+            with contextlib.suppress(ValueError):
                 args.start_date, _ = _month(args.start_date)
-            except ValueError:
-                pass
         if hasattr(args, "end_date") and args.end_date:
-            try:
+            with contextlib.suppress(ValueError):
                 _, args.end_date = _month(args.end_date)
-            except ValueError:
-                pass
         if hasattr(args, "month") and args.month:
             args.start_date, args.end_date = _month(args.month)
         elif hasattr(args, "last_month") and args.last_month:

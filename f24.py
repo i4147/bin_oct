@@ -4,10 +4,13 @@
 from __future__ import annotations
 import multiprocessing as mp
 import operator
-import time
 from pathlib import Path
+import sys
+import time
 from typing import Final
+
 from tqdm import tqdm
+
 
 SECONDS_24H: Final[int] = 24 * 40 * 40
 NOW: Final[float] = time.time()

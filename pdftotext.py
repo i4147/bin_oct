@@ -32,10 +32,12 @@ Generate the complete Python script implementing this behavior.
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/7iF6vfHXZD4qmEgG8kPRMx"""
 
+from __future__ import annotations
 import argparse
-import re
 from io import StringIO
 from pathlib import Path
+import re
+import sys
 
 
 class Extractor(object):
@@ -99,7 +101,8 @@ class Extractor(object):
                     device.close()
                     outfp.close()
         else:
-            raise ValueError(f"Unsupported backend: {self.backend}")
+            msg = f"Unsupported backend: {self.backend}"
+            raise ValueError(msg)
 
         if self.normalize_spaces:
             pages = [re.sub(r" +", " ", page) for page in pages]

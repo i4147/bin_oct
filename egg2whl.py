@@ -4,10 +4,11 @@ It should locate the EGG-INFO directory within the extracted egg, parse PKG-INFO
 Using this information, it should dynamically generate a setup.py file in a temporary directory, then invoke it via subprocess (using setuptools/wheel commands) to build the wheel, copying the resulting artifact to an output location while cleaning up temporary files afterward."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
-from pathlib import Path
 
 
 def parse_pkg_info(egg_info_dir):

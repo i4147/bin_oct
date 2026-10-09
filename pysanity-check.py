@@ -6,9 +6,11 @@ The main function should print a formatted summary report to the console showing
 
 from __future__ import annotations
 import importlib
+from pathlib import Path
 import re
 import subprocess
 import sys
+
 import importlib_metadata
 
 

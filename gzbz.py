@@ -5,18 +5,21 @@ Merges three previously independent scripts: * bzr.py — bzip2 compression / de
 from __future__ import annotations
 import argparse
 import bz2
-import contextlib
-import gzip
-import mmap
-import shutil
-import tarfile
-import time
 from concurrent.futures import ProcessPoolExecutor
+import contextlib
 from dataclasses import dataclass
 from datetime import timedelta
+import gzip
+import mmap
 from pathlib import Path
+import shutil
+import sys
+import tarfile
+import time
 from typing import Optional, Self, Sequence
+
 from loguru import logger
+
 
 DEFAULT_WORKERS: int = 8
 DEFAULT_CHUNK_SIZE: int = 524_288

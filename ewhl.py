@@ -5,9 +5,10 @@ It should handle errors gracefully, such as invalid zip files or unreadable whee
 
 from __future__ import annotations
 import argparse
-import shutil
-import zipfile
 from pathlib import Path
+import shutil
+import sys
+import zipfile
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

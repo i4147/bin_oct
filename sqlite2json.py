@@ -43,20 +43,20 @@ Key requirements and behavior:
 LiveDoc: https://felo.ai/zh-Hans/livedoc/NLfg7xEcezESTtnxdzoitQ"""
 
 from __future__ import annotations
-
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import closing
 import json
 import math
 import os
+from pathlib import Path
 import shutil
 import sqlite3
 import sys
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from contextlib import closing
-from pathlib import Path
 from typing import Any, Callable
+
 
 BLOB_BASE64 = "__blob_base64"
 BLOB_HEX = "__blob_hex"
@@ -79,7 +79,8 @@ def make_blob_encoder(blob_encoding: str) -> Callable[[bytes], Any]:
     try:
         return encoders[blob_encoding]
     except KeyError:
-        raise ValueError(f"Unsupported blob encoding: {blob_encoding}") from None
+        msg = f"Unsupported blob encoding: {blob_encoding}"
+        raise ValueError(msg) from None
 
 
 def encode_value(value: Any, blob_fn: Callable[[bytes], Any]) -> Any:

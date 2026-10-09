@@ -1,19 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
 import argparse
+import contextlib
 import csv
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timedelta, timezone
 import fnmatch
 import json
 import logging
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tomllib
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any, Callable, Iterator
+
 
 LOG = logging.getLogger("gitaddedfiles")
 
@@ -102,17 +103,13 @@ def _passes_filters(rec: CommitRecord, opts: Options) -> bool:
             return False
     if opts.since and _parse_dt(rec.authored_at) < _parse_dt(opts.since):
         return False
-    if opts.until and _parse_dt(rec.authored_at) > _parse_dt(opts.until):
-        return False
-    return True
+    return not (opts.until and _parse_dt(rec.authored_at) > _parse_dt(opts.until))
 
 
 def _path_ok(path: str, opts: Options) -> bool:
     if opts.path and not fnmatch.fnmatch(path, opts.path):
         return False
-    if opts.exclude and fnmatch.fnmatch(path, opts.exclude):
-        return False
-    return True
+    return not (opts.exclude and fnmatch.fnmatch(path, opts.exclude))
 
 
 def _apply_mode(rec: CommitRecord, mode: str) -> CommitRecord:
@@ -276,10 +273,8 @@ def _iter_pygit2(opts: Options) -> Iterator[CommitRecord]:
             diff = commit.tree.diff_to_tree(context_lines=0)
 
         if opts.rename:
-            try:
+            with contextlib.suppress(Exception):
                 diff.find_similar()
-            except Exception:
-                pass
 
         added, modified, deleted, renamed = [], [], [], []
         for patch in diff:
@@ -296,9 +291,8 @@ def _iter_pygit2(opts: Options) -> Iterator[CommitRecord]:
             elif st == pygit2.GIT_DELTA_RENAMED:
                 if _path_ok(new_path, opts):
                     renamed.append({"from": old_path, "to": new_path})
-            elif st in (pygit2.GIT_DELTA_MODIFIED, pygit2.GIT_DELTA_COPIED):
-                if _path_ok(new_path, opts):
-                    modified.append(new_path)
+            elif st in (pygit2.GIT_DELTA_MODIFIED, pygit2.GIT_DELTA_COPIED) and _path_ok(new_path, opts):
+                modified.append(new_path)
 
         try:
             s = diff.stats
@@ -389,9 +383,8 @@ def _iter_gitpython(opts: Options) -> Iterator[CommitRecord]:
             elif ct == "R":
                 if _path_ok(b, opts):
                     renamed.append({"from": a, "to": b})
-            elif ct in ("M", "C", "T"):
-                if _path_ok(b, opts):
-                    modified.append(b)
+            elif ct in ("M", "C", "T") and _path_ok(b, opts):
+                modified.append(b)
 
         try:
             total = commit.stats.total
@@ -483,9 +476,8 @@ def _iter_gitcli(opts: Options) -> Iterator[CommitRecord]:
                 if code == "R":
                     if _path_ok(new, opts):
                         renamed.append({"from": old, "to": new})
-                else:
-                    if _path_ok(new, opts):
-                        added.append(new)
+                elif _path_ok(new, opts):
+                    added.append(new)
             else:
                 if i + 1 >= len(tokens):
                     break
@@ -497,9 +489,8 @@ def _iter_gitcli(opts: Options) -> Iterator[CommitRecord]:
                 elif code == "D":
                     if _path_ok(path, opts):
                         deleted.append(path)
-                elif code in ("M", "T"):
-                    if _path_ok(path, opts):
-                        modified.append(path)
+                elif code in ("M", "T") and _path_ok(path, opts):
+                    modified.append(path)
 
         rec = CommitRecord(
             sha=sha,
@@ -537,7 +528,8 @@ BACKENDS: dict[str, Callable[[Options], Iterator[CommitRecord]]] = {
 def iter_commits(repo_path: str = ".", backend: str = "dulwich", **kwargs: Any) -> Iterator[CommitRecord]:
     opts = Options(repo_path=repo_path, **kwargs)
     if backend not in BACKENDS:
-        raise ValueError(f"unknown backend: {backend}")
+        msg = f"unknown backend: {backend}"
+        raise ValueError(msg)
     return BACKENDS[backend](opts)
 
 
@@ -599,7 +591,8 @@ def _write_yaml(records: Iterator[CommitRecord], out: Any) -> int:
     try:
         import yaml
     except ImportError as e:
-        raise SystemExit(f"yaml output requires pyyaml: {e}")
+        msg = f"yaml output requires pyyaml: {e}"
+        raise SystemExit(msg)
     data = [asdict(r) for r in records]
     yaml.safe_dump(data, out, sort_keys=False, default_flow_style=False)
     return len(data)

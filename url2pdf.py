@@ -12,7 +12,10 @@ Import only `sys` and `HTML` from `weasyprint`. Keep the script simple, with no 
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/a3bQdoF7kFLQM5Zwoc9Fsk"""
 
+from __future__ import annotations
+from pathlib import Path
 import sys
+
 from weasyprint import HTML
 
 

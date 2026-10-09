@@ -5,8 +5,9 @@ It should open the file using UTF-8 encoding, read its full contents, compute th
 If the specified file does not exist, it should catch the FileNotFoundError, print an appropriate error message, and exit with a non-zero status code."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -8,19 +8,20 @@ pyfinfo.py -> python merged_search.py info [directory] pygrex.py -> python merge
 
 from __future__ import annotations
 import argparse
+from collections import Counter
+from concurrent.futures import ProcessPoolExecutor
 import fnmatch
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import threading
-import zipfile
-from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
+import zipfile
+
 
 try:
     import py7zr

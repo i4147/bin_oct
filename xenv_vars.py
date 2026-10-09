@@ -5,8 +5,9 @@ Finally, it should write the sorted list of unique variable names, one per line,
 
 from __future__ import annotations
 import builtins
-import re
 from pathlib import Path
+import re
+import sys
 
 
 def main():

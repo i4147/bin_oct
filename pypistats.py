@@ -3,11 +3,13 @@
 The script should aggregate the raw daily-category entries into average downloads per category, then print formatted summary tables sorted appropriately—numerically for Python versions and by a preferred OS order (Linux, Windows, Darwin, then others) for systems—showing each category's average downloads alongside its percentage share of the total."""
 
 from __future__ import annotations
+from collections import defaultdict
 import json
+from pathlib import Path
 import ssl
 import sys
-from collections import defaultdict
 from urllib.request import urlopen
+
 
 PACKAGE = sys.argv[1]
 

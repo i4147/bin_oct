@@ -1,18 +1,21 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
 import argparse
 import ast
-import shutil
-import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+import shutil
+import sys
 from typing import Dict, List, Literal, Tuple
+import warnings
 
 from rich.progress import Progress
+
 
 Status = Literal["ok", "error", "warn"]
 
 
-def check_file(path: Path) -> Tuple[Path, Status]:
+def check_file(path: Path) -> tuple[Path, Status]:
     try:
         source = path.read_text(encoding="utf-8")
     except Exception:
@@ -43,7 +46,7 @@ def main() -> None:
         print("No .py files found.")
         return
 
-    results: List[Tuple[Path, Status]] = []
+    results: list[tuple[Path, Status]] = []
     with Progress() as progress:
         task = progress.add_task("Processing .py files", total=len(files))
         with ProcessPoolExecutor() as executor:
@@ -52,7 +55,7 @@ def main() -> None:
                 results.append(future.result())
                 progress.update(task, advance=1)
 
-    groups: Dict[str, List[Path]] = {"ok": [], "error": [], "warn": []}
+    groups: dict[str, list[Path]] = {"ok": [], "error": [], "warn": []}
     for path, status in results:
         groups[status].append(path)
 

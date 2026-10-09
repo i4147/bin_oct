@@ -5,9 +5,11 @@ Use argparse to accept the search query and an optional result limit from the co
 
 from __future__ import annotations
 import argparse
-import json
-import sys
 from dataclasses import dataclass
+import json
+from pathlib import Path
+import sys
+
 import requests
 
 

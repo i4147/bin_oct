@@ -1,19 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
-
 import argparse
 import ast
+import contextlib
+from dataclasses import asdict, dataclass
 import difflib
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import stat
 import sys
 import tempfile
 import textwrap
-from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import ClassVar, Iterable, Iterator, Literal, Sequence
 
 import libcst as cst
@@ -98,7 +98,7 @@ def encode_source(source: DecodedSource, text: str) -> bytes:
 def strip_line_ending(line: str) -> tuple[str, str]:
     if line.endswith("\r\n"):
         return line[:-2], "\r\n"
-    if line.endswith("\n") or line.endswith("\r"):
+    if line.endswith(("\n", "\r")):
         return line[:-1], line[-1:]
     return line, ""
 
@@ -354,10 +354,8 @@ def atomic_write(path: Path, data: bytes, mode: int) -> None:
         os.chmod(temporary_path, mode)
         os.replace(temporary_path, path)
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             temporary_path.unlink(missing_ok=True)
-        except OSError:
-            pass
         raise
 
 
@@ -602,9 +600,11 @@ def positive_integer(value: str) -> int:
     try:
         number = int(value)
     except ValueError as error:
-        raise argparse.ArgumentTypeError("must be an integer") from error
+        msg = "must be an integer"
+        raise argparse.ArgumentTypeError(msg) from error
     if number < 1:
-        raise argparse.ArgumentTypeError("must be at least 1")
+        msg = "must be at least 1"
+        raise argparse.ArgumentTypeError(msg)
     return number
 
 
@@ -613,7 +613,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="pystrip",
         description="Strip selected Python comments, docstrings, and annotations in place.",
     )
-    parser.add_argument("paths", nargs="*", type=Path, default=[Path(".")])
+    parser.add_argument("paths", nargs="*", type=Path, default=[Path()])
     parser.add_argument("-c", "--comments", action="store_true", help="remove all removable comments")
     parser.add_argument("-d", "--docstrings", action="store_true", help="remove function and class docstrings")
     parser.add_argument("-a", "--all", action="store_true", help="remove all selected source metadata")

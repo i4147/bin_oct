@@ -4,9 +4,11 @@ It should use a fixed-size hash table over 4-byte sequences to find matches with
 The script should be runnable from the command line, accepting file or directory paths via sys.argv and using pathlib.Path for filesystem handling."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf
+
 
 _HASH_TABLE_SIZE = 1 << 14
 _MAX_OFFSET_1 = 2047

@@ -13,19 +13,20 @@ Third-party packages (install the ones you need): requests, loguru (all subcomma
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-import zipfile
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Callable, Iterable, Optional
 from urllib.parse import urlparse
-import requests
+import zipfile
+
 from loguru import logger
+import requests
 
 
 def _load_repo_list(file_path: Path) -> list[str]:

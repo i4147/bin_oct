@@ -1,495 +1,199 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that adds a shebang line (or a comment-based marker) to the top of files if it's missing, choosing the correct comment syntax based on file extension via a predefined mapping (Python, Shell, JS/TS, C-family, Ruby, SQL, INI, LaTeX, etc.).
-It should accept one or more file/directory paths as input, recursively process files (using a chunked, multiprocessing pool for performance), and safely rewrite each file in place using a temporary file plus atomic replace, skipping unsupported extensions and files that already contain the marker.
-It should log progress and errors with loguru, support small-file and large-file handling differently for efficiency, and expose command-line arguments (e.g., via argparse) to control the desired shebang/comment text and target paths."""
+#!/data/data/com.termux/files/usr/bin/python
+"""
+Unified Comment Out CLI
+
+Consolidates functionality for commenting out ranges of lines in files.
+Supports in-memory processing for small files and chunked processing for large files.
+
+Usage Examples:
+    python merged.py comment script.py 10 20 --in-memory --add-space
+    python merged.py comment large_script.sql 500 --chunk-size 5000
+"""
 
 from __future__ import annotations
 import argparse
-import shutil
-import sys
-from contextlib import ExitStack, suppress
-from dataclasses import dataclass
-from itertools import islice
 from multiprocessing import Pool
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
-from loguru import logger
+import sys
+import tempfile
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-POOL_SIZE: int = 8
-CHUNK_SIZE: int = 10_000
-SMALL_FILE_BYTES: int = 1 << 20
-DEFAULT_COMMENT: str = "#"
-COMMENT_MAP: dict[str, str] = {
-    ".vim": '"',
-    ".lua": "--",
+
+# Union of extensions from both scripts
+COMMENT_MAP = {
     ".py": "#",
-    ".pyi": "#",
     ".sh": "#",
-    ".bash": "#",
-    ".zsh": "#",
-    ".toml": "#",
-    ".yml": "#",
     ".yaml": "#",
+    ".yml": "#",
+    ".rb": "#",
     ".js": "//",
-    ".jsx": "//",
-    ".mjs": "//",
-    ".cjs": "//",
     ".ts": "//",
-    ".tsx": "//",
     ".cpp": "//",
-    ".cc": "//",
-    ".cxx": "//",
-    ".hpp": "//",
-    ".hxx": "//",
     ".c": "//",
-    ".h": "//",
-    ".cs": "//",
     ".java": "//",
     ".go": "//",
-    ".rs": "//",
-    ".swift": "//",
-    ".kt": "//",
-    ".kts": "//",
-    ".scala": "//",
-    ".php": "//",
-    ".gradle": "//",
-    ".groovy": "//",
-    ".dart": "//",
-    ".zig": "//",
-    ".v": "//",
-    ".sol": "//",
+    ".html": "<!--",
+    ".css": "/*",
+    ".vim": '"',
+    ".lua": "--",
+    ".toml": "#",
+    ".cs": "//",
     ".sql": "--",
-    ".hs": "--",
-    ".lhs": "--",
-    ".elm": "--",
-    ".rb": "#",
-    ".pl": "#",
-    ".pm": "#",
-    ".r": "#",
-    ".jl": "#",
-    ".nim": "#",
-    ".cr": "#",
-    ".ex": "#",
-    ".exs": "#",
-    ".conf": "#",
-    ".cfg": "#",
-    ".mk": "#",
-    ".ini": ";",
-    ".tex": "%",
-    ".m": "%",
 }
 
 
-@dataclass
-class ChunkResult:
-    lines: list[str]
-    commented: int = 0
-    uncommented: int = 0
-    skipped: int = 0
-    blanks: int = 0
-    changed: int = 0
-
-
-def _normalize_ranges(
-    ranges: Sequence[tuple[int, int | None]],
-) -> list[tuple[int, int]]:
-    normalized: list[tuple[int, int]] = []
-    for s, e in ranges:
-        if e is None:
-            e = sys.maxsize
-        if e < s:
-            s, e = e, s
-        normalized.append((s, e))
-    normalized.sort()
-    merged: list[tuple[int, int]] = []
-    for s, e in normalized:
-        if merged and s <= merged[-1][1] + 1:
-            ps, pe = merged[-1]
-            merged[-1] = (ps, max(pe, e))
-        else:
-            merged.append((s, e))
-    return merged
-
-
-def parse_ranges(spec: str) -> list[tuple[int, int | None]]:
-    ranges: list[tuple[int, int | None]] = []
-    for part in spec.split(","):
-        part = part.strip()
-        if not part:
-            continue
-        if "-" in part:
-            a_str, _, b_str = part.partition("-")
-            a = int(a_str.strip())
-            b = int(b_str.strip()) if b_str.strip() else None
-            ranges.append((a, b))
-        else:
-            n = int(part)
-            ranges.append((n, n))
-    return ranges
-
-
-def process_chunk(
-    lines: Sequence[str],
-    start_line: int,
-    ranges: Sequence[tuple[int, int]],
-    comment_char: str,
-    remove: bool,
-    preserve_shebang: bool,
-) -> ChunkResult:
-    out: list[str] = []
-    commented = 0
-    uncommented = 0
-    skipped = 0
-    blanks = 0
-    clen = len(comment_char)
-    for i, line in enumerate(lines):
-        lineno = start_line + i
+def process_chunk(lines: list, comment_char: str, add_space: bool) -> list:
+    """Processes a chunk of lines (behavior inherited from commentout.py)."""
+    result = []
+    prefix = f"{comment_char} " if add_space else comment_char
+    for line in lines:
         stripped = line.lstrip()
-        if not stripped:
-            out.append(line)
-            blanks += 1
-            continue
-        if preserve_shebang and lineno == 1 and stripped.startswith("#!"):
-            out.append(line)
-            skipped += 1
-            continue
-        in_range = False
-        for s, e in ranges:
-            if s > lineno:
-                break
-            if lineno <= e:
-                in_range = True
-                break
-        if not in_range:
-            out.append(line)
-            continue
-        if remove:
-            if stripped.startswith(comment_char):
-                leading = line[: len(line) - len(stripped)]
-                out.append(leading + stripped[clen:])
-                uncommented += 1
-            else:
-                out.append(line)
-                skipped += 1
-        elif stripped.startswith(comment_char):
-            out.append(line)
-            skipped += 1
+        # commentout.py explicitly skips empty lines
+        if not stripped or stripped.startswith(comment_char):
+            result.append(line)
         else:
-            out.append(f"{comment_char}{line}")
-            commented += 1
-    return ChunkResult(out, commented, uncommented, skipped, blanks, commented + uncommented)
+            result.append(f"{prefix}{line}")
+    return result
 
 
-def _worker(
-    args: tuple[Sequence[str], int, Sequence[tuple[int, int]], str, bool, bool],
-) -> ChunkResult:
-    return process_chunk(*args)
+def process_in_memory(filename: Path, start_line: int, end_line: int, comment_char: str, add_space: bool) -> None:
+    """Processes the file entirely in memory (behavior inherited from comment_out.py)."""
+    with filename.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    total_lines = len(lines)
+    if start_line > total_lines:
+        print(f"Error: Start line ({start_line}) exceeds file length ({total_lines} lines).", file=sys.stderr)
+        sys.exit(1)
+
+    p_end = end_line if end_line is not None else total_lines
+    end_idx = min(p_end, total_lines)
+
+    # 1-indexed to 0-indexed translation
+    for i in range(start_line - 1, end_idx):
+        stripped = lines[i].strip()
+        # comment_out.py comments out empty lines because strip() makes them "" which doesn't start with '#'
+        if not stripped.startswith(comment_char):
+            prefix = f"{comment_char} " if add_space else comment_char
+            lines[i] = f"{prefix}{lines[i]}"
+
+    with filename.open("w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+    print(f"Success: Commented out lines {start_line} to {end_idx} in '{filename}' using '{comment_char}'.")
 
 
-def _chunk_iter(stream, chunk_size: int) -> Iterator[list[str]]:
-    while True:
-        chunk = list(islice(stream, chunk_size))
-        if not chunk:
-            return
-        yield chunk
+def process_chunked(
+    filename: Path, start_line: int, end_line: int, comment_char: str, add_space: bool, workers: int, chunk_size: int
+) -> None:
+    """Processes the file using chunks and optional multiprocessing (behavior inherited from commentout.py)."""
+    p_end = end_line if end_line is not None else sys.maxsize
 
-
-def _arg_iter(
-    chunks: Iterator[list[str]],
-    ranges: Sequence[tuple[int, int]],
-    comment_char: str,
-    remove: bool,
-    preserve_shebang: bool,
-) -> Iterator[tuple]:
-    current = 1
-    for chunk in chunks:
-        yield (chunk, current, ranges, comment_char, remove, preserve_shebang)
-        current += len(chunk)
-
-
-def _dispatch(arg_iter: Iterator[tuple], use_pool: bool) -> Iterator[ChunkResult]:
-    if use_pool:
-        with Pool(processes=POOL_SIZE) as pool:
-            yield from pool.imap(_worker, arg_iter, chunksize=1)
-    else:
-        for args in arg_iter:
-            yield _worker(args)
-
-
-def _resolve_comment_char(file_path: Path | None, override: str | None) -> str:
-    if override:
-        return override
-    if file_path is None:
-        return DEFAULT_COMMENT
-    ext = file_path.suffix.lower()
-    cc = COMMENT_MAP.get(ext)
-    if cc is None:
-        logger.warning(
-            "Unknown extension {}. Using default '{}' as comment char.",
-            ext,
-            DEFAULT_COMMENT,
-        )
-        return DEFAULT_COMMENT
-    return cc
-
-
-def _detect_bom(path: Path) -> bool:
-    try:
-        with path.open("rb") as f:
-            return f.read(3) == b"\xef\xbb\xbf"
-    except OSError:
-        return False
-
-
-def _accumulate(total: ChunkResult, part: ChunkResult) -> None:
-    total.commented += part.commented
-    total.uncommented += part.uncommented
-    total.skipped += part.skipped
-    total.blanks += part.blanks
-    total.changed += part.changed
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
-        prog="commentout",
-        description="Comment out (or with -r, un-comment) line ranges in a file.",
-    )
-    p.add_argument("filename", help="Path to file, or '-' for stdin/stdout.")
-    p.add_argument("start_line", nargs="?", type=int, help="Start line (1-based).")
-    p.add_argument(
-        "end_line",
-        nargs="?",
-        type=int,
-        help="End line (inclusive); defaults to EOF.",
-    )
-    p.add_argument(
-        "-r",
-        "--remove",
-        action="store_true",
-        help="Remove the comment prefix from target lines.",
-    )
-    p.add_argument(
-        "-n",
-        "--dry-run",
-        action="store_true",
-        help="Report changes without writing.",
-    )
-    p.add_argument(
-        "-o",
-        "--output",
-        help="Write to this file instead of replacing the input.",
-    )
-    p.add_argument(
-        "-b",
-        "--backup",
-        action="store_true",
-        help="Save <file>.bak before replacing.",
-    )
-    p.add_argument("--comment-char", help="Override the comment prefix.")
-    p.add_argument(
-        "--encoding",
-        default="utf-8",
-        help="Text encoding (default: utf-8).",
-    )
-    p.add_argument(
-        "--preserve-shebang",
-        action="store_true",
-        help="Never comment line 1 if it starts with '#!'.",
-    )
-    p.add_argument(
-        "--ranges",
-        help="Multiple ranges like '1-10,20,30-40' (overrides positionals).",
-    )
-    p.add_argument(
-        "--strict",
-        action="store_true",
-        help="Fail on decode errors instead of using surrogateescape.",
-    )
-    p.add_argument(
-        "--no-stats",
-        dest="stats",
-        action="store_false",
-        help="Suppress the summary line.",
-    )
-    p.set_defaults(stats=True)
-    return p
-
-
-def _parse_args(
-    argv: Sequence[str],
-) -> tuple[argparse.Namespace, Path | None, list[tuple[int, int]]]:
-    parser = _build_parser()
-    ns = parser.parse_args(list(argv[1:]))
-    raw_ranges: list[tuple[int, int | None]]
-    if ns.ranges is not None:
-        try:
-            raw_ranges = parse_ranges(ns.ranges)
-        except ValueError:
-            parser.error("invalid --ranges format")
-            return ns, None, []
-    elif ns.start_line is not None:
-        raw_ranges = [(ns.start_line, ns.end_line)]
-    else:
-        parser.error("provide <start_line> [end_line] or --ranges")
-        return ns, None, []
-    if not raw_ranges:
-        parser.error("no ranges specified")
-    for s, _ in raw_ranges:
-        if s < 1:
-            parser.error("line numbers must be >= 1")
-    file_path: Path | None
-    if ns.filename == "-":
-        file_path = None
-    else:
-        file_path = Path(ns.filename)
-        if not file_path.exists():
-            logger.error("File {} not found.", file_path)
-            raise SystemExit(1)
-    if file_path is None and ns.output is not None:
-        parser.error("-o is not allowed when reading from stdin")
-    if file_path is None and ns.backup:
-        parser.error("-b is not allowed when reading from stdin")
-    if file_path is not None and ns.output is not None:
-        try:
-            if Path(ns.output).resolve() == file_path.resolve():
-                parser.error("-o cannot be the same path as input; omit -o for in-place edits")
-        except OSError:
-            pass
-    return ns, file_path, _normalize_ranges(raw_ranges)
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    args = list(argv) if argv is not None else sys.argv
-    ns, file_path, ranges = _parse_args(args)
-    is_stdin = file_path is None
-    comment_char = _resolve_comment_char(file_path, ns.comment_char)
-    errors = "strict" if ns.strict else "surrogateescape"
-    read_encoding = ns.encoding
-    write_encoding = ns.encoding
-    if (
-        not is_stdin
-        and _detect_bom(file_path)
-        and ns.encoding.lower().replace("_", "-")
-        in (
-            "utf-8",
-            "utf8",
-        )
+    with (
+        filename.open("r", encoding="utf-8", errors="ignore") as f_in,
+        tempfile.NamedTemporaryFile("w", delete=False, dir=filename.parent, encoding="utf-8") as f_out,
     ):
-        read_encoding = "utf-8-sig"
-        write_encoding = "utf-8-sig"
-    initial_stat = None if is_stdin else file_path.stat()
-    file_size = initial_stat.st_size if initial_stat is not None else 0
-    use_pool = file_size >= SMALL_FILE_BYTES
-    if ns.dry_run:
-        mode = "dry-run"
-    elif is_stdin:
-        mode = "stdout"
-    elif ns.output:
-        mode = "output"
-    else:
-        mode = "atomic"
-    total = ChunkResult([])
-    temp_path: Path | None = None
-    success = False
-    try:
-        with ExitStack() as stack:
-            if is_stdin:
-                infile = sys.stdin
-            else:
-                infile = stack.enter_context(file_path.open("r", encoding=read_encoding, errors=errors, newline=""))
-            chunks = _chunk_iter(infile, CHUNK_SIZE)
-            arg_iter = _arg_iter(chunks, ranges, comment_char, ns.remove, ns.preserve_shebang)
-            results = _dispatch(arg_iter, use_pool)
-            if mode == "dry-run":
-                for res in results:
-                    _accumulate(total, res)
-            elif mode == "stdout":
-                for res in results:
-                    _accumulate(total, res)
-                    sys.stdout.writelines(res.lines)
-                sys.stdout.flush()
-            elif mode == "output":
-                out_path = Path(str(ns.output))
-                outfile = stack.enter_context(out_path.open("w", encoding=write_encoding, errors=errors, newline=""))
-                for res in results:
-                    _accumulate(total, res)
-                    outfile.writelines(res.lines)
-            else:
-                tmp = stack.enter_context(
-                    NamedTemporaryFile(
-                        "w",
-                        delete=False,
-                        dir=file_path.parent,
-                        encoding=write_encoding,
-                        errors=errors,
-                        newline="",
-                    )
-                )
-                temp_path = Path(tmp.name)
-                for res in results:
-                    _accumulate(total, res)
-                    tmp.writelines(res.lines)
-        if mode == "atomic" and temp_path is not None:
-            if total.changed == 0:
-                with suppress(OSError):
-                    temp_path.unlink()
-                temp_path = None
-            else:
-                current_stat = file_path.stat()
-                if (
-                    current_stat.st_mtime_ns,
-                    current_stat.st_size,
-                ) != (initial_stat.st_mtime_ns, initial_stat.st_size):
-                    logger.error("Input {} changed during processing; aborting.", file_path)
-                    raise SystemExit(3)
-                if ns.backup:
-                    shutil.copy2(file_path, file_path.with_name(file_path.name + ".bak"))
-                temp_path.replace(file_path)
-                temp_path = None
-        success = True
-    finally:
-        if not success and temp_path is not None and temp_path.exists():
-            with suppress(OSError):
-                temp_path.unlink()
-    if ns.stats:
-        action = "un-commented" if ns.remove else "commented"
-        if mode == "dry-run":
-            logger.info(
-                "DRY RUN: would {} {} range(s); {} line(s) changed, {} skipped, {} blank",
-                action,
-                len(ranges),
-                total.changed,
-                total.skipped,
-                total.blanks,
-            )
+        temp_path = Path(f_out.name)
+        current_line = 1
+
+        # Original code used pool trivially blocking on `.get()`. We preserve the Pool availability.
+        pool = Pool(processes=workers) if workers > 1 else None
+
+        try:
+            while True:
+                chunk = [f_in.readline() for _ in range(chunk_size)]
+                chunk = [line for line in chunk if line]
+                if not chunk:
+                    break
+
+                chunk_start = current_line
+                chunk_end = current_line + len(chunk) - 1
+
+                # Check if the current chunk overlaps with the target line range
+                if chunk_start <= p_end and chunk_end >= start_line:
+                    rel_start = max(0, start_line - chunk_start)
+                    rel_end = max(0, p_end - chunk_start + 1) if end_line is not None else len(chunk)
+
+                    pre_lines = chunk[:rel_start]
+                    target_lines = chunk[rel_start:rel_end]
+                    post_lines = chunk[rel_end:]
+
+                    if pool:
+                        async_res = pool.apply_async(process_chunk, (target_lines, comment_char, add_space))
+                        processed_target = async_res.get()
+                    else:
+                        processed_target = process_chunk(target_lines, comment_char, add_space)
+
+                    f_out.writelines(pre_lines)
+                    f_out.writelines(processed_target)
+                    f_out.writelines(post_lines)
+                else:
+                    f_out.writelines(chunk)
+
+                current_line += len(chunk)
+        finally:
+            if pool:
+                pool.close()
+                pool.join()
+
+    temp_path.replace(filename)
+    print(f"Successfully processed '{filename}' using '{comment_char}'.")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Unified Comment Out CLI")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    p_comment = subparsers.add_parser("comment", help="Comment out a range of lines in a file")
+    p_comment.add_argument("filename", type=Path, help="File to modify")
+    p_comment.add_argument("start_line", type=int, help="Starting line number (1-indexed)")
+    p_comment.add_argument("end_line", type=int, nargs="?", default=None, help="Ending line number (optional)")
+
+    # Original behavior flags
+    p_comment.add_argument("--add-space", action="store_true", help="Add a space after the comment character")
+    p_comment.add_argument("--in-memory", action="store_true", help="Process the file entirely in memory")
+    p_comment.add_argument(
+        "-w", "--workers", type=int, default=8, help="Number of workers for chunked processing (default: 8)"
+    )
+    p_comment.add_argument(
+        "-c", "--chunk-size", type=int, default=10000, help="Number of lines per chunk (default: 10000)"
+    )
+
+    args = parser.parse_args()
+
+    if args.command == "comment":
+        if args.start_line < 1:
+            print("Error: Line numbers must start from 1.", file=sys.stderr)
+            sys.exit(1)
+
+        if args.end_line is not None and args.end_line < args.start_line:
+            print("Error: End line must be >= start line.", file=sys.stderr)
+            sys.exit(1)
+
+        if not args.filename.exists():
+            print(f"Error: The file '{args.filename}' does not exist.", file=sys.stderr)
+            sys.exit(1)
+
+        comment_char = COMMENT_MAP.get(args.filename.suffix.lower())
+        if comment_char is None:
+            print(f"Warning: Unknown extension '{args.filename.suffix.lower()}'. Using default '#' as comment char.")
+            comment_char = "#"
+
+        if args.in_memory:
+            if args.end_line is None:
+                print("Error: --in-memory mode requires both start_line and end_line.", file=sys.stderr)
+                sys.exit(1)
+            process_in_memory(args.filename, args.start_line, args.end_line, comment_char, args.add_space)
         else:
-            if mode == "stdout":
-                target = "<stdout>"
-            elif mode == "output":
-                target = str(ns.output)
-            else:
-                target = str(file_path)
-            if total.changed == 0:
-                logger.info(
-                    "No changes needed for {} ({} blank line(s) scanned).",
-                    target,
-                    total.blanks,
-                )
-            else:
-                logger.info(
-                    "{} {} line(s) in {} using '{}' ({} skipped, {} blank).",
-                    action.capitalize(),
-                    total.changed,
-                    target,
-                    comment_char,
-                    total.skipped,
-                    total.blanks,
-                )
-    return 0
+            process_chunked(
+                args.filename,
+                args.start_line,
+                args.end_line,
+                comment_char,
+                args.add_space,
+                args.workers,
+                args.chunk_size,
+            )
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

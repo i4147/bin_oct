@@ -18,13 +18,16 @@ Usage ----- python translate_words.py -i words.txt -t en -b deep_translator pyth
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
+from pathlib import Path
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from loguru import logger
+
 
 logger.remove()
 logger.add(

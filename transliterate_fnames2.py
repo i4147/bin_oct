@@ -33,8 +33,11 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/VKLr6XKBfiKZuZPrnUu7XW"""
 from __future__ import annotations
 import argparse
 import pathlib
+from pathlib import Path
 import re
+import sys
 import unicodedata
+
 
 PERSIAN_MAP: dict[str, str] = {
     "ا": "a",
@@ -222,7 +225,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    roots = args.paths or [pathlib.Path(".")]
+    roots = args.paths or [pathlib.Path()]
     for root in roots:
         root = root.expanduser()
         if not root.exists():

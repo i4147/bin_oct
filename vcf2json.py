@@ -6,9 +6,9 @@ The final output should be a list of parsed contact cards saved or printed as JS
 
 from __future__ import annotations
 import json
+from pathlib import Path
 import quopri
 import sys
-from pathlib import Path
 
 
 def decode_value(value, params):

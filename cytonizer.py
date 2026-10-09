@@ -5,10 +5,12 @@ For each discovered `.pyx` file, the script should change into its parent direct
 
 from __future__ import annotations
 import os
-import sys
 from os import chdir as os_chdir
 from pathlib import Path
+import sys
+
 from dh import get_files, mpf
+
 
 START_DIR = Path.cwd()
 NUM_PROCESSES = 4

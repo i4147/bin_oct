@@ -35,30 +35,35 @@ Examples
     strip_comments.py -n --backup --pool-method imap_unordered src/
 """
 
+from __future__ import annotations
 import argparse
 import ast
 import codecs
+from collections import deque
+from dataclasses import dataclass
 import difflib
 import enum
 import functools
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import tokenize
-from collections import deque
-from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass
-from multiprocessing.pool import AsyncResult, Pool
-from pathlib import Path
-from typing import Final, Literal, get_args
+from typing import TYPE_CHECKING, Final, Literal, get_args
 
 import libcst as cst
 from loguru import logger
+
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
+    from multiprocessing.pool import AsyncResult, Pool
+
 
 NUM_WORKERS: Final[int] = 8
 """Exact number of worker processes in the pool (a hard requirement)."""
@@ -223,7 +228,7 @@ class StripCommentsAndDocstrings(cst.CSTTransformer):
                 return body
             self.docstrings_removed += 1
             rest = small[1:]
-            return body.with_changes(body=rest if rest else [cst.Pass()])
+            return body.with_changes(body=rest or [cst.Pass()])
 
         if not isinstance(body, cst.IndentedBlock) or not body.body:
             return body
@@ -252,12 +257,14 @@ def _check_declared_encoding(raw: bytes) -> None:
     except (SyntaxError, LookupError):
         return
     if declared.lower() not in _UTF8_COMPATIBLE:
-        raise SkipFile(f"declares non-UTF-8 source encoding {declared!r}")
+        msg = f"declares non-UTF-8 source encoding {declared!r}"
+        raise SkipFile(msg)
 
 
 def _decode_source(raw: bytes, fallback: str | None) -> tuple[str, str, bytes]:
     if b"\x00" in raw:
-        raise SkipFile("binary or non-text content (NUL bytes)")
+        msg = "binary or non-text content (NUL bytes)"
+        raise SkipFile(msg)
     _check_declared_encoding(raw)
 
     bom = b""
@@ -269,13 +276,13 @@ def _decode_source(raw: bytes, fallback: str | None) -> tuple[str, str, bytes]:
         utf8_error = exc
 
     if fallback is None or bom:
-        raise SkipFile(
-            f"not valid UTF-8 ({utf8_error.reason} at byte {utf8_error.start}); use --fallback-encoding to process it"
-        ) from utf8_error
+        msg = f"not valid UTF-8 ({utf8_error.reason} at byte {utf8_error.start}); use --fallback-encoding to process it"
+        raise SkipFile(msg) from utf8_error
     try:
         return raw.decode(fallback), fallback, b""
     except UnicodeDecodeError as exc:
-        raise SkipFile(f"cannot decode as UTF-8 or {fallback}: {exc.reason}") from exc
+        msg = f"cannot decode as UTF-8 or {fallback}: {exc.reason}"
+        raise SkipFile(msg) from exc
 
 
 def strip_source(source: str) -> tuple[str, int, int]:
@@ -300,7 +307,8 @@ def _make_diff(path: Path, old: str, new: str) -> str:
 def _make_backup(path: Path) -> None:
     backup = path.with_name(path.name + ".bak")
     if backup.exists():
-        raise FileExistsError(f"backup already exists: {backup}")
+        msg = f"backup already exists: {backup}"
+        raise FileExistsError(msg)
     shutil.copy2(path, backup)
 
 
@@ -476,7 +484,8 @@ def _codec_name(value: str) -> str:
     try:
         codecs.lookup(value)
     except LookupError as exc:
-        raise argparse.ArgumentTypeError(f"unknown encoding: {value!r}") from exc
+        msg = f"unknown encoding: {value!r}"
+        raise argparse.ArgumentTypeError(msg) from exc
     return value
 
 

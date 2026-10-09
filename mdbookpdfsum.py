@@ -6,9 +6,11 @@ It should use argparse for CLI options such as input/output paths and an overwri
 from __future__ import annotations
 import argparse
 import os
-import re
-import urllib
 from pathlib import Path
+import re
+import sys
+import urllib
+
 import lxml.html
 import pypdf
 

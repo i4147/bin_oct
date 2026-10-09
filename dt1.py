@@ -6,17 +6,19 @@ Example: pip install loguru deep_translator python translate_chunks.py --input i
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import contextlib
 import json
 import os
+from pathlib import Path
 import sys
 import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable
+
 from loguru import logger
+
 
 Translator = Callable[[str], str]
 FALLBACK_BACKENDS = (

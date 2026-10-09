@@ -4,9 +4,11 @@ It should accept a list of file paths as command-line arguments; if none are pro
 For each file, read its content as UTF-8 (ignoring decode errors), remove the invisible characters, and if any were removed, overwrite the file with the cleaned text and print the count of removed characters, otherwise print a message indicating none were found."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import get_nobinary
+
 
 INVISIBLE_CHARS = {
     "\u200b",

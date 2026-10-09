@@ -8,12 +8,13 @@ Usage examples: python srt_shift.py movie.srt -s 2.5 python srt_shift.py movie.s
 
 from __future__ import annotations
 import argparse
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+import re
 from re import Match
+import sys
 from typing import Optional, Sequence
+
 
 SHIFT_RE = re.compile(r"(\d{2,3}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2,3}:\d{2}:\d{2},\d{3})")
 FALLBACK_ENCODINGS: tuple[str, ...] = ("utf-8", "cp1252", "latin1")

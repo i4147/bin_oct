@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """pdf_pages_to_txt.py — Extract each PDF page into its own .txt file.
-Merged from: pdftotxt.py, perpage.py, pp_fitz.py, pp_pdfminer.py, pp_pdfminer2.py, pp_plumber.py, pp_pymupdf.py, pp_pypdf.py, pp_pypdf2.py, ppminer.py Third-party dependencies (install whichever backend you use; all optional): pdfplumber (backend: plumber) PyMuPDF (backend: fitz) -> import name: fitz pypdf (backend: pypdf) PyPDF2 (backend: pypdf2) pdfminer.six (backend: pdfminer) No third-party code is imported at module load: backends are lazy-imported inside worker functions so the script runs with only the backend you use.
-Usage examples -------------- # default backend (pdfminer), parallel, all PDFs in cwd: python pdf_pages_to_txt.py # single PDF via PyMuPDF with 8 threads, sorted text: python pdf_pages_to_txt.py -b fitz --sort -P thread -w 8 book.pdf # every PDF under ./input, skipping pages already extracted: python pdf_pages_to_txt.py -b plumber --skip-existing ./input # pypdf2 backend with per-page files named `<stem>_0001.txt`: python pdf_pages_to_txt.py -b pypdf2 --name-template '{stem}_{page:0{w}d}.txt' a.pdf # pdfminer with detailed LAParams tweaks: python pdf_pages_to_txt.py -b pdfminer --char-margin 1.5 --line-margin 0.3 --detect-vertical b.pdf Original script equivalents --------------------------- pdftotxt.py -> python pdf_pages_to_txt.py -b plumber --name-template '{stem}_{page:0{w}d}.txt' <pdf> perpage.py -> python pdf_pages_to_txt.py -b pypdf2 --name-template '{stem}_{page:0{w}d}.txt' <pdf> pp_fitz.py -> python pdf_pages_to_txt.py -b fitz -P thread -w 8 <pdf...> pp_pdfminer.py -> python pdf_pages_to_txt.py -b pdfminer -P process -w 8 <pdf> pp_pdfminer2.py -> python pdf_pages_to_txt.py -b pdfminer --char-margin 2.0 ...
-<pdf...> pp_plumber.py -> python pdf_pages_to_txt.py -b plumber -P thread -w 8 <pdf...> pp_pymupdf.py -> python pdf_pages_to_txt.py -b fitz --sort -P thread -w 8 <pdf...> pp_pypdf.py -> python pdf_pages_to_txt.py -b pypdf -P process -w 8 <pdf> pp_pypdf2.py -> python pdf_pages_to_txt.py -b pypdf2 -P process -w 8 <pdf> ppminer.py -> python pdf_pages_to_txt.py -b pdfminer -P process -w 8 <pdf|dir...>"""
+Merged from: pdftotxt.py, perpage.py, pp_pymupdf.py, pp_pdfminer.py, pp_pdfminer2.py, pp_plumber.py, pp_pymupdf.py, pp_pypdf.py, pp_pypdf2.py, ppminer.py Third-party dependencies (install whichever backend you use; all optional): pdfplumber (backend: plumber) PyMuPDF (backend: pymupdf) -> import name: pymupdf pypdf (backend: pypdf) PyPDF2 (backend: pypdf2) pdfminer.six (backend: pdfminer) No third-party code is imported at module load: backends are lazy-imported inside worker functions so the script runs with only the backend you use.
+Usage examples -------------- # default backend (pdfminer), parallel, all PDFs in cwd: python pdf_pages_to_txt.py # single PDF via PyMuPDF with 8 threads, sorted text: python pdf_pages_to_txt.py -b pymupdf --sort -P thread -w 8 book.pdf # every PDF under ./input, skipping pages already extracted: python pdf_pages_to_txt.py -b plumber --skip-existing ./input # pypdf2 backend with per-page files named `<stem>_0001.txt`: python pdf_pages_to_txt.py -b pypdf2 --name-template '{stem}_{page:0{w}d}.txt' a.pdf # pdfminer with detailed LAParams tweaks: python pdf_pages_to_txt.py -b pdfminer --char-margin 1.5 --line-margin 0.3 --detect-vertical b.pdf Original script equivalents --------------------------- pdftotxt.py -> python pdf_pages_to_txt.py -b plumber --name-template '{stem}_{page:0{w}d}.txt' <pdf> perpage.py -> python pdf_pages_to_txt.py -b pypdf2 --name-template '{stem}_{page:0{w}d}.txt' <pdf> pp_pymupdf.py -> python pdf_pages_to_txt.py -b pymupdf -P thread -w 8 <pdf...> pp_pdfminer.py -> python pdf_pages_to_txt.py -b pdfminer -P process -w 8 <pdf> pp_pdfminer2.py -> python pdf_pages_to_txt.py -b pdfminer --char-margin 2.0 ...
+<pdf...> pp_plumber.py -> python pdf_pages_to_txt.py -b plumber -P thread -w 8 <pdf...> pp_pymupdf.py -> python pdf_pages_to_txt.py -b pymupdf --sort -P thread -w 8 <pdf...> pp_pypdf.py -> python pdf_pages_to_txt.py -b pypdf -P process -w 8 <pdf> pp_pypdf2.py -> python pdf_pages_to_txt.py -b pypdf2 -P process -w 8 <pdf> ppminer.py -> python pdf_pages_to_txt.py -b pdfminer -P process -w 8 <pdf|dir...>"""
 
 from __future__ import annotations
 import argparse
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
+import sys
 from typing import Sequence
 
 
@@ -30,12 +30,12 @@ def _extract_plumber(pdf_path: str, page_indices: Sequence[int], opts: dict) -> 
     return out
 
 
-def _extract_fitz(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
-    import fitz  # type: ignore
+def _extract_pymupdf(pdf_path: str, page_indices: Sequence[int], opts: dict) -> list[tuple[int, str]]:
+    import pymupdf  # type: ignore
 
     sort = bool(opts.get("sort", False))
     out: list[tuple[int, str]] = []
-    doc = fitz.open(pdf_path)
+    doc = pymupdf.open(pdf_path)
     try:
         for idx in page_indices:
             try:
@@ -129,12 +129,12 @@ def _extract_pdfminer(pdf_path: str, page_indices: Sequence[int], opts: dict) ->
 
 _BACKENDS = {
     "plumber": _extract_plumber,
-    "fitz": _extract_fitz,
+    "pymupdf": _extract_pymupdf,
     "pypdf": _extract_pypdf,
     "pypdf2": _extract_pypdf2,
     "pdfminer": _extract_pdfminer,
 }
-_THREAD_BACKENDS = {"fitz", "plumber"}
+_THREAD_BACKENDS = {"pymupdf", "plumber"}
 
 
 def _extract_chunk(pdf_path: str, page_indices: Sequence[int], backend: str, opts: dict) -> list[tuple[int, str]]:
@@ -147,10 +147,10 @@ def _page_count(pdf_path: str, backend: str, password: str = "") -> int:
 
         with pdfplumber.open(pdf_path) as pdf:
             return len(pdf.pages)
-    if backend == "fitz":
-        import fitz  # type: ignore
+    if backend == "pymupdf":
+        import pymupdf  # type: ignore
 
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
         try:
             return len(doc)
         finally:
@@ -337,7 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--parallel",
         choices=["auto", "thread", "process", "none"],
         default="auto",
-        help="Parallelism mode (default: auto — thread for fitz/plumber, process for pypdf/pypdf2/pdfminer).",
+        help="Parallelism mode (default: auto — thread for pymupdf/plumber, process for pypdf/pypdf2/pdfminer).",
     )
     p.add_argument(
         "--name-template",
@@ -363,7 +363,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--sort",
         action="store_true",
-        help="Sort text blocks top-to-bottom/left-to-right (fitz backend only).",
+        help="Sort text blocks top-to-bottom/left-to-right (pymupdf backend only).",
     )
     p.add_argument(
         "--password",

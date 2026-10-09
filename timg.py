@@ -6,11 +6,13 @@ Include error handling for missing dependencies (like cairosvg for SVG support) 
 from __future__ import annotations
 import argparse
 import io
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 from typing import Iterator
+
 from PIL import Image
+
 
 IMAGE_EXTENSIONS = {
     ".png",

@@ -1,14 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/python
-import subprocess
+from __future__ import annotations
+import argparse
+import logging
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import shutil
+import subprocess
+import sys
 import tarfile
 import tempfile
-import argparse
-import sys
-from pathlib import Path
-from multiprocessing import Pool, cpu_count
 from typing import Optional, Tuple
-import logging
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -22,8 +24,7 @@ def normalize(name: str) -> str:
 
 def source_pkg_name(source_name: str) -> str:
     stem = source_name
-    if stem.endswith(".tar.gz"):
-        stem = stem[:-7]
+    stem = stem.removesuffix(".tar.gz")
     if "-" in stem:
         return stem.rsplit("-", 1)[0]
     return stem
@@ -33,10 +34,7 @@ def is_already_built(wheels_dir: Path, source_name: str) -> bool:
     if not wheels_dir.exists():
         return False
     target = normalize(source_pkg_name(source_name))
-    for whl in wheels_dir.glob("*.whl"):
-        if normalize(whl.name.split("-")[0]) == target:
-            return True
-    return False
+    return any(normalize(whl.name.split("-")[0]) == target for whl in wheels_dir.glob("*.whl"))
 
 
 def has_rust_backend(pkg_dir: Path) -> bool:
@@ -64,13 +62,12 @@ def cleanup_build_artifacts(pkg_dir: Path) -> None:
                         logger.debug(f"  -> Removed {item.name}")
                 except Exception as e:
                     logger.warning(f"  ! Failed to remove {item.name}: {e}")
-        else:
-            if pattern.exists():
-                try:
-                    shutil.rmtree(pattern)
-                    logger.debug(f"  -> Removed {pattern.name}")
-                except Exception as e:
-                    logger.warning(f"  ! Failed to remove {pattern.name}: {e}")
+        elif pattern.exists():
+            try:
+                shutil.rmtree(pattern)
+                logger.debug(f"  -> Removed {pattern.name}")
+            except Exception as e:
+                logger.warning(f"  ! Failed to remove {pattern.name}: {e}")
 
 
 def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
@@ -91,7 +88,7 @@ def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
     return cmd
 
 
-def build_wheel_from_dir(pkg_dir: Path) -> Tuple[Path, Optional[str]]:
+def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {pkg_dir.name}")
     wheels_dir = Path.cwd() / "wheels"
 
@@ -135,10 +132,10 @@ def build_wheel_from_dir(pkg_dir: Path) -> Tuple[Path, Optional[str]]:
     except subprocess.TimeoutExpired:
         return pkg_dir, "Build timeout (>300s)"
     except Exception as e:
-        return pkg_dir, f"Error: {str(e)}"
+        return pkg_dir, f"Error: {e!s}"
 
 
-def build_wheel_from_tar_gz(tar_gz_file: Path) -> Tuple[Path, Optional[str]]:
+def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {tar_gz_file.name}")
     wheels_dir = Path.cwd() / "wheels"
 
@@ -181,11 +178,11 @@ def build_wheel_from_tar_gz(tar_gz_file: Path) -> Tuple[Path, Optional[str]]:
                 return tar_gz_file, f"Build failed: {error_msg[:150]}"
 
         except tarfile.TarError as e:
-            return tar_gz_file, f"Extraction failed: {str(e)}"
+            return tar_gz_file, f"Extraction failed: {e!s}"
         except subprocess.TimeoutExpired:
             return tar_gz_file, "Build timeout (>300s)"
         except Exception as e:
-            return tar_gz_file, f"Error: {str(e)}"
+            return tar_gz_file, f"Error: {e!s}"
 
 
 def is_valid_package_dir(path: Path) -> bool:

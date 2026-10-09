@@ -5,11 +5,13 @@ Supported formats: .json .jsonl/.ndjson .csv .tsv .pkl/.pickle .sqlite/.db/.sqli
 from __future__ import annotations
 import argparse
 import json
+from pathlib import Path
 import pickle
 import sqlite3
 import sys
-from pathlib import Path
+
 import pandas as pd
+
 
 SQLITE_MAGIC = b"SQLite format 3\x00"
 

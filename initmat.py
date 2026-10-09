@@ -3,10 +3,10 @@
 Usage: python init_maturin_project.py [pkgname] If pkgname is omitted, the current directory name is used."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import subprocess
 import sys
-from pathlib import Path
 
 
 def get_pkgname() -> str:

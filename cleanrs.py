@@ -5,13 +5,14 @@ It should expose a RustCommentStripper class that parses source code into an AST
 
 from __future__ import annotations
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
+
 
 try:
-    import tree_sitter_rust
     from tree_sitter import Language, Parser
+    import tree_sitter_rust
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:

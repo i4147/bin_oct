@@ -4,11 +4,12 @@ It should decompress such .gz files to temporary files as needed, then run an ex
 The script is invoked from the command line with a target path and optional extension filters, and cleans up temporary files after processing."""
 
 from __future__ import annotations
-import gzip
-import sys
 from collections import deque
+import gzip
 from pathlib import Path
+import sys
 from tempfile import NamedTemporaryFile
+
 from dh import cprint, mpf, runcmd
 
 

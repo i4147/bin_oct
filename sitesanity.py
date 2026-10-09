@@ -5,11 +5,12 @@ The script should report which package files are missing and which dependencies 
 
 from __future__ import annotations
 import argparse
+from fnmatch import fnmatch
 import importlib.metadata
 import logging
-import sys
-from fnmatch import fnmatch
 from pathlib import Path
+import sys
+
 
 logging.basicConfig(
     level=logging.INFO,

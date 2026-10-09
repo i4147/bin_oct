@@ -6,7 +6,9 @@ Include appropriate status messages during loading and processing, and handle th
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import sys
+
 import whisper
 
 

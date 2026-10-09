@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
+r"""rmcomdocs.py — unified comments/docstrings stripper for Python source trees.
 This single script merges the behaviour of four earlier tools (gemc.py, t5.py, grmc_ts.py, tsrmc.py) behind one argparse CLI.
 Subcommands ----------- strip Remove comments (and optionally docstrings) from Python files.
 compare Dry-run comparison between the tree-sitter and AST engines.
@@ -13,17 +13,18 @@ Original script -> equivalent command ------------------------------------- gemc
 from __future__ import annotations
 import argparse
 import ast
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Sequence
 
+
 try:
-    import tree_sitter_python as _tspython
     from tree_sitter import Language, Node, Parser, Query, QueryCursor
+    import tree_sitter_python as _tspython
 except ImportError as _exc:  # pragma: no cover
     print(
         f"error: missing dependency ({_exc}); install with: pip install tree-sitter tree-sitter-python",

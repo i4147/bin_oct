@@ -5,10 +5,11 @@ It should print clear status/error messages for failed git commands and prompt o
 Use Python's subprocess and shutil modules, with proper error handling for CalledProcessError."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import subprocess
-import sys
 from subprocess import CompletedProcess
+import sys
 
 
 def run_git_command(cmd: str, check=True, capture_output=True) -> CompletedProcess[str] | None:

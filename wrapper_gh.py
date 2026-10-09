@@ -7,10 +7,11 @@ It should then execute the real gh binary with the original arguments, forwardin
 from __future__ import annotations
 import datetime
 import os
+from pathlib import Path
 import subprocess
 import sys
 import time
-from pathlib import Path
+
 
 LOG_DIR = Path.home() / "tmp" / "log" / "apps"
 REAL_GH = "/data/data/com.termux/files/usr/bin/gh"

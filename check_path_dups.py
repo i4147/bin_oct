@@ -4,10 +4,13 @@ For each file it should compute the hash in chunks for memory efficiency, gracef
 The script should use a custom cprint function from a local "dh" module for colored/formatted output when reporting the findings, ultimately helping the user identify redundant or duplicate executables across their PATH."""
 
 from __future__ import annotations
-import os
 from collections import defaultdict
+import os
 from pathlib import Path
+import sys
+
 from dh import cprint
+
 
 CHUNK_SIZE = 1024 * 1024
 

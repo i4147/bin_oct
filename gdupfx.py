@@ -4,15 +4,16 @@ Requirements: pip install xxhash Usage: python finder.py # Auto-scans current di
 
 from __future__ import annotations
 import argparse
-import hashlib
-import os
-import sys
-import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+import hashlib
+import os
 from pathlib import Path
+import sys
+import time
 from typing import List, Optional
+
 
 try:
     import xxhash

@@ -12,14 +12,15 @@ import argparse
 import ast
 import io
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tokenize
 import traceback
-from pathlib import Path
 from typing import Callable, Iterable, NamedTuple, Sequence
+
 
 try:
     import libcst as cst

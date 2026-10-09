@@ -5,14 +5,15 @@ The script uses dataclasses to structure interface and location data, supports c
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass
 import json
 import logging
+from pathlib import Path
 import re
 import subprocess
 import sys
 import urllib.request
-from dataclasses import dataclass
-from pathlib import Path
+
 
 BLACKLIST_IFACES_PREFIX = "lo"
 INTERFACE_PRIORITY = ["wlan", "eth", "rmnet", "tun", "ppp"]

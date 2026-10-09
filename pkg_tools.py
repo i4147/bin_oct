@@ -4,20 +4,21 @@ Merges 11 originals into a single argparse CLI: aptin.py -> pkgtool.py apt-insta
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import io
 import json
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import time
+from typing import Any, Callable, Optional, Sequence
 import urllib.error
 import urllib.request
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
-from typing import Any, Callable, Optional, Sequence
+
 
 try:
     from rapidfuzz import fuzz as _rapidfuzz  # type: ignore

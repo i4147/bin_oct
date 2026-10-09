@@ -1,12 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
 import argparse
+from concurrent.futures import as_completed
+from pathlib import Path
 import re
 import shutil
 import sys
-from concurrent.futures import as_completed
-from pathlib import Path
 
 from rich.console import Console
 from rich.progress import (
@@ -18,6 +17,7 @@ from rich.progress import (
     TimeElapsedColumn,
     TimeRemainingColumn,
 )
+
 
 try:
     from concurrent.futures import InterpreterPoolExecutor

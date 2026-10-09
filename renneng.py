@@ -5,10 +5,13 @@ The script should print a log line for each successful rename showing the old an
 
 from __future__ import annotations
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 from deep_translator import GoogleTranslator
 from fastwalk import walk_files
+
 
 DIRECTORY = "."
 non_english_pattern = re.compile(r"[^\x00-\x7F]")

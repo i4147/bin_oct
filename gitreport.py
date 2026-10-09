@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-import json
 import argparse
+import json
+from pathlib import Path
 import subprocess
+import sys
+
 from dulwich.repo import Repo
-import pygit2
 from git import Repo as GitRepo
+import pygit2
 
 
 def get_added_files_per_commit_dulwich(repo_path: str) -> dict:

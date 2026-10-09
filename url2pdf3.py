@@ -24,6 +24,8 @@ Main behavior and requirements:
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/Eutmfn8uD7F42dAJdAhGAN"""
 
+from __future__ import annotations
+from pathlib import Path
 import sys
 from urllib.parse import urlparse
 
@@ -34,8 +36,7 @@ def url_to_filename(url: str) -> str:
         url = f"http://{url}"
         parsed = urlparse(url)
     domain = parsed.netloc.lower()
-    if domain.startswith("www."):
-        domain = domain[4:]
+    domain = domain.removeprefix("www.")
     safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in domain)
     return f"{safe}.pdf"
 

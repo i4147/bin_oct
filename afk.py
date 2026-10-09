@@ -13,19 +13,20 @@ Lines that do not parse on their own (e.g.
 continuations of a multi-line import) are skipped, which is why archive-member pseudo-paths (``archive::member``) are never autofixed by the AST engine."""
 
 from __future__ import annotations
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import ast
+from dataclasses import dataclass, field
 import difflib
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
-import zipfile
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Sequence
+import zipfile
+
 
 try:
     import zstandard as zstd

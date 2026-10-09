@@ -7,8 +7,9 @@ After merging, it should print a summary message stating how many files were mer
 
 from __future__ import annotations
 import os
-import re
 from pathlib import Path
+import re
+import sys
 
 
 def resolve_imports(content: str, cwd: Path) -> str:

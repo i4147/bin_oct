@@ -4,7 +4,10 @@ The resulting list of upgradable package names should be written, one per line, 
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from dh import cprint, runcmd
+
 
 if __name__ == "__main__":
     cmd = ["apt", "list", "--upgradable"]

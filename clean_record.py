@@ -6,6 +6,8 @@ The script should expose a `main()` entry point and exit via `SystemExit(main())
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 ALLOWED_DIST_INFO_FILES = {
     "METADATA",

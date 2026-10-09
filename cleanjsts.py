@@ -2,15 +2,17 @@
 """Strip comments from JS/TS/JSX/TSX files using tree-sitter: gather target files, parse them in parallel with a multiprocessing pool of 8 workers, remove comment nodes, validate the cleaned output by re-parsing, and log via loguru."""
 
 from __future__ import annotations
-import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
+import sys
 from typing import Final
+
+from loguru import logger
 import tree_sitter
+from tree_sitter import Language, Parser
 import tree_sitter_javascript
 import tree_sitter_typescript
-from loguru import logger
-from tree_sitter import Language, Parser
+
 
 MAX_WORKERS: Final[int] = 8
 SUPPORTED_EXTENSIONS: Final[tuple[str, ...]] = (".js", ".ts", ".jsx", ".tsx")

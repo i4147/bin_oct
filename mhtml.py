@@ -36,27 +36,33 @@ The script parses MIME-encoded MHTML documents (as produced by browsers' "Save a
 LiveDoc: https://felo.ai/zh-Hans/livedoc/NLQgmuZQCYZJkzU8hrqba4"""
 
 from __future__ import annotations
-
 import argparse
 import base64
 import codecs
 import contextlib
-import glob
-import mimetypes
-import multiprocessing as mp
-import os
-import re
-import sys
 from email.parser import BytesParser
 from email.policy import compat32
-from importlib.metadata import PackageNotFoundError, version as _pkg_version
+import glob
+from importlib.metadata import (
+    PackageNotFoundError,
+    version as _pkg_version,
+)
+import mimetypes
+import multiprocessing as mp
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Sequence
+import re
+import sys
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence
 from urllib.parse import unquote, urljoin
 from urllib.request import Request, urlopen
 
 from loguru import logger
 from lxml import html as lh
+
+
+if TYPE_CHECKING:
+    import os
+
 
 __all__ = ["convert", "convert_file", "main"]
 
@@ -88,10 +94,12 @@ _URL_ATTRS: dict[str, tuple[str, ...]] = {
 }
 _SRCSET_TAGS = frozenset({"img", "source"})
 
-_CSS_URL = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.I)
-_CSS_IMPORT = re.compile(r"""@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;'"]+))\s*\)?\s*([^;]*);""", re.I)
-_CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.I)
-_CLOSING_TAG = re.compile(r"</(style|script)", re.I)
+_CSS_URL = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.IGNORECASE)
+_CSS_IMPORT = re.compile(
+    r"""@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;'"]+))\s*\)?\s*([^;]*);""", re.IGNORECASE
+)
+_CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.IGNORECASE)
+_CLOSING_TAG = re.compile(r"</(style|script)", re.IGNORECASE)
 _SRCSET_SPLIT = re.compile(r"\s*,\s+")
 _XPATH_EVENT_ATTRS = "//*[@*[starts-with(name(), 'on')]]"
 
@@ -147,12 +155,13 @@ def parse_mhtml(raw: bytes) -> tuple[Resource, str, dict[str, Optional[Resource]
             root = res
             root_url = url or "".join(str(msg.get("Snapshot-Content-Location", "")).split())
     if root is None:
-        raise ValueError("no HTML part found in MHTML archive")
+        msg_0 = "no HTML part found in MHTML archive"
+        raise ValueError(msg_0)
     return root, root_url, resources
 
 
 class _Converter:
-    __slots__ = ("res", "scripts", "fetch", "timeout", "uris", "stack")
+    __slots__ = ("fetch", "res", "scripts", "stack", "timeout", "uris")
 
     def __init__(
         self,
@@ -263,7 +272,7 @@ class _Converter:
             if style and "url(" in style.lower():
                 attrs["style"] = self.css(style, base)
 
-            if tag == "a" or tag == "area":
+            if tag in {"a", "area"}:
                 href = attrs.get("href")
                 if href:
                     low = href.lstrip().lower()
@@ -318,7 +327,7 @@ class _Converter:
                         el.text = _safe(_decode(found))
                 for k in ("integrity", "crossorigin", "nonce"):
                     attrs.pop(k, None)
-            elif tag == "iframe" or tag == "frame":
+            elif tag in {"iframe", "frame"}:
                 src = attrs.get("src")
                 if not src or "srcdoc" in attrs:
                     continue
@@ -415,7 +424,8 @@ def convert_file(
     tmp = dst.with_name(dst.name + ".tmp")
     try:
         if dst.absolute() == src.absolute():
-            raise ValueError("input and output are the same file")
+            msg = "input and output are the same file"
+            raise ValueError(msg)
         if skip_existing and dst.exists():
             logger.info("skipped (exists) {}", dst)
             return True
@@ -547,7 +557,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     jobs = [
         (
             f,
-            args.output if args.output else None,
+            args.output or None,
             args.enable_scripts,
             args.fetch_missing_resources,
             args.timeout,

@@ -5,17 +5,20 @@ It should log progress and errors via the logging module, accept command-line ar
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
+from pathlib import Path
 import random
 import re
 import sqlite3
+import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Final
+
 from deep_translator import GoogleTranslator
+
 
 MAX_WORKERS: Final[int] = 16
 RETRY_ATTEMPTS: Final[int] = 4

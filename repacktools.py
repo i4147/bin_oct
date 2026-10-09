@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""repack_tool.py — unified Python package → wheel repacker.
+r"""repack_tool.py — unified Python package → wheel repacker.
 This module merges the behaviour of eleven ad-hoc scripts that all do "take some installed/unpacked Python package and produce a .whl file".
 It exposes two subcommands: repack Repack installed packages discovered inside a site-packages directory (or the user/system site-packages, or a specific directory) into wheels.
 pack-dirs Take a directory full of already-unpacked wheel trees (each containing a ``*.dist-info`` sub-directory) and pack each one back into a .whl.
@@ -13,10 +13,14 @@ import asyncio
 import base64
 import contextlib
 import csv
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
 import email
 import hashlib
 import json
 import logging
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import platform
 import shutil
 import site
@@ -24,12 +28,9 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-import zipfile
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any, Optional, Sequence
+import zipfile
+
 
 try:
     from wheel.wheelfile import WheelFile  # type: ignore

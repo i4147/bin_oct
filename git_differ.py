@@ -5,9 +5,9 @@ The script should raise a clear error if the repository has fewer than two commi
 
 from __future__ import annotations
 import json
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_git(*args: str, cwd: Path) -> str:

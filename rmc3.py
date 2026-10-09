@@ -34,22 +34,23 @@ Structure the code with clear separation between CLI argument parsing, option da
 LiveDoc: https://felo.ai/zh-Hans/livedoc/d9fhChRKUVhYaKgZieU9rN"""
 
 from __future__ import annotations
-
 import argparse
 import ast
+import contextlib
+from dataclasses import dataclass
 import functools
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
 import tokenize
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterable, Iterator, Sequence
 
 import libcst as cst
+
 
 PROGRAM = "strip_comments"
 VERSION = "2.0.0"
@@ -169,10 +170,8 @@ def strip_indented_block_docstring(
     if first.leading_lines:
         following = later_statements[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             later_statements[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     return block.with_changes(body=later_statements), True
 
 
@@ -210,10 +209,8 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
     if first.leading_lines and rest:
         following = rest[0]
         existing = list(getattr(following, "leading_lines", ()) or ())
-        try:
+        with contextlib.suppress(AttributeError):
             rest[0] = following.with_changes(leading_lines=[*first.leading_lines, *existing])
-        except AttributeError:
-            pass
     elif first.leading_lines:
         return module.with_changes(body=[], header=[*module.header, *first.leading_lines])
     return module.with_changes(body=rest)
@@ -221,7 +218,7 @@ def strip_module_docstring(module: cst.Module) -> cst.Module:
 
 def _dehash(comment: str) -> str:
     text = comment[1:]
-    return text[1:] if text.startswith(" ") else text
+    return text.removeprefix(" ")
 
 
 def looks_like_commented_out_code(comment_lines: Sequence[str]) -> bool:
@@ -430,16 +427,12 @@ def atomic_replace(path: Path, data: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         if mode is not None:
-            try:
+            with contextlib.suppress(OSError):
                 os.chmod(temporary, mode)
-            except OSError:
-                pass
         os.replace(temporary, path)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             temporary.unlink()
-        except OSError:
-            pass
         raise
 
 
@@ -450,7 +443,8 @@ def backup_path_for(path: Path) -> Path:
 def write_backup(path: Path, data: bytes, overwrite: bool) -> None:
     backup = backup_path_for(path)
     if backup.exists() and not overwrite:
-        raise FileExistsError(f"backup already exists: {backup} (use --overwrite-backup)")
+        msg = f"backup already exists: {backup} (use --overwrite-backup)"
+        raise FileExistsError(msg)
     atomic_replace(backup, data)
 
 

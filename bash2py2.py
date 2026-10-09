@@ -6,9 +6,10 @@ Usage: python bash2py.py <path-to-bash-script> Example bash script content: pyth
 if the bash script contains several python heredocs)."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 HEREDOC_START_RE = re.compile(
     r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^\n]*?)"

@@ -5,6 +5,7 @@ It should print the original file size, compare it against the new compressed si
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys

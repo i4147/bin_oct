@@ -5,10 +5,12 @@ The extraction functions should return a boolean success indicator and gracefull
 Include necessary imports (shutil, tarfile, zipfile, pathlib.Path, py7zr) to support these file operations."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
+import sys
 import tarfile
 import zipfile
-from pathlib import Path
+
 import py7zr
 
 

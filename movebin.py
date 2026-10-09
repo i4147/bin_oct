@@ -4,8 +4,9 @@ For every file moved, it should print a message showing the source and destinati
 At the end, it should print a summary stating either the total number of binary files moved or that no binary files were found."""
 
 from __future__ import annotations
-import shutil
 from pathlib import Path
+import shutil
+import sys
 
 
 def main() -> None:

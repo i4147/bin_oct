@@ -4,12 +4,14 @@ It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging,
 The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt."""
 
 from __future__ import annotations
-import re
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any
+
 from loguru import logger
+
 
 SECRET_PATTERNS: dict[str, str] = {
     "AWS Key": "AKIA[0-9A-Z]{16}",

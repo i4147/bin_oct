@@ -32,17 +32,18 @@ Mapping:
 from __future__ import annotations
 import argparse
 import ast
+from functools import partial
 import io
+from pathlib import Path
 import re
 import subprocess
 import sys
+from textwrap import fill as _fill
 import time
 import tokenize
-import unicodedata
-from functools import partial
-from pathlib import Path
-from textwrap import fill as _fill
 from typing import Any, Dict, List, Optional, Tuple
+import unicodedata
+
 
 _ANSI = {
     "red": "\x1b[31m",

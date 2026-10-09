@@ -5,15 +5,16 @@ Features: - 2500-char chunks with word-boundary preservation - Multiple translat
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 import json
+from pathlib import Path
 import signal
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Callable, Optional
+
 from loguru import logger
 
 

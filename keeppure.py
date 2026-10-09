@@ -5,10 +5,11 @@ Finally, it should read a given requirements.txt file (default path "requirement
 
 from __future__ import annotations
 import csv
-import os
-import site
 from multiprocessing import cpu_count
+import os
 from pathlib import Path
+import site
+import sys
 
 
 def get_all_dist_info_dirs():

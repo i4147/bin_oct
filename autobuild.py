@@ -3,10 +3,11 @@
 Each subdirectory containing a setup.py or pyproject.toml is treated as a package."""
 
 from __future__ import annotations
-import subprocess
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
+import sys
+
 
 NUM_WORKERS = 8
 CURRENT_DIR = Path.cwd()

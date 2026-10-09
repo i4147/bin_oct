@@ -7,10 +7,13 @@ import argparse
 from collections import defaultdict
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, TypeAlias
+
 from dh import fsz, gsz  # type: ignore[import-untyped]
 from loguru import logger
 from xxhash import xxh64  # type: ignore[import-untyped]
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

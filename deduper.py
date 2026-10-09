@@ -6,24 +6,26 @@ The script should accept command-line arguments (via argparse) to configure inpu
 from __future__ import annotations
 import argparse
 import ast
+from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
 import bz2
+from collections import defaultdict
 import gzip
 import hashlib
 import lzma
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
 import tarfile
 import tempfile
 import zipfile
-from ast import Assign, AsyncFunctionDef, ClassDef, FunctionDef
-from collections import defaultdict
-from pathlib import Path
+
 from loguru import logger
 
+
 try:
-    import tree_sitter_python
     from tree_sitter import Language, Parser
+    import tree_sitter_python
 
     TREE_SITTER_AVAILABLE = True
 except Exception:

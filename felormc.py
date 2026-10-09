@@ -17,12 +17,13 @@ Python: 3.12+"""
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass
 import logging
 import multiprocessing as mp
-import sys
-from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Final, Iterable, Iterator, Optional
+
 import libcst as cst
 from libcst import (
     BaseCompoundStatement,
@@ -36,6 +37,7 @@ from libcst import (
     TrailingWhitespace,
 )
 from loguru import logger
+
 
 DEFAULT_WORKERS: Final[int] = 8
 PRAGMA_PREFIXES: Final[tuple[str, ...]] = ("# type:", "# fmt:", "# fmt: skip", "# noqa")

@@ -33,18 +33,20 @@
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/c2MXECCpteWq9jy46jZsto"""
 
+from __future__ import annotations
 import argparse
+from collections import Counter
 import contextlib
+from dataclasses import dataclass
 import functools
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
-from collections import Counter
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Iterator, Sequence
+
 
 try:
     import tomllib
@@ -150,7 +152,8 @@ class Parser:
 
     def error(self, message: str):
         line = self.s.count("\n", 0, self.i) + 1
-        raise ParseError(f"line {line}: {message}")
+        msg = f"line {line}: {message}"
+        raise ParseError(msg)
 
     def peek(self) -> str:
         return self.s[self.i] if self.i < self.n else ""
@@ -222,7 +225,7 @@ class Parser:
         while True:
             self.skip_ws()
             c = self.peek()
-            if c == '"' or c == "'":
+            if c in {'"', "'"}:
                 parts.append(self.scan_string())
             else:
                 match = BARE_KEY_RE.match(self.s, self.i)
@@ -275,7 +278,7 @@ class Parser:
         c = self.peek()
         if c == "":
             self.error("expected a value")
-        if c == '"' or c == "'":
+        if c in {'"', "'"}:
             return Scalar(self.scan_string())
         if c == "[":
             return self.parse_array()
@@ -299,7 +302,7 @@ class Parser:
             if self.i >= self.n:
                 self.error("unterminated array")
             c = s[self.i]
-            if c == " " or c == "\t":
+            if c in {" ", "\t"}:
                 self.i += 1
             elif c == "\n":
                 self.i += 1
@@ -536,27 +539,33 @@ def format_text(text: str) -> str:
     try:
         original = tomllib.loads(text)
     except tomllib.TOMLDecodeError as exc:
-        raise FormatError(f"invalid TOML: {exc}") from None
+        msg = f"invalid TOML: {exc}"
+        raise FormatError(msg) from None
     parser = Parser(text)
     try:
         items = parser.parse()
     except ParseError as exc:
-        raise FormatError(f"unsupported syntax: {exc}") from None
+        msg = f"unsupported syntax: {exc}"
+        raise FormatError(msg) from None
     output = render(items)
     try:
         reparsed = tomllib.loads(output)
     except tomllib.TOMLDecodeError as exc:
-        raise FormatError(f"formatter produced invalid TOML, file left untouched: {exc}") from None
+        msg = f"formatter produced invalid TOML, file left untouched: {exc}"
+        raise FormatError(msg) from None
     if not same_data(original, reparsed):
-        raise FormatError("formatter would change the data, file left untouched")
+        msg = "formatter would change the data, file left untouched"
+        raise FormatError(msg)
 
     checker = Parser(output)
     try:
         checker.parse()
     except ParseError as exc:
-        raise FormatError(f"formatter output is not re-parseable: {exc}") from None
+        msg = f"formatter output is not re-parseable: {exc}"
+        raise FormatError(msg) from None
     if Counter(parser.comments) != Counter(checker.comments):
-        raise FormatError("formatter would lose or alter comments, file left untouched")
+        msg = "formatter would lose or alter comments, file left untouched"
+        raise FormatError(msg)
     return output
 
 

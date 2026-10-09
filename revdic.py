@@ -5,8 +5,11 @@ After successfully writing the file, it should print "done" to indicate completi
 
 from __future__ import annotations
 import json
+from pathlib import Path
 import sys
+
 from dh import reverse_dict
+
 
 if __name__ == "__main__":
     fn = sys.argv[1]

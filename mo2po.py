@@ -6,9 +6,9 @@ The script should support a verbose flag for detailed progress messages and hand
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def check_msgunfmt() -> bool:

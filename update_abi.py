@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def update_setup_files() -> None:

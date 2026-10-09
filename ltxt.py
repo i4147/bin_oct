@@ -7,9 +7,12 @@ import argparse
 from collections import Counter
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, TypeAlias
+
 from dh import BIN_EXT  # type: ignore[import-untyped]
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

@@ -9,14 +9,16 @@ from __future__ import annotations
 import argparse
 import asyncio
 import mmap
+from multiprocessing import Pool
+from pathlib import Path
 import shutil
 import sys
 import tarfile
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final
-import lz4.frame
+
 from loguru import logger
+import lz4.frame
+
 
 MAX_WORKERS: Final[int] = 8
 CHUNK_SIZE: Final[int] = 524288

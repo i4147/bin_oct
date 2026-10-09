@@ -7,7 +7,10 @@ from __future__ import annotations
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import sys
+
 from lingua import LanguageDetectorBuilder
+
 
 BATCH_SIZE = 8
 _detector = None

@@ -6,10 +6,10 @@ The script should track per-file results (path, replacement count, success/error
 
 from __future__ import annotations
 import argparse
-import re
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import NamedTuple
 
 

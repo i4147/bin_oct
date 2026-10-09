@@ -4,13 +4,13 @@ Merges the following original scripts into one CLI: dirinfo.py -> info dirinfo2.
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import contextlib
 import math
 import os
+from pathlib import Path
 import shutil
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
 
 

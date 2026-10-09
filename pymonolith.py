@@ -7,13 +7,15 @@ Third-party dependencies (already required by the originals): * requests * beaut
 from __future__ import annotations
 import argparse
 import base64
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urlparse
-import requests
+
 from bs4 import BeautifulSoup
+import requests
+
 
 DEFAULT_MIME_TYPES: dict[str, str] = {
     ".css": "text/css",

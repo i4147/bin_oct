@@ -5,8 +5,10 @@ The script must preserve the first-seen order of packages while removing duplica
 
 from __future__ import annotations
 import argparse
-import re
 from pathlib import Path
+import re
+import sys
+
 
 PKG_NAME_RE = re.compile(
     r"""

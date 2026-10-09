@@ -4,15 +4,16 @@ It should support recursive directory scanning, multiprocessing for parallel fil
 The script should accept command-line arguments (via argparse) to configure input paths, output format, and processing options, and output results in a human-readable format for developers to clean up unused imports in their codebase."""
 
 from __future__ import annotations
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import ast
+from dataclasses import dataclass, field
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import tarfile
 import zipfile
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
-from dataclasses import dataclass, field
-from multiprocessing import Pool
-from pathlib import Path
+
 
 try:
     import zstandard as zstd

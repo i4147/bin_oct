@@ -5,8 +5,11 @@ It should accept input via argparse (e.g., file path and an autofix option), tra
 
 from __future__ import annotations
 import argparse
-import re
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
+import re
+import sys
+
 from spellchecker import SpellChecker
 
 

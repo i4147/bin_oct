@@ -4,11 +4,13 @@ It should accept HTML file paths as command-line arguments, or if none are given
 The script should process files in parallel (via the `mpf` helper), print colored status messages (using `cprint`) indicating how many styles were found per file and confirming each CSS file's creation, and skip saving empty or trivially short style contents."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 from bs4 import BeautifulSoup
 from dh import cprint, get_files, get_random_filename, mpf
+
 
 if TYPE_CHECKING:
     from bs4.element import PageElement

@@ -6,17 +6,19 @@ Third-party dependencies (only these are needed at runtime): pip install deep-tr
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
+from multiprocessing import Pool
+from pathlib import Path
 import re
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm
+
 
 FARSI_RE: re.Pattern[str] = re.compile(r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
 TOFA_MARKERS: tuple[str, ...] = (

@@ -6,9 +6,11 @@ Original -> merged mapping -------------------------- remove_tag.py -> python ht
 from __future__ import annotations
 import argparse
 import logging
-import re
 from pathlib import Path
+import re
+import sys
 from typing import Iterable, Optional, Sequence
+
 
 try:
     from bs4 import BeautifulSoup  # type: ignore[import-untyped]

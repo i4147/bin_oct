@@ -5,11 +5,11 @@ The script should use argparse to accept configurable input parameters (such as 
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
 
 
 def is_empty_wheel(wheel_path: Path) -> bool:

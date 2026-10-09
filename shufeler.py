@@ -6,10 +6,11 @@ The script should accept an input file path and an output file path via argparse
 from __future__ import annotations
 import argparse
 import mmap
+from pathlib import Path
 import random
 import secrets
 import sys
-from pathlib import Path
+
 
 MMAP_THRESHOLD_BYTES = 1 * 1024 * 1024
 

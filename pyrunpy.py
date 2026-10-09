@@ -6,14 +6,16 @@ Example ------- :: python runner.py ./scripts --timeout 30 --verbose"""
 
 from __future__ import annotations
 import argparse
-import subprocess
-import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
+import sys
 from typing import TYPE_CHECKING, Final
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from multiprocessing.pool import AsyncResult

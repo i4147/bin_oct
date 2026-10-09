@@ -9,20 +9,21 @@ Original scripts merged here: fix_ext.py fix_extension_mismatch_Version1.py fix_
 from __future__ import annotations
 import argparse
 import concurrent.futures
+from dataclasses import dataclass
+from io import StringIO
 import logging
 import mimetypes
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tokenize
-import zipfile
-from dataclasses import dataclass
-from io import StringIO
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+import zipfile
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

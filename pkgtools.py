@@ -11,11 +11,12 @@ import fnmatch
 import importlib.metadata
 import logging
 import os
+from pathlib import Path
 import shutil
 import site
 import sys
-from pathlib import Path
 from typing import Any, Sequence
+
 
 logger = logging.getLogger("pkgtool")
 

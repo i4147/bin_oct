@@ -5,8 +5,9 @@ For each file, skip it if it doesn't exist, is empty, or has only one line; othe
 Process a single file directly, or use a multiprocessing helper `mpf` to format multiple files in parallel, relying on utility functions imported from a local `dh` module."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import get_files, mpf, runcmd
 
 

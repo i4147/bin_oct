@@ -9,13 +9,15 @@ The generated script should: - Recursively discover .ipynb files from CLI-provid
 - Include complete type annotations, docstrings on all functions, and this module-level docstring."""
 
 from __future__ import annotations
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-import nbformat
+
 from loguru import logger
+import nbformat
 from nbformat import NotebookNode
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

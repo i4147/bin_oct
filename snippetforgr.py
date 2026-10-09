@@ -7,13 +7,14 @@ Original script -> Merged command ------------------------ ---------------------
 
 from __future__ import annotations
 import argparse
-import json
-import re
-import sys
 from dataclasses import dataclass
+import json
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Iterable, Iterator, Sequence
+
 
 SOURCE_CODE_EXTS: frozenset[str] = frozenset({
     ".py",

@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
 import argparse
 import ast as ast_module
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import Sequence
+
 
 try:
     import libcst as cst
@@ -125,7 +125,8 @@ def _looks_like_python(path: Path) -> bool:
 
 def strip_comments_libcst(source: str, options: argparse.Namespace) -> str:
     if not HAS_LIBCST:
-        raise ImportError("libcst is required for this backend. Install with: pip install libcst")
+        msg = "libcst is required for this backend. Install with: pip install libcst"
+        raise ImportError(msg)
 
     class CommentRemover(cst.CSTTransformer):
         METADATA_DEPENDENCIES = (ParentNodeProvider,)
@@ -139,9 +140,8 @@ def strip_comments_libcst(source: str, options: argparse.Namespace) -> str:
             comment_text = original_node.value
             if comment_text.startswith(SHEBANG_PREFIX):
                 return updated_node
-            if not self.options.all:
-                if any(comment_text.startswith(p) for p in PRESERVED_COMMENTS):
-                    return updated_node
+            if not self.options.all and any(comment_text.startswith(p) for p in PRESERVED_COMMENTS):
+                return updated_node
             if self.options.all or self.options.comments:
                 return cst.RemoveFromParent()
             if self.options.docstring or self.options.type:
@@ -295,7 +295,8 @@ def strip_comments_ast(source: str, options: argparse.Namespace) -> str:
 
 def strip_comments_tree_sitter(source: str, options: argparse.Namespace) -> str:
     if not HAS_TREE_SITTER:
-        raise ImportError("tree-sitter is required for this backend. Install with: pip install tree-sitter")
+        msg = "tree-sitter is required for this backend. Install with: pip install tree-sitter"
+        raise ImportError(msg)
     logger.warning("tree-sitter backend is experimental; falling back to ast")
     return strip_comments_ast(source, options)
 
@@ -320,7 +321,8 @@ def process_file(file_path: Path, options: argparse.Namespace) -> tuple[Path, bo
         elif options.backend == "ast":
             result = strip_comments_ast(source, options)
         else:
-            raise ValueError(f"Unsupported backend: {options.backend}")
+            msg = f"Unsupported backend: {options.backend}"
+            raise ValueError(msg)
         if not validate_python_code(result):
             logger.error(f"Validation failed for: {file_path}")
             return (file_path, False, "Validation failed")

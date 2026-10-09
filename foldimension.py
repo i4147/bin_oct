@@ -4,10 +4,11 @@ It should then organize the images into subfolders named after their resolution 
 The script should gracefully handle missing Pillow by printing an install instruction and exiting, and should print warnings for files that fail to open as images rather than crashing."""
 
 from __future__ import annotations
-import shutil
-import sys
 from collections import defaultdict
 from pathlib import Path
+import shutil
+import sys
+
 
 try:
     from PIL import Image

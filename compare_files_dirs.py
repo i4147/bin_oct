@@ -16,15 +16,17 @@ Optional third-party package:
     dh (for cprint). If unavailable, a plain print fallback is used.
 """
 
+from __future__ import annotations
 import argparse
 import difflib
 import filecmp
 import hashlib
 import os
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
+
 
 try:
     from dh import cprint
@@ -46,8 +48,8 @@ def _sha256_file(path: Path, chunk_size: int = 65536) -> str:
     return h.hexdigest()
 
 
-def _dir_hashes(root: Path, chunk_size: int) -> Dict[str, str]:
-    result: Dict[str, str] = {}
+def _dir_hashes(root: Path, chunk_size: int) -> dict[str, str]:
+    result: dict[str, str] = {}
     for v in root.rglob("*"):
         if v.is_file():
             z = v.relative_to(root)
@@ -55,7 +57,7 @@ def _dir_hashes(root: Path, chunk_size: int) -> Dict[str, str]:
     return result
 
 
-def _read_lines_udiffer(path: str, encoding: Optional[str] = None) -> List[str]:
+def _read_lines_udiffer(path: str, encoding: Optional[str] = None) -> list[str]:
     if encoding:
         with open(path, encoding=encoding) as f:
             return f.readlines()
@@ -113,8 +115,8 @@ def cmd_compare_move(args: argparse.Namespace) -> int:
             print("Operation cancelled.")
             return 0
     j = 0
-    d: List[str] = []
-    b: List[str] = []
+    d: list[str] = []
+    b: list[str] = []
     for u in sorted(c):
         k = A / u
         s = o / u
@@ -195,13 +197,13 @@ def cmd_compare_dirz(args: argparse.Namespace) -> int:
     u = Path(args.dir2)
     w = _dir_hashes(t, args.hash_chunk_size)
     x = _dir_hashes(u, args.hash_chunk_size)
-    m: List[str] = []
-    o: List[str] = []
-    c: List[str] = []
+    m: list[str] = []
+    o: list[str] = []
+    c: list[str] = []
     for l, B in w.items():
         if l not in x:
             c.append(l)
-        elif B == x[l]:
+        elif x[l] == B:
             o.append(l)
         else:
             m.append(l)
@@ -232,8 +234,8 @@ def cmd_pdif(args: argparse.Namespace) -> int:
         return 1
     f = [l.rstrip("\n") for l in f]
     g = [l.rstrip("\n") for l in g]
-    c: List[int] = []
-    d: List[int] = []
+    c: list[int] = []
+    d: list[int] = []
     b = 0
     for i, l in enumerate(f):
         if l not in g:
@@ -264,8 +266,8 @@ def cmd_pycommon(args: argparse.Namespace) -> int:
         return 1
     with g.open("r", encoding=args.encoding) as m:
         f = {j.strip("\n") for j in m}
-    e: List[str] = []
-    k: Set[str] = set()
+    e: list[str] = []
+    k: set[str] = set()
     with h.open("r", encoding=args.encoding) as n:
         for j in n:
             b = j.strip("\n")
@@ -298,7 +300,7 @@ def cmd_udiffer(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Merged file utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
 

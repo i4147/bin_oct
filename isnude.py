@@ -4,11 +4,13 @@ For each detected image, it should load it with OpenCV to check its dimensions, 
 The script should process files concurrently using a multiprocessing/multithreading helper (mpf) and rely on shared utility functions (cprint, get_files, mpf) imported from a local "dh" module."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 import cv2
-import nude
 from dh import cprint, get_files, mpf
+import nude
+
 
 nude_path = Path("nude")
 nude_path.mkdir(exist_ok=True)

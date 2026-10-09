@@ -5,9 +5,12 @@ Files where no episode number can be extracted should be skipped from renaming."
 
 from __future__ import annotations
 import argparse
-import re
 from pathlib import Path
+import re
+import sys
+
 from dh import colored
+
 
 VIDEO_EXTS = {".srt"}
 LEADING_JUNK = re.compile(r"^\s*[\d\s\.-]{6,}", re.IGNORECASE)

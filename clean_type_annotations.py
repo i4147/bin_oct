@@ -10,11 +10,13 @@ import contextlib
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import tokenize
-from pathlib import Path
 from typing import TYPE_CHECKING
+
 import libcst as cst
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

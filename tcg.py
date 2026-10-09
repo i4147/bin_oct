@@ -5,10 +5,11 @@ It should place the resulting file into the correct script directory (such as ~/
 Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+
 
 TERMUX_SHEBANGS = {
     "python": "#!/data/data/com.termux/files/usr/bin/python",

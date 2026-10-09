@@ -22,10 +22,13 @@ The purpose of the script is to help developers audit a codebase for stray non-E
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/Pdbgp2LCf3zySUK9VnQi8k"""
 
-from pathlib import Path
+from __future__ import annotations
 import math
+from pathlib import Path
 import sys
+
 import py3langid as langid
+
 
 ROOT = Path.cwd()
 SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}

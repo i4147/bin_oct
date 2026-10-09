@@ -7,8 +7,10 @@ For date-stamped versions (``X.Y.Z-YYYYMMDD``), keep only the newest date per pa
 
 from __future__ import annotations
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 
 WHL_DIRECTORY = Path()
 WHL_PATTERN = re.compile(

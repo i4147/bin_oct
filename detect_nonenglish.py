@@ -5,14 +5,15 @@ Usage ----- python detect_nonenglish.py --backend <name> [options] <path> [<path
 
 from __future__ import annotations
 import argparse
-import json
-import sys
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+import json
 from pathlib import Path
+import sys
 from typing import Optional, Sequence
+
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset({
     ".txt",

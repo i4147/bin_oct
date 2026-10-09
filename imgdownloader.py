@@ -1,11 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import io
 import os
+from pathlib import Path
 import re
 import sys
 import urllib.parse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 # Optional imports for backends with graceful fallback handling
 try:
@@ -47,7 +50,8 @@ def validSize(size):
     if valid:
         dimensions = re.findall(r"[0-9]+", size)
         return dimensions
-    raise argparse.ArgumentTypeError("Custom size must be in 'WIDTH*HEIGHT' format (e.g. 1920*1080).")
+    msg = "Custom size must be in 'WIDTH*HEIGHT' format (e.g. 1920*1080)."
+    raise argparse.ArgumentTypeError(msg)
 
 
 def getParams(sysArgs):
@@ -249,17 +253,16 @@ def getParamValue(k, v, imgQuery):
             return typeSwitcher.get(v, "")
         else:
             return v
+    elif k == "limit":
+        return 3
+    elif k == "outputDir":
+        # Default directory created in current working directory based on query
+        safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
+        return os.path.join(os.getcwd(), safe_folder)
+    elif k == "SafeSearch":
+        return "images"
     else:
-        if k == "limit":
-            return 3
-        elif k == "outputDir":
-            # Default directory created in current working directory based on query
-            safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
-            return os.path.join(os.getcwd(), safe_folder)
-        elif k == "SafeSearch":
-            return "images"
-        else:
-            return ""
+        return ""
 
 
 def getSearchUrl(params):
@@ -369,7 +372,8 @@ def getImageUrls(params, url):
 def download_with_requests(url, timeout=10, headers=None):
     """Download implementation using the 'requests' package."""
     if requests is None:
-        raise ImportError("The 'requests' library is not installed (`pip install requests`).")
+        msg = "The 'requests' library is not installed (`pip install requests`)."
+        raise ImportError(msg)
     resp = requests.get(url, headers=headers, timeout=timeout)
     resp.raise_for_status()
     content_type = resp.headers.get("content-type", "")
@@ -379,7 +383,8 @@ def download_with_requests(url, timeout=10, headers=None):
 def download_with_httpx(url, timeout=10, headers=None):
     """Download implementation using the 'httpx' package."""
     if httpx is None:
-        raise ImportError("The 'httpx' library is not installed (`pip install httpx`).")
+        msg = "The 'httpx' library is not installed (`pip install httpx`)."
+        raise ImportError(msg)
     with httpx.Client(follow_redirects=True, timeout=timeout) as client:
         resp = client.get(url, headers=headers)
         resp.raise_for_status()
@@ -390,7 +395,8 @@ def download_with_httpx(url, timeout=10, headers=None):
 def download_with_pycurl(url, timeout=10, headers=None):
     """Download implementation using the 'pycurl' libcurl bindings."""
     if pycurl is None:
-        raise ImportError("The 'pycurl' library is not installed (`pip install pycurl`).")
+        msg = "The 'pycurl' library is not installed (`pip install pycurl`)."
+        raise ImportError(msg)
 
     buffer = io.BytesIO()
     header_buffer = io.BytesIO()
@@ -409,7 +415,8 @@ def download_with_pycurl(url, timeout=10, headers=None):
     c.close()
 
     if status_code != 200:
-        raise Exception(f"HTTP Status Code {status_code}")
+        msg = f"HTTP Status Code {status_code}"
+        raise Exception(msg)
 
     # Extract Content-Type header from response
     header_text = header_buffer.getvalue().decode("iso-8859-1", errors="ignore")
@@ -455,7 +462,8 @@ def single_download_worker(index, url, backend, output_dir, headers):
         elif backend == "pycurl":
             file_content, content_type = download_with_pycurl(url, headers=headers)
         else:
-            raise ValueError(f"Unknown backend requested: {backend}")
+            msg = f"Unknown backend requested: {backend}"
+            raise ValueError(msg)
 
         ext = get_extension_from_content_type(content_type)
         filename = f"image_{index:03d}{ext}"

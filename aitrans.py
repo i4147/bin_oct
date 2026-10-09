@@ -34,11 +34,13 @@ Describe the following requirements clearly:
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/TtrvfNQ4bP5X464G8XXBLr"""
 
-import os
-import sys
-import glob
+from __future__ import annotations
 import argparse
+import glob
+import os
 from pathlib import Path
+import sys
+
 
 try:
     from openai import OpenAI
@@ -124,7 +126,8 @@ class UniversalTranslator:
             except Exception as e:
                 print(f"❌ Gemini translation error: {e}", file=sys.stderr)
 
-        raise RuntimeError("No operational translation client or fallback API routes available.")
+        msg = "No operational translation client or fallback API routes available."
+        raise RuntimeError(msg)
 
 
 def process_file(file_path, translator, target_lang):

@@ -12,16 +12,18 @@ Requirements: - Use argparse to accept zero or more directory paths (default: cu
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass
 import json
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Final
-import ffmpeg  # type: ignore[import-untyped]
+
 from dh import fsz
+import ffmpeg  # type: ignore[import-untyped]
 from loguru import logger
+
 
 NUM_WORKERS: Final[int] = 8
 MIN_BITRATE_KBPS: Final[int] = 8

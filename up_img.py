@@ -29,21 +29,24 @@ A command-line image-upload helper that takes an image from a file path, the sys
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/EML4UYv7jbxTG3riWa9Jv9"""
 
+from __future__ import annotations
 import argparse
+from collections import namedtuple
+from datetime import datetime
+from io import BytesIO
 import os
-import sys
+from pathlib import Path
 import pickle
 import platform
 import subprocess
-from datetime import datetime
-from collections import namedtuple
-from io import BytesIO
+import sys
 from traceback import print_exc
 from urllib.parse import urljoin
 
 from PIL import Image, ImageGrab
 from pyperclip import copy as copy2clipboard
 import upyun
+
 
 SYSTEM = platform.system()
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".upimg_config.pkl")
@@ -131,7 +134,7 @@ def set_config():
     for field, default in zip(CONFIG_FIELDS, CONFIG_DEFAULTS):
         display_default = f" [{default}]" if default else ""
         value = input(f"{field.replace('_', ' ')}{display_default}: ").strip()
-        args[field] = value if value else default
+        args[field] = value or default
 
     with open(CONFIG_PATH, "wb") as fp:
         pickle.dump(ConfigTuple(**args), fp)
@@ -139,6 +142,7 @@ def set_config():
     if SYSTEM == "Windows":
         try:
             import winreg
+
             import pythoncom
             from win32com.shell import shell
 

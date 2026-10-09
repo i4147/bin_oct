@@ -5,8 +5,8 @@ If a file with the same name already exists in the destination folder, it must n
 The file path should be accessed via sys.argv and handled using pathlib.Path."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 
 
 def process_file(path) -> None:

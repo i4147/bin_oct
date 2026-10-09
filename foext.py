@@ -4,8 +4,9 @@ It should iterate over all entries in the current directory, skip anything that 
 The script should run as a standalone executable module via a main() function invoked through the standard __main__ guard."""
 
 from __future__ import annotations
-import shutil
 from pathlib import Path
+import shutil
+import sys
 
 
 def main() -> None:

@@ -17,9 +17,10 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 WORKERS: int = 6
 FILE_SENTINEL = re.compile(r"^#\s*File:\s*(.+?)\s*$")

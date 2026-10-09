@@ -4,16 +4,17 @@ Merges the behaviors of the following scripts into one CLI: bightml.py -> python
 
 from __future__ import annotations
 import argparse
-import json
-import logging
-import shutil
-import subprocess
-import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import partial
+import json
+import logging
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 from typing import TYPE_CHECKING, Optional
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
@@ -148,8 +149,8 @@ class HtmlTagFormatter:
 
     def __init__(self) -> None:
         try:
-            import tree_sitter_html as ts_html
             from tree_sitter import Language, Parser
+            import tree_sitter_html as ts_html
         except ImportError as exc:
             msg = "Required packages not installed. Install with: pip install tree-sitter tree-sitter-html"
             raise RuntimeError(msg) from exc

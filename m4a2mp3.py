@@ -5,9 +5,10 @@ After conversion it should print the input and output file sizes in MB along wit
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+
 from dh import runcmd
 
 

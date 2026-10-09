@@ -4,12 +4,13 @@ The script should locate safe byte-offset split points (avoiding breaking inside
 It should handle command-line input/output file paths, use a custom HTMLParser subclass to track parsing state, and rely on temporary files for intermediate processing."""
 
 from __future__ import annotations
+from html.parser import HTMLParser
 import multiprocessing as mp
 import os
-import sys
-from html.parser import HTMLParser
 from pathlib import Path
+import sys
 from tempfile import NamedTemporaryFile
+
 
 SKIP_CONTENT_TAGS = {"script", "style", "noscript", "template", "head"}
 BLOCK_TAGS = {

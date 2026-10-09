@@ -7,6 +7,8 @@ Finally, it should print a confirmation message showing the name of the created 
 from __future__ import annotations
 import ast
 from pathlib import Path
+import sys
+
 from dh import get_files, mpf, unique_path
 
 

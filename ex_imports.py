@@ -5,9 +5,12 @@ Finally, it should print "done." after writing the file."""
 
 from __future__ import annotations
 from pathlib import Path
-import tree_sitter_python as tsp
+import sys
+
 from dh import get_files, mpf, unique_path
 from tree_sitter import Language, Parser
+import tree_sitter_python as tsp
+
 
 OUTPUT_DIR = Path.home() / "tmp" / "output"
 parser = Parser()

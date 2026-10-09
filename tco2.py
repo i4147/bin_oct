@@ -7,17 +7,18 @@ No offline model is loaded; offline-style operation requires a LibreTranslate se
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import importlib
 import json
 import os
+from pathlib import Path
 import platform
 import sys
 import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable
+
 
 try:
     from loguru import logger
@@ -143,19 +144,6 @@ def _language(backend: str, code: str) -> str:
         )
         return code
     return mapped
-
-
-def _require_python_and_platform() -> None:
-    if sys.version_info[:2] != (3, 12):
-        msg = f"Python 3.12 is required; detected {platform.python_version()}"
-        raise SystemExit(msg)
-    machine = platform.machine().casefold()
-    if machine not in {"armv8l", "armv7l", "armv7"}:
-        msg = f"This script targets 32-bit ARM Termux; detected architecture '{machine}'"
-        raise SystemExit(msg)
-    if sys.maxsize > 2**32:
-        msg = "This script requires a 32-bit Python process"
-        raise SystemExit(msg)
 
 
 def _import(name: str):
@@ -687,7 +675,6 @@ def _run(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    _require_python_and_platform()
     _configure_logging()
     args = _parse_args()
     return _run(args)

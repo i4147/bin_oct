@@ -18,14 +18,15 @@ python renametools.py pnr -t "chapter" --recursive ./books Optional third-party 
 from __future__ import annotations
 import argparse
 import ast
-import logging
-import os
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+import logging
+import os
 from pathlib import Path
+import re
+import sys
 from typing import Iterator, Optional, Sequence
+
 
 log = logging.getLogger("renametools")
 

@@ -6,9 +6,12 @@ from __future__ import annotations
 import argparse
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Any, Final, TypeAlias
-import requests
+
 from loguru import logger
+import requests
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

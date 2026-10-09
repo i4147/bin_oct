@@ -5,8 +5,13 @@ It should skip the rename if a file with the target name already exists, print a
 
 from __future__ import annotations
 import os
-from os.path import dirname as dirn, isfile as isf, join as jn
+from os.path import (
+    dirname as dirn,
+    isfile as isf,
+    join as jn,
+)
 from pathlib import Path
+import sys
 
 
 class DirectoryWalker:

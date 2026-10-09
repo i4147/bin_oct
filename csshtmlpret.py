@@ -4,16 +4,17 @@ It should use BeautifulSoup for HTML parsing, support multiprocessing for scanni
 The script should print a summary of findings, including timing information from start to finish, and gracefully handle the case where BeautifulSoup4 is not installed by printing an installation hint."""
 
 from __future__ import annotations
-import itertools
-import os
-import re
-import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime
+import itertools
 from multiprocessing import get_context
+import os
 from pathlib import Path
+import re
 from subprocess import getoutput
+import sys
 from time import sleep
+
 
 try:
     from bs4 import BeautifulSoup

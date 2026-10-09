@@ -7,7 +7,9 @@ from __future__ import annotations
 import argparse
 import codecs
 from pathlib import Path
+import sys
 from typing import Iterator, Optional
+
 
 BOMS: tuple[tuple[bytes, str], ...] = (
     (codecs.BOM_UTF8, "utf-8"),

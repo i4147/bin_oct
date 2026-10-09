@@ -3,8 +3,9 @@
 Defaults to 'list.txt' if no argument is provided, and deletes the list file afterward."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 DEFAULT_LIST = "list.txt"
 

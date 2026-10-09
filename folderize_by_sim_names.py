@@ -5,10 +5,11 @@ The script must exclude itself from the collected Lua files when scanning."""
 
 from __future__ import annotations
 import argparse
-import re
-import shutil
 from collections import defaultdict
 from pathlib import Path
+import re
+import shutil
+import sys
 
 
 def normalize_name(path: Path) -> str:

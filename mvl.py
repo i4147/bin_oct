@@ -4,6 +4,7 @@ It should accept four arguments: the source file path, the start line number, th
 The script should handle file-not-found and other exceptions gracefully by printing an error message, print a success confirmation message when the move completes, and print a usage message if the wrong number of command-line arguments is provided."""
 
 from __future__ import annotations
+from pathlib import Path
 import sys
 
 

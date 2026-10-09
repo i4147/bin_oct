@@ -8,6 +8,7 @@ import argparse
 import ast
 import multiprocessing as mp
 from pathlib import Path
+import sys
 
 
 def find_docstring_lines(source_bytes: bytes) -> set[int]:

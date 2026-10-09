@@ -1,26 +1,24 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a Python command-line tool that recursively scans a directory tree—including inside nested archive files (tar, zip, gz, xz, bz2, zst, whl, 7z, etc.)—to extract and collect all HTTP/HTTPS URLs found in text content, skipping excluded directories like .git and __pycache__ and enforcing a configurable maximum file size (default 15MB) to avoid scanning huge files.
-It should decode byte content using multiple fallback encodings (utf-8, latin-1, utf-16), apply a regex to detect URLs while stripping trailing punctuation, and optionally filter by file extension.
-Found URLs should be validated and categorized (e.g., git links vs.
-general repo links) and appended into separate output files (gitlinks.txt and repos.txt) using a helper module (dh) providing append_text and is_valid_url functions.
-The script should support command-line arguments (via argparse) to configure the scan path, size limits, and other options, and must handle archive extraction safely using temporary directories."""
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import argparse
 import contextlib
 import io
 import os
+from pathlib import Path
 import re
 import sys
 import tarfile
-import tempfile
-import zipfile
-from pathlib import Path
 from tarfile import TarFile
+import tempfile
 from urllib.parse import urlparse
+import zipfile
 from zipfile import ZipFile
-import zstd
-from dh import append_text, is_valid_url
+
+
+if sys.version_info >= (3, 14):
+    from compression import zstd
+else:
+    import zstandard as zstd
 
 DEFAULT_MAX_MB = 15
 EXCLUDE_DIRS = {".git", "__pycache__"}
@@ -45,11 +43,48 @@ ARCHIVE_SUFFIXES = (
     ".7z",
     ".tar.7z",
     ".tar.br",
-    ".tar.7z",
     ".t7z",
     ".tbz",
-    "tzz",
+    ".tzz",
 )
+
+
+def append_text(path, text):
+    path = Path(path)
+    existing = set()
+    if path.exists():
+        try:
+            existing = set(path.read_text(encoding="utf-8").splitlines())
+        except Exception:
+            existing = set()
+    new_lines = [line for line in text.splitlines() if line and line not in existing]
+    if not new_lines:
+        return
+    with path.open("a", encoding="utf-8") as f:
+        for line in new_lines:
+            f.write(line + "\n")
+
+
+def is_valid_url(url: str) -> bool:
+    if not url or not isinstance(url, str):
+        return False
+    url = url.strip()
+    if not url:
+        return False
+    if any(c in url for c in " \t\n\r\"'<>"):
+        return False
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+    if parsed.scheme not in ("http", "https"):
+        return False
+    if not parsed.netloc:
+        return False
+    host = parsed.hostname
+    if not host:
+        return False
+    return not ("." not in host and host != "localhost")
 
 
 def should_skip_dir(dirname: str) -> bool:
@@ -183,9 +218,6 @@ def process_bytes_as_archive(b, name, max_bytes, exts, found, recursion_depth: i
                 found.update(scan_bytes_for_urls(b, max_bytes, exts, name_hint=name))
             return
         if lname.endswith(".tar.zst"):
-            if zstd is None:
-                found.update(scan_bytes_for_urls(b, max_bytes, exts, name_hint=name))
-                return
             try:
                 dctx = zstd.ZstdDecompressor()
                 with (
@@ -255,15 +287,14 @@ def process_path(path: str, max_bytes: int, exts, found, recursion_limit=999) ->
             except (tarfile.ReadError, EOFError):
                 pass
         if lname.endswith(".tar.zst"):
-            if zstd is None:
+            tf, tmpf = open_tar_from_zst_path(path)
+            if tf is None:
                 try:
-                    b = p.read_bytes()[: max_bytes + 1]
+                    with p.open("rb") as f:
+                        b = f.read(max_bytes + 1)
                     found.update(scan_bytes_for_urls(b, max_bytes, exts, name_hint=path))
                 except Exception:
                     pass
-                return
-            tf, tmpf = open_tar_from_zst_path(path)
-            if tf is None:
                 return
             try:
                 process_tarfile_obj(tf, max_bytes, exts, found, 0, recursion_limit)
@@ -273,14 +304,9 @@ def process_path(path: str, max_bytes: int, exts, found, recursion_limit=999) ->
                 with contextlib.suppress(Exception):
                     tmpf.close()
             return
-        b = p.read_bytes()[: max_bytes + 1]
-        found.update(scan_bytes_for_urls(b, max_bytes, exts, found=found, name_hint=path))
-    except TypeError:
-        try:
-            b = p.read_bytes()[: max_bytes + 1]
-            found.update(scan_bytes_for_urls(b, max_bytes, exts, name_hint=path))
-        except Exception:
-            return
+        with p.open("rb") as f:
+            b = f.read(max_bytes + 1)
+        found.update(scan_bytes_for_urls(b, max_bytes, exts, name_hint=path))
     except Exception:
         return
 
@@ -289,7 +315,7 @@ def is_github_url(url):
     try:
         result = urlparse(url)
         return "github.com" in result.netloc
-    except:
+    except Exception:
         return False
 
 
@@ -375,7 +401,6 @@ def main() -> None:
                     if is_valid_url(u):
                         out.write(u + "\n")
         print(f"Wrote {len(sorted_urls)} unique URLs to {args.output}")
-        any(p.endswith(".tar.zst") for p in sorted_urls)
     except OSError as e:
         print(f"Error writing output file: {e}", file=sys.stderr)
 

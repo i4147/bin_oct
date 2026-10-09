@@ -7,10 +7,13 @@ from __future__ import annotations
 import argparse
 import io
 import os
+from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
+
 from cairosvg import svg2png
 from PIL import Image
+
 
 if TYPE_CHECKING:
     from PIL.ImageFile import ImageFile

@@ -5,6 +5,7 @@ The script should then overwrite the history file with the deduplicated lines an
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 
 def main() -> None:

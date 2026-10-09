@@ -4,11 +4,13 @@ It should run these operations concurrently across multiple files using a proces
 The script takes a target directory (or files) as input via command-line arguments and produces console output summarizing successes and problems, using a lock to keep printed output from interleaving across worker processes."""
 
 from __future__ import annotations
-import sys
 from multiprocessing import Lock, Pool
 from pathlib import Path
+import sys
+
 from dh import runcmd
 from fastwalk import walk_files
+
 
 MAX_WORKERS = 8
 print_lock = Lock()

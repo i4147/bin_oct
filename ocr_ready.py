@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 import multiprocessing
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Union
+
+from loguru import logger
 import numpy as np
 import pytesseract
-from loguru import logger
+
 
 try:
     import cv2

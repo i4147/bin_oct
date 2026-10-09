@@ -5,13 +5,14 @@ Originals -> this script ------------------------ gdrive_downloader.py -> python
 
 from __future__ import annotations
 import argparse
+from datetime import datetime
 import os
+from pathlib import Path
 import pickle
 import sys
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import urlencode
+
 
 try:
     from dotenv import load_dotenv  # type: ignore
@@ -21,13 +22,14 @@ except ImportError:
         return False
 
 
-import requests
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
+import requests
+
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 FOLDER_MIME = "application/vnd.google-apps.folder"

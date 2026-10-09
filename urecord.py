@@ -6,8 +6,8 @@ It should accept command-line arguments via argparse and support running against
 from __future__ import annotations
 import argparse
 import csv
-import sys
 from pathlib import Path
+import sys
 
 
 def find_site_packages() -> list[str]:

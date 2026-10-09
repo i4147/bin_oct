@@ -5,9 +5,10 @@ If the hashes match, it should print messages indicating the target exists and t
 If the destination does not exist or the hashes differ, the script should rename/move the source file into the destination directory."""
 
 from __future__ import annotations
-import sys
 from hashlib import sha256
 from pathlib import Path
+import sys
+
 
 CHUNK_SIZE = 32768
 dest = Path.home() / "sbin"

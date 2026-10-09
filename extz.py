@@ -5,12 +5,13 @@ Recursively scan current directory, report extension statistics with terminal-wi
 column formatting. Optionally show total size per extension instead of example files.
 """
 
-from pathlib import Path
+from __future__ import annotations
+import argparse
 from collections import defaultdict
-from typing import Dict, List, Tuple, Optional
+from pathlib import Path
 import shutil
 import sys
-import argparse
+from typing import Dict, List, Optional, Tuple
 
 
 class Colors:
@@ -64,14 +65,11 @@ def format_size(bytes_val: int) -> str:
 def should_skip(path: Path) -> bool:
     if path.is_symlink():
         return True
-    for part in path.parts:
-        if part in SKIP_DIRS:
-            return True
-    return False
+    return any(part in SKIP_DIRS for part in path.parts)
 
 
-def scan_extensions(show_size: bool = False) -> Dict[str, Tuple[List[Path], int]]:
-    ext_map: Dict[str, Tuple[List[Path], int]] = defaultdict(lambda: ([], 0))
+def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]]:
+    ext_map: dict[str, tuple[list[Path], int]] = defaultdict(lambda: ([], 0))
     cwd = Path.cwd()
     for file_path in cwd.rglob("*"):
         if should_skip(file_path):
@@ -85,8 +83,8 @@ def scan_extensions(show_size: bool = False) -> Dict[str, Tuple[List[Path], int]
 
 
 def generate_report(
-    ext_map: Dict[str, Tuple[List[Path], int]], show_size: bool = False, max_examples: int = 3
-) -> List[Tuple[str, int, str]]:
+    ext_map: dict[str, tuple[list[Path], int]], show_size: bool = False, max_examples: int = 3
+) -> list[tuple[str, int, str]]:
     report_data = []
     for ext in sorted(ext_map.keys(), key=lambda x: -len(ext_map[x][0])):
         paths, total_size = ext_map[ext]
@@ -101,7 +99,7 @@ def generate_report(
 
 
 def format_table(
-    report_data: List[Tuple[str, int, str]], term_width: int, show_size: bool = False, use_color: bool = True
+    report_data: list[tuple[str, int, str]], term_width: int, show_size: bool = False, use_color: bool = True
 ) -> str:
     col1_width = max(10, int(term_width * 0.15))
     col2_width = 12

@@ -7,7 +7,9 @@ from __future__ import annotations
 from collections import defaultdict
 from email.parser import Parser
 from pathlib import Path
+import sys
 from zipfile import ZipFile
+
 from packaging.utils import canonicalize_name
 
 

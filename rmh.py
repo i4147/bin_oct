@@ -4,11 +4,12 @@ It should use a dataclass (ProcessResult) to track per-file statistics such as o
 The script should be runnable as a command-line tool that accepts a target path and options, then prints or logs a summary report of processed files, space savings, and failures at the end."""
 
 from __future__ import annotations
-import re
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import re
+import sys
+
 from loguru import logger
 from tqdm import tqdm
 

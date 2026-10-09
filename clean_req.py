@@ -6,9 +6,10 @@ The script should overwrite the original file with the cleaned, sorted list (one
 Handle missing file errors and incorrect usage by printing a helpful message to stderr and exiting with status code 1."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 _VERSION_OP_RE = re.compile(r"\s*(?:===|==|!=|>=|<=|~=|>|<)\s*")
 

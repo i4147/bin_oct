@@ -5,9 +5,11 @@ The script should write the collected results for each analyzed file into a repo
 
 from __future__ import annotations
 import json
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
+import sys
+
 
 TOOLS = {
     "mypy": ["mypy", "--ignore-missing-imports"],

@@ -4,9 +4,11 @@ It should use the `re` module to search file contents for occurrences of these t
 The output should summarize which model tokens are used and in which files, aiding in auditing or documenting API token usage across a codebase."""
 
 from __future__ import annotations
-import re
 from collections import defaultdict
 from pathlib import Path
+import re
+import sys
+
 
 MODEL_MAPPINGS = {
     "COBUDDY_TOKEN": "baidu/cobuddy:free",

@@ -6,6 +6,8 @@ The script should print a "Created: <symlink_name> -> <target_filename>" message
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 BASHBIN: Path = Path.home() / "bashbin"
 BIN: Path = Path.home() / "bin"

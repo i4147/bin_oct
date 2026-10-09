@@ -5,9 +5,10 @@ For any filename found in more than one directory, the script should print the d
 The script should handle permission errors gracefully by skipping inaccessible directories with a warning message, and print a final message if no duplicates are found."""
 
 from __future__ import annotations
-import os
 from collections import defaultdict
+import os
 from pathlib import Path
+import sys
 
 
 def find_path_duplicates() -> None:

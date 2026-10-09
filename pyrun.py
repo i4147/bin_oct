@@ -5,13 +5,15 @@ Classify failures by error type (ModuleNotFoundError, SyntaxError, ImportError, 
 from __future__ import annotations
 import argparse
 import multiprocessing
+from pathlib import Path
 import runpy
 import subprocess
 import sys
 import time
-from pathlib import Path
 from typing import Any
+
 from loguru import logger
+
 
 NUM_WORKERS: int = 8
 DEFAULT_TIMEOUT: int = 10

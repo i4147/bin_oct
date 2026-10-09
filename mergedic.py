@@ -5,13 +5,15 @@ Merged entries should be accumulated per direction using a dict-of-dicts structu
 Throughout the process it should log progress, warnings, and errors using the "loguru" logger, and exit gracefully with a clear error message if something goes wrong (e.g., invalid JSON, non-dict content, or empty input list)."""
 
 from __future__ import annotations
+from collections import defaultdict
 import json
+from pathlib import Path
 import re
 import sys
-from collections import defaultdict
-from pathlib import Path
+
 from dh import get_random_filename
 from loguru import logger
+
 
 ENGLISH_RE = re.compile(r"^[A-Za-z][A-Za-z\s\-'.]*$")
 

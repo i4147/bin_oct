@@ -6,6 +6,7 @@ The main function should iterate through all discovered Python files, scan each 
 from __future__ import annotations
 import ast
 from pathlib import Path
+import sys
 from typing import Iterator
 
 

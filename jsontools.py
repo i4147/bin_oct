@@ -35,12 +35,13 @@ import contextlib
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import random
 import re
 import sys
 import tempfile
-from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple
+
 
 _CUSTOM_RULE_RE = re.compile(r"^(?:(\d+?)>)?(\d+)=")
 

@@ -6,10 +6,13 @@ File processing should run in parallel via `joblib.Parallel`/`delayed` (with a c
 from __future__ import annotations
 import ast
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Any
+
 from dh import cprint, get_pyfiles
 from joblib import Parallel, delayed
 from xxhash import xxh64_hexdigest
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

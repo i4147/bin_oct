@@ -20,8 +20,9 @@ Requirements:
 LiveDoc: https://felo.ai/zh-Hans/livedoc/F4eZrYhitiaZ6UZtZcjD7Y"""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import get_files, mpf
 from docutils.core import publish_parts
 from markdownify import markdownify

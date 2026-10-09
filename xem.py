@@ -7,10 +7,12 @@ It should track and report the count of successfully extracted assets, gracefull
 from __future__ import annotations
 import base64
 import hashlib
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 from dh import MIME2EXT, get_nobinary
+
 
 OUTPUT_DIR = Path("extracted_base64")
 DATA_URL_RE = re.compile("data:(?P<mime>[-\\w.+/]+);base64,(?P<data>[A-Za-z0-9+/=\\s]+)", re.IGNORECASE)

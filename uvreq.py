@@ -5,6 +5,7 @@ The script should read uv.lock encoding as UTF-8, process the file's content lin
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 
 def process_file(path: str) -> None:

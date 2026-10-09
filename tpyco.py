@@ -5,20 +5,23 @@ The script recursively discovers Python files, extracts non-English text from co
 from __future__ import annotations
 import argparse
 import ast
+from dataclasses import dataclass
 import json
 import multiprocessing
-import re
-import time
-import tokenize
-from dataclasses import dataclass
 from multiprocessing import Lock, Pool, Value
 from pathlib import Path
+import re
+import sys
 from tempfile import NamedTemporaryFile
+import time
+import tokenize
 from typing import Final
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
 from loguru import logger
+
 
 WORKER_COUNT: Final[int] = 8
 DEFAULT_CHUNK_SIZE: Final[int] = 2500

@@ -17,9 +17,10 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/HbgEvfUpatXJZ4d43M8Z9H"""
 
 from __future__ import annotations
 import datetime
-import sys
 from os import scandir as _scandir
 from pathlib import Path
+import sys
+
 
 REVERSE = "-r" in sys.argv
 

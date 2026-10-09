@@ -4,13 +4,14 @@ Merges the following original scripts into one CLI: dupimg.py -> scan --method d
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import re
 import shutil
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any, Iterable, Optional, Sequence
+
 
 SUPPORTED_EXTS = {
     ".jpg",

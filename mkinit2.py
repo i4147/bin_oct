@@ -6,9 +6,9 @@ The script should support parallel processing of modules via `multiprocessing` f
 from __future__ import annotations
 import ast
 import multiprocessing as mp
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
 
 
 def get_public_names(path: Path) -> list[str]:

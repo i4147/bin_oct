@@ -5,7 +5,9 @@ The cleaned content should overwrite the original file, and the script should pr
 If the script is run without exactly one argument, it should print a usage message and exit with status code 1."""
 
 from __future__ import annotations
+from pathlib import Path
 import sys
+
 import regex as re
 
 

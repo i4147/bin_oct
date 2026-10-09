@@ -5,10 +5,13 @@ It must handle naming collisions by appending an incrementing numeric suffix unt
 
 from __future__ import annotations
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 from deep_translator import GoogleTranslator
 from fastwalk import walk_files
+
 
 DIRECTORY = Path.cwd()
 non_english_pattern = re.compile(r"[^\x00-\x7F]")

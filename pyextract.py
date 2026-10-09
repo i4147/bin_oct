@@ -6,20 +6,22 @@ Migration map (original script -> new invocation): cext.py -> pyextract extract 
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
+from dataclasses import dataclass, field
 import io
 import json
 import logging
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import sqlite3
+import sys
 import tarfile
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterable, Iterator, Optional
+import zipfile
+
 
 try:
     import tree_sitter

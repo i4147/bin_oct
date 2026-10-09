@@ -1,18 +1,12 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""git_squash_n.py Usage: python git_squash_n.py N [-b backend] [--patch-file PATCH] [--meta-file META] [--force] [--dry-run] Description: - Save the combined changes of the last N commits to a patch file and metadata JSON.
-- Reset the repo to the state before those N commits.
-- Apply the saved patch at once and create a single commit that reproduces the net effect.
-- Supported backends (names): subprocess (default), pygithub, gitpython, libgit2, dulwich, typer - If the chosen backend cannot complete an operation, the script falls back to subprocess/git CLI automatically.
-Notes: - The script requires a clean working tree by default (use --force to proceed with uncommitted changes; the script will stash/restore).
-- It creates temporary backups and will attempt to restore the original HEAD on failure."""
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import argparse
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
-from datetime import datetime
 
 
 def run(cmd, cwd=None, capture=False, check=True):
@@ -79,24 +73,15 @@ class SubprocessBackend(Backend):
     def ensure_clean_worktree(self, force=False):
         st = run(["git", "status", "--porcelain"], cwd=self.repo_path, capture=True)
         dirty = bool(st.stdout.strip())
-        stash_made = False
-        if dirty and not force:
-            msg = "Working tree is dirty. Commit or use --force to stash changes before running."
-            raise RuntimeError(msg)
-        if dirty and force:
+        auto_committed = False
+        if dirty:
+            run(["git", "add", "-A"], cwd=self.repo_path)
             run(
-                [
-                    "git",
-                    "stash",
-                    "push",
-                    "--include-untracked",
-                    "-m",
-                    "git_squash_n auto-stash",
-                ],
+                ["git", "commit", "-m", "auto-commit before squash", "--no-verify"],
                 cwd=self.repo_path,
             )
-            stash_made = True
-        return (not dirty, stash_made)
+            auto_committed = True
+        return (not dirty, auto_committed)
 
     def get_head(self):
         res = run(["git", "rev-parse", "HEAD"], cwd=self.repo_path, capture=True)
@@ -253,9 +238,6 @@ class GenericBackend(Backend):
         )
 
     def ensure_clean_worktree(self, force=False):
-        if not any(self._available.values()):
-            self._announce_fallback("ensure_clean_worktree")
-            return self.subprocess.ensure_clean_worktree(force)
         self._announce_fallback("ensure_clean_worktree")
         return self.subprocess.ensure_clean_worktree(force)
 
@@ -339,7 +321,7 @@ def main():
         default="saved_patch.meta.json",
         help="Path to write metadata JSON",
     )
-    parser.add_argument("--force", action="store_true", help="Stash uncommitted changes and proceed")
+    parser.add_argument("--force", action="store_true", help="Ignored; dirty trees are auto-committed")
     parser.add_argument("--dry-run", action="store_true", help="Show actions without making changes")
     args = parser.parse_args()
     repo_path = "."
@@ -351,10 +333,12 @@ def main():
         sys.exit(2)
     backend = create_backend(args.backend, repo_path)
     try:
-        _was_clean, stash_made = backend.ensure_clean_worktree(force=args.force)
+        _was_clean, auto_committed = backend.ensure_clean_worktree(force=args.force)
     except Exception as e:
         print("Error: working tree check failed:", e, file=sys.stderr)
         sys.exit(1)
+    if auto_committed:
+        print("Working tree was dirty; auto-committed changes before squashing.")
     orig_head = backend.get_head()
     print("Original HEAD:", orig_head)
     if args.N <= 0:
@@ -364,8 +348,6 @@ def main():
         commits = backend.get_last_n_commits(args.N)
     except Exception as e:
         print("Error getting last N commits:", e, file=sys.stderr)
-        if stash_made:
-            run(["git", "stash", "pop"], cwd=repo_path)
         sys.exit(1)
     head_rev = orig_head
     try:
@@ -375,8 +357,6 @@ def main():
             base_rev = backend.rev_parse(f"{commits[0]}^")
         except Exception as e:
             print("Cannot identify base revision:", e, file=sys.stderr)
-            if stash_made:
-                run(["git", "stash", "pop"], cwd=repo_path)
             sys.exit(1)
     print(f"Base rev (state before last {args.N} commits): {base_rev}")
     print("Commits to squash (oldest->newest):")
@@ -398,14 +378,10 @@ def main():
             print("Wrote metadata to", meta_path)
         except Exception as e:
             print("Error creating patch/metadata:", e, file=sys.stderr)
-            if stash_made:
-                run(["git", "stash", "pop"], cwd=repo_path)
             sys.exit(1)
     if args.dry_run:
         print("[dry-run] Would reset hard to", base_rev)
         print("[dry-run] Would apply patch and commit a single commit summarizing these commits")
-        if stash_made:
-            print("[dry-run] Would pop stash")
         return
     backup_head = orig_head
     try:
@@ -423,17 +399,12 @@ def main():
         backend.commit(summary_msg, allow_empty=(len(commit_msgs) == 0))
         new_head = backend.get_head()
         print("Created new single commit:", new_head)
-        if stash_made:
-            print("Restoring stashed uncommitted changes (pop stash)")
-            run(["git", "stash", "pop"], cwd=repo_path)
         print("Done. The last {} commits were replaced by a single commit {}.".format(args.N, new_head))
     except Exception as e:
         print("Error during apply/reset/commit:", e, file=sys.stderr)
         print("Attempting to restore original state (reset --hard {})".format(backup_head))
         try:
             run(["git", "reset", "--hard", backup_head], cwd=repo_path)
-            if stash_made:
-                run(["git", "stash", "pop"], cwd=repo_path)
         except Exception as e2:
             print(
                 "Error while trying to restore repository. Manual recovery may be necessary.",

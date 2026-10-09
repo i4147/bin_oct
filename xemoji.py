@@ -33,9 +33,12 @@ The script should have no command-line arguments or external dependencies beyond
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/en3ZY6GWmN2BKmF3mCnXkH"""
 
+from __future__ import annotations
 import json
-import re
 from pathlib import Path
+import re
+import sys
+
 
 _BASE = (
     "\U0001f300-\U0001f5ff"

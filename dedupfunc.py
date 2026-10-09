@@ -6,10 +6,10 @@ The script should accept file or directory paths via argparse on the command lin
 from __future__ import annotations
 import argparse
 import ast
-import re
-import sys
 from collections import defaultdict
 from pathlib import Path
+import re
+import sys
 
 
 class FunctionInfo:

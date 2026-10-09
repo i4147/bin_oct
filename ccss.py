@@ -4,8 +4,9 @@ It should accept file paths as arguments, or if none are given, recursively find
 For each file it should run cleancss in place, print the filename plus a colored status ("NO CHANGE", "OK" with size reduction and percentage, or "ERROR"), process files in parallel, and finally report the total disk space freed."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf, runcmd
 
 

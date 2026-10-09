@@ -7,11 +7,12 @@ The script should be runnable from the command line, accepting a target path as 
 from __future__ import annotations
 import gzip
 import lzma
+from multiprocessing import Pool
+from pathlib import Path
 import subprocess
 import sys
 import tarfile
-from multiprocessing import Pool
-from pathlib import Path
+
 
 MAX_WORKERS = 8
 SUPPORTED_EXTENSIONS = {".tar.gz", ".tar.xz", ".tar.zst", ".tar.br", ".tgz"}

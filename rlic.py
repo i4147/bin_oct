@@ -7,12 +7,13 @@ remove --block-mode comment --min-lines 2 tlic.py -> scan --block-mode segment -
 from __future__ import annotations
 import argparse
 import ast
-import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
+import sys
 from typing import Optional, Sequence
+
 
 DEFAULT_TEXT_EXTS: set[str] = {
     ".txt",

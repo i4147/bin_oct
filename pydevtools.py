@@ -9,19 +9,20 @@ python pydevkit.py new-script ./myscript.py"""
 from __future__ import annotations
 import argparse
 import configparser
+from dataclasses import dataclass, field
+from email.parser import Parser
 import importlib
 import json
+from pathlib import Path
 import pprint
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import zipfile
-from dataclasses import dataclass, field
-from email.parser import Parser
-from pathlib import Path
 from typing import Any, Iterable, Sequence
+import zipfile
+
 
 try:
     import tomllib  # type: ignore[import]

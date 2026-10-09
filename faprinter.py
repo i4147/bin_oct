@@ -4,8 +4,9 @@ For each line, pass it through the `faprint` function imported from the `faprint
 The script should process the file lazily line-by-line rather than loading it all into memory at once, and assumes the file is UTF-8 encoded."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from faprint import faprint as pp
 
 

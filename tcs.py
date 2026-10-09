@@ -4,9 +4,9 @@ It should accept a file path along with either a start/end line range or a list 
 The script must handle and report errors gracefully, including missing files, out-of-range line numbers, the `termux-clipboard-set` binary not being found (e.g., Termux:API not installed), and any non-zero exit codes or exceptions from the clipboard subprocess, printing descriptive messages to stderr and exiting with a non-zero status on failure."""
 
 from __future__ import annotations
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def send_to_process(txt: str) -> None:

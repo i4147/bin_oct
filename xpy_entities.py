@@ -6,19 +6,20 @@ If a dep is missing, only the corresponding --backend errors out; the default (a
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
+from dataclasses import dataclass, field
 import io
 import json
 import os
+from pathlib import Path
 import re
 import sqlite3
 import sys
 import tarfile
 import textwrap
-import zipfile
-from collections import defaultdict
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterable, Iterator
+import zipfile
+
 
 try:
     import libcst as cst  # type: ignore
@@ -36,13 +37,15 @@ except ImportError:
     tree_sitter = None  # type: ignore
     tspython = None  # type: ignore
     HAS_TS = False
-try:
-    import zstd  # type: ignore
+
+
+if sys.version_info >= (3, 14):
+    from compression import zstd
+else:
+    import zstandard as zstd
 
     HAS_ZSTD = True
-except ImportError:
-    zstd = None  # type: ignore
-    HAS_ZSTD = False
+
 UPPER_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 SKIP_DIRS: set[str] = {
     ".git",

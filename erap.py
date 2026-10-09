@@ -5,9 +5,10 @@ The script should accept command-line arguments (via argparse) to control which 
 
 from __future__ import annotations
 import argparse
-import subprocess
 from multiprocessing import Pool
 from pathlib import Path
+import subprocess
+import sys
 
 
 def get_pyfiles_iter(root: Path):

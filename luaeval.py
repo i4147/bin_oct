@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 from pathlib import Path
-import tree_sitter_lua
+import sys
+
 from tree_sitter import Language, Parser
+import tree_sitter_lua
 
 
 def make_parser() -> Parser:

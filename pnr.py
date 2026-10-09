@@ -4,9 +4,11 @@ It should accept arguments for the target string, a dry-run flag to preview chan
 
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
+import sys
+
 from dh import unique_path
+
 
 SKIP_DIRS = {".git"}
 

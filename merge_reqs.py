@@ -13,13 +13,14 @@ import hashlib
 import json
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import tarfile
-import zipfile
-from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional, Sequence
+import zipfile
+
 
 try:
     from tqdm import tqdm as _tqdm

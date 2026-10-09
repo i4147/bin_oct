@@ -12,23 +12,25 @@ Usage examples:
     sql2json --output "report-{CURRENT_DATE}.json"
 """
 
-from __future__ import absolute_import
-
+from __future__ import absolute_import, annotations
 import calendar
+import contextlib
 import csv
 import datetime
+from decimal import Decimal
 import json
 import os
+from pathlib import Path
 import re
 import sys
-from decimal import Decimal
 from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
-import fire
 from dateutil.relativedelta import relativedelta
+import fire
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+
 
 __version__ = "0.0.0"
 
@@ -67,15 +69,15 @@ def _last_day_month(current_date):
 
 
 def _parse_field(field, to_add, current_date, date_format="%Y-%m-%d"):
-    if "CURRENT_DATE" == field:
+    if field == "CURRENT_DATE":
         return (current_date + datetime.timedelta(days=to_add)).strftime(date_format)
-    elif "START_CURRENT_MONTH" == field:
+    elif field == "START_CURRENT_MONTH":
         return (_first_day_month(current_date) + relativedelta(months=to_add)).strftime(date_format)
-    elif "END_CURRENT_MONTH" == field:
+    elif field == "END_CURRENT_MONTH":
         return (_last_day_month(current_date) + relativedelta(months=to_add)).strftime(date_format)
-    elif "START_CURRENT_YEAR" == field:
+    elif field == "START_CURRENT_YEAR":
         return (_first_day_year(current_date) + relativedelta(years=to_add)).strftime(date_format)
-    elif "END_CURRENT_YEAR" == field:
+    elif field == "END_CURRENT_YEAR":
         return (_last_day_year(current_date) + relativedelta(years=to_add)).strftime(date_format)
     else:
         return field
@@ -152,7 +154,7 @@ def handle_run_query2json(
     format="json",
     output=None,
     list_connections=False,
-    list_queries: Union[bool, str] = False,
+    list_queries: bool | str = False,
     timezone=None,
     read_only=False,
     **kwargs,
@@ -208,7 +210,7 @@ def run_query(
     timezone: Optional[str] = None,
     read_only: bool = False,
     **kwargs,
-) -> Union[list, dict]:
+) -> list | dict:
     read_only = _coerce_bool(read_only)
     current_date = _current_date(timezone)
     parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
@@ -221,7 +223,7 @@ def run_query(
             result_proxy = con.execute(text(raw_query), parameters)
 
             if result_proxy.returns_rows:
-                records: Union[list, dict] = map_result_proxy2list_dict(result_proxy)
+                records: list | dict = map_result_proxy2list_dict(result_proxy)
             else:
                 records = {"rowcount": max(result_proxy.rowcount, 0)}
         except Exception as exc:
@@ -231,10 +233,8 @@ def run_query(
             raise
         finally:
             if read_only and con.engine.dialect.name == "sqlite":
-                try:
+                with contextlib.suppress(Exception):
                     con.exec_driver_sql("PRAGMA query_only = OFF")
-                except Exception:
-                    pass
 
         if read_only:
             con.rollback()
@@ -283,7 +283,7 @@ def get_for_key_or_first_map_value(my_dict: dict, key: Optional[str] = None):
     if key in my_dict:
         return my_dict.get(key)
 
-    for _, v in my_dict.items():
+    for v in my_dict.values():
         return v
 
     return ""
@@ -306,18 +306,22 @@ def _get_connection_queries_dict(config: dict, connections: dict) -> dict:
         return {}
 
     if not isinstance(connection_queries, dict):
-        raise ValueError("connection_queries must be an object")
+        msg = "connection_queries must be an object"
+        raise ValueError(msg)
 
     for connection_name, queries in connection_queries.items():
         if connection_name not in connections:
-            raise ValueError(f"connection_queries references unknown connection '{connection_name}'")
+            msg = f"connection_queries references unknown connection '{connection_name}'"
+            raise ValueError(msg)
 
         if not isinstance(queries, dict):
-            raise ValueError(f"connection_queries.{connection_name} must be an object")
+            msg = f"connection_queries.{connection_name} must be an object"
+            raise ValueError(msg)
 
         for query_name, raw_query in queries.items():
             if not isinstance(raw_query, str):
-                raise ValueError(f"connection_queries.{connection_name}.{query_name} must be a string")
+                msg = f"connection_queries.{connection_name}.{query_name} must be a string"
+                raise ValueError(msg)
 
     return connection_queries
 
@@ -326,7 +330,7 @@ def list_queries(
     config_path: Optional[str] = None,
     scoped: bool = False,
     connection: Optional[str] = None,
-) -> Union[list, dict]:
+) -> list | dict:
     path = config_path or _find_config()
     config = load_config_file(path)
     global_query_names = list(config.get("queries", {}).keys())
@@ -347,7 +351,7 @@ def list_queries(
 
     if connection is not None:
         effective_query_names = list(global_query_names)
-        for query_name in connection_queries.get(connection, {}).keys():
+        for query_name in connection_queries.get(connection, {}):
             if query_name not in effective_query_names:
                 effective_query_names.append(query_name)
         return effective_query_names
@@ -366,7 +370,7 @@ def _resolve_query_string(connection_name: str, query_name: str, connections: di
     return config_queries.get(query_name, query_name)
 
 
-def run_query_by_name(conection_name: str = "default", query_name: str = "default", **kwargs) -> Union[list, dict]:
+def run_query_by_name(conection_name: str = "default", query_name: str = "default", **kwargs) -> list | dict:
     config_path = kwargs.pop("config", None) or _find_config()
     timezone = kwargs.pop("timezone", None)
     read_only = kwargs.pop("read_only", False)
@@ -409,7 +413,7 @@ def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
     return response
 
 
-def apply_wrapper(result: Union[str, dict, list], wrapper: Union[bool, str] = False) -> Union[str, dict, list]:
+def apply_wrapper(result: str | dict | list, wrapper: bool | str = False) -> str | dict | list:
     if isinstance(wrapper, str) and wrapper:
         return {wrapper: result}
     elif wrapper:
@@ -419,15 +423,15 @@ def apply_wrapper(result: Union[str, dict, list], wrapper: Union[bool, str] = Fa
 
 def apply_output_transforms(
     unparsed_results: list,
-    wrapper: Union[bool, str] = False,
+    wrapper: bool | str = False,
     first: bool = False,
     key: str = "",
     value: str = "",
     jsonkeys: str = "",
-) -> Union[str, dict, list]:
+) -> str | dict | list:
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 
-    result: Union[str, dict, list, None] = None
+    result: str | dict | list | None = None
 
     if first:
         if results and len(results) > 0:
@@ -439,14 +443,12 @@ def apply_output_transforms(
                 result = get_for_key_or_first_map_value(item, key) if key else item
         else:
             result = "" if key and not value else {}
+    elif key and value:
+        result = [
+            ({item.get(key): item.get(value)} if key and key in item and value in item else item) for item in results
+        ]
     else:
-        if key and value:
-            result = [
-                ({item.get(key): item.get(value)} if key and key in item and value in item else item)
-                for item in results
-            ]
-        else:
-            result = [item.get(key) if key and key in item else item for item in results]
+        result = [item.get(key) if key and key in item else item for item in results]
 
     return apply_wrapper(result, wrapper)
 
@@ -461,7 +463,7 @@ def _warn_read_only_write(result: dict) -> None:
 def run_query2json(
     name: str = "default",
     query: str = "default",
-    wrapper: Union[bool, str] = False,
+    wrapper: bool | str = False,
     first: bool = False,
     key: str = "",
     value: str = "",
@@ -469,7 +471,7 @@ def run_query2json(
     timezone: Optional[str] = None,
     read_only: bool = False,
     **kwargs,
-) -> Union[str, dict, list]:
+) -> str | dict | list:
     read_only = _coerce_bool(read_only)
     result = run_query_by_name(name, query, timezone=timezone, read_only=read_only, **kwargs)
 
@@ -497,7 +499,8 @@ def parse_filename(file_name, current_date):
 def json_default(value):
     if isinstance(value, Decimal):
         return float(value)
-    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+    msg = f"Object of type {type(value).__name__} is not JSON serializable"
+    raise TypeError(msg)
 
 
 def json_dumps(value):
@@ -528,7 +531,7 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
     try:
         if isinstance(rows, str):
             first_row = {}
-            final_key = key if key else "key"
+            final_key = key or "key"
             first_row[final_key] = rows
             final_rows = [first_row]
         elif isinstance(rows, dict):
@@ -556,19 +559,18 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
 
 def emit_result(result, format, output, key, value, first, timezone):
     if output:
-        if "csv" == format:
+        if format == "csv":
             save_csv(result, output, "csv", key, timezone=timezone)
-        elif "excel" == format:
+        elif format == "excel":
             save_csv(result, output, "excel", key, timezone=timezone)
         else:
             save_json(result, output, timezone=timezone)
+    elif key and value and first:
+        print(json_dumps(result))
+    elif key and first:
+        print(result)
     else:
-        if key and value and first:
-            print(json_dumps(result))
-        elif key and first:
-            print(result)
-        else:
-            print(json_dumps(result))
+        print(json_dumps(result))
 
 
 def handle_run_query2json(
@@ -582,7 +584,7 @@ def handle_run_query2json(
     format="json",
     output=None,
     list_connections=False,
-    list_queries: Union[bool, str] = False,
+    list_queries: bool | str = False,
     timezone=None,
     read_only=False,
     **kwargs,

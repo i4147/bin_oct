@@ -5,14 +5,15 @@ Usage: python extract_assets.py [files/dirs...] If no arguments provided, proces
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass
 import hashlib
 import html.parser
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

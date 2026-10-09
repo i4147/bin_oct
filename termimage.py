@@ -5,8 +5,9 @@ Displays images directly in the terminal using ANSI escape codes."""
 from __future__ import annotations
 import argparse
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
 

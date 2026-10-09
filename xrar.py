@@ -27,10 +27,11 @@ Notable behavior and requirements:
 LiveDoc: https://felo.ai/zh-Hans/livedoc/PEt6HkE3cu4H4PSVaw3jCv"""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+
 
 try:
     import libarchive

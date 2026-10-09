@@ -5,9 +5,10 @@ If no input file is provided, it should print a usage message and exit with an e
 After successful conversion, it should print a confirmation message showing the source and destination file paths."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 TIMESTAMP_RE = re.compile(r"\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}")
 TAG_RE = re.compile(r"<[^>]+>|{\w+}")

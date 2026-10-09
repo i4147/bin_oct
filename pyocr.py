@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Write a prompt instructing an AI coding agent to generate a single-file Python 3 (3+) commandility named for Termux (`#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a reusable OCR helper/library module (in version 0.8 The script must:
+"""
+generate a single-file Python 3 (3+) commandility named for Termux (`#!/data/data/com.termux/files/usr/bin/python3.12`) that acts as a reusable OCR helper/library module (in version 0.8 The script must:
 
 **Purpose**: Provide a andes/ions for runningifically Tesseract and filesounding-box coordinates), and converincluding building well-formed XHTML/hOCR documents and XML tports/d standules — `argparse`, `codes`, `locale`, `log `types.SimpleN the with a Python version check thatImportError` if running under Python older than 3.4, with the message "PyOCR requ a module-level `ogger(__name__)`ERSION = (0, ple and `__version__ = "0.8.5"` string constants.
 
@@ -11,24 +12,29 @@
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/UxfhCZCcWphe2nwPECu6Ng"""
 
+from __future__ import annotations
 import argparse
 import codecs
+import contextlib
 import ctypes
+from html.parser import HTMLParser
+from io import BytesIO
 import locale
 import logging
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import xml.dom.minidom
-from html.parser import HTMLParser
-from io import BytesIO
 from types import SimpleNamespace
+import xml.dom.minidom
+
 
 if sys.version_info < (3, 4):
-    raise ImportError("PyOCR requires Python 3.4+")
+    msg = "PyOCR requires Python 3.4+"
+    raise ImportError(msg)
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +200,7 @@ class LineBox:
         )
 
     def __repr__(self):
-        return f"LineBox({str(self)})"
+        return f"LineBox({self!s})"
 
     def __contains__(self, text):
         return text in self.content
@@ -250,22 +256,28 @@ class BaseBuilder:
         self.cuneiform_args = cuneiform_args
 
     def read_file(self, file_descriptor):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
     def write_file(self, file_descriptor, output):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
     def start_line(self, box):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
     def add_word(self, word, box, confidence=0):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
     def end_line(self):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
     def get_output(self):
-        raise NotImplementedError("Implement in subclasses")
+        msg = "Implement in subclasses"
+        raise NotImplementedError(msg)
 
 
 class TextBuilder(BaseBuilder):
@@ -694,7 +706,7 @@ def tess_detect_orientation(image, lang=None):
         try:
             output = original_output.split("\n")
             output = [line.split(": ", 1) for line in output if (": " in line)]
-            output = {x: y for (x, y) in output}
+            output = dict(output)
             angle = int(output.get("Rotate", output["Orientation in degrees"]))
             angle = (360 - angle) % 360
             return {"angle": angle, "confidence": float(output["Orientation confidence"])}
@@ -741,10 +753,8 @@ def tess_run_tesseract(input_filename, output_filename_base, cwd=None, lang=None
 
 
 def tess_cleanup(filename):
-    try:
+    with contextlib.suppress(OSError):
         os.remove(filename)
-    except OSError:
-        pass
 
 
 class ReOpenableTempfile:
@@ -1289,7 +1299,8 @@ def raw_detect_os(handle):
             None,
         )
         if not r:
-            raise TesseractError("detect_orientation failed", "TessBaseAPIDetectOrientationScript() failed")
+            msg = "detect_orientation failed"
+            raise TesseractError(msg, "TessBaseAPIDetectOrientationScript() failed")
         return {
             "orientation": round(orientation_deg.value / 90),
             "confidence": orientation_confidence.value,
@@ -1298,7 +1309,8 @@ def raw_detect_os(handle):
         results = OSResults()
         r = g_libtesseract.TessBaseAPIDetectOS(ctypes.c_void_p(handle), ctypes.pointer(results))
         if not r:
-            raise TesseractError("detect_orientation failed", "TessBaseAPIDetectOS() failed")
+            msg = "detect_orientation failed"
+            raise TesseractError(msg, "TessBaseAPIDetectOS() failed")
         return {
             "orientation": results.best_orientation_id,
             "confidence": results.best_oconfidence,
@@ -1342,7 +1354,8 @@ def libtess_detect_orientation(image, lang=None):
         raw_set_image(handle, image)
         os_result = raw_detect_os(handle)
         if os_result["confidence"] <= 0:
-            raise TesseractError("no script", "no script detected")
+            msg = "no script"
+            raise TesseractError(msg, "no script detected")
         orientation = {
             Orientation.PAGE_UP: 0,
             Orientation.PAGE_RIGHT: 90,
@@ -1373,10 +1386,11 @@ def libtess_image_to_string(image, lang=None, builder=None):
     lvl_line = PageIteratorLevel.TEXTLINE
     lvl_word = PageIteratorLevel.WORD
     try:
-        clang = lang if lang else "eng"
+        clang = lang or "eng"
         for lang_item in clang.split("+"):
             if lang_item not in raw_get_available_languages(handle):
-                raise TesseractError("no lang", "language {} is not available".format(lang_item))
+                msg = "no lang"
+                raise TesseractError(msg, "language {} is not available".format(lang_item))
         raw_set_page_seg_mode(handle, builder.tesseract_layout)
         raw_set_debug_file(handle, os.devnull)
         raw_set_image(handle, image)
@@ -1385,7 +1399,8 @@ def libtess_image_to_string(image, lang=None, builder=None):
         raw_recognize(handle)
         res_iterator = raw_get_iterator(handle)
         if res_iterator is None:
-            raise TesseractError("no script", "no script detected")
+            msg = "no script"
+            raise TesseractError(msg, "no script detected")
         page_iterator = raw_result_iterator_get_page_iterator(res_iterator)
         while True:
             if raw_page_iterator_is_at_beginning_of(page_iterator, lvl_line):
@@ -1439,9 +1454,11 @@ class LibtesseractPdfBuilder:
 
     def __validate(self):
         if len(self.images) < 1:
-            raise ValueError("At least one image is required to build the pdf!")
+            msg = "At least one image is required to build the pdf!"
+            raise ValueError(msg)
         if self.output_file is None:
-            raise ValueError("An output-file is required to build the pdf!")
+            msg = "An output-file is required to build the pdf!"
+            raise ValueError(msg)
 
     def build(self):
         self.__validate()
@@ -1522,7 +1539,8 @@ def cun_image_to_string(image, lang=None, builder=None):
     if builder is None:
         builder = TextBuilder()
     if "digits" in builder.tesseract_configs:
-        raise NotImplementedError("Numerical only : This option is not available with Cuneiform")
+        msg = "Numerical only : This option is not available with Cuneiform"
+        raise NotImplementedError(msg)
     with _cun_temp_file(builder.file_extensions[0]) as output_file:
         cmd = [CUNEIFORM_CMD]
         if lang is not None:
@@ -1640,7 +1658,8 @@ def _load_image(path):
     try:
         from PIL import Image
     except ImportError:
-        raise SystemExit("Pillow is required: pip install Pillow")
+        msg = "Pillow is required: pip install Pillow"
+        raise SystemExit(msg)
     return Image.open(path)
 
 
@@ -1669,7 +1688,8 @@ def _cmd_tools(args):
 def _cmd_langs(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
-        raise SystemExit(f"tool {args.tool} is not available")
+        msg = f"tool {args.tool} is not available"
+        raise SystemExit(msg)
     for lang in tool.get_available_languages():
         print(lang)
 
@@ -1677,9 +1697,11 @@ def _cmd_langs(args):
 def _cmd_orientation(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
-        raise SystemExit(f"tool {args.tool} is not available")
+        msg = f"tool {args.tool} is not available"
+        raise SystemExit(msg)
     if not tool.can_detect_orientation():
-        raise SystemExit(f"tool {args.tool} cannot detect orientation")
+        msg = f"tool {args.tool} cannot detect orientation"
+        raise SystemExit(msg)
     image = _load_image(args.image)
     result = tool.detect_orientation(image, lang=args.lang)
     print(f"angle: {result['angle']}")
@@ -1689,7 +1711,8 @@ def _cmd_orientation(args):
 def _cmd_ocr(args):
     tool = _TOOLS_BY_NAME[args.tool]
     if not tool.is_available():
-        raise SystemExit(f"tool {args.tool} is not available")
+        msg = f"tool {args.tool} is not available"
+        raise SystemExit(msg)
     builder = _BUILDERS[args.builder]()
     image = _load_image(args.image)
     result = tool.image_to_string(image, lang=args.lang, builder=builder)

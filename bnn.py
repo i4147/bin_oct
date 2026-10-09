@@ -5,13 +5,16 @@ Include argparse-based CLI input handling and logging configuration for reportin
 
 from __future__ import annotations
 import argparse
-import logging
-import shutil
-import tempfile
 from dataclasses import dataclass
+import logging
 from pathlib import Path
+import shutil
+import sys
+import tempfile
 from typing import TYPE_CHECKING
+
 from joblib import Parallel, delayed
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

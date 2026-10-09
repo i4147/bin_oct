@@ -4,11 +4,12 @@ It should build a mapping of each missing dependency to the list of packages tha
 The script should gracefully handle a non-zero exit code from pip check by still capturing and processing its stdout output."""
 
 from __future__ import annotations
+from collections import defaultdict
+from pathlib import Path
 import re
 import subprocess
 import sys
-from collections import defaultdict
-from pathlib import Path
+
 
 REQ = Path("requirements.txt")
 BLACKLIST = {

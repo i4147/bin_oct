@@ -5,8 +5,10 @@ After moving files, it should clean up by removing any now-empty directories lef
 
 from __future__ import annotations
 import contextlib
-import shutil
 from pathlib import Path
+import shutil
+import sys
+
 from dh import gsz
 
 

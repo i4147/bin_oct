@@ -15,14 +15,15 @@ python dh_tools.py usage --bin-dir ~/bin Requires Python 3.9+ (uses ``ast.unpars
 from __future__ import annotations
 import argparse
 import ast
-import hashlib
-import logging
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+import hashlib
+import logging
 from pathlib import Path
+import re
+import sys
 from typing import Iterable
+
 
 log = logging.getLogger("dh_tools")
 DEFAULT_DH_PATH: Path = Path.home() / "projects" / "py" / "dh" / "src" / "dh"

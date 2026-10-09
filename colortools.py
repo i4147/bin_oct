@@ -15,15 +15,18 @@ Optional third-party package: ``dh`` (for ``cprint``, ``is_binary``,
 used instead.
 """
 
+from __future__ import annotations
 import argparse
 import colorsys
+import contextlib
+from dataclasses import dataclass
 import os
+from pathlib import Path
 import random
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
+
 
 try:
     from dh import cprint, is_binary, should_skip
@@ -90,7 +93,7 @@ def _fg(r: int, g: int, b: int) -> str:
     return f"\x1b[38;2;{r};{g};{b}m"
 
 
-def _text_color(r: int, g: int, b: int) -> Tuple[int, int, int]:
+def _text_color(r: int, g: int, b: int) -> tuple[int, int, int]:
     return (0, 0, 0) if _luminance(r, g, b) > 0.35 else (255, 255, 255)
 
 
@@ -101,7 +104,7 @@ class Color:
     b: int
     a: float = 1.0
 
-    def as_tuple(self) -> Tuple[int, int, int, float]:
+    def as_tuple(self) -> tuple[int, int, int, float]:
         return (self.r, self.g, self.b, self.a)
 
     def to_hex(self) -> str:
@@ -125,7 +128,8 @@ def _hex_to_color(hex_str: str) -> Color:
         b = int(hex_str[4:6], 16)
         a = int(hex_str[6:8], 16) / 255.0
     else:
-        raise ValueError(f"Unexpected hex length: {len(hex_str)}")
+        msg = f"Unexpected hex length: {len(hex_str)}"
+        raise ValueError(msg)
     return Color(r=r, g=g, b=b, a=a)
 
 
@@ -145,13 +149,11 @@ def _match_rgba(m: "re.Match[str]") -> Optional[Color]:
     return Color(r=r, g=g, b=b, a=a)
 
 
-def _extract_colors(text: str) -> List[Color]:
-    out: List[Color] = []
+def _extract_colors(text: str) -> list[Color]:
+    out: list[Color] = []
     for hm in BARE_HEX_RE.finditer(text):
-        try:
+        with contextlib.suppress(Exception):
             out.append(_hex_to_color(hm.group(0)))
-        except Exception:
-            pass
     for rm in RGB_RE.finditer(text):
         c = _match_rgba(rm)
         if c is not None:
@@ -160,7 +162,7 @@ def _extract_colors(text: str) -> List[Color]:
 
 
 def _display_colors(colors: Sequence[Color], max_colors: int = 200) -> None:
-    seen: Dict[Tuple[int, int, int, float], Color] = {}
+    seen: dict[tuple[int, int, int, float], Color] = {}
     for c in colors:
         seen[c.as_tuple()] = c
     unique = list(seen.values())
@@ -198,7 +200,7 @@ def cmd_html(args: argparse.Namespace) -> int:
     out_path = Path(args.output)
     with in_path.open(encoding="utf-8") as f:
         lines = f.readlines()
-    colors: List[str] = []
+    colors: list[str] = []
     for d in lines:
         s = d.strip()
         if not s:
@@ -207,7 +209,7 @@ def cmd_html(args: argparse.Namespace) -> int:
             colors.append(s)
         else:
             colors.append(f"#{s}")
-    parts: List[str] = [
+    parts: list[str] = [
         "<html>",
         "<head>",
         "<title>Color Display</title>",
@@ -225,7 +227,7 @@ def cmd_html(args: argparse.Namespace) -> int:
 
 def cmd_extract(args: argparse.Namespace) -> int:
     root = Path(args.path)
-    found: Set[str] = set()
+    found: set[str] = set()
     for f in _walk_files(root):
         if is_binary(str(f)):
             continue
@@ -235,11 +237,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
             continue
         found.update(HEX_RE.findall(content))
     count = len(found)
-    expanded: List[str] = []
+    expanded: list[str] = []
     for c in found:
         expanded.append(c * 2 if len(c) == 3 else c)
 
-    result = sorted(set(c for c in expanded if len(c) != 3))
+    result = sorted({c for c in expanded if len(c) != 3})
     Path(args.output).write_text("\n".join(result), encoding="utf-8")
     cprint(f"{count} colors found", "green")
     return 0
@@ -247,8 +249,8 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 def cmd_extract_show(args: argparse.Namespace) -> int:
     root = Path(args.path)
-    allowed_ext: Set[str] = set(args.ext or [])
-    collected: List[Color] = []
+    allowed_ext: set[str] = set(args.ext or [])
+    collected: list[Color] = []
     for f in root.rglob("*"):
         if not f.is_file():
             continue
@@ -303,7 +305,7 @@ def cmd_showcolor(args: argparse.Namespace) -> int:
 def cmd_sorthue(args: argparse.Namespace) -> int:
     p = Path(args.file)
 
-    def key(line: str) -> Tuple[float, float, float]:
+    def key(line: str) -> tuple[float, float, float]:
         r = int(line[1:3], 16) / 255
         g = int(line[3:5], 16) / 255
         b = int(line[5:7], 16) / 255
@@ -317,7 +319,7 @@ def cmd_sorthue(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Merged color utilities.")
     sub = parser.add_subparsers(dest="command", required=True)
 

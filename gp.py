@@ -4,9 +4,10 @@ It should locate the repository (searching parent directories), copy a global ~/
 The script should handle and report errors gracefully, such as not being inside a git repository, a detached HEAD state preventing branch detection, and Git command failures during push, exiting with a non-zero status and printing messages to stderr in these cases."""
 
 from __future__ import annotations
-import sys
 from datetime import datetime
 from pathlib import Path
+import sys
+
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 
 

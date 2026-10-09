@@ -7,9 +7,10 @@ The script should be resilient to malformed or mixed-style tree text and skip or
 from __future__ import annotations
 import argparse
 import itertools
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 NODE_MARKERS = ("\u251c\u2500\u2500", "\u2514\u2500\u2500", "|--", "`--")
 FOOTER_RE = re.compile(r"^\d+\s+(directories|files|dirs|items)(,\s*\d+\s+(directories|files|dirs|items))?$")

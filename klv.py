@@ -11,14 +11,15 @@ Otherwise a stdlib fallback version key is used."""
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import logging
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Any, Optional, Sequence
+
 
 logger = logging.getLogger(__name__)
 ANDROID_RE = re.compile(r"/([^/]+)-(\d+\.\d+\.\d+)-py3-none-android_24_([^/]+)\.whl")

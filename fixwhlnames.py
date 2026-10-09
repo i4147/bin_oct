@@ -6,14 +6,17 @@ Provide a dry-run default."""
 
 from __future__ import annotations
 import argparse
-import re
-import shutil
-import zipfile
 from email.parser import HeaderParser
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import shutil
+import sys
 from typing import Any, Final
+import zipfile
+
 from loguru import logger
+
 
 WHEEL_SUFFIX: Final[str] = ".whl"
 METADATA_SUFFIX: Final[str] = ".dist-info/METADATA"

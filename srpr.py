@@ -18,8 +18,11 @@ Notable behavior: The script relies on an external helper module `dh` providing 
 LiveDoc: https://felo.ai/zh-Hans/livedoc/VZNS98iH967VsVbSmwX8n7"""
 
 from __future__ import annotations
+from pathlib import Path
 import sys
+
 from dh import runcmd
+
 
 if __name__ == "__main__":
     from string import ascii_lowercase

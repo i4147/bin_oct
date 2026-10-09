@@ -7,6 +7,8 @@ It has no explicit output on its own beyond defining this data structure and imp
 from __future__ import annotations
 from pathlib import Path
 from random import choice as random_choice
+import sys
+
 
 extensions = [
     ".Z",

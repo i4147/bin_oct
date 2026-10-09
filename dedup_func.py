@@ -11,15 +11,17 @@ Equivalent invocations ---------------------- python dedupfunc.py FILE [-r] [--b
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import hashlib
 import json
 import multiprocessing
 import os
-import re
-from collections import defaultdict
 from pathlib import Path
+import re
+import sys
 from typing import Any, Iterable, Optional
+
 
 try:
     from loguru import logger  # type: ignore
@@ -362,8 +364,8 @@ def find_fuzzy_duplicates(
     similarity_threshold: float,
 ) -> None:
     try:
-        import ssdeep  # type: ignore
         from rapidfuzz import fuzz  # type: ignore
+        import ssdeep  # type: ignore
     except ImportError:
         logger.error("Please install dependencies for --fuzzy: pip install ssdeep rapidfuzz")
         return

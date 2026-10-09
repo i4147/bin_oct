@@ -5,6 +5,8 @@ It should initialize curses color pairs (cyan for header, green/yellow/red for o
 from __future__ import annotations
 import curses
 from pathlib import Path
+import sys
+
 
 LINES_PER_FILE = 20
 

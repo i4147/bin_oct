@@ -5,7 +5,10 @@ It should be structured with a `process_file` function that validates the path e
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from dh import get_files, is_binary
+
 
 SIZE_THRESHOLD = 100
 LINE_THRESHOLD = 3

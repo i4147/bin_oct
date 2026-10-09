@@ -6,11 +6,12 @@ Subcommand mapping ------------------ avif2jpg.py -> python imgtool.py to-jpg av
 
 from __future__ import annotations
 import argparse
-import logging
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import logging
 from pathlib import Path
+import sys
 from typing import Iterable, Optional, Sequence
+
 
 try:
     from PIL import Image, UnidentifiedImageError  # type: ignore

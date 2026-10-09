@@ -12,16 +12,17 @@ The program resumes from an existing JSON file by default, saves atomically, ret
 
 from __future__ import annotations
 import argparse
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
+from pathlib import Path
 import sys
 import tempfile
 import threading
 import time
-from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Callable, Optional
+
 from loguru import logger
 
 

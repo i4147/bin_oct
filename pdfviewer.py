@@ -7,11 +7,13 @@ from __future__ import annotations
 import argparse
 import math
 import os
+from pathlib import Path
 import select
 import shutil
 import sys
 import termios
 import tty
+
 
 try:
     import fitz

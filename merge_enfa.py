@@ -7,6 +7,7 @@ Print progress messages using emoji-prefixed status indicators (e.g., 📖, ⚠�
 from __future__ import annotations
 import json
 from pathlib import Path
+import sys
 
 
 def merge_translation_files(base_dir=".", output_file="dic_en_fa.json", failed_file="failed-en.txt"):

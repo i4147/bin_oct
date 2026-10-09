@@ -29,8 +29,9 @@ The overall purpose is a quick utility/tool for bulk-converting RST documentatio
 LiveDoc: https://felo.ai/zh-Hans/livedoc/mbmV4rw8etbdkqNfayVsCz"""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import get_files, mpf
 from docutils.core import publish_parts
 from markdownify import markdownify

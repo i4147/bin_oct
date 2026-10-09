@@ -7,9 +7,10 @@ from __future__ import annotations
 import argparse
 import mmap
 import os
+from pathlib import Path
 import random
 import secrets
-from pathlib import Path
+import sys
 
 
 def enhanced_shuffle(input_file, output_file_prefix=None, methods=None, repeats=3) -> None:

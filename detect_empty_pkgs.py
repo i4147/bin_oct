@@ -8,10 +8,12 @@ from __future__ import annotations
 import argparse
 import ast
 import multiprocessing as mp
+from pathlib import Path
 import shutil
+import sys
 import tarfile
 import zipfile
-from pathlib import Path
+
 
 WORKERS = 4
 MIN_ARCHIVE_BYTES = 300

@@ -5,9 +5,11 @@ Write each resulting chunk to a new file in the same directory, reusing the orig
 The script should skip empty files and catch and report any errors encountered while processing a given file without crashing the whole run."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import mpf_map
+
 
 CHUNKSIZE = 15_850
 

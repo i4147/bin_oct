@@ -5,8 +5,9 @@ The script should walk directories using `os.walk`, skip symlinked files/directo
 It should be structured with a generator function to yield candidate file paths and a separate function to check and report oversized files, executed via a `main()` entry point."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import fsz
 
 

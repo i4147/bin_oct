@@ -6,11 +6,11 @@ It should accept command-line arguments to configure input paths and behavior, a
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
 import concurrent.futures
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 
 
 def parse_file_definitions(path: Path) -> dict:

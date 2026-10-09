@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Fix string literals in a (possibly invalid) JSON file.
+r"""Fix string literals in a (possibly invalid) JSON file.
 Usage: python fix_json.py <json-file> Per string literal we: 1.
 Convert any [ ] { } (escaped or not) into ( ).
 2.
@@ -10,9 +10,10 @@ Then we validate by json.loads + re-dump so the file is valid JSON."""
 
 from __future__ import annotations
 import json
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 STRING_RE = re.compile(r'"(?:[^"\\]|\\.)*"')
 

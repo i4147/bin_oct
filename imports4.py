@@ -24,22 +24,26 @@ The final script should be self-contained, runnable directly in Termux on Androi
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/fbMa7rQ4bXXteY5eMd5KUf"""
 
+from __future__ import annotations
 import argparse
 import ast
 import concurrent.futures
+import contextlib
 import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
 import time
-from pathlib import Path
+
+from dh import PKG_MAPPING, STDLIB
 import requests
 from yarg import json2package
 from yarg.exceptions import HTTPError
-from dh import STDLIB, PKG_MAPPING
+
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"
@@ -99,10 +103,8 @@ def read_cache(module):
 def write_cache(module, value):
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     p = CACHE_DIR / (cache_key(module) + ".json")
-    try:
+    with contextlib.suppress(Exception):
         p.write_text(json.dumps({"ts": time.time(), "value": value}))
-    except Exception:
-        pass
 
 
 def load_pypi_index(path=PYPI_INDEX_PATH):
@@ -186,11 +188,10 @@ def extract_imports_from_source(source, include_optional=False):
                 n = alias.name.split(".")[0]
                 if include_optional or not in_optional:
                     found.append(n)
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0 and node.module:
-                n = node.module.split(".")[0]
-                if include_optional or not in_optional:
-                    found.append(n)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            n = node.module.split(".")[0]
+            if include_optional or not in_optional:
+                found.append(n)
         for child in ast.iter_child_nodes(node):
             stack.append((child, in_optional))
     return found
@@ -331,12 +332,11 @@ def init(args):
                 if info and "==" in info:
                     n, v = info.split("==", 1)
                     results[pkg] = (n, v)
+                elif index and normalize(pkg) not in index:
+                    log.warning("%s not on PyPI, skipping", pkg)
                 else:
-                    if index and normalize(pkg) not in index:
-                        log.warning("%s not on PyPI, skipping", pkg)
-                    else:
-                        log.warning("could not resolve version for %s", pkg)
-                        results[pkg] = (pkg, None)
+                    log.warning("could not resolve version for %s", pkg)
+                    results[pkg] = (pkg, None)
     lines = []
     for pkg in results:
         if args["strip_installed"] and normalize(pkg) in installed:

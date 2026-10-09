@@ -7,9 +7,9 @@ When run as a script, compute this mapping and output it as formatted JSON (or p
 from __future__ import annotations
 import json
 import os
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def get_installed_packages_dependencies():

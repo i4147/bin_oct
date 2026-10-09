@@ -5,10 +5,12 @@ fi`, using a regex to locate and remove these blocks repeatedly until none remai
 For each file, it should first check whether the file appears to be a bash script (e.g., by shebang line or executable file permission bits) before applying the cleanup, read the file as UTF-8 text (ignoring decode errors), and only rewrite the file if its content actually changed, printing a confirmation message to stdout for cleaned files and any errors to stderr."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 from dh import get_nobinary
+
 
 IF_BLOCK_REGEX = re.compile(
     r"^if\s+\[\s*\$\((\S+)\)\s*\{\-ne\s+0\s*\}\]\s*;\s*then\s*\n((?:.|\n)*?)^\s*exit\s+1\s*$(.*?)^\s*fi",

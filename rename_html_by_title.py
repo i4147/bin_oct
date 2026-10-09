@@ -3,17 +3,19 @@
 It supports multiple languages through transliteration, handles file naming conventions, and provides concurrent processing for improved performance."""
 
 from __future__ import annotations
-import re
-import sys
-import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
 from typing import Any
+import unicodedata
+
 from loguru import logger
+
 
 try:
     TREE_SITTER_AVAILABLE = True

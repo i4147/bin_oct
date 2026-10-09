@@ -5,6 +5,8 @@ The script should use pathlib's Path.walk() for directory traversal and run its 
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     cwd = Path.cwd()

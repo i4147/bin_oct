@@ -5,6 +5,8 @@ As each file is moved, the script should print a line showing the source filenam
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     cwd = Path.cwd()

@@ -1,17 +1,14 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""fontpreview.py - unified font preview generator.
-Combines three standalone scripts into a single CLI with two subcommands.
-Original -> merged mapping -------------------------- fafontpreview.py -> python fontpreview.py simple --preset fa fontpreview.py -> python fontpreview.py simple --preset en fontpre.py -> python fontpreview.py rich [paths...] -o out.html Examples -------- # Persian preset (default 'simple' preset) python fontpreview.py simple python fontpreview.py simple --preset fa ./fonts # English preset python fontpreview.py simple --preset en ./fonts # Override text/sizes/output python fontpreview.py simple --text "Hello World" --sizes 12 18 32 -o test.html ./fonts # Rich preview with dark mode + metadata python fontpreview.py rich ./fonts ~/Downloads -o preview.html -v python fontpreview.py rich --max-fonts 200 ."""
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 import argparse
-import html
-import logging
 from collections import namedtuple
 from datetime import datetime
 from functools import lru_cache
+import html
+import logging
 from pathlib import Path
 from typing import Optional, Sequence
+
 
 LOG = logging.getLogger("fontpreview")
 FONT_EXTS: frozenset[str] = frozenset({
@@ -214,11 +211,15 @@ def _rich_section(info: FontInfo, root: Path, text: str) -> str:
         f"    {fname}\n"
         f"<small>({info.format})</small>\n"
         "</h1>\n"
-        "<textarea\n"
-        f"    style=\"font-family:'{family}',serif; font-size:22px;\"\n"
+        "<div\n"
+        '    class="preview-text"\n'
+        '    contenteditable="true"\n'
         '    spellcheck="false"\n'
-        '    placeholder="Type to test font..."\n'
-        f">{body}</textarea>\n"
+        '    data-placeholder="Type to test font..."\n'
+        f"    style=\"font-family:'{family}',serif; font-size:22px;\"\n"
+        f">{body}</div>\n"
+        f'<div class="font-sample" style="font-family:\'{family}\',serif; '
+        f'font-size:22px; white-space:pre-wrap; margin-top:8px;">{body}</div>\n'
         '<div class="metadata">\n'
         '<div class="metadata-item">\n'
         '<span class="metadata-label">Path:</span>\n'
@@ -279,7 +280,7 @@ h1 small {
   display: inline-block;
   margin-left: 0.5em;
 }
-textarea {
+.preview-text {
   width: 100%;
   min-height: 100px;
   padding: 16px;
@@ -288,14 +289,31 @@ textarea {
   border: 2px solid var(--border);
   font-size: clamp(1em, 2vw, 1.5em);
   resize: vertical;
+  overflow: auto;
   white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   background: var(--input-bg);
   color: var(--text);
   transition: border-color 0.3s;
   line-height: 1.6;
-  overflow-wrap: break-word;
+  outline: none;
+  font-synthesis: none;
 }
-textarea:focus { outline: none; border-color: var(--accent); }
+.preview-text:focus { border-color: var(--accent); }
+.preview-text:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.font-sample {
+  padding: 8px 0;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  color: var(--text);
+  border-bottom: 1px dashed var(--border);
+}
 section {
   margin-top: 30px;
   padding-bottom: 20px;
@@ -402,7 +420,6 @@ def build_parser() -> argparse.ArgumentParser:
         prog="fontpreview.py",
         description="Generate HTML previews for font files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__.split("Examples", 1)[-1] if "Examples" in __doc__ else None,
     )
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser(
@@ -429,7 +446,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_simple)
     p = sub.add_parser(
         "rich",
-        help="Rich interactive preview with textareas + dark mode (fontpre.py)",
+        help="Rich interactive preview with editable sample + dark mode (fontpre.py)",
     )
     p.add_argument("paths", nargs="*", help="Files/directories to scan (default: cwd)")
     p.add_argument(

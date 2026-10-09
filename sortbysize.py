@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import operator
 from pathlib import Path
+import sys
 
 
 def sort_by_size(root_folder: Path):

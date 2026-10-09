@@ -25,12 +25,13 @@ Theility designed to runux (Android) environment, using the shebang `#!/data/dat
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/Va4xBt5bbWsmKax2Lhkhzv"""
 
+from __future__ import annotations
 import ast
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
 
 
 def get_python_files(root_dir: Path):

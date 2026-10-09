@@ -30,24 +30,29 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/XCnhgqRWPMWGwdjCXMVWpD"""
 
 from __future__ import annotations
 import argparse
+from collections import Counter
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
+from functools import cache
 import hashlib
 import importlib
 import importlib.util
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
-from collections import Counter
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import dataclass, field
-from functools import cache
-from multiprocessing.pool import Pool
-from pathlib import Path
-from typing import Final, Literal, NamedTuple
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import Pool
+
 
 Status = Literal["stripped", "unchanged", "skipped", "error"]
 PoolMethod = Literal["imap_unordered", "imap", "map", "starmap", "apply_async", "apply"]
@@ -343,7 +348,8 @@ def strip_comments(data: bytes, lang: str) -> bytes:
     parser = _parser(lang)
     root = parser.parse(data).root_node
     if root.has_error:
-        raise SkipFile("source has syntax errors")
+        msg = "source has syntax errors"
+        raise SkipFile(msg)
     spans = removal_spans(root, data, spec)
     if not spans:
         return data
@@ -357,16 +363,19 @@ def strip_comments(data: bytes, lang: str) -> bytes:
     result = b"".join(parts)
     new_root = parser.parse(result).root_node
     if new_root.has_error:
-        raise ValidationError("stripped result has syntax errors")
+        msg = "stripped result has syntax errors"
+        raise ValidationError(msg)
     if fingerprint(new_root, result) != fingerprint(root, data):
-        raise ValidationError("stripped result changed the token stream")
+        msg = "stripped result changed the token stream"
+        raise ValidationError(msg)
     return result
 
 
 def commit(path: Path, payload: bytes, backup: bool, ref: os.stat_result) -> None:
     current = path.stat()
     if (current.st_mtime_ns, current.st_size) != (ref.st_mtime_ns, ref.st_size):
-        raise SkipFile("file modified concurrently")
+        msg = "file modified concurrently"
+        raise SkipFile(msg)
     if backup:
         shutil.copy2(path, path.with_name(f"{path.name}.bak"))
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
@@ -385,14 +394,17 @@ def process_file(path: Path, backup: bool, max_size: int, dry_run: bool) -> Outc
     name = str(path)
     try:
         if path.is_symlink():
-            raise SkipFile("symlink")
+            msg = "symlink"
+            raise SkipFile(msg)
         lang = SUFFIX_TO_LANG[path.suffix.lower()]
         ref = path.stat()
         if not 0 < ref.st_size <= max_size:
-            raise SkipFile(f"size {ref.st_size} outside accepted range")
+            msg = f"size {ref.st_size} outside accepted range"
+            raise SkipFile(msg)
         data = path.read_bytes()
         if b"\0" in data:
-            raise SkipFile("binary content")
+            msg = "binary content"
+            raise SkipFile(msg)
         result = strip_comments(data, lang)
         if result == data:
             return Outcome(name, "unchanged", len(data), len(data))
@@ -427,7 +439,8 @@ def run_pool(pool: Pool, method: PoolMethod, tasks: Iterable[Task], chunksize: i
             for task in tasks:
                 yield pool.apply(process_file, task)
         case _:
-            raise ValueError(f"unknown pool method: {method}")
+            msg = f"unknown pool method: {method}"
+            raise ValueError(msg)
 
 
 def report(outcome: Outcome) -> None:
@@ -461,7 +474,7 @@ def configure_logging(verbose: bool, log_file: Path | None) -> None:
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="strip_comments")
-    parser.add_argument("root", nargs="?", type=Path, default=Path("."))
+    parser.add_argument("root", nargs="?", type=Path, default=Path())
     parser.add_argument("-b", "--backup", action="store_true")
     parser.add_argument("-n", "--dry-run", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")

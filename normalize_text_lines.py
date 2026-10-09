@@ -6,10 +6,10 @@ The normalized lines should be written to a temporary file in the same directory
 The script should handle UnicodeDecodeError gracefully by printing an error message, and print usage/error messages to stderr with appropriate exit codes on invalid arguments or non-file paths."""
 
 from __future__ import annotations
+from pathlib import Path
 import sys
 import tempfile
 import unicodedata
-from pathlib import Path
 
 
 def normalize_line(line: str) -> str:

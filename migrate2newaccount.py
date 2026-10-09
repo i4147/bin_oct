@@ -5,7 +5,10 @@ The script should use "os" for directory traversal and "subprocess" to execute G
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import subprocess
+import sys
+
 
 NEW_USER = "i4147"
 IGNORE = {"cpython", "neovim-source", ".git"}

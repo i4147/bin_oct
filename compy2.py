@@ -8,16 +8,18 @@ from __future__ import annotations
 import argparse
 import ast
 import builtins
+from io import StringIO
 import keyword
 import multiprocessing as mp
+from pathlib import Path
 import re
 import sys
 import sysconfig
 import token
 import tokenize
-from io import StringIO
-from pathlib import Path
+
 from dh import runcmd
+
 
 OUTPUT_FILE = Path("compressed.txt")
 WORKERS = 8

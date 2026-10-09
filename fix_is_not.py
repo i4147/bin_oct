@@ -7,8 +7,9 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import os
-import tokenize
 from pathlib import Path
+import sys
+import tokenize
 
 
 def process_file(path: Path, auto_fix: bool = False) -> dict:

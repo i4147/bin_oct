@@ -6,12 +6,15 @@ Include helper functions for name normalization and for extracting a package's d
 
 from __future__ import annotations
 import argparse
-import html
-import re
 from collections import defaultdict, deque
+import html
 from importlib import metadata
 from pathlib import Path
+import re
+import sys
+
 from joblib import Parallel, delayed
+
 
 WORKERS = 8
 

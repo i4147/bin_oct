@@ -25,11 +25,15 @@ The script reads one or more HTML files, parses their markup, and reports any st
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/3xgVfruYSGnbGkKQnwgYAY"""
 
+from __future__ import annotations
 import argparse
-from pathlib import Path
-from html.parser import HTMLParser
 from html import escape
+from html.parser import HTMLParser
+from pathlib import Path
+import sys
+
 from loguru import logger
+
 
 VOID_ELEMENTS = {
     "area",
@@ -175,7 +179,10 @@ def backend_html_parser(raw):
 
 
 def backend_lxml(raw):
-    from lxml import html as lxml_html, etree
+    from lxml import (
+        etree,
+        html as lxml_html,
+    )
 
     errors = []
     try:
@@ -189,8 +196,9 @@ def backend_lxml(raw):
 
 
 def backend_html5lib(raw):
-    import html5lib
     from xml.etree import ElementTree as ET
+
+    import html5lib
 
     errors = []
     try:

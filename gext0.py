@@ -5,14 +5,16 @@ The script should handle file I/O robustly with shutil for temporary extraction 
 
 from __future__ import annotations
 import ast
+from multiprocessing import Pool, cpu_count
 import os
+from pathlib import Path
 import re
 import shutil
+import sys
 import tarfile
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Any
+import zipfile
+
 
 OUTPUT_DIR = Path("output")
 ARCHIVE_EXTENSIONS = (

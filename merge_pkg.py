@@ -9,8 +9,8 @@ import ast
 import base64
 import json
 import os
-import sys
 from pathlib import Path
+import sys
 
 
 class Module:

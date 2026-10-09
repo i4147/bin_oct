@@ -4,10 +4,12 @@ It should resolve the source path, compute the destination path by combining the
 The script then performs the move using shutil.move and prints a message showing the original name and the final destination name in the format "source --> destination"."""
 
 from __future__ import annotations
+from pathlib import Path
 import shutil
 import sys
-from pathlib import Path
+
 from dh import unique_path
+
 
 if __name__ == "__main__":
     src = Path(sys.argv[1]).resolve()

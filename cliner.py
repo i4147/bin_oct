@@ -5,9 +5,12 @@ The script should process files concurrently using a worker pool (e.g., 4 worker
 
 from __future__ import annotations
 import mmap
-import re
 from pathlib import Path
+import re
+import sys
+
 from dh import mpf
+
 
 LOG_EXT = ".log"
 MMAP_THRESHOLD = 1 * 1024 * 1024

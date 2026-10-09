@@ -11,17 +11,19 @@ import contextlib
 import hashlib
 import json
 import multiprocessing as mp
+from pathlib import Path
 import re
 import signal
 import sys
 import time
+from typing import Optional
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
-from typing import Optional
+
 import requests
 from tqdm import tqdm
+
 
 try:
     import pycurl  # type: ignore

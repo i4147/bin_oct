@@ -5,10 +5,10 @@ Merges 10 original scripts into one argparse CLI: cairosvg2pdf.py -> pdfkit.py s
 from __future__ import annotations
 import argparse
 import base64
-import re
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import re
+import sys
 from typing import Any, Iterable, Optional, Sequence
 
 

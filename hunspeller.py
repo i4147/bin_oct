@@ -6,9 +6,11 @@ Include proper handling for command-line argument parsing and use sys for exit c
 
 from __future__ import annotations
 import argparse
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import re
 import sys
-from multiprocessing import Pool, cpu_count
+
 import hunspell
 
 

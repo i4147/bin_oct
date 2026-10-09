@@ -5,16 +5,18 @@ Features: - Auto-detect repo name from dirname or use -n/--name - Copy .gitignor
 from __future__ import annotations
 import argparse
 import os
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 from typing import Optional
-import requests
+
 from loguru import logger
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
 
 ENV_FILE = Path.home() / ".env"
 GITHUB_API_BASE = "https://api.github.com"

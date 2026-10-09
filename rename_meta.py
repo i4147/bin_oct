@@ -5,7 +5,10 @@ It should print color-coded status messages (green for name+version success, yel
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from dh import cprint, get_files, unique_path
+
 
 OUT_PATH = Path("/data/data/com.termux/files/home/tmp/metadata")
 

@@ -4,18 +4,19 @@ Usage: dl https://example.com/file.iso dl -j 4 url1 url2 url3 dl -b requests -f 
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import contextlib
+from pathlib import Path
 import queue
 import re
 import shutil
 import sys
 import threading
 import time
+from typing import Iterator, Optional, Self
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-from typing import Iterator, Optional, Self
+
 
 __version__ = "2.0.0"
 CHUNK = 64 * 1024

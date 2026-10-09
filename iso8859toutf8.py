@@ -6,7 +6,9 @@ Include a main block that runs this conversion on a file named "script.sh"."""
 
 from __future__ import annotations
 import codecs
+from pathlib import Path
 import shutil
+import sys
 
 
 def convert_in_place(filename):

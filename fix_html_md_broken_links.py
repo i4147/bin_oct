@@ -6,8 +6,10 @@ The script should run as a standalone program invoked via a main function and ex
 
 from __future__ import annotations
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 
 static_dir = "/sdcard/_static"
 

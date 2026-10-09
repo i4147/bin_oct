@@ -6,8 +6,9 @@ If no input file argument is given, it should print a usage message and exit wit
 
 from __future__ import annotations
 import json
-import sys
 from pathlib import Path
+import sys
+
 import nbformat as nbf
 
 

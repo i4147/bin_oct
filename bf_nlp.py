@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-from blingfire import text_to_sentences, text_to_words
+from blingfire_compat import text_to_sentences, text_to_words
 
 
 if __name__ == "__main__":

@@ -5,10 +5,12 @@ The script should print progress messages, handle the case where the target file
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
+
 import zstandard as zstd
 
 

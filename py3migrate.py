@@ -16,7 +16,10 @@ Only the standard library is used; ``ruff`` is invoked if ``--with-ruff`` is pas
 from __future__ import annotations
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 import logging
+from pathlib import Path
 import pkgutil
 import re
 import shutil
@@ -24,11 +27,9 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import zipfile
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-from pathlib import Path
 from typing import Iterable, Sequence
+import zipfile
+
 
 log = logging.getLogger("py3migrate")
 DEFAULT_EXT: tuple[str, ...] = (".py",)

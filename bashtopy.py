@@ -7,10 +7,11 @@ This is useful for recovering readable, well-formatted Python source that was em
 
 from __future__ import annotations
 import io
+from pathlib import Path
 import re
 import sys
 import tokenize
-from pathlib import Path
+
 
 HEREDOC_START = re.compile(
     r"""

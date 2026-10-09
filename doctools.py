@@ -4,14 +4,14 @@ Merges these originals into one tool: export_chat.py -> chat-export info2md.py -
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import hashlib
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
 

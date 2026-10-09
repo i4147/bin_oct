@@ -8,9 +8,11 @@ Usage examples -------------- python pytokei_merged.py python pytokei_merged.py 
 
 from __future__ import annotations
 import argparse
-import re
 from pathlib import Path
+import re
+import sys
 from typing import Any, Sequence
+
 
 LANGUAGE_EXTENSIONS: dict[str, list[str]] = {
     "python": [".py", ".pyi"],

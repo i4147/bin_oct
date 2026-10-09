@@ -37,13 +37,15 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/NBVrt7eH4StQSRRAT5Cn9A"""
 
 from __future__ import annotations
 import argparse
+from collections import Counter
 import contextlib
 import json
 import multiprocessing as mp
 import os
-import re
-from collections import Counter
 from pathlib import Path
+import re
+import sys
+
 
 CWD = Path.cwd()
 DICT_PATH = Path.home() / ".personal_dict"

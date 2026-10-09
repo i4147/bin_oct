@@ -6,8 +6,10 @@ It should be structured as a standalone command-line utility with a main() entry
 from __future__ import annotations
 from multiprocessing import get_context
 from pathlib import Path
-import pdfplumber
+import sys
+
 from fastwalk import walk_files
+import pdfplumber
 
 
 def process_file(path) -> None:

@@ -2,15 +2,18 @@
 """Move every `tests` directory out of `~/.local/lib/python3.12/site-packages` into `~/tmp/tests_dirs` while preserving relative structure: discover candidates, process them via `multiprocessing.pool.starmap` on a fixed pool of 8 workers, skip excluded packages, support a `-d` dry-run flag, and log with loguru."""
 
 from __future__ import annotations
-import shutil
-import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import Final, NamedTuple
+
 from loguru import logger
 
+
 MAX_WORKERS: Final[int] = 8
-SRC: Final[Path] = Path.home() / ".local" / "lib" / "python3.12" / "site-packages"
+
+SRC: Final[Path] = Path.home() / ".." / "usr" / "lib" / "python3.14" / "site-packages"
 DEST: Final[Path] = Path.home() / "tmp" / "tests_dirs"
 EXCLUDED: Final[tuple[str, ...]] = ("numpy", "pandas", "scipy", "numba")
 DRY_RUN: Final[bool] = "-d" in sys.argv

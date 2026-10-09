@@ -4,8 +4,8 @@ It should accept a filename as the first argument, a starting line number as the
 The script reads the file, removes the specified 1-indexed inclusive line range, writes the remaining lines back to the same file, and prints a message showing how many lines remain."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 
 
 def delete_lines_from_file() -> None:

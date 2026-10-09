@@ -1,9 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
 import ast
 import json
 import multiprocessing as mp
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+import sys
+from typing import Any, Dict, List, Tuple
+
 
 # ----------------------------------------------------------------------
 # AST Normalization Helper
@@ -78,7 +81,7 @@ def check_annotations(node: ast.AST) -> bool:
 # ----------------------------------------------------------------------
 
 
-def extract_objects_from_file(file_path: Path) -> List[Dict[str, Any]]:
+def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
     """Parses a single Python file and extracts functions, classes, and constants."""
     results = []
 
@@ -141,13 +144,13 @@ def main():
     all_objects = [obj for sublist in file_results for obj in sublist]
 
     # Group objects by structural equivalence
-    grouped_objects: Dict[str, List[Dict[str, Any]]] = {}
+    grouped_objects: dict[str, list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
 
     # Identify duplicates and check annotation differences
-    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {"function": [], "class": [], "constant": []}
+    categorized_duplicates: dict[str, list[dict[str, Any]]] = {"function": [], "class": [], "constant": []}
 
     total_duplicates = 0
 

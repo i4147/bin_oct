@@ -4,6 +4,8 @@ It should then parse each found file with BeautifulSoup to extract common struct
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from bs4 import BeautifulSoup
 
 

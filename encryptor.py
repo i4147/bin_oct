@@ -3,13 +3,16 @@
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import random
 import string
-from pathlib import Path
+import sys
+
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from fastwalk import walk_files
+
 
 AES_BLOCK_SIZE = 128
 

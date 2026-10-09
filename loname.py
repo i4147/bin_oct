@@ -4,8 +4,9 @@ For each file, it checks existence (falling back to a lowercased path if the ori
 When run without arguments it processes only the top-level files in the current directory; when run with any argument it recursively processes all files in the current directory tree, excluding `.git` paths and symlinks."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import mpf, unique_path
 
 

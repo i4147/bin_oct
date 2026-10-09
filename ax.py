@@ -27,30 +27,32 @@
 LiveDoc: https://felo.ai/zh-Hans/livedoc/nx5nNpppbTGdRtCKmbXuaC"""
 
 from __future__ import annotations
-
+import contextlib
 import hashlib
 import html
 import os
+from pathlib import Path
 import re
 import sys
 import tempfile
 import time
+from typing import Any, Callable, Iterable, Optional
+from urllib.parse import urljoin
 import urllib.request
 import urllib.robotparser
 import webbrowser
-from typing import Any, Callable, Iterable, Optional
-from urllib.parse import urljoin
 
 import diskcache
 import just
 import justext
 import langdetect
 import lxml.html
-import requests
-import ujson as json
 from lxml.html import fromstring
 from metadate import parse_date
+import requests
 from tldextract import tldextract
+import ujson as json
+
 
 __project__ = "auto_extract"
 __version__ = "0.1.3"
@@ -58,7 +60,7 @@ __version__ = "0.1.3"
 
 class lazy_property:
     def __init__(self, func: Callable) -> None:
-        self.__doc__ = getattr(func, "__doc__")
+        self.__doc__ = func.__doc__
         self.func = func
 
     def __get__(self, obj: Any, cls: Any) -> Any:
@@ -82,8 +84,8 @@ def normalize(s: str) -> str:
 
 
 def get_text_and_tail(node: Any) -> str:
-    text = node.text if node.text else ""
-    tail = node.tail if node.tail else ""
+    text = node.text or ""
+    tail = node.tail or ""
     return text + " " + tail
 
 
@@ -102,7 +104,7 @@ def extract_links(tree: Any, domain: str, only_this_domain: bool = True) -> list
     links = tree.xpath("//a/@href")
     links = [urljoin(domain, x) for x in links]
     if only_this_domain:
-        links = list(set([x for x in links if domain in x]))
+        links = list({x for x in links if domain in x})
     return links
 
 
@@ -122,10 +124,8 @@ def get_language(tree: Any, domain: Optional[str] = None, lang_default: str = "e
         page_txt = " ".join(tree.xpath("//p/text()")) + " ".join(tree.xpath("//div/text()"))
         if not page_txt:
             page_txt = tree.text_content()
-        try:
+        with contextlib.suppress(langdetect.lang_detect_exception.LangDetectException):
             lang = langdetect.detect(page_txt)
-        except langdetect.lang_detect_exception.LangDetectException:
-            pass
     if lang is None and domain is not None:
         dom = domain.split(".")[-1]
         if dom == "com":
@@ -249,22 +249,19 @@ def general_ok_img(img_candidate: Any, original_url: str, wrong_imgs: list[str])
         if "src" not in img_candidate.attrib:
             return False
         link = img_candidate.attrib["src"]
-    else:
-        if "content" in img_candidate.attrib:
-            link = img_candidate.attrib["content"]
-        elif "style" in img_candidate.attrib:
-            tmp = re.findall(r"background-image:[ ]*url\((http[^)]+)", img_candidate.attrib["style"])
-            if tmp:
-                link = tmp[0]
+    elif "content" in img_candidate.attrib:
+        link = img_candidate.attrib["content"]
+    elif "style" in img_candidate.attrib:
+        tmp = re.findall(r"background-image:[ ]*url\((http[^)]+)", img_candidate.attrib["style"])
+        if tmp:
+            link = tmp[0]
     if link is None:
         return False
     if len(link) > 1000:
         return False
     if not urljoin(original_url, link).startswith("http"):
         return False
-    if any([any([w in img_candidate.attrib[a] for w in wrong_imgs]) for a in img_candidate.attrib]):
-        return False
-    return True
+    return not any(any(w in img_candidate.attrib[a] for w in wrong_imgs) for a in img_candidate.attrib)
 
 
 def dimensions_ok(img_candidate: Any) -> bool:
@@ -356,7 +353,7 @@ def different(text: str, title: str, date_str: str, simple: bool = True) -> bool
     text = text.strip()
     title = title.strip()
     date_str.strip()
-    return text != title and text != date_str
+    return text not in (title, date_str)
 
 
 def get_content(response_body: bytes, title: str, language: str, url: str) -> tuple[Any, Optional[str]]:
@@ -379,7 +376,7 @@ def get_content(response_body: bytes, title: str, language: str, url: str) -> tu
     if good_inds:
         if date_text is None:
             lower_index, upper_index = good_inds[0], good_inds[-1]
-            date_candidates = sorted(list(range(len(texts))), key=lambda x: edge_distance(x, lower_index, upper_index))
+            date_candidates = sorted(range(len(texts)), key=lambda x: edge_distance(x, lower_index, upper_index))
             date_candidates = [texts[i] for i in date_candidates]
             date_candidates = [x for x in date_candidates if len(x) < 100]
             for x in date_candidates:
@@ -528,10 +525,10 @@ def test_url(url: str) -> Article:
     return extract_url(url)
 
 
-YYYYMMDD = re.compile("20\d{2}\d{2}\d{2}[/_-]")
-YYYY_MM_DD = re.compile("20\d{2}[/_-]\d{2}[/_-]\d{2}[/_-]")
-YYYY_MM = re.compile("20\d{2}[/_-]*\d{2}[/_-]")
-YYYY = re.compile("[/_-]20\d{2}[/_-]")
+YYYYMMDD = re.compile(r"20\d{2}\d{2}\d{2}[/_-]")
+YYYY_MM_DD = re.compile(r"20\d{2}[/_-]\d{2}[/_-]\d{2}[/_-]")
+YYYY_MM = re.compile(r"20\d{2}[/_-]*\d{2}[/_-]")
+YYYY = re.compile(r"[/_-]20\d{2}[/_-]")
 
 
 def re_count(char: str, min_count: int, max_count: int) -> re.Pattern:
@@ -553,7 +550,7 @@ block_list = [
     "/#",
     "/tag",
     "/api",
-    "\.pdf",
+    r"\.pdf",
     "/job",
     "/faq",
     "/.pdf",
@@ -623,9 +620,7 @@ def should_be_blocked(url: str) -> bool:
     for b in block_list:
         if re.search(b, url):
             return True
-    if iso2_countries_re.search(url):
-        return True
-    return False
+    return bool(iso2_countries_re.search(url))
 
 
 class Storage:
@@ -709,7 +704,7 @@ def remove_hash_after_last_dash(article_url: str) -> str:
     return re.sub("-[a-f]*[0-9]+[a-f]+[0-9]+[a-f0-9]+$", "", article_url)
 
 
-file_extensions = set([".jpg", ".png", ".zip", ".dmg", ".exe", ".gz"])
+file_extensions = {".jpg", ".png", ".zip", ".dmg", ".exe", ".gz"}
 
 
 class UpfrontRobotFileParser(urllib.robotparser.RobotFileParser):
@@ -768,7 +763,7 @@ class Crawler:
         for seed_url in seed_urls:
             if not seed_url:
                 continue
-            if any([x in seed_url.split("/")[2] for x in ["tumblr", "ink.one"] if len(seed_url.split("/")) > 2]):
+            if any(x in seed_url.split("/")[2] for x in ["tumblr", "ink.one"] if len(seed_url.split("/")) > 2):
                 continue
             domain_name, domain = extract_domain(seed_url)
             self.domain_names.append(domain_name)
@@ -791,10 +786,7 @@ class Crawler:
         return rp
 
     def robots_can_fetch(self, url: str) -> bool:
-        for robot_parser in self.robot_parsers:
-            if robot_parser.can_fetch(self.user_agent, url):
-                return True
-        return False
+        return any(robot_parser.can_fetch(self.user_agent, url) for robot_parser in self.robot_parsers)
 
     @property
     def invalid_seeds(self) -> bool:
@@ -804,7 +796,7 @@ class Crawler:
         parts = url.split("/")
         if len(parts) < 3:
             return False
-        return any([domain_name in url.split("/")[2] for domain_name in self.domain_names])
+        return any(domain_name in url.split("/")[2] for domain_name in self.domain_names)
 
     def get(self, url: str) -> Optional[bytes]:
         try:
@@ -817,7 +809,7 @@ class Crawler:
 
     def pre_process_url(self, url: str) -> str:
         if self.remove_query_param:
-            url = url.split("?")[0]
+            url = url.split("?", maxsplit=1)[0]
         return url
 
     def view_tree(self) -> None:
@@ -861,13 +853,13 @@ class Crawler:
                     continue
                 if link == seed_url:
                     continue
-                if any([link.endswith(x) for x in file_extensions]):
+                if any(link.endswith(x) for x in file_extensions):
                     continue
                 if not self.robots_can_fetch(link):
                     continue
-                if self.any_exclude_regexes and any([x.search(link) for x in self.any_exclude_regexes]):
+                if self.any_exclude_regexes and any(x.search(link) for x in self.any_exclude_regexes):
                     continue
-                if self.all_required_regexes and not all([x.search(link) for x in self.all_required_regexes]):
+                if self.all_required_regexes and not all(x.search(link) for x in self.all_required_regexes):
                     continue
                 if self.auto_detect_fn and auto_pattern and not auto_pattern.search(link):
                     continue

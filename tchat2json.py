@@ -24,13 +24,15 @@ The purpose of the script is to help users convert raw/plain-text chat export lo
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/HFdxVZksciQREb8QZayNa3"""
 
+from __future__ import annotations
 import argparse
 import csv
 import json
+from pathlib import Path
 import re
 import sqlite3
 import sys
-from pathlib import Path
+
 
 LINE_RE = re.compile(r"^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(.*?):\s?(.*)$")
 

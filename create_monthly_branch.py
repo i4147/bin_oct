@@ -4,10 +4,11 @@ It should derive a branch name from the current month and year (e.g., "september
 If the branch doesn't exist, it should fetch all remotes, checkout and pull the main branch, then create and push the new monthly branch, printing status messages throughout using subprocess calls to git commands."""
 
 from __future__ import annotations
-import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
+import subprocess
+import sys
+
 
 REPO_PATH = Path.home() / "bin"
 MAIN_BRANCH = "main"

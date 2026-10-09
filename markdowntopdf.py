@@ -27,17 +27,19 @@ Use standard library modules (`argparse`, `json`, `logging`, `lzma`, `sys`, `pat
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/Cc3u7xeNnCnzLFfcPC83KL"""
 
+from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import lzma
-import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import sys
 from time import time
 
 from markdown import markdown
 from weasyprint import CSS, HTML
+
 
 MARKDOWN_BASE_EXTENSIONS = [
     "markdown.extensions.tables",
@@ -56,7 +58,7 @@ class ValidationError(Exception):
 
 
 def md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_config=None):
-    extras_config = extras_config if extras_config else {}
+    extras_config = extras_config or {}
     extras = extras if extras and len(extras) else []
 
     if md:
@@ -64,7 +66,8 @@ def md2pdf(pdf, raw=None, md=None, css=None, base_url=None, extras=None, extras_
         raw = md.read_text()
 
     if raw is None or not len(raw):
-        raise ValidationError("No markdown content to process (empty file or raw string)")
+        msg = "No markdown content to process (empty file or raw string)"
+        raise ValidationError(msg)
 
     extensions = MARKDOWN_BASE_EXTENSIONS + extras
     raw_html = markdown(raw, extensions=extensions, extension_configs=extras_config)
@@ -90,7 +93,8 @@ def parse_config(config):
     try:
         parsed = json.loads(config)
     except json.decoder.JSONDecodeError as err:
-        raise ValidationError("Invalid input configuration string (should be valid JSON)") from err
+        msg = "Invalid input configuration string (should be valid JSON)"
+        raise ValidationError(msg) from err
     return parsed
 
 
@@ -100,7 +104,7 @@ def _convert_one(md_path, pdf_path, css=None, extras=None, extras_config=None):
         md=md_path,
         css=css,
         base_url=Path.cwd(),
-        extras=extras if extras else None,
+        extras=extras or None,
         extras_config=extras_config,
     )
 
@@ -146,7 +150,7 @@ def main():
     if css:
         print(f"💅 CSS file: {css}")
 
-    extras = args.extras if args.extras else None
+    extras = args.extras or None
     if extras:
         print(f"🔧 Extras: {extras}")
 

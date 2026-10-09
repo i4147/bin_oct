@@ -9,12 +9,13 @@ Usage ----- python add_main_guard.py check [paths ...] [--detect ast|regex] [--w
 from __future__ import annotations
 import argparse
 import ast
+from concurrent.futures import ProcessPoolExecutor
 import logging
+from pathlib import Path
 import re
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 from typing import Sequence
+
 
 logger = logging.getLogger("add_main_guard")
 DEFAULT_EXCLUDES: tuple[str, ...] = (

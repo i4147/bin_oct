@@ -34,19 +34,20 @@ The final script should be directly executable/importable, self-contained, and s
 LiveDoc: https://felo.ai/zh-Hans/livedoc/gLsKg9sYA9JbwRbjPMNzDo"""
 
 from __future__ import annotations
-
 from hashlib import sha224
 from logging import error, exception, info
 from pathlib import Path
 from re import findall
 from shutil import move
+import sys
 from tempfile import gettempdir
 from time import sleep
 from typing import Any, Callable, Optional
 
 from requests import Response, get
 
-__all__ = ["get_resource", "save_file", "SaveToDisk"]
+
+__all__ = ["SaveToDisk", "get_resource", "save_file"]
 __name__ = "url_downloader"
 __version__ = "1.0.5"
 

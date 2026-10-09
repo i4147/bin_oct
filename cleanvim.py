@@ -5,13 +5,15 @@ The script should process files in parallel using multiprocessing, track per-fil
 It should also report summary statistics (e.g., total files processed, comments removed, elapsed time) to stdout upon completion."""
 
 from __future__ import annotations
+from dataclasses import dataclass
 import multiprocessing as mp
+from pathlib import Path
 import sys
 import time
-from dataclasses import dataclass
-from pathlib import Path
-import tree_sitter_vim
+
 from tree_sitter import Language, Node, Parser
+import tree_sitter_vim
+
 
 PathLike = str | Path
 

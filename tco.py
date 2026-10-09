@@ -7,10 +7,12 @@ Common features: - Respects the translator's ~500 char query limit (MAX_CHARS) -
 from __future__ import annotations
 import argparse
 import json
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
+
 from translate import Translator
+
 
 SAVE_EVERY = 50
 SLEEP_BETWEEN = 0.5

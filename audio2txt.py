@@ -6,10 +6,12 @@ The script should handle missing input files by printing an error and exiting, a
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import sys
 import tempfile
-import speech_recognition as sr
+
 from pydub import AudioSegment
+import speech_recognition as sr
 
 
 def m4a_to_text(input_file, output_file="out.txt"):

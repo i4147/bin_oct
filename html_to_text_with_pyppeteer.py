@@ -5,8 +5,9 @@ The script should run the entire flow within an asyncio event loop and close the
 
 from __future__ import annotations
 import asyncio
-import sys
 from pathlib import Path
+import sys
+
 from pyppeteer import launch
 
 

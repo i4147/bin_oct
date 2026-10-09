@@ -6,8 +6,11 @@ Finally, print a summary message showing how many folders were processed."""
 from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
-import tree_sitter_python as tsp
+import sys
+
 from tree_sitter import Language, Parser, Tree
+import tree_sitter_python as tsp
+
 
 parser = Parser()
 parser.language = Language(tsp.language())

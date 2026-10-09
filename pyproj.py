@@ -7,13 +7,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
+from typing import Any, Final
 import urllib.error
 import urllib.request
-from pathlib import Path
-from typing import Any, Final
+
 from dotenv import load_dotenv
+
 
 ENV_PATH: Final[Path] = Path.home() / ".env"
 """Location of the .env file that holds GITHUB_TOKEN."""

@@ -2,13 +2,14 @@
 """dupeguru-ng: Modern duplicate file finder with Textual TUI Inspired by dupeGuru, rebuilt for Python 3.12+ with Textual 8.2.5"""
 
 from __future__ import annotations
-import hashlib
-import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
+import hashlib
 from pathlib import Path
+import sys
 from typing import ClassVar
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding

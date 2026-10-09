@@ -2,9 +2,11 @@
 """Fetch the latest packages added to PyPI and save their names to a file."""
 
 from __future__ import annotations
+from pathlib import Path
+import sys
 import urllib.request
 import xml.etree.ElementTree as ET
-from pathlib import Path
+
 
 RSS_URL = "https://pypi.org/rss/packages.xml"
 OUTPUT_FILE = Path("latest_pypi_packages.txt")

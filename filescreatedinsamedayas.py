@@ -4,10 +4,10 @@ It should use os.stat to retrieve timestamps, handle the platform difference bet
 The script should print the input file's name and creation date, then list any matching files sorted chronologically along with their timestamps, or state that none were found."""
 
 from __future__ import annotations
-import os
-import sys
 from datetime import datetime
+import os
 from pathlib import Path
+import sys
 
 
 def get_file_creation_time(path: str) -> datetime | None:

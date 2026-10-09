@@ -5,8 +5,9 @@ At the end it should print the total directory size change before and after proc
 
 from __future__ import annotations
 import json
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, fsz, get_files, gsz, mpf
 
 

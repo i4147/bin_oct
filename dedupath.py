@@ -6,6 +6,7 @@ If duplicates existed, the script should locate the user's ~/.bashrc file, read 
 from __future__ import annotations
 import os
 from pathlib import Path
+import sys
 
 
 def get_path_entries():

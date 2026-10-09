@@ -15,12 +15,14 @@ import contextlib
 import io
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 import tempfile
 import tokenize
-from pathlib import Path
 from typing import Iterable, Iterator
+
 import libcst as cst
+
 
 NUM_WORKERS = 8
 CHUNKSIZE = 4

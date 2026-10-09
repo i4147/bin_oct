@@ -23,9 +23,11 @@ Outputs: colored console messages reporting the number of empty files found, the
 LiveDoc: https://felo.ai/zh-Hans/livedoc/9nr6sDU8oca5SyKVM4Vw7E"""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, get_files
+
 
 TIMEOUT = 0
 

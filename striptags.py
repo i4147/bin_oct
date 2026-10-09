@@ -1,8 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
+from __future__ import annotations
+from pathlib import Path
 import re
+import sys
 from typing import Iterable, Optional
-import click
+
 from bs4 import BeautifulSoup, Comment, NavigableString
+import click
+
 
 NEWLINE_ELEMENTS = (
     "address",
@@ -195,10 +200,7 @@ def strip_tags(
     def should_keep(element):
         if element.name in keep_tags:
             return True
-        for tag_name in keep_tags:
-            if element.find(tag_name):
-                return True
-        return False
+        return any(element.find(tag_name) for tag_name in keep_tags)
 
     for none_selector in DISPLAY_NONE_SELECTORS:
         for tag in soup.select(none_selector):

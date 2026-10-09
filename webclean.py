@@ -1,18 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""webclean.py — Unified comment stripper for web files (HTML, CSS, JS, TS).
+r"""webclean.py — Unified comment stripper for web files (HTML, CSS, JS, TS).
 Merges the behavior of the following original scripts: clean_css.py -> webclean.py css cleancss2.py -> webclean.py css --no-preserve-newlines --collapse-blank-lines --remove-whole-line-comments cleanjs.py -> webclean.py js cleants.py -> webclean.py ts clean_html.py -> webclean.py all cleanhtml.py -> webclean.py all cleanhtmlre.py -> webclean.py inline <file.html> [--output-suffix _cleaned] rmcss.py -> webclean.py regex --extensions .html .htm .css rmhtml.py -> webclean.py html --approach regex --unescape-entities --extensions .html .htm .xml rmjsts.py -> webclean.py js --approach regex (and ts --approach regex) Third-party dependencies (install exactly as the originals required): pip install tree-sitter tree-sitter-html tree-sitter-css \ tree-sitter-javascript tree-sitter-typescript Only the `tree-sitter` code paths require those packages; the `regex`, `inline`, and `--approach regex` code paths are pure standard library."""
 
 from __future__ import annotations
 import argparse
 import contextlib
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import sys
-import urllib.request
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
+import urllib.request
+
 
 DEFAULT_WORKERS: int = 8
 EXT_TO_LANG: dict[str, str] = {

@@ -6,15 +6,16 @@ The script should carefully handle whitespace and formatting edge cases when rem
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass
 import multiprocessing as mp
 import os
+from pathlib import Path
 import re
 import stat
 import sys
 import tempfile
-from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

@@ -5,6 +5,7 @@ The script must use termios/tty to put the terminal into raw mode and select for
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import select
 import sys
 import termios

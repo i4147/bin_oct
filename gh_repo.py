@@ -4,18 +4,19 @@ Merged from 5 originals, with a pluggable --backend flag.
 Original mapping ---------------- mkghrepo.py -> python gh_repo.py api <repo_name> [description] -b rest new_repo.py -> python gh_repo.py api-push -b rest new_repo2.py -> python gh_repo.py gh-create -b pygithub newrepo.py -> python gh_repo.py gh-cli -b subprocess pynewrepo.py -> python gh_repo.py gh-managed -b subprocess Backends (-b / --backend) ------------------------- subprocess git CLI + gh CLI (default) gitpython GitPython + gh CLI rest git CLI + requests (GitHub REST API) pygithub git CLI + PyGithub githubpython git CLI + github3.py dulwich Dulwich + gh CLI libgit2 pygit2 (libgit2 bindings) + gh CLI Usage examples -------------- python gh_repo.py api my-new-project "my new repo" -b rest python gh_repo.py gh-create -b pygithub python gh_repo.py gh-cli -b dulwich python gh_repo.py gh-managed -b libgit2 Third-party dependencies (only what the chosen backend needs) ------------------------------------------------------------- requests, python-dotenv, GitPython, PyGithub, github3.py, dulwich, pygit2 External tools: git, gh"""
 
 from __future__ import annotations
+from abc import ABC, abstractmethod
 import argparse
 import contextlib
+from dataclasses import dataclass
+from datetime import datetime
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import traceback
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 from typing import Optional, Sequence
+
 
 DEFAULT_GITHUB_USERNAME = "i4147"
 DEFAULT_GIT_EMAIL = "adnanonagh@gmail.com"

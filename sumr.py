@@ -9,10 +9,10 @@ Third-party packages (must be installed separately) ----------------------------
 
 from __future__ import annotations
 import argparse
-import re
-import sys
 from collections import Counter
 from pathlib import Path
+import re
+import sys
 from typing import Optional, Sequence
 
 

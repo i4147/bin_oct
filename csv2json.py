@@ -7,8 +7,8 @@ Finally, it should write the resulting dictionary as indented, UTF-8-encoded JSO
 from __future__ import annotations
 import csv
 import json
-import sys
 from pathlib import Path
+import sys
 
 
 def csv_to_json_map(csv_file: str) -> None:

@@ -4,8 +4,9 @@ The script should accept a file path as its first command-line argument, default
 Use sys.argv to read the argument and Path.write_text to perform the file writing."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 HTML_TEMPLATE = """<!doctype html>
 <html>

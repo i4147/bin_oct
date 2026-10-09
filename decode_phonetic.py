@@ -4,9 +4,9 @@ The script should run as a standalone module invoked via the command line, using
 It should exit cleanly by returning None from main through SystemExit."""
 
 from __future__ import annotations
-import sys
 from html import unescape
 from pathlib import Path
+import sys
 
 
 def main() -> None:

@@ -5,12 +5,14 @@ With -s / --structure: two folders are duplicates if their tree structure is the
 
 from __future__ import annotations
 import argparse
-import os
-import sys
 from collections import defaultdict
 from multiprocessing import Pool
+import os
 from pathlib import Path
+import sys
+
 import xxhash
+
 
 NUM_WORKERS = 8
 SKIP_DIR_NAMES = {".git"}

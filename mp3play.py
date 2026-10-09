@@ -4,6 +4,8 @@ It should define a custom PlaysoundException for error handling, and a playsound
 When run as a script, it should accept a sound file path or URL from the command line and play it."""
 
 from __future__ import annotations
+from pathlib import Path
+import sys
 
 
 class PlaysoundException(Exception):
@@ -16,6 +18,7 @@ def playsound(sound, block=True):
         raise NotImplementedError(msg)
     import os
     from urllib.request import pathname2url
+
     import gi
 
     gi.require_version("Gst", "1.0")

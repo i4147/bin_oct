@@ -4,8 +4,10 @@ Uses pathlib only, edits files in place, and preserves everything except the she
 
 from __future__ import annotations
 import os
-import stat
 from pathlib import Path
+import stat
+import sys
+
 
 HOME = Path.home()
 cwd = Path.cwd()
@@ -30,9 +32,7 @@ def looks_like_python_interpreter(interp: str) -> bool:
 def should_rewrite(interp: str) -> bool:
     if not looks_like_python_interpreter(interp):
         return False
-    if interp.strip() == str(PREFIX / "bin/python3.12"):
-        return False
-    return True
+    return interp.strip() != str(PREFIX / "bin/python3.12")
 
 
 def parse_shebang(first_line: str):

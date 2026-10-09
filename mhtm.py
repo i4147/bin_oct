@@ -5,13 +5,15 @@ The script should process files in parallel using multiprocessing for speed, pri
 
 from __future__ import annotations
 import argparse
-import multiprocessing as mp
-import sys
 from functools import partial
 from html.parser import HTMLParser
+import multiprocessing as mp
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 import minify_html as mh
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable

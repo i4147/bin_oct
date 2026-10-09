@@ -20,15 +20,16 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import json
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 import textwrap
-import zipfile
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import List, Optional, Sequence
+import zipfile
+
 
 try:
     from packaging.tags import parse_tag

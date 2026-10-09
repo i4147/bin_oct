@@ -10,28 +10,30 @@ External dependencies (install via `pip install ...`): requests # proxy-test col
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 import io
 import json
 import os
+from pathlib import Path
 import random
 import re
 import socket
 import string
 import subprocess
+import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from pathlib import Path
 from typing import List, Optional, Sequence
 from urllib import request as urlrequest
 
+
 try:
-    import requests  # type: ignore
     from colorama import (
         Fore,
         Style,
         init as colorama_init,  # type: ignore
     )
+    import requests  # type: ignore
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True

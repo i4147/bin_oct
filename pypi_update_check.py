@@ -28,15 +28,17 @@ import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import signal
 import sys
 import sysconfig
 import time
-from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
-import requests
+
 from packaging import version
+import requests
+
 
 try:
     import pycurl

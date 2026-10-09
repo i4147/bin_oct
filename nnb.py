@@ -4,8 +4,8 @@ The script should read the file's entire text content as UTF-8, replace every ac
 Use pathlib.Path for file reading and writing, and structure the code with a main() function invoked via SystemExit under the standard __main__ guard."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 
 
 def main() -> None:

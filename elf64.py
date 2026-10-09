@@ -10,12 +10,14 @@ Usage: python3 find_elf64.py [directory] [-r|--remove]"""
 from __future__ import annotations
 import argparse
 import multiprocessing as mp
-import sys
 from pathlib import Path
+import sys
 from typing import Iterator
+
 from dh import is_binary
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+
 
 WORKERS = 8
 ELF_TYPES = {

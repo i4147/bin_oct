@@ -6,18 +6,20 @@ Highlights over the previous iteration: * -t/--type presets (py, md, json, log, 
 from __future__ import annotations
 import argparse
 import bisect
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field
 import fnmatch
 import json
 import os
+from pathlib import Path
 import re
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, TextIO
+
 from dh import is_binary
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

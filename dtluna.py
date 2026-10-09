@@ -5,18 +5,20 @@ Include logging via loguru for progress and error reporting, safe temporary file
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from difflib import SequenceMatcher
 import importlib.util
 import json
 import os
+from pathlib import Path
 import sys
+from tempfile import NamedTemporaryFile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from difflib import SequenceMatcher
-from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Callable, TypeAlias
+
 from loguru import logger
+
 
 Translator: TypeAlias = Callable[[str], str]
 LANGUAGE_CODES: dict[str, str] = {

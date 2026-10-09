@@ -4,8 +4,9 @@ The script should accept an input video path and an optional output path (defaul
 It should read the input video's frame width, height, and FPS to configure a VideoWriter using the MJPG codec, then loop through each frame performing face detection and writing the annotated frames to the output file, printing progress messages such as the input/output paths and a running frame count, until all frames are processed or reading fails."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 import cv2
 
 

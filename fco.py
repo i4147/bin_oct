@@ -11,14 +11,16 @@ Requires: pip install fonttools loguru brotli Also imports `fsz` from a local `d
 from __future__ import annotations
 import argparse
 import contextlib
-import sys
-import time
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 from typing import List, Optional, Sequence
+
 from dh import fsz
 from loguru import logger
+
 
 try:
     from fontTools.ttLib import TTFont

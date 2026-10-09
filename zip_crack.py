@@ -5,14 +5,15 @@ While running, it should periodically print live progress statistics (passwords 
 
 from __future__ import annotations
 import argparse
-import multiprocessing
-import sys
-import time
-import zipfile
 from dataclasses import dataclass, field
 from itertools import islice
+import multiprocessing
 from pathlib import Path
+import sys
+import time
 from typing import TYPE_CHECKING, Final
+import zipfile
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

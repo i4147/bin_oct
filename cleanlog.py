@@ -20,9 +20,10 @@ The script should use `pathlib.Path` for file path handling, Python's `re` modul
 LiveDoc: https://felo.ai/zh-Hans/livedoc/7e3hfj2XTJ6GyzBUjfdhto"""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 ANSI_ESCAPE_RE = re.compile(
     r"""

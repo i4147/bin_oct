@@ -5,6 +5,9 @@ The script relies on a custom "faprint" module for output display and is structu
 
 from __future__ import annotations
 import datetime
+from pathlib import Path
+import sys
+
 from faprint import faprint
 
 

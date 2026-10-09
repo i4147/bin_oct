@@ -5,12 +5,14 @@ The script should save the downloaded subtitle file into the specified or defaul
 
 from __future__ import annotations
 import logging
-import sys
 from pathlib import Path
+import sys
+
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.providers import ProviderError
 from subliminal.video import scan_video
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

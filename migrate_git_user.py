@@ -22,11 +22,15 @@ The script should be structured so these functions can be called in sequence (an
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/hjAki4EWVgtcN8yNz4jc7x"""
 
+from __future__ import annotations
+import contextlib
 import os
-import re
-import subprocess
-import shutil
 from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
 
 OLD_USERNAME = "iho147"
 OLD_EMAIL = "isaacaunegh@gmail.com"
@@ -79,10 +83,8 @@ def remove_old_ssh_keys():
     if SSH_DIR.exists():
         for f in SSH_DIR.iterdir():
             if f.name.startswith("id_") or f.name == "known_hosts":
-                try:
+                with contextlib.suppress(Exception):
                     f.unlink()
-                except Exception:
-                    pass
 
 
 def generate_new_ssh_key():
@@ -166,7 +168,7 @@ def update_git_remotes_in_repos():
             try:
                 remotes = run(["git", "-C", repo_path, "remote", "-v"], capture_output=True, check=False).stdout
                 if OLD_USERNAME in remotes:
-                    remote_names = set(line.split()[0] for line in remotes.splitlines() if line)
+                    remote_names = {line.split()[0] for line in remotes.splitlines() if line}
                     for remote in remote_names:
                         url_result = run(
                             ["git", "-C", repo_path, "remote", "get-url", remote], capture_output=True, check=False
@@ -203,19 +205,13 @@ def clear_git_credential():
                 p.unlink()
         except Exception:
             pass
-    try:
+    with contextlib.suppress(Exception):
         run(["git", "config", "--global", "--unset-all", "credential.helper"], check=False)
-    except Exception:
-        pass
-    try:
+    with contextlib.suppress(Exception):
         run(["git", "config", "--global", "--remove-section", "credential"], check=False)
-    except Exception:
-        pass
     for helper in ("store", "cache"):
-        try:
+        with contextlib.suppress(Exception):
             run(["git", "credential-" + helper, "erase"], check=False, input_text="\n")
-        except Exception:
-            pass
 
 
 def purge_gitconfig_old_identity():
@@ -261,10 +257,8 @@ def main():
     print(f"  new email    : {NEW_EMAIL}")
     print(f"  public key   : {SSH_KEY_PATH}.pub")
     print("\nAdd the following public key to GitHub:")
-    try:
+    with contextlib.suppress(Exception):
         print((SSH_KEY_PATH.parent / (SSH_KEY_NAME + ".pub")).read_text())
-    except Exception:
-        pass
 
 
 if __name__ == "__main__":

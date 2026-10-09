@@ -17,9 +17,12 @@ import argparse
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from xxhash import xxh64
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

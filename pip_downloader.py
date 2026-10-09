@@ -1,17 +1,20 @@
 #!/data/data/com.termux/files/usr/bin/python
 # download_packages.py
-import sys
+from __future__ import annotations
 from pathlib import Path
+import sys
 from urllib.parse import quote
 
 import httpx
+
 
 PREFERRED_EXTENSIONS = (".tar.gz", ".tar.bz2", ".zip")
 
 
 def main():
     if len(sys.argv) != 2:
-        raise SystemExit(f"Usage: python {sys.argv[0]} <package-list-file>")
+        msg = f"Usage: python {sys.argv[0]} <package-list-file>"
+        raise SystemExit(msg)
 
     package_file = Path(sys.argv[1])
     output_dir = Path("downloads")

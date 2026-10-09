@@ -9,9 +9,11 @@ from __future__ import annotations
 import ast
 import importlib.metadata
 import importlib.util
-import sys
 from pathlib import Path
+import sys
+
 from dh import is_python_file
+
 
 PACKAGE_MAPPING = {
     "cv2": "opencv-python",

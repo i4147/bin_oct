@@ -5,8 +5,9 @@ Based on configurable thresholds, it should label the image as "Mostly Dark", "M
 If no image path argument is provided, the script should print a usage message and exit with a nonzero status code."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from PIL import Image
 
 

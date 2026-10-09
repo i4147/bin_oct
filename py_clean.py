@@ -22,15 +22,18 @@ that the parent process logs through loguru.
 """
 
 from __future__ import annotations
-
 import argparse
 import ast
 import codecs
+from collections import deque
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from dataclasses import dataclass, field, replace
 import difflib
 import fnmatch
 import io
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -38,17 +41,17 @@ import sys
 import tempfile
 import textwrap
 import tokenize
-from collections import deque
-from collections.abc import Callable, Iterable, Iterator, Sequence
-from dataclasses import dataclass, field, replace
-from multiprocessing.pool import AsyncResult
-from pathlib import Path
-from typing import Final, Literal, TypeVar, get_args
+from typing import TYPE_CHECKING, Final, Literal, TypeVar, get_args
 
 import libcst as cst
 from libcst.helpers import get_full_name_for_node
 from loguru import logger
 from tqdm import tqdm
+
+
+if TYPE_CHECKING:
+    from multiprocessing.pool import AsyncResult
+
 
 # --------------------------------------------------------------------------- #
 # Constants
@@ -166,7 +169,7 @@ def looks_like_code(comment_lines: Sequence[str]) -> bool:
     bodies: list[str] = []
     for raw in comment_lines:
         body = raw[1:]
-        bodies.append(body[1:] if body.startswith(" ") else body)
+        bodies.append(body.removeprefix(" "))
     try:
         tree = ast.parse(textwrap.dedent("\n".join(bodies)), feature_version=TARGET_VERSION)
     except (SyntaxError, ValueError, MemoryError, RecursionError):
@@ -535,7 +538,8 @@ def decode_source(raw: bytes) -> DecodedSource:
             return DecodedSource(payload.decode(encoding), encoding, bom)
         except (UnicodeDecodeError, LookupError):
             continue
-    raise ValueError("could not decode file as utf-8, its declared encoding, or cp1252")
+    msg = "could not decode file as utf-8, its declared encoding, or cp1252"
+    raise ValueError(msg)
 
 
 def is_python_file(path: Path) -> bool:

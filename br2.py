@@ -3,12 +3,15 @@
 
 from __future__ import annotations
 import io
-import tarfile
 from multiprocessing.pool import Pool
 from pathlib import Path
+import sys
+import tarfile
 from typing import BinaryIO, Final
+
 import brotli  # type: ignore[import-untyped]
 from loguru import logger
+
 
 MAX_WORKERS: Final[int] = 8
 BROTLI_QUALITY: Final[int] = 11

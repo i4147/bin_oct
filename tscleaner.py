@@ -4,13 +4,14 @@ It should use a multiprocessing Pool (with a configurable worker count) to parse
 The script should handle file access safely (checking file type/permissions via os and stat), collect and report parsing results or errors for each processed file, and exit with an appropriate status code reflecting overall success or failure."""
 
 from __future__ import annotations
-import os
-import stat
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
+import os
 from pathlib import Path
+import stat
+import sys
 from typing import Any
+
 
 WORKERS = 8
 ROOT = Path.cwd()
@@ -107,6 +108,7 @@ def iter_source_files(root: Path) -> list[Path]:
 
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
+
     from tree_sitter import Language
 
     module = import_module(spec.module_name)

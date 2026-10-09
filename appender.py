@@ -6,6 +6,8 @@ The script should execute this logic only when run as the main module."""
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     fn = Path.home() / "prompt.txt"

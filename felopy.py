@@ -5,12 +5,15 @@ Usage:
     python felo_wrapper.py --timeout 300 'your query here'
 """
 
+from __future__ import annotations
 import argparse
+from datetime import datetime
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
-from datetime import datetime
+
 
 SAVE_DIR = os.path.expanduser("~/tmp/apps")
 

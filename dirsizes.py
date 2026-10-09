@@ -4,16 +4,18 @@ Find top directory footprints or largest files recursively.
 Optimized with pathlib, os.scandir caching, and formatted with Rich.
 """
 
+from __future__ import annotations
 import argparse
 import heapq
 import os
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Generator, List, Optional, Set, Tuple
 
 from rich.console import Console
 from rich.status import Status
+
 
 console = Console()
 
@@ -85,11 +87,11 @@ def build_args() -> argparse.Namespace:
 
 def scan_directory(
     target_dir: Path,
-    exclude_paths: Set[Path],
+    exclude_paths: set[Path],
     wordy: bool = False,
     max_depth: int = -1,
     current_depth: int = 0,
-) -> Generator[Tuple[Path, List[Path], List[Tuple[Path, int]]], None, None]:
+) -> Generator[tuple[Path, list[Path], list[tuple[Path, int]]], None, None]:
     """
     Recursively scan directories using os.scandir for cached file stats.
     Yields tuple: (current_dir, list_of_subdirs, list_of_(file_path, file_size))
@@ -97,8 +99,8 @@ def scan_directory(
     if target_dir in exclude_paths:
         return
 
-    subdirs: List[Path] = []
-    files_with_sizes: List[Tuple[Path, int]] = []
+    subdirs: list[Path] = []
+    files_with_sizes: list[tuple[Path, int]] = []
 
     try:
         with os.scandir(target_dir) as entries:
@@ -131,7 +133,7 @@ def scan_directory(
 
 
 def print_results(
-    items: List[Tuple[int, Path]],
+    items: list[tuple[int, Path]],
     total_bytes: int,
     elapsed_time: float,
     reverse: bool = False,
@@ -181,9 +183,9 @@ def main() -> None:
         console.print(f"[red]Error:[/red] Path '[bold]{root_dir}[/bold]' does not exist.")
         sys.exit(1)
 
-    exclude_paths: Set[Path] = {p.resolve() for p in args.exclude}
+    exclude_paths: set[Path] = {p.resolve() for p in args.exclude}
 
-    min_heap: List[Tuple[int, Path]] = []
+    min_heap: list[tuple[int, Path]] = []
     total_scanned_bytes = 0
     start_time = time.perf_counter()
 

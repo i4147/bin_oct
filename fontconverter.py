@@ -5,10 +5,11 @@ Original scripts and their equivalents: font_convert.py -> python font_toolkit.p
 from __future__ import annotations
 import argparse
 import multiprocessing
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 from typing import Callable, Sequence
+
 
 try:
     from fontTools.pens.ttGlyphPen import TTGlyphPen

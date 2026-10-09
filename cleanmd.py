@@ -19,13 +19,14 @@ Examples
 
 from __future__ import annotations
 import argparse
-import logging
-import re
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
+import logging
 from pathlib import Path
+import re
+import sys
 from typing import Optional, Sequence
+
 
 try:
     from bs4 import BeautifulSoup

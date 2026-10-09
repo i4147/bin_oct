@@ -6,7 +6,10 @@ When run as the main script, it should print each item's name alongside its form
 from __future__ import annotations
 import operator
 from pathlib import Path
+import sys
+
 from dh import fsz, gsz
+
 
 total = 0
 

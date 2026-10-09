@@ -6,8 +6,9 @@ If only a single file is provided or found, process it directly and exit; otherw
 
 from __future__ import annotations
 import os
-import sys
 from pathlib import Path
+import sys
+
 from ascii_magic import AsciiArt
 from dh import get_files
 

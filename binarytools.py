@@ -10,12 +10,13 @@ import concurrent.futures as _futures
 import ctypes
 import logging
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
 
 SKIP_DIR_NAMES = {
     ".git",

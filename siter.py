@@ -9,12 +9,12 @@ import argparse
 import base64
 import csv
 import hashlib
+from multiprocessing import cpu_count
+from pathlib import Path
 import shutil
 import sys
 import tempfile
 import zipfile
-from multiprocessing import cpu_count
-from pathlib import Path
 
 
 class WheelBuilder:

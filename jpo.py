@@ -13,18 +13,20 @@ External requirements: the ``fastwalk`` extension module and the ``jpegoptim`` C
 from __future__ import annotations
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+
 from dh import SKIP_DIRS
 from fastwalk import walk_files
+
 
 cwd = Path.cwd().resolve()
 JPEG_SUFFIXES: Final[frozenset[str]] = frozenset({".jpeg", ".jpg"})

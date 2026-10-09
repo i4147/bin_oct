@@ -6,16 +6,18 @@ It should accept command-line arguments (via argparse) for configuring the targe
 from __future__ import annotations
 import argparse
 import ast
+from collections import defaultdict
 import hashlib
 import json
 import multiprocessing
 import os
+from pathlib import Path
 import sys
-from collections import defaultdict
+
 
 try:
-    import ssdeep
     from rapidfuzz import fuzz
+    import ssdeep
 except ImportError:
     print("Please install dependencies: pip install ssdeep rapidfuzz")
     sys.exit(1)

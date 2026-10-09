@@ -4,12 +4,14 @@ It should use argparse to accept the URL (and likely options like output file or
 
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
-import requests
+
 from bs4 import BeautifulSoup
+import requests
+
 
 if TYPE_CHECKING:
     from requests.sessions import Session

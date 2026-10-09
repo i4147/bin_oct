@@ -6,8 +6,9 @@ For each expected symlink, it should check whether a correct symlink already exi
 from __future__ import annotations
 import glob
 import os
-import re
 from pathlib import Path
+import re
+import sys
 
 
 def should_skip(so_path):

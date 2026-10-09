@@ -5,9 +5,9 @@ It should print a success message when done, and handle errors gracefully by pri
 If no filename is provided as a command-line argument, print a usage instructions message instead."""
 
 from __future__ import annotations
+from pathlib import Path
 import sys
 import unicodedata
-from pathlib import Path
 
 
 def clean_file(filename: str) -> None:

@@ -4,8 +4,9 @@ The script should then overwrite the original file with the decoded text content
 The path argument should have surrounding whitespace stripped before use."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     path = Path(sys.argv[1].strip())

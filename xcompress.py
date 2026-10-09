@@ -7,22 +7,23 @@ from __future__ import annotations
 import argparse
 import bz2
 import contextlib
+from dataclasses import dataclass
 import gzip
 import hashlib
 import logging
 import lzma
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import sys
 import tarfile
 import tempfile
 import time
+from typing import TYPE_CHECKING, Optional
 import zipfile
 import zlib
-from dataclasses import dataclass
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

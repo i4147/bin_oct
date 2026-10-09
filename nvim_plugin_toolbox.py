@@ -4,14 +4,15 @@ Original name -> equivalent invocation -----------------------------------------
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import json
+from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import Optional, Sequence
+
 
 PLUGIN_PATTERNS: dict[str, list[str]] = {
     "lazy.nvim": [

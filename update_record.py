@@ -8,9 +8,10 @@ import base64
 import hashlib
 import logging
 import multiprocessing
+from pathlib import Path
 import site
 import sys
-from pathlib import Path
+
 
 logging.basicConfig(
     level=logging.INFO,

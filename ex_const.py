@@ -9,8 +9,11 @@ import ast
 import logging
 import operator
 from pathlib import Path
+import sys
+
 from joblib import Parallel, delayed
 from xxhash import xxh64
+
 
 OUTPUT_DIR = Path("output")
 OUTPUT_FILE = OUTPUT_DIR / "const.py"

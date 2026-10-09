@@ -5,8 +5,9 @@ After moving files, it should also traverse the directory tree bottom-up to remo
 aborr mission if current dir is a a git repo The script relies on pathlib.Path and shutil for filesystem operations."""
 
 from __future__ import annotations
-import shutil
 from pathlib import Path
+import shutil
+import sys
 
 
 def get_target_folder_name(filename: str) -> str:

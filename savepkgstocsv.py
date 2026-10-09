@@ -5,9 +5,10 @@ It should handle errors gracefully, exiting with an informative message if dpkg-
 
 from __future__ import annotations
 import csv
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+
 
 OUTPUT_DIR = Path("/sdcard/backups")
 TSV_FILE = OUTPUT_DIR / "installed.tsv"

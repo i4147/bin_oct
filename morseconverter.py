@@ -5,8 +5,9 @@ Include a main block that parses command-line arguments to let the user choose e
 
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
+import sys
+
 
 MORSE_CODE_DICT = {
     "A": ".-",

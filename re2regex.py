@@ -4,11 +4,14 @@ Regenerate this script: parse --reverse (and optional --pool-method), recursivel
 
 from __future__ import annotations
 import argparse
-import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import re
+import sys
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

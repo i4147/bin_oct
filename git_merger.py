@@ -24,11 +24,12 @@ Ensure the generated code is a self-contained executable script matching this st
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/jFAN7G73x7DRoCVkjHyF4W"""
 
+from __future__ import annotations
+from enum import Enum
 import logging
 import os
-import sys
-from enum import Enum
 from pathlib import Path
+import sys
 
 import click
 import colored
@@ -38,6 +39,7 @@ from prompt_toolkit.shortcuts import button_dialog, checkboxlist_dialog, radioli
 from prompt_toolkit.styles import Style
 from sh import git
 
+
 repo = None
 g = None
 
@@ -46,7 +48,7 @@ try:
     g = git.cmd.Git()
 except:
     print("Not in a repo directory!")
-    exit()
+    sys.exit()
 
 
 class RepoManager:
@@ -290,7 +292,7 @@ def merge(branch):
 
         if author is None:
             printer.error("Author", "Not chosen")
-            exit()
+            sys.exit()
 
         commits = "\n".join(RepoManager.cherry(repo.active_branch, branch))
 
@@ -319,7 +321,7 @@ def remote():
 
     if len(remote_branches) == 0:
         button_dialog(title="ERROR", text="NO REMOTE BRANCHES FOUND", buttons=[("OK", True)]).run()
-        exit()
+        sys.exit()
 
     selected = RepoManager.choose_repos_from_list(
         "BRANCH REMOTE CLEANER",
@@ -342,7 +344,7 @@ def remote():
             repo.git.push("origin", "--delete", name)
 
         button_dialog(title="REMOTES DELETED", buttons=[("OK", True)]).run()
-        exit()
+        sys.exit()
     else:
         print("No branches deleted")
 

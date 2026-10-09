@@ -22,9 +22,10 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/3CtR2oNsstfSbjF9gfp9rw"""
 
 from __future__ import annotations
 import ast
-import re
-import tokenize
 from pathlib import Path
+import re
+import sys
+import tokenize
 
 
 def reformat_docstring(content):

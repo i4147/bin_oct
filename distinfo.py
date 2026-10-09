@@ -4,11 +4,12 @@ It should locate directories ending in ".dist-info" or ".egg-info", parse each n
 Finally, it should print out only the packages that have more than one distinct version installed, listing each version under the package name, and print "Done." when finished."""
 
 from __future__ import annotations
+from collections import defaultdict
 import contextlib
+from pathlib import Path
 import re
 import site
-from collections import defaultdict
-from pathlib import Path
+import sys
 
 
 def get_site_packages_dirs():

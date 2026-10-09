@@ -6,15 +6,17 @@ Where the originals differed only by defaults, the defaults are preserved in the
 from __future__ import annotations
 import argparse
 import base64
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import contextlib
 import io
 import os
+from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
+
 
 try:
     from tqdm import tqdm

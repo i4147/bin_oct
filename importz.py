@@ -5,8 +5,8 @@ The script should handle file reading errors and syntax errors gracefully by ski
 
 from __future__ import annotations
 import ast
-import sys
 from pathlib import Path
+import sys
 
 
 def is_python_file(path: Path) -> bool:

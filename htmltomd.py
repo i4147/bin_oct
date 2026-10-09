@@ -5,9 +5,10 @@ The script should support parallel processing using multiprocessing based on ava
 
 from __future__ import annotations
 import argparse
-import sys
 from multiprocessing import cpu_count
 from pathlib import Path
+import sys
+
 from bs4 import BeautifulSoup
 from html_to_markdown import Options, convert
 

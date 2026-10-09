@@ -8,10 +8,12 @@ Top pane: raw (logical) text you edit.  Bottom pane: the lines around the
 cursor rendered through faprint's format_persian (what you'd see with faprint).
 """
 
+from __future__ import annotations
 import argparse
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 try:
     from faprint import format_persian
@@ -48,7 +50,7 @@ def run_urwid(text):
     class Ed(urwid.Edit):
         def keypress(self, size, key):
             if key == "ctrl q":
-                raise urwid.ExitMainLoop()
+                raise urwid.ExitMainLoop
             key = super().keypress(size, key)
             pv.set_text(around(self.edit_text, self.edit_pos))
             return key

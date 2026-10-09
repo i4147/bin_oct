@@ -5,9 +5,11 @@ The script should use argparse to accept command-line options (like target direc
 
 from __future__ import annotations
 import argparse
-import re
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import sys
+
 
 REPLACEMENTS = {
     (

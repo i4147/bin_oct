@@ -5,13 +5,16 @@ Usage: python vidocr.py <video> [output.srt] [options] Examples: python vidocr.p
 
 from __future__ import annotations
 import argparse
-import multiprocessing as mp
-import re
 from functools import partial
+import multiprocessing as mp
 from pathlib import Path
+import re
+import sys
 from typing import TYPE_CHECKING, Optional, Sequence
+
 import cv2
 import pytesseract
+
 
 if TYPE_CHECKING:
     import numpy as np

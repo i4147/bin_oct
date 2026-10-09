@@ -5,6 +5,8 @@ The script has no external inputs beyond the current directory contents and prod
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from dh import cprint, gsz
 
 

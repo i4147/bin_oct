@@ -7,6 +7,7 @@ from __future__ import annotations
 import heapq
 import os
 from pathlib import Path
+import sys
 
 
 def get_top_10_largest_files_optimized(directory: str = "."):

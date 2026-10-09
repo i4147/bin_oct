@@ -6,8 +6,9 @@ It relies on a helper "cprint" from a local module "dh" for colored console outp
 
 from __future__ import annotations
 import base64
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint
 
 

@@ -7,9 +7,12 @@ The script should print progress messages for batch preparation and processing, 
 from __future__ import annotations
 import argparse
 import os
+from pathlib import Path
+import sys
 import time
-import pysrt
+
 from deep_translator import GoogleTranslator
+import pysrt
 
 
 def translate_srt(input_file, source_lang, target_lang):

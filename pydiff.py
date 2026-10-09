@@ -33,10 +33,12 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/iPPRGahoGTvBu6WzKw6tXJ"""
 
 from __future__ import annotations
 import argparse
-import hashlib
-import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import hashlib
 from pathlib import Path
+import shutil
+import sys
+
 from dh import cprint, read_lines
 
 

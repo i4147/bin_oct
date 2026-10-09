@@ -2,18 +2,19 @@
 """HTML Formatter using Tree-sitter Formats HTML files so every tag starts on a new line."""
 
 from __future__ import annotations
+from dataclasses import dataclass
 import logging
 import multiprocessing as mp
-import sys
-from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 try:
-    import tree_sitter_html as ts_html
     from tree_sitter import Language, Node, Parser
+    import tree_sitter_html as ts_html
 except ImportError:
     print("Error: Required packages not installed.", file=sys.stderr)
     print("Install with: pip install tree-sitter tree-sitter-html", file=sys.stderr)

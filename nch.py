@@ -8,15 +8,16 @@ Third-party packages (optional, auto-detected): * dh — provides is_binary(path
 
 from __future__ import annotations
 import argparse
+from dataclasses import dataclass, field
 import fnmatch
 import multiprocessing as mp
 import os
+from pathlib import Path
 import stat as st
 import sys
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Iterator, Optional, Sequence
+
 
 try:
     from tqdm import tqdm  # type: ignore

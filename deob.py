@@ -4,9 +4,10 @@ Usage: python3 deobfuscate.py <input.sh> [-o <output.sh>] If -o/--output is omit
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 _ASSIGN_RE = re.compile(
     r"""

@@ -4,11 +4,12 @@ Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for 
 
 from __future__ import annotations
 import argparse
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import Any, Final
+
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
 

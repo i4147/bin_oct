@@ -6,6 +6,7 @@ The script should run the function automatically when executed directly."""
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 
 def create_html_template(filename: str = "index.html") -> None:

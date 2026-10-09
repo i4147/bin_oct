@@ -5,8 +5,9 @@ The script takes no command-line inputs, operates directly on the filesystem sta
 
 from __future__ import annotations
 import os
-import subprocess
 from pathlib import Path
+import subprocess
+import sys
 
 
 def is_git_repo(path: Path) -> bool:

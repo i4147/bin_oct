@@ -2,12 +2,15 @@
 """Format JS/TS/CSS/HTML/JSON files with Prettier: discover matching files under the current directory, run `prettier --write` on each in a multiprocessing pool of 8 workers, move failures into a sibling `error/` folder, and log progress via loguru."""
 
 from __future__ import annotations
-import shutil
-import subprocess
 from multiprocessing.pool import Pool
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 from typing import Final, NamedTuple
+
 from loguru import logger
+
 
 MAX_WORKERS: Final[int] = 8
 PRETTIER_TIMEOUT_SECONDS: Final[int] = 900

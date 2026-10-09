@@ -6,8 +6,8 @@ If no file path argument is provided, the script should exit with a non-zero sta
 
 from __future__ import annotations
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any, Callable
 
 

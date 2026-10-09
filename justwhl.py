@@ -8,8 +8,10 @@ For every top-level subdirectory of the current folder:
   3. If no .whl file exists: do nothing.
 """
 
-import shutil
+from __future__ import annotations
 from pathlib import Path
+import shutil
+import sys
 
 
 def find_whl(subdir: Path):

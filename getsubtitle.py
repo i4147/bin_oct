@@ -5,11 +5,13 @@ It should save the resulting subtitle as an .srt file named after the video (wit
 
 from __future__ import annotations
 import logging
-import sys
 from pathlib import Path
+import sys
+
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.video import scan_video
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

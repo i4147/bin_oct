@@ -8,12 +8,14 @@ Example: python remove_comments.py /path/to/project --verbose"""
 
 from __future__ import annotations
 import argparse
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
+
 from dh import is_binary
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

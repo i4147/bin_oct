@@ -5,8 +5,9 @@ Each file should be read, parsed, and prettified, only rewriting the file if the
 Processing of multiple files should be handled concurrently using a helper "mpf" (map/multiprocess function) also imported from "dh", and the script should be runnable directly via a standard "__main__" entry point."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from bs4 import BeautifulSoup
 from dh import get_files, mpf
 

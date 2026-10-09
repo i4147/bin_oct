@@ -5,12 +5,15 @@ The script gracefully handles Ctrl+C interruption via a SIGINT signal handler, s
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import signal
 import sys
 import tempfile
 import time
-import speech_recognition as sr
+
 from pydub import AudioSegment
+import speech_recognition as sr
+
 
 interrupted = False
 output_file_global = "out.txt"

@@ -45,20 +45,23 @@ Include a module-level docstring/header comment summarizing the script's purpose
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/RU4EaLnuGkVoAwKQYjAXcN"""
 
+from __future__ import annotations
 import argparse
 import contextlib
+from dataclasses import dataclass
 import functools
 import importlib.util
 import multiprocessing as mp
 import os
+from pathlib import Path
 import signal
 import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
-from pathlib import Path
+
 from loguru import logger
+
 
 try:
     import tomllib

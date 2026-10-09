@@ -7,12 +7,14 @@ in the current directory."""
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import json
 import operator
-from collections import defaultdict
 from pathlib import Path
-import ssdeep
+import sys
+
 from dh import get_files
+import ssdeep
 
 
 def calculate_ssdeep_hash(path: Path, min_file_size: int = 1):

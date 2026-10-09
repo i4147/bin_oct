@@ -5,8 +5,9 @@ For each file, read its content, perform the tab-to-space replacement, and only 
 When processing a single file, exit with status code 1 afterward; when processing multiple files, use a multiprocessing helper (mpf) to process them in parallel."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, get_nobinary, mpf
 
 

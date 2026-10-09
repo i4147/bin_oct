@@ -6,6 +6,7 @@ The copy should be performed by reading all bytes from the largest file and writ
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 
 def copy_largest_file(source_dir, dest):

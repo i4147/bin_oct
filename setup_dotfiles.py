@@ -17,10 +17,12 @@ Prints next steps."""
 
 from __future__ import annotations
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import textwrap
+
 
 HOME = os.path.expanduser("~")
 AGE_DIR = os.path.join(HOME, ".config", "age")

@@ -5,9 +5,10 @@ The script should accept file paths via argparse, read and parse each file's con
 from __future__ import annotations
 import argparse
 import contextlib
-import sys
 from html.parser import HTMLParser
 from pathlib import Path
+import sys
+
 
 VOID_ELEMENTS = frozenset({
     "area",

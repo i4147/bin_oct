@@ -5,9 +5,11 @@ When a destination file with the same name already exists, the script must gener
 The script should track and report counts of moved, skipped, and errored files, and raise a ValueError if the specified starting directory does not exist."""
 
 from __future__ import annotations
-import shutil
-import time
 from pathlib import Path
+import shutil
+import sys
+import time
+
 
 TIME_THRESHOLD = 8 * 40
 

@@ -5,6 +5,8 @@ Also include a helper function that moves a given plugin directory into the Vim 
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 from dh import get_files
 
 

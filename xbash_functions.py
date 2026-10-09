@@ -14,12 +14,13 @@ Write each function to: <output>/<relative-dir-of-source>/<sanitized-name>[.sh] 
 from __future__ import annotations
 import argparse
 import contextlib
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sys
-from multiprocessing import Pool
-from pathlib import Path
 from typing import TYPE_CHECKING, Final, Protocol
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

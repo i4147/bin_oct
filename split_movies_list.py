@@ -4,9 +4,9 @@ For each URL, it should decode and sanitize the movie name into a safe filename,
 The script should handle missing/invalid input file arguments by printing usage instructions and exiting with an error code."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from urllib.parse import unquote
 
 

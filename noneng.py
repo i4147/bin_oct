@@ -4,11 +4,14 @@
 from __future__ import annotations
 import argparse
 import codecs
-import multiprocessing
 from dataclasses import dataclass
+import multiprocessing
 from pathlib import Path
+import sys
 from typing import Any, Iterable, Iterator
+
 from loguru import logger
+
 
 WORKERS = 8
 CHUNK_SIZE = 64 * 1024

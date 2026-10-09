@@ -5,11 +5,14 @@ It should skip files smaller than a minimum size threshold and only hash files t
 
 from __future__ import annotations
 import argparse
-import json
 from collections import defaultdict
 from datetime import UTC, datetime
+import json
 from pathlib import Path
+import sys
+
 from xxhash import xxh64
+
 
 BACKUP_FILE = ".symlink_backup.json"
 MIN_FILE_SIZE = 1

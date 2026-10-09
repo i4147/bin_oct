@@ -8,8 +8,10 @@ Usage: python mkx.py"""
 from __future__ import annotations
 import multiprocessing as mp
 import os
-import re
 from pathlib import Path
+import re
+import sys
+
 
 SUFFIXES = {".py", ".sh", ".bash", ".pl", ".rb", ".pyw", ".txt"}
 BIN_DIRS = {"sbin", "bin", ".bin"}

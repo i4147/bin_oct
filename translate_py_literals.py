@@ -12,13 +12,15 @@ Features:
 - In-place file updates using `pathlib.Path`.
 """
 
+from __future__ import annotations
 import argparse
 import ast
 from functools import lru_cache
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 from typing import List, Tuple
+
 
 # Try importing translation backends gracefully
 try:
@@ -85,7 +87,7 @@ def translate_text(text: str, target_lang: str = "en") -> str:
     return text
 
 
-def get_node_char_offsets(source_code: str, node: ast.AST) -> Tuple[int, int]:
+def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
     """
     Converts AST node line/column offsets (which use UTF-8 byte offsets)
     into 0-based character indices in the full source code string.
@@ -170,15 +172,14 @@ def process_python_file(file_path: Path) -> bool:
         return False
 
     # Collect AST nodes representing string constants with non-English text
-    targets: List[Tuple[int, int, str, str]] = []
+    targets: list[tuple[int, int, str, str]] = []
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            if contains_non_english(node.value):
-                if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-                    start_idx, end_idx = get_node_char_offsets(source_code, node)
-                    orig_slice = source_code[start_idx:end_idx]
-                    targets.append((start_idx, end_idx, node.value, orig_slice))
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and contains_non_english(node.value):
+            if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
+                start_idx, end_idx = get_node_char_offsets(source_code, node)
+                orig_slice = source_code[start_idx:end_idx]
+                targets.append((start_idx, end_idx, node.value, orig_slice))
 
     if not targets:
         print(f"No non-English string literals found in: {file_path}")
@@ -199,7 +200,7 @@ def process_python_file(file_path: Path) -> bool:
             new_literal = reformat_literal(orig_slice, translated_text)
             modified_code = modified_code[:start_idx] + new_literal + modified_code[end_idx:]
             changes_count += 1
-            print(f"  - Translated: {repr(orig_text.strip())} -> {repr(translated_text.strip())}")
+            print(f"  - Translated: {orig_text.strip()!r} -> {translated_text.strip()!r}")
 
     if changes_count > 0:
         file_path.write_text(modified_code, encoding="utf-8")
@@ -210,7 +211,7 @@ def process_python_file(file_path: Path) -> bool:
         return False
 
 
-def resolve_input_paths(inputs: List[str]) -> List[Path]:
+def resolve_input_paths(inputs: list[str]) -> list[Path]:
     """
     Resolves input file/directory arguments into a list of Path objects.
     If inputs list is empty, recursively scans current folder for all .py files.
@@ -222,12 +223,12 @@ def resolve_input_paths(inputs: List[str]) -> List[Path]:
         List[Path]: Filtered list of .py file Path objects.
     """
     current_script = Path(__file__).resolve()
-    target_files: List[Path] = []
+    target_files: list[Path] = []
 
     if not inputs:
         # Default: process current directory recursively
         print("No input files specified. Recursively scanning current directory for .py files...")
-        target_files = [p for p in Path(".").rglob("*.py") if p.is_file()]
+        target_files = [p for p in Path().rglob("*.py") if p.is_file()]
     else:
         for item in inputs:
             p = Path(item)
@@ -239,7 +240,7 @@ def resolve_input_paths(inputs: List[str]) -> List[Path]:
                 print(f"Warning: Ignored '{item}' (not a valid .py file or directory)")
 
     # Deduplicate and exclude the translator script itself
-    unique_files = sorted(list({f.resolve() for f in target_files if f.resolve() != current_script}))
+    unique_files = sorted({f.resolve() for f in target_files if f.resolve() != current_script})
     return unique_files
 
 

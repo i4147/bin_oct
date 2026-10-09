@@ -5,8 +5,9 @@ It relies on helper functions from a local "dh" module (cprint, fsz, get_nobinar
 
 from __future__ import annotations
 import ast
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, fsz, get_nobinary, gsz, is_binary, mpf, remove_blank_lines
 
 

@@ -5,6 +5,8 @@ After completing the operation, it should print "done." to indicate success."""
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 
 if __name__ == "__main__":
     fn = Path.home() / ".bash_history"

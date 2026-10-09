@@ -5,13 +5,14 @@ The script should accept root paths via argparse, walk the filesystem recursivel
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import hashlib
 import multiprocessing as mp
 import os
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 from typing import Iterable, Iterator
+
 
 CHUNK_SIZE = 1 << 20
 PARTIAL_SIZE = 1 << 16

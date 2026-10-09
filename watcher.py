@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/env python
-"""Unified file & folder watcher.
+r"""Unified file & folder watcher.
 Merges the behaviour of your previous scripts: dw.py poll-based recursive folder watcher; optional copy to ~/tmp/tmp; exits when "boostraped 100%" appears in the tail of a modified file.
 fwatcher.py watches ~/.tor/tor.log; exits on "100% (done)".
 watch_file.py watches a single file; exits on "boostraped 100%".
@@ -11,12 +11,13 @@ Usage examples -------------- Watch the current directory (print events only):: 
 from __future__ import annotations
 import argparse
 import contextlib
+from pathlib import Path
 import shutil
 import sys
 import threading
 import time
 import traceback
-from pathlib import Path
+
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 

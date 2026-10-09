@@ -9,14 +9,15 @@ import ast
 import json
 import logging
 import multiprocessing as mp
+from pathlib import Path
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import time
-from pathlib import Path
 from typing import Any, Iterator, Sequence
+
 
 try:
     from deep_translator import GoogleTranslator

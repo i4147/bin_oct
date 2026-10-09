@@ -7,7 +7,10 @@ The script must handle errors gracefully during compression by printing a failur
 from __future__ import annotations
 import os
 from pathlib import Path
+import sys
+
 import lz4.frame
+
 
 CHUNK_SIZE = 1024 * 1024
 CHUNK_THRESHOLD = 5 * 1024 * 1024

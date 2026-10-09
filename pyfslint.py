@@ -6,18 +6,19 @@ The tool is meant to help administrators quickly spot suspicious or insecure fil
 
 from __future__ import annotations
 import argparse
+from collections import defaultdict
 import contextlib
 import grp
 import hashlib
 import os
+from pathlib import Path
 import pwd
 import re
 import stat
 import subprocess
 import sys
-from collections import defaultdict
-from pathlib import Path
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from collections.abc import Generator

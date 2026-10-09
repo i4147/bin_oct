@@ -13,16 +13,18 @@ External requirements: the ``fastwalk`` extension module and the ``pngquant`` CL
 from __future__ import annotations
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+
 from fastwalk import walk_files
+
 
 cwd = Path.cwd().resolve()
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
@@ -94,7 +96,7 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
-        found = walk_files(str(root))
+        found = walk_files(str(root, follow_links=False))
     except Exception as exc:  # noqa: BLE001 - surface as a warning, keep going
         print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
         return

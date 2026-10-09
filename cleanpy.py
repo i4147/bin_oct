@@ -15,15 +15,17 @@ The script should: - Walk files/directories given on the command line (or curren
 from __future__ import annotations
 import argparse
 import ast
-import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
+
 import libcst as cst
 from libcst import RemovalSentinel
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

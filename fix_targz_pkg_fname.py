@@ -5,9 +5,10 @@ If those files are missing or lack the info, it should fall back to inspecting `
 The function should take a tar file path as input and return a tuple of (name, version), using `None` for values that cannot be determined."""
 
 from __future__ import annotations
-import re
-import tarfile
 from pathlib import Path
+import re
+import sys
+import tarfile
 
 
 def get_metadata_from_tar(tar_path):

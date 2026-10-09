@@ -4,9 +4,10 @@ It should use fontTools to open each font, extract the family and subfamily/styl
 It should process one or more input files or directories (via a helper that enumerates font files), skip or report files where a family name cannot be determined, avoid overwriting existing files by generating a unique path, and print colored status/error messages for each processed file while tracking and returning an overall error count."""
 
 from __future__ import annotations
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 from dh import cprint, get_files, mpf, unique_path
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.ttFont import TTFont

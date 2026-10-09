@@ -16,14 +16,16 @@ import importlib
 import io
 import json
 import mmap
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import re
 import sqlite3
 import sys
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Any, Callable, Optional
+
 from loguru import logger
+
 
 Tables = dict[str, list[dict[str, Any]]]
 MMAP_THRESHOLD = 5 * 1024 * 1024

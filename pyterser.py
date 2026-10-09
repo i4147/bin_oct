@@ -23,16 +23,18 @@ External requirements: the ``fastwalk`` extension module and the ``terser`` CLI 
 from __future__ import annotations
 import argparse
 import contextlib
+from functools import partial
+from multiprocessing import Pool
 import os
+from pathlib import Path
 import stat
 import subprocess
 import sys
 import tempfile
-from functools import partial
-from multiprocessing import Pool
-from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
+
 from fastwalk import walk_files
+
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

@@ -7,6 +7,7 @@ Inputs are filesystem Path objects; outputs are booleans or lists of names deriv
 from __future__ import annotations
 import ast
 from pathlib import Path
+import sys
 
 
 def is_valid_module_file(path: Path) -> bool:

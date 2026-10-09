@@ -6,14 +6,17 @@ Use a multiprocessing pool of 8 workers to process APKs in parallel."""
 
 from __future__ import annotations
 import argparse
+import contextlib
+from dataclasses import dataclass, field
 import multiprocessing
+from pathlib import Path
 import re
 import sys
 import zipfile
-from dataclasses import dataclass, field
-from pathlib import Path
+
 from fontTools.ttLib import TTFont
 from loguru import logger
+
 
 WORKERS: int = 8
 DEFAULT_OUTPUT_DIR: Path = Path("/sdcard/_static/fonts")
@@ -149,10 +152,8 @@ class APKFontExtractor:
             return None
         finally:
             if font is not None:
-                try:
+                with contextlib.suppress(Exception):
                     font.close()
-                except Exception:
-                    pass
 
     def _generate_font_filename(self, font_info: FontInfo) -> str:
         family_name = re.sub(r"[^\w\s-]", "", font_info.family_name)

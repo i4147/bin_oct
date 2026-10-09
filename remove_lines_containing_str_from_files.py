@@ -5,9 +5,10 @@ The script must read each file as UTF-8 (ignoring decode errors), filter out lin
 For a single file it should process it directly, but for multiple files it should use a multiprocessing Pool with 8 workers to clean them in parallel, and it should also compute the total size of files in the working directory before and/or after processing."""
 
 from __future__ import annotations
-import sys
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+
 from dh import fsz, get_nobinary, gsz
 
 

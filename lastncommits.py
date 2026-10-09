@@ -5,9 +5,9 @@ Internally, it should run `git log` with `--diff-filter=A` and `--name-status` t
 The script should handle Git command failures and other exceptions gracefully by printing an error message prefixed with "✗" to stderr and exiting with a non-zero status code."""
 
 from __future__ import annotations
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def get_created_files(n_commits: int) -> list:

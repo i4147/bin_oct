@@ -1,11 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-
+from collections import defaultdict
 import os
+from pathlib import Path
 import re
 import sys
-from collections import defaultdict
-from pathlib import Path
+
 
 # Base prefix path for Termux environment
 PREFIX = "/data/data/com.termux/files"
@@ -109,7 +109,7 @@ def extract_aliases(aliases_file: Path) -> dict[str, str]:
 
 
 def is_wrapper_alias(alias_name: str, alias_target: str) -> bool:
-    """
+    r"""
     Determines if an alias is an intentional wrapper for a binary of the same name.
     Examples ignored:
       - alias rg="rg 2>/dev/null"

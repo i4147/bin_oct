@@ -5,8 +5,9 @@ The script should print progress while checking each wheel and finally report or
 
 from __future__ import annotations
 import csv
-import zipfile
 from pathlib import Path
+import sys
+import zipfile
 
 
 def is_empty_wheel(wheel_path: str) -> bool:

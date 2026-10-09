@@ -9,12 +9,15 @@ The file does NOT need a ``.sh`` extension or a shebang -- it is treated as a sh
 from __future__ import annotations
 import argparse
 import contextlib
-import shutil
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from dh import get_files, is_binary, runcmd  # type: ignore[import-untyped]
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

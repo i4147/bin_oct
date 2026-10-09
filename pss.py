@@ -17,9 +17,10 @@ Usage: search pandas # top 20 substring matches by downloads search -n 100 panda
 from __future__ import annotations
 import argparse
 import heapq
+from pathlib import Path
 import sqlite3
 import sys
-from pathlib import Path
+
 
 DB_PATH = Path("/sdcard/data/pip.db")
 DEFAULT_LIMIT = 20

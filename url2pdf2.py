@@ -22,9 +22,12 @@ Notable behavior and requirements:
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/KcKhPj5y36F75obFt3bF8N"""
 
+from __future__ import annotations
+from pathlib import Path
 import re
 import sys
 from urllib.parse import urlparse
+
 import pdfkit
 
 

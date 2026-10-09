@@ -6,10 +6,12 @@ The script should be runnable via argparse from the command line, accepting a fi
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 import hunspell
+
 
 DICT_PATHS = [
     (

@@ -4,9 +4,10 @@ It should accept an optional first argument to switch between a shallow glob sca
 The script sorts matched entries by creation time descending and prints each entry's formatted timestamp alongside its path relative to the current directory, preceded by a header showing the count of results being shown."""
 
 from __future__ import annotations
-import sys
 from datetime import datetime
 from pathlib import Path
+import sys
+
 
 EXCLUDED_DIRS = {".git", "__pycache__"}
 N = 10

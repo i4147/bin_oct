@@ -17,15 +17,18 @@ The implementation should include dataclasses for FileResult and ProcessingStats
 from __future__ import annotations
 import argparse
 import ast
-import re
-import shutil
-import tempfile
-import zipfile
 from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
+import re
+import shutil
+import sys
+import tempfile
 from typing import Final
+import zipfile
+
 from loguru import logger
+
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",

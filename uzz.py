@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 from zipfile import BadZipFile, ZipFile
+
 from loguru import logger
 
 

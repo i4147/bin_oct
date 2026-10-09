@@ -5,13 +5,18 @@ It should optionally use the readchar library, if available, to support paginate
 
 from __future__ import annotations
 import argparse
-import sys
 from pathlib import Path
+import sys
+
 from rich.console import Console
 from rich.markdown import Markdown
 
+
 try:
-    from readchar import key as RKEY, readkey
+    from readchar import (
+        key as RKEY,
+        readkey,
+    )
 
     HAVE_READCHAR = True
 except Exception:

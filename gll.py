@@ -5,8 +5,8 @@ The output file should be automatically named using the start (and end) line num
 The script must handle errors gracefully, printing clear messages to stderr for missing arguments, invalid ranges, unreadable input files, or failures writing the output file, and return appropriate non-zero exit codes on failure while printing a success message with the output filename on completion."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
 
 
 def main() -> int:

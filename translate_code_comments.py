@@ -16,16 +16,19 @@ python merged_translator.py batch README.md src/example.py"""
 from __future__ import annotations
 import argparse
 import ast
-import io
-import logging
-import re
-import shutil
-import tokenize
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+import io
+import logging
 from pathlib import Path
+import re
+import shutil
+import sys
+import tokenize
 from typing import Iterator, Sequence
+
 from deep_translator import GoogleTranslator
+
 
 LOGGER = logging.getLogger("merged_translator")
 DEFAULT_EXCLUDED_DIRS = frozenset({

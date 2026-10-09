@@ -4,12 +4,12 @@ Merges these originals into one tool: checkout_previous.py -> checkout-previous 
 
 from __future__ import annotations
 import argparse
-import os
-import subprocess
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+import os
 from pathlib import Path
+import subprocess
+import sys
 from typing import List, Optional, Sequence
 
 

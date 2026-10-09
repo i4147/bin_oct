@@ -6,9 +6,12 @@ It should leverage utility functions from the "dh" module (cprint for colored co
 from __future__ import annotations
 import argparse
 from pathlib import Path
+import sys
 from time import perf_counter as pff
 from typing import Any
+
 from dh import cprint, format_time, fsz, get_pyfiles, mpf
+
 
 MODE: str = "black"
 CHUNK_SIZE: Any = 1024 * 1024
@@ -32,7 +35,11 @@ def process_file(path: str | Path, mode: str = MODE):
 
                 code = fix_with_isort(original_code)
             case "black":
-                from black import Mode as _Mode, TargetVersion as _tv, format_str
+                from black import (
+                    Mode as _Mode,
+                    TargetVersion as _tv,
+                    format_str,
+                )
 
                 code = format_str(
                     original_code,
@@ -47,7 +54,11 @@ def process_file(path: str | Path, mode: str = MODE):
 
                 code, _ = fix_with_yapf(original_code)
             case _:
-                from black import Mode as _Mode, TargetVersion as _tv, format_str
+                from black import (
+                    Mode as _Mode,
+                    TargetVersion as _tv,
+                    format_str,
+                )
 
                 code = format_str(
                     original_code,

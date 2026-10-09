@@ -129,17 +129,18 @@ The script should use only standard library modules: `argparse`, `json`, `os`, `
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/4ezbx9ZjMzYX9SHBpz4ceJ"""
 
+from __future__ import annotations
 import argparse
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
+from typing import Any, Dict, Optional, Sequence
 import urllib.error
 import urllib.request
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
 
 
 def run(
@@ -148,8 +149,8 @@ def run(
     return subprocess.run(list(cmd), cwd=str(cwd) if cwd else None, check=check, text=True, capture_output=capture)
 
 
-def load_env(path: Path) -> Dict[str, str]:
-    data: Dict[str, str] = {}
+def load_env(path: Path) -> dict[str, str]:
+    data: dict[str, str] = {}
     if not path.exists():
         return data
     for line in path.read_text().splitlines():
@@ -173,7 +174,7 @@ def get_token(args: argparse.Namespace) -> str:
     return token
 
 
-def api_request(method: str, url: str, token: str, payload: Optional[Dict[str, Any]] = None) -> tuple[int, Any]:
+def api_request(method: str, url: str, token: str, payload: Optional[dict[str, Any]] = None) -> tuple[int, Any]:
     data = json.dumps(payload).encode() if payload is not None else None
     request = urllib.request.Request(url, method=method, data=data)
     request.add_header("Authorization", f"token {token}")
@@ -194,7 +195,7 @@ def api_request(method: str, url: str, token: str, payload: Optional[Dict[str, A
 
 def create_repo_api(
     token: str, name: str, description: str, private: bool, auto_init: bool, api_url: str
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     payload = {"name": name, "description": description, "private": private, "auto_init": auto_init}
     status, data = api_request("POST", api_url, token, payload)
     if status == 201:

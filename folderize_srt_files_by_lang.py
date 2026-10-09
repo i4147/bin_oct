@@ -4,6 +4,8 @@ It should print progress messages with emojis for each step (scanning, files fou
 
 from __future__ import annotations
 from pathlib import Path
+import sys
+
 import pycld2 as cld2
 
 

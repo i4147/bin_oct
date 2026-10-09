@@ -5,10 +5,12 @@ The script should print each group of duplicates with their hash and file paths,
 It must also support an optional "-r" command-line flag that, when present, automatically deletes all but the first file in each duplicate group."""
 
 from __future__ import annotations
-import sys
 from pathlib import Path
+import sys
+
 from dh import cprint, mpf
 from xorhash import get_xorhash
+
 
 REMOVE = "-r" in sys.argv
 

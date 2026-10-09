@@ -4,8 +4,9 @@ It should verify the current directory is a Git repository root, run "git log --
 For each deleted file it should determine the appropriate commit to recover the content from and then check it out, restoring the files while handling and reporting any Git command errors gracefully."""
 
 from __future__ import annotations
-import subprocess
 from pathlib import Path
+import subprocess
+import sys
 
 
 def run_git_command(args: list[str]) -> str:

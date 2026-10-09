@@ -6,8 +6,8 @@ If no input file argument is provided, it should print a usage message and exit 
 from __future__ import annotations
 import csv
 import json
-import sys
 from pathlib import Path
+import sys
 
 
 def main() -> None:

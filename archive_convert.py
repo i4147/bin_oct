@@ -9,16 +9,18 @@ import gzip
 import lzma
 import multiprocessing as mp
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
-import zipfile
-from pathlib import Path
 from typing import TYPE_CHECKING
+import zipfile
+
 import brotli
 from loguru import logger
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

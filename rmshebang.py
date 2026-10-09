@@ -6,11 +6,13 @@ Using a multiprocessing Pool (spawn context, 8 workers, with a bounded pending q
 Before and after processing, it should measure the total size of the current directory via a "gsz" helper, compute the difference, and print the space saved using a "fsz" formatting helper, with all directory-size and file-listing utilities imported from a local "dh" module."""
 
 from __future__ import annotations
-import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+import sys
+
 from dh import fsz, get_files, gsz
+
 
 MAX_QUEUE = 16
 

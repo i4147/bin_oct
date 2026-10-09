@@ -5,6 +5,7 @@ The script should use pathlib.Path for file operations and read the filename fro
 
 from __future__ import annotations
 from pathlib import Path
+import sys
 from sys import argv
 
 

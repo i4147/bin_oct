@@ -8,13 +8,14 @@ Usage examples -------------- python module_usage.py report python module_usage.
 from __future__ import annotations
 import argparse
 import ast
-import contextlib
-import importlib
-import sys
 from collections import Counter, defaultdict
+import contextlib
 from datetime import datetime
+import importlib
 from pathlib import Path
+import sys
 from typing import Any, Sequence
+
 
 DEFAULT_PACKAGE = "dh"
 DEFAULT_DIR = Path.home() / "bin"

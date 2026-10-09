@@ -9,13 +9,14 @@ If you use HTTPS remotes with a PAT/credential manager, update stored credential
 
 from __future__ import annotations
 import argparse
+from datetime import datetime
 import logging
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
+
 
 DEFAULT_OLD_USERNAME = "i4147"
 DEFAULT_OLD_EMAIL = "yesnacoc@gmail.com"

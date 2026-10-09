@@ -7,7 +7,9 @@ The script should use argparse to expose these options (input paths, extension f
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from dh import get_nobinary, get_random_filename, should_skip, runcmd
+import sys
+
+from dh import get_nobinary, get_random_filename, runcmd, should_skip
 
 
 def read_file(path: Path) -> str | None:

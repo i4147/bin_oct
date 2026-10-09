@@ -6,9 +6,10 @@ Uses multiprocessing with 8 workers."""
 
 from __future__ import annotations
 import multiprocessing as mp
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+
 
 CPP_EXTS = {".cpp", ".cc", ".cxx"}
 C_EXTS = {".c"}

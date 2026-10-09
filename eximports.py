@@ -8,14 +8,16 @@ The generated script should: - Recursively discover "*.py" files under the curre
 - Include complete type hints and docstrings throughout."""
 
 from __future__ import annotations
-import sys
 from importlib.metadata import distributions
 from multiprocessing import Pool
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING, Final
-import tree_sitter_python as tsp
+
 from loguru import logger
 from tree_sitter import Language, Parser
+import tree_sitter_python as tsp
+
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

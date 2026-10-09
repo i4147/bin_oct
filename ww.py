@@ -5,8 +5,10 @@ It should invoke the subprocess without raising an exception on failure (using c
 
 from __future__ import annotations
 import os
-import subprocess
 from pathlib import Path
+import subprocess
+import sys
+
 
 if __name__ == "__main__":
     target_dir = Path.cwd().resolve()

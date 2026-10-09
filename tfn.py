@@ -7,8 +7,11 @@ The script should use argparse to accept input parameters (such as target direct
 from __future__ import annotations
 import argparse
 from pathlib import Path
+import sys
+
 from dh import FONTEXT, unique_path
 from fontTools.ttLib import TTFont
+
 
 STYLE_MAPPING = {
     "normal": "Regular",

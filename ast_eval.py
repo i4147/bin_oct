@@ -23,12 +23,13 @@ LiveDoc: https://felo.ai/zh-Hans/livedoc/K7omdspHfu6NJQHULHWqfn"""
 from __future__ import annotations
 import argparse
 import ast
-import shutil
-import sys
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
+import shutil
+import sys
 from typing import Sequence
+
 from dh import get_pyfiles
 from loguru import logger
 

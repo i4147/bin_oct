@@ -5,11 +5,14 @@ The script should accept input/output file paths and processing options as comma
 
 from __future__ import annotations
 import argparse
-import re
 from pathlib import Path
+import re
+import sys
+
 import cv2
 import numpy as np
 from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+
 
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,

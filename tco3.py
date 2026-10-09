@@ -5,18 +5,20 @@ It should be driven by command-line arguments (e.g., input/output paths, source/
 
 from __future__ import annotations
 import argparse
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import contextlib
 import importlib
 import json
 import os
+from pathlib import Path
 import sys
 import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Callable
+
 from loguru import logger
+
 
 Translator = Callable[[str], str]
 REQUEST_LOCK = threading.Lock()

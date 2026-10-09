@@ -9,16 +9,18 @@ For exact `fast_compress4.py` decompression-bug behavior, add `--simple-legacy-z
 from __future__ import annotations
 import argparse
 import contextlib
+from dataclasses import dataclass
 import fnmatch
 import json
-import os
-import sys
-from dataclasses import dataclass
 from multiprocessing import Pool
+import os
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
-import zstandard as zstd
+
 from loguru import logger
+import zstandard as zstd
+
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

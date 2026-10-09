@@ -2,12 +2,12 @@
 """Small repeatable benchmark that never modifies the source tree."""
 
 from __future__ import annotations
-
 import argparse
+from pathlib import Path
 import shutil
+import sys
 import tempfile
 import time
-from pathlib import Path
 
 import rmc3 as sc
 

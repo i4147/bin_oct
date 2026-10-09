@@ -13,14 +13,16 @@ Controlled via `--chunk-size`.
 
 from __future__ import annotations
 import argparse
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import re
 import sys
 import time
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 from typing import Iterable, Optional, Sequence
+
 from deep_translator import GoogleTranslator, single_detection
 from loguru import logger
+
 
 CHINESE_RE = re.compile(
     "[\u4e00-\u9fff"

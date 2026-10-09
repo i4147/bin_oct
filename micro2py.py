@@ -11,9 +11,10 @@ Every path may be a file or a directory; directories are walked recursively for 
 
 from __future__ import annotations
 import argparse
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 if sys.version_info >= (3, 10):
     _STDLIB: set[str] | None = set(sys.stdlib_module_names)

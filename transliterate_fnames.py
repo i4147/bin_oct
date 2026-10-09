@@ -27,11 +27,13 @@ The script must behave as follows:
 ---
 LiveDoc: https://felo.ai/zh-Hans/livedoc/aFmDxy8i93dEDrCKDbFUd9"""
 
+from __future__ import annotations
 import argparse
+from pathlib import Path
 import re
 import sys
 import unicodedata
-from pathlib import Path
+
 
 try:
     from pypinyin import lazy_pinyin

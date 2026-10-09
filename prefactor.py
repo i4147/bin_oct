@@ -7,11 +7,12 @@ Notable behaviors include skipping `__pycache__` directories, handling both pack
 from __future__ import annotations
 import argparse
 import ast
-import sys
 from collections import deque
 from dataclasses import dataclass
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+import sys
+
 
 MAX_DEFAULT = 10
 

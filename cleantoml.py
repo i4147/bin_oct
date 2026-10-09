@@ -6,12 +6,14 @@ The script should print a progress report listing each processed file name (alig
 It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
 
 from __future__ import annotations
-import sys
-import time
 from multiprocessing import Pool
 from pathlib import Path
+import sys
+import time
 from typing import Any, Final, Optional
+
 from dh import fsz
+
 
 _parser: Optional[Any] = None
 _WORKERS: Final[int] = 8
@@ -21,11 +23,11 @@ _NAME_WIDTH: Final[int] = 50
 def _get_parser() -> Any:
     global _parser
     if _parser is None:
-        import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
         from tree_sitter import (
             Language,  # type: ignore[import-untyped]
             Parser,
         )
+        import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
 
         _parser = Parser(Language(tstoml.language()))
     return _parser

@@ -5,11 +5,13 @@ For each file, read its text and use a stack-based algorithm to verify matching 
 When multiple files are provided, process them concurrently using a multiprocessing Pool (spawn context, 8 workers) with a bounded pending-task queue (max size 16) to limit memory usage, while single-file input is processed synchronously."""
 
 from __future__ import annotations
-import sys
 from collections import deque
 from multiprocessing import get_context
 from pathlib import Path
+import sys
+
 from dh import get_files
+
 
 MAX_QUEUE = 16
 
