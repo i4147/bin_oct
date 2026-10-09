@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """compressor.py — unified multi-codec compression toolkit.
 Original-script → merged CLI mapping ------------------------------------ auto_archive.py -> python compressor.py archive PATH [--output DIR] [--workers N] auto_comp.py -> python compressor.py bench PATH [--output DIR] autoco.py -> python compressor.py bench PATH [--output DIR] autocomp.py -> python compressor.py bench PATH [--output DIR] best_compression.py -> python compressor.py bench PATH [--output DIR] [--mp-chunks] compsub.py -> python compressor.py subdirs (-c|-d) PATH...
-[--algo ALGO] cramer.py -> python compressor.py compress PATH --algo ALGO [--keep] [--recursive] python compressor.py decompress PATH [--algo ALGO] [--keep] decompress_zlib.py -> python compressor.py decompress FILE --algo zlib xxr.py -> python compressor.py compress PATH --algo ALGO --workers N python compressor.py decompress PATH --workers N Optional third-party packages (all soft dependencies): zstandard, brotli, lz4, py7zr, blosc2, cramjam"""
+[--algo ALGO] cramer.py -> python compressor.py compress PATH --algo ALGO [--keep] [--recursive] python compressor.py decompress PATH [--algo ALGO] [--keep] decompress_zlib.py -> python compressor.py decompress FILE --algo zlib xxr.py -> python compressor.py compress PATH --algo ALGO --workers N python compressor.py decompress PATH --workers N Optional third-party packages (all soft dependencies): zstandard, brotli, lz4, py7zr, blosc2, cramjam
+"""
 
 from __future__ import annotations
 import argparse

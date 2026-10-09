@@ -5,7 +5,8 @@ Merges five independent download utilities into a single CLI: original -> new co
 [-f FILE] [--backend pycurl|requests|aria2c] [--output DIR] pipget.py -> pypi_dl.py scrape <pkg>...
 [-f FILE] [-d DIR] [-p | -c | -m runflare|pypi|tsinghua] Each subcommand reproduces the exact behaviour of its source script (same file-preference rules, same backends, same flags).
 Shared helpers live at module level.
-Third-party packages (optional — only imported by the modes that use them): requests basic, download, mirror(--backend requests) packaging (imported by pd.py; not required by the merged tool) pycurl mirror(--backend pycurl), scrape rich mirror (progress bar) beautifulsoup4 (bs4) scrape Only the standard library is imported unconditionally; any missing third- party package produces a friendly error when the relevant subcommand is run."""
+Third-party packages (optional — only imported by the modes that use them): requests basic, download, mirror(--backend requests) packaging (imported by pd.py; not required by the merged tool) pycurl mirror(--backend pycurl), scrape rich mirror (progress bar) beautifulsoup4 (bs4) scrape Only the standard library is imported unconditionally; any missing third- party package produces a friendly error when the relevant subcommand is run.
+"""
 
 from __future__ import annotations
 import argparse

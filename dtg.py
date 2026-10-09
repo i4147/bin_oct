@@ -2,7 +2,8 @@
 """Write a Python command-line tool that automatically translates the comments, docstrings, and print-statement string literals found in a given Python source file into another language (e.g., using an external translation API), while leaving actual code logic untouched.
 The script should use the ast module combined with a NodeVisitor to precisely locate translatable targets (print call string arguments, and docstrings of functions, async functions, classes, and modules), and use tokenize/regex to safely parse and reconstruct string and comment tokens including their quote styles and prefixes.
 It should support concurrent translation requests via ThreadPoolExecutor for speed, persist progress in a local JSON state file (.translation_state.json) to allow resuming interrupted runs, and accept command-line arguments (via argparse) for specifying the input file and other options.
-Output should be the modified source file with translated text substituted in place, preserving original formatting and code structure as much as possible."""
+Output should be the modified source file with translated text substituted in place, preserving original formatting and code structure as much as possible.
+"""
 
 from __future__ import annotations
 import argparse

@@ -4,7 +4,8 @@ Combines the behaviour of 10 original scripts (imports2.py, imports3.py, imports
 Third-party (all optional): tqdm — progress bars (silently ignored if missing) xxhash — faster cache hashing (falls back to hashlib) zstandard — needed only for .tar.zst archives Usage ----- python merge_reqs.py scan [options] python merge_reqs.py metadata [options] Examples -------- python merge_reqs.py scan -d ./myproj -o requirements.txt python merge_reqs.py scan -d .
 --extractor regex --include-unknown python merge_reqs.py scan -d .
 --cache .reqcache.json python merge_reqs.py metadata -d .
--o /sdcard/requirements.txt Mapping to original scripts --------------------------- imports2.py -> scan imports3.py -> scan --extractor regex imports4.py -> scan --check-installed --mapping FILE --include-notebooks imz.py -> scan --cache .reqcache.json --include-notebooks imz2.py -> scan --cache .reqcache.json --stdlib-file FILE --mapping FILE imz3.py -> scan --format flat --no-pip-filter imz_plex.py -> scan --include-archives imzzz.py -> scan --include-archives mkreq.py -> scan --stdlib-source python --no-pip-filter reqr.py -> metadata"""
+-o /sdcard/requirements.txt Mapping to original scripts --------------------------- imports2.py -> scan imports3.py -> scan --extractor regex imports4.py -> scan --check-installed --mapping FILE --include-notebooks imz.py -> scan --cache .reqcache.json --include-notebooks imz2.py -> scan --cache .reqcache.json --stdlib-file FILE --mapping FILE imz3.py -> scan --format flat --no-pip-filter imz_plex.py -> scan --include-archives imzzz.py -> scan --include-archives mkreq.py -> scan --stdlib-source python --no-pip-filter reqr.py -> metadata
+"""
 
 from __future__ import annotations
 import argparse

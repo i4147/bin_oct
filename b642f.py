@@ -2,7 +2,8 @@
 """Write a Python script that reads a text file line by line, where each line may contain raw base64 data or a data-URI-style string embedding "base64," followed by encoded content (optionally wrapped in quotes, spaces, or parentheses).
 For each line, it should extract and clean the base64 portion, decode it into bytes, and write the decoded output to a uniquely named ".bin" file based on the SHA-256 hash of the original line content, saving results into an "output" directory that is created if missing.
 The script should gracefully handle decoding failures (including a fallback retry that strips the last character before decoding again) and keep track of counts of successful and failed decodes as well as lists of failed/remaining lines.
-It relies on a helper "cprint" from a local module "dh" for colored console output and uses "pathlib.Path" for file operations."""
+It relies on a helper "cprint" from a local module "dh" for colored console output and uses "pathlib.Path" for file operations.
+"""
 
 from __future__ import annotations
 import base64

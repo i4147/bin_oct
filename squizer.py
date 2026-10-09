@@ -13,7 +13,8 @@ Shorten user-defined identifiers (a, b, ..., z, a1, ...).
 Peephole optimize: augmented assigns, nested-if merge, dead code removal, else-after-terminator flattening, constant folding, `if x: return True / return False` -> `return bool(x)`.
 6.
 `ast.unparse` and join adjacent simple statements with `;`.
-Output: * One input file -> <stem>_compressed.py (zlib+base85 runnable stub) <stem>_compressed.txt (readable minified) * Multiple inputs -> compressed.txt (readable minified) compressed_stub.py (zlib+base85 runnable stub)"""
+Output: * One input file -> <stem>_compressed.py (zlib+base85 runnable stub) <stem>_compressed.txt (readable minified) * Multiple inputs -> compressed.txt (readable minified) compressed_stub.py (zlib+base85 runnable stub)
+"""
 
 from __future__ import annotations
 import ast

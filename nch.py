@@ -4,7 +4,8 @@ Merges the behavior of five scripts: chmodi.py -> python chmodnorm.py all --para
 Files are normalized to 0o644, except: * already-executable files -> preserved * files with a `#!` shebang -> 0o755 * files inside an "exec dir" -> 0o755 * files with configured suffixes -> 0o755 (addx mode) The `deexec` mode strips execute bits from files matching one or more glob patterns.
 It has one important exception: * Files whose immediate parent directory is named `bin` or `sbin` are LEFT ALONE — exec state is preserved there.
 This mirrors the user's working snippet: for path in glob.glob("*.py"): mode = os.stat(path).st_mode new_mode = mode & ~(stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) os.chmod(path, new_mode) …integrated with skip-dir handling, dry-run, verbose reporting, and the existing multiprocessing machinery.
-Third-party packages (optional, auto-detected): * dh — provides is_binary(path) * tqdm — progress bars (falls back to no-op if missing)"""
+Third-party packages (optional, auto-detected): * dh — provides is_binary(path) * tqdm — progress bars (falls back to no-op if missing)
+"""
 
 from __future__ import annotations
 import argparse

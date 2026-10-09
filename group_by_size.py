@@ -84,7 +84,13 @@ def folderize_directories(n_parts: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Group top-level subdirectories into N parts by similar size.")
-    parser.add_argument("-n", "--parts", type=int, default=3, help="Number of parts/groups to create (default: 3)")
+    parser.add_argument(
+        "-n",
+        "--parts",
+        type=int,
+        default=3,
+        help="Number of parts/groups to create (default: 3)",
+    )
     args = parser.parse_args()
 
     folderize_directories(args.parts)

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script for Termux that reads a text file from a given path (defaulting to /sdcard/Download/sample.txt), raising an error if the file doesn't exist, and converts its contents to speech using the termux-tts-speak command-line tool.
 Since the TTS command likely has input length limits, the script should split the text into chunks of at most 3000 characters, breaking along paragraph boundaries where possible, and speak each chunk sequentially while printing progress like "Speaking chunk i/n" to the console.
-Implement this with separate functions for speaking text, reading the file, chunking the text, and orchestrating the whole process."""
+Implement this with separate functions for speaking text, reading the file, chunking the text, and orchestrating the whole process.
+"""
 
 from __future__ import annotations
 import subprocess

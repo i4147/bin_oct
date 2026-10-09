@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python/OpenCV-based multiprocessing script for Termux/Android that scans a folder of images (jpg, jpeg, png, bmp, tiff, webp), detects whether each image contains at least one human face using a Haar cascade classifier (with resizing to a max dimension of 640 for speed), and sorts/copies or moves images into separate output folders based on whether a face was detected.
 It should use multiprocessing.Pool with a worker count based on cpu_count for parallel processing, display progress with tqdm, and log all actions/errors (including missing OpenCV cascade files or unreadable images) both to console and to a log file in the home directory via the logging module.
-The script should exit gracefully with an informative error if OpenCV is not installed or the cascade classifier fails to load."""
+The script should exit gracefully with an informative error if OpenCV is not installed or the cascade classifier fails to load.
+"""
 
 from __future__ import annotations
 import logging

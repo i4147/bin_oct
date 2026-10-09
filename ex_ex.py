@@ -2,7 +2,8 @@
 """Write a Python script that recursively scans all .py files under the current directory (skipping hidden directories, site-packages, and the output folder itself) and uses tree_sitter_python to parse each file, extracting top-level nodes typed as function_docstrings or class_docstrings.
 For each folder containing such matches, concatenate the extracted snippets from all files in that folder and write them into a corresponding imports.py file under an output directory, preserving the relative folder structure.
 After processing, print a summary message showing how many folders were processed.
-Use tree_sitter's Parser and Language APIs for parsing, and pathlib for filesystem operations."""
+Use tree_sitter's Parser and Language APIs for parsing, and pathlib for filesystem operations.
+"""
 
 from __future__ import annotations
 from collections import defaultdict

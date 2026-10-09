@@ -12,7 +12,13 @@ import httpx
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.tags import Tag, compatible_tags, cpython_tags, interpreter_name, interpreter_version
+from packaging.tags import (
+    Tag,
+    compatible_tags,
+    cpython_tags,
+    interpreter_name,
+    interpreter_version,
+)
 from packaging.utils import (
     InvalidSdistFilename,
     InvalidWheelFilename,
@@ -152,12 +158,22 @@ def download(client: httpx.Client, link: Link, dest_dir: Path) -> Path:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Download a package from PyPI.")
     ap.add_argument("requirement", help="e.g. requests or 'requests==2.31.0'")
-    ap.add_argument("-d", "--dest", type=Path, default=Path("."), help="destination directory (default: .)")
+    ap.add_argument(
+        "-d",
+        "--dest",
+        type=Path,
+        default=Path("."),
+        help="destination directory (default: .)",
+    )
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 
     logger.remove()
-    logger.add(sys.stderr, level="DEBUG" if args.verbose else "INFO", format="<level>{level: <8}</level> {message}")
+    logger.add(
+        sys.stderr,
+        level="DEBUG" if args.verbose else "INFO",
+        format="<level>{level: <8}</level> {message}",
+    )
 
     req = Requirement(args.requirement)
 

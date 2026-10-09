@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """vidocr.py — Extract burned-in subtitles from a video using OCR.
 Merged from exsub.py and xburned_sub.py.
-Usage: python vidocr.py <video> [output.srt] [options] Examples: python vidocr.py movie.mp4 python vidocr.py movie.mp4 subs.srt --start 00:05:00 --end 00:10:00 python vidocr.py movie.mp4 subs.srt --resume python vidocr.py movie.mp4 subs.srt --sample-fps 1.0 --workers 8 --lang eng python vidocr.py movie.mp4 00:10:00 # 2nd positional = end time Mapping from original scripts: exsub.py -> python vidocr.py <video> [output] [-s HH:MM:SS] [-e HH:MM:SS] [-r] [--sample-fps F] [--workers N] xburned_sub.py -> python vidocr.py <video> [output] [--sample-fps F] [--workers N] [-v] Requires: opencv-python, numpy, pytesseract (+ tesseract-ocr binary on PATH)."""
+Usage: python vidocr.py <video> [output.srt] [options] Examples: python vidocr.py movie.mp4 python vidocr.py movie.mp4 subs.srt --start 00:05:00 --end 00:10:00 python vidocr.py movie.mp4 subs.srt --resume python vidocr.py movie.mp4 subs.srt --sample-fps 1.0 --workers 8 --lang eng python vidocr.py movie.mp4 00:10:00 # 2nd positional = end time Mapping from original scripts: exsub.py -> python vidocr.py <video> [output] [-s HH:MM:SS] [-e HH:MM:SS] [-r] [--sample-fps F] [--workers N] xburned_sub.py -> python vidocr.py <video> [output] [--sample-fps F] [--workers N] [-v] Requires: opencv-python, numpy, pytesseract (+ tesseract-ocr binary on PATH).
+"""
 
 from __future__ import annotations
 import argparse

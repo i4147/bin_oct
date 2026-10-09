@@ -2,7 +2,8 @@
 """Write a Python script that scans a package directory tree using the ast module to statically analyze .py files without importing them.
 It should provide helper functions to identify valid module files and valid subpackages (skipping private/underscore-prefixed names and requiring __init__.py for subpackages), safely parse a module into an AST while handling decode or syntax errors by returning None, and extract lists of public (non-underscore, non-"main") top-level function and class names from a parsed module.
 It should also include a function that detects whether a module contains only a "main" entry-point function/definition, useful for filtering out script-only modules when building package documentation or export summaries.
-Inputs are filesystem Path objects; outputs are booleans or lists of names derived from static AST inspection."""
+Inputs are filesystem Path objects; outputs are booleans or lists of names derived from static AST inspection.
+"""
 
 from __future__ import annotations
 import ast

@@ -12,7 +12,8 @@ Optionally remove module-level docstrings via a flag.
 - Preserve the original source formatting except for removed comments and docstrings (do not reformat via ast.unparse).
 - Print a per-file result list and a final summary of total files, changed files, comments removed, docstrings removed, and errors.
 - Exit with status 0 if no errors occurred, otherwise 1.
-The implementation should include dataclasses for FileResult and ProcessingStats, a CommentRemover class, a DocstringRemover AST transformer, functions for processing single files, wheel files, discovering files, printing results and summaries, and a main entry point with argparse."""
+The implementation should include dataclasses for FileResult and ProcessingStats, a CommentRemover class, a DocstringRemover AST transformer, functions for processing single files, wheel files, discovering files, printing results and summaries, and a main entry point with argparse.
+"""
 
 from __future__ import annotations
 import argparse

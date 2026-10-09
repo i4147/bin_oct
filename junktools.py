@@ -355,7 +355,10 @@ def cmd_empty_dirs(args: argparse.Namespace) -> int:
         except PermissionError:
             print(f"[ERROR] Permission denied for: {_safe_rel(d, root)}", file=sys.stderr)
         except OSError as exc:
-            print(f"[ERROR] Could not process {_safe_rel(d, root)}: {exc}", file=sys.stderr)
+            print(
+                f"[ERROR] Could not process {_safe_rel(d, root)}: {exc}",
+                file=sys.stderr,
+            )
         except Exception as exc:
             print(
                 f"[ERROR] An unexpected error occurred with {_safe_rel(d, root)}: {exc}",

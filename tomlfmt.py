@@ -702,7 +702,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="Format TOML files in place (taplo-style). Default: current directory, recursively.",
     )
     parser.add_argument("paths", nargs="*", type=Path, metavar="PATH", help="files and/or directories")
-    parser.add_argument("--check", action="store_true", help="do not write; exit 3 if any file would change")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="do not write; exit 3 if any file would change",
+    )
     parser.add_argument("-q", "--quiet", action="store_true", help="print only errors and the summary")
     return parser
 

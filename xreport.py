@@ -4,7 +4,8 @@ This single file merges three near-duplicate scripts into one CLI: * xreport.py 
 -j # Report *exact* uncompressed sizes and disk-space headroom python archive_report.py sizes ~/Downloads Notes / compatibility quirks preserved from the originals -------------------------------------------------------- * In the original `xreport*.py`, `-t/--test-integrity` actually toggles the banner and `-v/--verbose` toggles per-file output.
 We keep that behaviour so existing command lines keep working, but the --help text now explains it.
 * `.tar.bz3` and `.tar.snappy` fall into the generic tar branch (they can't be opened by `tarfile`), so they are reported as FAIL with an estimated size — exactly like the originals.
-Optional third-party packages (used when available): py7zr — .7z support zstandard — .zst support lz4.frame — .lz4 support snappy — .snappy support (estimate) brotli — .br support (estimate)"""
+Optional third-party packages (used when available): py7zr — .7z support zstandard — .zst support lz4.frame — .lz4 support snappy — .snappy support (estimate) brotli — .br support (estimate)
+"""
 
 from __future__ import annotations
 import argparse

@@ -15,7 +15,8 @@ Mapping from the original scripts --------------------------------- ewhl.py -> p
 emptywhl.py -> python wheel_cleaner.py wheels --detect record --move -y find_empty_wheels.py -> python wheel_cleaner.py wheels .
 -r --detect no-code --move -y Detectors (``--detect``, repeatable / comma-separated) ------------------------------------------------------ dist-info-only every archive entry lives under a single ``*.dist-info/`` directory (default; the documented intent of ewhl.py) record every ``RECORD`` row points inside the ``*.dist-info/`` directory (emptywhl.py) no-code the archive contains no ``.py`` / ``.so`` / ``.pyi`` file (find_empty_wheels.py) no-payload literal ewhl.py / ewhl2.py logic: no ``.py`` file *and* no other non-metadata file.
 Kept for exact backwards compatibility -- it is arguably buggy because it only ignores a *top-level* ``dist-info/`` directory.
-all union of all of the above A wheel is reported as empty when **any** selected detector matches."""
+all union of all of the above A wheel is reported as empty when **any** selected detector matches.
+"""
 
 from __future__ import annotations
 import argparse
@@ -439,8 +440,7 @@ def build_parser() -> argparse.ArgumentParser:
             "find broken installations in site-packages."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=textwrap.dedent(
-            f"""\
+        epilog=textwrap.dedent(f"""\
             {DETECTOR_HELP}
             original script mapping:
               ewhl.py               ->  wheels . --move -y
@@ -448,8 +448,7 @@ def build_parser() -> argparse.ArgumentParser:
               emptypkg.py           ->  scan .
               emptywhl.py           ->  wheels --detect record --move -y
               find_empty_wheels.py  ->  wheels . -r --detect no-code --move -y
-            """
-        ),
+            """),
     )
     subparsers = parser.add_subparsers(
         dest="command",

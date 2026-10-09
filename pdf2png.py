@@ -16,7 +16,10 @@ def pdf_to_png(pdf_path, output_dir=None, dpi=200):
         print(f"Error: file not found: {pdf_path}", file=sys.stderr)
         sys.exit(1)
     if shutil.which("pdftoppm") is None:
-        print("Error: 'pdftoppm' not found. Install with: pkg install poppler", file=sys.stderr)
+        print(
+            "Error: 'pdftoppm' not found. Install with: pkg install poppler",
+            file=sys.stderr,
+        )
         sys.exit(1)
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
     if output_dir is None:

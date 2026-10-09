@@ -73,7 +73,9 @@ def get_clipboard_file_paths():
             proc = subprocess.run(["osascript", "-e", "clipboard info"], capture_output=True, text=True)
             if "file" in proc.stdout:
                 file_path_proc = subprocess.run(
-                    ["osascript", "-e", "POSIX path of (the clipboard as alias)"], capture_output=True, text=True
+                    ["osascript", "-e", "POSIX path of (the clipboard as alias)"],
+                    capture_output=True,
+                    text=True,
                 )
                 path = file_path_proc.stdout.strip()
                 if path and os.path.exists(path):
@@ -143,7 +145,8 @@ def set_config():
             from win32com.shell import shell
 
             reg_key = winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
             )
             desktop_path = winreg.QueryValueEx(reg_key, "Desktop")[0]
 
@@ -151,7 +154,10 @@ def set_config():
             lnk_path = os.path.join(desktop_path, "UpImg.lnk")
 
             shortcut = pythoncom.CoCreateInstance(
-                shell.CLSID_ShellLink, None, pythoncom.CLSCTX_INPROC_SERVER, shell.IID_IShellLink
+                shell.CLSID_ShellLink,
+                None,
+                pythoncom.CLSCTX_INPROC_SERVER,
+                shell.IID_IShellLink,
             )
             shortcut.SetPath(sys.executable)
             shortcut.SetArguments(f'"{exe_path}"')
@@ -201,7 +207,10 @@ def main():
     else:
         if not os.path.exists(CONFIG_PATH):
             message = "Config file is not found. Please setup profile parameters first.\nUsage: upimg --config"
-            send_notify("Config Missing", "Execute configuration step via terminal instruction profile.")
+            send_notify(
+                "Config Missing",
+                "Execute configuration step via terminal instruction profile.",
+            )
             print(message)
             return
 
@@ -216,10 +225,16 @@ def main():
             if files_count > 0:
                 joined_markdown = "\n".join(markdown_links)
                 copy2clipboard(joined_markdown)
-                send_notify(title=f"{files_count} Upload Success", message="Link ready to paste via Ctrl+V / ⌘+V")
+                send_notify(
+                    title=f"{files_count} Upload Success",
+                    message="Link ready to paste via Ctrl+V / ⌘+V",
+                )
                 print(joined_markdown)
             else:
-                send_notify(title="Upload Cancelled", message="No valid file object image data parsed from clipboard.")
+                send_notify(
+                    title="Upload Cancelled",
+                    message="No valid file object image data parsed from clipboard.",
+                )
 
         except Exception:
             error_log = os.path.abspath("./upimg-error.log")

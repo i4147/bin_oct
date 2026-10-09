@@ -5,7 +5,8 @@ IMPORTANT MANUAL STEPS (this script cannot do these for you): 1.
 Add the NEW public key to your GitHub account: https://github.com/settings/keys 2.
 Delete/revoke the OLD public key from GitHub account settings (search for it by its old comment/email) at the same URL.
 3.
-If you use HTTPS remotes with a PAT/credential manager, update stored credentials (Keychain / Windows Credential Manager / git-credential-store) manually — this script does not touch credential stores."""
+If you use HTTPS remotes with a PAT/credential manager, update stored credentials (Keychain / Windows Credential Manager / git-credential-store) manually — this script does not touch credential stores.
+"""
 
 from __future__ import annotations
 import argparse

@@ -14,7 +14,8 @@ If the preferred backend cannot be imported or initialized, the script automatic
 * Periodic *atomic* JSON saves (``--save-every``).
 * Automatic resume: words already in the output file are skipped.
 * Graceful Ctrl+C: saves progress before exiting.
-Usage ----- python translate_words.py -i words.txt -t en -b deep_translator python translate_words.py -i words.txt -o out.json -s fr -t es -w 8 -d 0.1 python translate_words.py -i words.txt --no-continue"""
+Usage ----- python translate_words.py -i words.txt -t en -b deep_translator python translate_words.py -i words.txt -o out.json -s fr -t es -w 8 -d 0.1 python translate_words.py -i words.txt --no-continue
+"""
 
 from __future__ import annotations
 import argparse

@@ -4,7 +4,8 @@ Original scripts merged here: fix_ext.py fix_extension_mismatch_Version1.py fix_
 --apply --engines auto --workers 4 python filefixer.py fix .
 --scan-cwd --engines puremagic --apply python filefixer.py fix .
 --engines signature --dry-run python filefixer.py validate binary /data/data/com.termux --workers 4 python filefixer.py validate text .
---workers 4 python filefixer.py extract-python some_file.py -o out.py Optional third-party packages: pip install puremagic python-magic filetype"""
+--workers 4 python filefixer.py extract-python some_file.py -o out.py Optional third-party packages: pip install puremagic python-magic filetype
+"""
 
 from __future__ import annotations
 import argparse

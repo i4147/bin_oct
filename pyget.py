@@ -7,7 +7,8 @@ Features -------- * Three interchangeable HTTP backends (`-b python|requests|pyc
 * Reads URLs from the command line and/or from a file (`-f`).
 * Concurrent downloads with a pip-flavoured progress display.
 * Uses `pathlib` for every filesystem traversal.
-Usage ----- dl https://example.com/file.iso dl -b requests -j 4 url1 url2 url3 dl -f urls.txt -b pycurl dl -o movie.mp4 https://example.com/video"""
+Usage ----- dl https://example.com/file.iso dl -b requests -j 4 url1 url2 url3 dl -f urls.txt -b pycurl dl -o movie.mp4 https://example.com/video
+"""
 
 from __future__ import annotations
 import argparse

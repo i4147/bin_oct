@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that recursively scans all `.py` files under the current directory (skipping hidden directories, `site-packages`, and the script's own `output` folder), uses `tree-sitter` with the `tree_sitter_python` grammar to parse each file and extract only its top-level `import` and `from...import` statements.
 Group the extracted import statements by the relative folder path of the file they came from, prefixing each file's imports with a `# === filename ===` header, and accumulate them into a dictionary keyed by folder.
-Handle per-file parsing errors gracefully without stopping the overall scan, and keep counters for the number of processed files and the set of folders containing imports for later reporting or output generation."""
+Handle per-file parsing errors gracefully without stopping the overall scan, and keep counters for the number of processed files and the set of folders containing imports for later reporting or output generation.
+"""
 
 from __future__ import annotations
 from collections import defaultdict

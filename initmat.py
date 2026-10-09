@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Initialize a maturin mixed Rust/Python project in the current directory.
-Usage: python init_maturin_project.py [pkgname] If pkgname is omitted, the current directory name is used."""
+Usage: python init_maturin_project.py [pkgname] If pkgname is omitted, the current directory name is used.
+"""
 
 from __future__ import annotations
 import re

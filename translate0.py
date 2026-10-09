@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans a directory tree for text-based files (e.g., subtitles or localization files) containing Cyrillic text and translates them in place, replacing the original content with an English translation using deep_translator's GoogleTranslator.
 The script should read files line by line, split lines into size-limited chunks (max ~2000 characters) to respect translation API limits, and translate chunks concurrently using a ThreadPoolExecutor (up to 16 workers), with retry logic (several attempts with delay) for handling transient translation failures.
-It should log progress and errors via the logging module, accept command-line arguments (via argparse) such as the target directory and file patterns to process, optionally track processed/skipped files using an SQLite database to avoid reprocessing, and use threading utilities to safely coordinate shared state across worker threads."""
+It should log progress and errors via the logging module, accept command-line arguments (via argparse) such as the target directory and file patterns to process, optionally track processed/skipped files using an SQLite database to avoid reprocessing, and use threading utilities to safely coordinate shared state across worker threads.
+"""
 
 from __future__ import annotations
 import argparse

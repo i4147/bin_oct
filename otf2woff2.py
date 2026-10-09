@@ -2,7 +2,8 @@
 """Write a Python script that batch-converts OTF font files into WOFF2 format using fontTools.
 It should accept file paths as command-line arguments, or if none are given, automatically gather all ".otf" files from the current working directory via a helper function.
 For each font, it loads it with TTFont, sets the flavor to "woff2", and saves it to a same-named ".woff2" file, generating a unique filename if a non-empty target already exists, while printing success messages or a colored error message on failure.
-If only a single file is processed it should run synchronously and exit, otherwise it should process the files in parallel using a multiprocessing helper function."""
+If only a single file is processed it should run synchronously and exit, otherwise it should process the files in parallel using a multiprocessing helper function.
+"""
 
 from __future__ import annotations
 import sys

@@ -34,7 +34,12 @@ import click
 import colored
 import git
 from prompt_toolkit import prompt
-from prompt_toolkit.shortcuts import button_dialog, checkboxlist_dialog, radiolist_dialog, yes_no_dialog
+from prompt_toolkit.shortcuts import (
+    button_dialog,
+    checkboxlist_dialog,
+    radiolist_dialog,
+    yes_no_dialog,
+)
 from prompt_toolkit.styles import Style
 from sh import git
 
@@ -192,8 +197,7 @@ class Printer:
         path = Path(path_folder)
         path_autocomplete = os.path.join(path)
 
-        print(
-            f"""{colored.fg("green")}AUTOCOMPLETE
+        print(f"""{colored.fg("green")}AUTOCOMPLETE
 ===============
 ZSH:
 source {path_autocomplete}/merger-zsh-complete.sh
@@ -203,8 +207,7 @@ source {path_autocomplete}/merger-fish-complete.sh
 
 BASH:
 source {path_autocomplete}/merger-bash-complete.sh
-"""
-        )
+""")
 
     def banner(self, message="Merger"):
         from pyfiglet import print_figlet

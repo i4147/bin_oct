@@ -10,7 +10,8 @@ The tool understands plain ``.py`` files, wheel archives (``.whl``), and zstd-co
 When the optional ``zstandard`` package is not installed, a plain ``tarfile`` fallback is attempted for ``.tar.zst`` inputs.
 Autofix caveats --------------- The built-in rewriter re-parses each affected line individually so that it can strip only the unused aliases from a comma-separated import.
 Lines that do not parse on their own (e.g.
-continuations of a multi-line import) are skipped, which is why archive-member pseudo-paths (``archive::member``) are never autofixed by the AST engine."""
+continuations of a multi-line import) are skipped, which is why archive-member pseudo-paths (``archive::member``) are never autofixed by the AST engine.
+"""
 
 from __future__ import annotations
 import ast

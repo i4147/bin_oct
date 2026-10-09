@@ -126,7 +126,11 @@ def _fetch_requests(name: str, timeout: int, user_agent: str) -> Optional[dict[s
         if not download_url:
             info = data.get("info", {})
             download_url = info.get("home_page") or info.get("project_url")
-        return {"latest_version": latest, "download_url": download_url, "pypi_name": name}
+        return {
+            "latest_version": latest,
+            "download_url": download_url,
+            "pypi_name": name,
+        }
     except Exception:
         return None
 
@@ -235,7 +239,17 @@ def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict
         with multiprocessing.Pool(processes=args.workers) as pool:
             results = pool.starmap(
                 check_one,
-                [(name, ver, args.backend, args.timeout, args.user_agent, args.name_fallback) for name, ver in items],
+                [
+                    (
+                        name,
+                        ver,
+                        args.backend,
+                        args.timeout,
+                        args.user_agent,
+                        args.name_fallback,
+                    )
+                    for name, ver in items
+                ],
                 chunksize=max(1, len(items) // args.workers),
             )
     else:
@@ -243,7 +257,14 @@ def process_packages(packages: dict[str, str], args: argparse.Namespace) -> dict
         for name, ver in items:
             if args.sleep:
                 time.sleep(args.sleep)
-            res = check_one(name, ver, args.backend, args.timeout, args.user_agent, args.name_fallback)
+            res = check_one(
+                name,
+                ver,
+                args.backend,
+                args.timeout,
+                args.user_agent,
+                args.name_fallback,
+            )
             results.append(res)
             if args.color:
                 latest = res.get("latest_version") or "?"

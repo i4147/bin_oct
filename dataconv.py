@@ -7,7 +7,8 @@ Design ------ * Every loader returns a common in-memory model: Tables = {table_n
 * Multiple input files convert in parallel via ``multiprocessing.Pool.map``.
 * Optional 3rd-party libs are imported lazily; missing ones only affect the specific format, with a clear install hint.
 * All failures go through loguru.
-Examples -------- python dataconv.py --csv data.json python dataconv.py --json data.csv python dataconv.py --db dump.sql python dataconv.py --parquet data.csv python dataconv.py --csv a.json b.json c.json -j 4 -o out/ python dataconv.py --xlsx report.parquet"""
+Examples -------- python dataconv.py --csv data.json python dataconv.py --json data.csv python dataconv.py --db dump.sql python dataconv.py --parquet data.csv python dataconv.py --csv a.json b.json c.json -j 4 -o out/ python dataconv.py --xlsx report.parquet
+"""
 
 from __future__ import annotations
 import argparse

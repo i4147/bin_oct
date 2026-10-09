@@ -3,7 +3,8 @@
 - Provide compress mode (default) that compresses files >=1KB and non-compressed extensions in CWD, and tars+compresses directories to .tar.lz4.
 - Provide decompress mode that extracts .tar.lz4 archives and decompresses .lz4 files.
 - Use LZ4 max compression (level 9, high_compression, block size 4MB, block_linked, content_checksum).
-- Use pathlib for all path handling, loguru for logging, full strict type hints, and no CLI args controlling parallelism."""
+- Use pathlib for all path handling, loguru for logging, full strict type hints, and no CLI args controlling parallelism.
+"""
 
 from __future__ import annotations
 import argparse

@@ -2,7 +2,8 @@
 """Write a Python command-line script that formats source files using Prettier.
 It should accept file paths as command-line arguments, or if none are given, recursively discover files in the current directory matching extensions like .html, .js, .jsx, .ts, .tsx, .md, .scss, and .coffee via a helper `get_files`.
 For each file, skip it if it doesn't exist, is empty, or has only one line; otherwise run `prettier -w` on it, adjusting the path prefix from "/storage/emulated/0" to "/sdcard" for Android compatibility, and return a success/failure flag with the file path.
-Process a single file directly, or use a multiprocessing helper `mpf` to format multiple files in parallel, relying on utility functions imported from a local `dh` module."""
+Process a single file directly, or use a multiprocessing helper `mpf` to format multiple files in parallel, relying on utility functions imported from a local `dh` module.
+"""
 
 from __future__ import annotations
 import sys

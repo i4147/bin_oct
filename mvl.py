@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that moves a specified range of lines from one text file to another.
 It should accept four arguments: the source file path, the start line number, the end line number, and the destination file path, reading the source file, extracting the given line range, appending those lines to the destination file, and then rewriting the source file without them.
-The script should handle file-not-found and other exceptions gracefully by printing an error message, print a success confirmation message when the move completes, and print a usage message if the wrong number of command-line arguments is provided."""
+The script should handle file-not-found and other exceptions gracefully by printing an error message, print a success confirmation message when the move completes, and print a usage message if the wrong number of command-line arguments is provided.
+"""
 
 from __future__ import annotations
 import sys

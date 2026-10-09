@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that automatically detects Russian/Cyrillic text lines in a source file (using a Unicode regex covering Cyrillic ranges) and translates them to another language via the deep_translator GoogleTranslator API, running translations concurrently across multiple worker threads/processes (configurable, default up to 8 workers) with retry logic (attempts and delay constants) for failed API calls.
 The script should batch lines into size-limited chunks (max ~2000 characters) before sending them for translation to optimize API usage, periodically save progress (every 10 chunks) to avoid data loss, and gracefully handle Ctrl+C interruption via a signal handler that sets a global flag and saves partial progress before exiting.
-It should use argparse for CLI options (likely input/output file paths and worker count), loguru for structured logging of progress/warnings/errors, and JSON for reading/writing state or results, ultimately producing a translated version of the input file with the Cyrillic content replaced or supplemented by its translation."""
+It should use argparse for CLI options (likely input/output file paths and worker count), loguru for structured logging of progress/warnings/errors, and JSON for reading/writing state or results, ultimately producing a translated version of the input file with the Cyrillic content replaced or supplemented by its translation.
+"""
 
 from __future__ import annotations
 import argparse

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that recursively finds HTML files under one or more given directories (or accepts individual file paths), then validates and minifies each file in place using the minify_html library.
 It should use a custom HTMLParser subclass to check that tags are properly nested/closed before or after minification, collecting and reporting mismatched or unclosed tag errors per file.
-The script should process files in parallel using multiprocessing for speed, print a summary of successes, failures, and validation errors, and support command-line arguments (via argparse) to control input paths and behavior, exiting with a non-zero status code if any file fails validation or minification."""
+The script should process files in parallel using multiprocessing for speed, print a summary of successes, failures, and validation errors, and support command-line arguments (via argparse) to control input paths and behavior, exiting with a non-zero status code if any file fails validation or minification.
+"""
 
 from __future__ import annotations
 import argparse

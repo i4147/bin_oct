@@ -143,9 +143,18 @@ from typing import Any, Dict, Optional, Sequence
 
 
 def run(
-    cmd: Sequence[str], cwd: Optional[Path] = None, check: bool = False, capture: bool = True
+    cmd: Sequence[str],
+    cwd: Optional[Path] = None,
+    check: bool = False,
+    capture: bool = True,
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(list(cmd), cwd=str(cwd) if cwd else None, check=check, text=True, capture_output=capture)
+    return subprocess.run(
+        list(cmd),
+        cwd=str(cwd) if cwd else None,
+        check=check,
+        text=True,
+        capture_output=capture,
+    )
 
 
 def load_env(path: Path) -> Dict[str, str]:
@@ -193,9 +202,19 @@ def api_request(method: str, url: str, token: str, payload: Optional[Dict[str, A
 
 
 def create_repo_api(
-    token: str, name: str, description: str, private: bool, auto_init: bool, api_url: str
+    token: str,
+    name: str,
+    description: str,
+    private: bool,
+    auto_init: bool,
+    api_url: str,
 ) -> Optional[Dict[str, Any]]:
-    payload = {"name": name, "description": description, "private": private, "auto_init": auto_init}
+    payload = {
+        "name": name,
+        "description": description,
+        "private": private,
+        "auto_init": auto_init,
+    }
     status, data = api_request("POST", api_url, token, payload)
     if status == 201:
         print("✅ Repository created successfully!")
@@ -360,7 +379,10 @@ def cmd_gh(args: argparse.Namespace) -> int:
         print("Error: GitHub CLI (gh) is not installed.", file=sys.stderr)
         return 1
     if not gh_authenticated():
-        print("Error: GitHub CLI is not authenticated. Run: gh auth login", file=sys.stderr)
+        print(
+            "Error: GitHub CLI is not authenticated. Run: gh auth login",
+            file=sys.stderr,
+        )
         return 1
     repo_name = args.name or cwd.name
     if args.copy_global_gitignore:

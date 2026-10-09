@@ -2,7 +2,8 @@
 """xz_tool.py — unified compression / decompression CLI.
 Merges the behaviour of 13 original scripts into one entry-point.
 Original -> merged equivalent ----------------------------- compress_files.py -> xz_tool.py compress compress_files2.py -> xz_tool.py compress --sequential fast_xz.py -> xz_tool.py compress --no-size-stats lzmamter.py -> xz_tool.py compress --tar-subdirs [--dry-run] [--verbose] xz_compressor.py -> xz_tool.py compress --preset 7 --workers 8 -e txt log --exclude node_modules xzer.py -> xz_tool.py compress --auto-tar-dirs --chunk-size 1M xzer2.py -> xz_tool.py compress --dry-run uxz.py -> xz_tool.py decompress --handle-tar-xz csubdirxz.py -> xz_tool.py tar-dirs ptrr.py -> xz_tool.py archive-cwd py7z.py -> xz_tool.py 7z compress_pylzma.py -> xz_tool.py 7z --output-dir ./compressed pylzmaer.py -> xz_tool.py lzma-chunk Dependencies ------------ Required: stdlib only.
-Optional (matching the originals, gracefully degraded if missing): loguru — nicer logging (falls back to print) lzma_mt — multi-threaded xz (falls back to stdlib lzma) pylzma — required for `7z` and `lzma-chunk` subcommands rich — not required (originals' rich output replaced by plain text)"""
+Optional (matching the originals, gracefully degraded if missing): loguru — nicer logging (falls back to print) lzma_mt — multi-threaded xz (falls back to stdlib lzma) pylzma — required for `7z` and `lzma-chunk` subcommands rich — not required (originals' rich output replaced by plain text)
+"""
 
 from __future__ import annotations
 import argparse

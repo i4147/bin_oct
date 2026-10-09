@@ -28,7 +28,18 @@ import sys
 import py3langid as langid
 
 ROOT = Path.cwd()
-SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
+SKIP_DIRS = {
+    ".git",
+    ".hg",
+    ".svn",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+    "env",
+    "dist",
+    "build",
+}
 SKIP_EXTS = {
     ".pyc",
     ".pyo",

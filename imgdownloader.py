@@ -59,8 +59,20 @@ def getParams(sysArgs):
     # Required and general arguments
     parser.add_argument("-q", "--query", help="Query to search for", type=str, required=True, nargs="+")
     parser.add_argument("-l", "--limit", help="Max images to download (default: 3)", type=int, default=3)
-    parser.add_argument("-o", "--outputDir", help="Full directory to store images in", type=validDir, required=False)
-    parser.add_argument("-c", "--chromedriver", help="Full path to the chromedriver binary", type=str, required=False)
+    parser.add_argument(
+        "-o",
+        "--outputDir",
+        help="Full directory to store images in",
+        type=validDir,
+        required=False,
+    )
+    parser.add_argument(
+        "-c",
+        "--chromedriver",
+        help="Full path to the chromedriver binary",
+        type=str,
+        required=False,
+    )
 
     # NEW FUNCTIONALITY: Download Backend Choice
     parser.add_argument(
@@ -84,11 +96,22 @@ def getParams(sysArgs):
     # Query refinement arguments
     parser.add_argument("-epq", "--exactQuery", help="Words that must be included", type=str, default="")
     parser.add_argument("-oq", "--optionalQuery", help="Words that are optional", type=str, default="")
-    parser.add_argument("-eq", "--exceptQuery", help="Words that must not be included", type=str, default="")
+    parser.add_argument(
+        "-eq",
+        "--exceptQuery",
+        help="Words that must not be included",
+        type=str,
+        default="",
+    )
 
     # Size selection
     sizeGroup = parser.add_mutually_exclusive_group(required=False)
-    sizeGroup.add_argument("-cs", "--customSize", help="Find image of specific size (e.g., 1920*1080)", type=validSize)
+    sizeGroup.add_argument(
+        "-cs",
+        "--customSize",
+        help="Find image of specific size (e.g., 1920*1080)",
+        type=validSize,
+    )
     sizeGroup.add_argument(
         "-sz",
         "--size",
@@ -240,12 +263,20 @@ def getParamValue(k, v, imgQuery):
             ratioSwitcher = {"s": "iar:s", "t": "iar:t", "w": "iar:w", "p": "iar:p"}
             return ratioSwitcher.get(v, "")
         elif k == "colourType":
-            colourSwitcher = {"full-colour": "color", "black-and-white": "gray", "transparent": "trans"}
+            colourSwitcher = {
+                "full-colour": "color",
+                "black-and-white": "gray",
+                "transparent": "trans",
+            }
             return colourSwitcher.get(v, "")
         elif k == "SafeSearch":
             return "active" if v else "images"
         elif k == "usageRights":
-            typeSwitcher = {"CC": "sur%3Acl", "Commercial": "sur%3Aol", "Other": "sur%3Aol"}
+            typeSwitcher = {
+                "CC": "sur%3Acl",
+                "Commercial": "sur%3Aol",
+                "Other": "sur%3Aol",
+            }
             return typeSwitcher.get(v, "")
         else:
             return v

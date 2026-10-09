@@ -335,7 +335,10 @@ Examples:
     )
 
     parser.add_argument(
-        "-g", "--gzip", action="store_true", help="Build from .tar.gz files instead of extracted subdirectories"
+        "-g",
+        "--gzip",
+        action="store_true",
+        help="Build from .tar.gz files instead of extracted subdirectories",
     )
 
     args = parser.parse_args()

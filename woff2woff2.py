@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-converts WOFF font files to WOFF2 format using accept file paths as command-line arguments, or if none are given, automatically discover all ".woff" files in the current working directory via a helper function.
 For each file, it loads the font with TTFont, sets its flavor to "woff2", saves it with a ".woff2" extension (generating a unique filename if a non-empty target already exists), deletes the original ".woff" file, and prints a success or error message per file.
-If exactly one file is processed it runs synchronously and exits with status 1, otherwise it processes all files in parallel using a multiprocessing helper function."""
+If exactly one file is processed it runs synchronously and exits with status 1, otherwise it processes all files in parallel using a multiprocessing helper function.
+"""
 
 from __future__ import annotations
 import sys

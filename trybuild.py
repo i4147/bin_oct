@@ -169,7 +169,11 @@ def build_one(task: tuple[str, str], *, out_root: str | None, no_isolation: bool
 
     try:
         if not is_buildable(directory):
-            return Result(rel, "skipped", reason="pyproject.toml has no [project] or [build-system]")
+            return Result(
+                rel,
+                "skipped",
+                reason="pyproject.toml has no [project] or [build-system]",
+            )
         with tempfile.TemporaryDirectory(prefix="pkgbuild_") as scratch:
             if out_root:
                 flat = "root" if rel == "." else rel.replace(os.sep, "__")
@@ -196,12 +200,24 @@ def build_one(task: tuple[str, str], *, out_root: str | None, no_isolation: bool
             except subprocess.TimeoutExpired:
                 kill_tree(process)
                 output, _ = process.communicate()
-                return Result(rel, "failed", elapsed(), f"timed out after {timeout}s", tail(output))
+                return Result(
+                    rel,
+                    "failed",
+                    elapsed(),
+                    f"timed out after {timeout}s",
+                    tail(output),
+                )
             except BaseException:
                 kill_tree(process)
                 raise
             if process.returncode != 0:
-                return Result(rel, "failed", elapsed(), f"exit code {process.returncode}", tail(output))
+                return Result(
+                    rel,
+                    "failed",
+                    elapsed(),
+                    f"exit code {process.returncode}",
+                    tail(output),
+                )
             return Result(rel, "ok", elapsed())
     except KeyboardInterrupt:
         raise
@@ -218,7 +234,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build every Python project under the current directory.")
     parser.add_argument("--out", metavar="DIR", help="keep built artifacts here (default: discard)")
     parser.add_argument("--no-isolation", action="store_true", help="build in the current environment")
-    parser.add_argument("--timeout", type=int, default=900, metavar="SEC", help="per-project timeout (default: 900)")
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=900,
+        metavar="SEC",
+        help="per-project timeout (default: 900)",
+    )
     parser.add_argument("--log-file", metavar="FILE", help="also write errors to this file")
     args = parser.parse_args()
     if args.timeout < 1:
@@ -243,7 +265,12 @@ def main() -> int:
         return 1
     tasks = [(str(project), relpath(project, root)) for project in projects]
     print(f"Found {len(tasks)} project(s); building with {WORKERS} workers.\n")
-    worker = functools.partial(build_one, out_root=out_root, no_isolation=args.no_isolation, timeout=args.timeout)
+    worker = functools.partial(
+        build_one,
+        out_root=out_root,
+        no_isolation=args.no_isolation,
+        timeout=args.timeout,
+    )
     ok: list[str] = []
     failed: list[str] = []
     skipped: list[str] = []
@@ -259,7 +286,12 @@ def main() -> int:
                 else:
                     failed.append(result.rel)
                     print(f"[FAIL] {result.rel}  ({result.reason})")
-                    logger.error("build failed: {} ({})\n{}", result.rel, result.reason, result.output or "<no output>")
+                    logger.error(
+                        "build failed: {} ({})\n{}",
+                        result.rel,
+                        result.reason,
+                        result.output or "<no output>",
+                    )
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130

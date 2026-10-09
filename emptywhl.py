@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans the current directory for .whl (wheel) files and detects which ones are "empty" — meaning every file listed in their RECORD metadata belongs only to the .dist-info directory, with no actual package contents.
 For each wheel it opens the zip archive, locates the .dist-info folder and its RECORD file, and checks whether all recorded paths are prefixed by that .dist-info directory; any read, parsing, or zip errors should cause the wheel to be treated as not empty.
-The script should print progress while checking each wheel and finally report or handle the list of detected empty wheel filenames."""
+The script should print progress while checking each wheel and finally report or handle the list of detected empty wheel filenames.
+"""
 
 from __future__ import annotations
 import csv

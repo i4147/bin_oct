@@ -2,7 +2,8 @@
 """Write a Python command-line script that loads and inspects a pickle (.pkl) file specified as the first command-line argument.
 It should validate that the file exists and warn if it doesn't have a .pkl extension, then load it with pickle.load and print its type and approximate size.
 The script should recursively convert the loaded object into a JSON-serializable form (handling primitives, lists/tuples, dicts, sets, and falling back to string representation for other objects) and pretty-print its contents, with dict contents shown via json.dumps formatting.
-It must also handle and report errors gracefully, such as a missing file or a pickle that fails to load."""
+It must also handle and report errors gracefully, such as a missing file or a pickle that fails to load.
+"""
 
 from __future__ import annotations
 import json

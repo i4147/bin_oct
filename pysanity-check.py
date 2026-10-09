@@ -2,7 +2,8 @@
 """Write a Python script that performs a sanity check on installed Python packages in the current environment.
 It should list all installed packages with their versions using importlib_metadata, normalize package names for consistency, and attempt to import each one to verify it is actually usable, reporting any import errors encountered.
 It should also include a helper that queries pip via a dry-run install to determine the latest available version of a given package, extracting the version string from pip's output using a regular expression.
-The main function should print a formatted summary report to the console showing the total count of installed packages and the results of the import checks."""
+The main function should print a formatted summary report to the console showing the total count of installed packages and the results of the import checks.
+"""
 
 from __future__ import annotations
 import importlib

@@ -17,7 +17,6 @@ import re
 import sys
 from pathlib import Path
 
-
 # --------------------------------------------------------------------------- #
 # Regex for fenced Python code blocks.
 #

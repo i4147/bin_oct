@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """HTML File Renamer by Title Tag This script discovers HTML files in specified directories, extracts their title tags, and renames the files based on the extracted titles.
-It supports multiple languages through transliteration, handles file naming conventions, and provides concurrent processing for improved performance."""
+It supports multiple languages through transliteration, handles file naming conventions, and provides concurrent processing for improved performance.
+"""
 
 from __future__ import annotations
 import re

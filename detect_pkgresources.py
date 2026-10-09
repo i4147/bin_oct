@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans a directory tree of .py files to find usages of the deprecated pkg_resources module and reports which calls could be migrated to modern equivalents (such as importlib.resources, importlib.metadata, and packaging).
 For each file, it should check for pkg_resources imports, then use regex patterns to locate specific deprecated calls (e.g., resource_filename, resource_string, require, get_distribution, iter_entry_points, parse_version), recording the matched pattern and line number for each occurrence, while gracefully handling file read/encoding errors.
-The script should use argparse to accept command-line options (like target directory/files) and multiprocessing.Pool to scan multiple files in parallel for performance, ultimately outputting a report of files containing pkg_resources usage along with the detected patterns and their line numbers."""
+The script should use argparse to accept command-line options (like target directory/files) and multiprocessing.Pool to scan multiple files in parallel for performance, ultimately outputting a report of files containing pkg_resources usage along with the detected patterns and their line numbers.
+"""
 
 from __future__ import annotations
 import argparse

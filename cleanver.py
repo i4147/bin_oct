@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that takes a requirements.txt-style file path as a command-line argument and strips version constraints from each package entry, leaving only the bare package names.
 It should read the file line by line, skip empty lines and comments starting with "#", and parse each remaining line by splitting off version specifiers such as "==", ">=", "<=", "~=", the " @ " syntax for URL references, or trailing spaces.
-The cleaned package names should then be written back to the same file, one per line, overwriting the original content."""
+The cleaned package names should then be written back to the same file, one per line, overwriting the original content.
+"""
 
 from __future__ import annotations
 import sys

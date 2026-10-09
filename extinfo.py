@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that accepts a file extension as its single argument and recursively scans the current working directory for all files matching that extension.
 It should print usage instructions and exit if no argument is given, and print a message and exit cleanly if no matching files are found.
-Otherwise, it should sum up the sizes of all matched files and print both the total file count and the total size, formatting the size using a human-readable helper function called fsz imported from a local module named dh."""
+Otherwise, it should sum up the sizes of all matched files and print both the total file count and the total size, formatting the size using a human-readable helper function called fsz imported from a local module named dh.
+"""
 
 from __future__ import annotations
 import sys

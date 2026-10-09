@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that accepts a temperature value in Fahrenheit as a single argument via sys.argv, then converts it to both Celsius and Kelvin using standard conversion formulas.
 The script should print a single line displaying the Celsius and Kelvin values, each formatted to two decimal places, labeled clearly as "celecius" and "kelvin".
-Assume the input argument is a valid integer and no error handling for invalid input is required."""
+Assume the input argument is a valid integer and no error handling for invalid input is required.
+"""
 
 from __future__ import annotations
 import sys

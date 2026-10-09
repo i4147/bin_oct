@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that compresses a PDF file in place for mobile viewing using Ghostscript.
 The script should accept a file path, verify the file exists and that Ghostscript ('gs' or 'gswin64c') is available on the system, then invoke Ghostscript with screen-quality settings (72 DPI, PDF compatibility level 1.4, FastWebView linearization enabled) to produce a compressed temporary copy.
-It should print the original file size, compare it against the new compressed size, and only replace the original file if the compressed version is smaller, printing a success message with size details; otherwise it should report errors (missing file, missing Ghostscript, or Ghostscript failure) and exit with a non-zero status."""
+It should print the original file size, compare it against the new compressed size, and only replace the original file if the compressed version is smaller, printing a success message with size details; otherwise it should report errors (missing file, missing Ghostscript, or Ghostscript failure) and exit with a non-zero status.
+"""
 
 from __future__ import annotations
 import os

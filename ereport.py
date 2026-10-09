@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-runs multiple static analysis and linting tools (mypy,yrefly, pylint) against Python source files and produces JSON reports summarizing each tool's results.
 For each target file, it should invoke every configured tool as a subprocess, gracefully skip tools that are not installed (checking via shutil.which), and capture exit codes, combined stdout/stderr output, and error status into a structured dictionary.
-The script should write the collected results for each analyzed file into a report directory as JSON, and print progress messages while processing files."""
+The script should write the collected results for each analyzed file into a report directory as JSON, and print progress messages while processing files.
+"""
 
 from __future__ import annotations
 import json

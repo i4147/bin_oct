@@ -85,7 +85,9 @@ def scan_extensions(show_size: bool = False) -> Dict[str, Tuple[List[Path], int]
 
 
 def generate_report(
-    ext_map: Dict[str, Tuple[List[Path], int]], show_size: bool = False, max_examples: int = 3
+    ext_map: Dict[str, Tuple[List[Path], int]],
+    show_size: bool = False,
+    max_examples: int = 3,
 ) -> List[Tuple[str, int, str]]:
     report_data = []
     for ext in sorted(ext_map.keys(), key=lambda x: -len(ext_map[x][0])):
@@ -101,7 +103,10 @@ def generate_report(
 
 
 def format_table(
-    report_data: List[Tuple[str, int, str]], term_width: int, show_size: bool = False, use_color: bool = True
+    report_data: List[Tuple[str, int, str]],
+    term_width: int,
+    show_size: bool = False,
+    use_color: bool = True,
 ) -> str:
     col1_width = max(10, int(term_width * 0.15))
     col2_width = 12
@@ -135,7 +140,10 @@ def format_table(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Report file extensions in current directory recursively.")
     parser.add_argument(
-        "-s", "--size", action="store_true", help="Show total size per extension instead of example files"
+        "-s",
+        "--size",
+        action="store_true",
+        help="Show total size per extension instead of example files",
     )
     parser.add_argument("--no-color", action="store_true", help="Disable color output")
     args = parser.parse_args()

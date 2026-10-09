@@ -8,7 +8,8 @@ Because that helper exposes no pruning hooks, every filter (``SKIP_DIRS``, case-
 The original mode bits are preserved.
 * Failures never propagate out of a worker: they are reported through the ``error`` field of :class:`ProcessResult`.
 * A non-zero exit code from ``main`` signals that at least one file errored.
-External requirements: the ``fastwalk`` extension module and the ``pngquant`` CLI (or a compatible path supplied via ``--pngquant``)."""
+External requirements: the ``fastwalk`` extension module and the ``pngquant`` CLI (or a compatible path supplied via ``--pngquant``).
+"""
 
 from __future__ import annotations
 import argparse

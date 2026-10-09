@@ -9,7 +9,8 @@ get-zip Download one repo as a ZIP (token + progress bar).
 sparse Sparse-checkout clone filtered by file extensions.
 Mapping from the original scripts --------------------------------- clone_repos.py -> python repotools.py clone clonerepos.py -> python repotools.py zip clonerepos_dulwich.py -> python repotools.py dulwich forklone.py -> python repotools.py fork <user/repo> gclone1.py -> python repotools.py gclone get_zipped_repo.py -> python repotools.py get-zip <user/repo> sparse_clone.py -> python repotools.py sparse <ext>...
 <url>...
-Third-party packages (install the ones you need): requests, loguru (all subcommands) GitPython (`clone`, `fork`) -> `pip install gitpython` dulwich (`dulwich`) -> `pip install dulwich` PyGithub (`fork`, `get-zip`) -> `pip install PyGithub` python-dotenv (`fork`, `get-zip`)-> `pip install python-dotenv` tqdm (`get-zip`) -> `pip install tqdm`"""
+Third-party packages (install the ones you need): requests, loguru (all subcommands) GitPython (`clone`, `fork`) -> `pip install gitpython` dulwich (`dulwich`) -> `pip install dulwich` PyGithub (`fork`, `get-zip`) -> `pip install PyGithub` python-dotenv (`fork`, `get-zip`)-> `pip install python-dotenv` tqdm (`get-zip`) -> `pip install tqdm`
+"""
 
 from __future__ import annotations
 import argparse

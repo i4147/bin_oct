@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that uses the ast module to statically analyze a Python source file and detect import statements (both "import" and "from...import") that are not at the module's top level, such as those nested inside functions, classes, loops, conditionals, with blocks, or try blocks.
 It should define an ast.NodeVisitor subclass that tracks a nesting depth counter, incrementing it when entering compound statement bodies (function/class defs, for/while/if/with/try blocks) and recording any Import or ImportFrom node encountered while the depth is greater than zero into a list of non-top-level imports.
-The script should take a file path as input, parse the file into an AST, run the visitor, and output or return the collected list of improperly nested import statements for further reporting or linting purposes."""
+The script should take a file path as input, parse the file into an AST, run the visitor, and output or return the collected list of improperly nested import statements for further reporting or linting purposes.
+"""
 
 from __future__ import annotations
 import ast

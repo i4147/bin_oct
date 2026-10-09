@@ -2,7 +2,8 @@
 """Write a terminal-based calculator application using the Textual TUI framework.
 The script defines a Display widget for showing the current numeric value with right-aligned, bold styling, and a Calculator widget containing a grid of buttons (digits 0-9, decimal point, basic arithmetic operators, clear, and equals) styled with distinct colors for operator, equals, and clear buttons.
 It should handle button press events to build up numeric input, store the left operand and pending operator, perform the arithmetic calculation when equals is pressed, and reset state when clear is pressed, updating the display accordingly.
-Wrap the Calculator widget in a Textual App subclass so the script can be run directly as an interactive CLI calculator, using regex for input validation/parsing and sys for program entry as needed."""
+Wrap the Calculator widget in a Textual App subclass so the script can be run directly as an interactive CLI calculator, using regex for input validation/parsing and sys for program entry as needed.
+"""
 
 from __future__ import annotations
 import re

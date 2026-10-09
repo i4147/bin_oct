@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """A unified CLI tool for converting TOML, XML, and YAML to JSON.
 This script consolidates four distinct conversion utilities into a single interface, allowing for file-based batch processing, stream processing, and multiple parsing strategies.
-Mappings to original scripts: - original toml2json.py -> python merged.py toml <file> - original xml2json.py -> python merged.py xml [files...] --engine xmltodict --delete-source --workers 16 - original xmltojson.py -> python merged.py xml <file> --engine defusedxml - original yaml2json.py -> python merged.py yaml <file> [options...]"""
+Mappings to original scripts: - original toml2json.py -> python merged.py toml <file> - original xml2json.py -> python merged.py xml [files...] --engine xmltodict --delete-source --workers 16 - original xmltojson.py -> python merged.py xml <file> --engine defusedxml - original yaml2json.py -> python merged.py yaml <file> [options...]
+"""
 
 from __future__ import annotations
 import argparse

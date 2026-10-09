@@ -2,7 +2,8 @@
 """Write a Python command-line script that scans the currently installed Python packages via importlib.metadata, normalizes their names, and builds a dependency graph by parsing each package's "requires" metadata in parallel using joblib threads (8 workers), printing progress as each package is processed.
 The script should only keep dependency edges pointing to packages that are actually installed, and use the resulting graph (e.g., via BFS/DFS with collections.deque and defaultdict) to explore relationships such as reverse dependencies or dependency chains between packages.
 It should expose a command-line interface (via argparse) for specifying options like a target package, and produce output (e.g., an HTML report using the html module, or console text) summarizing the dependency structure.
-Include helper functions for name normalization and for extracting a package's direct dependencies from its distribution metadata."""
+Include helper functions for name normalization and for extracting a package's direct dependencies from its distribution metadata.
+"""
 
 from __future__ import annotations
 import argparse

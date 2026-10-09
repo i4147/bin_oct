@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """translate_files.py — a single CLI that merges four sibling translation scripts.
-Third-party dependencies (must be installed): pip install deep-translator tenacity loguru Original script -> merged equivalent ------------------------------------ vitrans.py -> python translate_files.py vi tkor.py -> python translate_files.py ko <input_file> [--game GAME] tchn.py -> python translate_files.py zh [--root DIR] trans_ru.py -> python translate_files.py ru <input_file> Every hardcoded constant from the originals is exposed as a CLI flag whose default matches the original value, so default invocations reproduce the original behavior exactly."""
+Third-party dependencies (must be installed): pip install deep-translator tenacity loguru Original script -> merged equivalent ------------------------------------ vitrans.py -> python translate_files.py vi tkor.py -> python translate_files.py ko <input_file> [--game GAME] tchn.py -> python translate_files.py zh [--root DIR] trans_ru.py -> python translate_files.py ru <input_file> Every hardcoded constant from the originals is exposed as a CLI flag whose default matches the original value, so default invocations reproduce the original behavior exactly.
+"""
 
 from __future__ import annotations
 import argparse
@@ -19,7 +20,13 @@ from typing import Final, Iterable, Sequence
 from deep_translator import GoogleTranslator
 
 try:
-    from tenacity import before_sleep_log, retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
+    from tenacity import (
+        before_sleep_log,
+        retry,
+        retry_if_exception_type,
+        stop_after_attempt,
+        wait_exponential_jitter,
+    )
 
     _HAS_TENACITY = True
 except ImportError:

@@ -13,7 +13,8 @@ Mapping from original scripts ----------------------------- addimgsize_to_filena
 # ...with HTML rewriting and only ?key=val patterns: python renametools.py jscss --query-style param --also-html .
 # Suggest Python filenames from docstrings: python renametools.py suggest-names ./src python renametools.py suggest-names ./src --apply # Path-name renamer: python renametools.py pnr -r "_backup" --dry-run .
 python renametools.py pnr -s "IMG_" "photo_" --recursive .
-python renametools.py pnr -t "chapter" --recursive ./books Optional third-party packages (used only where explicitly needed): * opencv-python — for the ``images`` subcommand (import cv2) * tqdm — for progress bars in ``images`` (falls back to no bar)"""
+python renametools.py pnr -t "chapter" --recursive ./books Optional third-party packages (used only where explicitly needed): * opencv-python — for the ``images`` subcommand (import cv2) * tqdm — for progress bars in ``images`` (falls back to no bar)
+"""
 
 from __future__ import annotations
 import argparse

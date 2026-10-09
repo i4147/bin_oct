@@ -20,7 +20,6 @@ import libcst as cst
 from libcst.metadata import MetadataWrapper, PositionProvider
 from loguru import logger
 
-
 VERSION = "1.0.0"
 UTF8_BOM = b"\xef\xbb\xbf"
 CODING_PATTERN = re.compile(r"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
@@ -233,13 +232,20 @@ class StripTransformer(cst.CSTTransformer):
         self.annotations_removed = 0
 
     def leave_TrailingWhitespace(
-        self, original_node: cst.TrailingWhitespace, updated_node: cst.TrailingWhitespace
+        self,
+        original_node: cst.TrailingWhitespace,
+        updated_node: cst.TrailingWhitespace,
     ) -> cst.TrailingWhitespace:
         comment = original_node.comment
         if comment is None:
             return updated_node
         position = self.get_metadata(PositionProvider, original_node)
-        if is_protected_comment(comment.value, position.start.line, self.options.remove_protected_comments, False):
+        if is_protected_comment(
+            comment.value,
+            position.start.line,
+            self.options.remove_protected_comments,
+            False,
+        ):
             return updated_node
         self.comments_removed += 1
         return updated_node.with_changes(whitespace=cst.SimpleWhitespace(""), comment=None)
@@ -268,7 +274,9 @@ class StripTransformer(cst.CSTTransformer):
         return updated_node
 
     def leave_SimpleStatementLine(
-        self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
     ) -> cst.SimpleStatementLine:
         if not self.options.remove_annotations:
             return updated_node
@@ -290,7 +298,13 @@ class StripTransformer(cst.CSTTransformer):
                 )
             else:
                 target = cst.AssignTarget(target=statement.target)
-            new_body.append(cst.Assign(targets=(target,), value=statement.value, semicolon=statement.semicolon))
+            new_body.append(
+                cst.Assign(
+                    targets=(target,),
+                    value=statement.value,
+                    semicolon=statement.semicolon,
+                )
+            )
         if not changed:
             return updated_node
         if not new_body:
@@ -443,7 +457,13 @@ def scan_paths(
             path = supplied.expanduser().resolve()
             exists = path.exists()
         except (OSError, RuntimeError, ValueError) as error:
-            scan_results.append(FileResult(path=str(supplied), status="skipped", message=f"cannot access: {error}"))
+            scan_results.append(
+                FileResult(
+                    path=str(supplied),
+                    status="skipped",
+                    message=f"cannot access: {error}",
+                )
+            )
             continue
         if not exists:
             scan_results.append(FileResult(path=str(path), status="skipped", message="path does not exist"))
@@ -461,7 +481,13 @@ def scan_paths(
             root = path
             candidates = path.rglob("*") if recursive else path.iterdir()
         else:
-            scan_results.append(FileResult(path=str(path), status="skipped", message="not a regular file or directory"))
+            scan_results.append(
+                FileResult(
+                    path=str(path),
+                    status="skipped",
+                    message="not a regular file or directory",
+                )
+            )
             continue
         try:
             for candidate in candidates:
@@ -557,7 +583,11 @@ def format_counts(result: FileResult, show_stats: bool) -> str:
 
 
 def report_results(
-    results: Sequence[FileResult], show_stats: bool, include_diff: bool, json_output: bool, quiet: bool
+    results: Sequence[FileResult],
+    show_stats: bool,
+    include_diff: bool,
+    json_output: bool,
+    quiet: bool,
 ) -> None:
     summary = summary_data(results)
     if json_output:
@@ -615,7 +645,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("paths", nargs="*", type=Path, default=[Path(".")])
     parser.add_argument("-c", "--comments", action="store_true", help="remove all removable comments")
-    parser.add_argument("-d", "--docstrings", action="store_true", help="remove function and class docstrings")
+    parser.add_argument(
+        "-d",
+        "--docstrings",
+        action="store_true",
+        help="remove function and class docstrings",
+    )
     parser.add_argument("-a", "--all", action="store_true", help="remove all selected source metadata")
     parser.add_argument("-n", "--stats", action="store_true", help="show removal counts")
     parser.add_argument("--dry-run", action="store_true", help="report changes without writing")

@@ -14,7 +14,8 @@ Requires ``packaging``.
 Original-script mapping ----------------------- check_wheels.py -> python wheel_tools.py check [DIR] have_script.py -> python wheel_tools.py entry-points [DIR] ispure.py -> python wheel_tools.py pypi PKG [PKG ...] mip.py -> python wheel_tools.py prune [DIR] strep.py -> python wheel_tools.py strip [FILES ...] valwheel.py -> python wheel_tools.py validate [DIR] whl_unpacked_size.py -> python wheel_tools.py size [-d DIR] Optional third-party dependencies --------------------------------- packaging - used by the ``validate`` subcommand requests - used by the ``pypi`` subcommand rich - used by the ``strip`` subcommand (nicer progress) Examples -------- # Find misconfigured wheels that dump into site-packages root python wheel_tools.py check ./wheels # List wheels that declare entry points python wheel_tools.py entry-points .
 # Query PyPI for a package python wheel_tools.py pypi requests numpy # Delete wheels whose package is already installed python wheel_tools.py prune .
 # Strip debug symbols from all .so files under ./native python wheel_tools.py strip -d ./native # Validate every wheel in the current directory python wheel_tools.py validate .
-# Report unpacked sizes of every wheel in ./wheels recursively python wheel_tools.py size -d ./wheels -r -v"""
+# Report unpacked sizes of every wheel in ./wheels recursively python wheel_tools.py size -d ./wheels -r -v
+"""
 
 from __future__ import annotations
 import argparse

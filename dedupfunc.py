@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python static-analysis tool that scans one or more Python source files, parses each with the ast module, and extracts every function definition's body (stripping comments and whitespace) to detect functions with duplicate or near-duplicate implementations.
 It should walk the AST via a NodeVisitor to collect FunctionInfo objects (name, normalized body, line number, node), group functions by matching normalized bodies across files, and report duplicates including their names, source files, and line numbers.
-The script should accept file or directory paths via argparse on the command line, recursively process .py files, and print a clear summary of duplicate function groups found, exiting with an appropriate status code based on whether duplicates were detected."""
+The script should accept file or directory paths via argparse on the command line, recursively process .py files, and print a clear summary of duplicate function groups found, exiting with an appropriate status code based on whether duplicates were detected.
+"""
 
 from __future__ import annotations
 import argparse

@@ -2,7 +2,8 @@
 """Write a Python script that uses a custom "dh" module's runcmd helper to perform a system package sanity check on a Debian/Ubuntu-based machine.
 It should list all installed packages via dpkg-query, then for each package run "dpkg -l" to verify its status is "ii" (properly installed), printing warnings for any package not in a healthy state and tracking an issue count.
 It should also include a function that runs "apt-get -s upgrade" (simulated upgrade) to check for available updates, returning the raw output.
-The main function should print progress messages and a summary of installed package count and any detected issues, handling errors gracefully by printing an error message and exiting on failure where appropriate."""
+The main function should print progress messages and a summary of installed package count and any detected issues, handling errors gracefully by printing an error message and exiting on failure where appropriate.
+"""
 
 from __future__ import annotations
 import sys

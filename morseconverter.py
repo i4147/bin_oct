@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a command-line Python script that converts text to and from Morse code using argparse for handling input arguments, based on a dictionary mapping A-Z letters, digits 0-9, and spaces (as "/") to their Morse code equivalents, plus a reverse dictionary for decoding.
 It should implement text_to_morse and morse_to_text functions that convert strings character-by-character (passing through any unrecognized characters unchanged), and an encrypt_file function that reads a text file with pathlib, encodes its contents to Morse code, and writes the result to an output file, handling file read errors gracefully.
-Include a main block that parses command-line arguments to let the user choose encode/decode mode and specify input/output file paths."""
+Include a main block that parses command-line arguments to let the user choose encode/decode mode and specify input/output file paths.
+"""
 
 from __future__ import annotations
 import argparse

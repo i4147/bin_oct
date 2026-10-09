@@ -141,7 +141,10 @@ def get_added_files_per_commit_gitcli(repo_path: str) -> dict:
         return files
 
     log = subprocess.run(
-        ["git", "-C", repo_path, "log", "--format=%H %T %P"], capture_output=True, text=True, check=True
+        ["git", "-C", repo_path, "log", "--format=%H %T %P"],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout
 
     for line in log.splitlines():

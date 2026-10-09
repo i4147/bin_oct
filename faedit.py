@@ -125,8 +125,18 @@ def run_curses(text):
                     st["x"] = x + 1
                 elif y + 1 < len(lines):
                     st["y"], st["x"] = y + 1, 0
-            elif k in (curses.KEY_UP, curses.KEY_DOWN, curses.KEY_PPAGE, curses.KEY_NPAGE):
-                d = {curses.KEY_UP: -1, curses.KEY_DOWN: 1, curses.KEY_PPAGE: -eh, curses.KEY_NPAGE: eh}[k]
+            elif k in (
+                curses.KEY_UP,
+                curses.KEY_DOWN,
+                curses.KEY_PPAGE,
+                curses.KEY_NPAGE,
+            ):
+                d = {
+                    curses.KEY_UP: -1,
+                    curses.KEY_DOWN: 1,
+                    curses.KEY_PPAGE: -eh,
+                    curses.KEY_NPAGE: eh,
+                }[k]
                 st["y"] = min(max(y + d, 0), len(lines) - 1)
                 st["x"] = min(x, len(lines[st["y"]]))
             elif k == curses.KEY_HOME:

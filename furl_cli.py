@@ -359,7 +359,10 @@ class Path:
     SAFE_SEGMENT_CHARS: Final[str] = ":@-._~!$&'()*+,;="
 
     def __init__(
-        self, path: Any = "", force_absolute: Callable[[Any], bool] = lambda _: False, strict: bool = False
+        self,
+        path: Any = "",
+        force_absolute: Callable[[Any], bool] = lambda _: False,
+        strict: bool = False,
     ) -> None:
         self.segments: list[str] = []
         self.strict = strict
@@ -620,7 +623,11 @@ class Query:
             self._params.add(key, value)
 
     def encode(
-        self, delimiter: str = "&", quote_plus: bool = True, dont_quote: Any = "", delimeter: Any = absent
+        self,
+        delimiter: str = "&",
+        quote_plus: bool = True,
+        dont_quote: Any = "",
+        delimeter: Any = absent,
     ) -> str:
         if delimeter is not absent:
             delimiter = delimeter

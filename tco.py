@@ -2,7 +2,8 @@
 """Text file translator using the `translate` library.
 Modes: default : translate the input file in CHUNKS (~450 chars, split at line boundaries), save to <input>.<target> -l : line-by-line interactive mode — prints each translation immediately and saves {"<src>": ..., "<tgt>": ...} pairs to JSON.
 Lines longer than the query limit are split and re-joined.
-Common features: - Respects the translator's ~500 char query limit (MAX_CHARS) - Saves progress every 50 chunks/lines to a .progress sidecar - Resumes from previous progress if the sidecar exists - Sleeps between requests and retries with exponential backoff - Uses pathlib for all file operations - Python 3.12 compatible"""
+Common features: - Respects the translator's ~500 char query limit (MAX_CHARS) - Saves progress every 50 chunks/lines to a .progress sidecar - Resumes from previous progress if the sidecar exists - Sleeps between requests and retries with exponential backoff - Uses pathlib for all file operations - Python 3.12 compatible
+"""
 
 from __future__ import annotations
 import argparse

@@ -8,7 +8,8 @@ The original mode bits are preserved.
 * Every file is processed in a worker process; the parent prints each worker's captured ``jpegoptim`` stdout/stderr verbatim, so lines never interleave across workers.
 * Failures never propagate out of a worker: they are reported through the ``error`` field of :class:`ProcessResult`.
 * A non-zero exit code from ``main`` signals that at least one file errored.
-External requirements: the ``fastwalk`` extension module and the ``jpegoptim`` CLI (or a compatible path supplied via ``--jpegoptim``)."""
+External requirements: the ``fastwalk`` extension module and the ``jpegoptim`` CLI (or a compatible path supplied via ``--jpegoptim``).
+"""
 
 from __future__ import annotations
 import argparse

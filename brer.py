@@ -5,7 +5,8 @@ The script should: - Provide a command-line interface with mutually exclusive `-
 - Compress files/folders using Brotli at maximum quality (quality=11, lgwin=24) in 32 KiB chunks, parallelizing chunk compression across the pool; skip files smaller than 1 KiB, symlinks, and already-compressed extensions; only keep the compressed output if it is smaller than the original.
 - For directories, create a `.tar` archive then Brotli-compress it to `.tar.br`, and remove the source directory on success.
 - Decompress `.br` files and `.tar.br` archives (extracting the inner tar), removing `.br` inputs on success.
-- Log all progress and errors with loguru; use pathlib exclusively for path handling; include full type annotations and docstrings for every function, class, and module-level constant."""
+- Log all progress and errors with loguru; use pathlib exclusively for path handling; include full type annotations and docstrings for every function, class, and module-level constant.
+"""
 
 from __future__ import annotations
 import argparse

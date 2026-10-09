@@ -4,7 +4,8 @@
 - Apply the saved patch at once and create a single commit that reproduces the net effect.
 - Supported backends (names): subprocess (default), pygithub, gitpython, libgit2, dulwich, typer - If the chosen backend cannot complete an operation, the script falls back to subprocess/git CLI automatically.
 Notes: - The script requires a clean working tree by default (use --force to proceed with uncommitted changes; the script will stash/restore).
-- It creates temporary backups and will attempt to restore the original HEAD on failure."""
+- It creates temporary backups and will attempt to restore the original HEAD on failure.
+"""
 
 from __future__ import annotations
 import argparse

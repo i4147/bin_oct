@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a PyPI package name as its single argument and fetches monthly download statistics from the pypistats.org API (covering Python version, system/OS, and overall download breakdowns), using an SSL context with certificate verification disabled.
-The script should aggregate the raw daily-category entries into average downloads per category, then print formatted summary tables sorted appropriately—numerically for Python versions and by a preferred OS order (Linux, Windows, Darwin, then others) for systems—showing each category's average downloads alongside its percentage share of the total."""
+The script should aggregate the raw daily-category entries into average downloads per category, then print formatted summary tables sorted appropriately—numerically for Python versions and by a preferred OS order (Linux, Windows, Darwin, then others) for systems—showing each category's average downloads alongside its percentage share of the total.
+"""
 
 from __future__ import annotations
 import json

@@ -193,7 +193,9 @@ class _BodyRepairMixin(cst.CSTTransformer):
         return updated_node.with_changes(body=[cst.SimpleStatementLine(body=[cst.Pass()])])
 
     def leave_SimpleStatementSuite(
-        self, original_node: cst.SimpleStatementSuite, updated_node: cst.SimpleStatementSuite
+        self,
+        original_node: cst.SimpleStatementSuite,
+        updated_node: cst.SimpleStatementSuite,
     ) -> cst.BaseSuite:
         if updated_node.body:
             return updated_node
@@ -231,7 +233,9 @@ class SourceCleaner(_BodyRepairMixin):
         return self.config.preserve_special_comments and PROTECTED_COMMENT.match(text) is not None
 
     def leave_TrailingWhitespace(
-        self, original_node: cst.TrailingWhitespace, updated_node: cst.TrailingWhitespace
+        self,
+        original_node: cst.TrailingWhitespace,
+        updated_node: cst.TrailingWhitespace,
     ) -> cst.TrailingWhitespace:
         """Drop an inline comment together with the padding before it."""
         comment = updated_node.comment
@@ -373,7 +377,9 @@ class SourceCleaner(_BodyRepairMixin):
         )
 
     def leave_SimpleStatementLine(
-        self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
     ) -> cst.BaseStatement | cst.RemovalSentinel:
         """Delete bare annotations (``x: int``) and lines left empty."""
         if self.config.strip_type_hints:
@@ -462,7 +468,9 @@ class _UnusedTypingImportRemover(_BodyRepairMixin):
         return updated_node.with_changes(names=self._fix_last_comma(kept))
 
     def leave_SimpleStatementLine(
-        self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
     ) -> cst.BaseStatement | cst.RemovalSentinel:
         return updated_node if updated_node.body else cst.RemoveFromParent()
 
@@ -740,7 +748,11 @@ def discover_files(inputs: Sequence[Path], extra_patterns: Sequence[str], ignore
         if not root.is_dir():
             logger.error(f"{root}: no such file or directory")
             continue
-        patterns = [*DEFAULT_IGNORES, *extra_patterns, *_read_ignore_file(root / IGNORE_FILENAME)]
+        patterns = [
+            *DEFAULT_IGNORES,
+            *extra_patterns,
+            *_read_ignore_file(root / IGNORE_FILENAME),
+        ]
         if ignore_file is not None:
             patterns += _read_ignore_file(ignore_file)
         matcher = IgnoreMatcher(patterns)
@@ -888,10 +900,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("paths", nargs="*", type=Path, help="files or directories (default: cwd)")
-    parser.add_argument("-c", "--strip-comments", action="store_true", help="also remove full-line comment blocks")
+    parser.add_argument(
+        "-c",
+        "--strip-comments",
+        action="store_true",
+        help="also remove full-line comment blocks",
+    )
     parser.add_argument("-d", "--strip-docstrings", action="store_true", help="remove docstrings")
     parser.add_argument(
-        "-t", "--strip-type-hints", action="store_true", help="remove annotations and now-unused typing imports"
+        "-t",
+        "--strip-type-hints",
+        action="store_true",
+        help="remove annotations and now-unused typing imports",
     )
     parser.add_argument(
         "-a",
@@ -907,11 +927,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="multiprocessing dispatch method (default: apply_async)",
     )
     parser.add_argument("--backup", action="store_true", help="write a .bak copy before modifying")
-    parser.add_argument("--dry-run", action="store_true", help="show proposed changes (as a diff) without writing")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show proposed changes (as a diff) without writing",
+    )
     parser.add_argument("--diff", action="store_true", help="print a colorized diff of each change")
     parser.add_argument("-n", "--stats", action="store_true", help="print a per-file/total report")
     parser.add_argument(
-        "--ignore", action="append", default=[], metavar="PATTERN", help="extra ignore pattern (repeatable)"
+        "--ignore",
+        action="append",
+        default=[],
+        metavar="PATTERN",
+        help="extra ignore pattern (repeatable)",
     )
     parser.add_argument(
         "--ignore-file",

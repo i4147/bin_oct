@@ -2,7 +2,8 @@
 """Write a Termux-focused Python CLI utility that reads script source code from the Android clipboard via termux-clipboard-get and saves it as a new executable script file.
 The script should take a target filename as an argument, infer the scripting language (python, bash, sh, or rust) from the file extension, and replace or insert the appropriate Termux-specific shebang line at the top of the clipboard content.
 It should place the resulting file into the correct script directory (such as ~/bin, ~/bashbin, or ~/.cargo/bin depending on language), make it executable, and also keep an archived copy under ~/isaac/may/scripts.
-Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong."""
+Include error handling for missing clipboard tool or clipboard read failures, printing errors to stderr and exiting with a non-zero status when something goes wrong.
+"""
 
 from __future__ import annotations
 import shutil

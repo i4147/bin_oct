@@ -2,7 +2,8 @@
 """Write a Python command-line script that converts GNU gettext binary .mo files into .po text files using the msgunfmt utility.
 It should first verify that msgunfmt is installed and accessible on the system, exiting with an error if not.
 Given one or more .mo file paths (via argparse), it should run msgunfmt on each, write the output to a corresponding .po file, validate that the result is non-empty, and optionally delete the original .mo file after a successful conversion.
-The script should support a verbose flag for detailed progress messages and handle errors gracefully, such as missing files, non-.mo extensions, failed subprocess calls, and empty output, printing clear error or warning messages for each case."""
+The script should support a verbose flag for detailed progress messages and handle errors gracefully, such as missing files, non-.mo extensions, failed subprocess calls, and empty output, printing clear error or warning messages for each case.
+"""
 
 from __future__ import annotations
 import argparse

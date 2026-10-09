@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Fast Duplicate File Finder -------------------------- Uses `xxhash` for high-throughput non-cryptographic hashing, parallel thread pool execution, and includes a benchmark mode (-b) to compare xxHash against hashlib.
-Requirements: pip install xxhash Usage: python finder.py # Auto-scans current dir in DRY-RUN mode python finder.py /path/to/dir # Scans custom directory (DRY-RUN) python finder.py -r # Actually removes duplicate files python finder.py -l # Lists duplicate groups in detail python finder.py -b # Runs xxHash vs hashlib benchmark comparison"""
+Requirements: pip install xxhash Usage: python finder.py # Auto-scans current dir in DRY-RUN mode python finder.py /path/to/dir # Scans custom directory (DRY-RUN) python finder.py -r # Actually removes duplicate files python finder.py -l # Lists duplicate groups in detail python finder.py -b # Runs xxHash vs hashlib benchmark comparison
+"""
 
 from __future__ import annotations
 import argparse

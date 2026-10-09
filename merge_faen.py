@@ -2,7 +2,8 @@
 """Write a Python utility module that manages a persistent word-translation cache and a failed-words tracking file for a translation pipeline.
 It should provide a function to load existing translations from a JSON file into a dictionary, gracefully handling missing files, invalid JSON, or a non-dictionary top-level structure by logging warnings and returning an empty dictionary.
 It should also provide a function to load previously failed words from a plain text file (one word per line) into a set, stripping whitespace and skipping empty lines, while handling missing files or read errors via logging.
-Both functions should print/log informative messages about how many entries were loaded, and the module should configure basic logging with timestamps at INFO level."""
+Both functions should print/log informative messages about how many entries were loaded, and the module should configure basic logging with timestamps at INFO level.
+"""
 
 from __future__ import annotations
 import json

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Generate a script that detects duplicate Python functions across a codebase and optionally refactors them into a shared module.
 The script scans directories for Python files, parses them with ast, groups FunctionDef nodes by (name, normalized source), reports duplicates that appear in two or more files, writes the shared function sources to repeated_functions.py, and can apply a refactor that removes duplicate definitions and adds `from dh import ...` imports.
-It uses multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for all path handling, loguru for logging, and complete type annotations."""
+It uses multiprocessing.Pool.apply_async with a fixed pool of 8 workers, pathlib for all path handling, loguru for logging, and complete type annotations.
+"""
 
 from __future__ import annotations
 import argparse

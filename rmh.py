@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python utility that recursively finds source files (e.g., JS/TS/Java-style files with // and /* */ comments) in a directory, strips out comments while safely preserving string literal contents via placeholder substitution, and writes the cleaned files back, optionally creating backups first.
 It should use a dataclass (ProcessResult) to track per-file statistics such as original/final line and byte counts, number of comments removed, space freed, and any errors encountered, and process files in parallel using multiprocessing.Pool with a progress bar (tqdm) and logging via loguru.
-The script should be runnable as a command-line tool that accepts a target path and options, then prints or logs a summary report of processed files, space savings, and failures at the end."""
+The script should be runnable as a command-line tool that accepts a target path and options, then prints or logs a summary report of processed files, space savings, and failures at the end.
+"""
 
 from __future__ import annotations
 import re

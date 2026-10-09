@@ -2,7 +2,8 @@
 """Write a Python command-line script that removes all lines containing a given search string from one or more text files.
 It should accept command-line arguments where the last argument is the search string and any preceding arguments are file paths; if no file paths are given, it should automatically gather non-binary files from the current directory using a helper module named "dh" (which provides get_nobinary, gsz, and fsz functions).
 The script must read each file as UTF-8 (ignoring decode errors), filter out lines containing the search string, and overwrite the file only if its content changed, tracking and reporting the number of removed lines per file.
-For a single file it should process it directly, but for multiple files it should use a multiprocessing Pool with 8 workers to clean them in parallel, and it should also compute the total size of files in the working directory before and/or after processing."""
+For a single file it should process it directly, but for multiple files it should use a multiprocessing Pool with 8 workers to clean them in parallel, and it should also compute the total size of files in the working directory before and/or after processing.
+"""
 
 from __future__ import annotations
 import sys

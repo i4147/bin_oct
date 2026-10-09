@@ -2,7 +2,8 @@
 """Write a Python script that recursively removes comments from Vim script (.vim) files using the tree-sitter-vim grammar for accurate parsing.
 It should define a VimCommentRemover class that parses each file's content into a syntax tree, locates all comment nodes, and strips them from the byte content while preserving the rest of the code.
 The script should process files in parallel using multiprocessing, track per-file results (success status, number of comments removed, processing time, and error messages) via a ProcessResult dataclass, and accept file or directory paths as input, writing the cleaned content back to disk.
-It should also report summary statistics (e.g., total files processed, comments removed, elapsed time) to stdout upon completion."""
+It should also report summary statistics (e.g., total files processed, comments removed, elapsed time) to stdout upon completion.
+"""
 
 from __future__ import annotations
 import multiprocessing as mp

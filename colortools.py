@@ -335,7 +335,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("path", nargs="?", default=".")
     p.add_argument("--max-colors", type=int, default=200)
     p.add_argument("--max-size", type=int, default=5_000_000)
-    p.add_argument("--ext", action="append", default=[], help="File extension to include (repeatable).")
+    p.add_argument(
+        "--ext",
+        action="append",
+        default=[],
+        help="File extension to include (repeatable).",
+    )
     p.set_defaults(func=cmd_extract_show)
 
     p = sub.add_parser("hex2rgb", help="Convert a hex color to RGB.")
@@ -345,7 +350,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.set_defaults(func=cmd_hex2rgb)
 
     p = sub.add_parser("showcolor", help="Print random ANSI color blocks.")
-    p.add_argument("--count", type=int, default=None, help="Number of blocks (default: random 1-999).")
+    p.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Number of blocks (default: random 1-999).",
+    )
     p.set_defaults(func=cmd_showcolor)
 
     p = sub.add_parser("sorthue", help="Sort #rrggbb lines by HSV hue.")

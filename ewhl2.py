@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that scans a directory of built wheel files, using zipfile to inspect each wheel's contents and identify "empty" wheels (those lacking actual .py files or code directories outside dist-info/__pycache__ metadata).
 It should parse package name and version from each wheel filename, cross-reference against the currently installed pip packages (obtained via "pip list --format=freeze" through subprocess) to determine version matches, and print diagnostic messages for unreadable or empty wheels.
-The script should use argparse to accept configurable input parameters (such as the wheel directory path) and leverage pathlib and shutil for file handling, ultimately helping the user identify and manage improperly built or empty wheel packages."""
+The script should use argparse to accept configurable input parameters (such as the wheel directory path) and leverage pathlib and shutil for file handling, ultimately helping the user identify and manage improperly built or empty wheel packages.
+"""
 
 from __future__ import annotations
 import argparse
@@ -151,8 +152,10 @@ def analyze_wheels(source_dir, dest_dir_name: str = "empty_wheels", check_instal
     print(f"Valid wheels: {len(valid_wheels)}")
     print(f"Empty wheels: {len(empty_wheels)}")
     if installed_empty_wheels:
-        print(f"""
-⚠ CRITICAL: {len(installed_empty_wheels)} empty wheels correspond to INSTALLED packages!""")
+        print(
+            f"""
+⚠ CRITICAL: {len(installed_empty_wheels)} empty wheels correspond to INSTALLED packages!"""
+        )
         for item in installed_empty_wheels:
             print(f"  - {item['wheel'].name} -> {item['package']}=={item['version']}")
         print("\nRECOMMENDATIONS:")

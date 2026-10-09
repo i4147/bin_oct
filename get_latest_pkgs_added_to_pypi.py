@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that fetches the PyPI package updates RSS feed (https://pypi.org/rss/updates.xml) via HTTP request, parses the XML with ElementTree to extract each item's title, link, description, publication date, and GUID, and splits the title into package name and version.
 The script should handle missing fields gracefully by defaulting to empty strings, and export the collected package update records to CSV and/or JSON output formats.
-It should use standard libraries (csv, json, xml.etree.ElementTree, datetime) alongside the requests library, and include basic error handling for network failures during the fetch operation."""
+It should use standard libraries (csv, json, xml.etree.ElementTree, datetime) alongside the requests library, and include basic error handling for network failures during the fetch operation.
+"""
 
 from __future__ import annotations
 import csv
@@ -25,10 +26,10 @@ def fetch_pypi_updates() -> list[dict[str, str]]:
         packages = []
         for item in root.findall(".//item"):
             package_info = {
-                "title": item.find("title").text if item.find("title") is not None else "",
+                "title": (item.find("title").text if item.find("title") is not None else ""),
                 "link": item.find("link").text if item.find("link") is not None else "",
-                "description": item.find("description").text if item.find("description") is not None else "",
-                "pub_date": item.find("pubDate").text if item.find("pubDate") is not None else "",
+                "description": (item.find("description").text if item.find("description") is not None else ""),
+                "pub_date": (item.find("pubDate").text if item.find("pubDate") is not None else ""),
                 "guid": item.find("guid").text if item.find("guid") is not None else "",
             }
             if package_info["title"]:

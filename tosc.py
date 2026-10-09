@@ -2,7 +2,8 @@
 """Write a Python command-line script that moves one or more files into a fixed destination folder (~/isaac/may/scripts).
 It should accept file paths and/or glob patterns as command-line arguments, expanding each pattern via glob.glob (recursively) and filtering to existing files, printing a warning to stderr for any argument that matches nothing.
 For each resolved file it should move it into the destination directory using shutil.move, relying on a helper function unique_path (imported from a module named dh) to rename the target if a file with the same name already exists there, and print a line showing the original filename and the final destination filename.
-If no arguments are provided, it should print a usage message to stderr and exit with status 1."""
+If no arguments are provided, it should print a usage message to stderr and exit with status 1.
+"""
 
 from __future__ import annotations
 import glob

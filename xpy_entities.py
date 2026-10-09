@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """merged.py — unified Python code-entity extractor.
 Merges the following scripts into one CLI: cext.py, ex_const.py, ex_nodes.py, exconst.py, excst.py, ext.py, extcode.py, extcst.py, extfc.py, extt.py, gen_s_expr.py, getfuncnames.py, gext2.py, gextco.py, gextdb.py, tsext.py Mapping (original -> merged command): cext.py -> python merged.py extract <paths> --backend ast --layout by-type --format py --global-imports --archives ex_const.py -> python merged.py constants <paths> --format py ex_nodes.py -> python merged.py nodes <paths> --kind func exconst.py -> python merged.py constants <paths> --format list excst.py -> python merged.py extract <paths> --backend libcst --layout by-type --format py ext.py -> python merged.py extract <paths> --backend ast --scope top-level --layout by-type --format py extcode.py -> python merged.py extract <paths> --backend tree-sitter --scope top-level --layout by-file --format py extcst.py -> python merged.py extract <paths> --backend libcst --layout by-type --format py+json extfc.py -> python merged.py extract <paths> --backend tree-sitter --layout by-folder --format py extt.py -> python merged.py extract <paths> --backend tree-sitter --layout by-folder --format py --toc gen_s_expr.py -> python merged.py sexpr <file> getfuncnames.py -> python merged.py funcnames <file> gext2.py -> python merged.py extract <paths> --backend ast --archives --format py gextco.py -> python merged.py extract <paths> --backend ast --format txt gextdb.py -> python merged.py extract <paths> --backend ast --format db --db-path ext.db tsext.py -> python merged.py extract <paths> --backend tree-sitter --scope top-level --format txt Optional third-party deps: libcst, tree-sitter, tree-sitter-python.
-If a dep is missing, only the corresponding --backend errors out; the default (ast) backend always works."""
+If a dep is missing, only the corresponding --backend errors out; the default (ast) backend always works.
+"""
 
 from __future__ import annotations
 import argparse
@@ -690,16 +691,14 @@ def write_db(entities: list[Entity], db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS entities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, full_name TEXT, type TEXT, source TEXT,
             path TEXT, parent TEXT, line_start INTEGER, line_end INTEGER,
             docstring TEXT, value TEXT
         )
-        """
-    )
+        """)
     for e in entities:
         cur.execute(
             "INSERT INTO entities "
@@ -950,8 +949,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         prog="merged.py",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Unified Python code-entity extractor.
             Subcommands
             -----------
@@ -960,8 +958,7 @@ def build_parser() -> argparse.ArgumentParser:
               sexpr       Print the tree-sitter S-expression for one file.
               funcnames   List function names defined in one file.
               constants   Extract only module-level UPPER_CASE constants.
-            """
-        ),
+            """),
     )
     sub = ap.add_subparsers(dest="command", required=True)
     ep = sub.add_parser("extract", help="Extract entities from files/dirs/archives")

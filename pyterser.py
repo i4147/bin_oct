@@ -18,7 +18,8 @@ Well-formedness --------------- JavaScript has no magic number, so unlike the SV
 Instead we rely on terser itself: it parses the input, transforms the AST, and only then serialises the output.
 A terser exit code of 0 therefore implies both that the input parsed and that the output was written.
 The only additional check we apply is that the output is non-empty.
-External requirements: the ``fastwalk`` extension module and the ``terser`` CLI (or a compatible path supplied via ``--terser``)."""
+External requirements: the ``fastwalk`` extension module and the ``terser`` CLI (or a compatible path supplied via ``--terser``).
+"""
 
 from __future__ import annotations
 import argparse

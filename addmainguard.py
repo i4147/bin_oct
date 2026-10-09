@@ -4,7 +4,8 @@ This script merges two previously separate tools: * ``addmain.py`` — AST-based
 * ``addmainguard.py`` — regex-based detection and template insertion, with multiprocessing and directory exclusions.
 Usage ----- python add_main_guard.py check [paths ...] [--detect ast|regex] [--workers N] [--exclude DIR ...] [--no-default-excludes] python add_main_guard.py fix [paths ...] [--strategy ast|template] [--dry-run] [--indent N] [--workers N] [--exclude DIR ...] [--no-default-excludes] Mapping to the original scripts ------------------------------- addmain.py python addmain.py -> python add_main_guard.py check --no-default-excludes python addmain.py -a -> python add_main_guard.py fix --strategy ast --no-default-excludes python addmain.py FILE DIR -a -> python add_main_guard.py fix --strategy ast --no-default-excludes FILE DIR addmainguard.py python addmainguard.py -> python add_main_guard.py check --detect regex python addmainguard.py -a -> python add_main_guard.py fix --strategy template python addmainguard.py src/ -a -> python add_main_guard.py fix --strategy template src/ python addmainguard.py -a --dry-run -> python add_main_guard.py fix --strategy template --dry-run Notes ----- * Only the Python standard library is used.
 ``loguru`` from the original ``addmainguard.py`` was replaced by :mod:`logging`.
-* Default exclusion directories are: .git, __pycache__, venv, .venv, env, dist, build, .pytest_cache, .mypy_cache."""
+* Default exclusion directories are: .git, __pycache__, venv, .venv, env, dist, build, .pytest_cache, .mypy_cache.
+"""
 
 from __future__ import annotations
 import argparse

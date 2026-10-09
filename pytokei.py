@@ -4,7 +4,8 @@ Merged from: - pytokei.py - pytokei2.py Original mapping ---------------- pytoke
 pytokei.py prints a final report; pytokei2.py computes the same statistics but does not print the final report (it still prints binary-file warnings).
 The --no-report flag reproduces pytokei2.py's output behavior.
 Usage examples -------------- python pytokei_merged.py python pytokei_merged.py src/ python pytokei_merged.py src/ --no-report python pytokei_merged.py .
---exclude .venv --exclude node_modules Dependencies ------------ Standard library only."""
+--exclude .venv --exclude node_modules Dependencies ------------ Standard library only.
+"""
 
 from __future__ import annotations
 import argparse

@@ -11,7 +11,8 @@ os.path -> pathlib.Path migration.
 concurrent.futures -> multiprocessing.Pool(WORKERS).imap_unordered, WORKERS = 6.
 5.
 logging -> loguru.
-Usage: script.py # scan current directory recursively script.py -f merged.py # read from a "# File: relpath" merged file script.py -o mypkg.py # choose output filename (default out.py)"""
+Usage: script.py # scan current directory recursively script.py -f merged.py # read from a "# File: relpath" merged file script.py -o mypkg.py # choose output filename (default out.py)
+"""
 
 from __future__ import annotations
 import argparse

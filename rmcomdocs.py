@@ -8,7 +8,8 @@ Original script -> equivalent command ------------------------------------- gemc
 --engine query --docstring pass \ --eat-trailing-newline --remove-blank-lines \ --keep-todo --workers 4 grmc_ts.py -> python rmcomdocs.py strip .
 --engine cursor --docstring pass \ --keep-module-docstring --workers 8 tsrmc.py -> python rmcomdocs.py strip .
 --engine query --preserve-lines \ --workers 8 tsrmc.py --compare -> python rmcomdocs.py compare .
---workers 8 Third-party dependencies ------------------------ tree-sitter tree-sitter-python"""
+--workers 8 Third-party dependencies ------------------------ tree-sitter tree-sitter-python
+"""
 
 from __future__ import annotations
 import argparse

@@ -66,12 +66,25 @@ except PackageNotFoundError:
     __version__ = "0+unknown"
 
 MHTML_SUFFIXES: frozenset[str] = frozenset({".mht", ".mhtml"})
-POOL_METHODS: tuple[str, ...] = ("map", "imap", "imap_unordered", "starmap", "apply", "apply_async")
+POOL_METHODS: tuple[str, ...] = (
+    "map",
+    "imap",
+    "imap_unordered",
+    "starmap",
+    "apply",
+    "apply_async",
+)
 
 _UA = "Mozilla/5.0 (compatible; mhtml-to-html)"
 _HTML_MIMES = frozenset({"text/html", "application/xhtml+xml"})
 _SKIP_PREFIXES = ("data:", "about:", "blob:", "javascript:", "mailto:", "tel:")
-_ICON_RELS = frozenset({"icon", "shortcut", "apple-touch-icon", "apple-touch-icon-precomposed", "mask-icon"})
+_ICON_RELS = frozenset({
+    "icon",
+    "shortcut",
+    "apple-touch-icon",
+    "apple-touch-icon-precomposed",
+    "mask-icon",
+})
 _DROP_RELS = frozenset({"preload", "prefetch", "modulepreload", "dns-prefetch", "preconnect", "prerender"})
 _DROP_HTTP_EQUIV = frozenset({"content-type", "refresh", "content-security-policy"})
 _URL_ATTRS: dict[str, tuple[str, ...]] = {
@@ -89,7 +102,10 @@ _URL_ATTRS: dict[str, tuple[str, ...]] = {
 _SRCSET_TAGS = frozenset({"img", "source"})
 
 _CSS_URL = re.compile(r"""url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)""", re.I)
-_CSS_IMPORT = re.compile(r"""@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;'"]+))\s*\)?\s*([^;]*);""", re.I)
+_CSS_IMPORT = re.compile(
+    r"""@import\s+(?:url\(\s*)?(?:"([^"]+)"|'([^']+)'|([^)\s;'"]+))\s*\)?\s*([^;]*);""",
+    re.I,
+)
 _CSS_CHARSET = re.compile(rb"""^@charset\s+["']([^"']+)["']""", re.I)
 _CLOSING_TAG = re.compile(r"</(style|script)", re.I)
 _SRCSET_SPLIT = re.compile(r"\s*,\s+")
@@ -515,17 +531,38 @@ def build_parser() -> argparse.ArgumentParser:
         description="Convert MHTML files to single HTML files. "
         "Without input, converts all .mht/.mhtml files in the current directory recursively.",
     )
-    p.add_argument("inputs", nargs="*", metavar="input", help="MHTML files, directories or wildcards")
+    p.add_argument(
+        "inputs",
+        nargs="*",
+        metavar="input",
+        help="MHTML files, directories or wildcards",
+    )
     p.add_argument("-o", "--output", type=Path, help="output HTML file (single input only)")
     p.add_argument("--enable-scripts", action="store_true", help="keep scripts (default: removed)")
-    p.add_argument("--fetch-missing-resources", action="store_true", help="download resources absent from the archive")
+    p.add_argument(
+        "--fetch-missing-resources",
+        action="store_true",
+        help="download resources absent from the archive",
+    )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    p.add_argument("-r", "--remove", action="store_true", help="delete original after successful conversion")
+    p.add_argument(
+        "-r",
+        "--remove",
+        action="store_true",
+        help="delete original after successful conversion",
+    )
     p.add_argument("-w", "--workers", type=int, default=4, help="worker processes (default: 4)")
     p.add_argument(
-        "--pool-method", choices=POOL_METHODS, default="map", help="multiprocessing pool method (default: map)"
+        "--pool-method",
+        choices=POOL_METHODS,
+        default="map",
+        help="multiprocessing pool method (default: map)",
     )
-    p.add_argument("--skip-existing", action="store_true", help="skip files whose .html already exists")
+    p.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="skip files whose .html already exists",
+    )
     p.add_argument("--timeout", type=float, default=15.0, help="network timeout in seconds")
     p.add_argument("--log-file", type=Path, help="also write logs to this file")
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging with tracebacks")

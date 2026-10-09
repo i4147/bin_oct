@@ -66,7 +66,12 @@ EXCLUDE_DIRS = {
 
 def run(cmd, check=True, capture_output=False, input_text=None):
     return subprocess.run(
-        cmd, shell=isinstance(cmd, str), check=check, capture_output=capture_output, text=True, input=input_text
+        cmd,
+        shell=isinstance(cmd, str),
+        check=check,
+        capture_output=capture_output,
+        text=True,
+        input=input_text,
     )
 
 
@@ -87,7 +92,17 @@ def remove_old_ssh_keys():
 
 def generate_new_ssh_key():
     SSH_DIR.mkdir(mode=0o700, exist_ok=True)
-    run(["ssh-keygen", "-t", "ed25519", "-C", NEW_EMAIL, "-f", str(SSH_KEY_PATH), "-N", ""])
+    run([
+        "ssh-keygen",
+        "-t",
+        "ed25519",
+        "-C",
+        NEW_EMAIL,
+        "-f",
+        str(SSH_KEY_PATH),
+        "-N",
+        "",
+    ])
     os.chmod(SSH_KEY_PATH, 0o600)
     os.chmod(f"{SSH_KEY_PATH}.pub", 0o644)
 
@@ -164,19 +179,42 @@ def update_git_remotes_in_repos():
         if ".git" in dirs:
             repo_path = root
             try:
-                remotes = run(["git", "-C", repo_path, "remote", "-v"], capture_output=True, check=False).stdout
+                remotes = run(
+                    ["git", "-C", repo_path, "remote", "-v"],
+                    capture_output=True,
+                    check=False,
+                ).stdout
                 if OLD_USERNAME in remotes:
                     remote_names = set(line.split()[0] for line in remotes.splitlines() if line)
                     for remote in remote_names:
                         url_result = run(
-                            ["git", "-C", repo_path, "remote", "get-url", remote], capture_output=True, check=False
+                            ["git", "-C", repo_path, "remote", "get-url", remote],
+                            capture_output=True,
+                            check=False,
                         )
                         old_url = url_result.stdout.strip()
                         new_url = old_url.replace(OLD_USERNAME, NEW_USERNAME)
                         if new_url != old_url:
-                            run(["git", "-C", repo_path, "remote", "set-url", remote, new_url], check=False)
-                run(["git", "-C", repo_path, "config", "user.name", NEW_USERNAME], check=False)
-                run(["git", "-C", repo_path, "config", "user.email", NEW_EMAIL], check=False)
+                            run(
+                                [
+                                    "git",
+                                    "-C",
+                                    repo_path,
+                                    "remote",
+                                    "set-url",
+                                    remote,
+                                    new_url,
+                                ],
+                                check=False,
+                            )
+                run(
+                    ["git", "-C", repo_path, "config", "user.name", NEW_USERNAME],
+                    check=False,
+                )
+                run(
+                    ["git", "-C", repo_path, "config", "user.email", NEW_EMAIL],
+                    check=False,
+                )
             except Exception:
                 pass
 
@@ -204,7 +242,10 @@ def clear_git_credential():
         except Exception:
             pass
     try:
-        run(["git", "config", "--global", "--unset-all", "credential.helper"], check=False)
+        run(
+            ["git", "config", "--global", "--unset-all", "credential.helper"],
+            check=False,
+        )
     except Exception:
         pass
     try:

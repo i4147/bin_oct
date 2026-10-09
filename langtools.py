@@ -4,7 +4,8 @@ Subcommands ----------- move-chinese Move files containing Chinese (CJK) charact
 filter-lines Filter non-English lines out of a single file (gcld3, or gcld3+NLTK with --strict).
 find-files Recursively find non-English files (pycld2).
 find-lines Find non-English lines across many files, save to TSV.
-Mapping of original scripts --------------------------- fchin.py -> python langtool.py move-chinese [DIR] filter_noneng.py -> python langtool.py filter-lines FILE -m strict_filter_noneng.py -> python langtool.py filter-lines FILE -m --strict find_non_eng.py -> python langtool.py find-files DIR find_nonenglish_files.py -> python langtool.py find-files DIR --detailed find_noneng.py -> python langtool.py find-lines Third-party dependencies (install only what you need) ----------------------------------------------------- pycld2 -> find-files, find-lines gcld3 -> filter-lines nltk -> filter-lines --strict (also: python -m nltk.downloader words)"""
+Mapping of original scripts --------------------------- fchin.py -> python langtool.py move-chinese [DIR] filter_noneng.py -> python langtool.py filter-lines FILE -m strict_filter_noneng.py -> python langtool.py filter-lines FILE -m --strict find_non_eng.py -> python langtool.py find-files DIR find_nonenglish_files.py -> python langtool.py find-files DIR --detailed find_noneng.py -> python langtool.py find-lines Third-party dependencies (install only what you need) ----------------------------------------------------- pycld2 -> find-files, find-lines gcld3 -> filter-lines nltk -> filter-lines --strict (also: python -m nltk.downloader words)
+"""
 
 from __future__ import annotations
 import argparse

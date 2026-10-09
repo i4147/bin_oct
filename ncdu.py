@@ -68,7 +68,8 @@ def redirect_logging_to_file(path: Path) -> None:
     fh = logging.FileHandler(path, mode="a", encoding="utf-8")
     fh.setFormatter(
         logging.Formatter(
-            "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s", datefmt="%H:%M:%S"
+            "%(asctime)s.%(msecs)03d %(levelname)-7s [%(processName)-11s] %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
         )
     )
     root.addHandler(fh)
@@ -110,7 +111,12 @@ def _stat_to_node(p: Path, st: os.stat_result, is_dir: bool) -> dict[str, Any]:
 
 
 def scan_subtree(
-    path_str: str, root_dev: int, one_filesystem: bool, follow_symlinks: bool, exclude: tuple[str, ...], verbosity: int
+    path_str: str,
+    root_dev: int,
+    one_filesystem: bool,
+    follow_symlinks: bool,
+    exclude: tuple[str, ...],
+    verbosity: int,
 ) -> dict[str, Any]:
     log = logging.getLogger("ncdu2.worker")
     log.setLevel(logging.DEBUG if verbosity >= 2 else logging.INFO)
@@ -124,7 +130,18 @@ def scan_subtree(
         except OSError as exc:
             counter["errors"] += 1
             log.debug("lstat failed on %s: %s", p, exc)
-            return {"n": p.name, "d": False, "s": 0, "b": 0, "e": True, "dev": 0, "ino": 0, "l": 1, "m": 0.0, "c": None}
+            return {
+                "n": p.name,
+                "d": False,
+                "s": 0,
+                "b": 0,
+                "e": True,
+                "dev": 0,
+                "ino": 0,
+                "l": 1,
+                "m": 0.0,
+                "c": None,
+            }
         is_dir = stat.S_ISDIR(st.st_mode)
         if stat.S_ISLNK(st.st_mode) and follow_symlinks:
             try:
@@ -265,7 +282,12 @@ def aggregate(node: Node) -> tuple[int, int, int]:
 
 
 def parallel_scan(
-    root: Path, *, one_filesystem: bool, follow_symlinks: bool, exclude: tuple[str, ...], verbosity: int
+    root: Path,
+    *,
+    one_filesystem: bool,
+    follow_symlinks: bool,
+    exclude: tuple[str, ...],
+    verbosity: int,
 ) -> Node:
     root = root.resolve()
     LOG.info("scan root      : %s", root)
@@ -304,7 +326,14 @@ def parallel_scan(
             LOG.debug("apply_async -> %s", entry)
             ar = pool.apply_async(
                 scan_subtree,
-                args=(str(entry), root_dev, one_filesystem, follow_symlinks, exclude, verbosity),
+                args=(
+                    str(entry),
+                    root_dev,
+                    one_filesystem,
+                    follow_symlinks,
+                    exclude,
+                    verbosity,
+                ),
             )
             results.append((entry, ar))
         pool.close()
@@ -355,7 +384,11 @@ def parallel_scan(
     LOG.info("  errors      : %s", fmt_count(totals["errors"]))
     LOG.info("  apparent    : %s", fmt_size(root_node.size))
     LOG.info("  disk usage  : %s", fmt_size(root_node.dsize))
-    LOG.info("  elapsed     : %.2fs (%.0f items/s)", elapsed, root_node.items / max(elapsed, 1e-9))
+    LOG.info(
+        "  elapsed     : %.2fs (%.0f items/s)",
+        elapsed,
+        root_node.items / max(elapsed, 1e-9),
+    )
     LOG.info("=" * 72)
     return root_node
 
@@ -381,7 +414,12 @@ def export_json(root: Node, out: Path) -> None:
             return d
         return [d, *(enc(c) for c in n.children)]
 
-    payload = [1, 2, {"progname": PROGNAME, "progver": __version__, "timestamp": int(time.time())}, enc(root)]
+    payload = [
+        1,
+        2,
+        {"progname": PROGNAME, "progver": __version__, "timestamp": int(time.time())},
+        enc(root),
+    ]
     out.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
     LOG.info("export finished: %s (%s)", out, fmt_size(out.stat().st_size))
 
@@ -518,9 +556,11 @@ class Browser:
                 0,
                 line.ljust(w)[:w],
                 w,
-                attr
-                if sel
-                else (curses.color_pair(4) if n.err else curses.color_pair(2) if n.is_dir else curses.A_NORMAL),
+                (
+                    attr
+                    if sel
+                    else (curses.color_pair(4) if n.err else curses.color_pair(2) if n.is_dir else curses.A_NORMAL)
+                ),
             )
         foot = (
             self.message
@@ -654,7 +694,13 @@ class Browser:
 
     def confirm(self, scr, question: str) -> bool:
         h, w = scr.getmaxyx()
-        scr.addnstr(h - 1, 0, (question + "  [y/N] ").ljust(w)[:w], w, curses.color_pair(4) | curses.A_BOLD)
+        scr.addnstr(
+            h - 1,
+            0,
+            (question + "  [y/N] ").ljust(w)[:w],
+            w,
+            curses.color_pair(4) | curses.A_BOLD,
+        )
         scr.refresh()
         return scr.getch() in (ord("y"), ord("Y"))
 
@@ -698,11 +744,23 @@ class Browser:
     def rescan(self, scr) -> None:
         target = self.cur.path
         h, w = scr.getmaxyx()
-        scr.addnstr(h - 1, 0, f" rescanning {target} with {WORKERS} workers ... ".ljust(w)[:w], w, curses.color_pair(1))
+        scr.addnstr(
+            h - 1,
+            0,
+            f" rescanning {target} with {WORKERS} workers ... ".ljust(w)[:w],
+            w,
+            curses.color_pair(1),
+        )
         scr.refresh()
         LOG.info("rescan requested for %s", target)
         try:
-            new = parallel_scan(target, one_filesystem=False, follow_symlinks=False, exclude=(), verbosity=2)
+            new = parallel_scan(
+                target,
+                one_filesystem=False,
+                follow_symlinks=False,
+                exclude=(),
+                verbosity=2,
+            )
         except SystemExit as exc:
             self.message = f" rescan failed: {exc} "
             return
@@ -721,13 +779,36 @@ class Browser:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        prog=PROGNAME, description="ncdu2 - NCurses Disk Usage v2 (Python 3.12, pathlib, 8 workers)"
+        prog=PROGNAME,
+        description="ncdu2 - NCurses Disk Usage v2 (Python 3.12, pathlib, 8 workers)",
     )
     ap.add_argument("path", nargs="?", default=".", type=Path, help="directory to scan")
-    ap.add_argument("-o", "--output", type=Path, metavar="FILE", help="export to ncdu JSON v2 and exit (no UI)")
-    ap.add_argument("-f", "--file", type=Path, metavar="FILE", help="load a previous export instead of scanning")
-    ap.add_argument("-x", "--one-file-system", action="store_true", help="do not cross filesystem boundaries")
-    ap.add_argument("-L", "--follow-symlinks", action="store_true", help="follow symlinks (dangerous: loops)")
+    ap.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        metavar="FILE",
+        help="export to ncdu JSON v2 and exit (no UI)",
+    )
+    ap.add_argument(
+        "-f",
+        "--file",
+        type=Path,
+        metavar="FILE",
+        help="load a previous export instead of scanning",
+    )
+    ap.add_argument(
+        "-x",
+        "--one-file-system",
+        action="store_true",
+        help="do not cross filesystem boundaries",
+    )
+    ap.add_argument(
+        "-L",
+        "--follow-symlinks",
+        action="store_true",
+        help="follow symlinks (dangerous: loops)",
+    )
     ap.add_argument(
         "--exclude",
         action="append",
@@ -735,15 +816,34 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         metavar="NAME",
         help="exclude entries with this exact name (repeatable)",
     )
-    ap.add_argument("--apparent-size", action="store_true", help="show apparent size instead of disk usage")
+    ap.add_argument(
+        "--apparent-size",
+        action="store_true",
+        help="show apparent size instead of disk usage",
+    )
     ap.add_argument("--si", action="store_true", help="use powers of 1000 instead of 1024")
-    ap.add_argument("-v", "--verbose", action="count", default=1, help="increase verbosity (-v, -vv, -vvv)")
+    ap.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=1,
+        help="increase verbosity (-v, -vv, -vvv)",
+    )
     ap.add_argument("-q", "--quiet", action="store_true", help="only warnings/errors")
     ap.add_argument(
-        "--log", type=Path, default=Path("ncdu2.log"), help="log file used while the TUI is active (default: ncdu2.log)"
+        "--log",
+        type=Path,
+        default=Path("ncdu2.log"),
+        help="log file used while the TUI is active (default: ncdu2.log)",
     )
     ap.add_argument("--no-ui", action="store_true", help="scan, print a summary, exit")
-    ap.add_argument("--top", type=int, default=20, metavar="N", help="with --no-ui: show the N largest entries")
+    ap.add_argument(
+        "--top",
+        type=int,
+        default=20,
+        metavar="N",
+        help="with --no-ui: show the N largest entries",
+    )
     ap.add_argument("-V", "--version", action="version", version=f"{PROGNAME} {__version__}")
     return ap.parse_args(argv)
 

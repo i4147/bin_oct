@@ -262,10 +262,24 @@ Examples:
   %(prog)s --indent 4 path/to/file.toml  # Use 4-space indentation
         """,
     )
-    parser_obj.add_argument("paths", nargs="*", help="Files or directories to format (default: current directory)")
+    parser_obj.add_argument(
+        "paths",
+        nargs="*",
+        help="Files or directories to format (default: current directory)",
+    )
     parser_obj.add_argument("--indent", type=int, default=2, help="Indentation size (default: 2)")
-    parser_obj.add_argument("--column-width", type=int, default=80, help="Column width for line wrapping (default: 80)")
-    parser_obj.add_argument("--workers", type=int, default=None, help="Number of worker processes (default: CPU count)")
+    parser_obj.add_argument(
+        "--column-width",
+        type=int,
+        default=80,
+        help="Column width for line wrapping (default: 80)",
+    )
+    parser_obj.add_argument(
+        "--workers",
+        type=int,
+        default=None,
+        help="Number of worker processes (default: CPU count)",
+    )
     args: argparse.Namespace = parser_obj.parse_args()
     init_tree_sitter()
     if not args.paths:

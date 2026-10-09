@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans GitHub repositories to estimate their disk/clone sizes and outputs a report of the largest ones.
 It should load a GitHub personal access token from a ~/.env file (falling back to unauthenticated requests with a warning about the 60/hr rate limit), query the GitHub API via the requests library for repository metadata, and cache the results in a local JSON file (repo_sizes.json) that expires after 7 days to avoid redundant API calls.
-The script should print progress and status messages with emoji indicators (✅, ⚠️, ⏰, 📂) throughout the process, and likely shell out via subprocess for git-related operations (e.g., cloning or inspecting repos) as part of gathering size data."""
+The script should print progress and status messages with emoji indicators (✅, ⚠️, ⏰, 📂) throughout the process, and likely shell out via subprocess for git-related operations (e.g., cloning or inspecting repos) as part of gathering size data.
+"""
 
 from __future__ import annotations
 import os

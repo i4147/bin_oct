@@ -177,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
             html = fetch(target, args.timeout, args.user_agent)
             doc = HTML(string=html, base_url=target)
         else:
-            doc = HTML(filename=urlparse(target).path if target.startswith("file://") else target)
+            doc = HTML(filename=(urlparse(target).path if target.startswith("file://") else target))
         console.print(f"[cyan]→[/cyan] rendering with WeasyPrint")
         doc.write_pdf(target=str(output), stylesheets=stylesheets)
     except KeyboardInterrupt:

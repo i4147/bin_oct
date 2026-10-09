@@ -202,7 +202,9 @@ class StripCommentsAndDocstrings(cst.CSTTransformer):
         return cst.RemoveFromParent()
 
     def leave_TrailingWhitespace(
-        self, original_node: cst.TrailingWhitespace, updated_node: cst.TrailingWhitespace
+        self,
+        original_node: cst.TrailingWhitespace,
+        updated_node: cst.TrailingWhitespace,
     ) -> cst.TrailingWhitespace:
         comment = updated_node.comment
         if comment is None or _is_preserved(comment.value):
@@ -342,7 +344,11 @@ def _process_file(path: Path, options: Options) -> FileResult:
     try:
         ast.parse(new_source, filename=str(path), feature_version=TARGET_VERSION)
     except (SyntaxError, ValueError, RecursionError) as exc:
-        return FileResult(path, Status.FAILED, message=f"transformed code failed validation, file untouched: {exc}")
+        return FileResult(
+            path,
+            Status.FAILED,
+            message=f"transformed code failed validation, file untouched: {exc}",
+        )
 
     new_raw = bom + new_source.encode(encoding)
     diff = _make_diff(path, source, new_source) if options.want_diff else ""

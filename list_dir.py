@@ -4,7 +4,8 @@ Subcommands ----------- stems Print the stem of each file in a directory, trunca
 (from cls.py) dirs Print the name of each subdirectory, prefixed with '-'.
 (from dirz.py) ls List directory contents.
 Unifies l.py, lll.py, lst.py, lt.py, li.py, ll.py, pyls.py and pyeza.py behind one set of flags (--recursive, --long, --json, --tree, --sort-by, ...).
-Mapping of original scripts --------------------------- cls.py -> python listpy.py stems dirz.py -> python listpy.py dirs l.py -> python listpy.py ls -R --sort-by mtime --exclude-cache lll.py -> python listpy.py ls -R --sort-by mtime --reverse --exclude-cache lst.py -> python listpy.py ls --sort-by mtime lt.py -> python listpy.py ls --sort-by ctime --reverse --files-first li.py -> python listpy.py ls --layout size-first --sort-by size --exclude-cache ll.py -> python listpy.py ls --sort-by size --reverse --files-first pyls.py -> python listpy.py ls [POSIX-like flags: -l -a -R -r -t -S -h] pyeza.py -> python listpy.py ls [--long|--tree|--json|--git|--icons|-R]"""
+Mapping of original scripts --------------------------- cls.py -> python listpy.py stems dirz.py -> python listpy.py dirs l.py -> python listpy.py ls -R --sort-by mtime --exclude-cache lll.py -> python listpy.py ls -R --sort-by mtime --reverse --exclude-cache lst.py -> python listpy.py ls --sort-by mtime lt.py -> python listpy.py ls --sort-by ctime --reverse --files-first li.py -> python listpy.py ls --layout size-first --sort-by size --exclude-cache ll.py -> python listpy.py ls --sort-by size --reverse --files-first pyls.py -> python listpy.py ls [POSIX-like flags: -l -a -R -r -t -S -h] pyeza.py -> python listpy.py ls [--long|--tree|--json|--git|--icons|-R]
+"""
 
 from __future__ import annotations
 import argparse

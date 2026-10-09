@@ -190,7 +190,18 @@ def convert_sqlite_to_json(
     with tempfile.TemporaryDirectory(dir=out_dir, prefix=".sqlite2json_") as tmp:
         tmp_dir = Path(tmp)
         frags = {t: tmp_dir / f"{i}.part" for i, t in enumerate(tables)}
-        tasks = [(str(db_path), t, str(frags[t]), blob_encoding, text_errors, indent, ensure_ascii) for t in tables]
+        tasks = [
+            (
+                str(db_path),
+                t,
+                str(frags[t]),
+                blob_encoding,
+                text_errors,
+                indent,
+                ensure_ascii,
+            )
+            for t in tables
+        ]
 
         workers = min(jobs, len(tasks))
         if workers > 1:

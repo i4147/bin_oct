@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that batch-converts PDF files into JPG images using pdf2image, saving each PDF's pages as separate high-resolution (300 DPI) JPG files inside a dedicated subfolder named after the PDF (created under a given output directory).
-The script should take a PDF file path and output folder as inputs, generate images per page via convert_from_path with multithreading, rename the resulting JPEG files with a consistent naming pattern (e.g., filename_page_N.jpg), and handle errors gracefully by printing warnings for missing expected files and catching exceptions during conversion, returning a boolean indicating success or failure."""
+The script should take a PDF file path and output folder as inputs, generate images per page via convert_from_path with multithreading, rename the resulting JPEG files with a consistent naming pattern (e.g., filename_page_N.jpg), and handle errors gracefully by printing warnings for missing expected files and catching exceptions during conversion, returning a boolean indicating success or failure.
+"""
 
 from __future__ import annotations
 import shutil

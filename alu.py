@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that runs the shell command "apt list --upgradable" using a custom runcmd helper from a "dh" module, then parses the output line by line to extract just the package names (stripping everything from the "/" character onward, and skipping lines containing "listing").
-The resulting list of upgradable package names should be written, one per line, to the file "/sdcard/alu" if any are found, and each extracted package name should also be printed to the console using the cprint helper prefixed with " - "."""
+The resulting list of upgradable package names should be written, one per line, to the file "/sdcard/alu" if any are found, and each extracted package name should also be printed to the console using the cprint helper prefixed with " - ".
+"""
 
 from __future__ import annotations
 from pathlib import Path

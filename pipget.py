@@ -15,7 +15,8 @@ Validation runs by default with no CLI flag.
 If it fails, the partial file is removed and the download is retried (up to ``MAX_RETRIES``).
 Version pinning --------------- Each argument / line may be either ``name`` or ``name==version`` (e.g.
 ``aiohttp==3.5.16``).
-When a version is pinned we filter the mirror's file list down to entries whose *normalised* filename starts with ``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before applying the usual sdist → pure-wheel → skip priority."""
+When a version is pinned we filter the mirror's file list down to entries whose *normalised* filename starts with ``<normalised-name>_<normalised-version>_`` (PEP 503 separators) before applying the usual sdist → pure-wheel → skip priority.
+"""
 
 from __future__ import annotations
 import argparse

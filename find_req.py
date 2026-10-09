@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a fixed Termux site-packages directory (`/data/data/com.termux/files/home/.local/lib/python3.12/site-packages`) for all files named "METADATA" found recursively.
 For each METADATA file, it reads and lowercases its content, then checks whether it contains the string "requires-dist: " followed by a dependency name passed as a command-line argument (sys.argv[1]).
-If a match is found, it prints the name of the parent directory of that METADATA file, effectively identifying which installed packages declare the given package as a dependency."""
+If a match is found, it prints the name of the parent directory of that METADATA file, effectively identifying which installed packages declare the given package as a dependency.
+"""
 
 from __future__ import annotations
 import sys

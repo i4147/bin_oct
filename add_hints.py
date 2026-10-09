@@ -102,7 +102,19 @@ def infer_literal_type(node: cst.BaseExpression) -> Optional[str]:
         if isinstance(node.operand, (cst.Integer, cst.Float)):
             return infer_literal_type(node.operand)
     if isinstance(node, cst.Call) and isinstance(node.func, cst.Name):
-        if node.func.value in {"int", "float", "str", "bool", "bytes", "list", "dict", "set", "tuple", "len", "repr"}:
+        if node.func.value in {
+            "int",
+            "float",
+            "str",
+            "bool",
+            "bytes",
+            "list",
+            "dict",
+            "set",
+            "tuple",
+            "len",
+            "repr",
+        }:
             return {"len": "int", "repr": "str"}.get(node.func.value, node.func.value)
     return None
 
@@ -162,7 +174,13 @@ def infer_return_type(func: cst.FunctionDef) -> Optional[str]:
 
 
 class AnnotateTransformer(cst.CSTTransformer):
-    def __init__(self, context: CodemodContext, *, add_returns: bool = True, name_heuristics: bool = False) -> None:
+    def __init__(
+        self,
+        context: CodemodContext,
+        *,
+        add_returns: bool = True,
+        name_heuristics: bool = False,
+    ) -> None:
         super().__init__()
         self.context = context
         self.add_returns = add_returns
@@ -190,7 +208,9 @@ class AnnotateTransformer(cst.CSTTransformer):
         params = updated.params
         new_posonly = self._annotate_params(params.posonly_params, is_method and not is_static, first_group=True)
         new_params = self._annotate_params(
-            params.params, is_method and not is_static and not params.posonly_params, first_group=True
+            params.params,
+            is_method and not is_static and not params.posonly_params,
+            first_group=True,
         )
         new_kwonly = self._annotate_params(params.kwonly_params, False)
         updated = updated.with_changes(
@@ -216,7 +236,7 @@ class AnnotateTransformer(cst.CSTTransformer):
                         AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
                     p = p.with_changes(
                         annotation=cst.Annotation(annotation=cst.parse_expression(t)),
-                        equal=cst.AssignEqual() if p.default is not None else cst.MaybeSentinel.DEFAULT,
+                        equal=(cst.AssignEqual() if p.default is not None else cst.MaybeSentinel.DEFAULT),
                     )
                     self.stats["params"] += 1
             out.append(p)
@@ -268,7 +288,13 @@ def validate(original: str, new: str, filename: str) -> None:
 
 
 def process_file(
-    path: Path, *, dry_run: bool, show_diff: bool, backup: bool, add_returns: bool, name_heuristics: bool
+    path: Path,
+    *,
+    dry_run: bool,
+    show_diff: bool,
+    backup: bool,
+    add_returns: bool,
+    name_heuristics: bool,
 ) -> int:
     source = path.read_text(encoding="utf-8")
 

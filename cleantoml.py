@@ -3,7 +3,8 @@
 This is a simple single-response task, no tools needed."} Write a Python script that recursively finds all TOML files under a given directory and strips comments from each using a tree-sitter TOML parser, trimming trailing spaces/tabs left before removed comments while preserving valid UTF-8 content.
 It should process files concurrently using a multiprocessing Pool with a fixed worker count (8), overwrite each file in place with the cleaned content, and track per-file timing along with original and resulting byte sizes (leveraging a helper like dh.fsz for size formatting).
 The script should print a progress report listing each processed file name (aligned/padded to a fixed width), its processing time, and size before/after, then output a final summary of total files processed, total time elapsed, and overall size reduction.
-It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv."""
+It should handle file read/write errors gracefully per file without crashing the whole run, and be invokable from the command line with the target directory as an argument via sys.argv.
+"""
 
 from __future__ import annotations
 import sys

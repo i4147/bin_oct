@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that attempts to crack a password-protected ZIP file by trying candidate passwords from a wordlist file, using multiprocessing to test batches of passwords in parallel worker processes for speed.
 It should accept the ZIP file path and wordlist path (plus options like batch size and progress update interval) via argparse, verify each candidate by attempting to open and read the first file inside the archive with that password, and stop as soon as a correct password is found.
-While running, it should periodically print live progress statistics (passwords tested, elapsed time formatted as h/m/s, and passwords-per-second rate), and finally report whether the password was found, printing the result along with total attempts and elapsed time."""
+While running, it should periodically print live progress statistics (passwords tested, elapsed time formatted as h/m/s, and passwords-per-second rate), and finally report whether the password was found, printing the result along with total attempts and elapsed time.
+"""
 
 from __future__ import annotations
 import argparse

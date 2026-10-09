@@ -2,7 +2,8 @@
 """Write a Python command-line script that generates type stub (.pyi) files for Python source files using mypy's stubgen tool.
 It should accept file paths as command-line arguments, or if none are provided, discover all ".py" files in the current working directory (via a helper get_files).
 For each file, it should skip generation if a corresponding .pyi stub already exists, otherwise run stubgen as a subprocess and report success or failure with the error output.
-Processing should run in parallel across multiple files (via a helper mpf) unless only a single file is given, and after processing, the script should print a summary list of any files for which no stub file was successfully generated."""
+Processing should run in parallel across multiple files (via a helper mpf) unless only a single file is given, and after processing, the script should print a summary list of any files for which no stub file was successfully generated.
+"""
 
 from __future__ import annotations
 import subprocess

@@ -2,7 +2,8 @@
 """Write a Python script that scans the current Python environment's site-packages directory to discover all installed packages and extract their declared dependencies from each package's dist-info METADATA file.
 For each package found, parse the "Requires-Dist" lines, strip version specifiers, environment markers, and extras to obtain clean dependency names, then build a dictionary mapping each package name to its list of dependencies.
 If no site-packages directory can be located, return an error message string instead.
-When run as a script, compute this mapping and output it as formatted JSON (or print the error message if applicable)."""
+When run as a script, compute this mapping and output it as formatted JSON (or print the error message if applicable).
+"""
 
 from __future__ import annotations
 import json

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that recursively or non-recursively renames files and directories in a given (or current) working directory by removing every occurrence of a specified substring from their names, skipping ".git" directories and refusing renames that would result in an empty name.
-It should accept arguments for the target string, a dry-run flag to preview changes without applying them, a recursive flag to descend into subdirectories, and an optional starting path, use a helper "unique_path" function (from a module named "dh") to avoid collisions when the new name already exists, print each rename (or would-be rename) and any warnings/errors, and return/print the total count of items renamed."""
+It should accept arguments for the target string, a dry-run flag to preview changes without applying them, a recursive flag to descend into subdirectories, and an optional starting path, use a helper "unique_path" function (from a module named "dh") to avoid collisions when the new name already exists, print each rename (or would-be rename) and any warnings/errors, and return/print the total count of items renamed.
+"""
 
 from __future__ import annotations
 import argparse

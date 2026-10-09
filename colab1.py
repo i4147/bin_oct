@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script for Google Colab that mounts Google Drive and exports the contents of the current Python environment's site-packages directory to a "wheels" folder on the Drive, so the installed packages can be reused later without reinstalling.
 It should skip "setuptools" and "pip" entries, copy top-level files directly, and compress each top-level subdirectory into a separate zip archive (excluding .pyc files), preserving relative paths from the site-packages root.
-Finally, it should print a summary reporting the source and output paths, the number of files copied, and the number of directories zipped."""
+Finally, it should print a summary reporting the source and output paths, the number of files copied, and the number of directories zipped.
+"""
 
 from __future__ import annotations
 import shutil

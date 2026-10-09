@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans all Python site-packages directories (system, global, and user) to detect packages installed with multiple different versions simultaneously.
 It should locate directories ending in ".dist-info" or ".egg-info", parse each name into a package name and version using a regular expression, and group versions by lowercased package name.
-Finally, it should print out only the packages that have more than one distinct version installed, listing each version under the package name, and print "Done." when finished."""
+Finally, it should print out only the packages that have more than one distinct version installed, listing each version under the package name, and print "Done." when finished.
+"""
 
 from __future__ import annotations
 import contextlib

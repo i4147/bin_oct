@@ -2,7 +2,8 @@
 """Write a Python script that scans one or more HTML (or other text) files for embedded base64-encoded data URLs (e.g., "data:image/png;base64,...") using a regex, decodes each match, and saves the decoded binary content as separate files into an "extracted_base64" output directory.
 Filenames should be derived from a short SHA-256 hash of the decoded content plus a file extension inferred from the MIME type (via a MIME2EXT mapping), skipping duplicates already saved.
 The script should accept file paths as command-line arguments, or if none are given, default to non-binary files discovered in the current working directory via a helper function get_nobinary.
-It should track and report the count of successfully extracted assets, gracefully skip files that fail to decode or read, and avoid re-writing files whose content hash already exists on disk."""
+It should track and report the count of successfully extracted assets, gracefully skip files that fail to decode or read, and avoid re-writing files whose content hash already exists on disk.
+"""
 
 from __future__ import annotations
 import base64

@@ -103,14 +103,20 @@ class UniversalTranslator:
                 response = self.openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
-                        {"role": "system", "content": "You are a helpful translation assistant."},
+                        {
+                            "role": "system",
+                            "content": "You are a helpful translation assistant.",
+                        },
                         {"role": "user", "content": prompt},
                     ],
                     temperature=0.3,
                 )
                 return response.choices[0].message.content.strip()
             except Exception as e:
-                print(f"⚠️ OpenAI translation error: {e}. Falling back to alternative methods...", file=sys.stderr)
+                print(
+                    f"⚠️ OpenAI translation error: {e}. Falling back to alternative methods...",
+                    file=sys.stderr,
+                )
 
                 if self.gemini_key and genai and not self.gemini_client:
                     self.gemini_client = genai.Client(api_key=self.gemini_key)
@@ -118,7 +124,9 @@ class UniversalTranslator:
         if self.gemini_client:
             try:
                 response = self.gemini_client.models.generate_content(
-                    model="gemini-2.5-flash", contents=prompt, config=types.GenerateContentConfig(temperature=0.3)
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.3),
                 )
                 return response.text.strip()
             except Exception as e:
@@ -156,12 +164,18 @@ def main():
         help="Comma-separated file extensions to look for (default: txt,md)",
     )
     parser.add_argument(
-        "-l", "--lang", default="English", help="Target translation destination language (default: English)"
+        "-l",
+        "--lang",
+        default="English",
+        help="Target translation destination language (default: English)",
     )
     args = parser.parse_args()
 
     if OpenAI is None and genai is None:
-        print("❌ Error: Missing required packages. Run: pip install openai google-genai", file=sys.stderr)
+        print(
+            "❌ Error: Missing required packages. Run: pip install openai google-genai",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     translator = UniversalTranslator()

@@ -285,9 +285,23 @@ def main():
 
     parser = argparse.ArgumentParser(description="Python 3.14 Duplicate Detector via Subinterpreters")
     parser.add_argument("--dir", type=str, default=".", help="Root directory to scan recursively")
-    parser.add_argument("--disable-fuzzy", action="store_true", help="Disable variable alpha-renaming matching")
-    parser.add_argument("--min-nodes", type=int, default=MIN_AST_NODES, help="Minimum AST node count threshold")
-    parser.add_argument("--max-duplicates", type=int, default=-1, help="Max duplicates allowed before exit failure")
+    parser.add_argument(
+        "--disable-fuzzy",
+        action="store_true",
+        help="Disable variable alpha-renaming matching",
+    )
+    parser.add_argument(
+        "--min-nodes",
+        type=int,
+        default=MIN_AST_NODES,
+        help="Minimum AST node count threshold",
+    )
+    parser.add_argument(
+        "--max-duplicates",
+        type=int,
+        default=-1,
+        help="Max duplicates allowed before exit failure",
+    )
     args = parser.parse_args()
 
     root_dir = Path(args.dir).resolve()
@@ -317,7 +331,11 @@ def main():
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
 
-    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {"function": [], "class": [], "constant": []}
+    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {
+        "function": [],
+        "class": [],
+        "constant": [],
+    }
 
     total_duplicates = 0
     annotation_diff_total = 0
@@ -335,7 +353,11 @@ def main():
                 "count": len(instances),
                 "differ_in_type_annotations": differ_in_annotations,
                 "instances": [
-                    {"file": inst["file"], "line": inst["line"], "has_annotations": inst["has_annotations"]}
+                    {
+                        "file": inst["file"],
+                        "line": inst["line"],
+                        "has_annotations": inst["has_annotations"],
+                    }
                     for inst in instances
                 ],
             }

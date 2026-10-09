@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that regenerates the RECORD file inside a Python package's dist-info (or egg-info) directory to ensure installed package metadata accurately reflects file hashes and sizes.
 It should compute SHA-256 hashes (base64url-encoded, in the "sha256=..." format) and byte sizes for each installed file, parse and rewrite existing RECORD entries while skipping irrelevant files like .pyc, direct_url.json, INSTALLER, and RECORD itself, and log progress and errors via the logging module to stderr.
-The script should locate dist-info directories using site-packages paths, support multiprocessing for parallel hash computation across many files, and be runnable as a command-line tool that updates one or more installed distributions' RECORD metadata in place."""
+The script should locate dist-info directories using site-packages paths, support multiprocessing for parallel hash computation across many files, and be runnable as a command-line tool that updates one or more installed distributions' RECORD metadata in place.
+"""
 
 from __future__ import annotations
 import base64

@@ -302,7 +302,11 @@ def _iter_pygit2(opts: Options) -> Iterator[CommitRecord]:
 
         try:
             s = diff.stats
-            stats = {"files": s.files_changed, "insertions": s.insertions, "deletions": s.deletions}
+            stats = {
+                "files": s.files_changed,
+                "insertions": s.insertions,
+                "deletions": s.deletions,
+            }
         except Exception:
             stats = {}
 
@@ -606,7 +610,15 @@ def _write_yaml(records: Iterator[CommitRecord], out: Any) -> int:
 
 
 def _write_markdown(records: Iterator[CommitRecord], out: Any) -> int:
-    cols = ["short", "author_name", "authored_at", "added", "modified", "deleted", "renamed"]
+    cols = [
+        "short",
+        "author_name",
+        "authored_at",
+        "added",
+        "modified",
+        "deleted",
+        "renamed",
+    ]
     out.write("| " + " | ".join(cols) + " |\n")
     out.write("| " + " | ".join("---" for _ in cols) + " |\n")
     n = 0
@@ -679,7 +691,12 @@ def build_parser() -> argparse.ArgumentParser:
         prog="git-added-files",
         description="List added/modified/deleted files per commit across multiple Git backends.",
     )
-    p.add_argument("repo_path", nargs="?", default=None, help="Path to the git repository (default: .)")
+    p.add_argument(
+        "repo_path",
+        nargs="?",
+        default=None,
+        help="Path to the git repository (default: .)",
+    )
     p.add_argument("output_path", nargs="?", default=None, help="Output file (- for stdout)")
     p.add_argument("-b", "--backend", choices=list(BACKENDS), help="Git backend to use")
     p.add_argument("-f", "--format", dest="fmt", choices=list(WRITERS), help="Output format")
@@ -688,15 +705,34 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--until", help="Only commits before this date")
     p.add_argument("--author", help="Filter by author name or email (substring)")
     p.add_argument("--max-count", type=int, help="Limit number of commits emitted")
-    p.add_argument("--first-parent", action="store_true", default=None, help="Follow only first parents")
+    p.add_argument(
+        "--first-parent",
+        action="store_true",
+        default=None,
+        help="Follow only first parents",
+    )
     p.add_argument("--path", help="Only include paths matching this glob (fnmatch)")
     p.add_argument("--exclude", help="Exclude paths matching this glob (fnmatch)")
     p.add_argument(
-        "--mode", choices=["added", "modified", "deleted", "changed", "all"], help="Which change types to include"
+        "--mode",
+        choices=["added", "modified", "deleted", "changed", "all"],
+        help="Which change types to include",
     )
-    p.add_argument("--rename", action="store_true", default=None, help="Enable rename detection (backend-dependent)")
-    p.add_argument("--config", help="Explicit config TOML path (default: .gitaddedfiles.toml or pyproject.toml)")
-    p.add_argument("--dry-run", action="store_true", help="Validate and count but do not write output")
+    p.add_argument(
+        "--rename",
+        action="store_true",
+        default=None,
+        help="Enable rename detection (backend-dependent)",
+    )
+    p.add_argument(
+        "--config",
+        help="Explicit config TOML path (default: .gitaddedfiles.toml or pyproject.toml)",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and count but do not write output",
+    )
     p.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     p.add_argument("-q", "--quiet", action="store_true", help="Quiet logging (errors only)")
     return p

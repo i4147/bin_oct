@@ -6,7 +6,8 @@ Features kept: - TTF / OTF / WOFF / WOFF2 conversion via fontTools.
 - Parallel conversion with multiprocessing.
 - Optional original removal after successful conversion.
 - Safe default: refuses TTF<->OTF outline mismatches unless --allow-outline-mismatch is given.
-Requires: pip install fonttools loguru brotli Also imports `fsz` from a local `dh` module, same as the original scripts."""
+Requires: pip install fonttools loguru brotli Also imports `fsz` from a local `dh` module, same as the original scripts.
+"""
 
 from __future__ import annotations
 import argparse

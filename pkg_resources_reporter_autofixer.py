@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Scan and optionally autofix deprecated ``pkg_resources`` usage in Python files.
 This script walks the current working directory, reports every occurrence of ``pkg_resources`` imports and usages (with known replacements for common patterns such as ``get_distribution``, ``resource_string``, ``require`` and ``DistributionNotFound``), and can mechanically rewrite safe usages to the modern ``importlib.metadata`` / ``importlib.resources`` equivalents.
-It uses a ``multiprocessing.Pool`` with 8 workers, ``pathlib`` for all path handling, ``loguru`` for logging and full strict type annotations."""
+It uses a ``multiprocessing.Pool`` with 8 workers, ``pathlib`` for all path handling, ``loguru`` for logging and full strict type annotations.
+"""
 
 from __future__ import annotations
 import argparse

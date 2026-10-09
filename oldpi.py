@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python utility that recursively scans a directory tree (skipping common noise folders like .git, __pycache__, .mypy_cache, .ruff_cache, .pytest_cache, and lazy, and ignoring symlinks) to collect files, optionally filtered by a list of extensions, returning them as a list of Path objects via BFS traversal using a deque.
 Additionally include helper functions that open a source file efficiently (using mmap for files larger than 1MB, otherwise a regular binary file handle), read a file's text content safely as UTF-8 with errors ignored, detect Python2-style print statements via a regex pattern, and check whether a given source text already imports Rich's print function.
-The script should rely on tokenize and an internal module `dh.mpf_joblib`, and is intended as part of a code-scanning or linting tool that inspects Python source files for legacy print usage."""
+The script should rely on tokenize and an internal module `dh.mpf_joblib`, and is intended as part of a code-scanning or linting tool that inspects Python source files for legacy print usage.
+"""
 
 from __future__ import annotations
 import mmap

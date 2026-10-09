@@ -6,7 +6,8 @@ The generated script should: - Recursively discover .ipynb files from CLI-provid
 - Wrap the remaining body inside an `if __name__ == '__main__':` block.
 - Process files concurrently with multiprocessing.Pool.apply_async using a fixed pool of 8 workers (no CLI flag controls parallelism).
 - Use loguru for all logging output.
-- Include complete type annotations, docstrings on all functions, and this module-level docstring."""
+- Include complete type annotations, docstrings on all functions, and this module-level docstring.
+"""
 
 from __future__ import annotations
 import sys

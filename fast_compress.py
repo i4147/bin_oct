@@ -4,7 +4,8 @@ Third-party dependencies used by the original scripts: - zstandard - loguru - lz
 --threads 1 --chunk-size 131072 --pool-workers 8 --progress simple --tar-zst-skip-decompress --no-skip-so --legacy-extra-skips --stats-scale 100 fast_compress2.py -> python unified_compress.py zstd -c --dir .
 --threads 4 --chunk-size 8192 --pool-workers 8 --scan-order largest --progress simple --stats-scale 40 fast_compress3.py -> python unified_compress.py zstd -c --dir .
 --threads 4 --chunk-size 8192 --pool-workers 8 --progress bar --stats-scale 40 fast_compress4.py -> python unified_compress.py zstd -c --simple --sequential --zstd-writer --progress verbose --chunk-size 1048576 --threads 4 --pattern "*" fast_xz.py -> python unified_compress.py xz -c --preset 9 --threads 4 --pool-workers 8 --dir .
-For exact `fast_compress4.py` decompression-bug behavior, add `--simple-legacy-zst-skip` to the `zstd -d --simple` command."""
+For exact `fast_compress4.py` decompression-bug behavior, add `--simple-legacy-zst-skip` to the `zstd -d --simple` command.
+"""
 
 from __future__ import annotations
 import argparse

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """pybat.py — a Python port of the Rust `bat` crate.
 A `cat` clone with syntax highlighting, line numbers, Git modification markers, and pretty file headers.
-Install dependencies: pip install pygments Usage: python pybat.py [OPTIONS] [FILE...] Examples: python pybat.py main.py python pybat.py -n -r 10:40 app.rs python pybat.py --plain README.md python pybat.py -H 12 -H 20 config.yaml cat file.py | python pybat.py -l python - python pybat.py --list-languages python pybat.py --list-themes"""
+Install dependencies: pip install pygments Usage: python pybat.py [OPTIONS] [FILE...] Examples: python pybat.py main.py python pybat.py -n -r 10:40 app.rs python pybat.py --plain README.md python pybat.py -H 12 -H 20 config.yaml cat file.py | python pybat.py -l python - python pybat.py --list-languages python pybat.py --list-themes
+"""
 
 from __future__ import annotations
 import argparse
@@ -15,7 +16,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pygments import highlight as pyg_highlight
 from pygments.formatters import Terminal256Formatter, TerminalTrueColorFormatter
-from pygments.lexers import TextLexer, get_all_lexers, get_lexer_by_name, get_lexer_for_filename, guess_lexer
+from pygments.lexers import (
+    TextLexer,
+    get_all_lexers,
+    get_lexer_by_name,
+    get_lexer_for_filename,
+    guess_lexer,
+)
 from pygments.styles import get_all_styles, get_style_by_name
 from pygments.util import ClassNotFound
 

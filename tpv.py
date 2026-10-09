@@ -2,7 +2,8 @@
 """tpv - a terminal PDF viewer that needs no Python PDF bindings.
 Pages are rasterised by shelling out to one of the native PDF renderers that Termux ships as prebuilt 32-bit ARM binaries: * Ghostscript `gs` (pkg install ghostscript) * poppler `pdftoppm` (pkg install poppler) * MuPDF tools `mutool` (pkg install mupdf-tools) Every one of them can emit a binary PPM (P6) image, which is just an ASCII header followed by raw RGB bytes -- so the parser below is pure Python and needs no Pillow/numpy.
 Each page is then painted into the terminal using 24-bit-colour "half block" characters (U+2580): the foreground colour paints the upper pixel of a cell, the background colour the lower one, doubling the vertical resolution.
-Usage: python tpv.py document.pdf [-p PAGE] [-z ZOOM] [-b BACKEND] Keys: q / Esc / Ctrl-C quit j / Down scroll down one line k / Up scroll up one line h / Left scroll left l / Right scroll right Space / PgDn / f next screen (next page when already at the bottom) b / PgUp prev screen (prev page when already at the top) n / N / p next / previous page g / Home top of page G / End bottom of page + / - zoom in / out 0 reset zoom and scroll"""
+Usage: python tpv.py document.pdf [-p PAGE] [-z ZOOM] [-b BACKEND] Keys: q / Esc / Ctrl-C quit j / Down scroll down one line k / Up scroll up one line h / Left scroll left l / Right scroll right Space / PgDn / f next screen (next page when already at the bottom) b / PgUp prev screen (prev page when already at the top) n / N / p next / previous page g / Home top of page G / End bottom of page + / - zoom in / out 0 reset zoom and scroll
+"""
 
 from __future__ import annotations
 import argparse

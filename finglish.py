@@ -2,7 +2,8 @@
 """Write a Python script that transliterates Persian (Farsi) text into a Latin "Finglish" representation suitable for use as filenames or identifiers.
 It should define a function that maps each Persian character to a corresponding Latin letter sequence using a predefined dictionary, with special positional handling for the letters "و" (rendered as "v" at the start of a word, otherwise "o") and "ی" (rendered as "y" at the start or end of a word, otherwise "i").
 The function should split the input text on spaces, transliterate each word, and rejoin the resulting words using underscores instead of spaces.
-It should import unicodedata and pathlib.Path, even if they are not directly used in the core logic shown."""
+It should import unicodedata and pathlib.Path, even if they are not directly used in the core logic shown.
+"""
 
 from __future__ import annotations
 import unicodedata

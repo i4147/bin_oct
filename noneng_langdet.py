@@ -8,7 +8,8 @@ The script should: - Use multiprocessing.Pool.apply_async with a fixed pool of 8
 - Provide a CLI via argparse with arguments: directory (positional, default "."), --confidence/-c, --output/-o, --min-length, --extensions, --verbose/-v.
 - Emit a report at the given output path summarizing files with non-English lines, including per-line language, confidence, and truncated content.
 - Exit with code 0 if no non-English content found, 1 if found or on error, 130 on KeyboardInterrupt.
-- Include full type annotations everywhere and be compatible with strict type checkers."""
+- Include full type annotations everywhere and be compatible with strict type checkers.
+"""
 
 from __future__ import annotations
 import argparse

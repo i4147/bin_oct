@@ -2,7 +2,8 @@
 """Write a Python command-line script that splits a single merged text file back into multiple separate files.
 The input file contains multiple file contents concatenated together, each preceded by a marker line in the format "# File: <path>"; the script should parse this file using a regex to extract each path and its corresponding content.
 For each extracted file, it must create any necessary parent directories, and if a file already exists at that path, it should avoid overwriting it by generating a unique filename (appending an incrementing counter like "_1", "_2" before the extension).
-The script takes the merged file path as a single command-line argument, writes out each reconstructed file, and prints a status line for each ("Created" or "Renamed to") showing the final path used."""
+The script takes the merged file path as a single command-line argument, writes out each reconstructed file, and prints a status line for each ("Created" or "Renamed to") showing the final path used.
+"""
 
 from __future__ import annotations
 import re

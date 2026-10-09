@@ -8,7 +8,8 @@ replace ProcessPoolExecutor with multiprocessing.Pool.imap_unordered 5.
 replace stdlib logging with loguru 6.
 emit code with no comments and no docstrings Adding PEP 484 annotations where none exist requires type inference and is NOT automated — existing annotations are preserved, unannotated code is left as-is.
 Fix those by hand.
-Usage: # Directory / single-file mode (walks recursively): python refactor_single_file.py path/to/pkg -o pkg_single.py python refactor_single_file.py some_pkg/some_module.py -o out.py python refactor_single_file.py # defaults to CWD # Merged-file mode (single file containing "# File: <path>" headers): python refactor_single_file.py -f merged.py -o out.py"""
+Usage: # Directory / single-file mode (walks recursively): python refactor_single_file.py path/to/pkg -o pkg_single.py python refactor_single_file.py some_pkg/some_module.py -o out.py python refactor_single_file.py # defaults to CWD # Merged-file mode (single file containing "# File: <path>" headers): python refactor_single_file.py -f merged.py -o out.py
+"""
 
 from __future__ import annotations
 import argparse

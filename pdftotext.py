@@ -114,7 +114,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("pdffiles", nargs="+")
     parser.add_argument("-p", "--perpage", action="store_true")
-    parser.add_argument("-b", "--backend", default="fitz", choices=["fitz", "pypdf", "pdfplumber", "pdfminer"])
+    parser.add_argument(
+        "-b",
+        "--backend",
+        default="fitz",
+        choices=["fitz", "pypdf", "pdfplumber", "pdfminer"],
+    )
     parser.add_argument("--password", default="")
     args = parser.parse_args()
 

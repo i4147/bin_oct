@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans a directory for .srt subtitle files and determines the dominant spoken language in each file using majority-vote language detection with the lingua library.
 For each SRT file it should strip out sequence numbers and timestamp lines, split the remaining subtitle text into batches, and detect the language of each line in parallel using a multiprocessing Pool for performance.
-It should tally detected languages across all lines with a Counter and report the most frequent language (name and ISO 639-1 code) per file, gracefully handling lines where detection fails or returns no result."""
+It should tally detected languages across all lines with a Counter and report the most frequent language (name and ISO 639-1 code) per file, gracefully handling lines where detection fails or returns no result.
+"""
 
 from __future__ import annotations
 from collections import Counter

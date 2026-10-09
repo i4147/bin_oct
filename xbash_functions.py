@@ -9,7 +9,8 @@ For each script, scan for function definitions of the form: name() { ...
 } function name { ...
 } using brace-matching to find the closing '}'.
 3.
-Write each function to: <output>/<relative-dir-of-source>/<sanitized-name>[.sh] Third-party dependencies ------------------------ Optional: fastwalk (only when --walker fastwalk is used) Optional: loguru (only when --use-loguru is used) Both are guarded with try/except and fall back to stdlib behavior."""
+Write each function to: <output>/<relative-dir-of-source>/<sanitized-name>[.sh] Third-party dependencies ------------------------ Optional: fastwalk (only when --walker fastwalk is used) Optional: loguru (only when --use-loguru is used) Both are guarded with try/except and fall back to stdlib behavior.
+"""
 
 from __future__ import annotations
 import argparse

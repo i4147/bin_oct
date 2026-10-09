@@ -135,8 +135,20 @@ def get(author: str | None, year: str, kind: str | None) -> str:
 
 @click.command(help="A license fetcher.")
 @click.option("-a", "--author", nargs=1, help="The name of the author.")
-@click.option("-y", "--year", nargs=1, default=str(date.today().year), help="The year the program was created in.")
-@click.option("-k", "--kind", nargs=1, help="The kind of license to fetch.", type=click.Choice(list(LICENSE_KINDS)))
+@click.option(
+    "-y",
+    "--year",
+    nargs=1,
+    default=str(date.today().year),
+    help="The year the program was created in.",
+)
+@click.option(
+    "-k",
+    "--kind",
+    nargs=1,
+    help="The kind of license to fetch.",
+    type=click.Choice(list(LICENSE_KINDS)),
+)
 def li(author: str | None, year: str, kind: str | None) -> None:
     try:
         result = get(author, year, kind.lower() if kind else None)

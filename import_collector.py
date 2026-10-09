@@ -3,7 +3,8 @@
 It should use a predefined mapping (PACKAGE_MAPPING) to translate import names that differ from their PyPI package names (e.g.
 "cv2" to "opencv-python", "PIL" to "Pillow").
 The script should write the aggregated results to an "importz.txt" file and also generate a pip install shell script listing any missing dependencies.
-Include a `main()` entry point that orchestrates directory traversal, import collection, status checking, and output file generation."""
+Include a `main()` entry point that orchestrates directory traversal, import collection, status checking, and output file generation.
+"""
 
 from __future__ import annotations
 import ast

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Translate detectable non-English comments and string literals in Python files into English.
-The script recursively discovers Python files, extracts non-English text from comments and ordinary string literals, splits it into approximately 2500-character chunks, translates chunks through a selectable backend using eight multiprocessing workers, validates the result with compile(), and atomically replaces the original files."""
+The script recursively discovers Python files, extracts non-English text from comments and ordinary string literals, splits it into approximately 2500-character chunks, translates chunks through a selectable backend using eight multiprocessing workers, validates the result with compile(), and atomically replaces the original files.
+"""
 
 from __future__ import annotations
 import argparse

@@ -314,7 +314,10 @@ def _make_alibaba(source: str, target: str, script_path: str) -> Translator:
     key_id = _require_env("ALIBABA_ACCESS_KEY_ID", "alibaba")
     key_secret = _require_env("ALIBABA_ACCESS_KEY_SECRET", "alibaba")
     core = _import("aliyunsdkcore.client", "pip install aliyun-python-sdk-alimt")
-    req_mod = _import("aliyunsdkalimt.request.v20181012.TranslateGeneralRequest", "pip install aliyun-python-sdk-alimt")
+    req_mod = _import(
+        "aliyunsdkalimt.request.v20181012.TranslateGeneralRequest",
+        "pip install aliyun-python-sdk-alimt",
+    )
     src, tgt = _map_lang("alibaba", source), _map_lang("alibaba", target)
 
     def call(text: str) -> str:
@@ -537,7 +540,13 @@ def atomic_save(path: str, data: Dict[str, str], lock: threading.Lock) -> bool:
 
 
 class Shared:
-    def __init__(self, fn: Translator, results: Dict[str, str], total: int, args: argparse.Namespace) -> None:
+    def __init__(
+        self,
+        fn: Translator,
+        results: Dict[str, str],
+        total: int,
+        args: argparse.Namespace,
+    ) -> None:
         self.fn = fn
         self.results = results
         self.total = total
@@ -563,7 +572,13 @@ def translate_with_retries(sh: Shared, word: str) -> Tuple[Optional[str], object
             text = raw.strip() if isinstance(raw, str) else ""
             if text and text.casefold() != word.casefold():
                 return text, raw, False
-            logger.warning("attempt {}/{} for {!r}: empty or identity result {!r}", attempt, MAX_ATTEMPTS, word, raw)
+            logger.warning(
+                "attempt {}/{} for {!r}: empty or identity result {!r}",
+                attempt,
+                MAX_ATTEMPTS,
+                word,
+                raw,
+            )
         if attempt < MAX_ATTEMPTS and sh.stop.wait(BACKOFF_BASE * 2 ** (attempt - 1)):
             return None, last_raw, True
     return None, last_raw, False
@@ -619,7 +634,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     p.add_argument("-w", "--workers", type=int, default=2, help="worker threads (default: 2)")
     p.add_argument(
-        "-d", "--delay", type=float, default=0.5, help="seconds before each request, per worker (default: 0.5)"
+        "-d",
+        "--delay",
+        type=float,
+        default=0.5,
+        help="seconds before each request, per worker (default: 0.5)",
     )
     p.add_argument("--save-every", type=int, default=50, help="save every N words (default: 50)")
     p.add_argument("--no-continue", action="store_true", help="ignore existing output; start fresh")
@@ -656,7 +675,12 @@ def run(args: argparse.Namespace) -> int:
             stream.reconfigure(encoding="utf-8", errors="replace")
 
     setup_logging()
-    logger.debug("python {} on {} ({})", platform.python_version(), platform.machine(), platform.system())
+    logger.debug(
+        "python {} on {} ({})",
+        platform.python_version(),
+        platform.machine(),
+        platform.system(),
+    )
 
     script_path = os.path.abspath(__file__)
     name, fn = build_translator(preferred, args.source, args.target, script_path)

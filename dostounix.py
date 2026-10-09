@@ -2,7 +2,8 @@
 """Write a Python command-line utility that recursively converts Windows-style CRLF line endings to Unix-style LF in text files, accepting one or more file or directory paths as arguments (defaulting to the current working directory if none are given).
 It should traverse directories recursively, skipping binary files and files matched by a "should_skip" filter (both provided by an external "dh" module), and process the remaining files in parallel using a multiprocessing Pool with a fixed worker count.
 For each file, it should read the raw bytes, check for CRLF sequences, and if found, write the converted content to a temporary file before atomically replacing the original, while gracefully handling and collecting OSError/PermissionError failures.
-Finally, it should aggregate and report how many files were changed versus errored, using a defined chunk size constant for task distribution."""
+Finally, it should aggregate and report how many files were changed versus errored, using a defined chunk size constant for task distribution.
+"""
 
 from __future__ import annotations
 import sys

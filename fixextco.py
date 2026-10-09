@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that scans a directory tree for files whose extensions do not match their detected MIME type (using the `file` command) or shebang, then interactively or automatically renames them to the correct extension.
-Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for logging, pathlib for all path operations, complete type annotations, and a MIME-to-extension mapping table with skip lists."""
+Use multiprocessing.Pool.apply_async with a fixed pool of 8 workers, loguru for logging, pathlib for all path operations, complete type annotations, and a MIME-to-extension mapping table with skip lists.
+"""
 
 from __future__ import annotations
 import argparse
@@ -449,7 +450,7 @@ def detect_mismatch(base_dir: Path, path: Path) -> MismatchResult | None:
         return MismatchResult(
             path=path,
             current_ext=current_ext,
-            detected_mime="text/x-shellscript" if shebang_ext == ".sh" else "text/x-python",
+            detected_mime=("text/x-shellscript" if shebang_ext == ".sh" else "text/x-python"),
             expected_exts=[shebang_ext],
             new_path=unique_path(new_path),
         )

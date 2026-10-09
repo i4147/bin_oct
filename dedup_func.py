@@ -6,7 +6,8 @@ consolidate Recursively find exact duplicate funcs/classes/constants and move th
 prune Remove functions from target files whose (signature + body) hash matches a function in a reference file.
 Equivalent invocations ---------------------- python dedupfunc.py FILE [-r] [--backup] -> python dedup_tool.py single FILE [-r] [--backup] python dup_detector.py [-r] [-f] -> python dedup_tool.py scan .
 [--refactor] [--fuzzy] python find_dup_func_class_const.py [-m] -> python dedup_tool.py consolidate .
-[-m] python remove_duplicate_functions.py REF [TARGETS...] [-a] -> python dedup_tool.py prune REF [TARGETS...] [-a] Optional dependencies --------------------- * ssdeep, rapidfuzz — required only for `scan --fuzzy` * loguru — optional; nicer log output for `prune`"""
+[-m] python remove_duplicate_functions.py REF [TARGETS...] [-a] -> python dedup_tool.py prune REF [TARGETS...] [-a] Optional dependencies --------------------- * ssdeep, rapidfuzz — required only for `scan --fuzzy` * loguru — optional; nicer log output for `prune`
+"""
 
 from __future__ import annotations
 import argparse

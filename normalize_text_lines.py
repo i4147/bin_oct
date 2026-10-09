@@ -3,7 +3,8 @@
 It should accept exactly one argument, the path to the input file, and validate that the path exists and is a regular file.
 For every line, apply NFKC Unicode normalization, strip non-printable characters, remove all punctuation characters, lowercase/casefold the text, and collapse whitespace-separated words by joining them with underscores.
 The normalized lines should be written to a temporary file in the same directory (preserving UTF-8 encoding with Unix-style newlines), which then atomically replaces the original file.
-The script should handle UnicodeDecodeError gracefully by printing an error message, and print usage/error messages to stderr with appropriate exit codes on invalid arguments or non-file paths."""
+The script should handle UnicodeDecodeError gracefully by printing an error message, and print usage/error messages to stderr with appropriate exit codes on invalid arguments or non-file paths.
+"""
 
 from __future__ import annotations
 import sys

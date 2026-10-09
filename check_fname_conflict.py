@@ -29,7 +29,10 @@ def main() -> int:
     stdlib = {n.lower() for n in getattr(sys, "stdlib_module_names", set())}
     third_party = load_third_party(PIP_LIST)
     if not stdlib:
-        print("⚠️  sys.stdlib_module_names unavailable (needs Python 3.10+)", file=sys.stderr)
+        print(
+            "⚠️  sys.stdlib_module_names unavailable (needs Python 3.10+)",
+            file=sys.stderr,
+        )
     print(f"📂 Scanning: {TARGET_DIR}")
     print(f"📦 stdlib entries: {len(stdlib)} | 3rd-party entries: {len(third_party)}\n")
     conflicts = 0

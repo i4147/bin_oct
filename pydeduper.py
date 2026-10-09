@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line tool that recursively scans a directory (or archive files like zip, tar, whl, and various compressed formats such as gz, bz2, xz, zst, br) for Python source files, and extracts top-level definitions—functions, classes, and constants/type aliases—using the ast module.
 It should deduplicate these definitions across the entire codebase by computing content hashes (e.g., via hashlib), using multiprocessing for parallel file/archive processing to speed up scanning.
-The script should output the deduplicated, unique definitions into organized files grouped by kind (e.g., funcs.py, classes.py, const.py), while logging progress and issues using loguru if available, falling back to the standard logging module otherwise, and should be configurable via argparse command-line arguments (such as input path, output directory, and worker count)."""
+The script should output the deduplicated, unique definitions into organized files grouped by kind (e.g., funcs.py, classes.py, const.py), while logging progress and issues using loguru if available, falling back to the standard logging module otherwise, and should be configurable via argparse command-line arguments (such as input path, output directory, and worker count).
+"""
 
 from __future__ import annotations
 import argparse

@@ -2,7 +2,8 @@
 """Write a Python command-line script that scans font files (e.g., TTF/OTF, using the extensions defined in a shared FONTEXT constant) and renames them based on metadata extracted from each font's internal "name" table via fontTools.
 It should read the family name and subfamily/style strings from the font, normalize the style using a STYLE_MAPPING dictionary (mapping variants like "bold italic", "semibold", "condensed", etc.
 to canonical suffixes), and construct a new filename combining the family name and mapped style.
-The script should use argparse to accept input parameters (such as target directory or files), handle missing or unreadable name tables gracefully by skipping or defaulting to "Regular", and use a unique_path helper to avoid overwriting existing files when renaming."""
+The script should use argparse to accept input parameters (such as target directory or files), handle missing or unreadable name tables gracefully by skipping or defaulting to "Regular", and use a unique_path helper to avoid overwriting existing files when renaming.
+"""
 
 from __future__ import annotations
 import argparse

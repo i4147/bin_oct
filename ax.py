@@ -279,12 +279,24 @@ def dimensions_ok(img_candidate: Any) -> bool:
 
 
 def get_images(
-    tree: Any, original_url: str, title_index: Optional[int], wrong_atts: Optional[list[str]] = None
+    tree: Any,
+    original_url: str,
+    title_index: Optional[int],
+    wrong_atts: Optional[list[str]] = None,
 ) -> Optional[list[str]]:
     if title_index is None:
         return None
     if wrong_atts is None:
-        wrong_atts = ["adsense", "icon", "logo", "advert", "toolbar", "footer", "layout", "banner"]
+        wrong_atts = [
+            "adsense",
+            "icon",
+            "logo",
+            "advert",
+            "toolbar",
+            "footer",
+            "layout",
+            "banner",
+        ]
     img_candidates = tree.xpath("//img[string-length(@src) > 3]")
     img_candidates += tree.xpath('//meta[contains(@property, "image")]')
     img_candidates += tree.xpath('//*[contains(@style, "background-image")]')
@@ -341,7 +353,10 @@ def extract_jsonld(tree: Any) -> list[Any]:
     return results
 
 
-lang_to_stoplist = {"nl": justext.get_stoplist("Dutch"), "en": justext.get_stoplist("English")}
+lang_to_stoplist = {
+    "nl": justext.get_stoplist("Dutch"),
+    "en": justext.get_stoplist("English"),
+}
 
 
 def edge_distance(i: int, lower: int, upper: int) -> int:
@@ -379,7 +394,10 @@ def get_content(response_body: bytes, title: str, language: str, url: str) -> tu
     if good_inds:
         if date_text is None:
             lower_index, upper_index = good_inds[0], good_inds[-1]
-            date_candidates = sorted(list(range(len(texts))), key=lambda x: edge_distance(x, lower_index, upper_index))
+            date_candidates = sorted(
+                list(range(len(texts))),
+                key=lambda x: edge_distance(x, lower_index, upper_index),
+            )
             date_candidates = [texts[i] for i in date_candidates]
             date_candidates = [x for x in date_candidates if len(x) < 100]
             for x in date_candidates:
@@ -504,7 +522,16 @@ class Article:
 
     def to_dict(
         self,
-        keys: Iterable[str] = ("title", "publish_date", "url", "id", "article_text", "code", "links", "image"),
+        keys: Iterable[str] = (
+            "title",
+            "publish_date",
+            "url",
+            "id",
+            "article_text",
+            "code",
+            "links",
+            "image",
+        ),
         skip_if_empty: bool = False,
     ) -> dict:
         return {x: getattr(self, x) for x in keys if getattr(self, x) or skip_if_empty}
@@ -895,7 +922,13 @@ class MediumCrawler(Crawler):
         super().__init__(
             seed_urls=seed_urls,
             name="medium_{}".format(name),
-            any_exclude_regexes=["/about", "/archive", "/welcome", "/tagged", "/trending"],
+            any_exclude_regexes=[
+                "/about",
+                "/archive",
+                "/welcome",
+                "/tagged",
+                "/trending",
+            ],
             all_required_regexes=[re_count("/", 4, 4)],
             *args,
             **kwargs,

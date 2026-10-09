@@ -301,7 +301,7 @@ class ResultsTable(Widget):
                 group.size_str,
                 f"{group.match_score:.1f}%",
                 group.reason,
-                str(sample.path)[:58] + "…" if len(str(sample.path)) > 60 else str(sample.path),
+                (str(sample.path)[:58] + "…" if len(str(sample.path)) > 60 else str(sample.path)),
                 key=f"group-{i}",
             )
 

@@ -190,7 +190,9 @@ def _with_leading(node: cst.CSTNode, extra: Sequence[cst.EmptyLine]) -> cst.CSTN
     return node.with_changes(leading_lines=[*extra, *existing])
 
 
-def strip_indented_block_docstring(block: cst.IndentedBlock) -> tuple[cst.IndentedBlock, bool]:
+def strip_indented_block_docstring(
+    block: cst.IndentedBlock,
+) -> tuple[cst.IndentedBlock, bool]:
     if not block.body:
         return block, False
     first = block.body[0]
@@ -201,13 +203,18 @@ def strip_indented_block_docstring(block: cst.IndentedBlock) -> tuple[cst.Indent
     if tail:
         return block.with_changes(body=[first.with_changes(body=tail), *later]), True
     if not later or first.trailing_whitespace.comment is not None:
-        return block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later]), True
+        return (
+            block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later]),
+            True,
+        )
     if first.leading_lines:
         later[0] = _with_leading(later[0], first.leading_lines)
     return block.with_changes(body=later), True
 
 
-def strip_simple_suite_docstring(suite: cst.SimpleStatementSuite) -> tuple[cst.SimpleStatementSuite, bool]:
+def strip_simple_suite_docstring(
+    suite: cst.SimpleStatementSuite,
+) -> tuple[cst.SimpleStatementSuite, bool]:
     if not suite.body:
         return suite, False
     first = suite.body[0]
@@ -539,7 +546,12 @@ def _process_file(path: Path, options: TransformOptions) -> FileResult:
         except OSError as exc:
             return FileResult(path, size, len(new_bytes), error=f"write error: {exc}")
         if (after.st_mtime_ns, after.st_size) != (before.st_mtime_ns, before.st_size):
-            return FileResult(path, size, len(new_bytes), error="file changed while processing; left untouched")
+            return FileResult(
+                path,
+                size,
+                len(new_bytes),
+                error="file changed while processing; left untouched",
+            )
         if options.make_backup:
             try:
                 write_backup(path, original, options.overwrite_backup, options.fsync)
@@ -704,17 +716,37 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="remove comments that parse as Python instead of protecting them",
     )
-    parser.add_argument("--keep-blank-lines", action="store_true", help="do not collapse runs of repeated blank lines")
     parser.add_argument(
-        "--backup", action="store_true", help=f"save original bytes beside each changed file as *{BACKUP_SUFFIX}"
+        "--keep-blank-lines",
+        action="store_true",
+        help="do not collapse runs of repeated blank lines",
     )
-    parser.add_argument("--overwrite-backup", action="store_true", help="allow --backup to replace an existing backup")
+    parser.add_argument(
+        "--backup",
+        action="store_true",
+        help=f"save original bytes beside each changed file as *{BACKUP_SUFFIX}",
+    )
+    parser.add_argument(
+        "--overwrite-backup",
+        action="store_true",
+        help="allow --backup to replace an existing backup",
+    )
     parser.add_argument("--reverse", action="store_true", help="restore files from sidecar backups")
-    parser.add_argument("--dry-run", action="store_true", help="show changes without writing files or backups")
     parser.add_argument(
-        "--check", action="store_true", help="like --dry-run, but return status 3 if any file would change"
+        "--dry-run",
+        action="store_true",
+        help="show changes without writing files or backups",
     )
-    parser.add_argument("--fsync", action="store_true", help="fsync every written file (durable but much slower)")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="like --dry-run, but return status 3 if any file would change",
+    )
+    parser.add_argument(
+        "--fsync",
+        action="store_true",
+        help="fsync every written file (durable but much slower)",
+    )
     parser.add_argument(
         "-j",
         "--jobs",
@@ -737,10 +769,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
         metavar="NAME",
         help="additional directory basename to skip; repeatable",
     )
-    parser.add_argument("--no-color", action="store_true", help="disable ANSI color (NO_COLOR is also honored)")
-    parser.add_argument("-q", "--quiet", action="store_true", help="print only errors and the final summary")
     parser.add_argument(
-        "paths", nargs="*", type=Path, metavar="PATH", help="files/directories; default: current directory"
+        "--no-color",
+        action="store_true",
+        help="disable ANSI color (NO_COLOR is also honored)",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="print only errors and the final summary",
+    )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        metavar="PATH",
+        help="files/directories; default: current directory",
     )
     return parser
 
@@ -784,7 +829,12 @@ def iter_results(files: list[Path], options: TransformOptions, jobs: int, chunk_
         return
     files.sort(key=_file_size, reverse=True)
     chunk = max(1, min(chunk_size, len(files) // (jobs * 4)))
-    with mp.Pool(processes=jobs, initializer=_init_worker, initargs=(options,), maxtasksperchild=500) as pool:
+    with mp.Pool(
+        processes=jobs,
+        initializer=_init_worker,
+        initargs=(options,),
+        maxtasksperchild=500,
+    ) as pool:
         yield from pool.imap_unordered(_worker, files, chunksize=chunk)
 
 

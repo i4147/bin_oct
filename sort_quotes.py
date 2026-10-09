@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python command-line script that takes a JSON file path as its first argument, containing a list of quote objects each with "quote" and "author" fields.
 The script should load the file, remove duplicate quotes (case-insensitive, whitespace-trimmed comparison), sort the remaining entries alphabetically by author name (case-insensitive), and write the result back to the same file in pretty-printed JSON with UTF-8 characters preserved.
-It should gracefully handle a missing file or invalid/empty JSON content by printing a descriptive error message instead of crashing, and print "Success: Sorted" upon successful completion."""
+It should gracefully handle a missing file or invalid/empty JSON content by printing a descriptive error message instead of crashing, and print "Success: Sorted" upon successful completion.
+"""
 
 from __future__ import annotations
 import json

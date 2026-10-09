@@ -2,7 +2,8 @@
 """Write a Python command-line tool that compresses a Python source file (or files) to reduce token count while preserving functionality, intended for feeding code into an LLM.
 It should use the ast and tokenize modules to strip comments and shebang lines, remove standard library imports, and rename local variables and functions to short single/double-letter identifiers while protecting dunder methods, builtins, keywords, and names like self/cls from being renamed.
 The script should process files in parallel using multiprocessing (configurable worker count), write the compressed output to a file (default compressed.txt), and prepend a note explaining that the code has been compressed and that identifiers were renamed freely.
-It should accept file paths via argparse and rely on an external helper module (dh) for running shell commands."""
+It should accept file paths via argparse and rely on an external helper module (dh) for running shell commands.
+"""
 
 from __future__ import annotations
 import argparse

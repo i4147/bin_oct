@@ -6,7 +6,8 @@ The script should: - Use argparse to accept a reference .py file, zero or more t
 - Use multiprocessing.Pool with apply_async and a fixed pool of 8 workers to process target files concurrently (no CLI flags controlling parallelism).
 - Report per-file status (skipped, ok, found, updated, error) using loguru.
 - When applying, delete duplicate functions (including preceding decorators and blank lines) from the bottom of each file upward to keep line numbers valid.
-- Use pathlib exclusively for all path handling, with full type annotations throughout so the code passes a strict type checker."""
+- Use pathlib exclusively for all path handling, with full type annotations throughout so the code passes a strict type checker.
+"""
 
 from __future__ import annotations
 import argparse

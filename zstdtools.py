@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """zstd_toolkit.py — unified zstandard compression / decompression CLI.
-Merged from the following scripts (all preserved via CLI flags/subcommands): compress_big_files_with_zstd.py -> compress -t files --min-size N -r csubzstd.py -> compress -t dirs pytrr.py -> archive-cwd [--verify] [--no-remove] split_tzstd.py -> split <file.tar.zst> <N> z5r.py -> compress -t both --min-size 5MB zcompressor.py -> compress -t files --level 19 zser.py -> compress -t both --level 21 zsr.py -> compress -t both --level 22 (output identical) zstd_compressor.py -> compress -t both zstder.py (compress) -> compress -t files -r [--dry-run] zstder.py (decompress) -> decompress -r Third-party dependencies (same as originals): * zstandard (required) * loguru (optional — falls back to stdlib logging)"""
+Merged from the following scripts (all preserved via CLI flags/subcommands): compress_big_files_with_zstd.py -> compress -t files --min-size N -r csubzstd.py -> compress -t dirs pytrr.py -> archive-cwd [--verify] [--no-remove] split_tzstd.py -> split <file.tar.zst> <N> z5r.py -> compress -t both --min-size 5MB zcompressor.py -> compress -t files --level 19 zser.py -> compress -t both --level 21 zsr.py -> compress -t both --level 22 (output identical) zstd_compressor.py -> compress -t both zstder.py (compress) -> compress -t files -r [--dry-run] zstder.py (decompress) -> decompress -r Third-party dependencies (same as originals): * zstandard (required) * loguru (optional — falls back to stdlib logging)
+"""
 
 from __future__ import annotations
 import argparse
@@ -256,7 +257,11 @@ def compress_file(
                 duration=time.perf_counter() - t0,
             )
         cctx = zstd.ZstdCompressor(level=level, threads=threads)
-        with src.open("rb") as fin, tmp.open("wb") as fout, cctx.stream_writer(fout) as writer:
+        with (
+            src.open("rb") as fin,
+            tmp.open("wb") as fout,
+            cctx.stream_writer(fout) as writer,
+        ):
             shutil.copyfileobj(fin, writer, length=1024 * 1024)
         compressed = tmp.stat().st_size
         if only_if_smaller and compressed >= original:
@@ -318,7 +323,11 @@ def tar_compress_dir(
         with tarfile.open(tmp_tar, "w") as tar:
             tar.add(src_dir, arcname=src_dir.name)
         cctx = zstd.ZstdCompressor(level=level, threads=threads)
-        with tmp_tar.open("rb") as fin, dst.open("wb") as fout, cctx.stream_writer(fout) as writer:
+        with (
+            tmp_tar.open("rb") as fin,
+            dst.open("wb") as fout,
+            cctx.stream_writer(fout) as writer,
+        ):
             shutil.copyfileobj(fin, writer, length=1024 * 1024)
         tmp_tar.unlink(missing_ok=True)
         compressed = dst.stat().st_size
@@ -373,7 +382,11 @@ def decompress_file(
     try:
         original = _file_size(src)
         dctx = zstd.ZstdDecompressor()
-        with src.open("rb") as fin, tmp.open("wb") as fout, dctx.stream_reader(fin) as reader:
+        with (
+            src.open("rb") as fin,
+            tmp.open("wb") as fout,
+            dctx.stream_reader(fin) as reader,
+        ):
             shutil.copyfileobj(reader, fout, length=1024 * 1024)
         tmp.rename(dst)
         tar_extracted = False

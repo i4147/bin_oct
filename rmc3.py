@@ -161,10 +161,16 @@ def strip_indented_block_docstring(
     same_line_tail = list(first.body[1:])
     later_statements = list(block.body[1:])
     if same_line_tail:
-        return block.with_changes(body=[first.with_changes(body=same_line_tail), *later_statements]), True
+        return (
+            block.with_changes(body=[first.with_changes(body=same_line_tail), *later_statements]),
+            True,
+        )
 
     if not later_statements or has_trailing_comment(first):
-        return block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later_statements]), True
+        return (
+            block.with_changes(body=[first.with_changes(body=[cst.Pass()]), *later_statements]),
+            True,
+        )
 
     if first.leading_lines:
         following = later_statements[0]
@@ -498,7 +504,11 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
             new_source = collapse_repeated_blank_lines(new_source)
         new_bytes = new_source.encode(encoding)
     except Exception as exc:
-        return FileResult(path, len(original_bytes), error=f"transform error: {type(exc).__name__}: {exc}")
+        return FileResult(
+            path,
+            len(original_bytes),
+            error=f"transform error: {type(exc).__name__}: {exc}",
+        )
 
     if new_bytes == original_bytes:
         return FileResult(path, len(original_bytes), len(original_bytes))
@@ -506,14 +516,24 @@ def process_file(path: Path, options: TransformOptions) -> FileResult:
     try:
         ast.parse(new_source, filename=str(path), type_comments=True)
     except (SyntaxError, ValueError) as exc:
-        return FileResult(path, len(original_bytes), len(new_bytes), error=f"post-transform validation failed: {exc}")
+        return FileResult(
+            path,
+            len(original_bytes),
+            len(new_bytes),
+            error=f"post-transform validation failed: {exc}",
+        )
 
     if not options.dry_run:
         if options.make_backup:
             try:
                 write_backup(path, original_bytes, options.overwrite_backup)
             except OSError as exc:
-                return FileResult(path, len(original_bytes), len(new_bytes), error=f"backup error: {exc}")
+                return FileResult(
+                    path,
+                    len(original_bytes),
+                    len(new_bytes),
+                    error=f"backup error: {exc}",
+                )
         try:
             atomic_replace(path, new_bytes)
         except (OSError, UnicodeEncodeError) as exc:
@@ -536,7 +556,10 @@ def _walk_python_files(root: Path, skip_names: frozenset[str]) -> Iterator[Path]
                         elif entry.is_file(follow_symlinks=False) and entry.name.endswith(PY_SUFFIXES):
                             yield Path(entry.path)
                     except OSError as exc:
-                        print(f"warning: cannot inspect {entry.path}: {exc}", file=sys.stderr)
+                        print(
+                            f"warning: cannot inspect {entry.path}: {exc}",
+                            file=sys.stderr,
+                        )
         except OSError as exc:
             print(f"warning: cannot scan {directory}: {exc}", file=sys.stderr)
 
@@ -635,15 +658,31 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="remove comments that parse as Python instead of protecting them",
     )
-    parser.add_argument("--keep-blank-lines", action="store_true", help="do not collapse runs of repeated blank lines")
     parser.add_argument(
-        "--backup", action="store_true", help=f"save original bytes beside each changed file as *{BACKUP_SUFFIX}"
+        "--keep-blank-lines",
+        action="store_true",
+        help="do not collapse runs of repeated blank lines",
     )
-    parser.add_argument("--overwrite-backup", action="store_true", help="allow --backup to replace an existing backup")
-    parser.add_argument("--reverse", action="store_true", help="restore files from sidecar backups")
-    parser.add_argument("--dry-run", action="store_true", help="show changes without writing files or backups")
     parser.add_argument(
-        "--check", action="store_true", help="like --dry-run, but return status 3 if any file would change"
+        "--backup",
+        action="store_true",
+        help=f"save original bytes beside each changed file as *{BACKUP_SUFFIX}",
+    )
+    parser.add_argument(
+        "--overwrite-backup",
+        action="store_true",
+        help="allow --backup to replace an existing backup",
+    )
+    parser.add_argument("--reverse", action="store_true", help="restore files from sidecar backups")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show changes without writing files or backups",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="like --dry-run, but return status 3 if any file would change",
     )
     parser.add_argument(
         "-j",
@@ -668,9 +707,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="additional directory basename to skip; repeatable",
     )
     parser.add_argument("--no-color", action="store_true", help="disable ANSI color")
-    parser.add_argument("-q", "--quiet", action="store_true", help="print only errors and the final summary")
     parser.add_argument(
-        "paths", nargs="*", type=Path, metavar="PATH", help="files/directories; default: current directory"
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="print only errors and the final summary",
+    )
+    parser.add_argument(
+        "paths",
+        nargs="*",
+        type=Path,
+        metavar="PATH",
+        help="files/directories; default: current directory",
     )
     return parser
 

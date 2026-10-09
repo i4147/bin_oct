@@ -7,7 +7,8 @@ f2base64.py -> python merge.py ttf-to-base64 --root .
 file_to_base64.py -> python merge.py file-to-base64 <file> ucss.py -> python merge.py extract-css <file.css> [...] xbase64_assets.py -> python merge.py extract-assets --root .
 xembedded_elements.py -> python merge.py extract-elements --root .
 xembedded_elements2.py -> python merge.py extract-html --root .
-xlines_contains_base64.py-> python merge.py list-lines [--root .] Examples -------- # Extract every inline data: URI in .css/.js/.html and rewrite them python merge.py extract-cleanuri --root ./site --out ./site/assets # Pull only images out of notebooks and js/html files python merge.py extract-images --root ./notebooks --out ./extracted_images # Big-boy extraction with magic-byte MIME detection and concurrency python merge.py extract-assets --root ./src --out ./assets --workers 8 # Convert a font to base64 text python merge.py ttf-to-base64 --root ./fonts # Report every line containing `base64,` python merge.py list-lines --root ./build --report b64_report.txt Third-party packages required only for `extract-html`: requests, beautifulsoup4"""
+xlines_contains_base64.py-> python merge.py list-lines [--root .] Examples -------- # Extract every inline data: URI in .css/.js/.html and rewrite them python merge.py extract-cleanuri --root ./site --out ./site/assets # Pull only images out of notebooks and js/html files python merge.py extract-images --root ./notebooks --out ./extracted_images # Big-boy extraction with magic-byte MIME detection and concurrency python merge.py extract-assets --root ./src --out ./assets --workers 8 # Convert a font to base64 text python merge.py ttf-to-base64 --root ./fonts # Report every line containing `base64,` python merge.py list-lines --root ./build --report b64_report.txt Third-party packages required only for `extract-html`: requests, beautifulsoup4
+"""
 
 from __future__ import annotations
 import argparse

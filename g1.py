@@ -8,7 +8,8 @@ Usage: script.py <repository_url> [--token YOUR_GITHUB_TOKEN] [-d] [-b BACKEND] 
 Defaults to ``gh`` (subprocess git/gh).
 The script prompts before cloning repositories larger than 5 MB and before initializing submodules.
 All progress and status messages are emitted via loguru.
-If a selected backend cannot perform an operation, the script falls back to subprocess-based git commands."""
+If a selected backend cannot perform an operation, the script falls back to subprocess-based git commands.
+"""
 
 from __future__ import annotations
 import argparse

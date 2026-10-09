@@ -2,7 +2,8 @@
 """Write a Python script that defines a large list of file extension strings (covering a wide variety of common and uncommon extensions, e.g.
 ".py", ".js", ".mp3", ".zip", etc.) and imports Path from pathlib along with random.choice, presumably to later select or generate random filenames/extensions.
 The script's main purpose is to serve as a reference dataset of file extensions for use in file-related utilities such as random file generation, extension filtering, or testing.
-It has no explicit output on its own beyond defining this data structure and imports, implying the rest of the logic (using random_choice to pick extensions and Path to build file paths) is expected to follow."""
+It has no explicit output on its own beyond defining this data structure and imports, implying the rest of the logic (using random_choice to pick extensions and Path to build file paths) is expected to follow.
+"""
 
 from __future__ import annotations
 from pathlib import Path

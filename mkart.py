@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that defines a dictionary mapping each uppercase English letter to a 5-row ASCII-art representation built from block characters and spaces.
 Implement a function that accepts a word string and prints (or returns) the corresponding letters' ASCII art side by side to render the word in large stylized text.
-Handle letters not present in the dictionary gracefully (e.g., skipping or substituting blank space), and include a usage example that demonstrates converting a sample word into its ASCII-art banner output."""
+Handle letters not present in the dictionary gracefully (e.g., skipping or substituting blank space), and include a usage example that demonstrates converting a sample word into its ASCII-art banner output.
+"""
 
 from __future__ import annotations
 import os

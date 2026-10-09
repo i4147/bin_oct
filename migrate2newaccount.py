@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that migrates all Git repositories found in the current directory to a new GitHub account under a specified username (e.g., "i4147"), skipping a predefined ignore list such as "cpython", "neovim-source", and ".git".
 For each valid repository, it should stage and commit any uncommitted changes with a "migration sync" message, create a new private repository on GitHub using the "gh" CLI, update the repository's remote origin URL to point to the new account via SSH, and push all branches and tags to the new remote.
-The script should use "os" for directory traversal and "subprocess" to execute Git and GitHub CLI commands, suppressing their output, and should safely change directories in and out of each repository during processing."""
+The script should use "os" for directory traversal and "subprocess" to execute Git and GitHub CLI commands, suppressing their output, and should safely change directories in and out of each repository during processing.
+"""
 
 from __future__ import annotations
 import os

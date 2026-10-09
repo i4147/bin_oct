@@ -165,7 +165,13 @@ class LineBox:
         span_tag.setAttribute("class", "ocr_line")
         span_tag.setAttribute(
             "title",
-            "bbox %d %d %d %d" % (self.position[0][0], self.position[0][1], self.position[1][0], self.position[1][1]),
+            "bbox %d %d %d %d"
+            % (
+                self.position[0][0],
+                self.position[0][1],
+                self.position[1][0],
+                self.position[1][1],
+            ),
         )
         for box_idx, box in enumerate(self.word_boxes):
             if box_idx:
@@ -399,7 +405,11 @@ class _WordHTMLParser(HTMLParser):
         if tag_type in self.WORD_TAG_TYPES:
             if self.__current_box_text is None:
                 return
-            box = Box(self.__current_box_text, self.__current_box_position, self.__current_box_confidence)
+            box = Box(
+                self.__current_box_text,
+                self.__current_box_position,
+                self.__current_box_confidence,
+            )
             self.boxes.append(box)
             self.__current_line_content.append(box)
             self.__current_box_text = None
@@ -530,7 +540,10 @@ class LineBoxBuilder(BaseBuilder):
     def read_file(self, file_descriptor):
         parsers = [
             (_WordHTMLParser(), lambda parser: parser.lines),
-            (_LineHTMLParser(), lambda parser: [LineBox([box], box.position) for box in parser.boxes]),
+            (
+                _LineHTMLParser(),
+                lambda parser: [LineBox([box], box.position) for box in parser.boxes],
+            ),
         ]
         html_str = file_descriptor.read()
         for parser, convertion in parsers:
@@ -593,7 +606,10 @@ class CharBoxBuilder(BaseBuilder):
             elements = line.split(" ")
             if len(elements) < 6:
                 continue
-            position = ((int(elements[1]), int(elements[2])), (int(elements[3]), int(elements[4])))
+            position = (
+                (int(elements[1]), int(elements[2])),
+                (int(elements[3]), int(elements[4])),
+            )
             boxes.append(Box(elements[0], position))
         return boxes
 
@@ -697,7 +713,10 @@ def tess_detect_orientation(image, lang=None):
             output = {x: y for (x, y) in output}
             angle = int(output.get("Rotate", output["Orientation in degrees"]))
             angle = (360 - angle) % 360
-            return {"angle": angle, "confidence": float(output["Orientation confidence"])}
+            return {
+                "angle": angle,
+                "confidence": float(output["Orientation confidence"]),
+            }
         except Exception as ex:
             raise TesseractError(-1, "No script found in image (%s - %s)" % (str(ex), original_output))
 
@@ -772,7 +791,7 @@ def tess_image_to_string(image, lang=None, builder=None):
         if image.mode != "RGB":
             image = image.convert("RGB")
         image.save(os.path.join(tmpdir, "input.bmp"))
-        (status, errors) = tess_run_tesseract(
+        status, errors = tess_run_tesseract(
             "input.bmp",
             "output",
             cwd=tmpdir,
@@ -784,7 +803,10 @@ def tess_image_to_string(image, lang=None, builder=None):
             raise TesseractError(status, errors)
         tested_files = []
         for file_extension in builder.file_extensions:
-            output_file_name = "%s.%s" % (os.path.join(tmpdir, "output"), file_extension)
+            output_file_name = "%s.%s" % (
+                os.path.join(tmpdir, "output"),
+                file_extension,
+            )
             tested_files.append(output_file_name)
             try:
                 with codecs.open(output_file_name, "r", encoding="utf-8", errors="replace") as file_desc:
@@ -845,11 +867,17 @@ def tess_get_version(set_env=True):
             upd = els[2]
         version = (major, minor, upd)
         if version == (0, 0, 0):
-            raise TesseractError(ret, ("Unable to parse Tesseract version (not a number): [%s]" % ver_string))
+            raise TesseractError(
+                ret,
+                ("Unable to parse Tesseract version (not a number): [%s]" % ver_string),
+            )
         g_version = version
         return version
     except IndexError:
-        raise TesseractError(ret, ("Unable to parse Tesseract version (spliting failed): [%s]" % ver_string))
+        raise TesseractError(
+            ret,
+            ("Unable to parse Tesseract version (spliting failed): [%s]" % ver_string),
+        )
 
 
 TESSDATA_PREFIX = os.getenv("TESSDATA_PREFIX", None)
@@ -987,7 +1015,10 @@ if g_libtesseract:
         ctypes.c_char_p,
     ]
     g_libtesseract.TessBaseAPIInit3.restype = ctypes.c_int
-    g_libtesseract.TessBaseAPISetSourceResolution.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    g_libtesseract.TessBaseAPISetSourceResolution.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
     g_libtesseract.TessBaseAPISetSourceResolution.restype = None
     g_libtesseract.TessBaseAPISetVariable.argtypes = [
         ctypes.c_void_p,
@@ -1010,15 +1041,25 @@ if g_libtesseract:
         ctypes.c_int,
     ]
     g_libtesseract.TessBaseAPISetImage.restype = None
-    g_libtesseract.TessResultRendererAddImage.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    g_libtesseract.TessResultRendererAddImage.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
     g_libtesseract.TessResultRendererAddImage.restype = ctypes.c_bool
     g_libtesseract.TessBaseAPISetInputName.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
     g_libtesseract.TessBaseAPISetInputName.restype = None
-    g_libtesseract.TessResultRendererBeginDocument.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    g_libtesseract.TessResultRendererBeginDocument.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_char_p,
+    ]
     g_libtesseract.TessResultRendererBeginDocument.restype = ctypes.c_bool
     g_libtesseract.TessResultRendererEndDocument.argtypes = [ctypes.c_void_p]
     g_libtesseract.TessResultRendererEndDocument.restype = ctypes.c_bool
-    g_libtesseract.TessPDFRendererCreate.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_bool]
+    g_libtesseract.TessPDFRendererCreate.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_bool,
+    ]
     g_libtesseract.TessPDFRendererCreate.restype = ctypes.c_void_p
     g_libtesseract.TessBaseAPIRecognize.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     g_libtesseract.TessBaseAPIRecognize.restype = ctypes.c_int
@@ -1040,7 +1081,10 @@ if g_libtesseract:
     g_libtesseract.TessPageIteratorOrientation.restype = None
     g_libtesseract.TessPageIteratorNext.argtypes = [ctypes.c_void_p, ctypes.c_int]
     g_libtesseract.TessPageIteratorNext.restype = ctypes.c_bool
-    g_libtesseract.TessPageIteratorIsAtBeginningOf.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    g_libtesseract.TessPageIteratorIsAtBeginningOf.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
     g_libtesseract.TessPageIteratorIsAtBeginningOf.restype = ctypes.c_bool
     g_libtesseract.TessPageIteratorIsAtFinalElement.argtypes = [
         ctypes.c_void_p,
@@ -1061,9 +1105,15 @@ if g_libtesseract:
     g_libtesseract.TessPageIteratorBoundingBox.restype = ctypes.c_bool
     g_libtesseract.TessResultIteratorGetPageIterator.argtypes = [ctypes.c_void_p]
     g_libtesseract.TessResultIteratorGetPageIterator.restype = ctypes.c_void_p
-    g_libtesseract.TessResultIteratorGetUTF8Text.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    g_libtesseract.TessResultIteratorGetUTF8Text.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
     g_libtesseract.TessResultIteratorGetUTF8Text.restype = ctypes.c_void_p
-    g_libtesseract.TessResultIteratorConfidence.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    g_libtesseract.TessResultIteratorConfidence.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
     g_libtesseract.TessResultIteratorConfidence.restype = ctypes.c_float
     g_libtesseract.TessDeleteText.argtypes = [ctypes.c_void_p]
     g_libtesseract.TessDeleteText.restype = None
@@ -1077,7 +1127,10 @@ if g_libtesseract:
         ]
         g_libtesseract.TessBaseAPIDetectOrientationScript.restype = ctypes.c_bool
     else:
-        g_libtesseract.TessBaseAPIDetectOS.argtypes = [ctypes.c_void_p, ctypes.POINTER(OSResults)]
+        g_libtesseract.TessBaseAPIDetectOS.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(OSResults),
+        ]
         g_libtesseract.TessBaseAPIDetectOS.restype = ctypes.c_bool
 
 
@@ -1289,7 +1342,10 @@ def raw_detect_os(handle):
             None,
         )
         if not r:
-            raise TesseractError("detect_orientation failed", "TessBaseAPIDetectOrientationScript() failed")
+            raise TesseractError(
+                "detect_orientation failed",
+                "TessBaseAPIDetectOrientationScript() failed",
+            )
         return {
             "orientation": round(orientation_deg.value / 90),
             "confidence": orientation_confidence.value,
@@ -1359,7 +1415,13 @@ def libtess_get_name():
 
 
 def libtess_get_available_builders():
-    return [TextBuilder, WordBoxBuilder, DigitBuilder, LineBoxBuilder, DigitLineBoxBuilder]
+    return [
+        TextBuilder,
+        WordBoxBuilder,
+        DigitBuilder,
+        LineBoxBuilder,
+        DigitLineBoxBuilder,
+    ]
 
 
 def _tess_box_to_pyocr_box(box):
@@ -1389,14 +1451,14 @@ def libtess_image_to_string(image, lang=None, builder=None):
         page_iterator = raw_result_iterator_get_page_iterator(res_iterator)
         while True:
             if raw_page_iterator_is_at_beginning_of(page_iterator, lvl_line):
-                (r, box) = raw_page_iterator_bounding_box(page_iterator, lvl_line)
+                r, box = raw_page_iterator_bounding_box(page_iterator, lvl_line)
                 assert r
                 builder.start_line(_tess_box_to_pyocr_box(box))
             last_word_in_line = raw_page_iterator_is_at_final_element(page_iterator, lvl_line, lvl_word)
             word = raw_result_iterator_get_utf8_text(res_iterator, lvl_word)
             confidence = raw_result_iterator_get_confidence(res_iterator, lvl_word)
             if word is not None and confidence is not None and word != "":
-                (r, box) = raw_page_iterator_bounding_box(page_iterator, lvl_word)
+                r, box = raw_page_iterator_bounding_box(page_iterator, lvl_word)
                 assert r
                 builder.add_word(word, _tess_box_to_pyocr_box(box), confidence)
                 if last_word_in_line:

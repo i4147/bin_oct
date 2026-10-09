@@ -2,7 +2,8 @@
 """Write a Python script that recursively walks a given directory (defaulting to the current directory) and compresses each file in place using LZ4 frame compression at maximum compression level, saving each output as the original filename with an added ".lz4" extension and then deleting the original file.
 It should skip directories, files already ending in ".lz4", and files with other common archive/compressed extensions (like .gz, .br, .xz, .zst, .bz2, .zip, .whl) to avoid recompressing already-compressed data.
 For large files above a defined size threshold, it should compress in streaming chunks to limit memory usage, while smaller files are read and compressed all at once.
-The script must handle errors gracefully during compression by printing a failure message and cleaning up any partially written output file, without crashing the overall recursive process."""
+The script must handle errors gracefully during compression by printing a failure message and cleaning up any partially written output file, without crashing the overall recursive process.
+"""
 
 from __future__ import annotations
 import os

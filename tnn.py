@@ -2,7 +2,8 @@
 """Write a Python command-line utility that replaces all tab characters with four spaces in one or more text files.
 It should accept file and/or directory paths as command-line arguments (recursively collecting non-binary files from directories via a helper), or default to scanning non-binary files in the current working directory when no arguments are given.
 For each file, read its content, perform the tab-to-space replacement, and only rewrite the file if the content actually changed, printing a colored status message ("no change" or "updated") using a custom cprint helper.
-When processing a single file, exit with status code 1 afterward; when processing multiple files, use a multiprocessing helper (mpf) to process them in parallel."""
+When processing a single file, exit with status code 1 afterward; when processing multiple files, use a multiprocessing helper (mpf) to process them in parallel.
+"""
 
 from __future__ import annotations
 import sys

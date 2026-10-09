@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script using the watchdog library that monitors a directory (given as a command-line argument, defaulting to a Termux tmp path) for files with specific archive extensions (.tar.gz, .whl, .tar.xz, .zip, .tar.bz2) and automatically copies any matching files into a fixed destination folder (~/tmp/tgz), creating it if necessary.
-On startup it should perform an initial recursive scan of the target directory to copy any existing matching files, then continue watching for newly created or modified files in real time, printing the source path of each copied file or an error message if the copy fails."""
+On startup it should perform an initial recursive scan of the target directory to copy any existing matching files, then continue watching for newly created or modified files in real time, printing the source path of each copied file or an error message if the copy fails.
+"""
 
 from __future__ import annotations
 import os

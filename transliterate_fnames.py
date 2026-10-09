@@ -156,7 +156,14 @@ FA_TABLE = {ord(k): v for k, v in _FA.items()}
 
 BAD_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
-RESERVED = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
+RESERVED = {
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    *(f"COM{i}" for i in range(1, 10)),
+    *(f"LPT{i}" for i in range(1, 10)),
+}
 
 
 def _japanese(text: str) -> str:
@@ -241,9 +248,15 @@ def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="backslashreplace")
         sys.stderr.reconfigure(errors="backslashreplace")
-    for lib, label in ((lazy_pinyin, "pypinyin (Chinese)"), (_KAKASI, "pykakasi (Japanese)")):
+    for lib, label in (
+        (lazy_pinyin, "pypinyin (Chinese)"),
+        (_KAKASI, "pykakasi (Japanese)"),
+    ):
         if lib is None:
-            print(f"warning: {label} not installed; falling back to a rougher conversion", file=sys.stderr)
+            print(
+                f"warning: {label} not installed; falling back to a rougher conversion",
+                file=sys.stderr,
+            )
     root = args.root.resolve()
     if not root.is_dir():
         print(f"error: not a directory: {root}", file=sys.stderr)

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Strip Python comments and docstrings in-place.
-Prompt: Write a Python CLI that recursively removes non-essential comments and docstrings from .py files in-place using tree-sitter, validates the result with ast.parse, processes files concurrently with multiprocessing.Pool(8), logs via loguru, uses pathlib throughout, and prints a final summary of changed files, removed nodes, and errors."""
+Prompt: Write a Python CLI that recursively removes non-essential comments and docstrings from .py files in-place using tree-sitter, validates the result with ast.parse, processes files concurrently with multiprocessing.Pool(8), logs via loguru, uses pathlib throughout, and prints a final summary of changed files, removed nodes, and errors.
+"""
 
 from __future__ import annotations
 import argparse

@@ -29,8 +29,19 @@ import httpx
 from loguru import logger
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
-from packaging.tags import Tag, compatible_tags, cpython_tags, generic_tags, interpreter_name, interpreter_version
-from packaging.utils import InvalidWheelFilename, canonicalize_name, parse_wheel_filename
+from packaging.tags import (
+    Tag,
+    compatible_tags,
+    cpython_tags,
+    generic_tags,
+    interpreter_name,
+    interpreter_version,
+)
+from packaging.utils import (
+    InvalidWheelFilename,
+    canonicalize_name,
+    parse_wheel_filename,
+)
 from packaging.version import InvalidVersion, Version
 
 __all__ = [

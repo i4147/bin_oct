@@ -255,11 +255,16 @@ if HAS_LIBCST:
                 expr = node.body[0]
                 if isinstance(expr, cst.Expr):
                     val = expr.value
-                    return isinstance(val, (cst.SimpleString, cst.ConcatenatedString, cst.FormattedString))
+                    return isinstance(
+                        val,
+                        (cst.SimpleString, cst.ConcatenatedString, cst.FormattedString),
+                    )
             return False
 
         def leave_TrailingWhitespace(
-            self, original_node: cst.TrailingWhitespace, updated_node: cst.TrailingWhitespace
+            self,
+            original_node: cst.TrailingWhitespace,
+            updated_node: cst.TrailingWhitespace,
         ) -> cst.TrailingWhitespace:
             if updated_node.comment is not None:
                 c_text = updated_node.comment.value
@@ -417,7 +422,10 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
                     edits.append((node.start_byte, node.end_byte, b""))
 
         elif node.type == "expression_statement":
-            if len(node.children) == 1 and node.children[0].type in ("string", "concatenated_string"):
+            if len(node.children) == 1 and node.children[0].type in (
+                "string",
+                "concatenated_string",
+            ):
                 is_module_doc = parent and parent.type == "module" and is_first
                 if is_module_doc:
                     if options.remove_all or (options.remove_docstrings and not options.preserve_module_docstring):
@@ -511,7 +519,13 @@ def is_python_file(path: Path) -> bool:
         return False
 
     # Skip common non-code files
-    if path.name.startswith(".") or path.suffix in (".pyc", ".pyo", ".so", ".dll", ".exe"):
+    if path.name.startswith(".") or path.suffix in (
+        ".pyc",
+        ".pyo",
+        ".so",
+        ".dll",
+        ".exe",
+    ):
         return False
 
     if path.suffix in (".py", ".pyw", ".pyi"):
@@ -596,7 +610,11 @@ def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, st
 
     # Requirement 5: Independent AST validation
     if not validate_transformed_code(transformed):
-        return (file_path_str, "ERROR", "Validation failed: transformed source is invalid Python syntax")
+        return (
+            file_path_str,
+            "ERROR",
+            "Validation failed: transformed source is invalid Python syntax",
+        )
 
     # Avoid redundant write operations if file content did not change
     if transformed == source:

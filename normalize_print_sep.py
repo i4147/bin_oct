@@ -2,7 +2,8 @@
 """Write a Python command-line tool that scans one or more given paths (defaulting to the current directory) for .py files, using a regex to find calls like print or cprint that output a repeated single-character separator line (e.g.
 print('-'*42)) and normalizes them all to a consistent format.
 It should support recursive directory scanning, process files in parallel via multiprocessing.Pool, and take an autofix flag to decide whether to actually rewrite matching files or just report how many replacements would be made.
-The script should track per-file results (path, replacement count, success/error status, error message) using a NamedTuple, and finally print a summary report of the total files scanned, files modified, and any errors encountered, driven by argparse-based CLI arguments."""
+The script should track per-file results (path, replacement count, success/error status, error message) using a NamedTuple, and finally print a summary report of the total files scanned, files modified, and any errors encountered, driven by argparse-based CLI arguments.
+"""
 
 from __future__ import annotations
 import argparse
@@ -60,7 +61,7 @@ def report_stats(results: list[ProcessResult], autofix: bool) -> None:
     cwd = Path.cwd()
     rel_results = [
         (
-            r.file.relative_to(cwd) if cwd in r.file.parents or r.file == cwd else r.file,
+            (r.file.relative_to(cwd) if cwd in r.file.parents or r.file == cwd else r.file),
             r,
         )
         for r in results

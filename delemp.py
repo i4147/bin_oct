@@ -2,7 +2,8 @@
 """Refactored blank line remover script.
 This is a parallel file processing tool that recursively removes blank lines (and optionally whitespace-only lines) from text files.
 It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, and complete type annotations.
-The script detects binary files and skips them, reports progress, and provides a summary of modified files, removed lines, and errors."""
+The script detects binary files and skips them, reports progress, and provides a summary of modified files, removed lines, and errors.
+"""
 
 from __future__ import annotations
 import argparse

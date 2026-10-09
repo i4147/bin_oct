@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """A Python script that detects and corrects likely keyboard-typo mistakes in Python identifier/keyword usage within source files, using a learned pattern database (typo_patterns.json) combining common character substitutions and QWERTY-adjacent-key mappings alongside a list of known Python keywords (imported from a dh module) to recognize probable misspellings.
 It should expose a PatternLearner class that loads, updates, and persists learned correction frequencies and context-based rules in JSON form, and likely provide a CLI (via argparse) allowing users to scan file(s) or directories, apply or suggest corrections, and optionally back up originals (using shutil) before rewriting them.
-Inputs are Python source file paths or directories plus CLI flags controlling learning/correction behavior, and outputs include corrected source files, console reports of detected typos, and an updated JSON pattern database with timestamps."""
+Inputs are Python source file paths or directories plus CLI flags controlling learning/correction behavior, and outputs include corrected source files, console reports of detected typos, and an updated JSON pattern database with timestamps.
+"""
 
 from __future__ import annotations
 import argparse

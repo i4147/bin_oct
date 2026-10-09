@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a terminal-based interactive fuzzy finder in Python that reads a list of candidate strings (e.g., piped from stdin) and lets the user type a query to filter and rank them in real time.
 It should implement a fuzzy matching algorithm scoring candidates based on match completeness, consecutive character runs, matches at word/path boundaries or camelCase transitions, and proximity, while penalizing gaps and longer overall text length.
-The script must use termios/tty to put the terminal into raw mode and select for non-blocking keyboard input, dynamically re-render the filtered/sorted list with highlighted matched characters as the user types, support navigation (up/down) and selection, and finally print the chosen entry to stdout upon confirmation (e.g., Enter key), similar to tools like fzf."""
+The script must use termios/tty to put the terminal into raw mode and select for non-blocking keyboard input, dynamically re-render the filtered/sorted list with highlighted matched characters as the user types, support navigation (up/down) and selection, and finally print the chosen entry to stdout upon confirmation (e.g., Enter key), similar to tools like fzf.
+"""
 
 from __future__ import annotations
 import os

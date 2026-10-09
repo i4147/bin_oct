@@ -385,24 +385,46 @@ def build_parser() -> argparse.ArgumentParser:
         prog="remove_images",
         description="Remove image references from Markdown / RST / HTML files.",
     )
-    p.add_argument("paths", nargs="*", type=Path, help="Files or directories to scan (default: current directory)")
     p.add_argument(
-        "--ext", nargs="+", default=None, help="File extensions to process (default: .md .markdown .rst .html .htm)"
+        "paths",
+        nargs="*",
+        type=Path,
+        help="Files or directories to scan (default: current directory)",
     )
     p.add_argument(
-        "--remote-only", action="store_true", help="Only remove remote image references (http://, https://, //)"
+        "--ext",
+        nargs="+",
+        default=None,
+        help="File extensions to process (default: .md .markdown .rst .html .htm)",
+    )
+    p.add_argument(
+        "--remote-only",
+        action="store_true",
+        help="Only remove remote image references (http://, https://, //)",
     )
     p.add_argument("--badges", action="store_true", help="Also strip badge / shield link blocks")
     p.add_argument(
-        "--aggressive-defs", action="store_true", help="Remove every link definition line, even non-image ones"
+        "--aggressive-defs",
+        action="store_true",
+        help="Remove every link definition line, even non-image ones",
     )
     p.add_argument("--workers", type=int, default=8, help="Parallel worker processes (default: 8)")
-    p.add_argument("--backup", action="store_true", help="Write a .bak copy before modifying each file")
     p.add_argument(
-        "--html-parser", choices=("regex", "bs4"), default="regex", help="HTML parsing backend (default: regex)"
+        "--backup",
+        action="store_true",
+        help="Write a .bak copy before modifying each file",
     )
     p.add_argument(
-        "--report", choices=("none", "simple", "detailed"), default="simple", help="Output verbosity (default: simple)"
+        "--html-parser",
+        choices=("regex", "bs4"),
+        default="regex",
+        help="HTML parsing backend (default: regex)",
+    )
+    p.add_argument(
+        "--report",
+        choices=("none", "simple", "detailed"),
+        default="simple",
+        help="Output verbosity (default: simple)",
     )
     p.add_argument("-v", "--verbose", action="store_true")
     return p

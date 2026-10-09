@@ -9,7 +9,8 @@ python merged_translate.py whole input.txt --lang auto Assumptions / deviations 
 Otherwise long texts silently lost content.
 Controlled via `--chunk-size`.
 * dtransline_chinese.py printed `threshold*40`; corrected to `threshold*100` (purely cosmetic).
-* logging is unified on loguru, which was already a dependency of two of the four scripts."""
+* logging is unified on loguru, which was already a dependency of two of the four scripts.
+"""
 
 from __future__ import annotations
 import argparse

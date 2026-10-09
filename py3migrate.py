@@ -11,7 +11,8 @@ Mapping from original scripts ----------------------------- 223.py -> py3migrate
 --apply # f23.py -f -a equivalent: python py3migrate.py fixprint .
 --apply --all --no-backup # 2to3ruff.py equivalent: python py3migrate.py fixprint .
 --apply --with-ruff --no-backup Requires Python 3.9–3.12 (uses ``lib2to3``, removed in 3.13).
-Only the standard library is used; ``ruff`` is invoked if ``--with-ruff`` is passed and the binary is on ``$PATH``."""
+Only the standard library is used; ``ruff`` is invoked if ``--with-ruff`` is passed and the binary is on ``$PATH``.
+"""
 
 from __future__ import annotations
 import argparse

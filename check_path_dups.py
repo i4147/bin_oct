@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that scans every directory listed in the PATH environment variable (excluding a specific Mason nvim bin path) and identifies duplicate executable files, both by matching filenames and by comparing SHA-256 hashes of their contents to detect identical binaries with different names.
 For each file it should compute the hash in chunks for memory efficiency, gracefully handle permission errors by printing a warning and skipping the file, and group results by filename in a dictionary mapping each name to a list of (path, hash) tuples.
-The script should use a custom cprint function from a local "dh" module for colored/formatted output when reporting the findings, ultimately helping the user identify redundant or duplicate executables across their PATH."""
+The script should use a custom cprint function from a local "dh" module for colored/formatted output when reporting the findings, ultimately helping the user identify redundant or duplicate executables across their PATH.
+"""
 
 from __future__ import annotations
 import os

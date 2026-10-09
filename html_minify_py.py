@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that defines an HTMLMinifier class for compressing HTML source code by removing comments, collapsing redundant whitespace, and stripping empty attributes, with optional support for removing optional tags and minifying embedded CSS/JS, while preserving the contents of tags like pre, textarea, code, script, and style.
 It should use lxml to parse the HTML into a DOM tree, recursively process nodes to apply the configured minification rules, then serialize the tree back to a string and run additional post-processing regex cleanup.
-The script should integrate with helper utilities (get_files, mpf) from a local "dh" module to discover and batch-process HTML files from the filesystem, reading each file's content, minifying it, and writing the result back out or to a designated output location."""
+The script should integrate with helper utilities (get_files, mpf) from a local "dh" module to discover and batch-process HTML files from the filesystem, reading each file's content, minifying it, and writing the result back out or to a designated output location.
+"""
 
 from __future__ import annotations
 import re

@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Generate a Python script that scans a directory tree for hardcoded secrets using regex patterns, skipping binary/large file types, common vendor directories, and any file containing known signatures of a zip brute-forcer or a pdfminer-based extraction tool.
 It uses multiprocessing.Pool with a fixed pool of 8 workers, loguru for logging, pathlib for path handling, complete type hints, and excludes the script itself from the scan.
-The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt."""
+The script reports leaks and exits with code 1 if any secrets are found, 0 if clean, and 2 on error or interrupt.
+"""
 
 from __future__ import annotations
 import re
@@ -108,8 +109,8 @@ def scan_file(path: Path) -> tuple[str, list[dict[str, Any]]]:
             leaks.append({
                 "secret_type": secret_name,
                 "line_number": line_num,
-                "matched_text": matched_text[:50] + "..." if len(matched_text) > 50 else matched_text,
-                "line_content": line_content[:80] + "..." if len(line_content) > 80 else line_content,
+                "matched_text": (matched_text[:50] + "..." if len(matched_text) > 50 else matched_text),
+                "line_content": (line_content[:80] + "..." if len(line_content) > 80 else line_content),
             })
     return str(path), leaks
 

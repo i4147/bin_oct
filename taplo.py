@@ -141,7 +141,18 @@ class Tokenizer:
             while self.pos < len(self.source) and self.current_char() != quote:
                 if self.current_char() == "\\":
                     self.advance()
-                    if self.current_char() in ("n", "t", "r", "b", "f", "\\", '"', "'", "u", "U"):
+                    if self.current_char() in (
+                        "n",
+                        "t",
+                        "r",
+                        "b",
+                        "f",
+                        "\\",
+                        '"',
+                        "'",
+                        "u",
+                        "U",
+                    ):
                         result.append(self.current_char() or "")
                         self.advance()
                 else:
@@ -280,7 +291,11 @@ class Parser:
         return token
 
     def skip_whitespace_and_comments(self) -> None:
-        while self.current().type in (TokenType.WHITESPACE, TokenType.COMMENT, TokenType.NEWLINE):
+        while self.current().type in (
+            TokenType.WHITESPACE,
+            TokenType.COMMENT,
+            TokenType.NEWLINE,
+        ):
             self.advance()
 
     def expect(self, tt: TokenType) -> Token:

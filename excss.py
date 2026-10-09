@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Write a Python script that extracts inline `<style>` block contents from one or more HTML files and saves each block as a separate CSS file inside a "css" directory, using randomly generated filenames and avoiding overwrites of existing files.
 It should accept HTML file paths as command-line arguments, or if none are given, automatically discover all .html/.htm files in the current working directory.
-The script should process files in parallel (via the `mpf` helper), print colored status messages (using `cprint`) indicating how many styles were found per file and confirming each CSS file's creation, and skip saving empty or trivially short style contents."""
+The script should process files in parallel (via the `mpf` helper), print colored status messages (using `cprint`) indicating how many styles were found per file and confirming each CSS file's creation, and skip saving empty or trivially short style contents.
+"""
 
 from __future__ import annotations
 import sys

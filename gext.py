@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 """Recursive extractor of classes/functions + top-level constants.
 Methods (functions directly inside a class body) are skipped.
-Each entity is written to its own file: - output/classes/<name>.py - output/functions/<name>.py - output/const/<name>.py Usage: script.py [file_or_dir ...] If no input is provided, the current directory is scanned recursively."""
+Each entity is written to its own file: - output/classes/<name>.py - output/functions/<name>.py - output/const/<name>.py Usage: script.py [file_or_dir ...] If no input is provided, the current directory is scanned recursively.
+"""
 
 from __future__ import annotations
 import ast

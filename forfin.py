@@ -2,7 +2,8 @@
 """Write a Python command-line utch-processes files in the current directory using an external CLI tool, run in parallel via multiprocessing.
 It should accept a file extension, the CLI application name, and optional extra arguments from sys.argv, validate that the extension starts with a dot, then glob all matching files in the current working directory.
 For each matched file it should invoke the external tool as a subprocess (appending the file path to the given CLI args), capturing stdout/stderr, and report per-file success or failure with a checkmark or cross emoji.
-It should use a process pool sized to about 75% of available CPU cores, print progress/status messages, and exit gracefully with informative usage instructions if arguments are missing or no matching files are found."""
+It should use a process pool sized to about 75% of available CPU cores, print progress/status messages, and exit gracefully with informative usage instructions if arguments are missing or no matching files are found.
+"""
 
 from __future__ import annotations
 import subprocess

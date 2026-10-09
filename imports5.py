@@ -522,7 +522,12 @@ def resolve_from_pypi(
                 if resp.status >= 300:
                     continue
                 data = json.loads(resp.read().decode("utf-8"))
-        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, OSError):
+        except (
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            json.JSONDecodeError,
+            OSError,
+        ):
             print(f'[!] Package "{name}" does not exist or network problem')
             continue
         version = data.get("info", {}).get("version")
@@ -733,12 +738,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="use a local PyPI package list (no network); mirrors imp1/imp2",
     )
     off.add_argument("-p", "--path", default=None, help="project directory (default: current dir)")
-    off.add_argument("-l", "--pypi-list", default="/sdcard/data/pip.txt", help="path to the offline PyPI package list")
+    off.add_argument(
+        "-l",
+        "--pypi-list",
+        default="/sdcard/data/pip.txt",
+        help="path to the offline PyPI package list",
+    )
     off.add_argument("--pip-cmd", default="pip3", help="pip executable used for `pip freeze`")
-    off.add_argument("--detect-local", action="store_true", help="enable imp2-style local-module detection")
-    off.add_argument("--ast", action="store_true", help="parse imports via AST instead of line-by-line")
+    off.add_argument(
+        "--detect-local",
+        action="store_true",
+        help="enable imp2-style local-module detection",
+    )
+    off.add_argument(
+        "--ast",
+        action="store_true",
+        help="parse imports via AST instead of line-by-line",
+    )
     off.add_argument("--encoding", default="utf-8")
-    off.add_argument("--ignore", action="append", default=[], help="additional directory basenames to ignore")
+    off.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        help="additional directory basenames to ignore",
+    )
     off.add_argument("--no-follow-links", action="store_true")
     off.add_argument("--scan-notebooks", action="store_true")
     off.set_defaults(func=run_offline)
@@ -749,12 +772,17 @@ def build_parser() -> argparse.ArgumentParser:
     on.add_argument("-p", "--path", default=None)
     on.add_argument("--savepath", default=None, help="path for the generated requirements file")
     on.add_argument(
-        "--print", dest="print_only", action="store_true", help="print requirements to stdout instead of writing"
+        "--print",
+        dest="print_only",
+        action="store_true",
+        help="print requirements to stdout instead of writing",
     )
     on.add_argument("--force", action="store_true", help="overwrite existing requirements.txt")
     on.add_argument("--use-local", action="store_true", help="use local installation metadata only")
     on.add_argument(
-        "--pypi-server", default="https://pypi.python.org/pypi/", help="PyPI JSON base URL (pr2 used a Tsinghua mirror)"
+        "--pypi-server",
+        default="https://pypi.python.org/pypi/",
+        help="PyPI JSON base URL (pr2 used a Tsinghua mirror)",
     )
     on.add_argument("--proxy", default=None)
     on.add_argument(

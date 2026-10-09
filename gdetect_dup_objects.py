@@ -147,7 +147,11 @@ def main():
         grouped_objects.setdefault(key, []).append(obj)
 
     # Identify duplicates and check annotation differences
-    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {"function": [], "class": [], "constant": []}
+    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {
+        "function": [],
+        "class": [],
+        "constant": [],
+    }
 
     total_duplicates = 0
 
@@ -162,7 +166,11 @@ def main():
                 "count": len(instances),
                 "differ_in_type_annotations": differ_in_annotations,
                 "instances": [
-                    {"file": inst["file"], "line": inst["line"], "has_annotations": inst["has_annotations"]}
+                    {
+                        "file": inst["file"],
+                        "line": inst["line"],
+                        "has_annotations": inst["has_annotations"],
+                    }
                     for inst in instances
                 ],
             }

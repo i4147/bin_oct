@@ -71,7 +71,12 @@ def load_anthologies(anthologies: list[str]) -> None:
 
 
 def log_message(entry: dict, message: str, color: str = "green") -> None:
-    sys.stderr.write(colored("{} ({}): {}\n".format(entry["ID"], entry["ENTRYTYPE"], message), color=color))
+    sys.stderr.write(
+        colored(
+            "{} ({}): {}\n".format(entry["ID"], entry["ENTRYTYPE"], message),
+            color=color,
+        )
+    )
 
 
 def err_message(entry: dict, message: str) -> None:
@@ -181,7 +186,10 @@ def check_pages(entry: dict, _: bool) -> bool:
     if pages_match:
         start, end = pages_match.groups()
         if int(end) < int(start):
-            err_message(entry, "the end page ({}) is before the start page ({})".format(end, start))
+            err_message(
+                entry,
+                "the end page ({}) is before the start page ({})".format(end, start),
+            )
             return False
         return True
     elif pages != "TODO":
@@ -242,7 +250,10 @@ def _fix_based_on_isbn(isbn_string: str, entry: dict) -> None:
                 log_message(entry, "year found based on ISBN: {}".format(meta_data["Year"]))
             if "Publisher" in meta_data and entry["publisher"] == "TODO":
                 entry["publisher"] = meta_data["Publisher"]
-                log_message(entry, "publisher found based on ISBN: '{}'".format(meta_data["Publisher"]))
+                log_message(
+                    entry,
+                    "publisher found based on ISBN: '{}'".format(meta_data["Publisher"]),
+                )
     except Exception:
         pass
 
@@ -357,7 +368,10 @@ def check_address(entry: dict, _: bool) -> bool:
     if address == "Online" or address == "Singapore":
         return True
     if len(tokens) != 2 and (len(tokens) != 3 or tokens[-1] != "USA"):
-        err_message(entry, "Adrress should be comma-separated city and country, was '{}'".format(address))
+        err_message(
+            entry,
+            "Adrress should be comma-separated city and country, was '{}'".format(address),
+        )
         return False
     country = tokens[-1]
     if country == "USA":
@@ -443,7 +457,10 @@ def check_doi(entry: dict, try_fix: bool) -> bool:
         doi_parts = doi.split("/")
         doi_prefix = doi_parts[0]
         if DOI_PREFIX.match(doi_prefix) is None:
-            err_message(entry, "doi prefix must be in format '10.XXXX', was '{}'".format(doi_prefix))
+            err_message(
+                entry,
+                "doi prefix must be in format '10.XXXX', was '{}'".format(doi_prefix),
+            )
             doi_ok = False
     if doi_ok:
         return True
@@ -495,7 +512,10 @@ def check_field(entry: dict, field: str, try_fix: bool, disable_todo: bool, try_
                 if field in database_entry:
                     value = database_entry[field]
                     entry[field] = value
-                    log_message(entry, "Field {} copied from database as: '{}'.".format(field, value))
+                    log_message(
+                        entry,
+                        "Field {} copied from database as: '{}'.".format(field, value),
+                    )
         if field in ignore_list:
             return True
         err_message(entry, "Missing field '{}'".format(field))
@@ -630,7 +650,10 @@ def cache_journal_issn(database: Any) -> None:
                 if name not in CACHED_JOURNALS:
                     CACHED_JOURNALS[name] = entry["issn"]
                 elif entry["issn"] != CACHED_JOURNALS[name]:
-                    print("Journal '{}' has more differens ISSNs.".format(name), file=sys.stderr)
+                    print(
+                        "Journal '{}' has more differens ISSNs.".format(name),
+                        file=sys.stderr,
+                    )
 
 
 def cache_field(entry: dict, field: str, cache_dict: dict) -> None:
@@ -716,7 +739,10 @@ def look_for_misspellings(values: dict, name: str, threshold: float = 0.8) -> No
             continue
         used_values.update(group)
         formatted_values = ["'{}' ({})".format(a, ", ".join(values[a])) for a in group]
-        print(colored("{} might be the same.".format(name), color="yellow"), file=sys.stderr)
+        print(
+            colored("{} might be the same.".format(name), color="yellow"),
+            file=sys.stderr,
+        )
         for val in formatted_values:
             print(colored(" * {}".format(val), color="yellow"), file=sys.stderr)
 
@@ -771,7 +797,10 @@ def run_validate(args: argparse.Namespace) -> None:
     parsed.entries = [e for e in parsed.entries if e["ENTRYTYPE"] != "book"]
     parsed.entries = list(parsed.get_entry_dict().values())
     print(writer.write(parsed))
-    print("Finished. {} records kept, {} skipped.".format(records, skipped), file=sys.stderr)
+    print(
+        "Finished. {} records kept, {} skipped.".format(records, skipped),
+        file=sys.stderr,
+    )
 
 
 def main() -> None:
@@ -780,12 +809,30 @@ def main() -> None:
 
     check_parser = subparsers.add_parser("check")
     check_parser.add_argument("input", type=argparse.FileType("r"), help="Input file, default is stdin.")
-    check_parser.add_argument("--output", type=argparse.FileType("w"), default=sys.stdout, help="Optional output file.")
     check_parser.add_argument(
-        "--try-fix", default=False, action="store_true", help="Flag to search information to fix the database."
+        "--output",
+        type=argparse.FileType("w"),
+        default=sys.stdout,
+        help="Optional output file.",
     )
-    check_parser.add_argument("--add-todo", default=False, action="store_true", help="Adds TODO for missing fields.")
-    check_parser.add_argument("--anthologies", type=str, nargs="+", help="List of BibTeX files with know papers.")
+    check_parser.add_argument(
+        "--try-fix",
+        default=False,
+        action="store_true",
+        help="Flag to search information to fix the database.",
+    )
+    check_parser.add_argument(
+        "--add-todo",
+        default=False,
+        action="store_true",
+        help="Adds TODO for missing fields.",
+    )
+    check_parser.add_argument(
+        "--anthologies",
+        type=str,
+        nargs="+",
+        help="List of BibTeX files with know papers.",
+    )
     check_parser.set_defaults(func=run_check)
 
     validate_parser = subparsers.add_parser("validate")
