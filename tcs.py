@@ -1,6 +1,8 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
+
 
 from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path
@@ -76,6 +78,55 @@ def copy_lines_to_clipboard(path: str | Path, start_line: int | None = None, end
         print("No content selected to copy.", file=sys.stderr)
         sys.exit(1)
     send_to_process(content)
+
+
+def is_valid_python(source: str) -> bool:
+    """Return True if `source` parses as valid Python."""
+    try:
+        ast.parse(source)
+    except (SyntaxError, ValueError):
+        return False
+    return True
+
+
+def _future_import_lines(tree: ast.Module) -> set[int]:
+    """Return the 1-based line numbers occupied by `__future__` imports."""
+    lines: set[int] = set()
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.module == "__future__":
+            end_lineno = getattr(node, "end_lineno", node.lineno) or node.lineno
+            lines.update(range(node.lineno, end_lineno + 1))
+    return lines
+
+
+def strip_shebang_and_future_imports(source: str) -> str:
+    """Remove a leading shebang and any `__future__` imports from Python source."""
+    lines = source.splitlines(keepends=True)
+    remove: set[int] = set()
+
+    if lines and lines[0].startswith("#!"):
+        remove.add(1)
+
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        # Fallback for `.py` files that aren't valid Python: match by text.
+        for i, line in enumerate(lines, start=1):
+            if line.lstrip().startswith("from __future__ import"):
+                remove.add(i)
+    else:
+        remove |= _future_import_lines(tree)
+
+    return "".join(line for i, line in enumerate(lines, start=1) if i not in remove)
+
+
+def should_strip_python(path: Path, source: str) -> bool:
+    """Whether the file at `path` should be treated as Python source."""
+    if path.suffix.lower() == ".py":
+        return True
+    if path.suffix == "":
+        return is_valid_python(source)
+    return False
 
 
 def main() -> None:

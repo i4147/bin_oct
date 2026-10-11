@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import json
 import operator
 from collections import defaultdict
 from pathlib import Path
+
 import ssdeep
 from dh import get_files
 

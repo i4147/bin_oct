@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from bs4 import BeautifulSoup
 from dh import cprint, get_files, get_random_filename, mpf
 

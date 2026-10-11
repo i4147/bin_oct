@@ -1,9 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import argparse
-from pathlib import Path
-from html.parser import HTMLParser
 from html import escape
+from html.parser import HTMLParser
+from pathlib import Path
+
 from loguru import logger
 
 VOID_ELEMENTS = {
@@ -150,7 +151,8 @@ def backend_html_parser(raw):
 
 
 def backend_lxml(raw):
-    from lxml import html as lxml_html, etree
+    from lxml import etree
+    from lxml import html as lxml_html
 
     errors = []
     try:
@@ -164,8 +166,9 @@ def backend_lxml(raw):
 
 
 def backend_html5lib(raw):
-    import html5lib
     from xml.etree import ElementTree as ET
+
+    import html5lib
 
     errors = []
     try:

@@ -12,7 +12,7 @@ import urllib.request
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple
 
 try:
-    STDLIB: Set[str] = set(sys.stdlib_module_names)
+    STDLIB: set[str] = set(sys.stdlib_module_names)
 except AttributeError:
     STDLIB = {
         "abc",
@@ -221,7 +221,7 @@ except AttributeError:
         "zipimport",
         "zlib",
     }
-IMPORT_MAPPING: Dict[str, str] = {
+IMPORT_MAPPING: dict[str, str] = {
     "bs4": "beautifulsoup4",
     "cv2": "opencv-python",
     "sklearn": "scikit-learn",
@@ -238,7 +238,7 @@ IMPORT_MAPPING: Dict[str, str] = {
     "numpy": "numpy",
     "pandas": "pandas",
 }
-IGNORES_ONLINE: Set[str] = {
+IGNORES_ONLINE: set[str] = {
     ".hg",
     ".svn",
     ".git",
@@ -248,7 +248,7 @@ IGNORES_ONLINE: Set[str] = {
     "venv",
     ".ipynb_checkpoints",
 }
-IGNORES_OFFLINE_FULL: Set[str] = {
+IGNORES_OFFLINE_FULL: set[str] = {
     "__pycache__",
     "venv",
     ".venv",
@@ -289,8 +289,8 @@ def parse_imports_lines(lines: Iterable[str]) -> Iterator[str]:
                 yield name
 
 
-def parse_imports_ast(source: str) -> Set[str]:
-    result: Set[str] = set()
+def parse_imports_ast(source: str) -> set[str]:
+    result: set[str] = set()
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -308,7 +308,7 @@ def parse_imports_ast(source: str) -> Set[str]:
 def read_notebook(path: str, encoding: str = "utf-8") -> str:
     with open(path, "r", encoding=encoding) as f:
         nb = json.load(f)
-    chunks: List[str] = []
+    chunks: list[str] = []
     for cell in nb.get("cells", []):
         src = cell.get("source", [])
         if isinstance(src, list):
@@ -322,18 +322,18 @@ def read_notebook(path: str, encoding: str = "utf-8") -> str:
 def scan_project(
     root: str,
     encoding: str = "utf-8",
-    ignore: Optional[List[str]] = None,
+    ignore: Optional[list[str]] = None,
     follow_links: bool = True,
     scan_notebooks: bool = False,
     use_ast: bool = False,
-    ignore_set: Optional[Set[str]] = None,
-) -> List[str]:
-    ignores: Set[str] = set(ignore_set or ())
+    ignore_set: Optional[set[str]] = None,
+) -> list[str]:
+    ignores: set[str] = set(ignore_set or ())
     if ignore:
         for item in ignore:
             ignores.add(os.path.basename(os.path.realpath(item)))
-    seen: Set[str] = set()
-    ordered: List[str] = []
+    seen: set[str] = set()
+    ordered: list[str] = []
     for dirpath, dirnames, filenames in os.walk(root, followlinks=follow_links):
         dirnames[:] = [
             d
@@ -363,8 +363,8 @@ def scan_project(
     return ordered
 
 
-def load_offline_list(path: str) -> Set[str]:
-    result: Set[str] = set()
+def load_offline_list(path: str) -> set[str]:
+    result: set[str] = set()
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -374,7 +374,7 @@ def load_offline_list(path: str) -> Set[str]:
     return result
 
 
-def get_installed(pip_cmd: str = "pip3") -> Tuple[List[str], Set[str]]:
+def get_installed(pip_cmd: str = "pip3") -> tuple[list[str], set[str]]:
     try:
         proc = subprocess.Popen(
             [pip_cmd, "freeze"],
@@ -385,8 +385,8 @@ def get_installed(pip_cmd: str = "pip3") -> Tuple[List[str], Set[str]]:
     except FileNotFoundError:
         print(f"[!] '{pip_cmd}' not found, skipping installed-package check")
         return [], set()
-    raw: List[str] = []
-    names: Set[str] = set()
+    raw: list[str] = []
+    names: set[str] = set()
     for line in out.decode("utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or line.startswith("-e"):
@@ -397,8 +397,8 @@ def get_installed(pip_cmd: str = "pip3") -> Tuple[List[str], Set[str]]:
     return raw, names
 
 
-def detect_local_modules(root: str) -> Set[str]:
-    local: Set[str] = set()
+def detect_local_modules(root: str) -> set[str]:
+    local: set[str] = set()
     root_abs = os.path.realpath(root)
     for dirpath, dirnames, filenames in os.walk(root_abs):
         dirnames[:] = [
@@ -421,8 +421,8 @@ def detect_local_modules(root: str) -> Set[str]:
     return local
 
 
-def detect_local_names(root: str) -> Set[str]:
-    names: Set[str] = set()
+def detect_local_names(root: str) -> set[str]:
+    names: set[str] = set()
     for dirpath, _dirnames, filenames in os.walk(root):
         names.add(os.path.basename(dirpath))
         for fname in filenames:
@@ -431,15 +431,15 @@ def detect_local_names(root: str) -> Set[str]:
     return names
 
 
-def map_imports_to_pypi(names: Iterable[str]) -> List[str]:
-    mapped: Set[str] = set()
+def map_imports_to_pypi(names: Iterable[str]) -> list[str]:
+    mapped: set[str] = set()
     for name in names:
         mapped.add(IMPORT_MAPPING.get(name, name))
     return sorted(mapped, key=lambda s: s.lower())
 
 
-def get_local_packages(encoding: str = "utf-8") -> Dict[str, Dict[str, Optional[str]]]:
-    result: Dict[str, Dict[str, Optional[str]]] = {}
+def get_local_packages(encoding: str = "utf-8") -> dict[str, dict[str, Optional[str]]]:
+    result: dict[str, dict[str, Optional[str]]] = {}
     skip = {"tests", "_tests", "egg", "EGG", "info"}
     for p in sys.path:
         if not p or not os.path.isdir(p):
@@ -466,15 +466,15 @@ def get_local_packages(encoding: str = "utf-8") -> Dict[str, Dict[str, Optional[
 
 def match_local(
     pkgs: Iterable[str],
-    local: Dict[str, Dict[str, Optional[str]]],
-) -> List[Dict[str, Optional[str]]]:
-    out: List[Dict[str, Optional[str]]] = []
+    local: dict[str, dict[str, Optional[str]]],
+) -> list[dict[str, Optional[str]]]:
+    out: list[dict[str, Optional[str]]] = []
     for p in pkgs:
         entry = local.get(p.lower())
         if entry is not None:
             out.append(entry)
-    uniq: List[Dict[str, Optional[str]]] = []
-    seen: Set[Tuple[str, Optional[str]]] = set()
+    uniq: list[dict[str, Optional[str]]] = []
+    seen: set[tuple[str, Optional[str]]] = set()
     for entry in out:
         key = (entry["name"], entry["version"])
         if key not in seen:
@@ -484,11 +484,11 @@ def match_local(
 
 
 def resolve_from_pypi(
-    names: List[str],
+    names: list[str],
     server: str = "https://pypi.python.org/pypi/",
     proxy: Optional[str] = None,
-) -> List[Dict[str, Optional[str]]]:
-    results: List[Dict[str, Optional[str]]] = []
+) -> list[dict[str, Optional[str]]]:
+    results: list[dict[str, Optional[str]]] = []
     opener = urllib.request.build_opener()
     if proxy:
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
@@ -513,14 +513,14 @@ def resolve_from_pypi(
     return results
 
 
-def parse_requirements_file(path: str) -> List[Dict[str, Optional[str]]]:
+def parse_requirements_file(path: str) -> list[dict[str, Optional[str]]]:
     try:
         with open(path, "r") as f:
             lines = [line.strip() for line in f.readlines() if line.strip()]
     except OSError as exc:
         print(f"Error opening {path}: {exc}")
         raise
-    result: List[Dict[str, Optional[str]]] = []
+    result: list[dict[str, Optional[str]]] = []
     delims = ["<", ">", "=", "!", "~"]
     for line in lines:
         if not line or not line[0].isalpha():
@@ -541,14 +541,14 @@ def parse_requirements_file(path: str) -> List[Dict[str, Optional[str]]]:
     return result
 
 
-def show_diff(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
+def show_diff(req_file: str, resolved: list[dict[str, Optional[str]]]) -> None:
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
     diff = existing - imported
     print(f"[i] The following modules are in {req_file} but do not seem to be imported: {','.join(diff)}")
 
 
-def clean_file(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
+def clean_file(req_file: str, resolved: list[dict[str, Optional[str]]]) -> None:
     existing = {r["name"] for r in parse_requirements_file(req_file)}
     imported = {r["name"] for r in resolved}
     to_remove = existing - imported
@@ -570,10 +570,10 @@ def clean_file(req_file: str, resolved: List[Dict[str, Optional[str]]]) -> None:
 
 def write_requirements(
     out_path: str,
-    pkgs: List[Dict[str, Optional[str]]],
+    pkgs: list[dict[str, Optional[str]]],
     delimiter: str,
 ) -> None:
-    lines: List[str] = []
+    lines: list[str] = []
     for entry in pkgs:
         if entry["version"]:
             lines.append(f"{entry['name']}{delimiter}{entry['version']}")
@@ -591,7 +591,7 @@ def run_offline(args: argparse.Namespace) -> int:
     path = args.path or os.curdir
     known = load_offline_list(args.pypi_list)
     print(f"[i] Loaded {len(known)} packages from {args.pypi_list}")
-    local: Set[str] = set()
+    local: set[str] = set()
     if args.detect_local:
         local = detect_local_modules(path)
         print(f"[i] Detected {len(local)} local modules/packages")
@@ -608,11 +608,11 @@ def run_offline(args: argparse.Namespace) -> int:
     _raw, installed = get_installed(args.pip_cmd)
     print(f"[i] {len(installed)} packages installed locally")
     stdlib = {_norm(m) for m in STDLIB}
-    skip_std: List[str] = []
-    skip_inst: List[str] = []
-    skip_local: List[str] = []
-    keep: List[str] = []
-    unknown: List[str] = []
+    skip_std: list[str] = []
+    skip_inst: list[str] = []
+    skip_local: list[str] = []
+    keep: list[str] = []
+    unknown: list[str] = []
     for name in imports:
         n = _norm(name)
         if n in stdlib:
@@ -779,7 +779,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import hashlib
@@ -21,6 +22,7 @@ from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urldefrag, urljoin, urlparse
 from urllib.robotparser import RobotFileParser
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -211,6 +213,7 @@ def cmd_pkg_updates(args: argparse.Namespace) -> int:
 
 def cmd_import_check(args: argparse.Namespace) -> int:
     import site
+
     from loguru import logger
 
     logger.remove()

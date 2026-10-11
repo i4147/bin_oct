@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import json
@@ -12,6 +13,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable
+
 from loguru import logger
 
 Translator = Callable[[str], str]

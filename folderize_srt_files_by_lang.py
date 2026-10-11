@@ -1,7 +1,46 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm going to write the prompt directly since it's a self-contained text-generation task.
+
+Write a complete, self-contained Python 3 script (intended to run under Termux on Android, so the shebang points to the Termux Python path) that recursively scans a directory for subtitle files and organizes them into folders by detected language.
+
+**Purpose:** Walk a directory tree, detect the language of each `.srt` subtitle file by analyzing its text content, and sort the files into per-language folders within the scanned directory.
+
+**Dependencies:** Use `pathlib.Path` from the standard library and the third-party `pycld2` package (Compact Language Detector 2). Include `from __future__ import annotations` at the top for modern type hints such as `list[Path]`.
+
+**Required functions:**
+
+1. `get_srt_files(directory: Path) -> list[Path]` — returns every `.srt` file found recursively under the given directory, using a recursive glob.
+
+2. `detect_language(file_path: Path)` — reads the file as UTF-8 and builds a text sample by keeping only lines that are non-empty after stripping whitespace, that are not purely numeric (subtitle index lines), and that do not contain the `-->` timestamp separator. If the resulting text is empty, return `None`. Otherwise pass the text to `pycld2.detect`, which returns a tuple of (is_reliable, text_bytes_found, details). If details are missing or the first entry is falsy, return `None`. Unpack the first detail entry into language name, language code, percent, and score. If the code is `"un"` or the name lowercased equals `"unknown"`, return `None`. Otherwise return a tuple of (language name, language code). Wrap the whole body in a try/except that catches any `Exception`, prints a warning line including the file's name and the error message (prefixed with a warning symbol and indented by two spaces), and returns `None`.
+
+3. `organize_subtitles(directory: Path = Path.cwd()) -> None` — the main routine. Note that the default is evaluated at import time, so the current working directory is captured when the module loads.
+   - Print a scanning header showing the absolute path of the directory, followed by a blank line.
+   - Collect SRT files via `get_srt_files`. If none are found, print a "no .srt files found" message and return.
+   - Print how many SRT files were found.
+   - Print a separator line of 70 equals signs.
+   - Maintain a dictionary `language_folders` mapping language names to lists or folder information for grouping.
+   - For each file, print a progress line with the file name, detect its language, and group it. Files whose language cannot be determined should be handled gracefully (for example, placed in an "Unknown" group or skipped with a message) rather than crashing.
+   - After detection, create one folder per detected language directly inside the scanned directory (named after the language), and move each file into its language's folder. Create folders with parent-tolerant, exist-ok semantics. Handle filename collisions in the destination by not silently overwriting existing files.
+   - Print a final summary listing each language folder with its file count, and a completion message.
+
+**Entry point:** Guard execution with `if __name__ == "__main__":` and call `organize_subtitles()` with no arguments.
+
+**Behavior and edge cases to honor:**
+- Use UTF-8 for all file reads; treat decoding failures as per-file errors that are reported and skipped, not fatal.
+- Ignore files that yield no usable text or an undetectable language.
+- The script should never crash the whole run because of a single bad file.
+- Use emoji-prefixed console output (magnifying glass for scanning, document for each file, bar chart for counts, cross mark for errors, warning sign for warnings) and visually consistent separators, matching the style of a terminal progress report.
+- Keep output in English.
+
+**Usage:** Run the script directly from the directory containing the subtitles, or via `python` with the script's path; it operates on the current working directory by default. Make it executable with a Termux-compatible shebang.
+
+Produce only the complete script as the deliverable, with clear, idiomatic code, concise comments where helpful, and no extra commentary.
+---"""
 
 from __future__ import annotations
+
 from pathlib import Path
+
 import pycld2 as cld2
 
 

@@ -1,6 +1,56 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script that scans a directory of Python files for top-level function definitions that repeat (same name and same normalized source) across files, using multiprocessing, and writes the results to a generated module file.
+
+Build a Python 3 command-line script named to find repeated top-level functions across a set of Python source files and write the findings to a generated Python file. Reproduce the behavior described below as closely as possible, using only the standard library.
+
+**Purpose**
+The script scans Python files for top-level function definitions (regular `def` functions only, not async functions, classes, or nested functions) and identifies functions that appear more than once across the scanned files. Two definitions count as the same repeated function only when both their name and their normalized source text match exactly. The results are written to an output Python file that re-exports the repeated functions, intended for later importing.
+
+**Interface and inputs**
+- Use `argparse` to accept a root directory or list of paths to scan and an optional output file path. The output path defaults to a file named `repeated_functions.py` in the current working directory.
+- Expand input paths so that directories are searched recursively for `*.py` files, while individual file paths are accepted directly. Sort or otherwise deterministically order the file list.
+- Skip nothing silently by default; any file that cannot be read or parsed should be ignored rather than crashing the whole run.
+
+**Core logic**
+1. For each Python file, read it as UTF-8 text and parse it with `ast.parse`. Iterate only over the module's top-level body. For each `FunctionDef` node:
+   - Extract its exact source segment using `ast.get_source_segment` on the file content (empty string if unavailable).
+   - Normalize the source: strip leading and trailing whitespace from the whole block, then strip trailing whitespace from each line, and rejoin with newlines.
+   - Build a key of `(function_name, normalized_source)`.
+   - Record the file path string under that key in a mapping from key to list of paths (a defaultdict of lists), so duplicates across files and within a file are both captured.
+   - Store the original (non-normalized) source text the first time each key is seen, in a separate map from key to source.
+2. Per-file analysis must be wrapped in a broad `try`/`except Exception` that silently passes on errors, so a bad file contributes nothing but does not abort processing. The analysis function should return a dictionary containing the definitions map and the source map.
+3. Run the per-file analysis in parallel using `multiprocessing.Pool` with a fixed pool size of 8 workers, via `imap_unordered` or equivalent, and guard the entry point with `if __name__ == "__main__":`. Merge the per-file results in the parent process: combine all path lists for each key, and keep the first-seen source text for each key.
+4. Filter the merged results to keep only keys whose path list has more than one entry. Each repeated item should be represented as a dictionary holding the function name, the list of file paths where it occurs, and its source text. Sort the repeated items deterministically, for example by function name and then by file paths.
+
+**Output**
+- Write the output file as valid Python. It must begin with a shebang line for Termux-style Python (`#!/data/data/com.termux/files/usr/bin/env python`), followed by a `from __future__ import annotations` import when appropriate.
+- Include a module-level comment or docstring describing that the file was auto-generated and listing the locations where each function was found.
+- For each repeated function, write its source verbatim into the output file, preceded by a comment that lists its occurrence paths.
+- Add an import line that re-exports the repeated function names from a module named `dh`, for example by writing an import statement for each name, or by using a single `from dh import ...` line that aggregates them. Choose one consistent approach and note that the module name `dh` is a constant the script defines.
+- If no repeated functions are found, still write a valid file that contains only the header.
+- Print a short summary to standard output indicating the number of repeated functions found and the output path written.
+
+**Dependencies and environment**
+Use only the Python standard library: `argparse`, `ast`, `collections.defaultdict`, `multiprocessing.Pool`, `pathlib.Path`, and `typing.Any`. Use type hints throughout, including type aliases for the definition key, the definition map, the source map, and the repeated item structure. Target Python 3.9 or newer (the `tuple[...]` and `dict[...]` generic syntax is used at module level, so `from __future__ import annotations` should be present for annotations; type aliases may need to be evaluated at runtime, so use built-in generic syntax that works on the target version).
+
+**Constants**
+Define module-level constants: pool size `8`, default output filename `repeated_functions.py`, and import module name `dh`.
+
+**Edge cases and behavior notes**
+- Nested functions, methods inside classes, lambdas, and async functions are excluded; only top-level synchronous `def` nodes count.
+- Identical function names with different bodies are not reported as repeats.
+- The same function appearing twice in one file is counted as a repeat because both paths are recorded.
+- Files with syntax errors, encoding errors, or read failures are skipped silently.
+- Empty source segments produce an empty normalized string, which still forms a valid key.
+- Output must be deterministic across runs so results can be diffed.
+- Create parent directories for the output path if they do not exist, or fail with a clear message if they cannot be created.
+
+**Execution**
+Run as a script from the command line, for example `python script.py <paths> -o output.py`. The script should exit with status 0 on success and a nonzero status only for invalid arguments or an unwritable output path.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 from collections import defaultdict

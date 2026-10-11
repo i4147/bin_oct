@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
-from dh import get_nobinary, get_random_filename, should_skip, runcmd
+
+from dh import get_nobinary, get_random_filename, runcmd, should_skip
 
 
 def read_file(path: Path) -> str | None:

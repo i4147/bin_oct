@@ -1,6 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which scans files for invalid escape sequences in string literals, optionally auto-fixes them, and reports results. Describe behavior, inputs, outputs, dependencies, logic, error handling, and edge cases, without any code or snippets.
+
+Create a Python 3 command-line tool that scans one or more source files for invalid escape sequences in string literals, reports them, and optionally repairs them in place. The script should be runnable under Termux on Android (use a `#!/data/data/com.termux/files/usr/bin/env python` shebang) and must be a single self-contained file that uses only the standard library.
+
+**Purpose:** Detect and optionally fix "invalid escape sequence" problems in Python source files, such as a string like `"\\d"` or `"\\s"` that Python would otherwise warn about (`DeprecationWarning`/`SyntaxWarning`) and which will become an error in future Python versions. A raw-string or doubled-backslash fix is applied to the offending string literals.
+
+**Command-line interface:** Use `argparse`. Accept:
+- One or more positional file paths (or directories, which should be expanded to the `.py` files they contain, if you choose to support that; at minimum accept file paths).
+- A flag (for example `--fix`) that enables in-place rewriting. Without it, the script only reports issues and must not modify any file.
+- Optionally a flag to choose the number of worker processes; default to a sensible value based on CPU count.
+
+**Parallelism:** Process files concurrently using `multiprocessing` (a process pool). Each worker takes a tuple of (file path string, fix flag) and returns a tuple of (file path string, whether the file was changed, list of human-readable message strings, and an optional replacement/new-content value). The main process collects the results, prints messages, and writes out fixed content when applicable. Make sure the worker function is top-level so it is picklable.
+
+**Per-file logic (in the worker):**
+1. Read the file as UTF-8 text. If reading fails, return an error message in red ANSI color (`\\033[91m`) containing the path and exception, reset with `\\033[0m`, and report no change.
+2. Compile the source text inside a `warnings.catch_warnings(record=True)` context, with `SyntaxWarning` set to `"always"`. Catch `SyntaxError` (record that a syntax error occurred) and any other exception (ignore it). Determine whether any recorded warning message contains the text "invalid escape sequence".
+3. If there was neither an invalid-escape warning nor a syntax error, return that the file is clean, with no messages and no changes.
+4. Otherwise, tokenize the source with `tokenize.generate_tokens` over a `io.StringIO` of the text, suppressing `tokenize.TokenError` via `contextlib.suppress` so partial token lists are still usable.
+5. Iterate over the tokens. For each `STRING` token, examine the literal text: skip raw strings (prefix containing `r` or `R`), and for non-raw strings find backslash escape sequences that are not valid Python escapes (valid ones include newline continuation, `\\\\`, quotes, `a b f n r t v`, octal digits `0-7`, `x`, `N`, `u`, `U`). Use a regex to locate backslash-plus-character sequences, handling bytes literals (prefix containing `b`/`B`) where `\\N`, `\\u`, `\\U` are not valid escapes.
+6. For each invalid escape found, record an issue message (with file path, line and column from the token start, and the offending sequence) in a readable form, colorized in cyan (`\\033[96m`) with reset. When fixing, build a replacement that doubles the backslash (or converts the literal to a raw-string prefix, whichever you choose consistently), and record the replacement with its position.
+7. Apply the replacements to the source text (process them from the end of the file toward the start, or otherwise ensure offsets remain valid), and return the new content.
+
+**Writing:** When `--fix` is given and the file changed, write the new content back as UTF-8 in the main process, and print a cyan success line naming the file. When not fixing, print the issues so the user can see them and optionally a hint to rerun with the fix flag. Print a final summary of how many files had issues and how many were fixed.
+
+**Output and exit status:** Print issue lines and errors to standard output or standard error consistently. Exit with status 0 when no issues are found (or all were fixed) and a non-zero status when issues remain unfixed or any file could not be read. Handle `KeyboardInterrupt` gracefully by terminating the pool and exiting with a non-zero status.
+
+**Edge cases to handle:**
+- Files that are already clean: skip quickly with no output.
+- Files with syntax errors unrelated to escapes: tokenization may fail partway; still process the tokens gathered so far, and do not corrupt the file.
+- Multi-line triple-quoted strings: compute line and column correctly from the token's start position.
+- f-strings and prefixed strings (`f`, `rb`, `Rb`, `BR`, etc.): handle prefix detection case-insensitively.
+- Files that are not valid UTF-8: report as an error for that file only, without stopping the others.
+- Empty input list: print usage or a message and exit cleanly.
+- Never write to a file unless `--fix` is set and the content actually changed.
+
+**Style:** Use `from __future__ import annotations`, module-level ANSI color constants, concise docstrings or comments only where helpful, and a `main()` function guarded by `if __name__ == "__main__":`. Keep the code readable and idiomatic, with no third-party dependencies.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import io

@@ -1,20 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import re
 from pathlib import Path
+
 import cv2
 import numpy as np
-from PIL import (
-    Image,
-    ImageColor,
-    ImageDraw,
-    ImageEnhance,
-    ImageFilter,
-    ImageFont,
-    ImageOps,
-)
+from PIL import Image, ImageColor, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
 RESAMPLING = {
     "nearest": Image.Resampling.NEAREST,

@@ -1,12 +1,66 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to write a Python script (Termux-targeted) which compresses files and directories using multiple algorithms (zstd, xz, py7zr/7z, gzip, bz2, brotli, lz4), with concurrent execution (up to 4 workers, 1 MiB chunked processing), a COMPRESSORS registry configured at runtime, argparse-driven CLI, asyncio-based parallel jobs, and helper utilities imported from a local `dh` module for file sizes and directory/file listing. The prompt should describe the purpose, inputs and outputs, dependencies, logic, error handling, edge cases, and usage, without including code.
+
+Note: the provided code is truncated after the `brotli` entry, so the prompt should only describe the behavior evidenced in the visible portion and reasonably infer the remainder as the natural continuation of the pattern, flagging what is inferred.
+
+---
+
+You are writing a single, self-contained Python 3 command-line script intended to run under Termux on Android (shebang pointing to the Termux Python at /data/data/com.termux/files/usr/bin/env python). The script batch-compresses files and directories using multiple compression algorithms in parallel and writes the resulting archives to disk. Produce only the complete script, with no explanations.
+
+**Purpose**
+The tool takes one or more input paths (files or directories) and a choice of compression format(s), then produces compressed output for each, reporting sizes and progress. It is intended for bulk archiving on a mobile device.
+
+**Dependencies**
+- Standard library: `argparse`, `asyncio`, `bz2`, `gzip`, `sys`, `pathlib.Path`; include `from __future__ import annotations` at the top.
+- Third-party: `brotlicffi` (imported as `brotli`), `lz4.frame`, `py7zr`, `zstandard` (imported as `zstd`).
+- Local helper module `dh` providing `fsz` (human-readable size formatting), `get_dirs`, and `get_files` (directory/file enumeration). Import these from `dh` rather than reimplementing them.
+
+**Constants and registry**
+- `MAX_WORKERS = 4` bounds concurrent compression jobs.
+- `CHUNK_SIZE = 1024 * 1024` (1 MiB) governs streaming read/write buffers for large files.
+- A module-level `COMPRESSORS` dictionary is populated by a `setup_compressors()` function (declared with `global`). Each entry is keyed by format name and contains:
+  - `ext`: output file extension (e.g. `.zst`, `.xz`, `.7z`, `.gz`, `.bz2`, `.br`)
+  - `tar_ext`: a glob-style pattern describing the tarred variant (e.g. `*.tar.zst`), used for matching/naming
+  - `settings`: format-specific tuning parameters, with these defaults:
+    - zstd: level 22
+    - xz: preset 9
+    - py7zr: compression_level 7
+    - gzip: compresslevel 9
+    - bz2: compresslevel 9
+    - brotli: quality 11, lgwin 22
+    - lz4 (inferred continuation): a sensible high-compression setting such as compression_level 16
+  - `available`: boolean, set True for each compressor whose library imported successfully (inferred: wrap imports so a missing library marks its entry unavailable rather than crashing the whole script).
+
+**Behavior**
+1. Parse CLI arguments with `argparse`: positional input paths, plus options to select one or more formats (defaulting to all available), to set worker count (capped at `MAX_WORKERS`), and to control output location and whether to produce per-item archives or a tarred archive per input (the `tar_ext` patterns imply both modes).
+2. Call `setup_compressors()` before any work, then restrict to available compressors and report any requested format that is unavailable.
+3. Expand inputs with `get_dirs`/`get_files` so directories are traversed, and use `fsz` to report original and compressed sizes with human-readable units.
+4. Run compression jobs concurrently with `asyncio`, using a semaphore or equivalent limiting parallelism to `MAX_WORKERS`. Blocking compression calls should be run off the event loop (e.g. via `asyncio.to_thread` or an executor).
+5. Stream data in `CHUNK_SIZE` chunks where the library allows, to keep memory bounded on constrained devices.
+6. Write each output next to the source or into the specified output directory, appending the format's `ext` (and for tar modes, the tar-based name).
+7. Print a per-file result line (input, output, original size, compressed size, ratio) and a final summary with totals and any failures.
+
+**Error handling and edge cases**
+- A missing input path, unreadable file, or permission error should be reported for that item without aborting the rest of the batch; the process should exit with a nonzero status if any job failed.
+- Unavailable libraries must not crash startup; they are skipped with a clear message.
+- Empty directories and zero-byte files should be handled gracefully (no division-by-zero in ratio calculations).
+- Output files that already exist should not be silently clobbered unless an overwrite option is given.
+- Handle `KeyboardInterrupt` by cancelling pending tasks and exiting cleanly.
+- Partially written output from a failed job should be removed.
+
+**Execution**
+Run directly as an executable script (`python script.py [options] PATH...`) under Termux. Use `sys.exit` with appropriate codes. Keep the implementation idiomatic, with type hints where helpful, a `main()` entry point guarded by `if __name__ == "__main__":`, and concise comments matching the surrounding style.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import asyncio
 import bz2
 import gzip
 import sys
 from pathlib import Path
+
 import brotlicffi as brotli
 import lz4.frame
 import py7zr

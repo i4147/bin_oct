@@ -1,6 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""You are reproducing a Python utility script from scratch. Write a single, self-contained Python 3 script that meets the specification below. Output only the script's source code, with no commentary before or after it.
+
+**Purpose:** The script is a Termux-targeted (Android, `/data/data/com.termux` shebang) code-extraction tool. It scans a directory tree for Python source files and archive files, extracts Python source out of archives, parses each Python file's AST, and splits the code into individual entity files (functions, classes, and similar top-level or nested definitions) saved under an output directory.
+
+**Configuration constants to define:**
+- An output directory named `output`, relative to the current working directory.
+- A tuple of recognized archive extensions: `.whl`, `.zip`, `.tar.gz`, `.tgz`, `.tar.zst`, `.tar.xz`, `.tar`, `.zst`. Note that compound extensions such as `.tar.gz` must be matched before the simpler ones.
+- A tuple of allowed Python file extensions: `.py` and the empty string (to accept extensionless scripts that are verified as Python).
+
+**Main components:**
+
+1. **An AST-based entity extractor** that subclasses the standard library's node visitor. It is constructed with the full source text and the original file path. It keeps a list of extracted entities and a scope-depth counter. It splits source text into lines preserving line endings, and provides a helper that extracts the exact source text of a given AST node by line range and column offsets (trimming the first line's start column and the last line's end column). A shared save helper appends each entity as a record containing at least its name, type, source code, and origin path, and it should also track whether the entity is nested. Visit handlers should cover function definitions (sync and async) and class definitions, incrementing and decrementing scope depth while descending into their bodies so nested definitions are recorded with appropriate context.
+
+2. **Archive handling:** Detect archives by extension (using the compound-extension list correctly). Extract them into a temporary working location, then walk the extracted tree to find Python files. Support `.zip` and `.whl` via the zipfile module, and the tar-based formats via tarfile. For `.zst` and `.tar.zst` formats, use an external decompression approach (for example, invoking the `zstd` command-line tool via subprocess) since the standard library does not support zstd; handle the case where that tool is missing gracefully. Guard against path traversal when extracting archives (reject members whose resolved paths escape the target directory). Clean up temporary extraction directories afterward using shutil.
+
+3. **Python file discovery:** Walk the input directory recursively. A file qualifies as Python if its extension is in the allowed list, and for extensionless files, check whether the content parses as valid Python (or whether the first line is a Python shebang) before accepting it. Skip files that cannot be read as text and files that fail to parse, logging a short warning rather than crashing.
+
+4. **Processing pipeline:** For each discovered Python file, read it as UTF-8 (with a tolerant fallback such as ignoring decode errors), parse with `ast.parse`, run the extractor, and write each extracted entity to its own file under the output directory, organized into a subdirectory per source file. Output file names should be sanitized (replace unsafe characters with underscores) and must avoid collisions by appending a counter when needed.
+
+5. **Parallelism:** Use `multiprocessing.Pool` sized to the CPU count (via `cpu_count()`) to process files concurrently. The per-file worker function must be a top-level function so it is picklable. Collect and report aggregate results from the pool.
+
+**Command-line usage:** Accept one or more input paths (files or directories) as command-line arguments, with the output directory defaulting to `output`. If no arguments are given, print a usage message and exit with a non-zero status. Print a summary at the end showing the number of files scanned, Python files processed, entities extracted, and any files skipped or failed.
+
+**Error handling and edge cases:**
+- Never let one bad file or archive abort the whole run; catch exceptions per item and report them.
+- Handle missing input paths by reporting them and continuing with the rest.
+- Handle empty files, files containing only comments, syntax errors, decode errors, and archives that are corrupt or unsupported.
+- Ensure the output directory is created if missing, and that re-running does not corrupt previously written output (overwrite or namespace consistently).
+- Handle symbolic links safely (do not follow links out of the input tree during the walk, or do so only with cycle protection).
+
+**Dependencies:** Only the Python standard library is used: `ast`, `os`, `re`, `shutil`, `tarfile`, `zipfile`, `multiprocessing`, `pathlib`, `typing`, `subprocess`, `sys`, `tempfile`. Target Python 3.8+ and begin the file with `from __future__ import annotations`. The script should be runnable directly via its shebang line and as `python script.py <paths...>`.
+
+**Style:** Use type hints where they aid clarity, `pathlib.Path` for paths, concise docstrings or comments only where they help, and keep the code idiomatic and readable.
+---"""
 
 from __future__ import annotations
+
 import ast
 import os
 import re

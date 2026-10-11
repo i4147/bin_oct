@@ -1,11 +1,58 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which recursively scans a directory for TOML files, strips comments from them using a tree-sitter parser, and reports results in parallel. Here is the prompt:
+
+---
+
+Create a Python 3 command-line script (intended to run under Termux on Android, so use a `#!/data/data/com.termux/files/usr/bin/env python` shebang) that processes TOML files in parallel and reports the size difference after stripping comments.
+
+**Purpose:** Given one or more file or directory paths, locate every TOML file, remove all comments from each file's content using a concrete syntax tree parser, and report per-file and total size statistics, showing how many bytes comment removal saves.
+
+**Module header:** Begin with `from __future__ import annotations`. Use only the standard library plus two third-party components: `tree_sitter_toml` (provides the TOML grammar via a `language()` function) and `tree_sitter` (provides `Language` and `Parser`). Also import a helper `fsz` from a local module named `dh` that formats a byte count into a human-readable string (e.g., KB/MB). Import `sys`, `time`, `Path` from `pathlib`, `Pool` from `multiprocessing`, and `Any`, `Final`, `Optional` from `typing`.
+
+**Constants and lazy parser:**
+- A module-level `_WORKERS` constant set to 8 (number of worker processes).
+- A module-level `_NAME_WIDTH` constant set to 50 (column width used when printing file names).
+- A module-level `_parser` variable initialized to `None`. Implement `_get_parser()` that lazily creates a single `Parser` configured with `Language(tree_sitter_toml.language())` the first time it is called and caches it in the global. Each worker process must create its own parser this way (parsers are not shared across processes).
+
+**`remove_toml_comments(content: str) -> str`:**
+1. Encode the content to UTF-8 bytes and parse it with the parser.
+2. Walk the syntax tree iteratively (using an explicit stack, not recursion) and collect the byte ranges `(start_byte, end_byte)` of every node whose type is `"comment"`.
+3. If no comment ranges are found, return the original string unchanged.
+4. Otherwise copy the source bytes into a `bytearray`. Process ranges in reverse-sorted order so earlier offsets remain valid. For each range, also consume any immediately preceding spaces or tabs (0x20, 0x09) so that trailing whitespace before a comment is removed along with it. Delete the slice.
+5. Decode the bytearray back to a UTF-8 string and return it.
+
+**`process_file(path: Path) -> tuple[str, int, int]` (or similar tuple of name, original size, new size):**
+- Read the file as text (UTF-8), run `remove_toml_comments`, and return the file's display name, its original byte size, and the byte size of the stripped result. Handle the worker's per-file errors gracefully so one bad file does not abort the whole run: catch exceptions per file, report the failing path with the error message in the output, and continue with the remaining files.
+
+**Main logic (`main()` with `if __name__ == "__main__":` guard):**
+- Accept one or more paths from `sys.argv[1:]`. If none are given, print a usage message to stderr and exit with a nonzero status.
+- For each argument, if it is a file ending in `.toml`, include it; if it is a directory, recursively collect all `*.toml` files beneath it. Skip or warn about nonexistent paths. Deduplicate and sort the collected list.
+- If no TOML files are found, print a message saying so and exit cleanly.
+- Use `multiprocessing.Pool(_WORKERS)` with `imap_unordered` (or equivalent) to process files concurrently, and display progress as results arrive.
+- Print each file's name left-aligned/padded to `_NAME_WIDTH` characters, followed by the original size, the new size, and the bytes saved (formatted with `fsz`). Truncate or handle names longer than the width gracefully.
+- Track and print totals at the end: number of files processed, number of errors, total original size, total new size, total saved, and the elapsed time measured with `time.perf_counter()` (or `time.time()`) formatted to a sensible precision.
+- Ensure the pool is properly closed and joined (use a `with` block or explicit `close()`/`join()`), and that the process works correctly under the `spawn`/`fork` start methods, meaning all worker functions must be defined at module top level.
+
+**Edge cases to handle:**
+- Empty files (should produce zero savings and not crash).
+- Files with no comments (returned unchanged).
+- Comments at the very start of a line, after values, and multiple consecutive comments.
+- Files that are not valid UTF-8 (report as an error for that file, don't crash).
+- Nonexistent paths and unreadable files.
+- Symlinks and hidden directories may be followed or skipped; document the choice in a comment.
+- Keep the code free of unnecessary dependencies and avoid recursion depth issues.
+
+**Style:** Use type hints throughout (including `# type: ignore[import-untyped]` on the tree-sitter imports), concise docstrings, and a clean, flat module structure. Output only the complete script.
+---"""
 
 from __future__ import annotations
+
 import sys
 import time
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final, Optional
+
 from dh import fsz
 
 _parser: Optional[Any] = None
@@ -17,10 +64,8 @@ def _get_parser() -> Any:
     global _parser
     if _parser is None:
         import tree_sitter_toml as tstoml  # type: ignore[import-untyped]
-        from tree_sitter import (
-            Language,  # type: ignore[import-untyped]
-            Parser,
-        )
+        from tree_sitter import Language  # type: ignore[import-untyped]
+        from tree_sitter import Parser
 
         _parser = Parser(Language(tstoml.language()))
     return _parser

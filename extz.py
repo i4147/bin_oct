@@ -1,11 +1,36 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""You are reproducing a Python 3 command-line utility from scratch. Write a single, self-contained script that scans the current working directory recursively and reports how many files exist for each file extension, with optional size totals. Output only the script itself.
 
-from pathlib import Path
-from collections import defaultdict
-from typing import Dict, List, Tuple, Optional
+Purpose and behavior:
+- Walk the current working directory recursively and group every regular file by its file extension (the suffix, e.g. ".py"). Files with no extension should be grouped under a sensible label such as "(no ext)".
+- For each extension, report the file count. When a size option is enabled, also report the total size of those files and display sizes in human-readable form (bytes through TB, one decimal place, with a PB fallback).
+- Output should be a colored, aligned terminal table or list. Use ANSI escape codes defined in a small color-constants class: reset, bold, dim, cyan, yellow, green, magenta, white, gray, plus composite styles for headers, extension names, counts, and data values. Sort results in a sensible order (e.g., by count descending, then by extension name).
+- Accept command-line arguments via argparse, including a flag to include file sizes. Provide a help description. Support a way to disable colors (for example when stdout is not a TTY, or via a flag) so output is plain text when needed.
+
+Skipping rules:
+- Maintain a fixed set of directory names to skip anywhere in the path: VCS folders (.git, .hg, .svn), Python caches and virtual environments (__pycache__, .pytest_cache, .venv, venv, env, .tox, .mypy_cache, .ruff_cache, .egg-info), build and dependency output (node_modules, .next, dist, build), coverage output (.coverage, htmlcov), and temp/cache folders (.tmp, .cache).
+- Skip any path that is a symbolic link, and skip any path having a component in the skip set.
+- Do not follow symlinked directories.
+
+Error handling and edge cases:
+- Handle permission errors and files that disappear or cannot be stat'ed during the scan without crashing; skip them silently or with a brief warning to stderr.
+- Handle the case where no files are found by printing a clear message.
+- Handle KeyboardInterrupt gracefully, exiting with a short message and a nonzero status.
+- Hidden files (dotfiles such as .bashrc with no real suffix) should be treated as having no extension unless Python's suffix logic says otherwise; be consistent.
+- Extensions should be compared case-sensitively or normalized consistently; state the choice in code comments.
+
+Execution details:
+- Target Python 3 with type hints (Dict, List, Tuple, Optional, and built-in generics). Use pathlib, collections.defaultdict, shutil (for terminal width or similar layout if useful), sys, and argparse only; no third-party dependencies.
+- The script should begin with a shebang line pointing to the Termux Python interpreter path (/data/data/com.termux/files/usr/bin/env python), and be runnable directly as a module entry point under a main guard that returns an exit code via sys.exit.
+- Keep the code idiomatic and concise, with brief comments where logic is non-obvious.
+---"""
+
+import argparse
 import shutil
 import sys
-import argparse
+from collections import defaultdict
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 
 class Colors:
@@ -65,8 +90,8 @@ def should_skip(path: Path) -> bool:
     return False
 
 
-def scan_extensions(show_size: bool = False) -> Dict[str, Tuple[List[Path], int]]:
-    ext_map: Dict[str, Tuple[List[Path], int]] = defaultdict(lambda: ([], 0))
+def scan_extensions(show_size: bool = False) -> dict[str, tuple[list[Path], int]]:
+    ext_map: dict[str, tuple[list[Path], int]] = defaultdict(lambda: ([], 0))
     cwd = Path.cwd()
     for file_path in cwd.rglob("*"):
         if should_skip(file_path):
@@ -80,10 +105,10 @@ def scan_extensions(show_size: bool = False) -> Dict[str, Tuple[List[Path], int]
 
 
 def generate_report(
-    ext_map: Dict[str, Tuple[List[Path], int]],
+    ext_map: dict[str, tuple[list[Path], int]],
     show_size: bool = False,
     max_examples: int = 3,
-) -> List[Tuple[str, int, str]]:
+) -> list[tuple[str, int, str]]:
     report_data = []
     for ext in sorted(ext_map.keys(), key=lambda x: -len(ext_map[x][0])):
         paths, total_size = ext_map[ext]
@@ -98,7 +123,7 @@ def generate_report(
 
 
 def format_table(
-    report_data: List[Tuple[str, int, str]],
+    report_data: list[tuple[str, int, str]],
     term_width: int,
     show_size: bool = False,
     use_color: bool = True,

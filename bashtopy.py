@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt from the code as written: the snippet is cut off partway through `extract_heredoc`, so the closing logic and the rest of the script's behavior are missing. Writing a spec that describes behavior I can't see would mean guessing at the end of the file.
+
+If you paste the complete script, I'll write the self-contained reproduction prompt you asked for.
+---"""
 
 from __future__ import annotations
+
 import io
 import re
 import sys
@@ -9,7 +14,7 @@ from pathlib import Path
 
 HEREDOC_START = re.compile(
     r"""
-    \bpython(?:3(?:\.\d+)?)?      # python, python3, python3.12, etc.
+    \bpython(?:3(?:\.\d+)?)?      # python, python3, python3.14, etc.
     \s+
     (?:
         [^\n]*?                  # optional flags, such as -u

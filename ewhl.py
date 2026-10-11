@@ -1,6 +1,43 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script with the following specification:
+
+Create a standalone Python command-line script (Termux-compatible, with a `/data/data/com.termux/files/usr/bin/env python` shebang line and `from __future__ import annotations` at the top) that scans a directory for Python wheel files (`.whl`) and moves those that contain no usable code into a subdirectory.
+
+**Purpose:** Identify "empty" wheels — wheel archives that contain no Python modules and no other code-bearing files — and relocate them into a separate folder so they can be reviewed or removed.
+
+**Inputs:**
+- A source directory path (provided on the command line via `argparse`), which is the directory to scan.
+- An optional destination subdirectory name, defaulting to `empty_wheels`, created inside the source directory.
+- Only top-level `*.whl` files in the source directory are considered (non-recursive glob).
+
+**Outputs:**
+- A destination folder (created with `exist_ok=True` semantics, so reruns don't fail) containing the wheels classified as empty.
+- Console messages reporting: how many wheel files were found, the file currently being checked, which wheels were identified as empty and moved, which were kept, and a summary count. If no `.whl` files are found, print a message naming the source directory and return without error.
+
+**Classification logic (`is_empty_wheel`):**
+- Open the wheel as a zip archive and list all entry names.
+- A wheel is **not empty** if any entry ends with `.py`, or if any entry is a "code-like" file: an entry that does not start with `dist-info/` or `__pycache__/`, does not end with `/` (directory entries), and does not end with `.dist-info/`.
+- Otherwise the wheel is considered empty (returns `True`).
+- Error handling: on `zipfile.BadZipFile`, print an error stating the file is not a valid zip and treat it as **not empty** (return `False`, so it is kept in place). On any other exception, print an error including the exception text and return `False`.
+
+**Move logic:**
+- Use `shutil.move` to relocate each empty wheel into the destination folder.
+- Wheels classified as valid/non-empty remain untouched in the source directory.
+- Track two lists (empty and valid) and report their counts at the end.
+
+**Edge cases to handle:**
+- No `.whl` files present.
+- Corrupt or non-zip files with a `.whl` extension.
+- Unreadable files or permission problems.
+- Destination folder already exists.
+- Wheels whose entries are only metadata (`.dist-info`) or cache directories — these count as empty.
+- Filenames printed via their `.name` attribute.
+
+**Usage:** Run as `python <script> <source_dir> [dest_name]` from the command line; the entry point should be guarded by `if __name__ == "__main__":` and use `argparse` to parse arguments. Use type hints (`Path`, `-> bool`, `-> None`) consistent with the original style, and standard library only (`argparse`, `shutil`, `zipfile`, `pathlib`).
+---"""
 
 from __future__ import annotations
+
 import argparse
 import shutil
 import zipfile

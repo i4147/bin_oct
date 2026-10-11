@@ -1,12 +1,61 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to write a Python script which strips comments and docstrings from Python source files, preserving certain special comments, using libcst, with parallel processing via multiprocessing, and with error handling and CLI usage. Output only the prompt.
+
+Write a complete, self-contained Python command-line script that removes comments and docstrings from Python source files while preserving specific directive comments, using the libcst library for concrete syntax tree transformation and multiprocessing for parallel batch processing. The script must be runnable under Termux on Android (shebang line pointing to the Termux Python path), and should be written for Python 3.10+ with `from __future__ import annotations`.
+
+**Purpose and behavior**
+- Accept one or more input paths on the command line. Each path may be a single `.py` file or a directory, which should be searched recursively for `.py` files.
+- For each Python file, parse the source with libcst, apply a transformer that strips comments and docstrings, and write the result back to the same file (in-place) or to an output location, depending on the CLI options.
+- Provide an argument parser (argparse) with options for: the input paths (positional, one or more), an optional output directory or a dry-run/check mode that reports which files would change without modifying them, and an optional worker count (default 8, capped at a constant MAX_WORKERS of 8).
+
+**Comment preservation rules**
+- Define a module-level constant tuple of prefixes that must always be kept: `#!` (shebang), `# type:` (type comments), and `# fmt:` (formatter directives).
+- Define a module-level frozenset of exact comments that must be kept: `# fmt: skip`, `# fmt: on`, `# fmt: off`.
+- A helper function takes a comment's text, strips surrounding whitespace, and returns True if it starts with any preserved prefix or exactly equals a preserved exact string.
+- All other comments are removed.
+
+**Transformer logic (libcst)**
+- Implement a subclass of `cst.CSTTransformer`.
+- In a `leave_Comment` method, return the updated node if the comment should be preserved; otherwise return `cst.RemovalSentinel.REMOVE`.
+- Implement a static helper that inspects a sequence of statements in a module, class, or function body and, if the first statement is a simple statement line containing exactly one `cst.Expr` whose value is a string literal (a docstring), removes it. Apply this to module bodies, class bodies, and function bodies (including async functions). Ensure that if removing the docstring would leave the body empty, a `pass` statement is inserted so the code remains syntactically valid.
+- Be careful to handle the case where the first statement is a docstring that also carries leading comments or where an indented block would otherwise become empty.
+
+**Processing pipeline**
+- For each file: read the source as UTF-8 (fall back gracefully on decode errors by reporting and skipping the file), parse it with `cst.parse_module`, catch and report.g., syntax errors) without crashing the whole run, apply the transformer via `module.visit(...)`, and generate the new code with `module.code`.
+- Only write the file if the content actually changed; in check mode, just report changed files and set a non-zero exit code if any would change.
+- Preserve the original file's line endings and trailing newline behavior as far as libcst allows.
+
+**Parallelism**
+- Use `multiprocessing.Pool` to process files concurrently. The number of workers is `min(requested_workers, MAX_WORKERS)` and at least 1. Use `imap_unordered` or `apply_async` with `AsyncResult` to collect results, and ensure per-file exceptions are caught in the worker function and returned as status messages rather than crashing the pool.
+- Guard the entry point with `if __name__ == "__main__":` so multiprocessing works correctly.
+- Sort or deterministically order the reported results for stable output.
+
+**Error handling and edge cases**
+- Skip non-existent paths with a warning to stderr.
+- Skip non-`.py` files when given explicitly as files, or ignore them during directory traversal.
+- Skip directories such as `__pycache__`, `.git`, and virtual environment folders during recursive search.
+- Handle `KeyboardInterrupt` gracefully by terminating the pool and exiting with status 130.
+- Return exit code 0 on success, 1 if any file failed to process or (in check mode) would change, and 2 for argument errors.
+- Empty files and files containing only comments should be handled without crashing.
+
+**Output and usage**
+- Print a concise per-file status line for changed, unchanged, and failed files, and a final summary with counts.
+- Include a module docstring at the top describing usage examples.
+- Use only the standard library plus `libcst` as the third-party dependency; import `libcst` as `cst`.
+- Include type annotations throughout, using `Final` for constants and `TYPE_CHECKING` guards for type-only imports such as `Sequence` and `AsyncResult`.
+
+Deliver the complete script in a single file with all imports, constants, the transformer class, the worker function, the argument parsing, and the `main` entry point.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
+
 import libcst as cst
 
 if TYPE_CHECKING:

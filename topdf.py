@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import base64
 import re
@@ -358,17 +359,11 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     try:
         from reportlab.lib.enums import TA_CENTER  # type: ignore
         from reportlab.lib.pagesizes import letter  # type: ignore
-        from reportlab.lib.styles import (
-            ParagraphStyle,  # type: ignore
-            getSampleStyleSheet,
-        )
+        from reportlab.lib.styles import ParagraphStyle  # type: ignore
+        from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib.units import inch  # type: ignore
-        from reportlab.platypus import (
-            PageBreak,
-            Paragraph,  # type: ignore
-            SimpleDocTemplate,
-            Spacer,
-        )
+        from reportlab.platypus import Paragraph  # type: ignore
+        from reportlab.platypus import PageBreak, SimpleDocTemplate, Spacer
     except ImportError:
         die("reportlab is required for --backend reportlab")
     chm_obj = chm.CHMFile(str(chm_path))
@@ -553,10 +548,8 @@ def _convert_markdown2(
         try:
             from pygments import highlight  # type: ignore
             from pygments.formatters import HtmlFormatter  # type: ignore
-            from pygments.lexers import (
-                TextLexer,  # type: ignore
-                get_lexer_by_name,
-            )
+            from pygments.lexers import TextLexer  # type: ignore
+            from pygments.lexers import get_lexer_by_name
         except ImportError:
             warn("pygments not installed — skipping code highlighting")
             pygments = False

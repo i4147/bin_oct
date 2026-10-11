@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import base64
 import hashlib
 import re
 import sys
 from pathlib import Path
+
 from dh import MIME2EXT, get_nobinary
 
 OUTPUT_DIR = Path("extracted_base64")
-DATA_URL_RE = re.compile("data:(?P<mime>[-\\w.+/]+);base64,(?P<data>[A-Za-z0-9+/=\\s]+)", re.IGNORECASE)
+DATA_URL_RE = re.compile(r"data:(?P<mime>[-\w.+/]+);base64,(?P<data>[A-Za-z0-9+/=\s]+)", re.IGNORECASE)
 
 
 def infer_extension(mime):

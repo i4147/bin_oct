@@ -1,6 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool for Brotli-based compression and decompression of files and directories. The prompt must cover the following:
+
+**Purpose:** A Termux-targeted (Android, shebang points to `/data/data/com.termux/files/usr/bin/env python`) utility that compresses files and directories with Brotli at maximum quality, and decompresses `.br` files back to their originals. It also bundles directories into tar archives before compression.
+
+**Required dependencies:** `brotli` (Python bindings) and `loguru` for logging; standard library modules `argparse`, `asyncio`, `mmap`, `shutil`, `sys`, `tarfile`, `multiprocessing.Pool`, `pathlib`, and `typing.Final`. Use `from __future__ import annotations`.
+
+**Constants to define exactly:** `MAX_WORKERS = 8`, `CHUNK_SIZE = 524288` (512 KiB), `CHUNK_SIZE_SMALL = 32768` (32 KiB), `BROTLI_QUALITY = 11`, `BROTLI_LGWIN = 24`, `MIN_COMPRESS_SIZE = 1024` (files smaller than this should not be compressed). Use `Final` type annotations.
+
+**Required functions and behavior:**
+- `fsz(size: int) -> str`: human-readable size formatting iterating units B, KB, MB, GB, TB, dividing by 1024 with one decimal place; bytes shown as an integer with "B" suffix; TB is the final unit regardless of magnitude.
+- `get_pool() -> Pool`: lazily creates a module-level global `multiprocessing.Pool` with `MAX_WORKERS` processes, reused across calls.
+- `compress_chunk(data: bytes) -> bytes`: calls `brotli.compress` with quality 11, lgwin 24, and `brotli.MODE_GENERIC`.
+- `decompress_file(path: Path) -> bool`: returns False immediately if the suffix is not `.br`; computes the output path by stripping the `.br` suffix; reads the file bytes; returns False for empty files; decompresses with `brotli.decompress`; writes the result to the output path; returns True on success, and handles exceptions by logging and returning False (wrap I/O and decompression in try/except).
+
+**Remaining functionality to implement (complete the script consistently with the above):**
+- A compression routine that reads files in `CHUNK_SIZE` chunks (memory-mapped via `mmap` for large inputs where appropriate, falling back gracefully for empty files since mmap cannot map zero-length files), compresses chunks in parallel using the pool, and writes a `.br` output. Files smaller than `MIN_COMPRESS_SIZE` should be skipped or stored without compression as the design dictates, and the agent should document this choice.
+- Directory handling: archive a directory into a tar stream via `tarfile` before compressing, and optionally extract/decompress tar archives on decompression.
+- Asynchronous orchestration with `asyncio` to process multiple files concurrently while offloading CPU-bound compression to the process pool (e.g., via `loop.run_in_executor` or `asyncio.to_thread`).
+- Use `loguru` for all logging (info for progress, error for failures), and print human-readable sizes with `fsz` in summaries including original size, compressed size, and compression ratio/savings percentage.
+- Ensure the pool is closed and joined on exit (use a `try/finally` or `atexit`), and handle `KeyboardInterrupt` gracefully.
+- Edge cases: nonexistent paths (log error and exit with non-zero status), zero-byte files, files that already end in `.br`, permission errors, and overwriting existing outputs (either refuse or require a `--force` flag).
+
+**CLI interface via `argparse`:** A main entry point with subcommands or flags to compress and decompress, accepting one or more input paths, an optional output directory, a flag to keep or delete source files, and a force-overwrite flag. Provide `--help` text. Exit codes: 0 on success, nonzero on any failure. Run via `if __name__ == "__main__":` calling `sys.exit(main())`.
+
+**Output requirements:** A single complete Python file, with a Termux shebang line as given, PEP 8 style, type hints throughout, and docstrings for public functions. Include no external config files.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import asyncio
 import mmap
@@ -10,6 +37,7 @@ import tarfile
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
+
 import brotli
 from loguru import logger
 

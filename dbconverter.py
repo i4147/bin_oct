@@ -1,12 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that tells an AI coding agent to reproduce a Python CLI tool that converts data between file formats. The prompt should cover the purpose, inputs/outputs, supported formats, detection logic, the target-name parsing, dependencies, error handling, and usage details. Since the code is truncated at the end, I'll describe the likely remaining behavior carefully as a reasonable assumption rather than stating it as fact.
+
+Reproduce the following Python command-line tool from scratch.
+
+**Purpose:** A cross-format data converter CLI that reads a tabular dataset from one file format and writes it to another. It is intended to run under Termux on Android (the shebang points to the Termux Python interpreter), so it should use a portable `#!/usr/bin/env python`-style shebang with the Termux path as the first line.
+
+**Dependencies:** Python 3 standard library (`argparse`, `json`, `pickle`, `sqlite3`, `sys`, `pathlib`) plus `pandas`. Use `from __future__ import annotations` at the top.
+
+**Supported formats and extension detection:**
+- SQLite: `.db`, `.sqlite`, `.sqlite3`
+- JSON Lines: `.jsonl`, `.ndjson`
+- JSON: `.json`
+- CSV: `.csv`
+- TSV: `.tsv`
+- Pickle: `.pkl`, `.pickle`
+- Parquet: `.parquet`, `.pq`
+- Excel: `.xlsx`, `.xls`
+
+Extension matching must be case-insensitive. An unrecognized input extension must raise a `ValueError` whose message includes the offending extension in repr form.
+
+**SQLite detection:** Provide a helper that checks whether a file is a real SQLite database by reading its first 16 bytes and comparing them to the standard header `SQLite format 3` followed by a NUL byte. Return False on any `OSError` rather than raising.
+
+**Target format parsing:** Provide a helper that takes a user-supplied target name, strips a leading dot, lowercases it, and maps aliases to canonical format names (e.g., `db`/`sqlite`/`sqlite3` → sqlite, `jsonl`/`ndjson` → jsonl, `pkl`/`pickle` → pkl, `parquet`/`pq` → parquet, `xlsx`/`xls`/`excel` → excel, and `json`/`csv`/`tsv` map to themselves). Unrecognized names raise a `ValueError` with a clear "unsupported" message.
+
+**CLI behavior:** Build the interface with `argparse`. It takes an input file path and a target format (or output path from which the target is derived via the extension). Use `Path` objects throughout. Convert the data by loading into a pandas DataFrame according to the detected input format, then write it out in the requested target format using pandas (or sqlite3 for SQLite output, and pickle for `pkl`). For SQLite input, read the first/specified table into a DataFrame via sqlite3. Exit with a non-zero status and a message to stderr on errors, using `sys.exit`.
+
+**Error handling:** Validate that the input file exists before processing; surface unsupported extensions and targets as clear user-facing errors rather than tracebacks; handle unreadable or non-SQLite files gracefully.
+
+**Edge cases to handle:** Files with uppercase extensions, targets specified with or without a leading dot, input files whose extension lies about their content (use the SQLite magic check to confirm), and empty datasets.
+
+**Output:** Write the converted file to the target path and print a short confirmation to stdout (row count and output path are reasonable).
+
+**Style:** Keep the script a single file, use type hints, small focused helper functions, and a `main()` guarded by `if __name__ == "__main__":` that returns an exit code.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import pickle
 import sqlite3
 import sys
 from pathlib import Path
+
 import pandas as pd
 
 SQLITE_MAGIC = b"SQLite format 3\x00"

@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import multiprocessing as mp
 import re
 import sys
 from pathlib import Path
+
 from dh import get_nobinary
 
 HTML_ENTITIES = {

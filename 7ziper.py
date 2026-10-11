@@ -1,6 +1,40 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""The code provided is truncated at the end (it stops mid-line in `_log_error`), so the prompt below describes the full intended behavior as far as it can be inferred from what is visible, and flags the truncated portion.
+
+Write a Python 3 script that acts as a Termux-friendly archive packer and compression benchmarker built on the py7zr library. It should be runnable as an executable with the shebang `#!/data/data/com.termux/files/usr/bin/env python`, and use `from __future__ import annotations` for type hints.
+
+**Dependencies and imports:**
+- Standard library only, plus `py7zr` (required) and `loguru` (optional). Use `argparse`, `logging`, `mmap`, `multiprocessing`, `shutil`, `sys`, `tarfile`, `tempfile`, `concurrent.futures.ProcessPoolExecutor`, `pathlib.Path`, and `typing` (`Any`, `Dict`, `List`, `Optional`, `Tuple`).
+- Attempt to import `loguru`'s logger as `_log`; if the import fails, set `_log` to `None` and fall back to the standard `logging` module.
+
+**Module constants:**
+- `_BASIC_SKIP_SUFFIXES`: set of file suffixes to skip in basic mode, namely `.7z`, `.xz`, `.br`, `.zst`, `.gz`, `.zip`, `.whl`, `.log`.
+- `_NAMED_SKIP_SUFFIXES`: set of suffixes to skip in named mode, namely `.tar`, `.7z`, `.br`, `.gz`, `.xz`, `.zip`, `.whl`.
+- `_FULL_SKIP_SUFFIXES`: tuple of suffixes to skip in full mode, namely `.7z`, `.xz`, `.gz`, `.bz2`, `.br`, `.zst`, `.zip`, `.rar`.
+- `_NAMED_METHODS`: tuple `("LZMA2", "LZMA", "PPMd")` of compression methods to try in named mode.
+- `_FULL_SETTINGS`: a dict of py7zr write options: an LZMA2 filter at preset 9, dictionary size 268435456 bytes (256 MiB), solid archive enabled, header compression enabled, and block size 4194304 bytes (4 MiB).
+
+**Logging helpers:**
+- Implement `_log_info`, `_log_warning`, and `_log_error`. Each takes a message template and optional positional args. When `_log` is available, format the message with `str.format(*args)` if args are given and call the loguru method; otherwise pass the template and args directly to the corresponding `logging` function.
+
+**Expected behavior (inferred from the module design):**
+- Provide a command-line interface via `argparse` that accepts an input path (file or directory) and an output location, and selects a mode (basic, named, or full) that determines which compression methods and skip-suffix rules apply.
+- In full mode, use `_FULL_SETTINGS` when writing 7z archives via py7zr.
+- In named mode, iterate over `_NAMED_METHODS`, trying each method when creating archives.
+- Skip files matching the mode's suffix set, logging skipped items.
+- Use `tempfile` for intermediate staging and `shutil` for file operations; use `tarfile` for tar-based packaging where relevant.
+- Use `mmap` for efficient reading of large files where appropriate.
+- Use `ProcessPoolExecutor` (with `multiprocessing`) to compress multiple files or variants in parallel, returning results as `(name, result)`-style tuples typed with `Tuple`, `Dict`, and `List`.
+- Report sizes and compression ratios per variant and a summary, and handle errors per item without aborting the whole run, logging failures through the helpers.
+- Guard the entry point with `if __name__ == "__main__":` and exit with `sys.exit` using a nonzero status on fatal errors.
+
+**Edge cases to handle:** missing or unreadable inputs, empty directories, skipped suffixes, temp-directory cleanup even on failure, and the optional absence of `loguru`.
+
+**Note:** The source was truncated at the `_log_error` helper, so the remainder of the script (the main logic and CLI) must be designed to fit these constants and helpers consistently.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import logging
 import mmap
@@ -12,6 +46,7 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 import py7zr
 
 try:

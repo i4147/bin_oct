@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import bz2
 import contextlib
@@ -16,6 +17,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import brotli
 from loguru import logger
 

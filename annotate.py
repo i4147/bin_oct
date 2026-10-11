@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce this prompt as requested: the code you pasted is cut off partway through, so I can't see its full behavior, and writing a complete reproduction prompt from an incomplete file would mean guessing at the rest. Could you paste the full script? Once I have the whole thing, I'll write the self-contained prompt you described.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
@@ -15,6 +18,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
 import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import ApplyTypeAnnotationsVisitor

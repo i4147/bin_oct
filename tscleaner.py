@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import os
 import stat
 import sys
@@ -104,6 +105,7 @@ def iter_source_files(root: Path) -> list[Path]:
 
 def get_language(spec: LanguageSpec) -> Any:
     from importlib import import_module
+
     from tree_sitter import Language
 
     module = import_module(spec.module_name)

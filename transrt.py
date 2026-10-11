@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import os
 import time
+
 import pysrt
 from deep_translator import GoogleTranslator
 

@@ -1,12 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to write a Python script with the following specification:
+
+The script is a batch face-detection sorter for Android (Termux) that scans a directory of images, detects human faces using OpenCV Haar cascade classifiers, and copies or moves images into separate output folders depending on whether a face was found. It must run on Termux on Android, using the Termux Python interpreter at the path /data/data/com.termux/files/usr/bin/env python, with a shebang line pointing to that environment.
+
+Dependencies and setup: the script requires the OpenCV Python bindings (cv2) and the tqdm progress-bar library. If cv2 is not importable, the script must print a message telling the user to install it via "pkg install opencv" and exit with status 1. The Haar cascade XML files are expected in the directory /data/data/com.termux/files/home/.local/share/opencv4/haarcascades/. The script should try, in order, the cascade files frontalface_default.xml, frontalface_alt.xml, frontalface_alt2.xml, and frontalface_alt_tree.xml, using the first one that loads successfully. If none loads, log an error and return no detector.
+
+Logging: configure the root logging at INFO level with the format "timestamp - level - message", writing to both a file named face_detection.log in the user's home directory (Path.home()) and to the console stream. Use a module-level logger.
+
+Image handling: recognize image files by extension, case-insensitively, for the set .jpg, .jpeg, .png, .bmp, .tiff, and .webp. Use pathlib.Path throughout. Define a constant maximum dimension of 640 pixels; images larger than this in width or height should be downscaled (preserving aspect ratio) before detection to speed up processing. Read images with cv2.imread, convert to grayscale for detection, and detect faces with the cascade's detectMultiScale call. Return a boolean indicating whether any face was found. Handle unreadable or corrupt images gracefully by catching exceptions per file, logging a warning or error, and treating the image as having no face (or skipping it) without crashing the whole run.
+
+Main workflow: accept a source directory and an output directory (likely via command-line arguments, with usage guidance printed if missing or invalid). Walk the source directory, collect all image files matching the extensions, and process them with a multiprocessing Pool sized to the CPU count (using cpu_count()). Each worker creates its own detector, since cascade objects should not be shared across processes. Wrap progress reporting with tqdm, showing progress as results come in. Copy (or move) each image into an output subfolder such as "faces" when a face is detected and "no_faces" otherwise, creating those folders if needed. Use shutil for file operations, and avoid overwriting existing files by handling name collisions (for example, appending a numeric suffix). Log summary statistics at the end: total images processed, number with faces, number without, and number that failed, plus elapsed time measured with time.time().
+
+Execution details: the script should be runnable directly as a command-line tool from the Termux shell. Use a main guard so it can be imported without running. Exit cleanly on keyboard interrupt, logging that the run was cancelled. Use `from __future__ import annotations` for type hints. Keep the code readable with clear function boundaries: a file-type check, a detector factory, a per-image detection function, and a main entry point.
+
+Edge cases to handle: nonexistent or non-directory source paths (print an error and exit non-zero), empty source directories (report zero and exit cleanly), nested subdirectories (decide whether to recurse and state it in the output), files with uppercase extensions, images that OpenCV cannot decode, cascade files missing, and output directories that already exist or are the same as the source.
+---"""
 
 from __future__ import annotations
+
 import logging
 import shutil
 import sys
 import time
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+
 from tqdm import tqdm
 
 logging.basicConfig(

@@ -1,12 +1,53 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script with the following specification:
+
+Create a Python command-line utility (Termux-friendly, shebang pointing to the Termux Python path) that recursively scans a directory tree for Python source files and detects legacy Python 2-style `print` statements (e.g., `print "text"` without parentheses).
+
+Requirements to implement:
+
+1. **File discovery**
+   - Provide a function that takes a directory path (string or Path) and an optional list of file extensions, and returns a list of file Paths.
+   - Traverse breadth-first using a queue, starting from the given root.
+   - Skip these directory names entirely: `.git`, `__pycache__`, `.mypy_cache`, `.ruff_cache`, `.pytest_cache`, `lazy`.
+   - Do not follow symbolic links (skip them for both files and directories).
+   - Include a file only if it is a regular file and either no extension filter is given or its suffix is in the filter list.
+   - Silently skip directories that raise PermissionError or OSError when listing.
+   - Use `from __future__ import annotations` and modern type hints (`str | Path`, `list[str] | None`).
+
+2. **Legacy print detection**
+   - Define a module-level size threshold of 1 MiB.
+   - Define a multiline regex matching lines whose first non-whitespace token is `print` followed by at least one space/tab and then a character that is not `(` or newline (catching Python 2 print statements, not `print(...)` calls).
+   - Provide a helper that opens a file for scanning: stat the file size; open in binary mode; if larger than the threshold, return a read-only memory map of the file, otherwise return the file handle. Ensure resources are properly managed (close the file handle/mmap appropriately).
+   - Provide a helper that reads a file as UTF-8 text with `errors="ignore"`, returning `None` on read failure (catch OS and decoding-related exceptions gracefully).
+   - Use the `tokenize` module where appropriate to distinguish real code tokens from string/comment content so that matches inside strings or comments are not counted as violations (the regex alone is a first pass; the tokenizer validates).
+   - Return per-file results listing the line numbers and offending line content of detected legacy print statements.
+
+3. **Parallel execution**
+   - Process the discovered files in parallel using the `dh` package's `mpf_joblib` helper (import it as `from dh import mpf_joblib`). Assume it maps a function over an iterable of items in parallel and returns results; keep the call compatible with that usage, and gracefully handle results where a file yielded no findings or could not be read.
+
+4. **Output and CLI**
+   - Accept a target directory from the command line (default to the current directory), optionally an extension filter.
+   - Print a report for each file containing violations: file path, line number, and the offending line, followed by a summary count of files and total violations.
+   - Exit with status 0 when no violations are found and a nonzero status otherwise.
+   - Use an `if __name__ == "__main__":` guard.
+
+5. **Edge cases and robustness**
+   - Empty directories, unreadable directories, symlinks, binary or non-UTF-8 files, empty files, and files exactly at or above the size threshold must not crash the script.
+   - Avoid duplicate imports of `mmap` (import the module once; do not shadow it).
+   - Keep the code clean, PEP 8 compliant, and idiomatic; include concise docstrings and comments only where helpful.
+
+Output only the script itself as the deliverable.
+---"""
 
 from __future__ import annotations
+
 import mmap
 import re
 import tokenize
 from collections import deque
 from mmap import mmap
 from pathlib import Path
+
 from dh import mpf_joblib
 
 

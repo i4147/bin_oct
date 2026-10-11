@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
-import json
+
 import argparse
+import json
 import subprocess
-from dulwich.repo import Repo
+
 import pygit2
+from dulwich.repo import Repo
 from git import Repo as GitRepo
 
 

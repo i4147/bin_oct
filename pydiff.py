@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+
 from dh import cprint, read_lines
 
 

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import os
 import sys
@@ -8,6 +9,7 @@ import threading
 from pathlib import Path
 from queue import Queue
 from typing import Optional
+
 import cv2
 import pytesseract
 from PIL import Image

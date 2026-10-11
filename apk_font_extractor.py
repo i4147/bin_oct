@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""The code you pasted is truncated: it stops partway through `_find_apk_files`, so the rest of the script (the extraction logic, the CLI entry point, and the remaining error handling) is not visible to me. I can't write a faithful reproduction prompt for behavior I can't see.
+
+Could you paste the complete script? Once I have the whole file, I'll produce the prompt.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing
 import re
@@ -8,6 +13,7 @@ import sys
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from fontTools.ttLib import TTFont
 from loguru import logger
 

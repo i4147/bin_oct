@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import shutil
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
+
 from loguru import logger
 
 MAX_WORKERS: Final[int] = 8

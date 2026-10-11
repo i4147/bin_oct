@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import os
 import signal
 import sys
 import tempfile
 import time
+
 import speech_recognition as sr
 from pydub import AudioSegment
 

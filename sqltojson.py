@@ -140,7 +140,7 @@ def handle_run_query2json(
     format="json",
     output=None,
     list_connections=False,
-    list_queries: Union[bool, str] = False,
+    list_queries: bool | str = False,
     timezone=None,
     read_only=False,
     **kwargs,
@@ -196,7 +196,7 @@ def run_query(
     timezone: Optional[str] = None,
     read_only: bool = False,
     **kwargs,
-) -> Union[list, dict]:
+) -> list | dict:
     read_only = _coerce_bool(read_only)
     current_date = _current_date(timezone)
     parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
@@ -209,7 +209,7 @@ def run_query(
             result_proxy = con.execute(text(raw_query), parameters)
 
             if result_proxy.returns_rows:
-                records: Union[list, dict] = map_result_proxy2list_dict(result_proxy)
+                records: list | dict = map_result_proxy2list_dict(result_proxy)
             else:
                 records = {"rowcount": max(result_proxy.rowcount, 0)}
         except Exception as exc:
@@ -314,7 +314,7 @@ def list_queries(
     config_path: Optional[str] = None,
     scoped: bool = False,
     connection: Optional[str] = None,
-) -> Union[list, dict]:
+) -> list | dict:
     path = config_path or _find_config()
     config = load_config_file(path)
     global_query_names = list(config.get("queries", {}).keys())
@@ -354,7 +354,7 @@ def _resolve_query_string(connection_name: str, query_name: str, connections: di
     return config_queries.get(query_name, query_name)
 
 
-def run_query_by_name(conection_name: str = "default", query_name: str = "default", **kwargs) -> Union[list, dict]:
+def run_query_by_name(conection_name: str = "default", query_name: str = "default", **kwargs) -> list | dict:
     config_path = kwargs.pop("config", None) or _find_config()
     timezone = kwargs.pop("timezone", None)
     read_only = kwargs.pop("read_only", False)
@@ -397,7 +397,7 @@ def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
     return response
 
 
-def apply_wrapper(result: Union[str, dict, list], wrapper: Union[bool, str] = False) -> Union[str, dict, list]:
+def apply_wrapper(result: str | dict | list, wrapper: bool | str = False) -> str | dict | list:
     if isinstance(wrapper, str) and wrapper:
         return {wrapper: result}
     elif wrapper:
@@ -407,15 +407,15 @@ def apply_wrapper(result: Union[str, dict, list], wrapper: Union[bool, str] = Fa
 
 def apply_output_transforms(
     unparsed_results: list,
-    wrapper: Union[bool, str] = False,
+    wrapper: bool | str = False,
     first: bool = False,
     key: str = "",
     value: str = "",
     jsonkeys: str = "",
-) -> Union[str, dict, list]:
+) -> str | dict | list:
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 
-    result: Union[str, dict, list, None] = None
+    result: str | dict | list | None = None
 
     if first:
         if results and len(results) > 0:
@@ -449,7 +449,7 @@ def _warn_read_only_write(result: dict) -> None:
 def run_query2json(
     name: str = "default",
     query: str = "default",
-    wrapper: Union[bool, str] = False,
+    wrapper: bool | str = False,
     first: bool = False,
     key: str = "",
     value: str = "",
@@ -457,7 +457,7 @@ def run_query2json(
     timezone: Optional[str] = None,
     read_only: bool = False,
     **kwargs,
-) -> Union[str, dict, list]:
+) -> str | dict | list:
     read_only = _coerce_bool(read_only)
     result = run_query_by_name(name, query, timezone=timezone, read_only=read_only, **kwargs)
 
@@ -570,7 +570,7 @@ def handle_run_query2json(
     format="json",
     output=None,
     list_connections=False,
-    list_queries: Union[bool, str] = False,
+    list_queries: bool | str = False,
     timezone=None,
     read_only=False,
     **kwargs,

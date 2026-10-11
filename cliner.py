@@ -1,9 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt as requested: the script is truncated mid-string (the `decode("` call is unterminated), so I can't fully specify its behavior without guessing. I can write a prompt based on what is visible, but it would have to fill in unknown details. Please paste the complete script (including the rest of `clean_file_large`, the worker/main logic, and the `dh` import context) and I'll generate the prompt.
+---"""
 
 from __future__ import annotations
+
 import mmap
 import re
 from pathlib import Path
+
 from dh import mpf
 
 LOG_EXT = ".log"

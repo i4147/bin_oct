@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import glob
 import shutil
 import sys
 from pathlib import Path
+
 from dh import unique_path
 
 dest = Path.home() / "isaac" / "may" / "scripts"

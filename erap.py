@@ -1,6 +1,44 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which recursively finds all `.py` files under a given directory, runs a selected set of static type checkers and linters on each file in parallel, and appends each file's combined tool output to a file. Specify the following:
+
+**Purpose:** A batch type-checking and linting runner for Python projects, designed for Termux (Android) environments, that collects output from multiple checkers per file and writes results into a report file.
+
+**Interface:** Use argparse. Accept a root directory argument (a path to scan recursively) and a way to select which tools to run from a fixed set of five: ty, pyright, pylint, pyrefly, and mypy. Tool selection should allow choosing one or more tools, with an option to run all. The script should use a shebang line pointing to the Termux Python interpreter path and include `from __future__ import annotations`.
+
+**Tool invocation rules:**
+- ty: run `ty check <file>`
+- pyright: run `pyright <file>`
+- pylint: run `pylint -E <file>` (errors only)
+- pyrefly: run `pyrefly check <file>`
+- mypy: run `mypy <file>`
+- Any unrecognized tool name returns no output (nothing is reported for it).
+
+**Execution helper:** A function runs a command via subprocess with captured stdout and stderr as text, without raising on nonzero exit codes. It returns the exit code and the concatenation of stdout followed by stderr. Exit codes from tools are ignored for reporting purposes; only the output matters.
+
+**Per-file tool runner:** For a given tool and file path, build the command, run it, and return the tool name paired with its output, or `None` if the output is empty or whitespace-only. Handle errors: if the executable is not found, return an error string of the form "ERROR: <tool> not found in PATH"; for any other exception, return "ERROR: " followed by the exception message.
+
+**Output writing:** For each file, append to a results file (opened in append mode with UTF-8 encoding) a leading blank-line separator, then for each tool write its section. Include the file header, the tool name, and the output (skipping tools whose output is `None`). Write with clear section delimiters so each file's results are readable.
+
+**Parallelism:** Use `multiprocessing.Pool` to process files concurrently, distributing per-file (or per-file-and-tool) work across worker processes. Collect results and write them in a deterministic order where practical. Make sure the pool is properly closed and joined, and that the main logic is guarded by `if __name__ == "__main__":`.
+
+**File discovery:** Use `Path.rglob("*.py")` via a generator function, so discovery is recursive and lazy. Consider and handle the case where the root path does not exist or is not a directory, printing a clear error and exiting with a nonzero status.
+
+**Edge cases to address:**
+- Empty directories or no `.py` files: exit cleanly with a message.
+- Tools not installed: the error string is recorded in the output rather than crashing.
+- Files with non-UTF-8 content or unusual names: handle gracefully.
+- Tool output containing only whitespace is treated as no output.
+- Ensure the results file is created or appended correctly, and mention in the script where it is written.
+
+**Dependencies:** Only the Python standard library (argparse, subprocess, multiprocessing, pathlib). The external checkers (ty, pyright, pylint, pyrefly, mypy) must be available on PATH at runtime.
+
+**Usage:** Run as an executable script from the command line with the directory and tool selection as arguments. Print a brief progress or completion message to the console, such as the number of files processed and the output file location.
+
+Keep the code idiomatic, with type hints using modern syntax, concise docstrings or comments where they aid understanding, and consistent naming.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import subprocess
 from multiprocessing import Pool

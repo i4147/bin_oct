@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
+
 import argparse
 import asyncio
 import fnmatch
@@ -8,20 +9,15 @@ import re
 import subprocess
 import sys
 import time
+
 from dh import DOC_TH1, DOC_TH2
 
 FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
 FELO_TIMEOUT = int(os.environ.get("FELO_TIMEOUT", "300"))
-PROMPT_TEMPLATE = """\
-Provide a prompt for ai agent that can produce the following Python code.
-The prompt must describe the script's purpose, its main inputs/outputs, and any notable behavior.
-Strict output rules:
-- Output ONLY the prompt text.
-- Do not include the code itself.
-- Do not repeat these instructions.
-- Do not add a preamble like "Sure" or "Here is".
-Answer in ENGLISH ONLY.
-Code:
+PROMPT_TEMPLATE = """
+You are an expert prompt engineer.Given the Python code below, write a single self-contained prompt that another AI coding agent can use to reproduce the same Python script from scratch. The generated prompt must clearly describe the script’s purpose, its main inputs and outputs, and any notable behavior, including dependencies, key logic, error handling, edge cases, and execution or usage details. Do not include the original code or any code snippets. Output only the generated prompt in English. Do not add explanations, preamble, or these instructions.
+
+Python code:
 {code}
 """
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")

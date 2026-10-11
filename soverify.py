@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import ctypes
 import subprocess
 import sys
 from pathlib import Path
+
 from dh import cprint, get_files
 from loguru import logger
 

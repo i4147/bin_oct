@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -11,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
 from typing import Callable, Optional
+
 import loguru
 from deep_translator import GoogleTranslator
 from deep_translator.exceptions import NotValidPayload, TranslationNotFound

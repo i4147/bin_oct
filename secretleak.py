@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import re
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
+
 from loguru import logger
 
 SECRET_PATTERNS: dict[str, str] = {

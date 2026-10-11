@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from PIL import Image
 from pytesseract import image_to_string
 

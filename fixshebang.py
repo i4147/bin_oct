@@ -1,13 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm going to write the prompt directly from the code you pasted; no tools are needed.
+
+Write a self-contained Python 3 script that reproduces the following behavior. Use only the standard library. Include a Termux-style shebang on line 1 (`#!/data/data/com.termux/files/usr/bin/env python`) and `from __future__ import annotations` at the top, and use `typing.Final` for module-level constants.
+
+**Purpose:** The script scans a directory tree for Python source files that lack a proper Python shebang line (or are otherwise identifiable as Python), and normalizes their first line so they start with a fixed Termux-specific interpreter shebang. It processes files in parallel.
+
+**Constants to define:**
+- A compiled regex `SHEBANG_PATTERN` (multiline mode) that matches a first-line shebang referencing `python`, optionally with a version suffix such as `python2`, `python3`, or `python3.x`, and optional trailing arguments.
+- `PY_SHEBANG`, the replacement shebang string `#!/data/data/com.termux/files/usr/bin/python3.14`.
+- A set `COMMON_PYTHON_NAMES` of extensionless and `.py`-suffixed names commonly used for Python entry points (e.g., setup, manage, app, wsgi, asgi, test, conftest, requirements, main, cli, run, each with and without `.py`).
+
+**Function `is_likely_python_file(path: Path) -> bool`:**
+- Open the file in binary mode and read only the first 512 bytes. Wrap everything in a try/except that returns False on any error (e.g., permissions, missing file, directory).
+- If the sample starts with `#!` and the first line (up to the first newline, or the whole sample if there is no newline) contains `python` (case-insensitive), return True.
+- Otherwise decode the sample as UTF-8 with errors ignored and test it against a list of regex patterns anchored at line starts with multiline matching: import/from statements, `def name(`, `class Name:` or `class Name(`, `if __name__ == '__main__'` (either quote style), and a `#!` line containing `python`. Return True if any match.
+
+**Expected remaining behavior (infer and complete sensibly):**
+- A function that takes a file path, checks whether it is a candidate (e.g., name in COMMON_PYTHON_NAMES, `.py` suffix, or `is_likely_python_file` returns True), reads the full text, and if the first line does not already match SHEBANG_PATTERN, replaces or prepends the first line with `PY_SHEBANG` while preserving the rest of the content and line endings. Handle `UnicodeDecodeError` and `OSError` gracefully by skipping the file and returning a status or message rather than crashing.
+- A main entry point that accepts a root directory (default to the current directory, or take it from `sys.argv[1]`), recursively walks it with `Path.rglob`, skips hidden directories and common vendor/cache directories such as `.git`, `__pycache__`, `venv`, `.venv`, `node_modules`, and skips non-regular files and symlinks.
+- Use `multiprocessing.Pool` to process the collected files in parallel (use `if __name__ == "__main__":` guard), and collect results via `imap_unordered` or `map`.
+- Print a concise summary: number of files scanned, number modified, and a list of modified paths and any errors encountered. Use a non-zero exit code if any errors occurred.
+- Preserve file encoding (UTF-8) and do not modify files that already have a matching Python shebang.
+- Be idempotent: running it twice should produce no further changes.
+- Use type hints throughout, PEP 8 style, and short docstrings for each function.
+
+**Output requirements for the generated script:** Print nothing except the summary and per-file messages for modified or failed files. Do not follow symlinks. Do not crash on empty files (an empty file should get the shebang only if it is a candidate, or be skipped; document the choice in a comment).
+---"""
 
 from __future__ import annotations
+
 import re
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
 
 SHEBANG_PATTERN: Final[re.Pattern[str]] = re.compile(r"^#!.*python[23]?(?:\.\d+)?(?:[ \t]+.*)?$", re.MULTILINE)
-PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python3.12"
+PY_SHEBANG: Final[str] = "#!/data/data/com.termux/files/usr/bin/python3.14"
 COMMON_PYTHON_NAMES: Final[set[str]] = {
     "setup",
     "setup.py",

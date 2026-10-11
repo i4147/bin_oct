@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 import shutil
@@ -9,6 +10,7 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Sequence
+
 from dh import get_pyfiles
 from loguru import logger
 

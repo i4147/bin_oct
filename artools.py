@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import bz2
 import contextlib
@@ -16,6 +17,7 @@ from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Optional
+
 import brotli
 import cramjam
 import lz4.frame

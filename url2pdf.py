@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 import sys
+
 from weasyprint import HTML
 
 

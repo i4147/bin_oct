@@ -1,6 +1,42 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to reproduce a Python command-line utility with the following specification.
+
+Build a Python 3 command-line script (targeting Termux on Android, so the shebang points to `/data/data/com.termux/files/usr/bin/env python`) that scans a directory tree for Python source files and finds duplicate top-level definitions across them. Use only the standard library, and include `from __future__ import annotations` at the top.
+
+Core behavior:
+
+1. **Definition extraction.** For each `.py` file, read it as UTF-8 and parse it with the `ast` module. If reading or parsing fails for any reason, silently treat the file as having no definitions and return an empty mapping. Only inspect top-level statements in the module body. Recognize three kinds of definitions:
+   - Sync and async function definitions, keyed by their name and their full normalized source text (obtained via `ast.unparse`).
+   - Class definitions, keyed the same way.
+   - Simple assignments with exactly one target that is a plain name, treated as "constant" definitions, keyed the same way using the assigned name and unparsed statement text.
+
+   Each extracted entry records the file path, the object's name, its type (function, class, or constant), and the AST node. The lookup key is a tuple of (type, name, unparsed source), so two definitions with the same name but different bodies are distinct entries.
+
+2. **Duplicate detection.** Aggregate definitions across all scanned files and group identical ones (same type, name, and unparsed source) appearing in more than one location. Use `collections.defaultdict` for grouping. Report each group with the object name, type, and every file path where it appears.
+
+3. **Parallel processing.** Use `concurrent.futures` (a thread or process pool) to parse files concurrently, since there may be many files. Collect results as they complete and merge them into the aggregate structure.
+
+4. **Affected-file modification.** The script contains a helper function, `modify_affected_file`, which takes a file path string, an object name, and an object type (and related parameters) and rewrites the affected file to remove or modify the matched duplicate definition. Implement it so that it locates the target top-level node in the file's AST, edits the source accordingly, and writes the result back. Before writing, guard against destructive mistakes: only modify when the target is found exactly, and never write if parsing fails. Keep edits minimal and preserve the rest of the file's text.
+
+5. **Command-line interface.** Use `argparse` to accept a root directory (defaulting to the current working directory), plus options to control behavior such as the number of worker threads, whether to apply modifications, and a verbosity or dry-run flag. By default the script should only report duplicates and not modify any files; modifications require an explicit flag. Print results in a readable, grouped format to standard output, and write diagnostic or error messages to standard error. Return a meaningful process exit code (0 on success, nonzero on argument or fatal errors).
+
+6. **Filesystem handling.** Use `os` and `pathlib.Path` to walk the directory tree recursively, skipping hidden directories and common virtual-environment or cache directories such as `__pycache__`, `.git`, and `venv`-style folders. Only consider files ending in `.py`. Handle missing or unreadable paths gracefully, reporting them on standard error without crashing.
+
+7. **Edge cases to handle:**
+   - Empty directories or directories with no Python files: report that nothing was found and exit cleanly.
+   - Files with syntax errors or non-UTF-8 content: skip them silently (they contribute no definitions).
+   - Files that are symlinks or that disappear mid-scan: skip without crashing.
+   - Duplicate names with differing bodies: do not report them as duplicates.
+   - Constant assignments with multiple targets or non-name targets: ignore them.
+   - Nested definitions (inside functions or classes): ignore them; only top-level nodes count.
+
+8. **Execution details.** The script should be runnable directly (`python script.py [root] [options]`) and should guard its entry point with `if __name__ == "__main__":`. Wrap the main logic in a `main()` function that returns an integer exit code, and call `sys.exit` with it. Keep the code dependency-free beyond the standard library, so it runs on a stock Termux Python install.
+
+Write clean, idiomatic code with type hints where helpful, descriptive function names, and concise docstrings. Include a brief usage explanation in the module docstring showing how to invoke the tool, its options, and what its output looks like.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 import concurrent.futures

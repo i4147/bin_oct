@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce this output as requested: the code you pasted is cut off mid-line (`log = logging.getLogg`), so I only have part of the script and can't describe its full behavior accurately. I'd also be guessing at much of its purpose, since the visible portion is mostly imports and optional-dependency fallbacks.
+
+If you paste the complete file, I'll write the self-contained reproduction prompt you described, with no code or snippets included.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import logging

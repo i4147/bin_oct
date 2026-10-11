@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import asyncio
 import contextlib
@@ -10,6 +11,7 @@ import tarfile
 import time
 import zipfile
 from pathlib import Path
+
 import httpx
 from bs4 import BeautifulSoup
 from dh import cprint

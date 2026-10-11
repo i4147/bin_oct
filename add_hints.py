@@ -14,7 +14,7 @@ import libcst as cst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
 
-NAME_HINTS: Dict[str, str] = {
+NAME_HINTS: dict[str, str] = {
     "name": "str",
     "path": "str",
     "text": "str",
@@ -108,7 +108,7 @@ def infer_literal_type(node: cst.BaseExpression) -> Optional[str]:
 
 class _ReturnCollector(cst.CSTVisitor):
     def __init__(self) -> None:
-        self.types: Set[str] = set()
+        self.types: set[str] = set()
         self.has_yield = False
         self._depth = 0
 
@@ -173,7 +173,7 @@ class AnnotateTransformer(cst.CSTTransformer):
         self.add_returns = add_returns
         self.name_heuristics = name_heuristics
         self.stats = {"params": 0, "returns": 0}
-        self._scope: List[str] = []
+        self._scope: list[str] = []
 
     def visit_ClassDef(self, node: cst.ClassDef) -> None:
         self._scope.append("class")
@@ -329,7 +329,7 @@ def process_file(
     return 0
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(description="Add simple type hints to .py files in place (libcst).")
     ap.add_argument("files", nargs="+", type=Path, help=".py file(s) to annotate")
     ap.add_argument("--dry-run", action="store_true", help="don't write, just report")

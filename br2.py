@@ -1,11 +1,25 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that asks an AI coding agent to build a Python script with these characteristics:
+
+The script is a parallel Brotli compressor for Termux (Android) that processes filesystem entries given as command-line arguments. For each directory argument, it creates an in-memory uncompressed tar archive of that directory (with the archive root named after the directory's basename) and compresses that archive with Brotli at maximum quality into a sibling file named "<directory name>.tar.br". For each regular file argument, it compresses the file contents directly with Brotli at maximum quality into a sibling file named "<file name>.br". Compression is streamed in 64 KiB chunks through a Brotli compressor object, which is flushed with a finish call at the end. Work items are dispatched to a multiprocessing pool of up to 8 worker processes, and each worker returns a tuple of (path, success flag, optional error message). Errors inside a worker are caught and reported as a failure tuple with a descriptive message rather than crashing the pool. The main process logs results with loguru: successes at info level, failures at error level, and a final summary of counts. The script should have a Termux-specific shebang line, use `from __future__ import annotations`, use type hints throughout (including Final constants for MAX_WORKERS=8, BROTLI_QUALITY=11, CHUNK_SIZE=64 KiB), and depend on the `brotli` and `loguru` packages. It should skip or report paths that are neither files nor directories, and handle a missing path argument by printing usage and exiting with a nonzero status.
+
+Details to reproduce faithfully:
+- Directories are archived with tarfile in write mode into a BytesIO buffer before compression, not written to disk first.
+- Output files are written in binary mode and overwrite existing outputs.
+- Work is dispatched with a multiprocessing Pool using imap_unordered or equivalent so results stream as they complete.
+- Use pathlib for all path handling; `with_name` builds the output path next to the input.
+- Exit code is 0 only if every item succeeded; otherwise it is nonzero.
+- Include a `if __name__ == "__main__":` guard, and parse arguments from `sys.argv` (one or more paths) without external argument-parsing libraries.
+---"""
 
 from __future__ import annotations
+
 import io
 import tarfile
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import BinaryIO, Final
+
 import brotli  # type: ignore[import-untyped]
 from loguru import logger
 

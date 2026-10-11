@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -17,7 +18,7 @@ DEFAULT_SHEBANG_SH = f"#!{TERMUX_PREFIX}/bin/bash"
 DEFAULT_WORKERS = 8
 _TERMUX_PY_SHEBANGS = {
     f"#!{TERMUX_PREFIX}/bin/python",
-    f"#!{TERMUX_PREFIX}/bin/python3.12",
+    f"#!{TERMUX_PREFIX}/bin/python3.14",
     f"#!{TERMUX_PREFIX}/bin/python3.13",
     f"#!{TERMUX_PREFIX}/bin/python3.14",
     f"#!{TERMUX_PREFIX}/bin/python3",
@@ -36,7 +37,7 @@ _SHEBANG_TO_EXT = {
 }
 _RENAME_PATTERNS = [
     (r"#!/data/data/com.termux/files/usr/bin/python3?", ".py"),
-    (r"#!/data/data/com.termux/files/usr/bin/python3.12?", ".py"),
+    (r"#!/data/data/com.termux/files/usr/bin/python3.14?", ".py"),
     (r"#!/data/data/com.termux/files/usr/bin/python3.14?", ".py"),
     (r"#!/data/data/com.termux/files/usr/bin/env python3?", ".py"),
     (r"#!/usr/bin/env python", ".py"),

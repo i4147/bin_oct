@@ -1,6 +1,24 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to build a Python command-line tool that converts Windows batch (.bat) files into Bash (.sh) shell scripts. The tool should be written to run under Termux on Android, use only the standard library, and include a class-based converter with a regex-driven command mapping table. It should handle comments, blank lines, and REM lines, then perform line-by-line conversion. Specifically, it should:
+
+- Strip trailing carriage return and newline characters from each line before processing.
+- Preserve blank lines and convert REM comments into Bash # comments by replacing the first occurrence of REM with #.
+- Convert percent-wrapped environment variable references (for example, a name enclosed in percent signs) into Bash dollar-prefixed variables.
+- Remove a leading case-insensitive set keyword, leaving the assignment.
+- Convert case-insensitive if-equality comparisons with optional quotes into Bash single-bracket string tests using quoted dollar-prefixed operands.
+- Map common batch commands to Unix equivalents using an ordered list of anchored, case-sensitive regex patterns with specific replacements: echo off to a comment, pause to a read prompt, cls to clear, exit to exit 0, cd, dir to ls -la, del to rm, copy to cp, move and ren to mv, type to cat, findstr to grep, and if exist and if not exist to Bash file tests.
+- Track counts of converted lines and errors on the converter instance.
+- Accept an input .bat path and an optional output .sh path (defaulting to the same name with a .sh extension), read the input with appropriate encoding handling, write a Bash shebang header, convert every line, write the result, make the output file executable, and print a summary of converted lines and errors.
+- Handle missing input files, unreadable files, and per-line conversion exceptions gracefully, reporting errors to stderr without crashing, and return appropriate nonzero exit codes on fatal failures.
+- Provide a main entry point that parses command-line arguments, prints usage when arguments are missing, and exits with status codes.
+- Begin the script with a Termux-specific Python shebang line and use postponed annotation evaluation for type hints.
+- Use only the Python standard library (re, sys, pathlib, and similar modules).
+
+Note the conversion is a best-effort heuristic: complex batch constructs such as delayed expansion, for loops, labels, and call statements are not fully translated and should be left as-is or flagged in comments.
+---"""
 
 from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

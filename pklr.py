@@ -1,11 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import json
-from pathlib import Path
 import pickle
 import sys
+from pathlib import Path
 from typing import Any
 
 

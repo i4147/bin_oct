@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import importlib.util
 import json
@@ -13,6 +14,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Callable, TypeAlias
+
 from loguru import logger
 
 Translator: TypeAlias = Callable[[str], str]

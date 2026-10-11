@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't write that prompt: the code you pasted is cut off at `def c(self, text:`, so the full script isn't available to me. A reproduction prompt built from a truncated file would describe behavior I can't see, such as the rest of the styling helpers, the main logic, and the CLI flow.
+
+If you paste the complete script, I'll produce the prompt you asked for.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
@@ -180,7 +185,7 @@ def warning_box(items: list[tuple[str, int, str]], style: Style, verbose: bool) 
     header = f"{style.yellow(mark)} {style.bold(len(items))} parser warning(s) suppressed"
     lines = [
         header,
-        style.dim("python 3.12+ flags invalid escape sequences in string literals"),
+        style.dim("python 3.14+ flags invalid escape sequences in string literals"),
     ]
     shown = items if verbose else items[:5]
     for filename, lineno, message in shown:

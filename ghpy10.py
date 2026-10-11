@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+
 import requests
 from dotenv import load_dotenv
 

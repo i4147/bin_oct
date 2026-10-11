@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import compileall
 import os
 import sys
 from pathlib import Path
+
 from dh import get_pyfiles, mpf
 
 REMOVE_ORIG = False

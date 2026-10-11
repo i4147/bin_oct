@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt: the code you pasted is cut off mid-function (it ends at `if version_match`), so I can't describe the full behavior accurately. Could you paste the complete script so I can write the reproduction prompt?
+---"""
 
 from __future__ import annotations
+
 import re
 import tarfile
 from pathlib import Path

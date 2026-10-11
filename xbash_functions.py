@@ -1,6 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -165,7 +166,7 @@ def _iter_directory_scandir(
         log.warning("OS error accessing {}: {}", directory, exc)
 
 
-def collect_scripts_scandir(
+def collect_scripts(
     inputs: Iterable[Path],
     *,
     include_extensionless: bool,
@@ -173,101 +174,30 @@ def collect_scripts_scandir(
     max_size: int,
     log: _LoggerProtocol,
 ) -> Iterator[Path]:
+    seen: set[Path] = set()
     for p in inputs:
         if not p.exists():
             log.warning("{} does not exist, skipping...", p)
             continue
         if p.is_file():
             if is_shell_script(p, include_extensionless=include_extensionless, max_size=max_size):
-                yield p.resolve()
+                r = p.resolve()
+                if r not in seen:
+                    seen.add(r)
+                    yield r
         elif p.is_dir():
-            yield from _iter_directory_scandir(
+            for s in _iter_directory_scandir(
                 p,
                 include_extensionless=include_extensionless,
                 skip_hidden=skip_hidden,
                 max_size=max_size,
                 log=log,
-            )
+            ):
+                if s not in seen:
+                    seen.add(s)
+                    yield s
         else:
             log.warning("{} is not a file or directory, skipping...", p)
-
-
-def collect_scripts_fastwalk(
-    inputs: Iterable[Path],
-    *,
-    include_extensionless: bool,
-    skip_hidden: bool,
-    max_size: int,
-    log: _LoggerProtocol,
-) -> Iterator[Path]:
-    try:
-        from fastwalk import walk_files  # type: ignore
-    except ImportError:
-        log.error("fastwalk is not installed; falling back to scandir walker")
-        yield from collect_scripts_scandir(
-            inputs,
-            include_extensionless=include_extensionless,
-            skip_hidden=skip_hidden,
-            max_size=max_size,
-            log=log,
-        )
-        return
-    for p in inputs:
-        if not p.exists():
-            log.warning("{} does not exist, skipping...", p)
-            continue
-        if p.is_file():
-            if is_shell_script(p, include_extensionless=include_extensionless, max_size=max_size):
-                yield p.resolve()
-        elif p.is_dir():
-            for s in walk_files(p):
-                t = Path(s)
-                if skip_hidden:
-                    try:
-                        rel_parts = t.relative_to(p).parts
-                    except ValueError:
-                        rel_parts = t.parts
-                    if any(part.startswith(".") for part in rel_parts):
-                        continue
-                if t.suffix in EXCLUDED_SUFFIXES:
-                    continue
-                if is_shell_script(t, include_extensionless=include_extensionless, max_size=max_size):
-                    yield t.resolve()
-        else:
-            log.warning("{} is not a file or directory, skipping...", p)
-
-
-def collect_scripts(
-    inputs: Iterable[Path],
-    *,
-    walker: str,
-    include_extensionless: bool,
-    skip_hidden: bool,
-    max_size: int,
-    log: _LoggerProtocol,
-) -> Iterator[Path]:
-    gen = (
-        collect_scripts_fastwalk(
-            inputs,
-            include_extensionless=include_extensionless,
-            skip_hidden=skip_hidden,
-            max_size=max_size,
-            log=log,
-        )
-        if walker == "fastwalk"
-        else collect_scripts_scandir(
-            inputs,
-            include_extensionless=include_extensionless,
-            skip_hidden=skip_hidden,
-            max_size=max_size,
-            log=log,
-        )
-    )
-    seen: set[Path] = set()
-    for s in gen:
-        if s not in seen:
-            seen.add(s)
-            yield s
 
 
 def extract_functions(path: Path, log: _LoggerProtocol) -> Iterator[tuple[str, str]]:
@@ -402,7 +332,6 @@ def run(args: argparse.Namespace) -> int:
     scripts = list(
         collect_scripts(
             inputs,
-            walker=args.walker,
             include_extensionless=include_extensionless,
             skip_hidden=args.skip_hidden,
             max_size=args.max_size,
@@ -445,7 +374,7 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Original script equivalents:\n"
-            "  xbash_functions.py   ->  python xb_extract.py --walker fastwalk "
+            "  xbash_functions.py   ->  python xb_extract.py "
             "--parallel --no-header --no-chmod\n"
             "  xbash_functions2.py  ->  python xb_extract.py\n\n"
             "Examples:\n"
@@ -455,8 +384,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  %(prog)s script1.sh myscript dir1/ dir2/ -o out_functions\n\n"
             "  # Only .sh files, skip hidden, dry run\n"
             "  %(prog)s --sh-only --skip-hidden --dry-run\n\n"
-            "  # Parallel extraction using fastwalk walker (script1 behavior)\n"
-            "  %(prog)s --walker fastwalk --parallel --no-header --no-chmod\n"
+            "  # Parallel extraction (script1 behavior)\n"
+            "  %(prog)s --parallel --no-header --no-chmod\n"
         ),
     )
     p.add_argument(
@@ -501,13 +430,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="List scripts that would be processed and exit.",
-    )
-    p.add_argument(
-        "--walker",
-        choices=("scandir", "fastwalk"),
-        default="scandir",
-        help="Filesystem walker: 'scandir' (stdlib, default) or 'fastwalk' "
-        "(requires the fastwalk package; falls back to scandir).",
     )
     p.add_argument(
         "--parallel",

@@ -1,6 +1,46 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't see the rest of the code past the truncation point, so the prompt below describes the script as far as its visible portion shows. Here is the prompt:
+
+Write a single self-contained Python 3 script (intended to run under Termux on Android, so the shebang points to the Termux Python path) that inspects files in a directory tree, detects each file's true type and extension, and reports or fixes mismatches between declared extensions and detected content. Use only the standard library as the core, with optional third-party detectors that are imported defensively.
+
+Requirements:
+
+1. **Imports and optional dependencies**: Use `from __future__ import annotations`. Standard library modules to use include argparse, concurrent.futures, logging, mimetypes, os, re, shutil, subprocess, sys, tarfile, tokenize, zipfile, dataclasses, io.StringIO, pathlib.Path, and typing (with TYPE_CHECKING guards for collections.abc Iterator and Sequence, plus Any and Callable). Attempt to import these optional detectors each inside its own try/except Exception block, falling back to None on failure: `puremagic`, `magic` (python-magic), and `filetype`. Also attempt to import a helper module named `dh` exposing BIN_EXT, MIME2EXT, SHEBANG_MAP, TXT_EXT, get_files, and is_binary, aliased with a `DH_` prefix; on failure set each to None. Code must work when none of the optional modules are present.
+
+2. **Constant tables**:
+   - `ALIASES`: a dict[str, str] mapping equivalent extensions to a canonical one (e.g. `.jpeg`→`.jpg`, `.tiff`→`.tif`, `.htm`→`.html`, `.tgz`→`.tar.gz`).
+   - `COMPOUND_EXTS`: a tuple of multi-part extensions treated as a single unit (`.tar.gz`, `.tar.bz2`, `.tar.xz`, `.min.js`, `.min.css`).
+   - `MIME2EXT`: a dict[str, str | list[str]] mapping MIME types to one or more candidate extensions. Populate it with a reasonable set of common types (text, images, archives, documents, audio/video, code). Also define text and binary extension sets, and a shebang-to-extension map (interpreter name → extension) used for extensionless scripts.
+
+3. **Detection pipeline**: For each file, determine its detected MIME type/extension using the following priority order, using the first successful result:
+   - Use `DH_MIME2EXT`/`DH_SHEBANG_MAP`/`dh_is_binary` when the `dh` helper is available.
+   - Otherwise use puremagic, then python-magic, then filetype, then the stdlib `mimetypes` module by filename.
+   - Inspect the first bytes for shebang lines (`#!`) to detect extensionless scripts and map the interpreter to an extension.
+   - For text files, use `tokenize` (with StringIO) to verify Python source validity where relevant.
+   - For archives, inspect content with `zipfile` and `tarfile` (including compound `.tar.*` names) to confirm type rather than trusting the extension.
+   - Optionally use `subprocess` to invoke the `file` command as a last resort if available, guarded by `shutil.which`.
+
+4. **Extension normalization**: Apply COMPOUND_EXTS first so `.tar.gz` and `.min.js` are not split into `.gz`/`.js`. Then map through ALIASES. Compare the normalized declared extension with the normalized detected extension(s) from MIME2EXT (which may be a list; any match counts as a match).
+
+5. **Dataclass result**: Define a `@dataclass` (e.g. a file-result record) holding at least the path, declared extension, detected extension, detected MIME type, detector used, and a boolean or status for mismatch, plus an optional error message.
+
+6. **Traversal and concurrency**: Walk the target directory recursively (or use `dh.get_files` when available). Process files concurrently with `concurrent.futures.ThreadPoolExecutor`, with a configurable worker count. Skip symlinks by default, and skip hidden directories such as `.git` unless told otherwise. Use `Path` objects throughout.
+
+7. **Command-line interface**: Use argparse with options including: target path (file or directory, default current directory), `--fix` / rename-on-mismatch (use `shutil.move` or `Path.rename`, never overwrite existing files, and report collisions), `--dry-run` (default when `--fix` not set, print intended actions only), `--workers N`, `--verbose` / `--quiet` controlling logging level, and an option to restrict to certain extensions or to output results as text or JSON.
+
+8. **Logging**: Configure the `logging` module in `main()` with level set from verbosity flags. Log detector selection, skipped files, and errors at appropriate levels. Print final summary counts (scanned, matched, mismatched, fixed, errors).
+
+9. **Error handling**: Wrap per-file work in try/except so one unreadable or corrupt file never aborts the run; record the error in the result record. Handle `PermissionError`, `OSError`, `zipfile.BadZipFile`, `tarfile.TarError`, `UnicodeDecodeError`, and `tokenize.TokenError` specifically. Exit with non-zero status for invalid arguments or a nonexistent target path; return 0 on a completed run even if some files errored. Catch `KeyboardInterrupt` in `main()` and exit cleanly with status 130.
+
+10. **Edge cases**: Empty files, files with no extension, files with multiple dots, hidden files, symlinks, binary files misnamed as text, text files misnamed as binary, files that disappear mid-scan, and very large files (read only a bounded prefix, e.g. a few KB, for detection).
+
+11. **Entry point**: Guard execution with `if __name__ == "__main__":` and call `sys.exit(main())`, where `main()` returns an integer exit status. Use type hints throughout (compatible with `from __future__ import annotations`), docstrings for public functions and the dataclass, and no external network access.
+
+Output a single complete, runnable script with these behaviors, using clear function names and consistent style.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import logging
@@ -33,14 +73,12 @@ try:
 except Exception:
     filetype = None  # type: ignore
 try:
-    from dh import (
-        BIN_EXT as DH_BIN_EXT,  # type: ignore
-        MIME2EXT as DH_MIME2EXT,
-        SHEBANG_MAP as DH_SHEBANG_MAP,
-        TXT_EXT as DH_TXT_EXT,
-        get_files as dh_get_files,
-        is_binary as dh_is_binary,
-    )
+    from dh import BIN_EXT as DH_BIN_EXT  # type: ignore
+    from dh import MIME2EXT as DH_MIME2EXT
+    from dh import SHEBANG_MAP as DH_SHEBANG_MAP
+    from dh import TXT_EXT as DH_TXT_EXT
+    from dh import get_files as dh_get_files
+    from dh import is_binary as dh_is_binary
 except Exception:
     DH_BIN_EXT = None
     DH_MIME2EXT = None

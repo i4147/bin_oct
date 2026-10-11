@@ -1,6 +1,57 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that tells an AI coding agent to build a Python CLI tool for Termux that manages git history: it reads and rewrites commits, produces combined diffs, and works with a backend abstraction that falls back to subprocess git calls. Specify purpose, inputs and outputs, dependencies, behavior, error handling, edge cases, and usage. Do not include code.
+
+Create a single-file Python 3 command-line script intended to run under Termux on Android (shebang pointing to the Termux Python interpreter at /data/data/com.termux/files/usr/bin/env python). The script is a git-history helper: it operates on a local git repository, inspects recent commits, can produce a combined diff between two revisions, and can perform history-rewriting operations on the last N commits. It is organized around a backend abstraction.
+
+Requirements for the script:
+
+**Language and dependencies**
+- Python 3 standard library only: argparse, json, os, subprocess, sys, datetime. Use `from __future__ import annotations` at the top.
+- No third-party packages. Shell out to the `git` executable for all repository operations.
+
+**Module structure**
+1. A module-level helper `run(cmd, cwd=None, capture=False, check=True)`:
+   - When `capture` is true, run with stdout and stderr piped, text mode enabled, and return the completed process. If `check` is true and the return code is nonzero, raise `subprocess.CalledProcessError` including the return code, the command, the captured stdout as output, and stderr.
+   - When `capture` is false, run with inherited stdio (output goes straight to the terminal). If `check` is true and it fails, raise `CalledProcessError` with the return code and command.
+   - Return the completed process in both cases.
+2. A helper `is_git_repo(path=".")` that runs `git rev-parse --git-dir` in the given directory with capture and returns True on success, False on any exception.
+3. A `Backend` class constructed with a `repo_path` (default "."), storing the absolute path and creating a `SubprocessBackend` instance (a separate class that performs git operations by invoking the git CLI through `run`) as its `fallback`. The `Backend` class delegates these methods to the fallback:
+   - `ensure_clean_worktree(force=False)`: verify the working tree has no uncommitted changes; if `force` is true, bypass the check.
+   - `get_head()`: return the current HEAD commit identifier.
+   - `get_last_n_commits(n)`: return the last N commit identifiers or records.
+   - `write_combined_diff(base_rev, head_rev, out_patch_path)`: write the combined diff between two revisions to a patch file at the given path.
+   - Additional rewrite-related operations on the last N commits as needed by the CLI (for example, squashing, reordering, or rewriting commit messages), each delegating to the fallback backend.
+   - Design `SubprocessBackend` so that each method runs git commands via `run` with the repo path as `cwd`, capturing output when values are needed.
+4. A `main()` function with an `argparse`-based CLI that:
+   - Accepts a repository path (default current directory).
+   - Provides subcommands or flags for: showing HEAD, listing the last N commits, writing a combined diff between a base and head revision to an output file, and performing history operations on the last N commits.
+   - Includes a `--force` option that is passed to `ensure_clean_worktree` to allow operating on a dirty working tree.
+   - Produces machine-readable output as JSON when requested (use the `json` module), and human-readable text otherwise.
+   - Uses `datetime` to timestamp generated output or backup/patch file names, so repeated runs do not overwrite each other by default.
+5. An `if __name__ == "__main__":` guard that calls `main()` and exits with its return code via `sys.exit`.
+
+**Behavior and edge cases**
+- Before any mutating operation, check that the path is a git repository (using `is_git_repo`) and, unless `--force` is given, that the working tree is clean. Exit with a clear error message and nonzero status if either check fails.
+- If `N` exceeds the number of available commits, use only the commits that exist and warn the user rather than crashing. If N is less than 1, reject with an error.
+- If the repository has fewer than two commits, a combined diff against a base revision that does not exist must fail gracefully with a message.
+- Handle the root commit correctly when generating diffs (compare against the empty tree, for example via the well-known empty tree object).
+- Ensure `CalledProcessError` from git is caught in `main()`, printing the git stderr to the user and returning a nonzero exit code, rather than printing a raw traceback.
+- Catch `KeyboardInterrupt` and exit with code 130.
+- Do not silently overwrite existing patch files; either append a timestamp (from `datetime`) to the file name or refuse with an error unless an explicit overwrite flag is given.
+- Validate that output directories exist before writing patch files.
+- When running history rewrites, do not leave the repository in a detached or half-rewritten state; if a git command fails midway, report the failure and state where the repository was left.
+
+**Output and usage**
+- Print progress and results to stdout; print errors to stderr.
+- Return exit code 0 on success, 1 on handled errors, 2 for argument errors (argparse default), and 130 on interrupt.
+- Include a `--help` description summarizing each subcommand and option.
+- Keep comments sparse and idiomatic; follow standard PEP 8 naming and formatting.
+
+Deliver the complete script as a single file, with the Termux shebang line, ready to run as `python <script> [options]` from inside a git repository.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import os

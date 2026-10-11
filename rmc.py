@@ -411,8 +411,8 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
 
 def backend_tree_sitter(source: str, opts: Options) -> Stripped:
     """tree-sitter backend: locate comment and docstring nodes precisely."""
-    from tree_sitter import Language, Parser  # type: ignore[import-not-found]
     import tree_sitter_python as tspy  # type: ignore[import-not-found]
+    from tree_sitter import Language, Parser  # type: ignore[import-not-found]
 
     parser = Parser(Language(tspy.language()))
     data = source.encode("utf-8")

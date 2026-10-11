@@ -1,15 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/python
 
-import ast
 import argparse
+import ast
 import json
 import sys
 from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Tuple, Any, Set
+from typing import Any, Dict, List, Set, Tuple
 
 # Directories to ignore automatically during recursive parsing
-DEFAULT_EXCLUDES: Set[str] = {
+DEFAULT_EXCLUDES: set[str] = {
     ".git",
     ".venv",
     "venv",
@@ -69,7 +69,7 @@ class CodeNormalizer(ast.NodeTransformer):
     def __init__(self, fuzzy: bool = True):
         super().__init__()
         self.fuzzy = fuzzy
-        self.var_map: Dict[str, str] = {}
+        self.var_map: dict[str, str] = {}
         self.var_counter = 0
 
     def _get_norm_var(self, name: str) -> str:
@@ -154,7 +154,7 @@ def count_ast_nodes(node: ast.AST) -> int:
 # ----------------------------------------------------------------------
 
 
-def process_file_task(task_args: Tuple[str, bool, int]) -> List[Dict[str, Any]]:
+def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
     """
     Parses a single Python file.
     Accepts string file path for fast subinterpreter IPC serialization.
@@ -203,7 +203,7 @@ def process_file_task(task_args: Tuple[str, bool, int]) -> List[Dict[str, Any]]:
 # ----------------------------------------------------------------------
 
 
-def generate_html_report(categorized_duplicates: Dict[str, List[Dict[str, Any]]], output_path: Path):
+def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]], output_path: Path):
     """Generates an interactive HTML dashboard highlighting duplicate code blocks."""
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -315,12 +315,12 @@ def main():
     all_objects = [item for sublist in raw_results for item in sublist]
 
     # Group extracted constructs by type and canonical code
-    grouped_objects: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+    grouped_objects: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
 
-    categorized_duplicates: Dict[str, List[Dict[str, Any]]] = {
+    categorized_duplicates: dict[str, list[dict[str, Any]]] = {
         "function": [],
         "class": [],
         "constant": [],

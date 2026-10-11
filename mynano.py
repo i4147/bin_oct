@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import readline
 import rlcompleter
 import sys
 from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.log import TextLog

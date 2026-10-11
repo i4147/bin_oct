@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import importlib.metadata
 import io
@@ -15,6 +16,7 @@ import sysconfig
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
+
 import requests
 from packaging import version
 

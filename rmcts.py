@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import tree_sitter_python as tsp
 from dh import gsz, rrs
 from loguru import logger

@@ -1,10 +1,14 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
+"""I can't provide that, since the request is to produce a prompt that reproduces the script's code from a description, and the instructions explicitly bar me from giving code or snippets. The script was truncated mid-function, so I also can't describe its full behavior accurately. If you paste the complete file, I can help with something else about it, such as explaining what it does, reviewing the logic, or suggesting improvements.
+---"""
 
 from __future__ import annotations
+
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from dh import should_skip
-from fastwalk import walk_files
+
+from dh import should_skip  # type: ignore[import-untyped]
 
 EXT = {
     ".zsh",
@@ -31,15 +35,21 @@ EXT = {
 }
 
 
-def get_files(root_dir):
+def walk_files(directory: Path) -> Iterator[Path]:
+    for root, _dirs, files in directory.walk():
+        for name in files:
+            yield root / name
+
+
+def get_files(root_dir: Path) -> Iterator[Path]:
     for p in walk_files(root_dir):
-        if should_skip(p):
+        if should_skip(str(p)):
             continue
         if p.suffix in EXT:
             yield p
 
 
-def strip_comments(line):
+def strip_comments(line: str) -> tuple[str, int]:
     if line.startswith("#!"):
         return (line, 0)
     in_single_quote = False
@@ -54,11 +64,11 @@ def strip_comments(line):
     return (line, 0)
 
 
-def process_file(path) -> int:
+def process_file(path: Path) -> int:
     try:
         rel_path = path.relative_to(Path.cwd().resolve())
         lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-        cleaned_lines = []
+        cleaned_lines: list[str] = []
         total_removed = 0
         for line in lines:
             cleaned, count = strip_comments(line)
@@ -74,7 +84,7 @@ def process_file(path) -> int:
         return 0
 
 
-def main():
+def main() -> int:
     cwd = Path.cwd()
     args = sys.argv[1:]
     total = 0
@@ -90,6 +100,7 @@ def main():
         for f in get_files(cwd):
             total += process_file(f)
     print(f"{total} comments removed")
+    return 0
 
 
 if __name__ == "__main__":

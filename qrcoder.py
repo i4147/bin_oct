@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import os
 import sys
+
 from PIL import Image
 from pyzbar import pyzbar
 

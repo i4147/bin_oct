@@ -5,12 +5,12 @@ import binascii
 import hashlib
 import json
 import mimetypes
+import re
 import sys
 from collections.abc import Iterator, Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from urllib.parse import quote
-import re
 
 PATTERN: re.Pattern[str] = re.compile(
     r"(?<![A-Za-z0-9_-])data:(?P<mime>[A-Za-z0-9.+-]+/[A-Za-z0-9.+-]+)?"

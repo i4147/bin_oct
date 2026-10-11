@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt: the Python code you pasted is cut off mid-line at `open(self.json_fi`, so I can't see the full script, and I don't want to write a specification for behavior I haven't seen. Could you paste the complete code? Once I have it, I'll write the self-contained reproduction prompt as you specified.
+---"""
 
 from __future__ import annotations
+
 import json
 import os
 import sys

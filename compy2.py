@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't write this prompt in full from the excerpt you've given, because the code is cut off at `if lines and lines[0].startswith("#!` and the rest of the script isn't included. A prompt that accurately describes the script's behavior, inputs, outputs, and edge cases needs the complete source.
+
+Could you paste the rest of the file? Once I have all of it, I'll produce the self-contained, English-only reproduction prompt you described, with no code snippets and no extra commentary.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import ast
 import builtins
@@ -13,6 +18,7 @@ import token
 import tokenize
 from io import StringIO
 from pathlib import Path
+
 from dh import runcmd
 
 OUTPUT_FILE = Path("compressed.txt")

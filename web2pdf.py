@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+
 from rich.console import Console
 from weasyprint import CSS, HTML
 

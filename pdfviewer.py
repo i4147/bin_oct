@@ -1,6 +1,57 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""You are reproducing a Python terminal PDF viewer from scratch. Write one complete, self-contained Python 3 script that satisfies the specification below. Output only the script's source as your final deliverable, with no commentary beyond what is needed to deliver it.
+
+**Purpose:** A terminal-based PDF viewer that renders PDF pages as images using half-block characters and ANSI escape sequences, with keyboard navigation, zoom, and page jumping. It is intended for Termux on Android but should run on any POSIX terminal.
+
+**Shebang and header:** Start with a Termux-style env shebang (`/data/data/com.termux/files/usr/bin/env python`) and `from __future__ import annotations`.
+
+**Dependencies:**
+- Standard library only, plus PyMuPDF. Import `fitz`; if that fails, fall back to `pymupdf` imported as `fitz`; if both fail, call `sys.exit` with the message "PyMuPDF is required:  pip install pymupdf".
+- Standard modules used: `argparse`, `math`, `os`, `select`, `shutil`, `sys`, `termios`, `tty`. The terminal control relies on POSIX-only `termios` and `tty`.
+
+**Constants:** Define ANSI sequences as module-level strings: reset, cursor home, clear screen, hide/show cursor, enter/leave alternate screen, reverse video, and the upper half-block character (U+2580).
+
+**`read_key(fd, timeout=None)` function:**
+- Use `select` to wait on the file descriptor with an optional timeout. Return `None` if nothing is ready.
+- Read one byte. If empty (EOF), return `"q"`.
+- If the byte is not ESC (`0x1b`), return it decoded as UTF-8 with replacement.
+- If it is ESC, collect an escape sequence: keep reading single bytes while more are available within 30 ms, up to 8 bytes total, stopping after an alphabetic byte or `~`. Return the sequence decoded as latin-1. This lets arrow keys and similar be recognized.
+
+**`Viewer` class:**
+- Class constants: minimum zoom 0.25, maximum zoom 8.0, zoom step 1.25, page render cache limit 6 entries.
+- Constructor `(path, page=1, zoom=1.0)`: open the document with `fitz.open`. If the page count is zero, raise an error with a clear message. Store the path, document, starting page (1-based, clamped into range), and zoom (clamped to min/max).
+- Maintain an LRU-style page render cache keyed by page and zoom/size, evicting the oldest beyond the limit.
+- Rendering: render each page to a pixmap with PyMuPDF scaled to the terminal's available cell grid. Each terminal cell row displays two pixel rows using the half-block character, with foreground color for the top pixel and background color for the bottom pixel, using 24-bit ANSI color escapes. Fit the page to terminal width/height with the zoom factor applied, preserving aspect ratio, and center it.
+- Show a status line at the bottom (or top) with file name, current page number over total, zoom percentage, and a short key-help hint, rendered in reverse video. Truncate to the terminal width using `shutil.get_terminal_size`.
+- Handle terminal resize by re-querying size each frame and invalidating cached renders when dimensions change.
+
+**Controls (handled via `read_key`):**
+- `q` quits. End of input also quits.
+- Next page: `j`, down arrow, space, `n`, PageDown. Previous page: `k`, up arrow, `p`, PageUp. Clamp at first and last pages; do not wrap.
+- `g` / Home goes to first page; `G` / End goes to last page.
+- Zoom in with `+` or `=`, zoom out with `-` or `_`, multiplied/divided by the zoom step and clamped; `0` resets zoom to 1.0.
+- Go-to-page prompt via `:` or `g`-style numeric entry: accept digits, Enter confirms, Escape or Backspace-to-empty cancels, out-of-range values clamp.
+- Ignore unrecognized keys.
+
+**Terminal handling:**
+- Save the terminal attributes with `termios.tcgetattr` on stdin, switch to cbreak/raw mode with `tty.setcbreak` or `tty.setraw`, and enter the alternate screen, hide the cursor, and clear on entry.
+- On exit (including exceptions and KeyboardInterrupt), restore the original terminal attributes via `termios.tcsetattr`, show the cursor, leave the alternate screen, and reset colors. Use try/finally.
+- Write output to stdout with a single buffered write per frame, flushing afterward, to avoid flicker.
+
+**`main()` / CLI:**
+- Use `argparse` with a required positional `pdf` path, an optional `-p/--page` integer (1-based, default 1), and an optional `-z/--zoom` float (default 1.0).
+- Verify the file exists and is readable; on failure print an error to stderr and exit with a nonzero code.
+- If stdin is not a TTY, print an error to stderr and exit nonzero, since interactive mode requires a terminal.
+- Catch `fitz` open errors and report them to stderr with a nonzero exit.
+- Guard the entry point with `if __name__ == "__main__":` and call `sys.exit(main())`.
+
+**Edge cases to handle:** empty PDFs, pages with zero size, very small terminals (render degenerate or minimum size without crashing), extreme zoom levels clamped, invalid or out-of-range page arguments clamped, non-ASCII file names, and partial escape sequences read by `read_key`.
+
+**Style:** Use type hints throughout, concise docstrings or comments only where helpful, and clear helper methods separating rendering, input handling, and terminal setup.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import math
 import os

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import logging
 import multiprocessing as mp
@@ -8,6 +9,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, Iterable, Iterator, Optional
+
 import libcst as cst
 from libcst import (
     BaseCompoundStatement,

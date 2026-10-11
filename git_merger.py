@@ -1,4 +1,48 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Build a self-contained prompt that tells an AI coding agent how to recreate a Python command-line utility for interactive Git branch and commit management in a local repository, based on the behavior described below.
+
+Create a Python 3 command-line script that acts as an interactive Git repository helper, intended to run from the root of a local Git repository (targeting the Termux environment on Android, so the shebang should point to the Termux Python path: /data/data/com.termux/files/usr/bin/env python).
+
+**Startup and repository check**
+- On launch, attempt to open the Git repository in the current working directory and create a Git command handle for it.
+- If the current directory is not a Git repository, print the message "Not in a repo directory!" and exit immediately. Use a broad exception handler for this check.
+- Keep the repository and command handle as module-level variables available to all helper code.
+
+**Dependencies**
+- Use the `click` library for command-line option and subcommand definitions, including shell-completion callbacks for branch names.
+- Use the `colored` library for colored terminal output.
+- Use GitPython (`git` package) for repository access, branches, and active-branch lookup.
+- Use the `sh` library for invoking Git subcommands and capturing their output as strings.
+- Use `prompt_toolkit` for interactive UI: a single-line `prompt`, and the shortcuts `yes_no_dialog`, `button_dialog`, `radiolist_dialog`, and `checkboxlist_dialog`, styled with `prompt_toolkit.styles.Style`.
+- Standard library modules: `logging`, `os`, `sys`, `enum.Enum`, and `pathlib.Path`.
+
+**RepoManager helper class (all static methods)**
+- `get_list_branches`: returns the names of all local branches except the currently active branch.
+- `get_autocomplete_list_branches(ctx, args, incomplete)`: returns branch names (excluding the active branch) that contain the partial text `incomplete`, for click autocompletion.
+- `ask(title, text)`: shows a yes/no dialog and returns the user's boolean answer.
+- `verify_branch`: asks the user to confirm the current active branch name via a yes/no dialog.
+- `cherry(first, second)`: runs `git cherry -v <first> <second>` through `sh`, splits the output by newline, and parses each line into a commit collection (the parsing logic and the returned structure should be a list of commit entries representing commits present in `second` but not in `first`, each carrying its marker and identifying info). Handle empty output gracefully by returning an empty list.
+
+**Enumerations**
+- Define an `Enum` for cherry-pick/commit status markers (for example, a "to apply" state and an "already applied" state), used to classify commits from `git cherry` output (`+` means not yet applied, `-` means already applied in the target).
+
+**Behavior expectations**
+- The tool is an interactive workflow: it lists candidate branches, asks the user to verify the current branch, displays commits that differ between two branches, lets the user select which commits to cherry-pick (via a checkbox or radio dialog), and performs the chosen Git operations, reporting results with colored output.
+- Use `prompt_toolkit` dialogs for all user choices; use `click` to expose the top-level command and its options/arguments with branch-name autocompletion.
+- Logging should be configured through the standard `logging` module for debug/info messages about Git operations.
+- Handle the case where there are no other branches to choose from, and the case where `git cherry` returns no output, without crashing.
+- Handle user cancellation of dialogs (a `None` result) by aborting the current action cleanly.
+- Handle Git command failures (from `sh` exceptions) by reporting the error in colored output and exiting or returning without a traceback.
+- Exit with a non-zero status on fatal errors and zero on successful completion or user cancellation.
+
+**Execution**
+- Run it as an executable script from inside a Git repository: `python <script> [options]`, with options and branch arguments provided through click.
+- Intended to be run in Termux on Android; no network access is required, only local Git operations.
+
+**Output requirements for the reproduction**
+- Produce one complete, runnable Python file with a `main` entry point guarded by `if __name__ == "__main__":`, using click's command decorator to start the program.
+- Include concise comments only where they clarify non-obvious logic, matching a plain, idiomatic style with 4-space indentation.
+---"""
 
 import logging
 import os
@@ -10,12 +54,7 @@ import click
 import colored
 import git
 from prompt_toolkit import prompt
-from prompt_toolkit.shortcuts import (
-    button_dialog,
-    checkboxlist_dialog,
-    radiolist_dialog,
-    yes_no_dialog,
-)
+from prompt_toolkit.shortcuts import button_dialog, checkboxlist_dialog, radiolist_dialog, yes_no_dialog
 from prompt_toolkit.styles import Style
 from sh import git
 

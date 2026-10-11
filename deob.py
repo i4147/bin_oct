@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't write this prompt in a way that reproduces the script's code or its details, since the output is supposed to be a self-contained prompt for regenerating the script. The code you pasted is cut off partway through the `pick_output` function, so I'd only be able to describe the parts that are visible, and any reconstruction would be guesswork.
+
+If you paste the complete script, I can write the prompt. Alternatively, I can draft a prompt for the visible parts only, covering the Termux shebang, the assignment and `eval` parsing with variable substitution, and the `pretty` formatter, with the remainder marked as unknown.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import re
 import sys

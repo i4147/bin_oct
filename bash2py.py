@@ -1,6 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line utility named bash2py that extracts embedded Python heredoc bodies from a Bash script. Requirements to convey:
+
+Create a Python 3 script (with a Termux-style shebang pointing to the Termux Python interpreter, and `from __future__ import annotations` at the top) that reads a Bash script file whose path is given as the single command-line argument. It should use only the standard library: `re`, `sys`, and `pathlib`.
+
+Detection rule: a line qualifies as a heredoc start when, after optional leading spaces or tabs, it begins with `python`, `python3`, or `py` as a whole word, followed by any text on the same line, then `<<`, an optional `-` immediately after the `<<`, optional spaces or tabs, an optional single or double quote, an identifier delimiter (letters or underscore, then letters, digits, or underscores), a matching closing quote if one was opened, optional trailing spaces or tabs, and end of line. Capture the indentation, command, dash flag, quote, and delimiter as named groups. Compile the pattern with multiline mode, though it is applied per line.
+
+Extraction rule: scan the file line by line, preserving line endings. For each matching start line, collect following lines as the body until a terminator line is found. The terminator matches the delimiter exactly after stripping the trailing newline; if the start used the dash flag, the terminator comparison first strips leading and trailing whitespace from the line. The body lines exclude the terminator. When a terminator is found, store the joined body text and resume scanning after the terminator. If no terminator is found before end of file, store everything after the start line as the body and stop scanning. Return the list of all extracted bodies in order. Note that a start line is only checked at the outer scan position, so nested or consecutive heredocs are handled by resuming after each block's terminator.
+
+Main behavior: if fewer than two command-line arguments are supplied, print a usage message to standard error of the form "Usage: python bash2py.py <bash_script_path>" and exit with a nonzero status. Note that the original code has a defect: it references the exit function without calling it, so it does not actually terminate; the reproduction should call it with a nonzero status code, and this should be stated as the intended behavior. Otherwise, read the file at the given path, extract the heredoc bodies, and write results to standard output, separating blocks clearly. Edge cases to handle: a missing or unreadable file should produce a clear error to standard error with a nonzero exit; an empty file or a file with no matching heredocs should produce no block output without crashing; file encoding should be read as UTF-8 with reasonable handling of decode errors.
+
+Execution details: the script is run directly via its shebang or with the Python interpreter, takes the bash script path as its only argument, and should include an `if __name__ == "__main__":` guard calling main. Output should be plain text suitable for piping. Keep the implementation concise, idiomatic, and commented sparingly, matching standard Python style with type hints where helpful.
+---"""
 
 from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

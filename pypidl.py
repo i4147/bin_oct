@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import io
@@ -852,7 +853,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Mapping from the original scripts:\n"
             "  pd.py      -> pypi_dl.py basic    <pkg>\n"
             "  pdown.py   -> pypi_dl.py download <pkg> [-v VER]\n"
-            "  pdown2.py  -> pypi_dl.py wheels   <pkg>... [--python 3.12]\n"
+            "  pdown2.py  -> pypi_dl.py wheels   <pkg>... [--python 3.14]\n"
             "  pip_get.py -> pypi_dl.py mirror   <pkg|pkg==ver>...\n"
             "  pipget.py  -> pypi_dl.py scrape   <pkg>... [-m runflare]\n"
         ),

@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import shutil
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from dh import get_files, is_binary, runcmd  # type: ignore[import-untyped]
 from loguru import logger
 

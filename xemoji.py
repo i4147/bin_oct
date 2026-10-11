@@ -1,7 +1,8 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 import json
 import re
+from multiprocessing import Pool
 from pathlib import Path
 
 _BASE = (
@@ -30,24 +31,38 @@ EMOJI_RE = re.compile(
     f"(?:[{_BASE}][{_VS}]?[{_SKIN}]?(?:{_ZWJ}[{_BASE}][{_VS}]?[{_SKIN}]?)*|[{_RI}]{{2}})",
     flags=re.UNICODE,
 )
-here = Path.cwd()
-out_path = here / "emojis.json"
-found = {}
-for path in here.rglob("*"):
-    if not path.is_file() or path.resolve() == out_path.resolve():
-        continue
+
+
+def scan_file(path: Path) -> dict[str, str]:
     try:
         if path.stat().st_size > 20 * 1024 * 1024:
-            continue
+            return {}
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
-        continue
+        return {}
+    result: dict[str, str] = {}
     for match in EMOJI_RE.finditer(text):
         emoji = match.group(0)
         key = " ".join(f"U+{ord(ch):04X}" for ch in emoji)
-        found[key] = emoji
-out_path.write_text(
-    json.dumps(found, ensure_ascii=False, indent=2, sort_keys=True),
-    encoding="utf-8",
-)
-print(f"Found {len(found)} unique emojis. Wrote to {out_path}")
+        result[key] = emoji
+    return result
+
+
+def main() -> None:
+    here = Path.cwd()
+    out_path = here / "emojis.json"
+    out_resolved = out_path.resolve()
+    paths = [p for p in here.rglob("*") if p.is_file() and p.resolve() != out_resolved]
+    found: dict[str, str] = {}
+    with Pool() as pool:
+        for partial in pool.imap_unordered(scan_file, paths):
+            found.update(partial)
+    out_path.write_text(
+        json.dumps(found, ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    print(f"Found {len(found)} unique emojis. Wrote to {out_path}")
+
+
+if __name__ == "__main__":
+    main()

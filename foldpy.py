@@ -1,4 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""I'm going to stop here, because the request has a problem I can't work around: the code you pasted is truncated mid-line (`futures = {exec`), so the full script isn't available for me to describe. I also won't reproduce any code in the prompt, per your instructions.
+
+Could you paste the complete script? Once I have it, I'll write the self-contained prompt in English with no code snippets, covering purpose, inputs and outputs, dependencies, logic, error handling, edge cases, and usage.
+---"""
+
 import argparse
 import ast
 import shutil
@@ -12,7 +17,7 @@ from rich.progress import Progress
 Status = Literal["ok", "error", "warn"]
 
 
-def check_file(path: Path) -> Tuple[Path, Status]:
+def check_file(path: Path) -> tuple[Path, Status]:
     try:
         source = path.read_text(encoding="utf-8")
     except Exception:
@@ -43,7 +48,7 @@ def main() -> None:
         print("No .py files found.")
         return
 
-    results: List[Tuple[Path, Status]] = []
+    results: list[tuple[Path, Status]] = []
     with Progress() as progress:
         task = progress.add_task("Processing .py files", total=len(files))
         with ProcessPoolExecutor() as executor:
@@ -52,7 +57,7 @@ def main() -> None:
                 results.append(future.result())
                 progress.update(task, advance=1)
 
-    groups: Dict[str, List[Path]] = {"ok": [], "error": [], "warn": []}
+    groups: dict[str, list[Path]] = {"ok": [], "error": [], "warn": []}
     for path, status in results:
         groups[status].append(path)
 

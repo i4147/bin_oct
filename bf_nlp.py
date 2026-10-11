@@ -1,7 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
-from pathlib import Path
+
 import sys
+from pathlib import Path
 
 from blingfire_compat import text_to_sentences, text_to_words
 

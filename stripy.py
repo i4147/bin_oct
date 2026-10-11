@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import ast
 import multiprocessing as mp
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
+
 import libcst as cst
 from loguru import logger
 

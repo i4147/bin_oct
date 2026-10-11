@@ -1,9 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import re
 from multiprocessing import Pool, cpu_count
+
 from spellchecker import SpellChecker
 
 

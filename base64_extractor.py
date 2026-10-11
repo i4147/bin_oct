@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""The Python code provided in your message is cut off partway through the `DEFAULT_SKIP_DIRS` set, so I can only see part of the script. The visible portion defines a MIME-type-to-extension map and a default set of directories to skip. Rather than guess at the rest of the logic, I'll ask one question before writing the prompt.
+
+Could you paste the complete script? Once I have all of it, I'll produce the standalone reproduction prompt. The visible portion alone isn't enough to accurately describe its purpose, inputs, outputs, error handling, and execution details, and a prompt built from a partial reading would likely mislead the agent that uses it.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import base64 as _b64
 import concurrent.futures as _cf

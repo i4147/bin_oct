@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 import io
@@ -12,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Sequence
+
 from deep_translator import GoogleTranslator
 
 LOGGER = logging.getLogger("merged_translator")

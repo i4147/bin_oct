@@ -1,9 +1,60 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which detects the dominant language of subtitle (.srt) files in a directory using a multiprocessing pool and a language-detection library, with majority voting. Describe the full behavior without including code.
+
+Create a Python command-line script that scans a directory for subtitle files and determines the dominant language of each one using majority voting over per-line language detection.
+
+**Purpose:** For every `.srt` subtitle file in a given directory, read its dialogue text, detect the language of each line, and report the language that appears most often (the majority vote) for that file.
+
+**Dependencies:**
+- Python 3 with `from __future__ import annotations` for type hints.
+- Standard library: `collections.Counter`, `multiprocessing.Pool` and `cpu_count`, `pathlib.Path`.
+- Third-party: the `lingua` library (`lingua-language-detector`), using `LanguageDetectorBuilder.from_all_languages().build()`.
+
+**Shebang and target environment:** Use a shebang pointing to the Termux Python interpreter at `/data/data/com.termux/files/usr/bin/env python`, so the script runs on Android under Termux.
+
+**Constants and globals:**
+- `BATCH_SIZE = 8`, the number of lines grouped into each batch.
+- A module-level `_detector` variable initialized to `None`, set per worker process.
+
+**Worker initialization:** Define an initializer function that, when each pool worker starts, builds the lingua detector once and stores it in the module-level `_detector` global. This avoids rebuilding the detector for every line.
+
+**Batch detection:** Define a function that takes a list of text lines and returns a list of tuples. For each line, call the detector's language detection. If a language is found, return the line, the language's English name, and its ISO 639-1 code (as a string name). If no language is determined, return the line with `None` for both values. Any exception raised during detection for a line must be caught, and that line returned with `None` values, so one failure never aborts the batch.
+
+**File discovery:** Define a function that returns all `*.srt` files directly inside a given directory (non-recursive), as a list of `Path` objects.
+
+**Per-file majority vote:** Define a function that takes a file path and a shared `Pool`:
+1. Open the file with UTF-8 encoding and read all lines. Handle decoding and I/O errors gracefully (catch exceptions and return `None` for that file rather than crashing).
+2. Filter lines: strip whitespace; skip empty lines, SRT timestamp lines (those containing `-->`), and pure-digit lines (subtitle sequence numbers). Count skipped lines. Keep the remaining text lines.
+3. If no text lines remain, return `None`.
+4. Split the text lines into consecutive batches of `BATCH_SIZE`.
+5. Submit the batches to the pool for parallel detection (e.g., via `imap` or `map`), collecting the results.
+6. Flatten the results and count the detected languages with `Counter`, ignoring lines whose language is `None`. Determine the most common language name (and code) as the majority vote. If nothing was detected, return `None`.
+7. Return a result that includes the winning language, its ISO code, the number of lines that voted for it, the total number of text lines considered, and the skipped-line count, so the caller can report confidence.
+
+**Main entry point:** Under the standard `__main__` guard:
+- Determine the target directory. Use the current working directory by default; accept an optional command-line argument giving another directory path. Validate that the path exists and is a directory, printing a clear error and exiting with a non-zero status otherwise.
+- Gather `.srt` files; if none are found, print a message and exit cleanly.
+- Create a `multiprocessing.Pool` with `cpu_count()` workers, using `_init_worker` as the initializer.
+- Process each file sequentially (the pool parallelizes within each file's batches), and print per-file results: file name, detected language name, ISO code, vote count out of total lines, and skipped count. Print a clear notice for files that yielded no result.
+- Close and join the pool properly (use a context manager or explicit close/join), even if an error occurs.
+- Print a final summary, such as a count of files processed and a tally of languages across files.
+
+**Error handling and edge cases:**
+- Empty directories, no `.srt` files, unreadable or non-UTF-8 files, files with only timestamps/numbers, and lines with undetectable language must all be handled without crashing.
+- Ctrl+C (KeyboardInterrupt) should terminate the pool cleanly and exit.
+- Keep the worker-side function and initializer at module top level so they are picklable for multiprocessing.
+
+**Style:** Use type hints, concise docstrings or comments only where helpful, and keep the script a single file with no external configuration. Output human-readable console text only; no JSON output is required.
+
+**Usage:** Run as `python script.py [directory]`, or execute directly on Termux since it has a shebang. The first run may be slow because the lingua model is loaded in each worker.
+---"""
 
 from __future__ import annotations
+
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+
 from lingua import LanguageDetectorBuilder
 
 BATCH_SIZE = 8

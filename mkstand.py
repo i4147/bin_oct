@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import base64
 import mimetypes
@@ -11,6 +12,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin, urlparse
+
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import sys
@@ -8,6 +9,7 @@ from functools import partial
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import minify_html as mh
 
 if TYPE_CHECKING:

@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 import re
@@ -11,6 +12,7 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
+
 from loguru import logger
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({

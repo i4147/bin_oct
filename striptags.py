@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/python
 import re
 from typing import Iterable, Optional
+
 import click
 from bs4 import BeautifulSoup, Comment, NavigableString
 

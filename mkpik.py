@@ -1,12 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ProcessPoolExecutor
 import os
-from pathlib import Path
 import py_compile
 import sys
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 from typing import List
 
 

@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import nbformat
 from loguru import logger
 from nbformat import NotebookNode

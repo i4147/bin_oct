@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import glob
 import json
 import os
 import sys
 from pathlib import Path
 from typing import Any
+
 from dh import runcmd
 
 PROGRESS_SUFFIX: str = ".progress"

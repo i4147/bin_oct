@@ -1,6 +1,41 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm going to write the prompt now.
+
+Create a self-contained prompt for an AI coding agent to build a Python command-line tool that scans a directory tree for text-based files and detects likely encoding and text characteristics, with output reporting.
+
+The tool should be a single Python 3 script designed to run under Termux on Android (shebang targets the Termux Python path), using only the standard library. It must begin with `from __future__ import annotations` and use type hints throughout, including `frozenset[str]`-style annotations.
+
+Purpose and behavior:
+- Recursively walk a root directory given as a command-line argument, skipping directories whose names appear in a default exclusion set (version control folders such as .git, .hg, .svn; cache folders such as __pycache__, .mypy_cache, .pytest_cache, .ruff_cache; dependency and build folders such as node_modules, .venv, venv, .tox, .nox, build, dist, target; and editor folders .idea, .vscode).
+- Only consider files whose extension (or special name, such as .gitignore or .dockerfile) belongs to a default set of text-oriented extensions covering plain text, data formats (csv, tsv, json, xml, yaml, yml, toml, ini, cfg, conf, env, properties), web (html, css, js, jsx, ts, tsx, vue), many programming languages (py, java, cpp, c, h, hpp, cs, go, rs, rb, php, pl, r, sql, swift, kt, scala, lua, sh, bash, bat, ps1), and documents (md, rst, tex, bib, log).
+- Skip files larger than a configurable maximum size, defaulting to 10 MiB.
+- For each candidate file, read a sample (a fixed number of characters/bytes, defined as a module constant) and estimate the text encoding and a confidence score (default minimum confidence 0.5). Detection should consider BOMs, UTF-8 validity, presence of NUL bytes (binary indicator), ratio of printable characters, and fallback candidates such as UTF-8, UTF-16, cp1252, latin-1. Report line endings (LF, CRLF, mixed) and whether the file has a trailing newline, if cheap to determine.
+- Use a process pool with a configurable worker count (default 8) and `as_completed` to process files in parallel, collecting results and handling per-file exceptions without aborting the whole run.
+
+Data model:
+- Use dataclasses (with `asdict` for serialization) for a per-file result record (path, size, extension, detected encoding, confidence, line ending style, flags such as binary/skipped/error, and an optional error message) and for a summary/report container that holds counters (via `collections.Counter`) of encodings, extensions, and statuses, plus timestamps from `datetime`.
+
+Interface:
+- Use `argparse` with a `main(argv: Optional[Sequence[str]] = None) -> int` entry point, guarded by `if __name__ == "__main__": sys.exit(main())`.
+- Options: root path (positional, defaults to current directory), `--extensions` to add or replace extensions, `--exclude-dir` to add excluded directory names, `--max-bytes`, `--workers`, `--min-confidence`, `--json` to emit machine-readable output to stdout or a file via `--output`, `--follow-symlinks` (default off), and `--quiet`/`--verbose` controlling progress output to stderr.
+- Validate arguments: root must exist and be a directory; workers and max-bytes must be positive; min-confidence must be between 0 and 1. Report invalid arguments with a clear message and a nonzero exit code (argparse errors use exit code 2; runtime failures use 1).
+
+Output:
+- Default human-readable report to stdout: totals, counts per encoding, counts per extension, count of skipped/binary/error files, and a list of files flagged below the confidence threshold or with errors.
+- JSON output containing the summary and per-file records when `--json` is used.
+
+Error handling and edge cases:
+- Handle permission errors, broken symlinks, unreadable files, files that disappear mid-scan, empty files (report as empty, not binary), files with only a BOM, and paths with non-ASCII characters.
+- Keyboard interrupt should stop cleanly, shut down the pool, print partial results if feasible, and exit with code 130.
+- Do not follow symlinks unless `--follow-symlinks` is given, and guard against symlink loops when following them.
+
+Termux notes: avoid dependencies outside the standard library, avoid multiprocessing start-method assumptions that break on Android (make the worker function a module-level function so it is picklable), and keep the script executable with a Termux-style shebang.
+
+Produce the full script as the deliverable, with concise docstrings and comments matching the density of a typical well-structured CLI utility.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import sys

@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't see the r: it cuts off at `LOG = logging.getLogger("im`, so the main logic, the CLI flags, and the file-processing behavior are unknown to me. Writing the prompt would mean guessing at those details, so I won't generate it yet.
+
+If you paste the complete script, I'll write the prompt. Alternatively, I can work from only the portion shown: a Termux-targeted image and document processing tool with optional dependencies (Pillow, pillow-heif, numpy, OpenCV, CairoSVG, WeasyPrint, pdf2image), graceful degradation when each is missing, multiprocessing via a process pool, and CLI parsing with argparse. That would give a partial prompt that may not reproduce the script faithfully.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import logging
 import sys

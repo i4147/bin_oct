@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -10,6 +11,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable, Iterator
+
 from loguru import logger
 
 BEAUTIFIER: tuple[str, ...] = ("html-beautify", "--quiet")

@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't write this prompt: the code you pasted is cut off partway through the `is_valid_archive` function, and I can't reproduce the complete script from a truncated excerpt. If you paste the full file, I'll generate the reproduction prompt for it.
+---"""
 
 from __future__ import annotations
+
 import shutil
 import tarfile
 import tempfile

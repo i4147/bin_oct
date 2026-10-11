@@ -1,6 +1,40 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""You are tasked with writing a Python command-line script from scratch. Build a self-contained script for Termux (Android, Python 3) that translates Farsi (Persian) text found in files to English, processing files in parallel. Follow these specifications.
+
+**Purpose:** Walk a directory tree (or accept a single file) and detect Farsi/Persian text in plain-text source and documentation files. Translate the Farsi content to English using a Google Translate wrapper, writing results to new output files without modifying the originals.
+
+**Dependencies:** `deep_translator` (GoogleTranslator), `loguru` for logging, `tqdm` for progress bars. Use only the standard library otherwise (`argparse`, `json`, `re`, `sys`, `time`, `concurrent.futures.ProcessPoolExecutor`/`as_completed`, `multiprocessing.Pool`, `pathlib`, `typing`). Include a Termux-compatible shebang line (`/data/data/com.termux/files/usr/bin/env python`) and `from __future__ import annotations`.
+
+**Constants to define:**
+- A Farsi detection regex covering the Arabic-script Unicode blocks U+0600–U+06FF, U+0750–U+077F, and U+08A0–U+08FF.
+- A tuple of text "break markers" used to split long text into translatable chunks, ordered from preferred to fallback: newline, CRLF, sentence endings followed by double space, semicolon-space, comma-space, and single space.
+- A regex matching runs of whitespace and sentence punctuation (for in-place line handling).
+- Default file suffixes: `.txt`, `.md`, `.py`, `.json`, `.csv`.
+- Default excluded directory/name patterns: `lazy`, `.git`, `__pycache__`, `.mypy_cache`, `.ruff_cache`, `.pytest_cache`.
+
+**Helper functions:**
+1. `read_text_any_encoding(path)`: try reading with utf-8, then latin-1, cp1252, iso-8859-1; skip on `OSError`/`UnicodeDecodeError`; if all fail, raise `OSError` with a clear message.
+2. `contains_farsi(text)`: return whether the Farsi regex matches anywhere.
+3. `derive_output_path(src, suffix)`: return a sibling path named `<stem>_<suffix><original suffix>`.
+4. Chunking logic: split text into chunks under a maximum length (for GoogleTranslator's limit) by repeatedly trying the break markers in priority order, falling back to hard splits when no marker is found. Preserve original separators so reassembly is faithful.
+5. Translation of a chunk via `GoogleTranslator(source="auto" or "fa", target="en")`, with retry logic: on failure, retry a limited number of times with a short sleep (`time.sleep`) between attempts, then log via loguru and fall back to returning the original text for that chunk.
+6. File discovery: recursively walk a root directory, filter by suffix and skip any path containing excluded names; accept a single file argument as well.
+
+**Main behavior:**
+- Parse CLI arguments with `argparse`: a required path (file or directory), options for output suffix (default something like `en`), allowed suffixes, extra excludes, max chunk length, number of worker processes, retry count/delay, a dry-run or list-only mode, and a verbosity/log-file option.
+- For each candidate file, read it, check `contains_farsi`; skip files without Farsi. For files with Farsi, translate line-by-line or chunk-by-chunk, preserving non-Farsi content, indentation, and line structure. Write the result to the derived output path (never overwrite the source). Skip files whose output already exists unless a force flag is given.
+- Parallelism: use `ProcessPoolExecutor` (or `multiprocessing.Pool`) to process files concurrently across the configured worker count, collecting results with `as_completed`. Wrap the iteration in `tqdm` to show progress.
+- Logging: use `loguru` with INFO-level summaries per file and DEBUG details; errors per file must not crash the whole run—catch exceptions per file, log them, and continue.
+- Output a final summary: counts of files scanned, translated, skipped (no Farsi / already exists), and failed, plus elapsed time.
+- Exit codes: 0 on full success, nonzero if any file failed; handle `KeyboardInterrupt` gracefully and exit with a clean message.
+
+**Edge cases to handle:** files with mixed encodings or undecodable bytes; empty files; very long single lines with no break markers (hard-split); Farsi appearing only in code comments or string literals (translate the whole text chunk anyway, but keep the file valid as text); network failures during translation (retry, then fall back to original text); paths with spaces or Unicode; symlinks (avoid infinite recursion); a root path that doesn't exist (clear error and nonzero exit); and rate-limit/timeout errors from the translation service.
+
+**Usage:** Run as `python script.py <path> [options]`, with `--help` documenting every option. Make the script executable with the Termux shebang and include a `if __name__ == "__main__":` entry point that calls a `main()` function returning an exit code, passed to `sys.exit`.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -10,6 +44,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 from tqdm import tqdm

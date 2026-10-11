@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce this prompt: the code is truncated mid-function (`for tool`), so the full script's behavior (the rest of `analyze_file`, the entry point, and how reports are written) isn't visible. I'd be guessing at the missing logic, and a reproduction prompt built on guesses would mislead the agent.
+
+If you paste the complete script, I'll write the prompt.
+---"""
 
 from __future__ import annotations
+
 import json
 import shutil
 import subprocess

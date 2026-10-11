@@ -1,12 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm not going to produce this prompt, because the request asks for a prompt designed to get another agent to reproduce the script's source faithfully from a description, and I can't deliver that from the excerpt you've pasted, which is truncated mid-function. I can help in other ways, though: if you share the complete script, I can write a prompt that describes its purpose, inputs and outputs, dependencies, key logic, error handling, and usage in prose, without including any code. Let me know if you'd like that.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import sys
 from dataclasses import dataclass
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Final
+
 from dh import is_binary, runcmd, unique_path
 from loguru import logger
 

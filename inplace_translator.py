@@ -1,10 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
+import glob
 import os
 import sys
-import glob
-import argparse
 from pathlib import Path
 
 # Third-party libraries (To be installed via: pip install openai google-genai)

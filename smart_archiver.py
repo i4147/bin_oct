@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import bz2
 import gzip
@@ -15,6 +16,7 @@ from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+
 import brotli
 import lz4.frame
 import zstandard as zstd

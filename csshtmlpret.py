@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't see the complete script. The code in your message is cut off partway through the `CSS_PROPS_TEXT` string, so I only have the imports, the BeautifulSoup fallback, and the start of a CSS property list. Writing a faithful reproduction prompt would mean guessing at the script's main logic, outputs, and error handling.
+
+Could you paste the full script? Once I have all of it, I'll produce the self-contained reproduction prompt you asked for.
+---"""
 
 from __future__ import annotations
+
 import itertools
 import os
 import re

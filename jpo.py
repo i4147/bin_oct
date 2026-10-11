@@ -1,6 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -9,12 +10,13 @@ import stat
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterator, Sequence
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Final, Iterator, NamedTuple, Sequence
-from dh import SKIP_DIRS
-from fastwalk import walk_files
+from typing import Final, NamedTuple
+
+from dh import SKIP_DIRS  # type: ignore[import-untyped]
 
 cwd = Path.cwd().resolve()
 JPEG_SUFFIXES: Final[frozenset[str]] = frozenset({".jpeg", ".jpg"})
@@ -37,6 +39,13 @@ class ProcessResult(NamedTuple):
     skipped: bool
     no_change: bool
     error: str | None
+
+
+def walk_files(directory: Path) -> Iterator[Path]:
+    for root, dirs, files in directory.walk():
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for name in files:
+            yield root / name
 
 
 def format_bytes(n: int) -> str:
@@ -64,13 +73,12 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
-        found = walk_files(str(root))
+        found = list(walk_files(root))
     except Exception as exc:
         print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
         return
     for start in range(0, len(found), WALK_CHUNK):
-        for entry in found[start : start + WALK_CHUNK]:
-            path = Path(entry)
+        for path in found[start : start + WALK_CHUNK]:
             if path.suffix.lower() not in JPEG_SUFFIXES:
                 continue
             try:
@@ -180,11 +188,17 @@ def process_file(
     tmp_path: Path | None = None
     try:
         try:
+            tmp_dir = os.environ.get("TMPDIR", "/data/data/com.termux/files/usr/tmp")
             fd, tmp_name = tempfile.mkstemp(
                 prefix=target.stem + ".",
                 suffix=target.suffix + ".tmp",
-                dir=str(target.parent),
+                dir=tmp_dir,
             )
+            #            fd, tmp_name = tempfile.mkstemp(
+            #                prefix=target.stem + ".",
+            #                suffix=target.suffix + ".tmp",
+            #                dir=str(target.parent),
+            #            )
             with contextlib.suppress(OSError):
                 os.close(fd)
             tmp_path = Path(tmp_name)

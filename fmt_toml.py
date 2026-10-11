@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import sys
 from dataclasses import dataclass
@@ -8,6 +9,7 @@ from io import StringIO
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 import tree_sitter
 from tree_sitter import Language, Parser
 

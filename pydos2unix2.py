@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import fnmatch
 import logging
@@ -8,6 +9,7 @@ import mmap
 import os
 from multiprocessing import Pool
 from pathlib import Path
+
 from tqdm import tqdm
 
 

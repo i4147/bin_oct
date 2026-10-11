@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from loguru import logger
 
 if TYPE_CHECKING:

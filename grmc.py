@@ -1,16 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""I can't reproduce the code itself here, but I can write the prompt you asked for, since it only needs the script's behavior and not the source. However, your message cuts off at `inline_comments` in the StripOptions dataclass, so I only have a partial view of the script. The prompt below describes what is visible (a Python source-stripping tool with libcst and tree-sitter backends, a loguru logger, and options such as remove_comments) and leaves the unseen parts generic. If you paste the rest of the file, I can make the prompt complete.
+
+Prompt:
+
+Write a single self-contained Python 3 command-line script that strips content from Python source files, such as comments, docstrings, and other removable elements, while preserving valid syntax and executable behavior. The script must be runnable from the command line and should be intended for execution under a Termux (Android) Python environment, so use a portable shebang and avoid desktop-only assumptions.
+
+Purpose and behavior:
+- Accept one or more input paths (files and/or directories). Directories should be traversed to find `.py` files. Support an optional output destination or an in-place mode, and clearly report which mode is active.
+- Provide a configuration object implemented as an immutable, slotted, frozen dataclass named StripOptions with fields including a backend selector (default "libcst"), a boolean remove_comments (default False), an inline_comments flag, and other boolean options controlling what is stripped (for example docstrings and blank lines, where applicable). Define sensible defaults for every field.
+- Support two parsing/transformation backends: libcst (preferred, round-trip preserving) and tree-sitter (via the tree_sitter and tree_sitter_python packages). Import each optionally inside try/except ImportError and record availability in module-level boolean flags. If the requested backend is unavailable, fail with a clear error message rather than crashing with a traceback; fall back only if that is clearly documented.
+- Use the standard library for argument parsing (argparse), file handling (pathlib, tempfile for atomic writes), and parallel processing (multiprocessing) for handling multiple files. Use `from __future__ import annotations` and type hints throughout.
+- Configure logging with loguru: remove the default handler, add a stderr sink with a colored format showing timestamp, level, and message, at INFO level.
+- Use `ast` to verify that the stripped output is still syntactically valid Python (parse the output and compare or check it). If verification fails, do not overwrite the original file; log an error and skip or report that file.
+- Write output atomically: write to a temporary file in the same directory and then replace the target, so partial writes never corrupt sources.
+- Preserve file encoding (default UTF-8, respect PEP 263 coding declarations where feasible) and original newline style where practical.
+- Handle errors robustly: missing paths, unreadable or unwritable files, decode errors, syntax errors in input, and backend exceptions should each be caught, logged with the file path, and should not abort processing of the remaining files. Return a non-zero exit code if any file failed, and zero otherwise.
+- Handle edge cases: empty files, files with only comments, files with a shebang line or encoding cookie (keep these when comments are removed), non-Python files passed explicitly (skip with a warning), symlinks (define and document a policy), and paths containing spaces or Unicode.
+- Provide a dry-run option that reports what would change without writing files, and a summary at the end showing counts of processed, changed, skipped, and failed files.
+- Provide a worker-count option controlling multiprocessing pool size, defaulting to the CPU count, and fall back to sequential processing when only one file is given or when the count is 1. Guard the main entry point with `if __name__ == "__main__":` and make multiprocessing safe for spawn-based start methods.
+- Exit with a clean usage message on invalid arguments.
+
+Output requirements: produce the complete script in one code block with brief docstrings and comments, and no external files beyond the listed dependencies (loguru, libcst, tree-sitter, tree-sitter-python, all optional except loguru).
+---"""
 
 from __future__ import annotations
 
 import argparse
 import ast
 import dataclasses
-from dataclasses import dataclass
 import multiprocessing
 import os
-from pathlib import Path
 import sys
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 from loguru import logger
@@ -25,8 +48,8 @@ except ImportError:
     HAS_LIBCST = False
 
 try:
-    from tree_sitter import Language, Parser
     import tree_sitter_python as tspython
+    from tree_sitter import Language, Parser
 
     HAS_TREESITTER = True
 except ImportError:

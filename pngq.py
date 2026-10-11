@@ -1,6 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -12,7 +13,6 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
-from fastwalk import walk_files
 
 cwd = Path.cwd().resolve()
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
@@ -39,7 +39,6 @@ SKIP_DIRS: Final[frozenset[str]] = frozenset({
 })
 PNG_SUFFIXES: Final[frozenset[str]] = frozenset({".png"})
 PNG_MAGIC: Final[bytes] = b"\x89PNG\r\n\x1a\n"
-WALK_CHUNK: Final[int] = 512
 DEFAULT_WORKERS: Final[int] = 8
 IMAP_CHUNKSIZE: Final[int] = 4
 DEFAULT_TIMEOUT: Final[float] = 300.0
@@ -83,27 +82,33 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
-    try:
-        found = walk_files(str(root))
-    except Exception as exc:  # noqa: BLE001 - surface as a warning, keep going
-        print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
-        return
-    for start in range(0, len(found), WALK_CHUNK):
-        for entry in found[start : start + WALK_CHUNK]:
-            path = Path(entry)
-            if path.suffix.lower() not in PNG_SUFFIXES:
-                continue
+    """Recursively walk `root` yielding PNG files, pruning SKIP_DIRS."""
+    stack: list[str] = [str(root)]
+    while stack:
+        current = stack.pop()
+        try:
+            with os.scandir(current) as it:
+                entries = list(it)
+        except OSError as exc:
+            print(f"warning: cannot scan {current}: {exc}", file=sys.stderr)
+            continue
+        for entry in entries:
+            name = entry.name
             try:
-                rel = path.relative_to(root)
-            except ValueError:
-                rel = path
-            if any(part in SKIP_DIRS for part in rel.parts[:-1]):
-                continue
-            try:
-                if path.is_symlink():
-                    continue
+                is_dir = entry.is_dir(follow_symlinks=False)
+                is_symlink = entry.is_symlink()
             except OSError:
                 continue
+            if is_dir:
+                if name in SKIP_DIRS:
+                    continue
+                stack.append(entry.path)
+                continue
+            if is_symlink:
+                continue
+            if Path(name).suffix.lower() not in PNG_SUFFIXES:
+                continue
+            path = Path(entry.path)
             if not _dedupe(path, seen):
                 continue
             yield path

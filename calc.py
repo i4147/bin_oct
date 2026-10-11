@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import re
 import sys
+
 from textual.app import App, ComposeResult
 from textual.containers import Grid
 from textual.widgets import Button, Static

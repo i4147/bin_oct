@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import shutil
@@ -9,6 +10,7 @@ import tempfile
 from multiprocessing import Pool
 from pathlib import Path
 from typing import List, Optional, Tuple
+
 from loguru import logger
 
 

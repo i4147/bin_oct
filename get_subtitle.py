@@ -1,9 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which, given a path to an MKV video file and an optional output directory, locates and downloads the best English subtitles for that video and saves them alongside or in the specified directory. Specify the following:
+
+Purpose: A command-line utility for Termux (Android) that fetches English subtitles for a local MKV video using the subliminal library and babelfish for language codes.
+
+Environment and shebang: Use the Termux Python path shebang (`#!/data/data/com.termux/files/usr/bin/env python`) and include `from __future__ import annotations` at the top.
+
+Dependencies: `babelfish`, `subliminal` (including `subliminal.providers.ProviderError` and `subliminal.video.scan_video`, plus `download_best_subtitles` and `save_subtitles`), plus standard library `logging`, `sys`, and `pathlib.Path`.
+
+Logging: Configure root logging at INFO level with the format `%(asctime)s - %(levelname)s - %(message)s`, and create a module-level logger using `__name__`.
+
+Core function `get_english_subtitles(mkv_path, output_dir=None)`:
+- Convert the input to a `Path`. If the file does not exist, log an error and return `False`.
+- If the suffix is not `.mkv` (case-insensitive), log a warning but continue processing.
+- If `output_dir` is not given, default to the video's parent directory. Otherwise convert it to a `Path` and create it (including parents) if missing.
+- Print the scanning message, then call `scan_video`. On success print the video name, size in bytes, duration formatted to two decimal places in seconds, and hashes. On any exception, log an error and return `False`.
+- Create the language object with `babelfish.Language("eng")` and print that English subtitles are being searched.
+- Call `download_best_subtitles` for the scanned video with English as the only requested language, handling `ProviderError` and other exceptions with logged errors and a `False` return.
+- If no subtitles are found, log a message and return `False`. Otherwise save the best subtitle(s) with `save_subtitles` into the output directory, log each saved file, and return `True` on success.
+
+Entry point: When run as a script, read the MKV path from the first command-line argument (via `sys.argv`) and optionally the output directory from the second argument. If no path is given, print a usage message and exit with a non-zero status. Call `get_english_subtitles` and exit with status 0 on success or 1 on failure.
+
+Edge cases to handle: nonexistent files, non-MKV extensions (warning only), missing or newly created output directories, scan failures, provider errors, network failures during subtitle search, and no subtitles found. Use `Path` consistently and avoid hard-coded absolute paths except the shebang.
+---"""
 
 from __future__ import annotations
+
 import logging
 import sys
 from pathlib import Path
+
 import babelfish
 from subliminal import download_best_subtitles, save_subtitles
 from subliminal.providers import ProviderError

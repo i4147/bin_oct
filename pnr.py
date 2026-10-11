@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
-from dh import unique_path, SKIP_DIRS
+
+from dh import SKIP_DIRS, unique_path
 
 
 def remove_string_from_names(

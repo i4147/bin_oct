@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import io
 import shutil
 import sys
 from pathlib import Path
 from typing import Iterator
+
 from PIL import Image
 
 IMAGE_EXTENSIONS = {

@@ -1,6 +1,39 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that would let an agent recreate this script. Output only the prompt.
+
+Write a single-file Python 3 command-line script (intended to run under Termux on Android, so use the `#!/data/data/com.termux/files/usr/bin/env python` shebang) that extracts plain text from PDF files, one page at a time, using a selectable backend and optional parallel processing.
+
+Purpose and behavior:
+- Accept one or more PDF file paths (and/or directories, if reasonable) on the command line and produce extracted text for every page, writing results to stdout or to output files.
+- Support multiple extraction backends, selected by a command-line option:
+  1. pdfplumber backend: open the PDF with pdfplumber, iterate over the requested page indices, and call the page's text extraction method, treating a None result as an empty string.
+  2. PyMuPDF (fitz) backend: open the PDF with fitz, iterate over page indices, and call get_text. When an option "sort" is enabled, call get_text with the "text" mode and sort=True so text reads in visual order; otherwise call get_text with default arguments. Close the document in a finally block.
+  3. Additional backend(s) for other PDF libraries may be included in the same pattern; the design must make it easy to add backends through a dispatch table or mapping from backend name to extraction function.
+- Each extraction worker function has the signature (pdf_path: str, page_indices: Sequence[int], opts: dict) and returns a list of (1-based page number, text) tuples. Import the backend library inside the worker function, not at module top level, so that a missing library only fails when that backend is actually used.
+- Per-page errors must not abort the run: catch exceptions per page, print a message to stderr in the form "Error extracting page N from <path>: <exception>", and substitute an empty string for that page's text.
+- Use the standard library only for the CLI itself: argparse for arguments, pathlib for paths, sys for stderr/stdout, concurrent.futures for parallelism (ProcessPoolExecutor for CPU-bound backends or a ThreadPoolExecutor for I/O-bound use; choose via an option or a sensible default, and document the choice in code comments only if needed).
+- Parallelism: split a document's page indices into chunks and dispatch chunks to the executor with as_completed, then reassemble results sorted by page number so output order is deterministic regardless of completion order. Provide a command-line option for the number of workers and a default (for example, the CPU count capped at a small number). A worker count of 1 should run without an executor.
+- Page selection: support a page range or list option (for example "1-5,8,10-") with 1-based inputs converted to 0-based indices, clamped or validated against the document's page count, and reported with a clear error for invalid specifications.
+- Output options: write to stdout by default, or to an output file path; optionally write one text file per input PDF into an output directory. Separate pages with a clear, consistent page marker (for example a form-feed or a line such as "--- Page N ---") and ensure output is UTF-8 encoded regardless of the terminal locale.
+- Sorting option: a --sort flag that is forwarded in opts to the PyMuPDF backend.
+- Error handling: validate that each input path exists and is a PDF; on a missing file or unreadable PDF, print an error to stderr, skip that file, continue with the rest, and exit with a non-zero status at the end if any file failed. Handle KeyboardInterrupt by cancelling pending futures and exiting with status 130. Return integer exit codes from a main() function and call it under the standard `if __name__ == "__main__":` guard using sys.exit.
+- If a required backend library is not installed, print a helpful message to stderr naming the package to install (pdfplumber or PyMuPDF) and exit non-zero rather than crashing with a traceback.
+- Include a module docstring or top-of-file comment describing usage with examples, and use type hints throughout (with `from __future__ import annotations`).
+
+Edge cases to handle:
+- Empty PDFs or pages with no extractable text (produce empty content, not errors).
+- Zero pages selected after range filtering (warn and skip the file).
+- Duplicate or overlapping page ranges (deduplicate and keep sorted order).
+- Paths with spaces or non-ASCII characters.
+- Very large documents (chunking keeps memory bounded; avoid loading all text before writing if output is streamed).
+- Worker count larger than page count (cap it).
+
+Output only the final Python script as the deliverable, complete and runnable, with a short argparse help text for each option.
+
+---"""
 
 from __future__ import annotations
+
 import argparse
 import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed

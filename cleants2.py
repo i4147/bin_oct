@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import importlib
 import multiprocessing as mp
 import os
@@ -8,6 +9,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
 from tree_sitter import Language, Node, Parser
 
 PathLike = str | Path

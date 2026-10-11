@@ -1,7 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
+
 from dh import runcmd
 
 if __name__ == "__main__":

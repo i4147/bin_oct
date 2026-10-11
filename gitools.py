@@ -1,6 +1,62 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script for Termux that analyzes a Git repository's commit history using subprocess-based git commands. The prompt should cover:
+
+Create a single-file Python 3 command-line tool (Termux-compatible, with the Termux-style shebang) that inspects a local Git repository and reports on its commit history over a recent time window.
+
+**Purpose and scope**
+- The tool reads commit metadata from a given local Git repository and summarizes activity within a configurable number of days (a lookback window measured back from the current UTC time).
+- It is intended to run on Android via Termux, so it must not rely on anything beyond the Python standard library and the `git` executable.
+
+**Language and dependencies**
+- Target Python 3, using `from __future__ import annotations` for forward-compatible type hints.
+- Use only standard library modules: argparse, os, subprocess, sys, dataclasses, datetime (with timezone-aware UTC handling), pathlib, and typing.
+- Git operations must be performed by invoking the `git` executable via subprocess, with the working directory set to the target repository. Capture stdout and stderr as text.
+
+**Data model**
+- Define a dataclass representing a commit with: the full SHA, the subject line, a Unix epoch timestamp, and a list of parent SHAs (defaulting to an empty list via a default factory).
+- Provide a read-only property returning the first 8 characters of the SHA as a short hash.
+- Provide a read-only property converting the epoch timestamp to a timezone-aware UTC datetime.
+
+**Logging helpers**
+- Implement three helpers that print to the console with bracketed level prefixes: an info-level message to stdout, and warning and error messages to stderr.
+
+**Time handling**
+- Implement a helper that returns the current UTC time minus a given number of days (cutoff).
+- Implement a helper that converts an epoch integer into a UTC datetime.
+
+**Git backend**
+- Define a backend class with a name attribute equal to "subprocess", constructed from a repository path that is resolved to an absolute path.
+- Implement a private run helper that executes `git` with the given arguments in the repository directory, capturing text output, with a `check` flag controlling whether non-zero exit codes raise an error, and an optional text input passed to stdin.
+- The backend should retrieve commits from the repository within the cutoff window, parse their metadata (SHA, parents, subject, author/committer timestamp) into CommitInfo objects, and handle the case where the path is not a valid Git repository or git is not installed by reporting a clear error and exiting with a non-zero status.
+- Handle edge cases: empty repositories, repositories with no commits in the window, merge commits with multiple parents, subjects containing special characters or pipes/delimiters, and malformed or unexpected git output lines (skip with a warning rather than crashing).
+
+**Command-line interface**
+- Use argparse. Accept a repository path (defaulting to the current directory), a lookback window in days (positive integer, with a sensible default such as 7), and optionally flags for output format or limiting the number of entries shown.
+- Validate inputs: reject non-positive day counts with an error message and nonzero exit.
+
+**Output**
+- Print a human-readable summary: the repository path, the time window, the total commit count, and a list of commits showing short hash, date (ISO-like UTC format), and subject, ordered newest first.
+- Optionally summarize per-day or per-author counts if that is a natural extension, but keep the primary output plain text.
+- Use the info/warn/err helpers for status messages; errors go to stderr.
+
+**Error handling and exit codes**
+- Return exit code 0 on success, a non-zero code on invalid arguments, a missing or invalid repository, or a git execution failure.
+- Catch subprocess and OS-level exceptions (e.g., git not found) and report them via the error helper rather than printing raw tracebacks.
+- Handle KeyboardInterrupt gracefully with a short message and a non-zero exit code.
+
+**Execution details**
+- Include a `main()` function returning an integer exit code, invoked under the standard `if __name__ == "__main__":` guard via `sys.exit`.
+- Mark the file executable with the Termux Python shebang line at the top.
+- Add a module docstring briefly describing usage, for example invoking the script with a repository path and an optional day count.
+
+**Quality expectations**
+- Use type hints throughout, consistent naming, and clear docstrings for public classes and functions.
+- Keep the code clean, readable, and free of unused imports.
+- Prefer clear, explicit logic over clever one-liners.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import os
 import subprocess

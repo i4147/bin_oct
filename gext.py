@@ -1,6 +1,50 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to build a Python command-line tool with the following specification:
+
+**Purpose:** Build a Python 3 static-analysis extraction tool that scans Python source files and splits their contents into three categories: classes, top-level functions, and module-level constants. Each extracted item is written to its own output file, and the tool runs in parallel across files.
+
+**Target environment:** The script is intended to run under Termux on Android, so it should use the shebang `#!/data/data/com.termux/files/usr/bin/env python`. It should work with only the Python standard library (no third-party packages), and it should begin with `from __future__ import annotations` so type hints like `list[str]` work on older interpreters.
+
+**Inputs:**
+- Command-line arguments: one or more file or directory paths. Any argument that is a file is checked to see whether it is a Python script; any argument that is a directory is walked recursively.
+- Python script detection: a file counts as a Python script if its name ends in `.py`, or if its first line starts with `#!` and contains the word "python" (case-insensitive). Read files with UTF-8 encoding, ignoring decoding errors. Any read failure during detection means the file is not treated as a script; do not crash.
+- Directory traversal must skip any subdirectory whose name is one of: `test`, `tests`, `examples`, `output`. Prune these in place during `os.walk` so they are not descended into.
+
+**Outputs:**
+- All results are written under a fixed `output/` directory relative to the current working directory, with three subdirectories: `output/classes`, `output/functions`, and `output/const`. Create them if they do not exist.
+- Each extracted class, function, or constant is written to a separate file in the appropriate subdirectory, with the source text of that definition.
+- Constant files are named after the constant identifier; the tool should detect constant names by the convention of being all-uppercase identifiers (with underscores and digits allowed), and should ignore names that do not match.
+- Name collisions across different source files should be handled deterministically (for example by prefixing or suffixing with the source module name) so that no output is silently overwritten.
+- The tool should print a brief progress or summary message to stdout indicating how many files were processed and how many items of each kind were extracted.
+
+**Core logic:**
+- Parse each Python file with the standard `ast` module. Before analysis, annotate every AST node with a reference to its parent node (via a recursive walk setting a private attribute), so that nested definitions can be distinguished from top-level ones.
+- Only top-level classes and top-level functions (including async functions) are extracted; nested definitions inside functions or classes are not extracted as separate items.
+- Only module-level assignments are considered for constants: examine plain assignments and annotated assignments whose target is a simple name matching the all-uppercase convention. Assignments inside functions or classes are excluded.
+- Extract the exact source segment for each node. Use `ast.get_source_segment` where available, or otherwise compute the text from line and column offsets, preserving original formatting.
+- Include decorators in the extracted source for classes and functions when they are part of the definition.
+
+**Parallelism:**
+- Process files concurrently using `multiprocessing` with a pool of 8 workers. Use the standard `if __name__ == "__main__":` guard and ensure the pool is properly closed and joined.
+- Each worker should return its extraction results to the parent process, which performs all file writes, so that writing and counting are not interleaved unsafely. Collect and tally counts in the parent.
+
+**Error handling and edge cases:**
+- Files that fail to parse (syntax errors, decoding issues, unreadable files) must be skipped with a warning printed to stderr; they must not abort the whole run.
+- Missing input paths should be reported and skipped.
+- Empty input lists or inputs yielding no Python files should produce a clear message and exit cleanly.
+- Handle files with no matching definitions gracefully (no empty output files).
+- Handle symlinks and permission errors during directory walking without crashing.
+- If no command-line arguments are given, print a usage message to stderr and exit with a nonzero status.
+
+**Execution:**
+- Invoke as a script: `python <script> <path> [<path> ...]`, or with the Termux shebang directly if executable.
+- Exit with status 0 on success; use a nonzero status for usage errors.
+
+Write the complete script in one file, with clear structure: helper functions for detection, collection, AST marking, constant-name checking, extraction, and writing, plus a `main` function invoked under the `__main__` guard. Keep comments concise and match the style of a short, practical utility script.
+---"""
 
 from __future__ import annotations
+
 import ast
 import multiprocessing as mp
 import os

@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 from multiprocessing import Pool
 from pathlib import Path
+
 from dh import is_binary
-from loguru import logger
 from dos2unix import dos2unix
+from loguru import logger
 
 MAX_WORKERS = 8
 CHUNK_SIZE = 32768

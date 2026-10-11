@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
+
 from dh import is_binary
 
 MAX_CONTEXT_DISPLAY = 3

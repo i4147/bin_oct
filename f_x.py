@@ -1,6 +1,50 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained Python 3 command-line script that recursively scans the current working directory and reports every regular file modified within the last N minutes, where N is given as the sole command-line argument. Requirements:
+
+**Purpose and behavior**
+- Accept one positional argument, `<minutes>`, parsed as an integer. If no argument is given, print the usage line `Usage: python script.py <minutes>` and exit with status 1.
+- If the argument is not a valid integer, print `Error: '<value>' is not a valid integer` and exit with status 1.
+- If the integer is negative, print `Error: minutes must be a non-negative number` and exit with status 1.
+- Zero is valid and means only files modified at the current instant (age ≤ 0 minutes) qualify.
+- Use the current working directory as the root (`Path.cwd()`).
+
+**File discovery**
+- Recursively enumerate all entries with `rglob("*")`.
+- Keep only paths that are regular files, are not symbolic links, and have no path component equal to `.git` (exclude anything inside any `.git` directory).
+- If no files are found, print `No files found in current directory` and return normally (exit status 0).
+
+**Age check (per file, run in parallel)**
+- For each file, read its modification time via `stat().st_mtime`, compute age in minutes as (current time − mtime) / 60, using `time.time()` as the current time.
+- A file qualifies if its age is less than or equal to N minutes.
+- For qualifying files, return a tuple of the path as a string and the modification time converted with `datetime.fromtimestamp` (local time).
+- Catch `OSError` and `PermissionError` during stat and silently skip that file (return nothing for it). Non-qualifying files also return nothing.
+- The per-file function must be a module-level function so it can be pickled by `multiprocessing`. The minutes threshold is shared with workers through a module-level global variable set in `main` (declared `global` there), which works with the default fork start method on Linux/Termux.
+
+**Parallelism**
+- Before scanning, print `Checking <count> files for modifications in last <N> minute(s)...` followed by a blank line.
+- Use `multiprocessing.Pool(8)` with `pool.map` over all files, then call `close()` and `join()`.
+- Filter out `None` results to form the list of recent files.
+
+**Output**
+- Print the matching files and their modification timestamps (formatted as a readable local datetime) in the order they were returned, along with a count summary. If no files match, print a message indicating no files were modified within the window.
+- Sort or present results clearly; the script should be deterministic in its wording.
+
+**Execution details**
+- Begin the file with a Termux-style shebang line: `#!/data/data/com.termux/files/usr/bin/env python`.
+- Use `from __future__ import annotations` at the top.
+- Guard the entry point with `if __name__ == "__main__":` and call `main()`.
+- Use only the Python standard library: `sys`, `time`, `datetime`, `multiprocessing.Pool`, `pathlib.Path`.
+- Target Python 3 on Termux (Android), where the pool size of 8 is fixed.
+
+**Edge cases to handle**
+- Empty directories or directories containing only `.git` content.
+- Files that disappear or become unreadable between enumeration and stat.
+- Symbolic links, which must be excluded entirely.
+- Very large trees, which are handled by collecting the file list first and mapping over it.
+---"""
 
 from __future__ import annotations
+
 import sys
 import time
 from datetime import datetime

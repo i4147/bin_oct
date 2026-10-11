@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import csv
 import json
 import os
 import shutil
 import sys
 from pathlib import Path
+
 import ssdeep
 from ppdeep import compare, hash_from_file
 

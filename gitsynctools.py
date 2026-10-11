@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -11,6 +12,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Sequence
+
 from dotenv import load_dotenv
 from git import GitCommandError, InvalidGitRepositoryError, Repo
 from github import Github, GithubException

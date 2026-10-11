@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't write a prompt that reproduces this script, because the Python code in your message is cut off mid-statement (it ends at `e`, inside the `rewrite_file` function's `except` block), so the full behavior of the script can't be described accurately. If you paste the complete code, I'll generate the prompt.
+---"""
 
 from __future__ import annotations
+
 import os
 import stat
 from pathlib import Path
@@ -8,7 +11,7 @@ from pathlib import Path
 HOME = Path.home()
 cwd = Path.cwd()
 PREFIX = Path(os.environ.get("PREFIX", "/data/data/com.termux/files/usr"))
-NEW_SHEBANG = f"#!{PREFIX}/bin/python3.12"
+NEW_SHEBANG = f"#!{PREFIX}/bin/python3.14"
 OLD_PREFIXES = (
     str(HOME / ".local/bin"),
     str(PREFIX / "bin"),
@@ -28,7 +31,7 @@ def looks_like_python_interpreter(interp: str) -> bool:
 def should_rewrite(interp: str) -> bool:
     if not looks_like_python_interpreter(interp):
         return False
-    if interp.strip() == str(PREFIX / "bin/python3.12"):
+    if interp.strip() == str(PREFIX / "bin/python3.14"):
         return False
     return True
 
@@ -80,7 +83,7 @@ def rewrite_file(path: Path) -> bool:
     except OSError as e:
         print(f"  ! cannot write {path}: {e}")
         return False
-    print(f"  ✓ {path.name}:  {interp}  →  {PREFIX}/bin/python3.12")
+    print(f"  ✓ {path.name}:  {interp}  →  {PREFIX}/bin/python3.14")
     return True
 
 

@@ -1,4 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm not able to produce that prompt from the code as written, because the code you pasted is cut off partway through the `api_request` function signature. The file ends at `def api_request(method: str, url: str, token: str,` with no closing parenthesis, parameter list, body, or the rest of the script (including the main logic and argument parsing), so I can't accurately describe its full behavior, endpoints, outputs, or error handling.
+
+Could you paste the complete script? Once I have the the reproduction prompt as requested.
+---"""
 
 import argparse
 import json
@@ -28,8 +32,8 @@ def run(
     )
 
 
-def load_env(path: Path) -> Dict[str, str]:
-    data: Dict[str, str] = {}
+def load_env(path: Path) -> dict[str, str]:
+    data: dict[str, str] = {}
     if not path.exists():
         return data
     for line in path.read_text().splitlines():
@@ -53,7 +57,7 @@ def get_token(args: argparse.Namespace) -> str:
     return token
 
 
-def api_request(method: str, url: str, token: str, payload: Optional[Dict[str, Any]] = None) -> tuple[int, Any]:
+def api_request(method: str, url: str, token: str, payload: Optional[dict[str, Any]] = None) -> tuple[int, Any]:
     data = json.dumps(payload).encode() if payload is not None else None
     request = urllib.request.Request(url, method=method, data=data)
     request.add_header("Authorization", f"token {token}")
@@ -79,7 +83,7 @@ def create_repo_api(
     private: bool,
     auto_init: bool,
     api_url: str,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     payload = {
         "name": name,
         "description": description,

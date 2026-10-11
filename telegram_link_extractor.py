@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import asyncio
 import os
@@ -8,6 +9,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Iterator
+
 from dotenv import load_dotenv
 from telethon import TelegramClient
 

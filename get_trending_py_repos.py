@@ -1,10 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm sorry, but the Python code in your message is cut off partway through the `fetch_trending` function (it ends at `description=descr`), so I can't fully describe its behavior and write a complete reproduction prompt from it. Could you paste the rest of the script? Once I have the full code, I'll generate the prompt.
+---"""
 
 from __future__ import annotations
+
 import csv
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
 import requests
 from bs4 import BeautifulSoup
 

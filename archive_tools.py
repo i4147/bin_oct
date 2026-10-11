@@ -1,6 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I'm not going to generate that prompt, because the code above is cut off mid-definition (the CLI_COMMANDS dictionary never closes), so I can't reliably describe its full behavior, and I'd be guessing at the missing logic. If you paste the complete script, I'll write the reproduction prompt for it.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import bz2
 import contextlib

@@ -1,7 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt: the code cuts off mid-function (`if "\\n" not in`), so the full script isn't visible to me. A prompt that describes it faithfully would have to guess at the missing logic and at the undefined names it references (`ANSI_RE`, `FENCE_RE`, `SHELL_PROMPT_RE`, `PREAMBLE_RE`). Could you paste the complete file? Once I have it, I'll write the reproduction prompt.
+---"""
 
 from __future__ import annotations
+
 import sys
+
 import regex as re
 
 

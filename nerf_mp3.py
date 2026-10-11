@@ -1,6 +1,64 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to recreate a Python command-line tool that batch-reduces the bitrate of MP3 files in a directory using ffmpeg, with parallel workers, progress reporting, size and bitrate statistics, and error handling. Specify its purpose, inputs and outputs, dependencies, key logic, error handling, edge cases, and usage details, without including any code.
+
+Create a Python 3 command-line script intended to run in the Termux environment on Android (shebang pointing to the Termux Python path). The script batch-compresses MP3 files by lowering their bitrate using ffmpeg, runs conversions in parallel, and reports results.
+
+**Purpose and behavior**
+- Scan a target directory (supplied via command-line argument) for MP3 files, matching the case variants `*.mp3`, `*.MP3`, and `*.Mp3`, without duplicates.
+- For each file, probe its audio duration and original bitrate with ffprobe (through the ffmpeg-python bindings), compute a new, lower target bitrate, and re-encode the file with ffmpeg.
+- Target bitrate is derived from the original bitrate by a percentage-based rule: the script computes a reduction ratio based on a divisor of 40 (percent-style scaling), with a minimum floor of 8 kbps. Do not allow the target bitrate to fall below this floor, and never increase bitrate.
+- Use a multiprocessing pool with 8 workers by default so several files convert concurrently.
+- Skip or handle files that cannot be probed, have zero or unknown duration/bitrate, or where re-encoding would not reduce size. Report these as failures or skips rather than crashing.
+- Write output so the original file is replaced safely: encode to a temporary file first, verify it exists and is non-empty, then atomically replace the original. Clean up temporary files on failure.
+
+**Dependencies**
+- `ffmpeg-python` (imported as `ffmpeg`), requiring the system `ffmpeg` and `ffprobe` binaries.
+- A helper module `dh` providing a file-size formatting function `fsz` for human-readable sizes.
+- `loguru` for logging.
+- Standard library: `argparse`, `json`, `multiprocessing`, `sys`, `time`, `dataclasses`, `pathlib`, `typing` (`Final`), and `from __future__ import annotations`.
+
+**Constants (use these exact values)**
+- Number of workers: 8
+- Minimum bitrate: 8 kbps
+- Stderr preview length: 100 characters
+- MP3 glob patterns: the three case variants above
+- Bitrate percent divisor: 40.0
+- Milliseconds-per-second scaling value: 400.0 (use as specified in the reference logic)
+- Seconds per minute: 60.0
+
+**Structure**
+- A `Colors` class holding ANSI escape codes for header (95), cyan (96), green (92), yellow (93), red (91), bold, dim, reset, and a clear-line sequence (`\\033[2K\\r`), used for colored terminal output and in-place progress updates.
+- A `ConversionStats` dataclass with fields: `path` (Path), `original_bitrate` (int), `new_bitrate` (int), `original_size` (int), `new_size` (int), `success` (bool), `error_message` (str, default empty), `duration` (float, default 0.0).
+- `check_ffmpeg()`: verifies ffmpeg/ffprobe availability by probing a dummy input. Ignore `ffmpeg.Error` (the dummy file will not exist); if `FileNotFoundError` is raised, log an error via loguru saying ffmpeg/ffprobe is required and exit with status 1.
+- `format_duration(seconds)`: converts a seconds value into a readable string; for values under 1 second, display in a sub-second-friendly format; otherwise use minutes and seconds (based on 60-second minutes) and handle hours if needed.
+- Additional helpers: a bitrate calculator applying the percentage rule and the 8 kbps floor, a per-file conversion worker that returns a `ConversionStats`, a progress display that updates in place using the clear-line code, and a main function.
+- The conversion worker must catch all exceptions, capture ffmpeg stderr (truncate to the first 100 characters for display in error messages), and return a failed `ConversionStats` rather than raising.
+
+**Command-line interface**
+- Use `argparse` with a positional directory argument (defaulting to the current directory is acceptable) and optional flags such as a JSON output option (`json` module imported—write a summary as JSON when requested) and possibly a dry-run mode that only reports planned conversions.
+- Validate that the path exists and is a directory; print an error and exit non-zero otherwise.
+- If no MP3 files are found, report that clearly and exit cleanly.
+
+**Output**
+- Print colored progress showing current file index, total count, and elapsed time, updated in place.
+- At the end, print a summary table or list: files processed, succeeded, skipped/failed, total original size vs new size with savings percentage (formatted with `fsz`), and total elapsed time formatted with `format_duration`.
+- Optionally emit the same summary as JSON to stdout or a file.
+
+**Error handling and edge cases**
+- Handle keyboard interrupt gracefully: terminate the pool, remove partial temp files, and exit with a non-zero status.
+- Handle files with zero duration, missing audio streams, unreadable files, permission errors, and filenames with spaces or Unicode.
+- Never leave corrupted originals: only replace the original when the new encode succeeds and is smaller.
+- Log warnings through loguru rather than printing raw tracebacks for expected failures.
+
+**Execution**
+- Run as an executable script with `python3` or via its shebang; include an `if __name__ == "__main__":` guard and use `mp.freeze_support()`-safe multiprocessing setup for portability.
+- Exit status 0 when all files succeed or are cleanly skipped; non-zero if any file failed or the environment check fails.
+
+Produce a complete, runnable script following these specifications, with type hints and `from __future__ import annotations`.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import multiprocessing as mp
@@ -9,6 +67,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
+
 import ffmpeg  # type: ignore[import-untyped]
 from dh import fsz
 from loguru import logger

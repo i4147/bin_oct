@@ -43,7 +43,7 @@ class UserError(Exception):
     pass
 
 
-_LANG_MAP: Dict[str, Dict[str, str]] = {
+_LANG_MAP: dict[str, dict[str, str]] = {
     "deepl:source": {
         c: c.upper()
         for c in ("bg cs da de el en es et fi fr hu id it ja ko lt lv nb nl pl pt ro ru sk sl sv tr uk zh").split()
@@ -329,7 +329,7 @@ def _make_azure(source: str, target: str, script_path: str) -> Translator:
     return call
 
 
-_BACKEND_FACTORIES: Dict[str, Callable[[str, str, str], Translator]] = {
+_BACKEND_FACTORIES: dict[str, Callable[[str, str, str], Translator]] = {
     "deepl": _make_deepl,
     "deep_translator": _make_deep_translator,
     "libretranslate_remote": _make_libretranslate_remote,
@@ -354,7 +354,7 @@ _DEFAULT_CHAIN = [
     "pygoogletranslation",
 ]
 
-_FORBIDDEN: Dict[str, str] = {
+_FORBIDDEN: dict[str, str] = {
     "argostranslate": "depends on ctranslate2 (no 32-bit ARM wheel)",
     "libretranslate": "self-hosting needs ctranslate2 + sentencepiece",
     "opus_mt": "depends on torch",
@@ -389,8 +389,8 @@ def _validate_backend_name(name: str) -> str:
     return key
 
 
-def _build_chain(preferred: Optional[str]) -> List[str]:
-    chain: List[str] = [preferred] if preferred else []
+def _build_chain(preferred: Optional[str]) -> list[str]:
+    chain: list[str] = [preferred] if preferred else []
     for name in _DEFAULT_CHAIN:
         if name in chain:
             continue
@@ -403,8 +403,8 @@ def _build_chain(preferred: Optional[str]) -> List[str]:
     return chain
 
 
-def build_translator(preferred: Optional[str], source: str, target: str, script_path: str) -> Tuple[str, Translator]:
-    failed: List[Tuple[str, str]] = []
+def build_translator(preferred: Optional[str], source: str, target: str, script_path: str) -> tuple[str, Translator]:
+    failed: list[tuple[str, str]] = []
     for name in _build_chain(preferred):
         try:
             fn = _BACKEND_FACTORIES[name](source, target, script_path)
@@ -459,7 +459,7 @@ def iter_words(path: str):
                 yield word
 
 
-def load_results(path: str) -> Dict[str, str]:
+def load_results(path: str) -> dict[str, str]:
     if not os.path.exists(path):
         return {}
     try:
@@ -474,7 +474,7 @@ def load_results(path: str) -> Dict[str, str]:
     return data
 
 
-def atomic_save(path: str, data: Dict[str, str], lock: threading.Lock) -> bool:
+def atomic_save(path: str, data: dict[str, str], lock: threading.Lock) -> bool:
     directory = os.path.dirname(os.path.abspath(path))
     with lock:
         fd, tmp = tempfile.mkstemp(prefix=".tw_", suffix=".tmp", dir=directory)
@@ -500,7 +500,7 @@ class Shared:
     def __init__(
         self,
         fn: Translator,
-        results: Dict[str, str],
+        results: dict[str, str],
         total: int,
         args: argparse.Namespace,
     ) -> None:
@@ -515,7 +515,7 @@ class Shared:
         self.file_lock = threading.Lock()
 
 
-def translate_with_retries(sh: Shared, word: str) -> Tuple[Optional[str], object, bool]:
+def translate_with_retries(sh: Shared, word: str) -> tuple[Optional[str], object, bool]:
     last_raw: object = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         if sh.stop.wait(sh.args.delay):
@@ -541,7 +541,7 @@ def translate_with_retries(sh: Shared, word: str) -> Tuple[Optional[str], object
     return None, last_raw, False
 
 
-def worker(sh: Shared, word: str) -> Tuple[str, Optional[str]]:
+def worker(sh: Shared, word: str) -> tuple[str, Optional[str]]:
     try:
         if word in sh.results:
             translation, raw, aborted = sh.results[word], sh.results[word], False
@@ -574,7 +574,7 @@ def worker(sh: Shared, word: str) -> Tuple[str, Optional[str]]:
         return word, None
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Translate a one-word-per-line file into a JSON map (Termux-friendly).")
     p.add_argument("-i", "--input", default="words.txt", help="input file (default: words.txt)")
     p.add_argument("-o", "--output", default="words.json", help="output JSON (default: words.json)")
@@ -646,7 +646,7 @@ def run(args: argparse.Namespace) -> int:
         % (name, args.source, args.target, args.workers, args.delay)
     )
 
-    results: Dict[str, str] = {} if args.no_continue else load_results(args.output)
+    results: dict[str, str] = {} if args.no_continue else load_results(args.output)
     if results:
         print("Loaded %d existing translation(s) from %s" % (len(results), args.output))
 
@@ -668,7 +668,7 @@ def run(args: argparse.Namespace) -> int:
         signal.signal(signal.SIGHUP, _raise_interrupt)
 
     executor = ThreadPoolExecutor(max_workers=args.workers)
-    window: Deque = deque()
+    window: deque = deque()
     max_inflight = args.workers * 4
     next_i = since_save = failed_count = 0
     interrupted = False

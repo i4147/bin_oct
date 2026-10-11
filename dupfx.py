@@ -1,10 +1,57 @@
 #!/data/data/com.termux/files/usr/bin/python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python duplicate-file finder with the following specification:
+
+Create a single-file Python command-line script (targeting a Termux/Android environment with a Python shebang pointing to the Termux Python path) that finds duplicate files across one or more directories using a multi-stage hashing pipeline.
+
+**Purpose and overall behavior:**
+The script recursively scans the given directories, groups files by size, then narrows candidates with a cheap partial hash, and finally confirms duplicates with a full-content hash. Files that share identical full hashes are reported as duplicate groups. The tool should be efficient on large trees by avoiding full reads whenever a cheaper check can rule a file out.
+
+**Inputs:**
+- One or more directory paths supplied as positional command-line arguments, defaulting to the current directory if none are given.
+- Optional flags defined with argparse for behavior such as the output mode (for example, printing groups versus deleting or listing extras), a minimum file size filter, and whether to follow symbolic links. Choose sensible flag names and document them in the help text.
+- Constants: a quick-read window of 4096 bytes, a read chunk size of 65536 bytes, and a process pool of 8 workers.
+
+**Outputs:**
+- Human-readable report to standard output listing each duplicate group (file paths with their size), and a summary count of duplicate groups and wasted bytes.
+- Logging of informational messages, warnings, and errors through the loguru library rather than the standard logging module or bare print for diagnostics.
+
+**Dependencies:**
+- Standard library: argparse, collections (defaultdict), multiprocessing (Pool), pathlib, typing.
+- Third-party: loguru for logging, xxhash (xxh64 hasher) for hashing.
+- Use `from __future__ import annotations` and a `TYPE_CHECKING` block for collections.abc type-only imports.
+
+**Key logic to implement:**
+1. Recursive traversal of each input directory collecting regular files only.
+2. Deduplicate hard links and repeated paths: identify files by the (inode, device) pair obtained from stat; skip a file if its key was already seen, and return no key (treat as skipped) if stat fails.
+3. Group files by size; discard size groups with fewer than two members. Skip zero-length files from hashing (they are considered identical to each other and may be reported as a group or handled explicitly, document the choice).
+4. Quick hash stage: for each size-group candidate, compute an xxh64 hash over the first 4096 bytes. If the file is more than twice the quick-read size, also hash the last 4096 bytes. If the file is between 4096 and 8192 bytes, hash the remaining bytes after the head. Wrap I/O errors in an OSError with a descriptive message including the path, chained from the original exception.
+5. Full hash stage: for remaining candidates, compute an xxh64 over the entire file read in 65536-byte chunks until EOF. On an OSError, return an empty-string hash for the path rather than crashing, and log the failure. Empty files return an empty hash immediately.
+6. Use multiprocessing.Pool with 8 workers to parallelize the hashing stages across files, and collect results to group paths by hash using defaultdict(list).
+7. Report groups with two or more members, ignoring the empty-hash sentinel from failed or empty reads unless explicitly documented otherwise.
+
+**Error handling and edge cases:**
+- Unreadable files, broken symbolic links, permission errors, and files that vanish mid-scan must not abort the run; log them and continue.
+- Handle nonexistent input paths by logging an error and exiting with a nonzero status, or skipping them with a warning, and say which in the code.
+- Handle files whose size changes between stat and read gracefully.
+- Handle empty files and files smaller than the quick-read window correctly.
+- Guard the entry point with `if __name__ == "__main__":` and ensure multiprocessing works correctly (picklable top-level worker functions, pool closed and joined).
+
+**Execution details:**
+- Make the script executable with the Termux Python shebang line.
+- Runs from the command line as `python script.py [options] [directories...]`.
+- Should work on Android/Termux with standard Python 3 and the two third-party packages installed via pip.
+
+Produce the complete script following these requirements, with clear function boundaries (scanning, size grouping, quick hashing, full hashing, grouping, reporting, and argument parsing), docstrings or brief comments where helpful, and consistent naming and style.
+---"""
+
 from __future__ import annotations
+
 import argparse
 from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from loguru import logger
 from xxhash import xxh64
 

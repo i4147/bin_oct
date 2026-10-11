@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt because the code you pasted is cut off mid-string at the `text_extensions` set, so I can't see the full script's logic, main function, or output behavior. A prompt built from a truncated file would describe features that may not be there or miss ones that are.
+
+If you paste the complete code, I'll write the self-contained reproduction prompt you described.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import sys
@@ -8,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
 from loguru import logger
 
 if TYPE_CHECKING:

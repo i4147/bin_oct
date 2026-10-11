@@ -12,10 +12,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
 import requests
+from dh import PKG_MAPPING, STDLIB
 from yarg import json2package
 from yarg.exceptions import HTTPError
-from dh import STDLIB, PKG_MAPPING
 
 PYPI_INDEX_PATH = "/sdcard/data/pip.json"
 CACHE_DIR = Path.home() / ".cache" / "piplist"

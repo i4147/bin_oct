@@ -1,6 +1,26 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""You are writing a prompt for an AI coding agent. Produce a single self-contained prompt that tells the agent how to recreate a Python command-line tool from scratch. Describe the tool's purpose, inputs, outputs, dependencies, key logic, error handling, edge cases, and usage. Do not include code or code snippets.
+
+The tool is a Termux-oriented (Android, `/data/data/com.termux` shebang) Python CLI that scans a directory tree for executable-like files or binaries (or a given extension set) and probes each one by running it with a set of help/version flags to detect whether it can load its shared libraries. It is intended to find broken binaries and report missing shared-library or "not found" errors. Please write the prompt so the agent rebuilds the complete script, including:
+
+- A Termux-compatible Python 3 shebang, `from __future__ import annotations`, and only standard-library imports (argparse, concurrent.futures, ctypes, logging, os, shutil, subprocess, sys, time, pathlib, typing).
+- A set of directory names to skip during traversal (version control folders, caches, virtualenvs, build output, node_modules), and a path check that skips any path containing those parts.
+- Recognition of missing-library error messages in command output (shared object loading failures, "not found", "no such file", "failed to load") and the probe flags to try in order (--help, -h, --version, -v, --info).
+- A colored console print helper that uses ANSI colors only when stdout is a TTY.
+- A unique-path helper that appends a numeric suffix before the extension when a file already exists.
+- A recursive file iterator with an extension filter, skipping ignored directories.
+- Concurrent probing via a thread or process pool, with per-probe timeouts, and a time measurement of the total run.
+- A command-line interface built with argparse that accepts a root path, extension filters, worker count, timeout, output/report file, and verbosity, with logging configured accordingly.
+- Use of shutil.which or PATH lookup to locate executables, and subprocess calls with captured output, handling FileNotFoundError, PermissionError, TimeoutExpired, and OSError gracefully.
+- Optional use of ctypes for loading shared libraries to verify them, where relevant.
+- Exit codes: zero when everything probes cleanly, non-zero when failures are detected, and a clean exit on KeyboardInterrupt.
+- A summary printed at the end with counts of OK, failed, skipped, and timed-out items, plus a per-item report of missing libraries.
+
+Instruct the agent to write idiomatic, well-commented code matching this description, keep it a single file, and verify the script runs with `python script.py --help`.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import concurrent.futures as _futures
 import ctypes

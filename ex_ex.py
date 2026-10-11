@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 from collections import defaultdict
 from pathlib import Path
+
 import tree_sitter_python as tsp
 from tree_sitter import Language, Parser, Tree
 

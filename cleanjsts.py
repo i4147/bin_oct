@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final
+
 import tree_sitter
 import tree_sitter_javascript
 import tree_sitter_typescript

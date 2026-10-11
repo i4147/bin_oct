@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import re
 import sys
 from pathlib import Path
+
 import hunspell
 
 DICT_PATHS = [

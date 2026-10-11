@@ -1,8 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 from dh import cprint, fsz, get_files, gsz, mpf
 
 _HASH_TABLE_SIZE = 1 << 14

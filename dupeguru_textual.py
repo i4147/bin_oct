@@ -1,6 +1,67 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that tells another AI coding agent how to build a Python terminal UI application (Textual-based) for finding and managing duplicate files on Android/Termux. Describe purpose, inputs/outputs, dependencies, logic, error handling, edge cases, and usage. Do not include code.
+
+Build a terminal user interface (TUI) application in Python for finding and managing duplicate files on a filesystem. The script is intended to run under Termux on Android, so its shebang should point to the Termux Python interpreter path (/data/data/com.termux/files/usr/bin/env python). Write it as a single self-contained module.
+
+**Dependencies and imports**
+- Use the standard library only, plus the Textual framework (the `textual` package) for the UI.
+- Use `from __future__ import annotations` for modern type hint syntax.
+- Standard library modules needed: hashlib (for file hashing), sys, collections.defaultdict, dataclasses (dataclass, field), difflib.SequenceMatcher (for fuzzy filename similarity), pathlib.Path, and typing.ClassVar.
+- From Textual, import: `on` decorator, `App`, `ComposeResult`, `Binding`, containers `Container`, `Horizontal`, `Vertical`, `ModalScreen`, `Widget`, and widgets `Button`, `DataTable`, `DirectoryTree`, `Footer`, `Header`, `Input`, `Label`, `OptionList`, `ProgressBar`, `RadioSet`, `Static`, `Switch`.
+
+**Data model**
+- A `FileEntry` dataclass holding: a `Path`, an integer `size` in bytes, an optional `hash` string (default none), and a `filename_normalized` string. In post-initialization, set `filename_normalized` to the lowercase version of the file's name.
+- A `DuplicateGroup` dataclass holding a list of `FileEntry` objects (default empty list), a `match_score` float (default 100.0), and a `reason` string (default "exact"). Provide:
+  - `total_size` property: returns 0 if there are no files; otherwise the size of the first file multiplied by (number of files minus one) — i.e., the reclaimable space if all but one copy are removed.
+  - `size_str` property: the total size formatted with a human-readable helper.
+- A helper `format_size(size_bytes)` that converts a byte count into a human-readable string by iterating units B, KB, MB, GB, TB, dividing by 1024 until the value is below 1024 (use one decimal place for non-byte units, and integer display for bytes), with a sensible fallback to TB for very large values.
+
+**Application behavior**
+- The main class is a Textual `App` with a header, footer, and a main layout built from containers, showing a directory selection area (a `DirectoryTree` so the user can browse and pick a folder to scan), controls for scan options, a `ProgressBar` for scan progress, a `DataTable` listing duplicate groups (with columns such as group index, file count, reclaimable size, match score/reason, and file paths), and a detail/action panel for the currently selected group.
+- Keybindings are declared via a `ClassVar` list of `Binding` objects (e.g., quit, start scan, select/deselect files, delete selected, toggle options, and similar). Keep key choices sensible and document them in the footer.
+- Scan options exposed in the UI:
+  - Exact duplicate detection via content hashing (MD5 or SHA-256 via hashlib, reading files in chunks so large files are not loaded whole into memory).
+  - Optional fuzzy filename matching using `SequenceMatcher` on normalized (lowercase) filenames, with a similarity threshold (e.g., a percentage) configurable by the user through an input field; fuzzy groups get a `match_score` equal to the similarity percentage and `reason` set to something like "similar name".
+  - Toggle switches for options such as including hidden files/directories, following symbolic links (default off), and minimum file size to consider (configurable via an input).
+  - A `RadioSet` to choose the hash algorithm or the grouping strategy (e.g., size-first prefilter then hash).
+- Scanning algorithm:
+  1. Walk the chosen directory recursively, skipping unreadable paths and handling `PermissionError` and `OSError` gracefully (log/skip, do not crash).
+  2. Group files by size first; only files sharing a size with at least one other file are hashed (this is the key optimization).
+  3. Within each size group, compute hashes of the files (in chunks) and group by hash; groups with 2+ members become exact `DuplicateGroup`s with match_score 100.
+  4. If fuzzy mode is enabled, compare normalized filenames among files not already in exact groups (or among all candidates, avoiding duplicating entries) using `SequenceMatcher` ratio against the threshold; form groups accordingly.
+  5. Sort results, e.g., by reclaimable size descending.
+  - Run scanning in a way that keeps the UI responsive (use a Textual worker or thread, and update the `ProgressBar` periodically via messages or `call_from_thread`).
+  - Support cancelling a running scan.
+- Actions on duplicates:
+  - Within each group, the user can mark files to delete; by default, keep the first/oldest or first-listed file and mark the rest as candidates for deletion.
+  - A confirmation `ModalScreen` must be shown before any deletion, displaying the number of files and total size to be freed, with Confirm and Cancel buttons.
+  - Deletion uses `Path.unlink()` wrapped in error handling; report per-file failures (permission denied, file missing) without aborting the whole batch, and show a summary afterward.
+  - Never delete the last remaining copy in a group; refuse if the selection would remove all files.
+  - Optionally support a dry-run mode toggled by a switch that only reports what would be deleted.
+- Edge cases to handle:
+  - Empty directory or no duplicates found: show a clear message in the UI.
+  - Zero-byte files: either exclude them by default or treat them with the minimum-size option.
+  - Symbolic links: skip by default to avoid loops; resolve paths carefully if following is enabled, guarding against cycles.
+  - Files that disappear or change during scanning: catch errors and skip.
+  - Very large files: chunked hashing.
+  - Invalid numeric input in input fields (threshold, min size): validate and fall back to defaults with a notice.
+  - Non-UTF-8 or unusual filenames: avoid crashing when rendering paths in the table (use safe string conversion).
+  - Hidden files: skipped unless the option is enabled.
+  - Permission errors on directories: skip and continue.
+- Error handling: wrap filesystem operations in try/except for `OSError`, `PermissionError`, and `FileNotFoundError`; surface non-fatal problems in a status line or notification area rather than raising.
+
+**Entry point**
+- Define a `main()` function that creates the app instance and runs it, and guard execution with `if __name__ == "__main__":`. Optionally accept a starting directory as a command-line argument from `sys.argv` (default to the current working directory or the Termux home directory if none is given; validate that the path exists and is a directory, otherwise print an error message to stderr and exit with a nonzero status).
+- Make the script executable and runnable as `python <scriptname>.py [directory]` in Termux.
+
+**Code quality expectations**
+- Use type hints throughout, docstrings for public classes and functions, and clear separation between the data model, scanning logic, and UI classes.
+- Keep the scanning logic independent of the UI so it can be tested alone.
+- Use descriptive names and constants (for chunk size, default threshold, supported hash algorithms) defined at module level.
+---"""
 
 from __future__ import annotations
+
 import hashlib
 import sys
 from collections import defaultdict
@@ -8,6 +69,7 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import ClassVar
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding

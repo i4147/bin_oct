@@ -1,6 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
 import contextlib
 import os
@@ -12,7 +13,6 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final, Iterator, NamedTuple, Sequence
-from fastwalk import walk_files
 
 SKIP_DIRS: Final[frozenset[str]] = frozenset({
     ".git",
@@ -55,6 +55,13 @@ class ProcessResult(NamedTuple):
     error: str | None
 
 
+def walk_files(directory: str) -> Iterator[str]:
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        for name in files:
+            yield os.path.join(root, name)
+
+
 def format_bytes(n: int) -> str:
     sign = "-" if n < 0 else ""
     value = float(abs(n))
@@ -87,8 +94,8 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
-        found = walk_files(str(root))
-    except Exception as exc:  # noqa: BLE001 - surface as a warning, keep going
+        found = list(walk_files(str(root)))
+    except Exception as exc:  # noqa: BLE001
         print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
         return
     for start in range(0, len(found), WALK_CHUNK):

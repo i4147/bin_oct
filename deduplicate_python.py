@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 import bz2
@@ -14,6 +15,7 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from pathlib import Path
+
 from loguru import logger
 
 try:

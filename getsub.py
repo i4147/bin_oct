@@ -1,9 +1,45 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that asks an AI coding agent to recreate a Python module implementing a class for searching English subtitles on OpenSubtitles.
+
+Create a single-file Python 3 script (intended to run under Termux on Android, so include the Termux-style shebang line `#!/data/data/com.termux/files/usr/bin/env python`) that defines a `SubtitleDownloader` class for searching subtitles on the OpenSubtitles REST API.
+
+Requirements:
+
+**Purpose:** The script provides a downloader helper that searches OpenSubtitles for English-language subtitles matching a free-text query, such as a movie or show name or a release filename.
+
+**Imports and dependencies:**
+- Use `from __future__ import annotations` at the top.
+- Use the standard library modules `re` and `sys`, and `quote` from `urllib.parse`.
+- Use the third-party `requests` library for HTTP.
+
+**Class `SubtitleDownloader`:**
+- The constructor creates a `requests.Session` stored on `self.session`, and sets its headers to include a browser-like User-Agent string: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`.
+- A method `search_opensubtitles(self, query)` performs the search:
+  - Normalize the query by replacing underscores and periods with spaces.
+  - Send a GET request to `https://rest.opensubtitles.com/api/v1/subtitles` with the query parameters `query` (the normalized string), `languages` set to `en`, and `type` set to `all`. Use the session for the request.
+  - If the HTTP status is 200, parse the JSON body. If the `data` key is present and non-empty, iterate through its items. Each item has an `attributes` object (default to an empty dict if missing). Return the first item whose `attributes.language` equals `en`, as a dictionary with keys:
+    - `id`: the item's `id` (required; use direct key access)
+    - `title`: the attribute `title`, defaulting to the original (un-normalized) query string
+    - `url`: the attribute `url` (may be None)
+    - `files`: the attribute `files`, defaulting to an empty list
+  - If no matching English item is found, or the status is not 200, or `data` is empty, return `None`.
+  - Wrap the whole operation in a try/except that catches any `Exception`, prints `Error searching OpenSubtitles: <error>` to standard output, and returns `None`.
+
+**Behavior notes and edge cases:**
+- No timeout, retry, or authentication headers are specified; the API key is not used in this version.
+- The method does not raise exceptions to callers; all failures result in `None`.
+- The `re`, `sys`, and `quote` imports are present in the original module; include them even though this portion does not need to use them, so the module matches the original structure.
+- The script has no `main` block or CLI in this portion; it only defines the class so it can be imported or extended.
+
+**Output expectations:** Produce only the complete Python file content, with the shebang, imports, and class as described, following standard PEP 8 style and a 4-space indent.
+---"""
 
 from __future__ import annotations
+
 import re
 import sys
 from urllib.parse import quote
+
 import requests
 
 

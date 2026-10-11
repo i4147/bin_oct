@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing as mp
 import re
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Sequence
+
 import cv2
 import pytesseract
 

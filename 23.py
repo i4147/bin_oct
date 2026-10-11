@@ -1,14 +1,24 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import sys
+from collections import deque
+from collections.abc import Iterator
 from multiprocessing import Lock, Pool
 from pathlib import Path
-from dh import runcmd
-from fastwalk import walk_files
+from typing import Any
+
+from dh import runcmd  # type: ignore[import-untyped]
 
 MAX_WORKERS = 8
 print_lock = Lock()
+
+
+def walk_files(directory: Path) -> Iterator[Path]:
+    for root, _dirs, files in directory.walk():
+        for name in files:
+            yield root / name
 
 
 def is_python_file(path: Path) -> bool:
@@ -16,7 +26,7 @@ def is_python_file(path: Path) -> bool:
         return True
     if path.suffix == "":
         try:
-            with Path(path).open("rb") as f:
+            with path.open("rb") as f:
                 head = f.read(64)
                 if b"python" in head and b"#!" in head:
                     return True
@@ -25,7 +35,7 @@ def is_python_file(path: Path) -> bool:
     return False
 
 
-def process_file(path: str | Path) -> None:
+def process_file(path: Path) -> None:
     path = Path(path)
     print(f"[OK] {path.name}")
     cmd = [
@@ -47,7 +57,7 @@ def process_file(path: str | Path) -> None:
         str(path),
     ]
     rc_fmt, _out_fmt, err_fmt = runcmd(format_cmd, show_output=True)
-    output = []
+    output: list[str] = []
     if rc_check != 0 or err_check.strip():
         output.append(f"--- Issues fixing {path.name} ---")
         if err_check.strip():
@@ -64,10 +74,9 @@ def process_file(path: str | Path) -> None:
             sys.stdout.flush()
 
 
-def get_all_files(cwd: Path):
-    py_files = []
-    for pth in walk_files(cwd):
-        path = Path(pth)
+def get_all_files(cwd: Path) -> list[Path]:
+    py_files: list[Path] = []
+    for path in walk_files(cwd):
         if path.is_file() and is_python_file(path):
             py_files.append(path)
     return py_files
@@ -80,7 +89,7 @@ def main() -> None:
         print("no file found.")
         return
     pool = Pool(processes=MAX_WORKERS)
-    pending = deque()
+    pending: deque[Any] = deque()
     for f in files:
         pending.append(pool.apply_async(process_file, (f,)))
         if len(pending) > 32:

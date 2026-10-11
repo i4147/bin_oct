@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import json
 import mmap
@@ -13,6 +14,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 from dh import fsz
 
 if TYPE_CHECKING:

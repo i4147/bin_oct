@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import multiprocessing as mp
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+
 import pycurl
 
 WORKERS = 8

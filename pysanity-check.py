@@ -1,10 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import importlib
 import re
 import subprocess
 import sys
+
 import importlib_metadata
 
 

@@ -1,6 +1,42 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Build a single self-contained prompt that instructs an AI coding agent to recreate a Python command-line tool that creates a GitHub repository from a local directory. Write the prompt so the agent can rebuild the script from scratch without seeing any code. Cover the following:
+
+**Purpose:** The script creates a new GitHub repository for a local project directory, initializes git if needed, makes an initial commit, and pushes it to GitHub. It is intended for Termux on Android (the shebang points to the Termux Python path), so it should work in that environment.
+
+**Configuration and environment:**
+- Load the GitHub token from the `GITHUB_TOKEN` environment variable first; if absent, fall back to a `.env` file in the user's home directory, parsing `GITHUB_TOKEN=` lines and tolerating quotes and whitespace. If no token is found, log an error and exit with a non-zero status.
+- Logging uses loguru, writing to stderr with a compact format, level controlled by the `LOG_LEVEL` environment variable (default INFO), removing the default handler first.
+- Constants: GitHub API base URL, local git command timeout of 30 seconds, network git timeout of 600 seconds, HTTP timeout of 15 seconds, default branch `main`, default commit message "Initial commit".
+
+**HTTP behavior:** Use a shared `requests.Session` with a retry policy (3 total retries, backoff factor 0.5, retry on statuses 500, 502, 503, 504, and 429, retry on GET and POST, do not raise on final status), mounted on the https scheme.
+
+**Headers for GitHub API calls:** Authorization as `token <token>`, Accept `application/vnd.github.v3+json`, User-Agent `gh-create-repo/1.0`.
+
+**Command-line interface (argparse):** Accept a positional or option for the local project directory (defaulting to the current directory), a repository name (optional, defaulting to the directory's basename), a description, a visibility flag (public by default, private option), a flag to skip the initial commit or push, a custom commit message, a branch name defaulting to `main`, and a flag to overwrite or reuse an existing remote as appropriate. Keep the exact option semantics coherent and document them in `--help`.
+
+**Core workflow:**
+1. Validate the target directory exists and is a directory; error out otherwise.
+2. Verify `git` is available on PATH (use `shutil.which`); error if not.
+3. Validate the repository name against GitHub's allowed characters (letters, digits, hyphens, underscores, periods; no leading/trailing invalid characters); reject invalid names with a clear message.
+4. Check via the GitHub API whether the repository already exists for the authenticated user; handle the existing-repo case per the options (abort, or reuse the remote).
+5. Create the repository via the GitHub API (POST to the user repos endpoint) with name, description, private flag, and auto_init disabled. Parse the JSON response, handle non-2xx responses with informative error messages including status and response text, and handle request exceptions.
+6. Initialize a local git repository if none exists (`git init` with the chosen default branch), set the branch, stage all files, and commit with the commit message, using local git commands with the 30-second timeout. Handle the case where no git user identity is configured by setting a fallback identity only if needed, and never overwrite an existing user config.
+7. Add the `origin` remote (update the URL if it already exists), using an authenticated HTTPS URL that embeds the token, and push the branch with upstream tracking using the 600-second network timeout. Do not print the token in logs; mask it in any displayed URL.
+8. Log the final repository URL on success.
+
+**Subprocess handling:** Run git via `subprocess.run` with captured output, text mode, and timeouts; catch `subprocess.TimeoutExpired` and `subprocess.CalledProcessError`-style failures, log stderr content, and exit non-zero on failure. Ensure all commands run with the working directory set to the project directory.
+
+**Error handling and edge cases:** Handle missing token, invalid directory, missing git, invalid repo name, existing repository, network failures, API errors (401, 403, 404, 422, and others), git timeouts, push rejections, empty directories (nothing to commit: skip commit gracefully), an existing git repository with uncommitted changes, existing remotes, and keyboard interrupts (exit cleanly with status 130). Use distinct non-zero exit codes where practical.
+
+**Dependencies:** requests, loguru, urllib3 (via requests), and the standard library (argparse, os, re, shutil, subprocess, sys, pathlib, typing). Include `from __future__ import annotations`.
+
+**Execution:** The script has a Termux shebang, should be runnable directly after `chmod +x`, and should have a `main()` entry point guarded by `if __name__ == "__main__":` that returns an exit code via `sys.exit`.
+
+Write the final output as a single prompt in English, describing the required behavior, structure, and details above, without including any code or snippets.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import os
 import re
@@ -9,6 +45,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+
 import requests
 from loguru import logger
 from requests.adapters import HTTPAdapter

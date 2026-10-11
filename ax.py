@@ -529,10 +529,10 @@ def test_url(url: str) -> Article:
     return extract_url(url)
 
 
-YYYYMMDD = re.compile("20\d{2}\d{2}\d{2}[/_-]")
-YYYY_MM_DD = re.compile("20\d{2}[/_-]\d{2}[/_-]\d{2}[/_-]")
-YYYY_MM = re.compile("20\d{2}[/_-]*\d{2}[/_-]")
-YYYY = re.compile("[/_-]20\d{2}[/_-]")
+YYYYMMDD = re.compile(r"20\d{2}\d{2}\d{2}[/_-]")
+YYYY_MM_DD = re.compile(r"20\d{2}[/_-]\d{2}[/_-]\d{2}[/_-]")
+YYYY_MM = re.compile(r"20\d{2}[/_-]*\d{2}[/_-]")
+YYYY = re.compile(r"[/_-]20\d{2}[/_-]")
 
 
 def re_count(char: str, min_count: int, max_count: int) -> re.Pattern:
@@ -554,7 +554,7 @@ block_list = [
     "/#",
     "/tag",
     "/api",
-    "\.pdf",
+    "\\.pdf",
     "/job",
     "/faq",
     "/.pdf",

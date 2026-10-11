@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import base64
 import mimetypes
@@ -11,6 +12,7 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
 from urllib.parse import unquote, urldefrag
+
 from loguru import logger
 
 if TYPE_CHECKING:

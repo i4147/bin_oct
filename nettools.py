@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce this prompt from the code as shown, because the code you pasted is cut off after the `get_public_ip` function. Everything after that point is missing, so I can't describe the script's full purpose, inputs, outputs, or main logic.
+
+If you paste the rest of the script, I'll write the self-contained reproduction prompt.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import io
 import json
@@ -19,11 +24,8 @@ from urllib import request as urlrequest
 
 try:
     import requests  # type: ignore
-    from colorama import (
-        Fore,
-        Style,
-        init as colorama_init,  # type: ignore
-    )
+    from colorama import Fore, Style
+    from colorama import init as colorama_init  # type: ignore
 
     colorama_init(autoreset=True)
     _HAS_COLORAMA = True

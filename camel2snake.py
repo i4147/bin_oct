@@ -1,6 +1,76 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Build a self-contained prompt that tells an AI coding agent to write a Python tool which converts camelCase identifiers to snake_case across a codebase, with the features below.
+
+Write a complete, single-file Python command-line tool (Termux-compatible, shebang pointing to the Termux Python path) that automatically renames camelCase identifiers to snake_case in Python source files, safely and reversibly.
+
+**Purpose**
+The script scans a directory tree of Python files and rewrites identifiers that are in camelCase (or partially camelCase) into snake_case, updating every reference consistently across the project. It must be safe: it should avoid breaking code, respect Python syntax, and support preview, undo, and caching.
+
+**Dependencies**
+- Standard library: argparse, base64, contextlib, difflib, hashlib, io, json, mmap, os, re, sys, tempfile, tokenize, pathlib, typing (Iterator, NamedTuple), multiprocessing.Pool, `from __future__ import annotations`.
+- Third-party: libcst (for concrete-syntax-tree-based rewriting that preserves formatting and comments) and loguru (for logging).
+- Declare these in a note or requirements comment at the top.
+
+**Configuration constants**
+- A frozenset of directory names to skip during traversal: .git, __pycache__, .tox, .venv, venv, env, node_modules, .mypy_cache, .pytest_cache, .eggs, build, dist, .idea, .vscode, .hg, .svn.
+- Regex patterns:
+  - A camelCase matcher that accepts optional leading underscores, a lowercase-start body with at least one internal uppercase-led segment, and optional trailing underscores (captured as prefix, body, suffix groups).
+  - A "partial camel" detector matching a lowercase letter immediately followed by an uppercase letter.
+  - A snake boundary splitter matching positions between a lowercase/digit and an uppercase letter, or between an uppercase letter and an uppercase-followed-by-lowercase sequence.
+  - A dunder matcher for names like `__name__` (these must never be renamed).
+- Cache file name: `.camel_cache.json`. Undo file name: `.camel_undo.json`.
+- Getattr-style builtin names that signal dynamic attribute access: getattr, setattr, delattr, hasattr.
+- Allowed rename targets: function, class, variable, param.
+
+**Core conversion function `to_snake(name)`**
+- Return None for empty names, dunder names, or names with no camel-case pattern.
+- For names matching the camel pattern, preserve the leading and trailing underscores and convert only the body; for partial-camel names, convert the whole name.
+- Insert underscores at snake boundaries and lowercase the result, keeping prefix/suffix underscores intact.
+- Return None if the converted result equals the original.
+
+**Behavior to implement**
+1. **Traversal**: recursively walk the target path (file or directory), skipping SKIP_DIRS and hidden/irrelevant directories; process only `.py` files.
+2. **Parsing**: parse each file with libcst; use tokenize/ast-level checks where needed to detect identifiers safely. Skip files that fail to parse and log a warning rather than crashing.
+3. **Scope-aware renaming**: collect definitions (functions, classes, variables, parameters) and rename them and all their references within the file and across the project where the name is referenced. Respect the allowed target types selected by the user.
+4. **Safety rules**:
+   - Do not rename dunder names or names in the getattr-sensitive contexts where a string literal may reference the name; warn instead.
+   - Avoid collisions: if the snake_case target already exists in the same scope, skip and report the conflict.
+   - Do not touch string contents, comments, or attribute names of external modules unless explicitly configured.
+5. **Caching**: store a hash of each processed file (e.g., via hashlib) in `.camel_cache.json` so unchanged files are skipped on subsequent runs. Read/write JSON safely; treat a corrupt cache as empty.
+6. **Undo support**: before writing changes, record original file contents (base64-encoded, since they may contain arbitrary bytes) and rename mappings into `.camel_undo.json`. Provide an undo mode that restores the recorded originals and removes the record.
+7. **Writing files atomically**: write to a tempfile in the same directory and then replace the original; use mmap only if reading large files benefits from it.
+8. **Parallelism**: process files using multiprocessing.Pool for speed; handle worker exceptions per file without aborting the whole run.
+9. **Diff preview**: a dry-run/preview mode that prints a unified diff (via difflib) of proposed changes without writing anything.
+10. **Logging**: use loguru for info/warning/error messages, including counts of renamed identifiers, skipped files, and conflicts.
+
+**Command-line interface (argparse)**
+- Positional: path to a file or directory (default current directory).
+- `--dry-run` / `--diff`: show diffs only.
+- `--undo`: revert the last run using the undo file.
+- `--targets`: comma-separated subset of function, class, variable, param (default: all).
+- `--jobs N`: number of worker processes.
+- `--no-cache`: ignore and do not update the cache.
+- `--exclude` pattern(s) for additional paths to skip.
+- `--verbose` to raise log level.
+
+**Output**
+- Print a summary: files scanned, files changed, identifiers renamed, files skipped (with reasons), and conflicts.
+- Exit code 0 on success, non-zero on fatal errors (e.g., invalid path, undo with no record, unrecoverable write failure).
+
+**Error handling and edge cases**
+- Handle missing paths, permission errors, non-UTF-8 files (skip with warning), syntax errors, empty files, symlink loops (do not follow symlinks), and interrupted runs (undo file must not be left inconsistent; write it before modifying files).
+- Ensure idempotence: running twice should produce no further changes.
+
+**Execution details**
+- Include the Termux-style shebang line for the Python interpreter.
+- Run as `python script.py [path] [options]`.
+- Guard the main entry point with `if __name__ == "__main__":` and ensure multiprocessing works with the `spawn`/`fork` default on Termux (keep worker functions top-level).
+
+Produce the complete script in one file, with clear docstrings and comments in the same style as the original (concise, practical), and nothing else beyond the code.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import base64
 import contextlib
@@ -17,6 +87,7 @@ import tokenize
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterator, NamedTuple
+
 import libcst as cst
 from loguru import logger
 

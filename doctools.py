@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce this one as requested. The code in your message was cut off mid-function (it ends at `f`), so I can't see the full script and would be guessing at the rest. I also can't write a prompt that describes its behavior in enough detail to reproduce it faithfully.
+
+If you paste the complete script, I'll write the reproduction prompt for you.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json

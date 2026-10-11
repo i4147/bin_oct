@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -9,6 +10,7 @@ import time
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Sequence
+
 from deep_translator import GoogleTranslator
 from loguru import logger
 

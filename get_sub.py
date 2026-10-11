@@ -29,9 +29,9 @@ from requests.utils import quote
 
 __version__ = "0.0.0"
 
-SUB_FORMATS: List[str] = [".ass", ".srt", ".ssa", ".sub", ".sup"]
-ARCHIVE_TYPES: List[str] = [".zip", ".rar", ".7z"]
-VIDEO_FORMATS: List[str] = [
+SUB_FORMATS: list[str] = [".ass", ".srt", ".ssa", ".sub", ".sup"]
+ARCHIVE_TYPES: list[str] = [".zip", ".rar", ".7z"]
+VIDEO_FORMATS: list[str] = [
     ".webm",
     ".mkv",
     ".flv",
@@ -99,7 +99,7 @@ class ProgressBar:
 
 def num_to_cn(number: str) -> str:
     assert number.isdigit() and 1 <= int(number) <= 99
-    trans_map: Dict[str, str] = {n: c for n, c in zip(("123456789"), ("一二三四五六七八九"))}
+    trans_map: dict[str, str] = {n: c for n, c in zip(("123456789"), ("一二三四五六七八九"))}
     if len(number) == 1:
         return trans_map[number]
     part1: str = "十" if number[0] == "1" else trans_map[number[0]] + "十"
@@ -111,8 +111,8 @@ def extract_name(name: str, en: bool = False) -> str:
     name, suffix = path.splitext(name)
     c_pattern: str = "[一-鿿]"
     e_pattern: str = "[a-zA-Z]"
-    c_indices: List[int] = [m.start(0) for m in re.finditer(c_pattern, name)]
-    e_indices: List[int] = [m.start(0) for m in re.finditer(e_pattern, name)]
+    c_indices: list[int] = [m.start(0) for m in re.finditer(c_pattern, name)]
+    e_indices: list[int] = [m.start(0) for m in re.finditer(e_pattern, name)]
     if en or len(c_indices) <= len(e_indices):
         target, discard = e_indices, c_indices
     else:
@@ -127,7 +127,7 @@ def extract_name(name: str, en: bool = False) -> str:
     elif last_target < first_discard:
         new_name = name[:first_discard]
     else:
-        result: List[int] = [0, 1]
+        result: list[int] = [0, 1]
         start: int = -1
         end: int = 0
         while end < len(name):
@@ -147,7 +147,7 @@ def extract_name(name: str, en: bool = False) -> str:
     return new_name
 
 
-def _print_and_choose(items: List[str]) -> int:
+def _print_and_choose(items: list[str]) -> int:
     for i, item in enumerate(items):
         print("%3s) %s" % (i, item))
     choice: Optional[int] = None
@@ -168,12 +168,12 @@ def _print_and_choose(items: List[str]) -> int:
     return choice
 
 
-def choose_archive(sub_dict: Dict[str, Any], sub_num: int = 5, query: bool = True) -> Tuple[bool, Any]:
+def choose_archive(sub_dict: dict[str, Any], sub_num: int = 5, query: bool = True) -> tuple[bool, Any]:
     should_exit: bool = False
     if not query:
         chosen_sub: str = list(sub_dict.keys())[0]
         return should_exit, chosen_sub
-    items: List[str] = ["Exit. Not downloading any subtitles."]
+    items: list[str] = ["Exit. Not downloading any subtitles."]
     for i, key in enumerate(sub_dict.keys()):
         if i == sub_num:
             break
@@ -191,8 +191,8 @@ def choose_archive(sub_dict: Dict[str, Any], sub_num: int = 5, query: bool = Tru
     return should_exit, list(sub_dict.keys())[choice - 1]
 
 
-def choose_subtitle(subtitles: List[str]) -> str:
-    items: List[str] = []
+def choose_subtitle(subtitles: list[str]) -> str:
+    items: list[str] = []
     for subtitle in subtitles:
         try:
             subtitle = subtitle.encode("cp437").decode("gbk")
@@ -203,7 +203,7 @@ def choose_subtitle(subtitles: List[str]) -> str:
     return subtitles[choice]
 
 
-def compute_subtitle_score(video_detail: Dict[str, Any], subname: str, match_episode: bool = True) -> int:
+def compute_subtitle_score(video_detail: dict[str, Any], subname: str, match_episode: bool = True) -> int:
     video_name: str = video_detail["title"].lower()
     season: str = str(video_detail.get("season"))
     episode: str = str(video_detail.get("episode"))
@@ -211,7 +211,7 @@ def compute_subtitle_score(video_detail: Dict[str, Any], subname: str, match_epi
     vtype: str = str(video_detail.get("type"))
     subname = subname.lower()
     score: int = 0
-    sub_name_info: Dict[str, Any] = guessit(subname)
+    sub_name_info: dict[str, Any] = guessit(subname)
     if sub_name_info.get("title"):
         sub_title: str = sub_name_info["title"].lower()
     else:
@@ -252,11 +252,11 @@ def compute_subtitle_score(video_detail: Dict[str, Any], subname: str, match_epi
     return score
 
 
-def guess_subtitle(sublist: List[str], video_detail: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+def guess_subtitle(sublist: list[str], video_detail: dict[str, Any]) -> tuple[bool, Optional[str]]:
     if not sublist:
         return False, None
-    scores: List[int] = []
-    subs: List[str] = []
+    scores: list[int] = []
+    subs: list[str] = []
     for one_sub in sublist:
         _, ftype = path.splitext(one_sub)
         if ftype not in SUB_FORMATS:
@@ -274,7 +274,7 @@ def guess_subtitle(sublist: List[str], video_detail: Dict[str, Any]) -> Tuple[bo
     return max_score > 0, subs[max_pos]
 
 
-def get_file_list(data: bytes, datatype: str) -> Dict[str, Any]:
+def get_file_list(data: bytes, datatype: str) -> dict[str, Any]:
     sub_buff: BytesIO = BytesIO(data)
     file_handler: Any
     if datatype == ".7z":
@@ -292,7 +292,7 @@ def get_file_list(data: bytes, datatype: str) -> Dict[str, Any]:
     if datatype == ".rar":
         sub_buff.seek(0)
         file_handler = rarfile.RarFile(sub_buff, mode="r")
-    sub_lists_dict: Dict[str, Any] = dict()
+    sub_lists_dict: dict[str, Any] = dict()
     for one_file in file_handler.namelist():
         if path.splitext(one_file)[-1] in SUB_FORMATS:
             sub_lists_dict[one_file] = file_handler
@@ -304,7 +304,7 @@ def get_file_list(data: bytes, datatype: str) -> Dict[str, Any]:
     return sub_lists_dict
 
 
-def run_command(cmd: str) -> Tuple[str, str, int]:
+def run_command(cmd: str) -> tuple[str, str, int]:
     process: subprocess.Popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
     return output.decode(), error.decode(), process.returncode
@@ -315,21 +315,21 @@ class P7ZIP:
         self.data: bytes = file.read()
         self.namelist()
 
-    def _parse_list_output(self, output: str) -> List[str]:
+    def _parse_list_output(self, output: str) -> list[str]:
         header_pattern: str = r"\s+Date\s+Time\s+Attr\s+Size\s+Compressed\s+Name\s+"
         body: str = re.split(header_pattern, output)[-1]
-        file_names: List[str] = []
+        file_names: list[str] = []
         for line in body.split("\n")[1:]:
             if line.startswith("-----"):
                 break
-            parts: List[str] = re.split(r"\s", line.strip())
+            parts: list[str] = re.split(r"\s", line.strip())
             file_name: str = parts[-1].strip()
             if path.basename(file_name) == file_name:
                 continue
             file_names.append(file_name)
         return file_names
 
-    def namelist(self) -> List[str]:
+    def namelist(self) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path: str = path.join(tmp_dir, "archive.7z")
             with open(file_path, "wb") as f:
@@ -338,7 +338,7 @@ class P7ZIP:
             output, err, status = run_command(cmd)
             if status != 0:
                 raise ValueError(err)
-            file_names: List[str] = self._parse_list_output(output)
+            file_names: list[str] = self._parse_list_output(output)
         return file_names
 
     def read(self, name: str) -> bytes:
@@ -346,7 +346,7 @@ class P7ZIP:
             file_path: str = path.join(tmp_dir, "archive.7z")
             with open(file_path, "wb") as f:
                 f.write(self.data)
-            cmd_lists: List[str] = ["7z", "e", file_path, "-o" + tmp_dir, name]
+            cmd_lists: list[str] = ["7z", "e", file_path, "-o" + tmp_dir, name]
             cmd: str = " ".join(cmd_lists)
             output, err, status = run_command(cmd)
             if status != 0:
@@ -360,7 +360,7 @@ class P7ZIP:
 class Video:
     @classmethod
     def sub_exists(cls, video_name: str, store_path: str, identifier: str) -> bool:
-        sub_types: List[str] = [identifier + sub_type for sub_type in SUB_FORMATS]
+        sub_types: list[str] = [identifier + sub_type for sub_type in SUB_FORMATS]
         for sub_type in sub_types:
             if exists(join(store_path, video_name + sub_type)):
                 return True
@@ -375,7 +375,7 @@ class Video:
         self.sub_identifier: str = identifier
         self.has_subtitle: bool = Video.sub_exists(self.name, self.sub_store_path, self.sub_identifier)
         self.extracted_name: str = extract_name(self.name)
-        self.info: Dict[str, Any] = guessit(self.extracted_name + self.type)
+        self.info: dict[str, Any] = guessit(self.extracted_name + self.type)
 
     def delete_existed_subtitles(self) -> None:
         if not self.has_subtitle:
@@ -388,17 +388,17 @@ class Video:
 
 
 class Downloader:
-    header: Dict[str, str] = {
+    header: dict[str, str] = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit 537.36 (KHTML, like Gecko) Chrome",
         "Accept-Language": "zh-CN,zh;q=0.8",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     }
-    service_short_names: Dict[str, str] = {"amazon prime": "amzn"}
+    service_short_names: dict[str, str] = {"amazon prime": "amzn"}
 
     @classmethod
-    def get_keywords(cls, video: Video) -> List[str]:
-        keywords: List[str] = []
-        info_dict: Dict[str, Any] = video.info
+    def get_keywords(cls, video: Video) -> list[str]:
+        keywords: list[str] = []
+        info_dict: dict[str, Any] = video.info
         title: str = info_dict["title"]
         keywords.append(title)
         if info_dict.get("season"):
@@ -421,7 +421,7 @@ class Downloader:
         keywords = [quote(_keyword) for _keyword in keywords]
         return keywords
 
-    def get_subtitles(self, video: Video, sub_num: int = 5) -> Dict[str, Any]:
+    def get_subtitles(self, video: Video, sub_num: int = 5) -> dict[str, Any]:
         raise NotImplementedError
 
     def download_file(
@@ -429,7 +429,7 @@ class Downloader:
         file_name: str,
         sub_url: str,
         session: Optional[requests.Session] = None,
-    ) -> Tuple[Optional[str], Optional[bytes], str]:
+    ) -> tuple[Optional[str], Optional[bytes], str]:
         raise NotImplementedError
 
 
@@ -439,9 +439,9 @@ class ZimukuDownloader(Downloader):
     site_url: str = "http://www.zimuku.la"
     search_url: str = "http://www.zimuku.la/search?q="
 
-    def get_keywords(self, video: Video) -> List[str]:
+    def get_keywords(self, video: Video) -> list[str]:
         if video.info["type"] == "episode":
-            keywords: List[str] = [
+            keywords: list[str] = [
                 video.info["title"],
                 "s%s" % str(video.info["season"]).zfill(2),
             ]
@@ -453,9 +453,9 @@ class ZimukuDownloader(Downloader):
         self,
         session: requests.Session,
         link: str,
-        info: Dict[str, Any],
+        info: dict[str, Any],
         match_episode: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         def _get_archive_dowload_link(sub_page_link: str) -> str:
             r = session.get(sub_page_link)
             bs_obj = BeautifulSoup(r.text, "html.parser")
@@ -470,7 +470,7 @@ class ZimukuDownloader(Downloader):
         r = session.get(link)
         bs_obj = BeautifulSoup(r.text, "html.parser")
         subs_body = bs_obj.find("div", class_="subs box clearfix").find("tbody")
-        subs: Dict[str, Any] = dict()
+        subs: dict[str, Any] = dict()
         for sub in subs_body.find_all("tr"):
             a = sub.find("a")
             name: str = extract_name(a.text, en=True)
@@ -499,8 +499,8 @@ class ZimukuDownloader(Downloader):
             }
         return subs
 
-    def _parse_shooter_episode_page(self, session: requests.Session, title: str, link: str) -> Dict[str, Any]:
-        sub: Dict[str, Any] = dict()
+    def _parse_shooter_episode_page(self, session: requests.Session, title: str, link: str) -> dict[str, Any]:
+        sub: dict[str, Any] = dict()
         r = session.get(link)
         bs_obj = BeautifulSoup(r.text, "html.parser")
         lang_box = bs_obj.find("ul", {"class": "subinfo"}).find("li")
@@ -524,19 +524,19 @@ class ZimukuDownloader(Downloader):
         }
         return sub
 
-    def get_subtitles(self, video: Video, sub_num: int = 10) -> Dict[str, Any]:
+    def get_subtitles(self, video: Video, sub_num: int = 10) -> dict[str, Any]:
         print("Searching ZIMUKU...", end="\r")
-        keywords: List[str] = self.get_keywords(video)
-        info_dict: Dict[str, Any] = video.info
+        keywords: list[str] = self.get_keywords(video)
+        info_dict: dict[str, Any] = video.info
         s: requests.Session = requests.session()
         s.headers.update(Downloader.header)
-        sub_dict: Dict[str, Any] = dict()
+        sub_dict: dict[str, Any] = dict()
         pattern: str = r"url\s*=\s*'([^']*)'\s*\+\s*url"
         for i in range(len(keywords), 1, -1):
             keyword: str = ".".join(keywords[:i])
             r = s.get(ZimukuDownloader.search_url + keyword, timeout=10)
             html: str = r.text
-            parts: List[str] = re.findall(pattern, html)
+            parts: list[str] = re.findall(pattern, html)
             while parts:
                 parts.reverse()
                 redirect_url: str = urljoin(ZimukuDownloader.site_url, "".join(parts))
@@ -555,13 +555,13 @@ class ZimukuDownloader(Downloader):
                             season_cn1: str = re.search("第(.*)季", title).group(1).strip()
                         except AttributeError:
                             sample_title: str = item.find("td", class_="first").find("a").get("title")
-                            sample_dict: Dict[str, Any] = guessit(extract_name(sample_title, en=True))
+                            sample_dict: dict[str, Any] = guessit(extract_name(sample_title, en=True))
                             season_cn1 = num_to_cn(str(sample_dict["season"]))
                         season_cn2: str = num_to_cn(str(info_dict["season"]))
                         if season_cn1 != season_cn2:
                             continue
                     episode_link: str = ZimukuDownloader.site_url + title_a.attrs["href"]
-                    new_subs: Dict[str, Any] = self._parse_episode_page(s, episode_link, info_dict)
+                    new_subs: dict[str, Any] = self._parse_episode_page(s, episode_link, info_dict)
                     if not new_subs:
                         new_subs = self._parse_episode_page(s, episode_link, info_dict, match_episode=False)
                     sub_dict.update(new_subs)
@@ -572,7 +572,7 @@ class ZimukuDownloader(Downloader):
                     if score == -1:
                         continue
                     link: str = ZimukuDownloader.site_url + persub.h1.a.attrs["href"]
-                    sub: Dict[str, Any] = self._parse_shooter_episode_page(s, title, link)
+                    sub: dict[str, Any] = self._parse_shooter_episode_page(s, title, link)
                     sub[list(sub.keys())[0]]["score"] = score
                     sub_dict.update(sub)
             else:
@@ -581,7 +581,7 @@ class ZimukuDownloader(Downloader):
                 del keywords[:]
                 break
         sub_dict = OrderedDict(sorted(sub_dict.items(), key=lambda e: e[1]["score"], reverse=True))
-        keys: List[str] = list(sub_dict.keys())[:sub_num]
+        keys: list[str] = list(sub_dict.keys())[:sub_num]
         return {key: sub_dict[key] for key in keys}
 
     def download_file(
@@ -589,7 +589,7 @@ class ZimukuDownloader(Downloader):
         file_name: str,
         download_link: str,
         session: Optional[requests.Session] = None,
-    ) -> Tuple[Optional[str], Optional[bytes], str]:
+    ) -> tuple[Optional[str], Optional[bytes], str]:
         try:
             if not session:
                 session = requests.session()
@@ -626,11 +626,11 @@ class ZimuzuDownloader(Downloader):
     site_url: str = "http://www.rrys2020.com"
     search_url: str = "http://www.rrys2020.com/search?keyword={0}&type=subtitle"
 
-    def get_subtitles(self, video: Video, sub_num: int = 5) -> Dict[str, Any]:
+    def get_subtitles(self, video: Video, sub_num: int = 5) -> dict[str, Any]:
         print("Searching ZIMUZU...", end="\r")
-        keywords: List[str] = Downloader.get_keywords(video)
+        keywords: list[str] = Downloader.get_keywords(video)
         keyword: str = " ".join(keywords)
-        sub_dict: Dict[str, Any] = OrderedDict()
+        sub_dict: dict[str, Any] = OrderedDict()
         s: requests.Session = requests.session()
         while True:
             r = s.get(
@@ -677,9 +677,9 @@ class ZimuzuDownloader(Downloader):
         file_name: str,
         sub_url: str,
         session: Optional[requests.Session] = None,
-    ) -> Tuple[Optional[str], Optional[bytes], str]:
+    ) -> tuple[Optional[str], Optional[bytes], str]:
         s: requests.Session = requests.session()
-        header: Dict[str, str] = Downloader.header.copy()
+        header: dict[str, str] = Downloader.header.copy()
         r = s.get(sub_url, headers=Downloader.header)
         bs_obj = BeautifulSoup(r.text, "html.parser")
         a = bs_obj.find("div", {"class": "subtitle-links"}).a
@@ -688,7 +688,7 @@ class ZimuzuDownloader(Downloader):
         ajax_url: str = "http://got002.com/api/v1/static/subtitle/detail?"
         ajax_url += download_link.split("?")[-1]
         r = s.get(ajax_url, headers=header)
-        json_obj: Dict[str, Any] = json.loads(r.text)
+        json_obj: dict[str, Any] = json.loads(r.text)
         download_link = json_obj["data"]["info"]["file"]
         try:
             with closing(requests.get(download_link, stream=True)) as response:
@@ -729,8 +729,8 @@ class ZimuzuDownloader(Downloader):
 
 
 class DownloaderManager:
-    downloaders: Tuple[Downloader, ...] = (ZimukuDownloader(), ZimuzuDownloader())
-    downloader_names: List[str] = [d.__class__.name for d in downloaders]
+    downloaders: tuple[Downloader, ...] = (ZimukuDownloader(), ZimuzuDownloader())
+    downloader_names: list[str] = [d.__class__.name for d in downloaders]
 
     @classmethod
     def get_downloader_by_name(cls, name: str) -> Optional[Downloader]:
@@ -777,7 +777,7 @@ class GetSubtitles:
         self.s_error: str = ""
         self.f_error: str = ""
         if not downloader:
-            self.downloader: Tuple[Downloader, ...] = DownloaderManager.downloaders
+            self.downloader: tuple[Downloader, ...] = DownloaderManager.downloaders
         else:
             if downloader not in DownloaderManager.downloader_names:
                 print(
@@ -790,7 +790,7 @@ class GetSubtitles:
             found: Optional[Downloader] = DownloaderManager.get_downloader_by_name(downloader)
             assert found is not None
             self.downloader = (found,)
-        self.failed_list: List[Dict[str, Any]] = []
+        self.failed_list: list[dict[str, Any]] = []
         self.sub_identifier: str = "" if not self.plex else ".zh"
         self.sub_store_path: str = sub_path.replace('"', "")
         if not path.isdir(self.sub_store_path):
@@ -800,9 +800,9 @@ class GetSubtitles:
         else:
             print("subtitles will be saved to: " + self.sub_store_path)
 
-    def get_videos(self, raw_path: str) -> List[Video]:
+    def get_videos(self, raw_path: str) -> list[Video]:
         raw_path = raw_path.replace('"', "")
-        videos: List[Video] = []
+        videos: list[Video] = []
         if path.isdir(raw_path):
             for root, dirs, files in os.walk(raw_path):
                 for file in files:
@@ -830,11 +830,11 @@ class GetSubtitles:
             videos.append(video)
         return videos
 
-    def get_search_results(self, video: Video) -> Dict[str, Any]:
-        results: Dict[str, Any] = OrderedDict()
+    def get_search_results(self, video: Video) -> dict[str, Any]:
+        results: dict[str, Any] = OrderedDict()
         for i, downloader in enumerate(self.downloader):
             try:
-                result: Dict[str, Any] = downloader.get_subtitles(video, sub_num=self.sub_num)
+                result: dict[str, Any] = downloader.get_subtitles(video, sub_num=self.sub_num)
                 results.update(result)
             except ValueError as e:
                 print("error: " + str(e))
@@ -854,12 +854,12 @@ class GetSubtitles:
         video: Video,
         archive_data: bytes,
         datatype: str,
-    ) -> Tuple[str, List[List[str]]]:
+    ) -> tuple[str, list[list[str]]]:
         error: str = ""
         if datatype not in ARCHIVE_TYPES:
             error = "unsupported file type " + datatype
             return error, []
-        sub_lists_dict: Dict[str, Any] = get_file_list(archive_data, datatype)
+        sub_lists_dict: dict[str, Any] = get_file_list(archive_data, datatype)
         if len(sub_lists_dict) == 0:
             error = "no subtitle in this archive"
             return error, []
@@ -875,7 +875,7 @@ class GetSubtitles:
         sub_title: str
         sub_type: str
         sub_title, sub_type = path.splitext(sub_name)
-        extract_subs: List[List[str]] = [[sub_name, sub_type]]
+        extract_subs: list[list[str]] = [[sub_name, sub_type]]
         if self.both:
             another_sub_type: str = ".srt" if sub_type == ".ass" else ".ass"
             another_sub: str = sub_name.replace(sub_type, another_sub_type)
@@ -895,13 +895,13 @@ class GetSubtitles:
                 sub.write(file_handler.read(one_sub))
         return error, extract_subs
 
-    def process_subtitle(self, video: Video, sub_data: bytes, datatype: str) -> Tuple[str, List[List[str]]]:
+    def process_subtitle(self, video: Video, sub_data: bytes, datatype: str) -> tuple[str, list[list[str]]]:
         video.delete_existed_subtitles()
         sub_name: str = video.name + video.sub_identifier + datatype
         extract_path: str = path.join(video.sub_store_path, sub_name)
         with open(extract_path, "wb") as sub:
             sub.write(sub_data)
-        extract_subs: List[List[str]] = [[sub_name, datatype]]
+        extract_subs: list[list[str]] = [[sub_name, datatype]]
         return "", extract_subs
 
     def process_result(
@@ -910,7 +910,7 @@ class GetSubtitles:
         chosen_sub: str,
         link: str,
         session: Optional[requests.Session],
-    ) -> Tuple[str, List[List[str]]]:
+    ) -> tuple[str, list[list[str]]]:
         choice_prefix: str = chosen_sub[: chosen_sub.find("]") + 1]
         downloader: Optional[Downloader] = DownloaderManager.get_downloader_by_choice_prefix(choice_prefix)
         assert downloader is not None
@@ -920,7 +920,7 @@ class GetSubtitles:
         datatype, data, error = downloader.download_file(chosen_sub, link, session=session)
         if error:
             return error, []
-        extract_subs: List[List[str]] = []
+        extract_subs: list[list[str]] = []
         if datatype in ARCHIVE_TYPES:
             assert data is not None
             error, extract_subs = self.process_archive(video, data, datatype)
@@ -949,9 +949,9 @@ class GetSubtitles:
             print("save original file.")
         return "", extract_subs
 
-    def process_video(self, video: Video) -> Tuple[str, List[List[str]]]:
-        extract_subs: List[List[str]] = []
-        sub_dict: Dict[str, Any] = self.get_search_results(video)
+    def process_video(self, video: Video) -> tuple[str, list[list[str]]]:
+        extract_subs: list[list[str]] = []
+        sub_dict: dict[str, Any] = self.get_search_results(video)
         if len(sub_dict) == 0:
             error: str = "no search results. "
             return error, []
@@ -976,8 +976,8 @@ class GetSubtitles:
                 sub_dict.pop(chosen_sub)
         return "", extract_subs
 
-    def start(self) -> Dict[str, Any]:
-        videos: List[Video] = self.get_videos(self.arg_name)
+    def start(self) -> dict[str, Any]:
+        videos: list[Video] = self.get_videos(self.arg_name)
         for i, video in enumerate(videos):
             self.s_error = ""
             self.f_error = ""
@@ -988,7 +988,7 @@ class GetSubtitles:
                 print("subtitle already exists, add '-o' to replace it.")
                 continue
             try:
-                extract_subs: List[List[str]] = []
+                extract_subs: list[list[str]] = []
                 error: str = ""
                 error, extract_subs = self.process_video(video)
                 self.s_error = error

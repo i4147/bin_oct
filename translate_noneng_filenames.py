@@ -1,11 +1,12 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import os
 import re
 from pathlib import Path
+
 from deep_translator import GoogleTranslator
-from fastwalk import walk_files
 
 DIRECTORY = Path.cwd()
 non_english_pattern = re.compile(r"[^\x00-\x7F]")
@@ -24,21 +25,29 @@ def translate_filename(filename: str):
 
 
 def rename_files(directory: str) -> None:
-    for path in walk_files(directory):
-        if is_english(path.stem):
-            continue
-        if path.is_file():
+    for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
+        # topdown=False means we visit children before parents, so a directory
+        # is renamed only after all of its contents have been processed.
+        # This avoids the classic bug where renaming a parent mid-walk makes
+        # the remaining child paths stale.
+        for name in filenames:
+            path = Path(dirpath) / name
+            if is_english(path.stem):
+                continue
             original_path = path
             new_name = translate_filename(path.stem)
             new_path = path.with_stem(new_name)
             counter = 1
             while new_path.exists():
-                name, ext = os.path.splitext(new_name)
-                new_path = path.with_name(f"{name}_{counter}{ext}")
+                _, ext = os.path.splitext(new_name)
+                new_path = path.with_name(f"{new_name}_{counter}{ext}")
                 counter += 1
             Path(original_path).rename(new_path)
             print(f"Renamed file: {original_path.name} -> {new_path.name}")
-        elif path.is_dir():
+        for name in dirnames:
+            path = Path(dirpath) / name
+            if is_english(path.name):
+                continue
             original_path = path
             new_name = translate_filename(path.name)
             new_path = path.with_name(new_name)

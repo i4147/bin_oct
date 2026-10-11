@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import ast
 import contextlib
@@ -12,6 +13,7 @@ import tempfile
 import tokenize
 from pathlib import Path
 from typing import Iterable, Iterator
+
 import libcst as cst
 
 NUM_WORKERS = 8

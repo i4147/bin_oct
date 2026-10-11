@@ -1,11 +1,13 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import json
 import sys
 import time
 from pathlib import Path
+
 from translate import Translator
 
 SAVE_EVERY = 50

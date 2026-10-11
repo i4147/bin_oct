@@ -2,9 +2,9 @@
 
 import argparse
 import ast
-from functools import lru_cache
 import re
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple
 
@@ -73,7 +73,7 @@ def translate_text(text: str, target_lang: str = "en") -> str:
     return text
 
 
-def get_node_char_offsets(source_code: str, node: ast.AST) -> Tuple[int, int]:
+def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
     """
     Converts AST node line/column offsets (which use UTF-8 byte offsets)
     into 0-based character indices in the full source code string.
@@ -158,7 +158,7 @@ def process_python_file(file_path: Path) -> bool:
         return False
 
     # Collect AST nodes representing string constants with non-English text
-    targets: List[Tuple[int, int, str, str]] = []
+    targets: list[tuple[int, int, str, str]] = []
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
@@ -198,7 +198,7 @@ def process_python_file(file_path: Path) -> bool:
         return False
 
 
-def resolve_input_paths(inputs: List[str]) -> List[Path]:
+def resolve_input_paths(inputs: list[str]) -> list[Path]:
     """
     Resolves input file/directory arguments into a list of Path objects.
     If inputs list is empty, recursively scans current folder for all .py files.
@@ -210,7 +210,7 @@ def resolve_input_paths(inputs: List[str]) -> List[Path]:
         List[Path]: Filtered list of .py file Path objects.
     """
     current_script = Path(__file__).resolve()
-    target_files: List[Path] = []
+    target_files: list[Path] = []
 
     if not inputs:
         # Default: process current directory recursively

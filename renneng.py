@@ -1,11 +1,12 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import os
 import re
 from pathlib import Path
+
 from deep_translator import GoogleTranslator
-from fastwalk import walk_files
 
 DIRECTORY = "."
 non_english_pattern = re.compile(r"[^\x00-\x7F]")
@@ -38,9 +39,11 @@ def get_unique_path(path: Path) -> Path:
 
 
 def rename_files(directory: str) -> None:
-    for pth in walk_files(directory):
-        path = Path(pth)
-        if path.is_file():
+    # topdown=False visits children before parents so directory renames do
+    # not invalidate paths still queued for processing.
+    for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
+        for name in filenames:
+            path = Path(dirpath) / name
             new_name = translate_if_needed(path.name)
             if new_name == path.name:
                 continue
@@ -48,7 +51,8 @@ def rename_files(directory: str) -> None:
             new_path = get_unique_path(new_path)
             Path(path).rename(new_path)
             print(f"File renamed: {path.name} -> {new_path.name}")
-        elif path.is_dir():
+        for name in dirnames:
+            path = Path(dirpath) / name
             new_name = translate_if_needed(path.name)
             if new_name == path.name:
                 continue

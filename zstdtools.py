@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import io
 import os
@@ -14,6 +15,7 @@ from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
+
 import zstandard as zstd
 
 try:

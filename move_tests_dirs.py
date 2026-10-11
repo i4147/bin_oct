@@ -1,15 +1,17 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import shutil
 import sys
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, NamedTuple
+
 from loguru import logger
 
 MAX_WORKERS: Final[int] = 8
-SRC: Final[Path] = Path.home() / ".local" / "lib" / "python3.12" / "site-packages"
+SRC: Final[Path] = Path("/data/data/com.termux/files/usr/lib/python3.14/site-packages")
 DEST: Final[Path] = Path.home() / "tmp" / "tests_dirs"
 EXCLUDED: Final[tuple[str, ...]] = ("numpy", "pandas", "scipy", "numba")
 DRY_RUN: Final[bool] = "-d" in sys.argv

@@ -1,9 +1,38 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Write a self-contained prompt that instructs an AI coding agent to build a Python script that groups the subdirectories of the current working directory into a fixed number of balanced folders, measuring each subdirectory's recursive file size and distributing them using a greedy size-balancing strategy. The prompt should specify:
 
+Purpose: Organize the immediate subdirectories of the current directory into N balanced groups (N supplied as a command-line argument), so that the total size of each group is roughly equal, by moving each subdirectory into a newly created group folder.
+
+Inputs:
+- A required positive integer command-line argument specifying the number of parts/groups, parsed with argparse.
+- The current working directory is the implicit input; no other files are read.
+
+Outputs:
+- Console output: the count of discovered subdirectories, a per-subdirectory size line in megabytes with two decimal places, and a final confirmation message after reorganization.
+- Filesystem changes: creation of group folders named with a "group_" prefix followed by a 1-based index, and moving each subdirectory into the group folder assigned to it.
+
+Required behavior and logic:
+- Only consider immediate child directories of the current directory (not files, not nested directories); exclude any directory whose name already starts with "group_" so that re-runs do not regroup previous output.
+- Compute each directory's total size by recursively walking all files beneath it (rglob), summing file sizes via stat, skipping files that raise PermissionError or FileNotFoundError, and tolerating errors at the top-level walk without crashing. Do not follow the sizes of symlinks as files beyond what is_file reports.
+- Sort directories by size in descending order, then assign each to the group with the currently smallest accedy longest-processing-time bin packing).
+- Create each group folder (with exist_ok-style behavior so existing folders are reused) and move each assigned subdirectory into it using shutil.move.
+- If no subdirectories are found, print a message stating so and exit without changes.
+- Handle edge cases: empty directories (size 0), name collisions when moving (decide and document behavior, e.g., skip or report on existing destination), permission errors during moves (report and continue), and a requested number of parts that is zero or negative (reject with an error message via argparse validation).
+
+Execution details:
+- Use only the Python standard library: os, shutil, pathlib, argparse.
+- Include a shebang line for Termux on Android (/data/data/com.termux/files/usr/bin/env python).
+- Provide a main entry point guarded by a __name__ check that parses arguments and calls the grouping function.
+- Use type hints on function signatures and keep the script a single file with clear, minimal helper functions (one for directory size, one for the grouping logic).
+- Print progress and sizes using f-strings with the size converted to megabytes (bytes divided by 1024 times 1024).
+
+Produce a complete, runnable script that follows these specifications.
+---"""
+
+import argparse
 import os
 import shutil
 from pathlib import Path
-import argparse
 
 
 def get_directory_size(path: Path) -> int:

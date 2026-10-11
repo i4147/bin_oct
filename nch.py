@@ -1,6 +1,69 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Create a self-contained prompt that instructs an AI coding agent to write a Python script from scratch that reproduces the following behavior. The prompt must describe purpose, inputs/outputs, dependencies, key logic, error handling, edge cases, and usage, without including code or snippets.
+
+Write a Python 3 command-line tool for Android/Termux (shebang pointing to the Termux Python path) that recursively normalizes file permissions and executable bits in a directory tree, with optional parallel processing and a progress display.
+
+Requirements to implement:
+
+**Purpose**
+Walk a target directory tree and enforce consistent permission modes: directories get a standard directory mode, regular files get a standard non-executable file mode, and files that should be executable get an executable mode. Symbolic links must be left untouched. The tool reports what it changes and supports a dry-run mode.
+
+**Dependencies and imports**
+- Use only the standard library, plus an optional progress-bar library (tqdm). If tqdm is not installed, fall back to a no-op wrapper that returns the iterable unchanged and accepts arbitrary keyword arguments.
+- Optionally import an external helper module providing a binary-detection function. If unavailable, fall back to a stub that always returns false, and record whether the helper is available in a flag.
+- Use argparse, fnmatch, multiprocessing, os, stat, sys, time, dataclasses (with field defaults), pathlib, and typing. Use `from __future__ import annotations`.
+
+**Constants (define as module-level defaults)**
+- Directory mode octal 0o775, file mode 0o644, executable mode 0o755.
+- Executable bit mask composed of owner, group, and other execute bits.
+- Default skip directories (frozen set): .git, __pycache__, .idea, node_modules, .venv, venv, .ruff_cache.
+- Default executable-directory names (frozen set): bin, sbin, .bin, libexec, scripts, tools.
+- Default executable file suffixes (tuple): .sh, .so.
+- Default de-executable glob patterns (tuple): *.py.
+- Default directory names whose executable children keep exec bits (frozen set): bin, sbin.
+
+**Helper functions**
+- mode_of(path): return the permission bits (masked with the permission-mode mask) from stat, or None on OS/permission errors.
+- is_symlink(path): return whether the path is a symlink, safely handling errors by returning false.
+- Additional helpers should cover: deciding whether a file should be executable (based on name suffix, parent directory name, glob patterns, shebang line presence starting with "#!", and binary detection when available), deciding whether to strip exec bits (e.g., matching de-exec patterns outside keep-exec parents), and computing the desired mode for a path.
+
+**Data model**
+Use a dataclass to hold per-run statistics and per-item results (e.g., counts of directories, files, executables changed, skipped items, errors, and elapsed time). Use field(default_factory=...) for mutable defaults.
+
+**Traversal**
+- Recursively iterate the tree with os.walk or pathlib, pruning any directory whose name is in the skip set (and any user-supplied extra skip names). Do not follow symlinks into directories.
+- Yield each path as an iterator, with the progress bar wrapping the iteration.
+
+**Key logic**
+- For each path, compute the desired mode and compare to the current mode; only call chmod when they differ. Never chmod symlinks.
+- In dry-run mode, do not modify anything; only report what would change.
+- Handle permission errors per item by counting and reporting them without aborting the whole run.
+
+**Parallelism**
+- Support an optional worker count argument. When greater than one, use a multiprocessing pool to process items in chunks; when one or less, process sequentially. Aggregate results from workers into the statistics dataclass.
+
+**Command-line interface (argparse)**
+- Positional: target directory (default current directory).
+- Options: --dry-run flag; --workers integer (default 1); --skip (repeatable, extra directory names to skip); --exec-suffix (repeatable, extra executable suffixes); --deexec-pattern (repeatable, glob patterns); --verbose flag to print each change; --no-progress flag to disable the progress bar.
+- Validate that the target exists and is a directory; print an error to stderr and exit with a nonzero code otherwise.
+
+**Output**
+- Print a summary at the end: directories and files examined, number of mode changes applied (or would-be applied in dry-run), skipped counts, error count, and elapsed time in seconds.
+- Verbose mode prints each path changed with old and new modes in octal.
+- Errors go to stderr.
+
+**Execution**
+- Entry point guarded by `if __name__ == "__main__":`, returns an integer exit status from a main() function, and passes it to sys.exit.
+- Handle KeyboardInterrupt gracefully by printing a message and exiting with code 130.
+
+**Edge cases**
+- Empty directories, broken symlinks, unreadable files, nonexistent target, target that is a file rather than a directory, files without extensions, hidden files, and files with uppercase suffixes (match case-insensitively).
+
+Output only the final script-generation prompt as described.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import fnmatch
 import multiprocessing as mp

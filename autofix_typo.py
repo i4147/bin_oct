@@ -1,6 +1,34 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""The Python code you pasted is cut off partway through `_load_learning_db` (it ends at `if Path(self.learning_db_path)`), so I can only see part of the script. The prompt below is written against what is visible; the remaining methods (the JSON load/save logic, correction and error-tracking behavior, the context rules, and the CLI entry point) are not shown, so I've described them only in general terms.
+
+Write a single Python 3 command-line script (tested against a Termux environment on Android, so the shebang line points to Termux's Python at /data/data/com.termux/files/usr/bin/env python) that implements a typo-pattern learner. The script should be self-contained except for one external import: a module named `dh` that exports a constant `PY_KEYWORDS` (a collection of Python reserved words). Use `from __future__ import annotations` at the top.
+
+Imports to use: argparse, json, re, shutil, sys, collections.defaultdict, datetime.datetime, pathlib.Path.
+
+Purpose: learn and store patterns of typing mistakes so that a user's common typos can be recognized and corrected later. The learned knowledge is persisted to a JSON file.
+
+Module-level data:
+1. A dictionary COMMON_SUBSTITUTIONS mapping single characters to single characters, representing common typo substitutions. It covers digits 0–9 mapped to the nearby letters on a QWERTY layout (0→p, 1→q, 2→w, 3→e, 4→r, 5→t, 6→y, 7→u, 8→i, 9→o), plus letter-to-letter and letter-to-digit confusions such as a→s, b→n, e→3, y→6, l→p, n→b, s→a, t→y, u→i, z→x. Reproduce these exact entries.
+2. A dictionary QWERTY_ADJACENT mapping each letter a–z (the standard QWERTY layout, rows q–p, a–l, z–m) to a string of its neighboring keys in the same row or adjacent rows (e.g., q→"w", w→"qe", e→"wr", ... m→"n"). Reproduce these exact entries, including the edge keys that have a single neighbor.
+
+Class PatternLearner:
+- Constructor takes `learning_db_path: str = "typo_patterns.json"`. It stores the path, initializes `substitution_patterns` as a copy of COMMON_SUBSTITUTIONS, `learned_corrections` as an empty dict, `error_frequency` as a `defaultdict(int)`, `context_rules` as an empty list, and then calls `_load_learning_db()`.
+- `_load_learning_db()` checks whether the database file exists (via Path) and, if so, loads it as JSON to restore learned corrections, error frequencies, and context rules. Handle missing files gracefully (start empty) and malformed JSON gracefully (do not crash; fall back to empty state and report a warning to stderr). Remaining behavior of this class (saving, recording corrections, applying substitutions, using QWERTY adjacency, and using context rules) is up to you to design sensibly, consistent with the attributes above.
+
+Design expectations:
+- Use PY_KEYWORDS from `dh` to avoid learning or "correcting" Python reserved words, and note that identifiers colliding with keywords should be treated carefully.
+- Use `re` where pattern matching on words or tokens is needed, and `shutil` for safe file operations such as creating a backup of the database before overwriting it.
+- Use `datetime` to timestamp recorded entries or backups.
+- Write the learned database as JSON with indentation so it stays human-readable.
+- Provide a `main()` function and an `if __name__ == "__main__":` guard. Use argparse for the CLI with subcommands or flags that let the user: specify the database path, learn a correction (typo → intended word), look up/apply corrections to a given input string or file, and optionally print or reset learned data. Write results to stdout and diagnostics to stderr.
+- Exit with a nonzero status code on invalid arguments or unrecoverable errors, and print a clear message instead of a traceback.
+- Keep the code idiomatic and commented at a moderate level, matching a small utility script.
+- Output only the complete script.
+
+---"""
 
 from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -9,6 +37,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+
 from dh import PY_KEYWORDS
 
 COMMON_SUBSTITUTIONS = {

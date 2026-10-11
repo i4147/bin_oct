@@ -1,11 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't produce that prompt: the code you pasted cuts off mid-line (`node.en`), so I only have part of the script and can't describe its full behavior accurately. If you paste the complete file, I'll write the prompt you asked for.
+---"""
 
 from __future__ import annotations
+
 import argparse
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import tree_sitter_c
 import tree_sitter_cpp
 from loguru import logger

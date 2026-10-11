@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import importlib
@@ -18,6 +19,7 @@ from functools import cache
 from multiprocessing.pool import Pool
 from pathlib import Path
 from typing import Final, Literal, NamedTuple
+
 from loguru import logger
 from tree_sitter import Language, Node, Parser
 

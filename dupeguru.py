@@ -1,6 +1,11 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""I can't see the rest of the code: the snippet is cut off after `for`, inside `walk_files`. Everything after that point (the hashing functions, the duplicate-grouping logic, the reporting and the `main` entry point) is missing, so I can't describe it accurately.
+
+Should I write the prompt based only on what's visible, leaving those parts as explicit placeholders? Or would you rather paste the complete script so I can generate the full prompt?
+---"""
 
 from __future__ import annotations
+
 import argparse
 import hashlib
 import multiprocessing as mp

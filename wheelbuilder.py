@@ -1,14 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python
-import subprocess
+import argparse
+import logging
 import shutil
+import subprocess
+import sys
 import tarfile
 import tempfile
-import argparse
-import sys
-from pathlib import Path
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
 from typing import Optional, Tuple
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ def pip_wheel_cmd(target: Path, wheels_dir: Path) -> list:
     return cmd
 
 
-def build_wheel_from_dir(pkg_dir: Path) -> Tuple[Path, Optional[str]]:
+def build_wheel_from_dir(pkg_dir: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {pkg_dir.name}")
     wheels_dir = Path.cwd() / "wheels"
 
@@ -138,7 +138,7 @@ def build_wheel_from_dir(pkg_dir: Path) -> Tuple[Path, Optional[str]]:
         return pkg_dir, f"Error: {str(e)}"
 
 
-def build_wheel_from_tar_gz(tar_gz_file: Path) -> Tuple[Path, Optional[str]]:
+def build_wheel_from_tar_gz(tar_gz_file: Path) -> tuple[Path, Optional[str]]:
     logger.info(f"Processing: {tar_gz_file.name}")
     wheels_dir = Path.cwd() / "wheels"
 

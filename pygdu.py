@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import sys
 import termios
 import tty
@@ -8,6 +9,7 @@ from dataclasses import dataclass, field
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Final
+
 from dh import fsz
 from loguru import logger
 

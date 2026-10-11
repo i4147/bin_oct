@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/env python
 
 from __future__ import annotations
+
 import argparse
 import multiprocessing
 import shutil
@@ -8,6 +9,7 @@ import sys
 import tarfile
 from pathlib import Path
 from typing import Any
+
 import cramjam  # type: ignore[import-untyped]
 from loguru import logger
 

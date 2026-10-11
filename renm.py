@@ -1,19 +1,21 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
+
 import argparse
+import os
 import re
 from multiprocessing.pool import AsyncResult, Pool
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, TypeAlias
+
 from deep_translator import GoogleTranslator  # type: ignore[import-untyped]
 from dh import unique_path  # type: ignore[import-untyped]
-from fastwalk import walk_files  # type: ignore[import-untyped]
 from loguru import logger
 from tqdm import tqdm
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 DIRECTORY: Final[str] = "."
 POOL_WORKERS: Final[int] = 8
 POOL_METHODS: Final[tuple[str, ...]] = (
@@ -24,6 +26,12 @@ POOL_METHODS: Final[tuple[str, ...]] = (
 )
 NON_ENGLISH_PATTERN: Final[re.Pattern[str]] = re.compile(r"[^\x00-\x7F]")
 NamePair: TypeAlias = tuple[str, str]
+
+
+def walk_files(directory: str) -> Iterator[str]:
+    for root, _dirs, files in os.walk(directory):
+        for name in files:
+            yield os.path.join(root, name)
 
 
 def is_english(text: str) -> bool:
