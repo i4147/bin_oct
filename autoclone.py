@@ -1,34 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""You are writing a self-contained prompt for an AI coding agent. Reproduce the following Python script from scratch, without access to its source. Describe it precisely enough that the agent can rebuild it.
-
-Write a Python 3 script intended for the Termux environment on Android (shebang pointing to the Termux Python interpreter under /data/data/com.termux/files/usr/bin/). Use `from __future__ import annotations` at the top.
-
-**Purpose:** The script inspects GitHub repositories and manages a local cache of their sizes. It fetches repository size information via the GitHub REST API and stores results in a JSON cache file so repeated runs avoid redundant API calls.
-
-**Dependencies:** `requests` for HTTP calls and `python-dotenv` (`dotenv.load_dotenv`) for environment loading. Standard library modules: `os`, `subprocess`, `sys`, `datetime` (datetime and timedelta), `pathlib.Path`. Note that `json` is used in the cache loader but must be imported; the agent must ensure `import json` is present.
-
-**Startup behavior:**
-- Look for a `.env` file at the user's home directory (`~/.env`). If it exists, load it with `load_dotenv` and print a success message including the path, prefixed with a checkmark emoji. If not, print a warning (warning emoji) stating that the file was not found and system environment variables will be used.
-
-**Constants:**
-- `SIZE_CACHE_FILE` = `"repo_sizes.json"` (relative path in the current working directory).
-- `CACHE_EXPIRY_DAYS` = `7`.
-
-**Functions to implement:**
-
-1. `get_github_token()`: Read the `GITHUB_TOKEN` environment variable. If present, print a success message and return it. Otherwise print a warning that no token was found, plus an indented note that unauthenticated requests are limited to 60 per hour, and return `None`.
-
-2. `load_size_cache()`: If the cache file exists, open and parse it as JSON. Read the `_cache_date` key (ISO 8601 string, default `"2000-01-01"` if missing) using `datetime.fromisoformat`. If the cache is younger than `CACHE_EXPIRY_DAYS`, print how many repo entries were loaded (total keys minus the metadata key) and return the data dict. If expired, print a message that the cache is older than the expiry period and is being refreshed. Wrap parsing in error handling so malformed or unreadable files do not crash the script (the remaining behavior, including the fallthrough return of an empty or None value when the cache is invalid or missing, should return no cached data so the caller fetches fresh data).
-
-**Notable behavior and conventions:**
-- All user-facing output uses print statements with emoji status prefixes (✅, ⚠️, 📂, ⏰). Preserve this style.
-- The cache stores a `_cache_date` metadata field alongside repo entries; entry count excludes this field.
-- The script imports `subprocess` and `sys`, suggesting it may invoke external commands or exit with status codes; include these imports and use `sys.exit` for fatal errors where appropriate.
-- Handle missing files, invalid JSON, invalid date strings, and network failures gracefully with clear printed messages.
-- Include a `if __name__ == "__main__":` guard that runs the main workflow: load environment, obtain the token, load or refresh the cache, fetch repository sizes via the GitHub API with the token as a Bearer authorization header when available, update and save the cache with a fresh `_cache_date` timestamp, and print a summary.
-
-**Output expectations:** A single runnable script with clear function separation, docstrings or brief comments, consistent emoji-prefixed console messages, and robust error handling for network, file, and parsing failures.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

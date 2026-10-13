@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ from typing import Any, Iterable, Optional, Sequence
 
 try:
     import requests
-except ImportError:  # pragma: no cover
+except ImportError:
     requests = None  # type: ignore[assignment]
 try:
     import pycurl
-except ImportError:  # pragma: no cover
+except ImportError:
     pycurl = None  # type: ignore[assignment]
 try:
     from rich.console import Console
@@ -37,11 +37,11 @@ try:
     )
 
     _rich_console: Any = Console()
-except ImportError:  # pragma: no cover
+except ImportError:
     _rich_console = None
 try:
     from bs4 import BeautifulSoup
-except ImportError:  # pragma: no cover
+except ImportError:
     BeautifulSoup = None  # type: ignore[assignment]
 JSON_MIRRORS: tuple[str, ...] = (
     "https://pypi.org/pypi",
@@ -93,7 +93,7 @@ def fetch_json_multi_mirror(pkg_name: str) -> dict:
                 with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as resp:
                     if resp.status == 200:
                         return json.loads(resp.read().decode("utf-8"))
-            except Exception:  # noqa: BLE001
+            except Exception:
                 continue
     msg = f"Failed to fetch metadata for '{pkg_name}' from all mirrors."
     raise RuntimeError(msg)
@@ -244,7 +244,7 @@ def download_urlopen_progress(url: str, target: Path, size: int, chunk: int = 81
                     )
         print(f"    ✅ Downloaded {target.name} ({written / 1024 / 1024:.2f} MB)")
         return True, ""
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return False, f"Failed: {exc!s}"
 
 
@@ -539,7 +539,7 @@ def cmd_mirror(args: argparse.Namespace) -> int:
             loaded = _read_specs_from_file(Path(args.file))
             print(f"Loaded {len(loaded)} package(s) from {args.file}")
             specs.extend(loaded)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"Failed to read '{args.file}': {exc}")
             return 1
     if not specs:
@@ -550,7 +550,7 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     for spec in specs:
         try:
             _mirror_process_spec(spec, args.backend, output_dir)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"Failed to process '{spec}': {exc}")
     return 0
 
@@ -656,7 +656,7 @@ def _scrape_fetch_html(pkg: str, mirror_url: str, trailing_slash: bool) -> str:
             _explain_http_error(code, pkg)
             return ""
         return buf.getvalue().decode("utf-8", errors="replace")
-    except Exception:  # noqa: BLE001
+    except Exception:
         return ""
     finally:
         c.close()
@@ -710,7 +710,7 @@ def _scrape_download(url: str, filename: str, out_dir: Path) -> bool:
                 _explain_http_error(code, filename)
                 if target.exists():
                     target.unlink()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
             finally:
                 c.close()
@@ -816,7 +816,7 @@ def cmd_scrape(args: argparse.Namespace) -> int:
                 ok_list.append(pkg)
             else:
                 fail_list.append(pkg)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  Error: {exc}")
             fail_list.append(pkg)
     elapsed = time.time() - start
@@ -946,7 +946,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\n⚠️  Interrupted by user", file=sys.stderr)
         return 130
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"❌ {exc}", file=sys.stderr)
         return 1
 

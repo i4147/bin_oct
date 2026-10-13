@@ -1,258 +1,242 @@
-#!/data/data/com.termux/files/usr/bin/env python
-
-from __future__ import annotations
-
+#!/data/data/com.termux/files/usr/bin/python
 import argparse
-import multiprocessing
-import runpy
+from dataclasses import dataclass, field
+from enum import Enum
+from multiprocessing import Pool
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
-
 from loguru import logger
 
-NUM_WORKERS: int = 8
-DEFAULT_TIMEOUT: int = 10
-MAX_ERROR_MSG_LEN: int = 200
+WORKER_COUNT = 8
+DEFAULT_TIMEOUT = 30.0
+MAX_ERROR_MSG_LEN = 200
 
 
-def run_python_file(path: Path, timeout: int = DEFAULT_TIMEOUT) -> tuple[Path, bool, str | None, str | None]:
+class Outcome(str, Enum):
+    SUCCESS = "success"
+    MODULE_NOT_FOUND = "ModuleNotFoundError"
+    IMPORT_ERROR = "ImportError"
+    SYNTAX_ERROR = "SyntaxError"
+    ATTRIBUTE_ERROR = "AttributeError"
+    TYPE_ERROR = "TypeError"
+    VALUE_ERROR = "ValueError"
+    KEYBOARD_INTERRUPT = "KeyboardInterrupt"
+    TIMEOUT = "TimeoutError"
+    OTHER_ERROR = "OtherError"
+
+
+@dataclass(slots=True)
+class FileResult:
+    path: Path
+    outcome: Outcome
+    returncode: int | None = None
+    stderr: str = ""
+    duration: float = 0.0
+
+
+@dataclass(slots=True)
+class Summary:
+    results: list[FileResult] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return len(self.results)
+
+    @property
+    def succeeded(self) -> int:
+        return sum(1 for r in self.results if r.outcome is Outcome.SUCCESS)
+
+    @property
+    def failed(self) -> int:
+        return self.total - self.succeeded
+
+    def counts_by_outcome(self) -> dict[Outcome, int]:
+        counts: dict[Outcome, int] = {}
+        for result in self.results:
+            counts[result.outcome] = counts.get(result.outcome, 0) + 1
+        return counts
+
+
+def discover_python_files(directory: Path, recursive: bool) -> list[Path]:
+    pattern = "*.py"
+    if recursive:
+        return sorted(p for p in directory.rglob(pattern) if p.is_file())
+    return sorted(p for p in directory.glob(pattern) if p.is_file())
+
+
+def _classify_failure(stderr: str, returncode: int | None) -> Outcome:
+    lower_stderr = stderr.lower()
+    if "modulenotfounderror" in lower_stderr or "no module named" in lower_stderr:
+        return Outcome.MODULE_NOT_FOUND
+    if "importerror" in lower_stderr:
+        return Outcome.IMPORT_ERROR
+    if "syntaxerror" in lower_stderr:
+        return Outcome.SYNTAX_ERROR
+    if "attributeerror" in lower_stderr:
+        return Outcome.ATTRIBUTE_ERROR
+    if "typeerror" in lower_stderr:
+        return Outcome.TYPE_ERROR
+    if "valueerror" in lower_stderr:
+        return Outcome.VALUE_ERROR
+    if "keyboardinterrupt" in lower_stderr or returncode in (-2, 130):
+        return Outcome.KEYBOARD_INTERRUPT
+    return Outcome.OTHER_ERROR
+
+
+def run_file(path: Path, timeout: float) -> FileResult:
+    start = time.monotonic()
     try:
-        result = runpy.run_path(
-            str(path),
-            run_name="__main__",
-        )
-        _ = result
-        return (path, True, None, None)
-    except SystemExit as e:
-        code = e.code
-        if code in (0, None):
-            return (path, True, None, None)
-        return (
-            path,
-            False,
-            f"SystemExit (code: {code})",
-            f"Process exited with code {code}",
-        )
-    except Exception as e:
-        error_msg = f"{type(e).__name__}: {e!s}"
-        error_type = _classify_exception(e)
-        return (path, False, error_type, error_msg)
-
-
-def _classify_exception(exc: BaseException) -> str:
-    name = type(exc).__name__
-    known = {
-        "ModuleNotFoundError",
-        "SyntaxError",
-        "ImportError",
-        "AttributeError",
-        "TypeError",
-        "ValueError",
-        "KeyboardInterrupt",
-        "TimeoutError",
-    }
-    if name in known:
-        return name
-    if isinstance(exc, ModuleNotFoundError):
-        return "ModuleNotFoundError"
-    if isinstance(exc, SyntaxError):
-        return "SyntaxError"
-    if isinstance(exc, ImportError):
-        return "ImportError"
-    if isinstance(exc, TimeoutError):
-        return "TimeoutError"
-    if isinstance(exc, KeyboardInterrupt):
-        return "KeyboardInterrupt"
-    return f"RuntimeError ({name})"
-
-
-def _run_with_timeout(path: Path, timeout: int) -> tuple[Path, bool, str | None, str | None]:
-    try:
-        proc = subprocess.run(
+        completed = subprocess.run(
             [sys.executable, str(path)],
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,
             cwd=str(path.parent),
         )
     except subprocess.TimeoutExpired:
-        return (
-            path,
-            False,
-            "TimeoutError",
-            f"Execution exceeded {timeout} seconds",
+        return FileResult(
+            path=path,
+            outcome=Outcome.TIMEOUT,
+            duration=time.monotonic() - start,
         )
-    except subprocess.SubprocessError as e:
-        return (path, False, "SubprocessError", str(e))
-    except Exception as e:  # noqa: BLE001
-        return (
-            path,
-            False,
-            "UnexpectedError",
-            f"{type(e).__name__}: {e!s}",
-        )
-    if proc.returncode == 0:
-        return (path, True, None, None)
-    stderr = (proc.stderr or "").lower()
-    error_msg = (proc.stderr or proc.stdout or "").strip()
-    if "modulenotfounderror" in stderr or "no module named" in stderr:
-        error_type = "ModuleNotFoundError"
-    elif "syntaxerror" in stderr:
-        error_type = "SyntaxError"
-    elif "importerror" in stderr:
-        error_type = "ImportError"
-    elif "attributeerror" in stderr:
-        error_type = "AttributeError"
-    elif "typeerror" in stderr:
-        error_type = "TypeError"
-    elif "valueerror" in stderr:
-        error_type = "ValueError"
-    elif "keyboardinterrupt" in stderr:
-        error_type = "KeyboardInterrupt"
-    else:
-        error_type = f"RuntimeError (exit code: {proc.returncode})"
-    return (path, False, error_type, error_msg)
-
-
-def _worker_entry(path: Path, timeout: int) -> tuple[Path, bool, str | None, str | None]:
-    return _run_with_timeout(path, timeout)
-
-
-def find_python_files(root_dir: Path, recursive: bool = True) -> list[Path]:
-    if recursive:
-        return sorted(root_dir.rglob("*.py"))
-    return sorted(root_dir.glob("*.py"))
-
-
-def run_files_parallel(
-    files: list[Path],
-    timeout: int = DEFAULT_TIMEOUT,
-    verbose: bool = False,
-) -> dict[str, list[Any]]:
-    results: dict[str, list[Any]] = {"success": [], "failed": []}
-    if not files:
-        return results
-    pool = multiprocessing.Pool(processes=NUM_WORKERS)
-    try:
-        async_results = [pool.apply_async(_worker_entry, args=(path, timeout)) for path in files]
-        pool.close()
-        for path, async_result in zip(files, async_results, strict=True):
-            try:
-                result_path, success, error_type, error_msg = async_result.get()
-                if success:
-                    results["success"].append(result_path)
-                    if verbose:
-                        logger.success(f"{result_path}")
-                else:
-                    results["failed"].append((result_path, error_type, error_msg))
-                    if verbose:
-                        logger.error(f"{result_path}: {error_type}")
-                        if error_msg:
-                            logger.debug(f"   {error_msg}")
-            except Exception as e:  # noqa: BLE001
-                results["failed"].append((path, "FutureError", str(e)))
-                if verbose:
-                    logger.error(f"{path}: FutureError - {e}")
-        pool.join()
     except KeyboardInterrupt:
-        pool.terminate()
-        pool.join()
-        raise
-    return results
+        return FileResult(
+            path=path,
+            outcome=Outcome.KEYBOARD_INTERRUPT,
+            duration=time.monotonic() - start,
+        )
+    except Exception as exc:
+        return FileResult(
+            path=path,
+            outcome=Outcome.OTHER_ERROR,
+            stderr=str(exc),
+            duration=time.monotonic() - start,
+        )
+
+    duration = time.monotonic() - start
+    if completed.returncode == 0:
+        return FileResult(
+            path=path,
+            outcome=Outcome.SUCCESS,
+            returncode=0,
+            duration=duration,
+        )
+
+    err_output = (completed.stderr or completed.stdout or "").strip()
+    outcome = _classify_failure(err_output, completed.returncode)
+    return FileResult(
+        path=path,
+        outcome=outcome,
+        returncode=completed.returncode,
+        stderr=err_output,
+        duration=duration,
+    )
+
+
+def _log_result(result: FileResult, verbose: bool) -> None:
+    if result.outcome is Outcome.SUCCESS:
+        if verbose:
+            logger.success(f"OK   {result.path} ({result.duration:.2f}s)")
+    else:
+        logger.error(f"FAIL {result.path} -> {result.outcome.value} (rc={result.returncode}, {result.duration:.2f}s)")
+        if verbose and result.stderr:
+            msg = result.stderr
+            if len(msg) > MAX_ERROR_MSG_LEN:
+                msg = msg[:MAX_ERROR_MSG_LEN] + "..."
+            logger.debug(f"   {msg}")
+
+
+def report_summary(summary: Summary, elapsed: float) -> None:
+    print("=" * 60)
+    print(f"Summary: {summary.total} file(s), {summary.succeeded} succeeded, {summary.failed} failed in {elapsed:.2f}s")
+    counts = summary.counts_by_outcome()
+    for outcome in Outcome:
+        count = counts.get(outcome)
+        if count:
+            print(f"  {outcome.value:<22} {count}")
+    print("=" * 60)
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=("Recursively run Python files with timeout and parallel processing"))
+    parser = argparse.ArgumentParser(
+        prog="pyrunner",
+        description="Recursively find and execute all .py files in a directory with a per-file timeout, in parallel.",
+    )
     parser.add_argument(
         "directory",
-        type=str,
+        type=Path,
         nargs="?",
-        default=".",
-        help="Directory to scan for Python files (default: current directory)",
-    )
-    parser.add_argument(
-        "-r",
-        "--recursive",
-        action="store_true",
-        default=True,
-        help="Recursively search subdirectories (default: True)",
-    )
-    parser.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default=DEFAULT_TIMEOUT,
-        help=f"Timeout in seconds per file (default: {DEFAULT_TIMEOUT})",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Print detailed output",
+        default=Path("."),
+        help="Directory to search for Python files.",
     )
     parser.add_argument(
         "--no-recursive",
-        action="store_false",
-        dest="recursive",
-        help="Don't scan subdirectories",
+        action="store_true",
+        help="Do not descend into subdirectories.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT,
+        help=f"Per-file timeout in seconds (default: {DEFAULT_TIMEOUT}).",
+    )
+    parser.add_argument(
+        "--verbose",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable verbose logging.",
     )
     return parser
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
-    args = parser.parse_args()
-    root_dir = Path(args.directory).resolve()
-    if not root_dir.exists():
-        logger.error(f"Directory '{root_dir}' does not exist")
-        return 1
-    if not root_dir.is_dir():
-        logger.error(f"'{root_dir}' is not a directory")
-        return 1
-    mode = "recursively" if args.recursive else "non-recursively"
-    print(f"Scanning {mode} in: {root_dir}")
-    files = find_python_files(root_dir, args.recursive)
+    args = parser.parse_args(argv)
+    directory = args.directory.resolve()
+    recursive = not args.no_recursive
+    timeout = args.timeout
+    verbose = args.verbose
+
+    if not directory.exists() or not directory.is_dir():
+        logger.error(f"Not a valid directory: {directory}")
+        return 2
+
+    files = discover_python_files(directory, recursive)
     if not files:
-        logger.warning("No Python files found.")
+        logger.warning(f"No Python files found in {directory}")
         return 0
-    print(f"Found {len(files)} Python files")
-    print(f"Using {NUM_WORKERS} workers with {args.timeout}s timeout per file")
-    print("-" * 40)
-    start_time = time.time()
+
+    mode = "recursively" if recursive else "non-recursively"
+    print(f"Scanning {mode} in: {directory}")
+    print(f"Found {len(files)} Python file(s) | Using {WORKER_COUNT} workers with {timeout}s timeout")
+    print("-" * 60)
+
+    summary = Summary()
+    start_time = time.monotonic()
     try:
-        results = run_files_parallel(
-            files=files,
-            timeout=args.timeout,
-            verbose=args.verbose,
-        )
+        with Pool(processes=WORKER_COUNT) as pool:
+            pending = [(path, pool.apply_async(run_file, (path, timeout))) for path in files]
+            for path, async_result in pending:
+                try:
+                    result = async_result.get(timeout=timeout + 5.0)
+                except Exception as exc:
+                    result = FileResult(
+                        path=path,
+                        outcome=Outcome.OTHER_ERROR,
+                        stderr=str(exc),
+                    )
+                summary.results.append(result)
+                _log_result(result, verbose)
     except KeyboardInterrupt:
-        logger.warning("Interrupted by user.")
+        logger.warning("Interrupted by user; shutting down workers.")
         return 130
-    elapsed_time = time.time() - start_time
-    print("=" * 40)
-    print("SUMMARY")
-    print("-" * 40)
-    print(f"Total files: {len(files)}")
-    print(f"Successfully ran: {len(results['success'])}")
-    print(f"Failed: {len(results['failed'])}")
-    print(f"Time elapsed: {elapsed_time:.2f} seconds")
-    failed = results["failed"]
-    if failed:
-        print("-" * 40)
-        print("FAILED FILES:")
-        print("-" * 40)
-        for path, error_type, error_msg in failed:
-            logger.error(f"{path}")
-            logger.error(f"   Error: {error_type}")
-            if error_msg:
-                if len(error_msg) > MAX_ERROR_MSG_LEN:
-                    error_msg = error_msg[:MAX_ERROR_MSG_LEN] + "..."
-                logger.error(f"   Message: {error_msg}")
-        return 1
-    return 0
+
+    elapsed_time = time.monotonic() - start_time
+    report_summary(summary, elapsed_time)
+    return 0 if summary.failed == 0 else 1
 
 
 if __name__ == "__main__":

@@ -1,40 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to recreate a Python command-line utility for bulk-downloading GitHub repositories and related assets, based on the following specification:
-
-You are building a Python 3 command-line script for Termux (Android) that bulk-processes a list of GitHub repositories. Target the Termux Python interpreter at the shebang path /data/data/com.termux/files/usr/bin/env python, and use `from __future__ import annotations` for modern type hints.
-
-**Purpose:** The script reads a plain-text file of GitHub repository identifiers and, for each entry, performs a clone or download operation into a local directory, skipping items that already exist, and prints a final summary of successes, skipped items, and failures.
-
-**Inputs:**
-- A text file path (provided via argparse) where each non-empty line is a repository identifier, either as an `owner/name` slug or a full GitHub URL. Leading and trailing whitespace is stripped; blank lines are ignored.
-- A destination directory (optional CLI argument, with a sensible default such as the current directory or a subfolder).
-- Optional flags controlling concurrency (number of worker threads or processes), and possibly a mode switch between `git clone` and ZIP archive download.
-
-**Outputs:**
-- Cloned repositories or extracted ZIP contents placed under the destination directory, one folder per repository.
-- Console output: a separator line, a "Summary:" heading, then lines with emoji-prefixed counts for successfully cloned items, items already existing (skipped), and failures. Progress and per-item status are logged via the loguru logger.
-- Exit with status 1 on fatal input errors.
-
-**Required behaviors and logic:**
-1. **Input loading:** If the list file does not exist, log an error and exit with code 1. If the file contains no non-blank lines, log an error and exit with code 1.
-2. **Slug validation:** A valid slug has exactly two non-empty parts separated by a single slash. Parse URLs with `urllib.parse.urlparse` to extract the owner and repo path, strip any trailing `.git`, and reject anything that does not yield a valid slug, recording it as a failure.
-3. **Human-readable sizes:** Format byte counts as bytes (`B`), kilobytes, megabytes, or gigabytes with thresholds at powers of 1024, using one decimal place for KB and MB and two for GB.
-4. **Skip existing:** If the target directory already exists, do not re-download; count it as "already existed".
-5. **Cloning:** Use `subprocess` to run `git clone` (with a depth-1 shallow option acceptable) and check `shutil.which("git")` first; if git is missing, log an error and treat items as failures rather than crashing. Capture stderr and report failures with the reason.
-6. **ZIP download mode (if implemented):** Use `requests` to fetch the repository's default branch archive from GitHub, with a timeout and `raise_for_status()`; extract using `zipfile` from an in-memory `io.BytesIO` buffer, stripping the top-level archive folder; handle `requests` exceptions and `zipfile.BadZipFile` gracefully.
-7. **Concurrency:** Use `concurrent.futures.ThreadPoolExecutor` with `as_completed` for I/O-bound work; `multiprocessing.Pool` is acceptable for CPU-bound steps. Wrap each task so one failure does not abort the batch. Guard the entry point with `if __name__ == "__main__":`.
-8. **Summary printing:** A helper prints a 40-character dashed separator, then "Summary:", then the three counts (success with a configurable label defaulting to "Successfully cloned", existed, failed) and the total. Use the emoji prefixes ✅ for success, ⏭️ for existing, and a failure marker such as ❌.
-9. **Error handling:** Catch and log exceptions per item with loguru (`logger.error`/`logger.warning`); never let unexpected exceptions leave the worker pool unhandled. Use `KeyboardInterrupt` handling to exit cleanly.
-10. **Logging:** Use `loguru.logger` for all diagnostics; use `print` only for the final summary block.
-
-**Dependencies:** Python 3.10+ (for `list[str]` and `|` style hints), `requests`, `loguru`, and standard-library modules: argparse, io, os, shutil, subprocess, sys, zipfile, concurrent.futures, multiprocessing, pathlib, typing, urllib.parse. Git must be installed on the system for clone mode.
-
-**Execution:** Run as `python script.py <list_file> [--dest DIR] [--workers N]` (adapt flags to what the argument parser defines). Make the script executable with the Termux shebang. Use type hints throughout (`Callable`, `Iterable`, `Optional` from typing), and `pathlib.Path` for all filesystem paths.
-
-**Edge cases to handle:** duplicate entries in the list, URLs with trailing slashes or `.git` suffixes, whitespace and blank lines, non-existent destination directories (create them with `mkdir(parents=True, exist_ok=True)`), partial clones from interrupted runs (remove incomplete directories on failure), repositories that are private or missing (report as failures), network timeouts, and an empty summary when the list yields zero items.
-
-Write the complete script with a `main()` function that parses arguments, loads the list, dispatches work through the thread pool, collects results, and calls the summary helper.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -454,7 +454,7 @@ class Viewer:
             error = str(exc)
             w = h = 1
             data = b"\x00\x00\x00"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             w = h = 1
             data = b"\x00\x00\x00"
@@ -602,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("must be run from an interactive terminal")
     try:
         viewer = Viewer(args.file, args.page, args.zoom, args.backend)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         sys.exit(f"tpv: could not open {args.file!r}: {exc}")
     fd = sys.stdin.fileno()
     saved = termios.tcgetattr(fd)

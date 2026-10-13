@@ -1,33 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a self-contained prompt that instructs an AI coding agent to build a Python script (Termux-targeted) that checks HTML files for tag balance. Describe purpose, inputs/outputs, dependencies, logic, error handling, edge cases, and usage, without including code.
-
-Note: the provided code is truncated mid-way through `handle_endtag`, so the prompt covers the behavior evident from the visible portion and the likely remainder (reporting, fixing, CLI) in a reasonable, generic way.
-
-Write a complete, self-contained Python 3 command-line script named along the lines of an HTML tag balance checker, intended to run under Termux on Android (use a `/data/data/com.termux/files/usr/bin/env python` shebang line).
-
-**Purpose:** The script scans HTML source and verifies that opening and closing tags are properly balanced, reporting unclosed tags, unexpected closing tags, and mismatched nesting. It may optionally repair simple imbalances in the file.
-
-**Dependencies:** Use only the Python standard library: `argparse`, `contextlib`, `sys`, `html.parser.HTMLParser`, and `pathlib.Path`. Include `from __future__ import annotations` at the top.
-
-**Void elements:** Define a frozen set of HTML void elements that never have closing tags: area, base, br, col, embed, hr, img, input, link, meta, param, source, track, wbr. Start tags for these must be ignored by the balance stack.
-
-**Core parser behavior:** Implement a subclass of `HTMLParser` (named along the lines of `TagBalanceChecker`) that:
-- Initializes an open-tag stack, an error list, a stored raw source string, and a flag indicating whether a fix is needed.
-- Provides a method to store the raw source text.
-- On each start tag, lowercases the tag name; if it is a void element, skips it; otherwise pushes the tag name and its position (line, column from `getpos()`) onto the stack.
-- On each end tag, lowercases the tag name. If the top of the stack matches, pop it. Otherwise, search downward through the stack for the most recent matching open tag; if found, remove that entry (tolerating the intervening unclosed tags, which remain reportable); if not found, record an error entry of kind "unexpected_closing" with the tag and position and set the fix-needed flag. Wrap this logic in a try/except that records an unexpected-closing error on any exception.
-- At the end of parsing, any tags remaining on the stack are reported as unclosed, with their positions.
-
-**Inputs:** One or more HTML file paths supplied on the command line via argparse (accept multiple files). Read files as UTF-8 text, using `pathlib.Path`. Support an option to apply fixes (for example, a `--fix` flag) that writes repaired output, and an option to write output to a different file or print to stdout; keep the default behavior non-destructive (report only, do not modify files unless fix is requested). Before overwriting any file, consider creating a backup copy.
-
-**Outputs:** For each file, print a human-readable report to stdout listing each error with its kind, tag name, and line/column position, or a clear success message if the document is balanced. Print errors and usage problems to stderr. Use exit codes: 0 when all files are balanced, nonzero when any imbalance or error is found, and a distinct nonzero code for usage or I/O failures.
-
-**Error handling:** Handle missing files, unreadable files, decoding errors, and invalid arguments gracefully with clear messages instead of tracebacks. Use `contextlib.suppress` or similar where appropriate for benign cleanup. Continue processing remaining files when one fails.
-
-**Edge cases:** Handle case-insensitive tag names, self-closing void tags, empty files, files with only text, nested identical tags, duplicate unclosed tags, and malformed input that the parser tolerates. Do not crash on any input the stdlib parser accepts.
-
-**Execution:** Make the script directly executable with a `main()` function guarded by `if __name__ == "__main__":`, returning an integer exit status passed to `sys.exit`. Keep code readable, with type hints, concise docstrings, and comments matching the style of a small utility script.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

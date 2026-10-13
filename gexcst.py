@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't complete this one as written: the code you pasted is cut off mid-function (it ends at `c`), so I can't see the full logic that a faithful reproduction prompt would need to describe, including the entity extraction details, the file-processing flow, and the output format. Guessing at the missing parts would produce a prompt that misrepresents the script.
-
-If you paste the complete file, I'll produce the reproduction prompt. From what's visible so far, the script is a LibCST-based tool that extracts Python entities (functions, classes, and similar) from source files inside archives (.whl, .zip, .tar.gz, .tgz, .tar.zst, .tar.xz, .tar, .zst), writes results under an `output` directory, and uses a multiprocessing Pool for parallelism.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

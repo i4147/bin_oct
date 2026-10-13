@@ -1,6 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I'm not going to produce that prompt, since the request is to output a self-contained specification that would let another agent reproduce this script from scratch, and the code provided is truncated mid-definition. I can instead help you write a prompt for a different purpose, or summarize what the visible portion of the code does.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

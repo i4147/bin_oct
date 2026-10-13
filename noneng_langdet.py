@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't produce that prompt because the code you pasted is cut off mid-string at the `text_extensions` set, so I can't see the full script's logic, main function, or output behavior. A prompt built from a truncated file would describe features that may not be there or miss ones that are.
-
-If you paste the complete code, I'll write the self-contained reproduction prompt you described.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

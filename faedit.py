@@ -1,56 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python terminal text editor with live Persian-formatted preview, without including any code.
-
----
-
-Create a Python 3 command-line script (intended for Termux on Android, so use a `#!/data/data/com.termux/files/usr/bin/env python` shebang) that acts as a terminal text editor with a live, reshaped Persian-text preview pane.
-
-**Purpose:** The user edits a text file in a full-screen terminal interface. Below or beside the editor, a small preview pane shows only the lines surrounding the current cursor position, rendered through a Persian text formatter so that right-to-left and Arabic-script text displays correctly in a terminal.
-
-**Inputs:**
-- An optional positional file path argument. If provided and the file exists, load its contents as the initial editor text. If it does not exist, start with empty text and save to that path on save. If no path is given, start with empty text and provide a default save behavior (e.g., prompt or a fixed default filename).
-- A command-line option to select the UI backend (for example `urwid` as default, with an alternative such as a curses-based or plain fallback backend).
-
-**Persian formatting dependency:**
-- Import a function `format_persian` from a module named `faprint`. If that import fails with `ImportError`, insert the script's own directory (resolved from `__file__`) at the front of `sys.path` and import `format_persian` from a sibling module named `core`. If that also fails, let the error surface clearly.
-- Every preview string must pass through `format_persian` before display; the raw editor buffer is never altered by it.
-
-**Constants:**
-- A module-level context size of 2 (number of lines shown above and below the cursor line in the preview).
-
-**Core helper `around(s, pos, n=CTX)`:**
-- Given full text `s` and a character offset `pos`, return the formatted slice consisting of the cursor's line plus up to `n` lines before it and up to `n` lines after it.
-- Compute the start index by scanning backward from `pos` for newlines, moving up `n` line boundaries, stopping early at the start of the string.
-- Compute the end index by scanning forward from `pos` for newlines, moving down `n+1` boundaries, stopping at the end of the string if fewer lines remain.
-- Only the slice is passed to `format_persian`, keeping work and memory small for large files.
-
-**Urwid backend `run_urwid(text)`:**
-- Import `urwid` inside the function so the module loads even when urwid is absent.
-- Create a preview `urwid.Text` initialized with `around(text, 0)`.
-- Define a subclass of `urwid.Edit` (multiline, tab allowed, starting cursor at position 0, initial content `text`) whose `keypress` method:
-  - Raises `urwid.ExitMainLoop` when the key is `ctrl q` (quit).
-  - Otherwise delegates to the superclass `keypress`, then updates the preview text with `around(self.edit_text, self.edit_pos)`, and returns any unhandled key.
-- Build the layout as a vertical `urwid.Pile`: the editor in a `Filler` anchored to top with weight 2, a horizontal divider line (`─`) packed to its natural height, and the preview `Text` in a `Filler` anchored to top with weight 1.
-- Run the main loop and handle the quit path cleanly.
-
-**Behavior and edge cases to handle:**
-- Empty input text: preview should render without errors.
-- Cursor at the very start or very end of the buffer: the boundary logic must not index out of range.
-- Files with no trailing newline, or with only one line.
-- Non-existent file path: start empty rather than crashing.
-- Files that cannot be decoded as UTF-8: report a clear error and exit with nonzero status.
-- Missing `urwid` package: print an actionable message telling the user to install it (e.g., via `pip install urwid`) and exit nonzero, rather than a raw traceback.
-- Ensure the terminal is restored properly on exit, including on Ctrl+C.
-- Saving: provide a save key (e.g., `ctrl s`) that writes the buffer as UTF-8 to the target path, and report success or failure in the UI or on exit.
-
-**Execution details:**
-- Make the script executable and runnable directly as `./script.py [file] [--backend ...]`.
-- Use `argparse` for argument parsing with a `--help` description.
-- Use the `main()` pattern with `if __name__ == "__main__":` guard.
-- Return a process exit code from `main()` and pass it to `sys.exit`.
-- Use `pathlib.Path` and `os` where appropriate for path handling.
-- Keep the code idiomatic, with short docstrings and comments matching a compact, practical style.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import os
@@ -59,11 +7,11 @@ from pathlib import Path
 
 try:
     from faprint import format_persian
-except ImportError:  # faprint's core.py sitting next to this script
+except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from core import format_persian
 
-CTX = 2  # preview lines above/below the cursor line
+CTX = 2
 
 
 def around(s, pos, n=CTX):
@@ -83,7 +31,6 @@ def around(s, pos, n=CTX):
     return format_persian(s[a:b])
 
 
-# --------------------------------------------------------------- urwid
 def run_urwid(text):
     import urwid
 
@@ -104,12 +51,11 @@ def run_urwid(text):
         ("weight", 1, urwid.Filler(pv, "top")),
     ])
     scr = urwid.display.raw.Screen()
-    scr.tty_signal_keys(start="undefined", stop="undefined")  # free Ctrl+Q
+    scr.tty_signal_keys(start="undefined", stop="undefined")
     urwid.MainLoop(root, screen=scr).run()
     return ed.edit_text
 
 
-# ---------------------------------------------------------------- curses
 def run_curses(text):
     os.environ.setdefault("ESCDELAY", "25")
     import curses
@@ -198,7 +144,6 @@ def run_curses(text):
     return "\n".join(lines)
 
 
-# --------------------------------------------------------- prompt_toolkit
 def run_prompt_toolkit(text):
     from prompt_toolkit import Application
     from prompt_toolkit.buffer import Buffer
@@ -225,7 +170,6 @@ def run_prompt_toolkit(text):
     return buf.text
 
 
-# --------------------------------------------------------------- textual
 def run_textual(text):
     from rich.text import Text
     from textual.app import App

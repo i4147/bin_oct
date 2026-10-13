@@ -1,42 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The provided code was cut off at `cursor.execute(f'C`, so I can only see part of the script. The prompt below describes what is visible and the features implied by the surrounding code, but it cannot fully cover the truncated portion.
-
-Write a single self-contained Python 3 command-line script (Termux-compatible, with a `#!/data/data/com.termux/files/usr/bin/env python` shebang) that merges and ingests file contents into a SQLite database. Use `from __future__ import annotations`.
-
-**Purpose:** Collect files and archives, extract their contents (including text decoded with fallback encodings and optionally structured data), and store them in a SQLite database in a dedicated files table, while also supporting optional import from ODBC-accessible sources.
-
-**Dependencies:**
-- Standard library only for core functionality: argparse, base64, codecs, contextlib, io, json, logging, os, re, sqlite3, sys, tempfile, traceback, concurrent.futures (ProcessPoolExecutor, as_completed), dataclasses, datetime (date, datetime, time), decimal (Decimal), multiprocessing (Pool, freeze_support), pathlib (Path), typing (Any; Iterator and Sequence imported only under TYPE_CHECKING).
-- Optional third-party modules, imported inside try/except ImportError and set to None when missing: `py7zr` (7z archive support) and `pyodbc` (ODBC database access). The script must run when these are absent and degrade gracefully, reporting or skipping the affected feature.
-
-**Logging:** Use a module-level logger named "merged". Provide a `_setup_logging(verbose: bool = False)` function that configures `logging.basicConfig` with DEBUG level when verbose, otherwise INFO, using the format `%(asctime)s [%(levelname)s] %(message)s`.
-
-**Constants:**
-- `DEFAULT_TEXT_ENCODINGS` = ("utf-8", "latin-1", "cp1252", "iso-8859-1"), tried in order when decoding text.
-- `DEFAULT_TEXT_CHAR_LIMIT` = 1 MiB (1024 * 1024 characters), limiting how much text is stored per file.
-
-**Helper functions:**
-- `_table_exists(cursor, table)`: checks `sqlite_master` for a table of that name and returns a bool.
-- `_init_files_table(cursor, table)`: creates the files table if it does not exist, using an f-string for the table name (the table name is a validated identifier; sanitize or validate it to prevent injection).
-
-**Expected behaviour to implement (inferred from the visible code and the naming):**
-- Accept command-line arguments via argparse, including an input path (file, directory, or archive), a SQLite database path, a target table name, a verbose flag, options controlling the text encoding list and character limit, and optional ODBC connection/query parameters. Handle `freeze_support()` for multiprocessing on Windows-style frozen executables.
-- Walk directories recursively; for each file, read its bytes, detect whether it is text or binary, and for text, try each encoding in order, truncating to the character limit. For binary content, store base64-encoded data or metadata (size, hash, MIME guess) as appropriate.
-- Extract `.7z` archives via py7zr into a `tempfile` temporary directory and process their members; clean up temp directories afterward, even on error.
-- Optionally parse structured content (JSON, and possibly CSV-like or other tabular formats) and represent values using `Decimal` and date/time types where appropriate, converting to JSON-serializable text for storage.
-- Use `ProcessPoolExecutor` (or `Pool`) with `as_completed` to parallelize file processing, collecting results in the main process and writing to SQLite in a single writer to avoid lock contention.
-- Use `contextlib` (e.g., suppress or closing) for resource cleanup and `traceback` to log full tracebacks on per-file failures; a failure on one file must not abort the whole run — log it and continue, then report a summary of successes and failures.
-- Use `re` for filename or pattern filtering and identifier validation for the table name.
-- When `pyodbc` is available and ODBC options are given, run the query and insert rows into the same files table with source metadata; if pyodbc is missing, log a clear warning and skip.
-- Use `sys.exit` with non-zero codes on fatal argument or configuration errors; return zero on success.
-- Entry point: a `main()` function called under `if __name__ == "__main__":`, wrapped with `freeze_support()`.
-
-**Output:** Rows inserted into the specified SQLite table (creating the database and table if needed), with one row per processed file or record, plus log messages summarizing progress, skipped items, and errors.
-
-**Edge cases to handle:** empty files, unreadable files, undecodable bytes (fallback encodings), very large files (character limit), nested or corrupt archives, duplicate entries (idempotent or clearly defined behavior), missing optional dependencies, invalid table names, and a non-existent input path.
-
-**Notes:** The provided source was truncated mid-statement, so reproduce the intent described above rather than an exact copy; keep the code idiomatic, well-commented where non-obvious, and runnable on Termux with Python 3.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

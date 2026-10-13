@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ class Monolith:
                 data = resp.content
             self._cache[url] = data
             return data
-        except Exception as exc:  # noqa: BLE001 — originals caught broadly
+        except Exception as exc:
             if not self.ignore_errors:
                 raise
             print(f"⚠ Skipping unreachable resource: {url} ({exc})", file=sys.stderr)
@@ -111,7 +111,7 @@ class Monolith:
                 mime = self.guess_mime(resolved, "application/octet-stream")
                 uri = self.to_data_uri(data, mime)
                 return f"url('{uri}')" if uri else match.group(0)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 if not self.ignore_errors:
                     raise
                 return match.group(0)
@@ -139,7 +139,7 @@ class Monolith:
                     uri = self.to_data_uri(data, "text/css")
                     if uri:
                         link["href"] = uri
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping CSS: {url} ({exc})", file=sys.stderr)
@@ -156,7 +156,7 @@ class Monolith:
                     continue
                 del script["src"]
                 script.string = data.decode("utf-8", errors="ignore")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping script: {url} ({exc})", file=sys.stderr)
@@ -179,7 +179,7 @@ class Monolith:
                 uri = self.to_data_uri(data, mime)
                 if uri:
                     img["src"] = uri
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 if not self.ignore_errors:
                     raise
                 print(f"⚠ Skipping image: {url} ({exc})", file=sys.stderr)
@@ -204,7 +204,7 @@ class Monolith:
                         if uri:
                             entries.append(f"{uri} {descriptor}".strip())
                             continue
-                except Exception:  # noqa: BLE001
+                except Exception:
                     if not self.ignore_errors:
                         raise
                 entries.append(item)
@@ -352,7 +352,7 @@ def main(argv: Optional[list] = None) -> int:
     except FileNotFoundError as exc:
         print(f"❌ File not found: {exc}", file=sys.stderr)
         return 1
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"❌ Error: {exc}", file=sys.stderr)
         return 1
 

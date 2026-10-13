@@ -1,6 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't write a prompt that reproduces this script, because the Python code in your message is cut off mid-statement (it ends at `e`, inside the `rewrite_file` function's `except` block), so the full behavior of the script can't be described accurately. If you paste the complete code, I'll generate the prompt.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

@@ -24,7 +24,7 @@ from packaging.version import InvalidVersion, Version
 PYPI = "https://pypi.org/simple/"
 ACCEPT = "application/vnd.pypi.simple.v1+json"
 CHUNK = 1024 * 1024
-NO_TAG = 10**9  # sentinel: sdist always loses to any wheel of the same version
+NO_TAG = 10**9
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +96,7 @@ def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
             prios = [tag_index[t] for t in tags if t in tag_index]
             if not prios:
                 continue
-            combined = min(prios)  # lower = better
+            combined = min(prios)
         elif fn.endswith((".tar.gz", ".zip")):
             try:
                 name, version = parse_sdist_filename(fn)
@@ -110,7 +110,7 @@ def select(links: list[Link], req: Requirement) -> tuple[Link, Version] | None:
         else:
             continue
 
-        key = (version, -combined)  # max() => newest version, then best tag/wheel
+        key = (version, -combined)
         if best_key is None or key > best_key:
             best_key = key
             best = (link, version)

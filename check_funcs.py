@@ -1,37 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained Python script that statically analyzes a single Python source file and reports its top-level public definitions. Requirements:
-
-**Purpose:** Given a path to a Python file, extract the names of its public top-level functions, classes, and constants without executing the file. The results are returned as a dictionary with three keys: "functions", "classes", and "constants", each mapping to a list of name strings.
-
-**Dependencies:** Use only the standard library's `ast` and `pathlib` modules, plus `loguru` for logging (`logger.error`). Include `from __future__ import annotations` at the top, and use the `dict[str, list[str]]` type hint style.
-
-**Script header:** Begin with a Termux-style shebang pointing to `/data/data/com.termux/files/usr/bin/env python`.
-
-**Function `extract_definitions(path: Path) -> dict[str, list[str]]`:**
-- Initialize an empty result dictionary with the three keys, each an empty list.
-- Read the file as UTF-8 and parse it with `ast.parse`, passing the file name for error context.
-- Error handling:
-  - On `SyntaxError` or `UnicodeDecodeError`, log an error via `logger.error` with the path and exception, then return the empty result dictionary.
-  - On any other `Exception` during reading or parsing, log a distinct "Unexpected error reading" message and return the empty result dictionary.
-- Iterate only over the module's top-level `tree.body` (no recursion into nested scopes):
-  - Sync and async function definitions: append the name if it does not start with an underscore.
-  - Class definitions: append the name if it does not start with an underscore.
-  - Plain assignments (`ast.Assign`): for each target that is a simple `ast.Name`, append the name to "constants" only if it is entirely uppercase (`str.isupper()`) and does not start with an underscore. Tuple/attribute/subscript targets are ignored.
-  - Annotated assignments (`ast.AnnAssign`) whose target is a simple `ast.Name`: apply the same uppercase and no-leading-underscore rule as for plain assignments.
-- Preserve source order within each list, since items are appended while walking the body in order.
-- Return the populated dictionary.
-
-**Edge cases to honor:**
-- Names with mixed case or lowercase module-level variables are excluded from constants.
-- Names like `__all__`, `_private`, or `_CONSTANT` are excluded.
-- Duplicate definitions are kept as separate entries (no deduplication).
-- An empty file yields three empty lists.
-- Unreadable or non-UTF-8 files yield empty lists without raising.
-
-**Main entry point:** Under the standard `if __name__ == "__main__":` guard, accept a file path from the command line (via `sys.argv` or `argparse`, with a usage message if missing), call `extract_definitions` on it as a `Path`, and print the resulting dictionary in a readable form (for example, one labeled section per category). Exit with a non-zero status if the argument is missing; otherwise exit normally even when the file failed to parse, since errors are logged rather than raised.
-
-**Style:** Keep the code concise, use f-strings for log messages, include brief docstrings or comments only where they clarify intent, and follow standard PEP 8 formatting.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

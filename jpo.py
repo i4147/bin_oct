@@ -194,11 +194,7 @@ def process_file(
                 suffix=target.suffix + ".tmp",
                 dir=tmp_dir,
             )
-            #            fd, tmp_name = tempfile.mkstemp(
-            #                prefix=target.stem + ".",
-            #                suffix=target.suffix + ".tmp",
-            #                dir=str(target.parent),
-            #            )
+
             with contextlib.suppress(OSError):
                 os.close(fd)
             tmp_path = Path(tmp_name)

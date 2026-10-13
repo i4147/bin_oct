@@ -59,7 +59,6 @@ def cmd_json(args: argparse.Namespace) -> None:
         if args.verbose:
             print(f"\n✓ Saved to: {output_path}")
     except (TypeError, ValueError) as e:
-        # Attempt fallback serialization if explicitly allowed or when sanitization flag is passed
         if args.sanitize:
             try:
                 sanitized_data = sanitize_for_json(data)

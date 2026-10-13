@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -92,7 +92,6 @@ def sort_python_script(path: Path) -> None:
             sorted_lines.append(segment)
     sorted_code = "\n".join(sorted_lines)
     try:
-        #        tmp_path = path.with_name(path.stem + "_sorted" + path.suffix)
         with path.open("w", encoding="utf-8") as f:
             f.write(sorted_code)
         print(f"Successfully sorted and saved: {path}")

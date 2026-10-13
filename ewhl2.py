@@ -1,35 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line utility with the following specification:
-
-Build a standalone Python 3 command-line script (intended to run under Termux on Android, with a shebang pointing to the Termux Python interpreter) that cleans up a directory of Python wheel files (.whl) by removing "empty" wheels and, optionally, wheels for packages that are already installed.
-
-**Purpose and behavior:**
-
-1. **Empty wheel detection:** A wheel counts as empty if it contains no `.py` files and no other non-directory content outside of `*.dist-info/`, `dist-info/`, and `__pycache__/` entries. Treat directory entries (names ending in `/`) as non-content. Inspect wheels as ZIP archives using the standard library. If a wheel cannot be read, print an error message including the path and the exception, and treat it as not empty (do not delete it).
-
-2. **Package name/version extraction:** Derive the package name and version from the wheel filename stem by splitting on hyphens: the first part is the name (with underscores replaced by hyphens), the second is the version. If there are fewer than two parts, return a pair of nulls.
-
-3. **Installed package detection:** Run the current interpreter (`sys.executable`) with `-m pip list --format=freeze` via `subprocess.run` with captured text output and `check=True`. Parse each output line of the form `name==version` into a mapping of normalized names to versions. Handle failures gracefully (pip missing, non-zero exit) with a clear message and a safe fallback (no installed packages assumed). Normalize names for comparison consistently (lowercase, treat underscores and hyphens equivalently).
-
-4. **Main workflow (command-line interface using argparse):**
-   - Accept a directory argument (the directory to scan for `.whl` files; default to the current directory if sensible) and flags controlling behavior, such as a dry-run/preview mode that only reports what would be removed, and an option to also remove wheels whose package is already installed (matching by name, and optionally by version).
-   - Scan the directory non-recursively for `*.whl` files.
-   - For each wheel, determine whether it is empty and/or corresponds to an installed package, and decide whether to delete it.
-   - Delete with `pathlib`/`shutil`/`os`-style file removal; in dry-run mode, delete nothing and only report.
-   - Print a per-file status line and a final summary with counts of scanned, removed (or would-be-removed), kept, and error files.
-
-5. **Error handling and edge cases:**
-   - Non-existent or non-directory target: print an error and exit with a non-zero status.
-   - No wheel files found: report that and exit cleanly with status 0.
-   - Filenames that don't parse into name and version: keep them and note it.
-   - Deletion failures: catch the exception, report it, count as an error, and continue with remaining files.
-   - Use `from __future__ import annotations` and type hints (`tuple[str, str] | tuple[None, None]` style).
-   - Exit codes: 0 on success, non-zero on fatal errors.
-
-6. **Execution details:** Make the file executable with the Termux shebang `#!/data/data/com.termux/files/usr/bin/env python`. Use only the Python standard library (argparse, shutil, subprocess, sys, zipfile, pathlib, and similar). Include a `main()` function guarded by `if __name__ == "__main__":` and return an integer exit code from it passed to `sys.exit`. Keep helper functions small, well named, and documented with brief docstrings or comments where non-obvious.
-
-Output the complete script as a single file with clear, readable formatting, consistent with the style of the surrounding Termux-oriented tooling.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

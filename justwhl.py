@@ -6,7 +6,7 @@ from pathlib import Path
 
 def find_whl(subdir: Path):
     """Return the first .whl file found in subdir or subdir/dist, or None."""
-    # Look in subdir root first, then in dist/
+
     for location in (subdir, subdir / "dist"):
         if location.is_dir():
             for whl in location.glob("*.whl"):
@@ -21,13 +21,11 @@ def clean_subdir(subdir: Path) -> None:
         print(f"[skip]  {subdir.name}: no .whl file")
         return
 
-    # Move the whl to the subdir root if it's currently in dist/
     target = subdir / whl.name
     if whl.parent != subdir:
         shutil.move(str(whl), str(target))
         print(f"[move]  {whl.relative_to(subdir)} -> {target.name}")
 
-    # Remove everything else inside subdir
     for entry in subdir.iterdir():
         if entry.resolve() == target.resolve():
             continue

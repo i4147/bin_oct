@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -74,12 +74,12 @@ def _with_page(url: str, page: int) -> str:
 def check_backend(backend: str) -> None:
     if backend == "requests":
         try:
-            import requests  # noqa: F401
+            import requests
         except ImportError:
             sys.exit("backend 'requests' selected but 'requests' is not installed (pip install requests)")
     elif backend == "pycurl":
         try:
-            import pycurl  # noqa: F401
+            import pycurl
         except ImportError:
             sys.exit("backend 'pycurl' selected but 'pycurl' is not installed (pip install pycurl)")
     elif backend == "aria2c":
@@ -91,7 +91,7 @@ def check_backend(backend: str) -> None:
             )
     elif backend == "httpx":
         try:
-            import httpx  # noqa: F401
+            import httpx
         except ImportError:
             sys.exit("backend 'httpx' selected but 'httpx' is not installed (pip install httpx)")
 
@@ -343,7 +343,7 @@ async def _download_one_async(
                         fh.write(chunk)
             tmp.replace(dest)
             return dest, written, None
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:
             tmp.unlink(missing_ok=True)
             return dest, None, exc
 
@@ -387,7 +387,7 @@ def download_all(
     for url, dest in tasks:
         try:
             written = download_file(url, dest, backend, max_bytes, timeout=timeout)
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:
             on_event("done", dest, None, exc)
         else:
             on_event("done", dest, written, None)
@@ -519,7 +519,7 @@ def main(argv=None) -> int:
         print(f"Fetching {profile_url} ...", file=sys.stderr)
     try:
         names, final_url = collect_packages(profile_url, args.backend, args.timeout, args.quiet)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"error: could not fetch the profile page: {exc}", file=sys.stderr)
         return 1
     if final_url.rstrip("/") != profile_url.rstrip("/") and not args.quiet:
@@ -546,7 +546,7 @@ def main(argv=None) -> int:
         prefix = f"[{index}/{len(names)}] {name}"
         try:
             version, files = fetch_package_files(name, args.backend, args.timeout)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"{prefix}: metadata error: {exc}", file=sys.stderr)
             continue
         if not files:

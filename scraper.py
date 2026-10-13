@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -1302,7 +1302,7 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-    # pkg-updates
+
     sp = sub.add_parser("pkg-updates", help="Check installed packages against a mirror.")
     sp.add_argument("--mirror", default="https://mirror-pypi.runflare.com/")
     sp.add_argument("--timeout", type=int, default=15)
@@ -1312,21 +1312,21 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("paths", nargs="*", help="Optional explicit .py files to test.")
     sp.add_argument("--log", default="check_modules.log")
     sp.set_defaults(func=cmd_import_check)
-    # coc-links
+
     sp = sub.add_parser("coc-links", help="Scrape CoC TH18 base links from a list of sites.")
     sp.add_argument("-l", "--links", default="links.txt")
     sp.add_argument("-o", "--output", default="th18_bases.html")
     sp.add_argument("--timeout", type=float, default=10)
     sp.add_argument("--delay", type=float, default=1)
     sp.set_defaults(func=cmd_coc_links)
-    # coc-youtube
+
     sp = sub.add_parser("coc-youtube", help="Extract CoC TH18 links from YouTube channels.")
     sp.add_argument("--api-key", default=None)
     sp.add_argument("--channels", default=None, help="Override channels as 'name=id,name=id'.")
     sp.add_argument("--days", type=int, default=30)
     sp.add_argument("--output-dir", default="output")
     sp.set_defaults(func=cmd_coc_youtube)
-    # movie-crawl
+
     sp = sub.add_parser("movie-crawl", help="Movie index crawler with three engines.")
     sp.add_argument("--engine", choices=("basic", "simple", "parallel"), default="basic")
     sp.add_argument(
@@ -1344,7 +1344,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--extensions", nargs="+", default=[".mkv", ".mp4"])
     sp.add_argument("--qualities", nargs="+", default=["480p", "720p"])
     sp.set_defaults(func=cmd_movie_crawl)
-    # image-hunt
+
     sp = sub.add_parser("image-hunt", help="Find/download large images from a site.")
     sp.add_argument("url")
     sp.add_argument("-p", "--print", action="store_true", dest="print_urls")
@@ -1354,13 +1354,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--min-height", type=int, default=400)
     sp.add_argument("--urls-file", default="img_urls.txt")
     sp.set_defaults(func=cmd_image_hunt)
-    # image-save
+
     sp = sub.add_parser("image-save", help="Save every <img> from one page.")
     sp.add_argument("url")
     sp.add_argument("output_dir", nargs="?", default="output")
     sp.add_argument("--timeout", type=float, default=5)
     sp.set_defaults(func=cmd_image_save)
-    # link-crawl
+
     sp = sub.add_parser("link-crawl", help="Crawl a site, collect links by mode.")
     sp.add_argument("url")
     sp.add_argument("--mode", choices=("ext", "pdf", "keyword"), default="ext")
@@ -1371,18 +1371,18 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--timeout", type=float, default=10)
     sp.add_argument("-o", "--output", default="urls.txt")
     sp.set_defaults(func=cmd_link_crawl)
-    # video-info
+
     sp = sub.add_parser("video-info", help="Inspect zzztube video URLs.")
     sp.add_argument("urls", nargs="+")
     sp.add_argument("-o", "--output", default="zzztube_links.json")
     sp.add_argument("--timeout", type=float, default=10)
     sp.set_defaults(func=cmd_video_info)
-    # google-search
+
     sp = sub.add_parser("google-search", help="DuckDuckGo/Google search wrapper.")
     sp.add_argument("query")
     sp.add_argument("-n", "--num-results", type=int, default=10)
     sp.set_defaults(func=cmd_google_search)
-    # web-size
+
     sp = sub.add_parser("web-size", help="Measure total download size of a page.")
     sp.add_argument("url")
     sp.add_argument("--crawl", action="store_true")

@@ -1,20 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a self-contained prompt that instructs an AI coding agent to write a Python HTML minifier script with the following specification:
-
-Write a Python 3 script (intended to run under Termux on Android, with a `#!/data/data/com.termux/files/usr/bin/env python` shebang) that minifies HTML files. Use `from __future__ import annotations`, and import the standard `re`, `sys`, and `pathlib.Path`, plus `typing.TYPE_CHECKING`. Import `get_files` and `mpf` from a local helper module named `dh`, and use `lxml.html` for DOM parsing. Import `HtmlElement` from `lxml.html` only under `TYPE_CHECKING`.
-
-Core design: implement a class `HTMLMinifier` whose constructor accepts these boolean keyword options with defaults: `remove_comments=True`, `collapse_whitespace=True`, `remove_empty_attributes=True`, `remove_optional_tags=False`, `minify_css=False`, `minify_js=False`. Store each as an attribute, and store a private set of tags to preserve whitespace in: `pre`, `textarea`, `code`, `script`, `style`.
-
-The public method `minify(html_str: str) -> str` should parse the input with `lxml.html.fromstring`; if that raises `lxml.html.ParserError`, fall back to `lxml.html.fragment_fromstring` with `create_parent=True`. Then run a recursive node-processing pass (`_process_node`) that respects the preserve set and applies the enabled options (comment removal, whitespace collapsing outside preserved tags, removal of empty attributes, optional tag removal, and optional CSS/JS minification). Serialize with `lxml.html.tostring(..., encoding="unicode", method="html")` and pass the result through a `_post_process` step that performs final regex-based cleanup (e.g., trimming whitespace between tags and tidying leftover spacing).
-
-Command-line behavior: the script should be runnable directly. It should use `get_files` from `dh` to resolve input files (accepting paths or patterns from `sys.argv`), read each file, minify it with an `HTMLMinifier` instance, and write the result. Use `pathlib.Path` for all file handling. Handle errors per file so one failing file does not stop processing of the rest; report failures to stderr and exit with a nonzero status if any file failed. Report successes or summary counts to stdout. If no arguments or no matching files are given, print a usage message to stderr and exit nonzero.
-
-Use `mpf` from `dh` where the original design calls for it (multi-file processing or progress output); treat it as an external helper and do not reimplement it.
-
-Edge cases to handle: empty input, input that is not valid HTML (fragment fallback), content inside preserved tags left untouched, unreadable or non-UTF-8 files (report and continue), and output paths that cannot be written.
-
-Write the complete script as a single file, with a `main()` function guarded by `if __name__ == "__main__":`, and keep the code style clean with type hints throughout.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

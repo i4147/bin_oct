@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from typing import Any, Iterator, Sequence
 
 try:
     from deep_translator import GoogleTranslator
-except ImportError:  # pragma: no cover
+except ImportError:
     sys.stderr.write("Missing dependency: pip install deep-translator\n")
     raise
 DEFAULT_EXTENSIONS: tuple[str, ...] = (
@@ -194,7 +194,7 @@ class Translator:
                 result = gt.translate(text)
                 if result is not None:
                     return result
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 last_exc = exc
                 if attempt < self.retries - 1:
                     time.sleep(self.delay * (attempt + 1))
@@ -352,7 +352,7 @@ def _run_file_api_mode(files: list[Path], opts: dict[str, Any], workers: int) ->
                         return f"[dry-run] would update {path}"
                     atomic_write(path, result, encoding="utf-8")
                     return f"✓ {path}"
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 last_exc = exc
                 if attempt < opts["retries"] - 1:
                     time.sleep(opts["delay"] * (attempt + 1))
@@ -585,7 +585,7 @@ def _segment_one(path: Path, args: argparse.Namespace, pattern: re.Pattern[str])
 _shutdown = False
 
 
-def _handle_signal(signum: int, _frame) -> None:  # noqa: ANN001
+def _handle_signal(signum: int, _frame) -> None:
     global _shutdown
     log.warning("Received signal %s — finishing current work and saving…", signum)
     _shutdown = True

@@ -95,7 +95,7 @@ def _dedupe(path: Path, seen: set[Path]) -> bool:
 def _iter_directory(root: Path, seen: set[Path]) -> Iterator[Path]:
     try:
         found = list(walk_files(str(root)))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"warning: walk_files failed for {root}: {exc}", file=sys.stderr)
         return
     for start in range(0, len(found), WALK_CHUNK):

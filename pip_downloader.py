@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/python
-# download_packages.py
+
 import sys
 from pathlib import Path
 from urllib.parse import quote
@@ -38,7 +38,6 @@ def main():
                 files = data.get("urls", [])
                 selected = None
 
-                # Prefer source archives in the specified order.
                 for extension in PREFERRED_EXTENSIONS:
                     selected = next(
                         (item for item in files if item.get("filename", "").lower().endswith(extension)),
@@ -47,7 +46,6 @@ def main():
                     if selected:
                         break
 
-                # Fall back to a wheel only if no preferred archive exists.
                 if selected is None:
                     selected = next(
                         (item for item in files if item.get("filename", "").lower().endswith(".whl")),

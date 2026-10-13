@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -287,7 +287,7 @@ class PurePythonBackend(Backend):
         finally:
             try:
                 resp.close()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
 
@@ -393,7 +393,7 @@ class PycurlBackend(Backend):
                     curl.perform()
                 finally:
                     curl.close()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 state["error"] = exc
             finally:
                 headers_ready.set()
@@ -563,7 +563,7 @@ def download_one(
         part.replace(final)
         bar.finished = True
         return final, False
-    except BaseException as exc:  # noqa: BLE001 - re-raised to the caller
+    except BaseException as exc:
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
         raise
@@ -704,7 +704,7 @@ def main(argv: list[str] | None = None) -> int:
                     try:
                         path, skipped = fut.result()
                         results.append((url, path, skipped, None))
-                    except BaseException as exc:  # noqa: BLE001
+                    except BaseException as exc:
                         results.append((url, None, False, exc))
             except KeyboardInterrupt:
                 interrupted = True

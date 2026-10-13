@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -286,7 +286,7 @@ class RequestsBackend(Backend):
     name = "requests"
 
     def __init__(self):
-        import requests  # noqa: F401 - presence check only
+        import requests
 
         self._requests = requests
 
@@ -322,7 +322,6 @@ class _PycurlStream(StreamResponse):
             msg = "pycurl: no HTTP status"
             raise IOError(msg)
 
-    # -- callbacks
     def _write_cb(self, data: bytes) -> int:
         if self._cancel.is_set() or STOP.is_set():
             return 0
@@ -355,7 +354,6 @@ class _PycurlStream(StreamResponse):
                 k, v = line.split(":", 1)
                 self.headers[k.strip().lower()] = v.strip()
 
-    # -- worker
     def _run(self, url, start, end, timeout):
         c = self._pycurl.Curl()
         try:
@@ -374,7 +372,7 @@ class _PycurlStream(StreamResponse):
                     rng += str(end)
                 c.setopt(c.RANGE, rng)
             c.perform()
-        except BaseException as e:  # noqa: BLE001
+        except BaseException as e:
             self._error = e
         finally:
             self._header_done.set()
@@ -420,7 +418,7 @@ class PycurlBackend(Backend):
     name = "pycurl"
 
     def __init__(self):
-        import pycurl  # noqa: F401
+        import pycurl
 
         self._pycurl = pycurl
 
@@ -616,7 +614,7 @@ def download_one(
         part.replace(final)
         bar.finished = True
         return final, False
-    except BaseException as exc:  # noqa: BLE001
+    except BaseException as exc:
         bar.failed = True
         bar.error = f"{type(exc).__name__}: {exc}" if str(exc) else type(exc).__name__
         raise
@@ -746,7 +744,7 @@ def main(argv=None) -> int:
                         (skipped if was_skipped else downloaded).append(path)
                     except KeyboardInterrupt:
                         raise
-                    except BaseException as exc:  # noqa: BLE001
+                    except BaseException as exc:
                         failed.append((url, exc))
             except KeyboardInterrupt:
                 interrupted = True

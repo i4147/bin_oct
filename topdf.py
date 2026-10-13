@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -169,7 +169,7 @@ def cmd_svg(args: argparse.Namespace) -> int:
         die("cairosvg is not installed (pip install cairosvg)")
     try:
         cairosvg.svg2pdf(url=str(inp), write_to=str(out))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"cairosvg failed: {exc}")
     info(f"PDF created: {out}")
     return 0
@@ -238,7 +238,7 @@ def _clean_topic_html(raw: str) -> str:
         out = ext.get_content()
         out = re.sub(r"\n\s*\n", "\n\n", out)
         return out.strip()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         warn(f"HTML parsing failed: {exc}")
         return raw
 
@@ -280,7 +280,7 @@ def _chm_weasyprint_extract(chm_path: Path) -> str:
                         body = _clean_topic_html(raw)
                         if body:
                             parts.append(body)
-                    except Exception as exc:  # noqa: BLE001
+                    except Exception as exc:
                         warn(f"could not extract topic {local}: {exc}")
                     parts.append('<hr style="border:1px solid #ccc; margin:20px 0;">')
             if hasattr(node, "GetChildren"):
@@ -304,7 +304,7 @@ def _render_one_topic(cf: Any, topic: str) -> str:
         if isinstance(raw, bytes):
             raw = raw.decode("utf-8", errors="ignore")
         return _CHM_STYLE_HEADER + _clean_topic_html(raw) + "</body></html>"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         warn(f"could not extract topic {topic}: {exc}")
         return ""
 
@@ -320,7 +320,7 @@ def _render_multiple_topics(cf: Any, topics: Iterable[str]) -> str:
             if body:
                 parts.append(body)
                 parts.append('<hr style="border:1px solid #ccc; margin:20px 0;">')
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             warn(f"could not extract topic {t}: {exc}")
     parts.append("</body></html>")
     return "".join(parts)
@@ -373,12 +373,12 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
             toc = chm_obj.get_toc()
             if toc:
                 topics = _flatten_toc(toc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             warn(f"get_toc failed: {exc}")
     if not topics and hasattr(chm_obj, "list"):
         try:
             topics = [f for f in chm_obj.list() if str(f).lower().endswith((".html", ".htm"))]
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             warn(f"list failed: {exc}")
     if not topics:
         die("no HTML topics found in CHM")
@@ -399,14 +399,14 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
     for i, topic in enumerate(topics):
         try:
             raw = chm_obj.get_obj(topic)
-        except Exception:  # noqa: BLE001
+        except Exception:
             raw = None
         if raw is None:
             continue
         if isinstance(raw, bytes):
             try:
                 raw = raw.decode("utf-8", errors="ignore")
-            except Exception:  # noqa: BLE001
+            except Exception:
                 raw = "[Binary or encoded content]"
         text = _strip_html_to_text(raw)
         if not text:
@@ -423,7 +423,7 @@ def _chm_reportlab_convert(chm_path: Path, output: Path) -> None:
                 continue
             try:
                 story.append(Paragraph(chunk, styles["Normal"]))
-            except Exception:  # noqa: BLE001
+            except Exception:
                 story.append(Paragraph(chunk[:1000], styles["Normal"]))
             story.append(Spacer(1, 0.05 * inch))
         processed += 1
@@ -463,7 +463,7 @@ def cmd_chm(args: argparse.Namespace) -> int:
         return 0
     try:
         html_text = _chm_weasyprint_extract(inp)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"CHM extraction failed: {exc}")
     if not html_text:
         die("no content extracted from CHM file")
@@ -495,7 +495,7 @@ def cmd_chm(args: argparse.Namespace) -> int:
     )
     try:
         render_pdf_from_html(wrapped, out)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
@@ -513,7 +513,7 @@ def cmd_html(args: argparse.Namespace) -> int:
             css_files=css_files,
             base_url=str(inp.parent),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
@@ -561,7 +561,7 @@ def _convert_markdown2(
             code = code.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
             try:
                 lexer = get_lexer_by_name(lang)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 lexer = TextLexer()
             return highlight(code, lexer, formatter)
 
@@ -617,7 +617,7 @@ def cmd_markdown(args: argparse.Namespace) -> int:
             css_strings=css_strings,
             base_url=str(inp.parent),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0
@@ -678,7 +678,7 @@ def cmd_dict(args: argparse.Namespace) -> int:
             out,
             base_url=str(inp.parent),
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"WeasyPrint failed: {exc}")
     info(f"PDF created: {out}")
     return 0

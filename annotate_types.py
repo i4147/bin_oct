@@ -1,37 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to recreate a Python script which applies type annotations to a Python source file using stub information, sanitizing typeshed references, with the following specification:
-
-Build a command-line Python 3 tool (intended to run under Termux on Android, with a Termux-style shebang pointing to the Termux Python interpreter) that adds type annotations to a target Python file by running a libCST-based codemod. The tool should use `from __future__ import annotations`, and rely on the standard library modules argparse, ast, difflib, shutil, subprocess, sys, tempfile, and pathlib, plus the third-party package libcst (using its CSTTransformer, CodemodContext, and ApplyTypeAnnotationsVisitor from libcst.codemod.visitors, and cst.helpers for name resolution).
-
-Core functionality to implement:
-
-1. A CST transformer class named TypeshedSanitizer that rewrites references to the `_typeshed` module, which exists only in type stubs and cannot be imported at runtime. It must:
-   - In ImportFrom nodes whose module is `_typeshed`, replace the entire import with `from typing import Any`.
-   - In Import nodes, rename any alias whose full name is `_typeshed` to `typing`, preserving other aliases unchanged.
-   - In Attribute nodes whose base name is `_typeshed`, rewrite the base to `typing` (preserving the attribute name), so that expressions like `_typeshed.X` become `typing.X` (and any further sanitization in the same spirit, e.g. replacing Name references that point to `_typeshed` symbols with `Any`, as appropriate).
-   - Handle nested or qualified names correctly by using libcst helpers rather than string hacks.
-
-2. A driver that takes a target Python source file and a stub/annotation source (e.g., a `.pyi` file or a generated stub), applies ApplyTypeAnnotationsVisitor with a CodemodContext, sanitizes the stub's `_typeshed` references via TypeshedSanitizer, and writes the annotated result.
-
-3. Command-line interface via argparse:
-   - Positional or required arguments for the target file and the stub/source of annotations.
-   - Options such as an output path (defaulting to in-place modification or a sibling file), a dry-run/diff mode that prints a unified diff using difflib instead of writing, and an option to keep or discard temporary files.
-   - Validate that input files exist and are readable; exit with a clear error message and nonzero status otherwise.
-
-4. Temporary-file handling: use tempfile to create working copies so that a failure never leaves the target file half-written; write to a temp file and move it into place with shutil only after successful parsing and transformation.
-
-5. Use subprocess where needed (for example, to invoke an external type-inference tool such as a stub generator like `stubgen` or `pyright`/`mypy` if available via shutil.which), checking availability first and giving a helpful message if the tool is missing.
-
-6. Error handling and edge cases:
-   - Catch libcst parse errors (ParserSyntaxError) and ast-related syntax errors, reporting the file and line when available, without a traceback for expected failures.
-   - Handle empty files, files with no annotations to apply, unicode/encoding issues (read and write as UTF-8), and files without a trailing newline.
-   - Ensure idempotency: running twice should not corrupt the output.
-   - Return meaningful process exit codes (0 success, nonzero on failure), and print progress/status messages to stderr.
-
-7. Execution details: the script should be executable directly (shebang line for Termux Python), should include a `main()` function guarded by `if __name__ == "__main__":`, and should use `sys.exit` with the return value of main.
-
-Output requirements for the reproduced script: a single file, well-commented but not overly verbose, using type hints throughout, with clear function boundaries (parse, sanitize, apply annotations, write output, diff display, CLI parsing).
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

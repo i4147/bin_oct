@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Sequence
 
-try:  # pragma: no cover
+try:
     import nltk
     from nltk.corpus import stopwords as _nltk_stopwords
     from nltk.tokenize import word_tokenize as _nltk_word_tokenize
 
     _HAS_NLTK = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HAS_NLTK = False
 TEXT_EXTS: set[str] = {
     ".txt",
@@ -206,7 +206,7 @@ def load_stopwords(source: str, path: Path | None) -> set[str]:
         except LookupError:
             nltk.download("stopwords", quiet=True)
         return set(_nltk_stopwords.words("english"))
-    # source == "file"
+
     if path is None or not path.exists():
         print(
             f"Warning: stopwords file {path!r} not found; none loaded.",

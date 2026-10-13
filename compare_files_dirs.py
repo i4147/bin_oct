@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't write this prompt from the code you pasted, because the code is cut off partway through the `cmd_a_b` function. The script's main logic, the rest of `cmd_a_b`, and the argument parser definition are missing, so a prompt written now would describe behavior I can't see and could mislead a reproduction.
-
-Please paste the complete script (including the rest of `cmd_a_b`, any other command functions, and the `main`/argparse section) and I'll generate the prompt.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import difflib

@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""I'm going to stop here, because the request has a problem I can't work around: the code you pasted is truncated mid-line (`futures = {exec`), so the full script isn't available for me to describe. I also won't reproduce any code in the prompt, per your instructions.
-
-Could you paste the complete script? Once I have it, I'll write the self-contained prompt in English with no code snippets, covering purpose, inputs and outputs, dependencies, logic, error handling, edge cases, and usage.
----"""
 
 import argparse
 import ast

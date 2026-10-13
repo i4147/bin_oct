@@ -8,7 +8,7 @@ from concurrent.futures import InterpreterPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
-# Directories to ignore automatically during recursive parsing
+
 DEFAULT_EXCLUDES: set[str] = {
     ".git",
     ".venv",
@@ -23,13 +23,8 @@ DEFAULT_EXCLUDES: set[str] = {
     "output",
 }
 
-# Minimum AST node count to skip trivial statements/functions
+
 MIN_AST_NODES: int = 5
-
-
-# ----------------------------------------------------------------------
-# AST Normalization & Analysis
-# ----------------------------------------------------------------------
 
 
 class TypeAnnotationChecker(ast.NodeVisitor):
@@ -149,11 +144,6 @@ def count_ast_nodes(node: ast.AST) -> int:
     return sum(1 for _ in ast.walk(node))
 
 
-# ----------------------------------------------------------------------
-# Worker Function Executed Across Subinterpreters
-# ----------------------------------------------------------------------
-
-
 def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
     """
     Parses a single Python file.
@@ -196,11 +186,6 @@ def process_file_task(task_args: tuple[str, bool, int]) -> list[dict[str, Any]]:
             })
 
     return extracted_objects
-
-
-# ----------------------------------------------------------------------
-# HTML Dashboard Generator
-# ----------------------------------------------------------------------
 
 
 def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]], output_path: Path):
@@ -262,13 +247,8 @@ def generate_html_report(categorized_duplicates: dict[str, list[dict[str, Any]]]
     output_path.write_text(html_content, encoding="utf-8")
 
 
-# ----------------------------------------------------------------------
-# Main Entry Point
-# ----------------------------------------------------------------------
-
-
 def main():
-    # Verify Python runtime version requirement
+
     if sys.version_info < (3, 14):
         sys.exit("Error: This script requires Python 3.14 or newer to use InterpreterPoolExecutor.")
 
@@ -297,7 +277,6 @@ def main():
     output_dir = Path.cwd() / "output"
     output_dir.mkdir(exist_ok=True)
 
-    # Collect target files
     python_files = [
         str(p)
         for p in root_dir.rglob("*.py")
@@ -308,13 +287,11 @@ def main():
 
     tasks = [(p, not args.disable_fuzzy, args.min_nodes) for p in python_files]
 
-    # Execute parallel scanning via Python 3.14 subinterpreters
     with InterpreterPoolExecutor() as executor:
         raw_results = list(executor.map(process_file_task, tasks))
 
     all_objects = [item for sublist in raw_results for item in sublist]
 
-    # Group extracted constructs by type and canonical code
     grouped_objects: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
@@ -359,17 +336,14 @@ def main():
                         f"Duplicate {obj_type} detected with mismatched type annotations."
                     )
 
-    # Export sorted JSON files
     for obj_type, entries in categorized_duplicates.items():
         entries.sort(key=lambda x: x["count"], reverse=True)
         json_file = output_dir / f"duplicate_{obj_type}s.json"
         json_file.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
-    # Export HTML report
     html_report_path = output_dir / "report.html"
     generate_html_report(categorized_duplicates, html_report_path)
 
-    # Console Summary
     print("\n" + "=" * 50)
     print("PYTHON 3.14 SUBINTERPRETER SCAN SUMMARY")
     print("=" * 50)

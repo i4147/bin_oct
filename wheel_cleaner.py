@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -172,7 +172,7 @@ def installed_packages() -> dict[str, str]:
             text=True,
             check=True,
         )
-    except Exception as exc:  # noqa: BLE001 - pip may be missing entirely
+    except Exception as exc:
         print(f"Warning: could not list installed packages: {exc}", file=sys.stderr)
         return {}
     packages: dict[str, str] = {}
@@ -190,7 +190,7 @@ def pip_show(name: str) -> Optional[dict[str, str]]:
             capture_output=True,
             text=True,
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
     if proc.returncode != 0:
         return None
@@ -209,7 +209,7 @@ def pip_show_location_and_files(name: str) -> tuple[Optional[str], bool]:
             capture_output=True,
             text=True,
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None, False
     if proc.returncode != 0:
         return None, False

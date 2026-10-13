@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -12,6 +12,45 @@ from email.parser import Parser
 from pathlib import Path
 
 
+from pip._internal.utils.compatibility_tags import (
+    interpreter_name,
+    interpreter_version,
+)
+from pip._internal.utils.urls import path_to_url
+
+
+def wheel_cache_hash(link_url: str) -> str:
+    """
+    Reproduce pip._internal.cache.WheelCache._get_cache_path_parts() for a
+    link that has no hash fragment and no subdirectory fragment.
+
+    Pip does::
+
+        key_parts = {"url": link.url_without_fragment}
+        if link.hash_name is not None and link.hash is not None:
+            key_parts[link.hash_name] = link.hash
+        if link.subdirectory_fragment:
+            key_parts["subdirectory"] = link.subdirectory_fragment
+        key_parts.update({
+            "interpreter_name": interpreter_name(),
+            "interpreter_version": interpreter_version(),
+        })
+        encoded = hashlib.sha224(json.dumps(key_parts, sort_keys=True).encode("utf-8")).hexdigest()
+    """
+    key_parts = {
+        "url": link_url,
+        "interpreter_name": interpreter_name(),
+        "interpreter_version": interpreter_version(),
+    }
+    return hashlib.sha224(json.dumps(key_parts, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def wheel_cache_dir(cache_dir: Path, link_url: str) -> Path:
+    h = wheel_cache_hash(link_url)
+
+    return Path(cache_dir) / "wheels" / h[0:2] / h[2:4] / h[4:6] / h
+
+
 def extract_wheel_metadata(wheel_path: Path) -> dict:
     with zipfile.ZipFile(wheel_path, "r") as wheel_zip:
         metadata_files = [f for f in wheel_zip.namelist() if f.endswith(".dist-info/METADATA")]
@@ -20,14 +59,16 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
             raise ValueError(msg)
         metadata_content = wheel_zip.read(metadata_files[0]).decode("utf-8")
         metadata = Parser(policy=policy.compat32).parsestr(metadata_content)
+
+    link_url = path_to_url(str(wheel_path.absolute()))
     wheel_metadata = {
-        "url": f"file://{wheel_path.absolute()}",
+        "url": link_url,
         "filename": wheel_path.name,
         "size": wheel_path.stat().st_size,
         "sha224": hashlib.sha224(wheel_path.read_bytes()).hexdigest(),
         "origin": "manual_cache",
     }
-    metadata_fields = [
+    for field in (
         "Name",
         "Version",
         "Summary",
@@ -36,29 +77,30 @@ def extract_wheel_metadata(wheel_path: Path) -> dict:
         "License",
         "Requires-Python",
         "Requires-Dist",
-    ]
-    for field in metadata_fields:
+    ):
         value = metadata.get(field)
         if value:
             wheel_metadata[field.lower().replace("-", "_")] = value
     return wheel_metadata
 
 
-def add_wheel_to_pip_cache(wheel_path: Path):
-    cache_dir = subprocess.check_output(["pip", "cache", "dir"]).decode().strip()
-    wheels_cache = Path(cache_dir) / "wheels"
-    wheel_data = wheel_path.read_bytes()
-    hash1 = hashlib.sha224(wheel_data).hexdigest()
-    target_dir = wheels_cache / hash1[:2] / hash1[2:4] / hash1
+def add_wheel_to_pip_cache(wheel_path: Path) -> None:
+    cache_dir = Path(subprocess.check_output(["pip", "cache", "dir"]).decode().strip())
+
+    link_url = path_to_url(str(wheel_path.absolute()))
+
+    target_dir = wheel_cache_dir(cache_dir, link_url)
     target_dir.mkdir(parents=True, exist_ok=True)
+
     target_file = target_dir / wheel_path.name
     shutil.copy2(wheel_path, target_file)
+
     metadata = extract_wheel_metadata(wheel_path)
-    metadata_file = target_dir / f"{wheel_path.name}.json"
-    with open(metadata_file, "w") as f:
-        json.dump(metadata, f, indent=2)
-    print(f"Wheel cached at: {target_file}")
-    print(f"Metadata cached at: {metadata_file}")
+    (target_dir / f"{wheel_path.name}.json").write_text(json.dumps(metadata, indent=2))
+
+    print(f"Cache key (sha224): {wheel_cache_hash(link_url)}")
+    print(f"Wheel cached at:    {target_file}")
+    print(f"Metadata cached at: {target_dir / (wheel_path.name + '.json')}")
 
 
 if __name__ == "__main__":

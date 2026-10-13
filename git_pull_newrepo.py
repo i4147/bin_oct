@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't write this prompt as requested. The code is cut off mid-string (`f"h`), and the task requires a complete, self-contained prompt that describes the script's full behavior, including its error handling and the final logic.
-
-I can do the job if you paste the rest of the file. Then I'll write the prompt covering the purpose, inputs and outputs, dependencies, key logic, error handling, edge cases, and usage.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

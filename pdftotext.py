@@ -1,30 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The code is truncated at `elif self.b`, so I'll write the prompt based on what's visible and note the backend dispatch as it appears to continue.
-
-Write a single, self-contained Python command-line script named as a PDF-to-text extractor with the following specifications.
-
-**Purpose:** The script extracts text from a PDF file and writes it to an output file or standard output. It supports multiple interchangeable extraction backends and optional text normalization.
-
-**Interface (argparse CLI):** Accept a required positional argument for the input PDF path. Provide optional arguments for: the backend choice (default `fitz`; supported values include `fitz`, `pypdf`, and `pdfplumber`, with one additional backend following in the dispatch chain), a password for encrypted PDFs (default empty string), an output encoding (default `utf-8`), an output file path (write to stdout if omitted), and a flag to disable space normalization. Use a shebang line pointing to the Termux Python interpreter at `/data/data/com.termux/files/usr/bin/env python`.
-
-**Core design:** Define an `Extractor` class with constructor parameters `backend` (default `"fitz"`, stored lowercased), `password` (default `""`), `encoding` (default `"utf-8"`), and `normalize_spaces` (default `True`). Implement a method `extract_pages(pdf_path)` that converts the path to a `pathlib.Path` and returns a list of per-page text strings.
-
-**Backend behavior:**
-- `fitz` (PyMuPDF): import lazily inside the branch, open the document, call `authenticate` with the password only when one is provided, iterate pages calling `get_text()`, and close the document.
-- `pypdf`: import `PdfReader` lazily, pass `password` to the constructor only when non-empty, and collect `extract_text()` per page, substituting an empty string when the result is `None`.
-- `pdfplumber`: import lazily, build keyword arguments with `password` only when non-empty, open the file as a context manager, and collect `extract_text()` per page with the same `None`-to-empty fallback.
-- Any other backend value must be handled by a final branch (the original code's dispatch continues past the visible portion; reproduce a sensible remaining backend such as a third library, and raise a clear error for unknown backends).
-
-**Post-processing:** When `normalize_spaces` is enabled, collapse runs of whitespace within text (using regular expressions), and normalize line breaks so output is clean, while keeping page separation. Join pages into a single output string with clear page boundaries.
-
-**Output:** Write the result using the configured encoding, to the output file if given, otherwise to standard output. Use `StringIO` where it helps build the output buffer.
-
-**Dependencies:** Only the standard library is required at import time (`argparse`, `re`, `io`, `pathlib`). PyMuPDF (`fitz`), `pypdf`, and `pdfplumber` are imported lazily and are needed only for their respective backends. The script should not fail at import time if a backend library is missing; it should raise a clear error at extraction time identifying the missing package and suggesting how to install it.
-
-**Error handling and edge cases:** Handle missing input files with a clear message, handle encrypted PDFs that lack or have the wrong password, handle pages that yield no text (treat as empty strings, not errors), and handle unknown backend names. Errors should be reported to the user with a non-zero exit status rather than an unhandled traceback where practical.
-
-**Execution:** The script runs as `python <script> input.pdf [options]`, with an `if __name__ == "__main__":` entry point that parses arguments, constructs the `Extractor`, extracts pages, post-processes, and writes output.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import re

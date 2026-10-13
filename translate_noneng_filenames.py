@@ -26,10 +26,6 @@ def translate_filename(filename: str):
 
 def rename_files(directory: str) -> None:
     for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
-        # topdown=False means we visit children before parents, so a directory
-        # is renamed only after all of its contents have been processed.
-        # This avoids the classic bug where renaming a parent mid-walk makes
-        # the remaining child paths stale.
         for name in filenames:
             path = Path(dirpath) / name
             if is_english(path.stem):

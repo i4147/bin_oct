@@ -1,37 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a self-contained prompt that tells an AI coding agent to build a Python 3 command-line script with the following specification.
-
-Write a Python 3 command-line script for Termux (Android) that converts a PDF file into one PNG image per page, using the external `pdftoppm` tool from Poppler.
-
-**Purpose**
-The script takes a PDF path and renders every page as a PNG at a configurable resolution, then renames the outputs to a consistent, zero-padded naming scheme.
-
-**Interface**
-- Start the file with a shebang pointing to the Termux Python interpreter at `/data/data/com.termux/files/usr/bin/env python`.
-- Use only the standard library: `sys`, `os`, `shutil`, and `subprocess`.
-- Define a function `pdf_to_png(pdf_path, output_dir=None, dpi=200)` as the core logic, and call it from a `__main__` guard using command-line arguments from `sys.argv`.
-- Accept the PDF path as the required first argument, and an optional output directory and DPI value. Default DPI is 200.
-
-**Behavior and steps**
-1. Verify the PDF file exists using `os.path.isfile`. If not, print `Error: file not found: <path>` to stderr and exit with status 1.
-2. Check that `pdftoppm` is available using `shutil.which`. If missing, print an error to stderr stating that `pdftoppm` was not found and suggesting installation with `pkg install poppler`, then exit with status 1.
-3. Derive the base name from the PDF filename without its extension. If no output directory was given, use the base name as the directory.
-4. Create the output directory (including parents) with `os.makedirs(..., exist_ok=True)`.
-5. Build the output prefix as `<output_dir>/<base_name>_page`.
-6. Run `pdftoppm` with arguments: `-png`, `-r <dpi>`, the PDF path, and the prefix. Print the full command as `Running: ...` before executing it. Capture stdout and stderr as text using `subprocess.run`.
-7. If the return code is nonzero, print `pdftoppm failed:` and the captured stderr to stderr, then exit with status 1.
-8. After success, list the output directory, select files starting with `<base_name>_page-`. For each, extract the page number from the portion after the last hyphen (before the extension). Skip any file whose number cannot be parsed as an integer.
-9. Rename each file to `<base_name>_page_NNN.png`, with the page number zero-padded to three digits (e.g., `_page_001.png`). Rename using `os.rename` within the output directory.
-10. On completion, print a summary indicating how many pages were converted and where the files are saved.
-
-**Edge cases and notes**
-- `pdftoppm` names pages with varying digit widths (e.g., `-1.png` vs `-01.png`); the script must handle any width by parsing the integer.
-- Unparseable filenames are silently skipped rather than causing a crash.
-- Paths with spaces should be handled correctly by passing arguments as a list, never through a shell.
-- Do not use `shell=True`.
-- Error messages go to stderr; normal progress goes to stdout.
-- Usage example: `python script.py document.pdf [output_dir] [dpi]`; print a usage message and exit nonzero if the PDF argument is missing.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import os
 import shutil

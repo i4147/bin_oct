@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -629,27 +629,8 @@ class HtmlFileProcessor:
 class FileDiscovery:
     SKIP_DIRS: set[str] = {
         ".git",
-        ".svn",
         "__pycache__",
-        "node_modules",
-        ".venv",
-        "venv",
-        ".env",
-        ".egg-info",
-        "dist",
-        "build",
-        ".idea",
-        ".vscode",
-        ".pytest_cache",
-        ".tox",
-        ".coverage",
         ".mypy_cache",
-        "target",
-        "out",
-        "bin",
-        ".gradle",
-        ".next",
-        ".cache",
     }
 
     @staticmethod

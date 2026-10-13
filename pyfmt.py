@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -155,7 +155,7 @@ class HtmlTagFormatter:
         try:
             self._language = Language(ts_html.language())
             self._parser = Parser(self._language)
-        except Exception as exc:  # pragma: no cover - init errors are env-specific
+        except Exception as exc:
             msg = f"Failed to initialize Tree-sitter parser: {exc}"
             raise RuntimeError(msg) from exc
 
@@ -610,14 +610,14 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="NAME",
         help="Directory names to skip while scanning.",
     )
-    # treesitter-only
+
     fmt.add_argument(
         "--max-bytes",
         type=int,
         default=50 * 1024 * 1024,
         help="tree-sitter: skip files larger than this (default: 50 MiB).",
     )
-    # jsbeautifier-only
+
     fmt.add_argument(
         "--indent-size",
         type=int,
@@ -630,7 +630,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=4,
         help="jsbeautifier: indent for JSON re-serialization (default: 4).",
     )
-    # prettier-only
+
     fmt.add_argument(
         "--npx",
         action="store_true",

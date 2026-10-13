@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -153,7 +153,7 @@ def translate_with_retry(
                 msg = "Empty result returned from translator"
                 raise TransientError(msg)
             return result
-        except Exception as exc:  # noqa: BLE001 - we re-raise below
+        except Exception as exc:
             last_exc = exc
             kind = _classify_error(exc)
             if kind is RateLimitError:
@@ -170,7 +170,7 @@ def translate_single_shot(text: str, *, source: str, target: str) -> str:
     try:
         result = GoogleTranslator(source=source, target=target).translate(text)
         return result if result is not None else text
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Chunk translation error: {exc}")
         return text
 
@@ -194,7 +194,7 @@ def _save_vi_progress(src: Path, chunk_map: dict[int, str], total: int) -> None:
     }
     try:
         make_progress_path(src).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"   ⚠️  Could not save progress: {exc}")
 
 
@@ -209,7 +209,7 @@ def _load_vi_progress(src: Path) -> dict[int, str]:
         chunks = {int(k): v for k, v in data.get("chunks", {}).items()}
         print(f"   🔄 Resuming: {len(chunks)} chunk(s) already done")
         return chunks
-    except Exception:  # noqa: BLE001
+    except Exception:
         return {}
 
 
@@ -222,7 +222,7 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
     print(f"\n📄 {src.name}  →  {out.name}")
     try:
         text = read_text_auto(src)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"   ❌ Cannot read: {exc}")
         return False
     if not text.strip():
@@ -251,7 +251,7 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
                 max_delay=args.retry_max_delay,
             )
             ok = True
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"   ❌ Chunk {idx} failed after all retries: {exc}")
             translated, ok = chunk, False
         done[idx] = translated
@@ -273,7 +273,7 @@ def _translate_one_vi_file(src: Path, args: argparse.Namespace, flag: InterruptF
         else:
             print(f"   ✅ Saved → {out}")
         return True
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"   ❌ Failed to write output: {exc}")
         return False
 
@@ -306,20 +306,20 @@ def run_ko(args: argparse.Namespace) -> int:
         return 1
     try:
         text = src.read_text(encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Read error: {exc}", file=sys.stderr)
         return 1
     chunks = chunk_fixed(text, args.chunk_size)
     translator = GoogleTranslator(source=args.source, target=args.target)
     try:
         translated = "".join(translator.translate(c) for c in chunks)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Translation error: {exc}", file=sys.stderr)
         return 1
     out = make_output_path(src, "stem")
     try:
         out.write_text(translated, encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Write error: {exc}", file=sys.stderr)
         return 1
     print(f"Saved translated file → {out}")
@@ -329,7 +329,7 @@ def run_ko(args: argparse.Namespace) -> int:
 def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     try:
         text = path.read_text(encoding="utf-8")
-    except Exception:  # noqa: BLE001
+    except Exception:
         print(f"Skipping unreadable file: {path}")
         return
     if not NON_ASCII_RE.search(text):
@@ -346,7 +346,7 @@ def _translate_zh_file(path: Path, args: argparse.Namespace) -> None:
     try:
         out.write_text(translated, encoding="utf-8")
         print(f"Translated → {out.name}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error writing {out}: {exc}")
 
 
@@ -363,7 +363,7 @@ def run_zh(args: argparse.Namespace) -> int:
             path = futures[fut]
             try:
                 fut.result()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"Error processing {path}: {exc}")
     return 0
 
@@ -376,7 +376,7 @@ def _ru_translate_chunk(line_group: list[str], args: argparse.Namespace):
             result = translator.translate(joined)
             if result is not None:
                 return line_group, result
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             delay = args.retry_base_delay * 2 ** (attempt - 1)
             delay += random.uniform(0, delay * 0.25)
             logger.warning(
@@ -398,7 +398,7 @@ def _ru_per_line(lines: Iterable[str], args: argparse.Namespace) -> dict[str, st
         try:
             translated = GoogleTranslator(source=args.source, target=args.target).translate(line)
             out[line] = translated if translated is not None else line
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Per-line fallback failed for %r: %s", line[:50], exc)
             out[line] = line
     return out
@@ -448,7 +448,7 @@ def run_ru(args: argparse.Namespace) -> int:
     try:
         with src.open(encoding="utf-8") as fh:
             lines = [raw.rstrip("\n") for raw in fh if raw.strip() != ""]
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error reading input file: {exc}", file=sys.stderr)
         return 1
     if not lines:
@@ -480,7 +480,7 @@ def run_ru(args: argparse.Namespace) -> int:
             try:
                 line_group, translated = async_res.get()
                 _ru_store_chunk(line_group, translated, mapping, idx, total, args)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.error(
                     "Unexpected error processing chunk starting with %r: %s",
                     (group[0][:60] + "...") if group else "",
@@ -494,7 +494,7 @@ def run_ru(args: argparse.Namespace) -> int:
         with json_out.open("w", encoding="utf-8") as fh:
             json.dump(mapping, fh, ensure_ascii=False, indent=2)
         print(f"Saved {len(mapping)} translations to {json_out.name}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error saving JSON file: %s", exc)
     try:
         with src.open("w", encoding="utf-8") as fh:
@@ -506,7 +506,7 @@ def run_ru(args: argparse.Namespace) -> int:
                 else:
                     fh.write(f"{line}\n")
         print(f"Updated {src.name}: translated {replaced} lines, kept {len(lines) - replaced} lines unchanged")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error updating input file: %s", exc)
     return 0
 

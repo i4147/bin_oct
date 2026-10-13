@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't write this prompt from the code as it stands: the snippet you pasted ends partway through the `DEFAULT_PORTS` dictionary (after `"sftp": 22,`), so the script is incomplete. The rest of the module, including the URL-handling classes, the query and path logic, and the `furl` public API, isn't in the message.
-
-If you paste the full file, I'll generate the prompt. I'd expect it to describe the `furl` library's purpose (URL parsing and manipulation), its dependencies (`orderedmultidict`, optional `icecream`), and its edge-case behavior.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

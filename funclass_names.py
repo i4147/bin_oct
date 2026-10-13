@@ -1,17 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""I can't produce this from the code shown: the paste is cut off at `"teardown`, so the full logic (the rest of the skip list and everything after it) isn't visible to me. Writing a faithful reproduction prompt would mean guessing at the missing behavior.
-
-If you paste the complete script, I'll write the prompt. Based on what's visible so far, the prompt would need to cover these parts:
-
-- **Purpose:** a static analyzer that parses Python source with `ast`, finds function and method definitions, and reports candidates that appear unused (dead-code detection).
-- **Inputs:** directories, individual `.py` files, and archives (`.zip`, `.tar` variants) read through `zipfile` and `tarfile`.
-- **Outputs:** a report printed with `rich` (a progress bar using `MofNCompleteColumn`, `TimeElapsedColumn`, and `TimeRemainingColumn`), and likely a JSON file (the script imports `json`).
-- **Parallelism:** `multiprocessing` for analyzing files concurrently.
-- **Exclusions:** a `SKIP_NAMES` set of entry points and dunder/protocol methods (`__init__`, `__str__`, `__enter__`, and others) plus common lifecycle names such as `setup` and `teardown` that are never referenced by name.
-- **Environment:** a Termux shebang (`/data/data/com.termux/files/usr/bin/python`), so it's intended to run on Android via Termux.
-
-Send the complete file and I'll generate the prompt.
----"""
 
 import ast
 import json
@@ -26,7 +13,7 @@ from typing import Dict, Iterator, List, Set, Tuple
 from rich.console import Console
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 
-SKIP_NAMES: Set[str] = {
+SKIP_NAMES: set[str] = {
     "main",
     "app",
     "run",
@@ -166,7 +153,7 @@ SKIP_NAMES: Set[str] = {
     "lambda_func",
 }
 
-EXCLUDED_DIRS: Set[str] = {
+EXCLUDED_DIRS: set[str] = {
     ".git",
     ".hg",
     ".svn",
@@ -187,16 +174,16 @@ EXCLUDED_DIRS: Set[str] = {
     ".vscode",
 }
 
-ARCHIVE_SUFFIXES: Tuple[str, ...] = (".whl", ".tar.gz", ".tar.xz", ".tar.zst")
+ARCHIVE_SUFFIXES: tuple[str, ...] = (".whl", ".tar.gz", ".tar.xz", ".tar.zst")
 
 HAS_NATIVE_ZSTD: bool = sys.version_info >= (3, 14)
 
-WorkerResult = Tuple[
-    Dict[str, int],
-    Dict[str, int],
-    Dict[str, int],
-    Dict[str, int],
-    List[str],
+WorkerResult = tuple[
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    dict[str, int],
+    list[str],
 ]
 
 
@@ -205,7 +192,7 @@ def _is_relevant(path: Path) -> bool:
     return name.endswith(".py") or name.endswith(ARCHIVE_SUFFIXES)
 
 
-def _iter_zip_python(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_zip_python(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     try:
         with zipfile.ZipFile(path, "r") as zf:
             for member in zf.namelist():
@@ -219,7 +206,7 @@ def _iter_zip_python(path: Path, messages: List[str]) -> Iterator[Tuple[str, str
         messages.append(f"[skip] {path}: {e}")
 
 
-def _iter_tar_python(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_tar_python(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     if path.name.endswith(".tar.gz"):
         mode = "r:gz"
     elif path.name.endswith(".tar.xz"):
@@ -242,7 +229,7 @@ def _iter_tar_python(path: Path, messages: List[str]) -> Iterator[Tuple[str, str
         messages.append(f"[skip] {path}: {e}")
 
 
-def _iter_tar_zst_native(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_tar_zst_native(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     try:
         with tarfile.open(path, "r:zst") as tf:
             for member in tf.getmembers():
@@ -259,7 +246,7 @@ def _iter_tar_zst_native(path: Path, messages: List[str]) -> Iterator[Tuple[str,
         messages.append(f"[skip] {path}: {e}")
 
 
-def _iter_tar_zst_zstandard(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_tar_zst_zstandard(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     try:
         import zstandard
     except ImportError:
@@ -282,14 +269,14 @@ def _iter_tar_zst_zstandard(path: Path, messages: List[str]) -> Iterator[Tuple[s
         messages.append(f"[skip] {path}: {e}")
 
 
-def _iter_tar_zst_python(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_tar_zst_python(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     if HAS_NATIVE_ZSTD:
         yield from _iter_tar_zst_native(path, messages)
     else:
         yield from _iter_tar_zst_zstandard(path, messages)
 
 
-def _iter_sources_from_path(path: Path, messages: List[str]) -> Iterator[Tuple[str, str]]:
+def _iter_sources_from_path(path: Path, messages: list[str]) -> Iterator[tuple[str, str]]:
     name = path.name
     if name.endswith(".py"):
         try:
@@ -304,9 +291,9 @@ def _iter_sources_from_path(path: Path, messages: List[str]) -> Iterator[Tuple[s
         yield from _iter_tar_zst_python(path, messages)
 
 
-def _collect_paths(directory: Path, messages: List[str]) -> List[Path]:
-    results: List[Path] = []
-    stack: List[Path] = [directory]
+def _collect_paths(directory: Path, messages: list[str]) -> list[Path]:
+    results: list[Path] = []
+    stack: list[Path] = [directory]
     while stack:
         current = stack.pop()
         try:
@@ -327,11 +314,11 @@ def _collect_paths(directory: Path, messages: List[str]) -> List[Path]:
 
 
 def process_path(path: Path) -> WorkerResult:
-    func_defs: Dict[str, int] = defaultdict(int)
-    class_defs: Dict[str, int] = defaultdict(int)
-    name_uses: Dict[str, int] = defaultdict(int)
-    attr_uses: Dict[str, int] = defaultdict(int)
-    messages: List[str] = []
+    func_defs: dict[str, int] = defaultdict(int)
+    class_defs: dict[str, int] = defaultdict(int)
+    name_uses: dict[str, int] = defaultdict(int)
+    attr_uses: dict[str, int] = defaultdict(int)
+    messages: list[str] = []
 
     for name, source in _iter_sources_from_path(path, messages):
         try:
@@ -361,7 +348,7 @@ def process_path(path: Path) -> WorkerResult:
     )
 
 
-def write_json(path: Path, data: List[Dict[str, int]]) -> None:
+def write_json(path: Path, data: list[dict[str, int]]) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
@@ -369,10 +356,10 @@ def main() -> None:
     directory = Path(".")
     console = Console()
 
-    func_defs: Dict[str, int] = defaultdict(int)
-    class_defs: Dict[str, int] = defaultdict(int)
-    name_uses: Dict[str, int] = defaultdict(int)
-    attr_uses: Dict[str, int] = defaultdict(int)
+    func_defs: dict[str, int] = defaultdict(int)
+    class_defs: dict[str, int] = defaultdict(int)
+    name_uses: dict[str, int] = defaultdict(int)
+    attr_uses: dict[str, int] = defaultdict(int)
 
     with Progress(
         TextColumn("[bold blue]Scanning"),

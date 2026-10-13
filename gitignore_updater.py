@@ -1,48 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The provided code is truncated at `def append_line_to_gitignore`, so I'll write the prompt to describe the full script as its visible structure implies, and note in the prompt where the remainder must be inferred.
-
-Reproduce a Python script from scratch that appends a given line to `.gitignore` files across many paths using multiprocessing. Write it to run under Termux on Android, using `#!/data/data/com.termux/files/usr/bin/env python` as the shebang and `from __future__ import annotations` at the top.
-
-**Purpose and structure**
-- The script validates an input line (a `.gitignore` entry) and appends it to one or more `.gitignore` files located at the paths it is given, skipping any file that already contains the line.
-- Configure logging at module level with `logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")` and a module logger from `logging.getLogger(__name__)`.
-
-**Dependencies (standard library only)**
-- `logging`, `os`, `sys`, `dataclasses.dataclass`, `multiprocessing.Pool` and `cpu_count`, `pathlib.Path`, `typing.Optional`.
-
-**Data structure**
-- A dataclass `ProcessResult` with fields: `path: Path`, `success: bool`, `modified: bool`, `error: str | None = None`, `message: str = ""`.
-
-**Functions**
-1. `validate_input_line(line: str) -> str`
-   - Raise `ValueError` with the message "Input line must be a string" if the input is not a `str`.
-   - Strip leading and trailing whitespace; if the result is empty, raise `ValueError` with "Input line cannot be empty".
-   - If the stripped value contains `\\n` or `\\r`, remove those characters, log a warning showing the cleaned value using `repr`, and return the cleaned value.
-2. `line_exists_in_file(path: Path, target_line: str) -> bool`
-   - Open the file in read mode with UTF-8 encoding and `errors="ignore"`.
-   - Return `True` if any line, with trailing `\\n` and `\\r` stripped, equals `target_line` exactly.
-   - Return `False` if no match. On `OSError`, log a warning naming the path and the error, and return `False`.
-3. `append_line_to_gitignore(...)`: the source is truncated at this definition, so infer a sensible implementation: it takes a path and a validated line, checks whether the file already contains the line (via `line_exists_in_file`), and if not, appends the line (ensuring a preceding newline if the file does not end with one) and creates the file if it is missing. It returns a `ProcessResult` describing success, whether it modified the file, and any error message.
-
-**Parallel execution**
-- Process multiple target paths concurrently with a `multiprocessing.Pool` sized to `cpu_count()`, mapping the per-path worker across the list of paths with the validated line.
-- Collect the `ProcessResult` objects and log a summary of how many files were modified, skipped as already present, or failed.
-
-**Entry point and usage**
-- Put the main logic under `if __name__ == "__main__":`.
-- Read the target line and the list of target paths from the command line arguments (`sys.argv`), printing a usage message and exiting with a nonzero status if arguments are missing.
-- Exit with status 0 on full success and a nonzero status if any file failed.
-
-**Error handling and edge cases**
-- Handle unreadable or unwritable files gracefully without crashing the pool; record the error in the `ProcessResult`.
-- Treat non-existent `.gitignore` paths as creatable targets rather than errors, where appropriate.
-- Reject empty or non-string input lines before any file is touched.
-- Strip newline characters from input lines rather than writing multi-line entries.
-- Match lines exactly after stripping only line terminators, so entries with leading whitespace or comments are compared literally.
-
-**Output**
-- Use the logger for all status output, not `print`, except for usage text written to stderr.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

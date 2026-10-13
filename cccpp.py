@@ -1,6 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't produce that prompt: the code you pasted cuts off mid-line (`node.en`), so I only have part of the script and can't describe its full behavior accurately. If you paste the complete file, I'll write the prompt you asked for.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -14,6 +12,7 @@ import tree_sitter_c
 import tree_sitter_cpp
 from loguru import logger
 from tree_sitter import Language, Node, Parser
+from dh import remove_blank_lines
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

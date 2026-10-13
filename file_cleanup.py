@@ -1,42 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to reproduce a Python utility module for large-file line reading and chunked processing, with the following specification.
-
-Build a Python 3 script (Termux-compatible shebang: `#!/data/data/com.termux/files/usr/bin/env python`) that begins with `from __future__ import annotations` and uses only the standard library. Required imports: argparse, heapq, json, mmap, os, shutil, sys, tempfile, collections.Counter, datetime/timezone, pathlib.Path, and typing (Any, Callable, Iterable, Optional, Sequence).
-
-Define these module-level constants:
-- MMAP_THRESHOLD = 1_048_576 (bytes; files larger than this are read via memory mapping)
-- DEFAULT_CHUNK_SIZE = 100_000 (lines per chunk)
-- DEFAULT_ENCODING = "utf-8"
-- DEFAULT_WORKERS = 8
-
-Define logging helpers: `info(msg)` prints `[INFO] {msg}` to stdout; `warn(msg)` and `err(msg)` print `[WARN] {msg}` and `[ERROR] {msg}` to stderr.
-
-Core function `read_lines(path: Path, encoding=DEFAULT_ENCODING, skip_empty=False) -> list[str]`:
-- Raise `FileNotFoundError(path)` if the path does not exist.
-- Check file size via stat. If size > MMAP_THRESHOLD, open the file in binary mode and memory-map it read-only; otherwise use a normal read path.
-- In the mmap path, iterate by locating `b"\\n"` with `mm.find` from a moving start offset; the final segment without a trailing newline is taken up to end of map. Decode each chunk with the given encoding, strip trailing `\\r\\n` only (not other whitespace), and append it unless `skip_empty` is True and the stripped line is empty.
-- Handle decoding failures explicitly (catch UnicodeDecodeError, report via `warn` or `err`, and continue or skip as sensible), and document the chosen policy in code comments only if idiomatic.
-- The non-mmap path should behave identically in output semantics (same line-ending stripping and skip_empty behavior).
-
-Remaining functionality to implement (the source file continues beyond the read helper, so design these consistently with the above):
-- A chunked processing pipeline that splits a line sequence into batches of `DEFAULT_CHUNK_SIZE` (overridable by CLI), possibly writing intermediate chunks to a `tempfile`-created directory that is cleaned up with `shutil.rmtree` in a `finally` block.
-- Parallel processing using a worker pool of `DEFAULT_WORKERS` (overridable), applying a caller-supplied `Callable` to each chunk.
-- Aggregation of results using `collections.Counter` for frequency statistics and `heapq.nlargest` for top-N reporting.
-- Optional JSON output via `json.dumps` with `ensure_ascii=False`, including a UTC timestamp generated with `datetime.now(timezone.utc).isoformat()`.
-- File-system outputs should be written atomically where practical (write to a temp file, then `os.replace`).
-- Expose a `main()` function that builds an `argparse.ArgumentParser` with options for input path, output path, encoding, chunk size, worker count, skip-empty, top-N, and JSON output; return an integer exit code and call `sys.exit(main())` under `if __name__ == "__main__":`.
-
-Error handling and edge cases the code must cover:
-- Missing input file: report via `err` and exit nonzero, without a traceback.
-- Empty input file: produce valid empty output rather than crashing.
-- Files with no trailing newline, and files with CRLF line endings.
-- Files exactly at or near MMAP_THRESHOLD; zero-byte files (mmap cannot map empty files, so the non-mmap path must be used for them).
-- Invalid encoding bytes.
-- Invalid argument values (non-positive chunk size or worker count) rejected with clear messages.
-- Keyboard interrupt handled gracefully with a nonzero exit code.
-
-Keep comment density and naming idiomatic and consistent with standard Python style, use type hints throughout, and produce a single runnable file with no external dependencies.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

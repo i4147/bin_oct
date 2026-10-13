@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -225,7 +225,7 @@ def process_file(path: Path, base: Path) -> tuple[str, int, str]:
         except ValueError:
             relative_path = str(path)
         return relative_path, removed_count, ""
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return str(path), 0, str(exc)
 
 
@@ -309,7 +309,7 @@ def main() -> int:
             total_files += 1
             try:
                 relative_path, count, error = result.get()
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 errors += 1
                 logger.error(f"{path}: ERROR: {exc}")
                 if not exhausted:

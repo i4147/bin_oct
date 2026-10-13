@@ -1,36 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""You are writing a Python  Termux (Android) that processes PDF files using the PyMuPDF library (imported as `pymupdf`). Reproduce it from scratch by following this specification.
-
-**Shebang and imports:** Start the file with the Termux-specific interpreter path shebang `#!/data/data/com.termux/files/usr/bin/python`. Import `argparse`, `os`, `re`, `sys`, `Sequence` from `collections.abc`, `ProcessPoolExecutor` from `concurrent.futures`, and `Path` from `pathlib`, plus `pymupdf`. The only third-party dependency is PyMuPDF.
-
-**Module constants:** Define `MERGED_NAME` as the string `"merged.pdf"`. Define `UNSAFE` as a compiled regular expression that matches any run of characters outside letters, digits, dot, underscore, and hyphen. Use full type annotations throughout, including `re.Pattern[str]` and `tuple[str, int]`-style generics.
-
-**Required helper functions:**
-
-1. `count_pages(pdf_path: Path) -> int`: opens the PDF with a context manager and returns its page count.
-
-2. `extract_one_page(job: tuple[str, int]) -> str`: takes a tuple of a PDF file name and a zero-based page number. Opens the PDF fresh inside the worker (so it is safe to run in a separate process), loads that page, extracts plain text using the `"text"` mode, and strips trailing form-feed characters (`\\f`) from the result before returning.
-
-3. `safe_name(value: str, fallback: str) -> str`: replaces every run of unsafe characters with an underscore, strips leading and trailing dots and underscores, and returns the fallback string if the result is empty.
-
-4. `is_readable(path: Path) -> bool`: returns True only if the PDF opens, is not password-protected (`needs_pass` is false), and contains at least one page. Any exception returns False.
-
-5. `chunked(items: Sequence[int], parts: int) -> list[list[int]]`: splits a sequence into roughly `parts` contiguous chunks. Compute chunk size as the ceiling of length divided by parts, guarding against zero with a minimum of 1, and return list-of-list slices.
-
-6. `split_one_page(job: tuple[str, int, str]) -> str`: takes a source PDF name, a zero-based page number, and a target output path string. Opens the source and creates a new empty PDF document, inserts only that single page into the new document, and is intended to save it to the target path and return a string (the source file was truncated at this point, so complete the function to save the single-page PDF to the target and return the target path as a string).
-
-**Behavior to implement in the rest of the script (`main` and `__main__` guard):**
-
-- Use `argparse` to accept one or more input PDF paths plus options for an output directory and worker count. Default the output file name to `MERGED_NAME` inside the output directory when merging.
-- Validate each input with `is_readable`; skip unreadable or encrypted files and report them to stderr, but continue processing the rest. Exit with a non-zero status if no valid inputs remain.
-- Use `count_pages` to determine total pages; use `chunked` to divide page indices among workers.
-- Run text extraction and single-page splitting in parallel with `ProcessPoolExecutor`, passing picklable job tuples only. Use `safe_name` to derive filesystem-safe names for per-file output folders or split files derived from input stems, falling back to a generic name.
-- Handle errors per file or per page: catch exceptions from workers, print a clear message to stderr, and continue where possible. Wrap top-level execution to return proper exit codes, using `sys.exit` with 0 for success and non-zero for failure, and handle `KeyboardInterrupt` gracefully.
-- Create output directories as needed with `Path.mkdir(parents=True, exist_ok=True)`.
-- Make the script runnable directly from the command line, printing a concise summary of what was produced (page counts, output paths).
-
-Keep the code idiomatic, with docstrings or brief comments where logic is non-obvious, consistent naming, and clean argument validation.
----"""
 
 import argparse
 import os

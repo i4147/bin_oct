@@ -5,10 +5,6 @@ import multiprocessing as mp
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-# ----------------------------------------------------------------------
-# AST Normalization Helper
-# ----------------------------------------------------------------------
-
 
 class TypeAnnotationChecker(ast.NodeVisitor):
     """Checks if an AST node contains type annotations."""
@@ -54,10 +50,10 @@ class AnnotationStripper(ast.NodeTransformer):
         return self.visit_FunctionDef(node)
 
     def visit_AnnAssign(self, node):
-        # Convert annotated assignment `x: int = 10` to standard assignment `x = 10`
+
         if node.value is not None:
             return ast.Assign(targets=[node.target], value=node.value)
-        return None  # Drop pure type declarations without assignments `x: int`
+        return None
 
 
 def get_canonical_structure(node: ast.AST) -> str:
@@ -71,11 +67,6 @@ def check_annotations(node: ast.AST) -> bool:
     checker = TypeAnnotationChecker()
     checker.visit(node)
     return checker.has_annotations
-
-
-# ----------------------------------------------------------------------
-# Worker Function for Multiprocessing
-# ----------------------------------------------------------------------
 
 
 def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
@@ -96,7 +87,6 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
         elif isinstance(node, ast.ClassDef):
             obj_type = "class"
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
-            # Detect module-level constants (e.g., ALL_CAPS variables)
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             is_constant = any(isinstance(t, ast.Name) and t.id.isupper() for t in targets)
             if is_constant:
@@ -118,35 +108,25 @@ def extract_objects_from_file(file_path: Path) -> list[dict[str, Any]]:
     return results
 
 
-# ----------------------------------------------------------------------
-# Main Processing & Duplication Analysis
-# ----------------------------------------------------------------------
-
-
 def main():
     current_dir = Path.cwd()
     output_dir = current_dir / "output"
     output_dir.mkdir(exist_ok=True)
 
-    # Exclude output dir from scanning
     python_files = [p for p in current_dir.rglob("*.py") if output_dir not in p.parents]
 
     print(f"Scanning {len(python_files)} Python file(s) across CPU cores...")
 
-    # Process files in parallel
     with mp.Pool(mp.cpu_count()) as pool:
         file_results = pool.map(extract_objects_from_file, python_files)
 
-    # Flatten results
     all_objects = [obj for sublist in file_results for obj in sublist]
 
-    # Group objects by structural equivalence
     grouped_objects: dict[str, list[dict[str, Any]]] = {}
     for obj in all_objects:
         key = (obj["type"], obj["canonical_code"])
         grouped_objects.setdefault(key, []).append(obj)
 
-    # Identify duplicates and check annotation differences
     categorized_duplicates: dict[str, list[dict[str, Any]]] = {
         "function": [],
         "class": [],
@@ -176,7 +156,6 @@ def main():
             }
             categorized_duplicates[obj_type].append(duplicate_entry)
 
-    # Save output grouped and sorted by type
     for obj_type, duplicates in categorized_duplicates.items():
         duplicates.sort(key=lambda x: x["count"], reverse=True)
 

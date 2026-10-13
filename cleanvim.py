@@ -1,14 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python script which removes comments from Vim script files using tree-sitter, with the following requirements:
-
-The script should be an executable Python 3 tool (Termux-compatible shebang) that processes one or more Vim script files in parallel using multiprocessing. It uses the tree-sitter library with the tree-sitter-vim grammar package (loaded via its language function, assigned to a Parser's language attribute) to parse each file's bytes, then walks the syntax tree recursively, collecting byte ranges of every node whose type is "comment" without descending into those nodes. If no comment ranges exist, the original content is returned unchanged with a count of zero; otherwise the content is rebuilt by concatenating the non-comment byte segments in order, tracking the end offset of the last removed comment, and returning the new bytes along with the number of comments removed.
-
-The agent should implement a dataclass for per-file results holding the path, a success flag, the number of comments removed, an error message string (empty by default), and the processing time in seconds. A remover class should construct the parser once in its initializer and expose a method that takes raw bytes and returns cleaned bytes plus a comment count, with private helpers for the node-type check and the recursive range collection.
-
-The main flow should accept file paths from the command line arguments, validate them, and process each file in a worker pool created with the multiprocessing module, with each worker creating its own remover instance. For each file the worker should read the file as bytes, remove comments, write the result back to the same file only when comments were removed (or otherwise handle the write deliberately), measure elapsed time with a monotonic-style timer, and catch exceptions so that failures are reported in the result object's error field rather than crashing the pool. Each result should be reported with the file name, success status, number of comments removed, and timing, and the script should print a summary of total files, successes, failures, and total comments removed. The script should exit with a nonzero status if any file failed, and print a usage message and exit with an error when no arguments are provided.
-
-Include edge-case handling: nonexistent paths or directories should be reported as errors without aborting the batch, empty files should be handled gracefully, files with no comments should not be rewritten, and non-UTF-8 or binary input should be processed as raw bytes without decoding. Use type hints throughout, including support for string or Path path-like inputs via a type alias and postponed annotation evaluation. The output must be the prompt only.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

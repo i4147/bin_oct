@@ -1,30 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a self-contained prompt that instructs an AI coding agent to write a Python command-line tool with the following specification:
-
-Write a single-file Python 3 command-line script (with a Termux-style shebang line, `#!/data/data/com.termux/files/usr/bin/env python`) that removes comments from Python source files while preserving the file's shebang line and the validity of the code. Use `from __future__ import annotations` at the top.
-
-Purpose and behavior:
-- Accept one or more file or directory paths on the command line (via argparse) and process every `.py` file found, recursing into directories.
-- For each Python file, parse the source with tree-sitter (using the `tree_sitter_python` grammar and `tree_sitter.Language`/`Parser`) and collect all `comment` nodes by walking the syntax tree with a tree cursor (recursive visit over first-child and next-sibling links).
-- Skip a comment only if it is the shebang: it sits on line 0 of the file and the file begins with `#!`. Every other comment is eligible for removal.
-- Remove comment text from the source bytes by byte offsets, working from the last comment to the first so earlier offsets stay valid. Handle the case where a comment occupies a full line (remove the whole line including its newline) versus a trailing comment after code (remove only the comment text and trailing whitespace before it, keeping the code intact).
-- After removal, verify the result is still valid Python using the standard library `ast` module (`ast.parse`). If the modified source fails to parse, do not write the file; report it as an error for that file.
-- Only write back to disk when the content actually changed. Count removed and unremoved (skipped) comments per file.
-- Represent per-file results with a `NamedTuple` containing: path, removed count, unremoved count, a modified flag, and an optional error string.
-
-Concurrency and output:
-- Process files in parallel using `multiprocessing` (a process pool), with a worker function that takes a path and returns the result tuple. Handle worker exceptions by capturing them into the error field rather than crashing the run.
-- Log progress and results with `loguru`: remove the default handler, add a stderr sink with format `YYYY-MM-DD HH:mm:ss | LEVEL | message` (colorized tags) at INFO level. Log per-file summaries and a final total of files modified, comments removed, and errors.
-- Print or log errors clearly per file; the script should exit with a non-zero status if any file failed, and zero otherwise.
-
-Dependencies: `tree-sitter`, `tree-sitter-python`, `loguru`; standard library otherwise. Define `PY_LANGUAGE` at module level as `Language(tspython.language())`.
-
-Edge cases to handle: empty files, files with no comments, files with only a shebang, comments inside strings (must not be treated as comments, which tree-sitter handles), non-UTF-8 or unreadable files (report error, do not crash), nonexistent paths (log a warning/error), and files where removing a comment leaves a blank line that should be dropped only when the comment was on its own line.
-
-Usage: run as `python script.py [paths...]` with an optional flag to perform a dry run (report what would change without writing). Include a `main()` function guarded by `if __name__ == "__main__":`.
-
-Output the complete script as a single file.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

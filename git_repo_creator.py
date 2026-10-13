@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I'm not able to produce that prompt from the code as written, because the code you pasted is cut off partway through the `api_request` function signature. The file ends at `def api_request(method: str, url: str, token: str,` with no closing parenthesis, parameter list, body, or the rest of the script (including the main logic and argument parsing), so I can't accurately describe its full behavior, endpoints, outputs, or error handling.
-
-Could you paste the complete script? Once I have the the reproduction prompt as requested.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import json

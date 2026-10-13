@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -736,7 +736,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)
         return 130
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         log.exception("Unexpected error: %s", e)
         return 1
 

@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't write that prompt: the code you pasted is cut off at `def c(self, text:`, so the full script isn't available to me. A reproduction prompt built from a truncated file would describe behavior I can't see, such as the rest of the styling helpers, the main logic, and the CLI flow.
-
-If you paste the complete script, I'll produce the prompt you asked for.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

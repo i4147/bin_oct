@@ -1,22 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create tells an AI coding agent how to build a Python command-line tool for bulk find-and-replace across files, using parallel processing, with the details below.
-
-The tool should be a single Python script that runs under Termux on Android (shebang pointing to the Termux Python path). It uses `from __future__ import annotations`, `argparse`, `logging`, `shutil`, `tempfile`, `dataclasses`, `pathlib`, `typing.TYPE_CHECKING` (with `collections.abc.Generator` imported only under that guard), and `joblib.Parallel` / `delayed` for parallel execution. Logging is configured at INFO level with the format `LEVELNAME (padded to 8) message`, using a module-level logger named after `__name__`.
-
-The script defines a dataclass `FileStats` with fields: `path` (Path), `success` (bool), `replacements` (int, default 0), `original_size` (int, default 0), `new_size` (int, default 0), and `error_msg` (optional str, default None). Its `__str__` shows the path relative to the current working directory. On failure it prints a cross mark, the relative path, and the error message. On success it prints a check mark, the relative path, the replacement count, and a signed byte-size delta in parentheses, or "(no size change)" when the delta is zero.
-
-Write a helper `is_text_file(path, max_sample=8192)` that reads up to `max_sample` bytes in binary mode and returns True only if no NUL byte is present; it returns False on any OSError.
-
-Write `should_process_file(path, text_only=True)` that returns False for directories and symlinks, and when `text_only` is set, returns False for files that fail the text check.
-
-Continue the script with the remaining logic the original implies: a generator (typed with the guarded `Generator` import) that walks the target directory tree and yields candidate files, a per-file processing function that performs the replacement and returns a `FileStats`, and a `main` that parses arguments and drives processing with `joblib.Parallel(delayed(...))`. Use `shutil` and `tempfile` for safe writes: write the modified content to a temporary file in the same directory and then move it over the original, so a failure never leaves a partially written file. Wrap each file's processing in try/except so that an exception produces a `FileStats` with `success=False` and the message in `error_msg` rather than aborting the whole run. Read files with explicit encoding handling and treat decode failures as errors for that file.
-
-Command-line interface: the script takes a search string and a replacement string as positional arguments, plus optional arguments for the root directory (defaulting to the current directory), a flag to include binary files (text-only by default), a worker count for parallelism (with a sensible default such as -1 for all cores), and a dry-run flag that reports what would change without writing anything. Include `--help` text describing each argument.
-
-Execution details: the script should be runnable directly as an executable with the Termux shebang. After processing, it prints one line per file using `FileStats.__str__`, then a summary of total files scanned, files changed, total replacements, and failures. Exit with status 0 if all files succeeded and non-zero if any failed. Handle edge cases: empty search strings should be rejected with a clear message, missing root directories should produce an error and non-zero exit, files that cannot be read or written should be reported and skipped, and zero matches should produce no file writes at all. Preserve file permissions when replacing files. Log warnings for skipped files and errors for failed ones through the module logger.
-
-Output only the script's functionality as described; write the complete script in a single file with no external dependencies beyond the standard library and joblib.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

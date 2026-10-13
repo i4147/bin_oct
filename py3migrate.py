@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -147,7 +147,7 @@ def resolve_fixers(spec: str, fixer_module: str) -> list[str]:
 def _import_refactoring_tool():
     try:
         from lib2to3.refactor import RefactoringTool  # type: ignore
-    except ImportError as e:  # pragma: no cover
+    except ImportError as e:
         msg = (
             "lib2to3 is not available in this Python (removed in 3.13). "
             "Use Python 3.12 or install `2to3` from PyPI for the CLI path."
@@ -242,7 +242,7 @@ def _refactor_file(
         new_tree = tool.refactor_string(original, str(path))  # type: ignore[attr-defined]
     except SyntaxError as e:
         return (path, False, f"✗ {path.name}: syntax error: {e}")
-    except Exception as e:  # noqa: BLE001 — surface any lib2to3 failure
+    except Exception as e:
         return (path, False, f"✗ {path.name}: refactor error: {e}")
     new_text = str(new_tree)
     log_block = ""
@@ -528,7 +528,7 @@ def _process_zip(path: Path, targets: frozenset[str], tag: str) -> bool:
                         if new_txt != txt:
                             data = new_txt.encode("utf-8")
                             changed = True
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
                 zout.writestr(info, data)
         if changed:
@@ -595,7 +595,7 @@ def _strip_tag_file(path: Path, targets: frozenset[str], tag: str) -> tuple[Path
                 return (path, True, f"✓ {path.name}: stripped")
             return (path, False, f"○ {path.name}: no change")
         return (path, False, "")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return (path, False, f"✗ {path.name}: {e}")
 
 

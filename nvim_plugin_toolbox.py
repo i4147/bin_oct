@@ -1,28 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't see the rest of the code: it cuts off mid-list in the `PLUGIN_PATTERNS` dictionary, right after the `noice` entry. So I can only describe what's visible. Below is a prompt built on what's shown, with the truncated part flagged so the agent doesn't invent it. If you paste the full script, I can regenerate the prompt with complete detail.
-
-Write a single self-contained Python 3 command-line script (with a Termux-compatible shebang, `#!/data/data/com.termux/files/usr/bin/env python`) that scans a Neovim configuration directory and reports which Neovim plugin ecosystems and plugins it uses.
-
-Requirements:
-
-**Purpose:** Detect installed or referenced Neovim plugins by searching configuration files for known textual patterns, and group the findings by plugin name.
-
-**Imports and environment:** Use only the standard library: `argparse`, `json`, `re`, `shutil`, `subprocess`, `sys`, `collections.defaultdict`, and `pathlib.Path`, plus `typing.Optional` and `Sequence`. Begin the file with `from __future__ import annotations`. Use type hints throughout.
-
-**Pattern table:** Define a module-level dictionary mapping plugin display names (strings such as "lazy.nvim", "packer.nvim", "vim-plug", "telescope", "fzf-lua", "treesitter", "lualine", "bufferline", "statuscol", "indent-blankline", "mini.nvim", "noice", and further entries whose names are not specified here) to lists of regular expression strings. Each plugin should match with several alternative patterns covering its module name, its `require(...)` form using either single or double quotes, and its setup call (for example `<name>.setup`). Some patterns are deliberately broad, such as a bare word match or a `mini.` prefix match; preserve that breadth. Compile patterns case-sensitively unless the implementation chooses otherwise, and make the matching robust to both `require("x")` and `require('x')` forms.
-
-**Inputs:** Accept a command-line argument specifying the configuration root directory (defaulting to a standard Neovim config location such as the user's `~/.config/nvim`). Accept optional flags to control output format (e.g., JSON vs. human-readable) and possibly other filters; the exact flag set beyond these should be inferred cautiously and documented in `--help`.
-
-**Processing:** Recursively walk the configuration directory, read text files (typically `.lua`, `.vim`, and similar config files), skip unreadable or binary files gracefully, and test each file's contents against every pattern. Record, for each plugin, which files matched, using a `defaultdict` to aggregate results. Use `shutil` and `subprocess` where helpful (for example, to locate tools or run external commands), but do not depend on anything beyond the standard library.
-
-**Outputs:** Print results either as human-readable grouped text or as JSON, depending on the flag. Each plugin entry should list matching files, and plugins with no matches should be omitted or clearly marked, consistent with the flag design.
-
-**Error handling:** Handle a missing or non-directory config path with a clear error message and a non-zero exit code. Handle file read errors (permissions, encoding issues) by skipping the file rather than crashing. Return exit codes from a `main(argv: Optional[Sequence[str]] = None) -> int` function, and invoke it under an `if __name__ == "__main__":` guard using `sys.exit`.
-
-**Execution:** The script should be runnable directly as an executable file, with help text available via `-h`/`--help`.
-
-**Edge cases:** Handle empty directories, symlinks (avoid infinite loops fromlink cycles if following them), very large files, and configs with no detectable plugins.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

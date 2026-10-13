@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def translate_text(translator: Translator, text: str) -> str:
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             return translator.translate(text)
-        except Exception as err:  # noqa: BLE001 — library raises generic errors
+        except Exception as err:
             last_err = err
             print(
                 f"  ! attempt {attempt}/{MAX_RETRIES} failed: {err}",

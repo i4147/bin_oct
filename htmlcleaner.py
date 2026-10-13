@@ -1,30 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a complete, self-contained Python command-line tool that extracts inline CSS and JavaScript from HTML files into separate external asset files, then rewrites the HTML to reference them. Write it so that another AI coding agent can reproduce it from scratch using only the standard library.
-
-**Purpose:** Batch-process HTML files (given as individual files or by scanning directories, with optional recursion) and externalize their embedded `<style>` blocks and inline `<script>` blocks. Each HTML file is rewritten so its inline code is replaced by references to external files, and the extracted code is saved under an assets directory with CSS and JS subdirectories.
-
-**Command-line interface:** Use argparse. Accept one or more positional paths (files or directories). Support flags for recursive directory scanning, an output or assets directory name, a minimum inline size threshold (blocks smaller than this many bytes stay inline; default 0), a dry-run mode that reports what would change without writing anything, a backup option that preserves original files, and a worker count option (default 8). Print a summary at the end showing how many files succeeded, failed, and how many CSS and JS assets were extracted. Exit with a nonzero status if any file failed.
-
-**Discovery:** Only process files whose extensions are `.html` or `.htm` (case-insensitive). When given a directory, collect matching files, recursing into subdirectories only when the recursive flag is set. Skip the assets directory itself so generated files are never reprocessed. Deduplicate and sort the file list.
-
-**Parsing:** Use the standard library `html.parser.HTMLParser` subclass with charref conversion disabled so original entities are preserved verbatim. Track when inside `<style>` and `<script>` tags. Capture style content and inline script content, and ignore `<script>` tags that already have a `src` attribute (leave them untouched). Preserve the exact original raw source text of each block so that byte-level offsets can be used to splice replacements. Track start and end positions of each extracted block, which requires computing line and column offsets from the raw text.
-
-**Extraction and rewriting:** For each qualifying inline block:
-- Compute a content-based identifier by hashing the extracted code (e.g., MD5 or SHA-based short hex prefix) so identical content maps to the same filename and is deduplicated across files.
-- Write CSS to a CSS subdirectory and JS to a JS subdirectory inside the assets directory, using hash-based filenames with appropriate extensions.
-- Replace the original `<style>` or `<script>` element in the HTML with a `<link rel="stylesheet">` or `<script src="...">` tag pointing to the relative path from the HTML file to the asset (use forward slashes in references).
-- Splice replacements from the end of the file toward the beginning so earlier offsets remain valid.
-- Skip blocks whose content is smaller than the minimum inline size threshold.
-- Skip writing if the target asset already exists with identical content.
-
-**Concurrency:** Process files in parallel using `multiprocessing` with a pool of the configured worker count, using imap or map with chunking so results stream back. Each worker processes one file and returns an ExtractionResult dataclass containing the path, success flag, CSS count, JS count, and optional error message. Guard the entry point with the main-module check and make the program safe on platforms that use spawn.
-
-**Error handling:** Catch exceptions per file so one failing file never aborts the batch. Handle unreadable files, encoding issues (read as UTF-8 with a fallback such as replacement errors), and write failures. Record errors in the result and report them in the summary. Do not partially overwrite an HTML file if an error occurs before writing; write atomically where practical (write to temp file then replace). Handle keyboard interrupt gracefully.
-
-**Edge cases:** Handle empty files, HTML with no style or script blocks (report zero extractions and leave file unchanged), nested or malformed tags, scripts with type attributes such as JSON or templates (treat per the same rule or leave untouched as chosen and document it), files containing multiple identical blocks, and paths containing spaces or non-ASCII characters. Ensure the assets directory is created relative to each HTML file's location or a configured root, and that relative link paths are computed correctly for nested directories.
-
-**Output and usage:** Print per-file progress or results in a concise format, a dry-run line describing planned actions when dry-run is enabled, and a final summary. Include a module docstring with usage examples. The script should run under a Termux-style Python interpreter shebang and require only the Python standard library.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

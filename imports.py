@@ -1,5 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-
+#!/data/data/com.termux/files/usr/bin/python
 from __future__ import annotations
 
 import argparse
@@ -26,6 +25,8 @@ SKIP_DIRS: set[str] = {
     ".tox",
     ".eggs",
     "*.dist-info",
+    "tests",
+    "test",
 }
 
 
@@ -246,6 +247,8 @@ def main() -> None:
         print("\n📦 Processing entire directory...")
         files: list[Path] = []
         for py_file in cwd.rglob("*.py"):
+            if "test" in py_file.name:
+                continue
             if py_file.is_file():
                 try:
                     rel_path = py_file.relative_to(cwd)

@@ -1,31 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""You are an expert Python developer. Write a complete, self-contained Python script from scratch that fulfills the specification below. Output only the script itself, with no explanations.
-
-**Purpose:** The script is a command-line tool, intended to run in Termux on Android (use the shebang `#!/data/data/com.termux/files/usr/bin/env python`), that scans a directory tree for text-based files containing Chinese text and translates that Chinese content into English, using a Google Translate backend.
-
-**Dependencies and imports:**
-- Use `from __future__ import annotations`.
-- Standard library: argparse, logging, multiprocessing (as mp), re, sys, pathlib.Path, typing.Final.
-- Optional third-party translators: try importing `googletrans.Translator` (set a flag `HAS_GOOGLETRANS`), and try importing `deep_translator.GoogleTranslator` (set a flag `HAS_DEEP_TRANSLATOR`). If neither is available, log an error stating to install either googletrans (4.0.0rc1) or deep-translator, and exit with status 1 at module load time.
-- Configure logging with `basicConfig(level=INFO, format="%(message)s")` and a module-level logger named after `__name__`.
-
-**Constants:**
-- A frozen set `SKIP_DIRS` of directory names to skip during traversal: "lazy", ".git", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache".
-- A compiled regex `CHINESE_PATTERN` matching a single CJK character from these Unicode ranges: U+4E00–U+9FFF, U+3400–U+4DBF, U+20000–U+2A6DF, U+2A700–U+2B73F, U+2B740–U+2B81F, U+2B820–U+2CEAF, U+F900–U+FAFF. (Note: write the extension-B range correctly as U+20000–U+2A6DF, and be careful that the range expressions are valid regex character ranges using the proper code point escapes.)
-
-**Helper functions:**
-- `is_chinese_text(text, threshold=0.3)`: remove all whitespace, return False if empty; count Chinese characters via the regex; return True if the ratio of Chinese characters to total non-whitespace characters is at least the threshold.
-- `is_non_english(text)`: return False for blank text; otherwise return the result of `is_chinese_text`.
-
-**Expected behavior to implement (infer and complete the rest):**
-- Use argparse to accept a target path (file or directory) and options such as a translation backend choice (googletrans or deep-translator, defaulting to whichever is available), a dry-run mode that reports without writing, and a worker count using multiprocessing for parallel file processing.
-- Walk directories recursively with pathlib, skipping any directory whose name is in `S`, and only processing text-like files (e.g., source, markdown, text, config files); skip binary files and files that fail UTF-8 decodingracefully with a logged warning.
-- For each file, detect whether it contains non-English (Chinese) text using the helpers. Translate Chinese-containing lines or segments to English, preserving line structure, indentation, code syntax, and non-Chinese content.
-- Handle translation errors per line or chunk: log a warning and keep the original text on failure; optionally retry with a small backoff. Respect rate limits by batching or pausing between requests.
-- Write results back to the original file only when not in dry-run mode, optionally creating a backup copy. Log per-file summaries (number of lines translated, errors encountered) and a final total.
-- Use a `main()` function guarded by `if __name__ == "__main__":`, and return proper exit codes (0 on success, nonzero on fatal argument or setup errors). Handle KeyboardInterrupt gracefully and make sure multiprocessing uses a safe entry point.
-- Include docstrings and type hints throughout, and keep the code clean and PEP 8 compliant.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

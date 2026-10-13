@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from rich.console import Console
 from weasyprint import CSS, HTML
 
 console = Console(stderr=True)
-# millimetres (width, height)
+
 PAPER: dict[str, tuple[float, float]] = {
     "A3": (297, 420),
     "A4": (210, 297),

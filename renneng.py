@@ -39,8 +39,7 @@ def get_unique_path(path: Path) -> Path:
 
 
 def rename_files(directory: str) -> None:
-    # topdown=False visits children before parents so directory renames do
-    # not invalidate paths still queued for processing.
+
     for dirpath, dirnames, filenames in os.walk(directory, topdown=False):
         for name in filenames:
             path = Path(dirpath) / name

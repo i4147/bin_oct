@@ -110,7 +110,6 @@ def strip_shebang_and_future_imports(source: str) -> str:
     try:
         tree = ast.parse(source)
     except (SyntaxError, ValueError):
-        # Fallback for `.py` files that aren't valid Python: match by text.
         for i, line in enumerate(lines, start=1):
             if line.lstrip().startswith("from __future__ import"):
                 remove.add(i)

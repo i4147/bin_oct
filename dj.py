@@ -1,40 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't see the rest of the code: it cuts off partway through the `main()` function's list of protected filenames. The prompt below describes everything that is visible. If you paste the remaining lines, I can complete the prompt.
-
-Write a Python 3 script, intended for Termux on Android (shebang pointing to the Termux Python path), that recursively cleans up the current working directory. It takes no required arguments and is controlled by two optional command-line flags checked anywhere in `sys.argv`:
-
-- `-e` (empty mode): truncate matching files to zero length instead of deleting them.
-- `-r` (remove mode): delete matching files and directories.
-
-Use only the standard library: `shutil`, `sys`, and `pathlib`. Include `from __future__ import annotations` and type hints on all functions.
-
-Module-level configuration:
-- Skip any path that has `.git` or `var` as one of its path components (checked against all parts of the path, so nested occurrences are also skipped).
-- Removable extensions: `.txt` and `.md`.
-- Junk extensions: `.tmp`, `.bak`, `.log`, `.pyc`.
-- A set of protected or known-boilerplate filenames, compared case-insensitively against the lowercased file name. These include license and notice files such as `LICENSE_GPL2.0.txt`, `LICENSE_LGPL_2.1.txt`, `COPYRIGHTNOTICE.txt`, `HISTORY.rst`, `.dirinfo`, `LICENCE.md`, `.DS_Store`, and `.reqcache.json`. (The list continues beyond what is shown; leave room for further entries.)
-
-Helper functions:
-- `empty_it(path)`: write an empty string to the file in UTF-8. On `OSError`, print `Error emptying <path>: <error>` to stderr and continue.
-- `remove_it(path)`: if the path is a directory, remove it recursively with `shutil.rmtree`; otherwise call `unlink`. On `OSError`, print `Error removing <path>: <error>` to stderr and continue.
-- `should_skip(path)`: return True if any name in the skip set appears in `path.parts`.
-- `has_multiple_suffixes(path)`: return True when `path.suffixes` has more than one entry (e.g., `archive.tar.gz`).
-
-`main()` behavior:
-- Start from `Path.cwd()` and iterate over `rglob("*")`.
-- For each path, skip it if `should_skip` is true. Compute the lowercased name and the path relative to the current directory.
-- Only files are candidates for the protected-name checks. Use the lowercased name against the protected set, and use the extension sets and the multiple-suffix check to decide which files are junk or removable.
-- Apply the mode: in empty mode, call `empty_it` on matched files; in remove mode, call `remove_it` on matched files or directories; in neither mode, just report or do nothing as the logic dictates. Count removals in `removed_count`.
-- Keep the iteration robust: a failure on one path must not stop processing of the others.
-- Report the outcome at the end (for example, a count of removed items) and exit normally.
-
-Edge cases to honor:
-- Because `rglob` is evaluated lazily while files are being deleted, handle paths that have already disappeared or whose parent directories were removed.
-- Paths with no suffix, hidden files starting with a dot, and files with multiple suffixes must not be misclassified.
-- Errors are reported to stderr but never raise out of the script.
-
-Execution: run as `python <script>` with optional `-e` or `-r`, from inside the directory to be cleaned. Print nothing extra on success beyond any summary line, and send all error messages to stderr.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

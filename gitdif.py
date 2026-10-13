@@ -1,45 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I'm going to write the prompt now.
-
-Write a self-contained prompt that instructs an AI coding agent to build a Python 3 command-line script that scans a set of directories for Git repositories and reports which of them have uncommitted changes. Follow the specification below exactly; do not include source code or code snippets in your output.
-
-**Purpose:** The script checks the working-tree status of multiple local Git repositories in parallel and prints a concise report, so the user can see at a glance which repositories have uncommitted or untracked work.
-
-**Target environment:** The script runs under Termux on Android. Its shebang line points to the Termux Python interpreter path (`/data/data/com.termux/files/usr/bin/env python`). Use only the Python standard library. Use the `from __future__ import annotations` import so modern type hints (such as `X | None` and `tuple[...]`) work.
-
-**Dependencies:** Standard library only: `subprocess`, `sys`, `multiprocessing` (`Pool`, `cpu_count`), and `pathlib.Path`. The script requires the `git` executable to be available on the system PATH.
-
-**Per-repository check (a worker function):**
-- Accept a `Path` to a repository directory and return a tuple of `(repo_path, has_changes: bool, message: str | None)`.
-- First verify that `<repo_path>/.git` exists and is a directory. If not, return `(repo_path, False, "Not a git repository")`.
-- Otherwise run `git status --porcelain` with the repository as the working directory, capturing stdout and stderr as text, with a timeout of 5 seconds.
-- If the command exits with a non-zero return code, return `(repo_path, False, "Git error: <stderr stripped>")`.
-- If stdout is non-empty (after stripping), it indicates changes. Split the output by newlines. For each line, take the first two characters as the status code and the text from index 3 onward as the file path. Skip entries whose status code is blank after stripping whitespace. Format each entry as `"<status> <file>"`.
-- Join at most the first 5 entries with `", "`. If there are more than 5 entries, append `" (+N more)"` where N is the remaining count. Return `(repo_path, True, summary)`.
-- If stdout is empty, return `(repo_path, False, "Clean")`.
-- Catch `subprocess.TimeoutExpired` and return `(repo_path, False, "Timeout checking git status")`.
-- Catch any other exception and return `(repo_path, False, "<error message>")` using the exception's string form, so one failing repository never crashes the whole run.
-
-**Main program flow:**
-- Determine the list of repository paths to scan from the command-line arguments (directories passed as arguments). Each argument is a path to a repository; convert each to a `Path`. Provide sensible handling if no arguments are given (print a short usage message to stderr and exit with a non-zero status), and decide whether to also accept a parent directory and scan its immediate subdirectories — document the chosen behavior in a usage string.
-- Run the worker across all repositories in parallel using `multiprocessing.Pool` sized to `cpu_count()`, using `pool.map` (or equivalent) so results are returned in input order.
-- Print a report: a header line, then one line per repository showing a marker (for example a checkmark or a clear symbol for clean, and a warning symbol for changes or errors), the repository's name (directory name), and the message. Make the output readable in a plain terminal.
-- At the end, print a summary line with counts of repositories with changes, clean repositories, and non-repositories or errors.
-- Exit with status 0 when all repositories are clean, and a non-zero status (e.g., 1) when any repository has uncommitted changes, so the script is usable in shell scripts. Print nothing extra to stdout beyond the report.
-
-**Execution details:**
-- Guard the entry point with `if __name__ == "__main__":` so multiprocessing works correctly (required for spawn-based start methods).
-- Make the script executable with the Termux shebang line at the top.
-
-**Edge cases to handle:**
-- A path that does not exist or is not a directory: treat as "Not a git repository" (the `.git` check covers this) without crashing.
-- Repositories with a `.git` file instead of directory (e.g., worktrees/submodules): the spec treats these as not a repository; mention this as a known limitation in a code comment.
-- Very long file lists: truncate to 5 entries as described.
-- Paths with spaces: pass the path as a `Path` object, not a shell string.
-- Command output with trailing whitespace or blank lines: strip before splitting.
-
-**Style:** Keep the code short, typed with the same annotations as described, use concise docstrings or comments only where helpful, and avoid external libraries.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

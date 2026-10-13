@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -180,7 +180,7 @@ def cmd_names(args: argparse.Namespace) -> int:
         return 1
     try:
         names = _load_names(names_file)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"Error loading names file: {e}", file=sys.stderr)
         return 1
     if not names:
@@ -192,7 +192,7 @@ def cmd_names(args: argparse.Namespace) -> int:
             continue
         try:
             content = path.read_text(encoding="utf-8", errors="ignore")
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"Could not read file {path}: {e}")
             continue
         for orig, rx in names:
@@ -234,7 +234,7 @@ def _fast_worker(job: tuple[str, str, bool]) -> list[tuple[str, Optional[int]]]:
                 for ln, line in enumerate(f, 1):
                     if query in line:
                         out.append((str(path), ln))
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     elif query.lower() in path.name.lower():
         out.append((str(path), None))
@@ -249,7 +249,7 @@ def _install_pause_hotkey() -> bool:
     _pause_event = threading.Event()
     _pause_event.set()
 
-    def handler(ev):  # noqa: ANN001
+    def handler(ev):
         if ev.name in {"space", "p"} and _pause_event.is_set():
             _pause_event.clear()
             print("PAUSED - press 'c' to continue...")
@@ -364,7 +364,7 @@ def _scan_archive(archive: Path, pattern: str) -> list[tuple[str, str]]:
                             out.append((str(archive), m.name))
             finally:
                 Path(tmp_path).unlink(missing_ok=True)
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     return out
 
@@ -438,7 +438,7 @@ def _grep_worker(
                         pos = idx + max(1, len(needle))
                 if spans:
                     results.append((ln, line, spans))
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     return str(path), results
 
@@ -624,7 +624,7 @@ def _strings_worker(job: tuple[str, str]) -> Optional[tuple[str, str]]:
             text=True,
             check=False,
         ).stdout
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
     return path.name, out
 

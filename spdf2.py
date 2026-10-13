@@ -1,16 +1,12 @@
-#!/data/data/com.termux/files/usr/bin/env python
-
-from __future__ import annotations
-
+#!/data/data/com.termux/files/usr/bin/python
 import sys
 from pathlib import Path
-
-from dh import fsz, get_files, gsz, mpf, runcmd
+from dh import fsz, get_files, gsz, mpf_async, runcmd
 
 MAX_WORKERS = 4
 
 
-def process_file(path: Path) -> None:
+def process_file(path):
     path = Path(path)
     if not path.exists():
         print("Input file not found.", file=sys.stderr)
@@ -39,7 +35,7 @@ def process_file(path: Path) -> None:
             temp_qpdf.unlink(missing_ok=True)
 
 
-def main() -> None:
+def main():
     cwd = Path.cwd()
     before = gsz(cwd)
     args = sys.argv[1:]
@@ -47,7 +43,7 @@ def main() -> None:
     if len(files) == 1:
         process_file(files[0])
         sys.exit(0)
-    mpf(process_file, files)
+    mpf_async(process_file, files)
     after = gsz(cwd)
     dsz = before - after
     if dsz:

@@ -86,9 +86,8 @@ def print_info(info):
 
 
 if __name__ == "__main__":
-    # Standard interval between successful requests (seconds)
     normal_delay = 7
-    # Cooldown delay if all APIs fail / internet goes out (seconds)
+
     cooldown_delay = 30
 
     try:

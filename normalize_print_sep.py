@@ -1,47 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool with the following specification:
-
-Create a Python 3 command-line script (Termux-compatible shebang, using `from __future__ import annotations`) that normalizes repeated-separator print statements across Python source files.
-
-**Purpose:** Scan Python (`.py`) files and rewrite any call to `print(...)` or `cprint(...)` whose first argument is a single quoted character (single or double quotes) multiplied by an integer (e.g., `print('=' * 60)`, optionally with extra trailing arguments or whitespace) so that the entire call becomes `print('-'*42)`. Only matching calls are changed; everything else in the file is left untouched.
-
-**Matching rule:** Use a regular expression that matches an optional whitespace-tolerant `cprint` or `print` name, an opening parenthesis, a single quoted character (either quote style), a `*` operator with optional surrounding whitespace, a run of digits, then any remaining characters up to the closing parenthesis. Replace every non-overlapping match in the file content and count the replacements.
-
-**Inputs (command line):**
-- Zero or more positional paths. Each may be a `.py` file or a directory. If no paths are given, default to the current directory (`.`).
-- A flag (e.g., `--fix` or `--autofix`) that enables writing changes back to disk. Without it, the tool runs in dry-run mode and only reports what would change.
-- Use `argparse` with a clear description and help text.
-
-**File discovery:**
-- For each given file that ends in `.py`, include its resolved absolute path.
-- For each given directory, recursively collect all `.py` files using `rglob`, resolving paths.
-- Ignore non-`.py` files and nonexistent paths silently or with a warning (choose one and be consistent).
-- Deduplicate results using a set, then sort the final list for deterministic output.
-
-**Processing:**
-- Process files in parallel using `multiprocessing.Pool` (the worker function takes a single tuple argument, `(path, autofix)`, so it works with `pool.map`).
-- Each worker reads the file as UTF-8, applies the normalization, and writes back only if there were replacements and autofix is enabled.
-- Wrap each worker in a try/except; on exception return a result with status `"error"`, zero replacements, and the error message string.
-- Return results as a `NamedTuple` with fields: `file` (Path), `replacements` (int), `status` (str), and `error` (optional str, default None).
-
-**Output:**
-- Print a per-file report for files with replacements or errors, showing the file path and count (or error message).
-- Print a summary: total files scanned, total replacements, and whether changes were applied or only previewed (dry-run). Keep output concise and readable.
-
-**Exit behavior:**
-- Exit with status 0 on normal completion and a nonzero status if any file errored (use `sys.exit`).
-- Guard the entry point with `if __name__ == "__main__":`. Use `multiprocessing` safely (the guard is required for Windows/spawn compatibility).
-
-**Edge cases to handle:**
-- Empty path list defaults to current directory.
-- Files that cannot be read or written (permissions, encoding errors) must be reported as errors, not crash the run.
-- Duplicate paths (same file given twice or reachable via multiple inputs) must be processed once.
-- Files with no matches should be reported as scanned with zero replacements and not rewritten.
-
-**Dependencies:** Only the Python standard library (`argparse`, `re`, `sys`, `multiprocessing`, `pathlib`, `typing`).
-
-**Execution:** Run directly as an executable script with the Termux Python shebang; usage is `script.py [--fix] [paths...]`.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

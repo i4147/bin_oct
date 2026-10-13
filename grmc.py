@@ -1,27 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""I can't reproduce the code itself here, but I can write the prompt you asked for, since it only needs the script's behavior and not the source. However, your message cuts off at `inline_comments` in the StripOptions dataclass, so I only have a partial view of the script. The prompt below describes what is visible (a Python source-stripping tool with libcst and tree-sitter backends, a loguru logger, and options such as remove_comments) and leaves the unseen parts generic. If you paste the rest of the file, I can make the prompt complete.
-
-Prompt:
-
-Write a single self-contained Python 3 command-line script that strips content from Python source files, such as comments, docstrings, and other removable elements, while preserving valid syntax and executable behavior. The script must be runnable from the command line and should be intended for execution under a Termux (Android) Python environment, so use a portable shebang and avoid desktop-only assumptions.
-
-Purpose and behavior:
-- Accept one or more input paths (files and/or directories). Directories should be traversed to find `.py` files. Support an optional output destination or an in-place mode, and clearly report which mode is active.
-- Provide a configuration object implemented as an immutable, slotted, frozen dataclass named StripOptions with fields including a backend selector (default "libcst"), a boolean remove_comments (default False), an inline_comments flag, and other boolean options controlling what is stripped (for example docstrings and blank lines, where applicable). Define sensible defaults for every field.
-- Support two parsing/transformation backends: libcst (preferred, round-trip preserving) and tree-sitter (via the tree_sitter and tree_sitter_python packages). Import each optionally inside try/except ImportError and record availability in module-level boolean flags. If the requested backend is unavailable, fail with a clear error message rather than crashing with a traceback; fall back only if that is clearly documented.
-- Use the standard library for argument parsing (argparse), file handling (pathlib, tempfile for atomic writes), and parallel processing (multiprocessing) for handling multiple files. Use `from __future__ import annotations` and type hints throughout.
-- Configure logging with loguru: remove the default handler, add a stderr sink with a colored format showing timestamp, level, and message, at INFO level.
-- Use `ast` to verify that the stripped output is still syntactically valid Python (parse the output and compare or check it). If verification fails, do not overwrite the original file; log an error and skip or report that file.
-- Write output atomically: write to a temporary file in the same directory and then replace the target, so partial writes never corrupt sources.
-- Preserve file encoding (default UTF-8, respect PEP 263 coding declarations where feasible) and original newline style where practical.
-- Handle errors robustly: missing paths, unreadable or unwritable files, decode errors, syntax errors in input, and backend exceptions should each be caught, logged with the file path, and should not abort processing of the remaining files. Return a non-zero exit code if any file failed, and zero otherwise.
-- Handle edge cases: empty files, files with only comments, files with a shebang line or encoding cookie (keep these when comments are removed), non-Python files passed explicitly (skip with a warning), symlinks (define and document a policy), and paths containing spaces or Unicode.
-- Provide a dry-run option that reports what would change without writing files, and a summary at the end showing counts of processed, changed, skipped, and failed files.
-- Provide a worker-count option controlling multiprocessing pool size, defaulting to the CPU count, and fall back to sequential processing when only one file is given or when the count is 1. Guard the main entry point with `if __name__ == "__main__":` and make multiprocessing safe for spawn-based start methods.
-- Exit with a clean usage message on invalid arguments.
-
-Output requirements: produce the complete script in one code block with brief docstrings and comments, and no external files beyond the listed dependencies (loguru, libcst, tree-sitter, tree-sitter-python, all optional except loguru).
----"""
 
 from __future__ import annotations
 
@@ -38,7 +15,7 @@ from typing import Any, Callable
 
 from loguru import logger
 
-# Optional dependency imports with explicit availability flags
+
 try:
     import libcst as cst
 
@@ -59,18 +36,12 @@ except ImportError:
     HAS_TREESITTER = False
 
 
-# Configure loguru logger format
 logger.remove()
 logger.add(
     sys.stderr,
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level:<=8}</level> | <cyan>{message}</cyan>",
     level="INFO",
 )
-
-
-# =============================================================================
-# Options Dataclass
-# =============================================================================
 
 
 @dataclass(slots=True, frozen=True)
@@ -91,9 +62,9 @@ class StripOptions:
         remove_all = getattr(args, "all", False)
         remove_comments = getattr(args, "comments", False) or remove_all
         remove_docstrings = getattr(args, "docstring", False) or remove_all
-        # Module docstring is preserved by default unless -d or -a is passed
+
         preserve_module_docstring = not (getattr(args, "docstring", False) or remove_all)
-        # Inline-only stripping occurs when no explicit comment flags are set
+
         inline_comments_only = not remove_comments and not remove_all
 
         return cls(
@@ -114,11 +85,6 @@ class StripOptions:
     def from_dict(cls, data: dict[str, Any]) -> StripOptions:
         """Reconstruct configuration from dictionary."""
         return cls(**data)
-
-
-# =============================================================================
-# Backend 1: AST Backend (Standard Library)
-# =============================================================================
 
 
 class ASTStripper(ast.NodeTransformer):
@@ -146,7 +112,7 @@ class ASTStripper(ast.NodeTransformer):
                 if self.options.preserve_module_docstring and not self.options.remove_all:
                     new_body.append(self.visit(stmt))
                 else:
-                    continue  # Strip module docstring
+                    continue
             elif self._is_docstring_node(stmt) and (self.options.remove_docstrings or self.options.remove_all):
                 continue
             else:
@@ -161,7 +127,6 @@ class ASTStripper(ast.NodeTransformer):
         """Clean statements within function or class body blocks."""
         new_body: list[ast.stmt] = []
         for idx, stmt in enumerate(body):
-            # Check for docstrings at the body start
             if (
                 idx == 0
                 and (self.options.remove_docstrings or self.options.remove_all)
@@ -169,22 +134,18 @@ class ASTStripper(ast.NodeTransformer):
             ):
                 continue
 
-            # Handle type annotation removals for variable assignments
             if (self.options.remove_types or self.options.remove_all) and isinstance(stmt, ast.AnnAssign):
                 if stmt.value is not None:
-                    # Convert `x: int = 1` -> `x = 1`
                     visited_target = self.visit(stmt.target)
                     visited_value = self.visit(stmt.value)
                     new_body.append(ast.Assign(targets=[visited_target], value=visited_value))
                 else:
-                    # `x: int` without assignment -> strip statement
                     continue
             else:
                 visited = self.visit(stmt)
                 if visited is not None:
                     new_body.append(visited)
 
-        # Requirement 4: Docstring-only or type-only body stripping must preserve syntax via pass
         if not new_body:
             new_body = [ast.Pass()]
         return new_body
@@ -238,10 +199,6 @@ def transform_ast(source: str, options: StripOptions) -> str:
     return result
 
 
-# =============================================================================
-# Backend 2: LibCST Backend
-# =============================================================================
-
 if HAS_LIBCST:
 
     class LibCSTStripper(cst.CSTTransformer):
@@ -281,7 +238,7 @@ if HAS_LIBCST:
                     return updated_node.with_changes(comment=None)
                 if self._is_special_comment(c_text):
                     return updated_node
-                # Remove inline comment
+
                 return updated_node.with_changes(comment=None)
             return updated_node
 
@@ -291,7 +248,7 @@ if HAS_LIBCST:
                 if self.options.remove_all:
                     return updated_node.with_changes(comment=None)
                 if c_text.startswith("#!"):
-                    return updated_node  # Preserve shebang
+                    return updated_node
                 if self._is_special_comment(c_text):
                     return updated_node
                 if self.options.remove_comments:
@@ -313,13 +270,12 @@ if HAS_LIBCST:
                             new_stmts.append(stmt)
                             continue
                         else:
-                            continue  # Strip module docstring
+                            continue
 
                 elif idx == 0 and not is_module:
                     if self._is_docstring_stmt(stmt) and (self.options.remove_docstrings or self.options.remove_all):
                         continue
 
-                # Strip subsequent docstrings if requested
                 if (
                     idx > 0
                     and self._is_docstring_stmt(stmt)
@@ -327,7 +283,6 @@ if HAS_LIBCST:
                 ):
                     continue
 
-                # Remove type annotations from assignments
                 if (
                     (self.options.remove_types or self.options.remove_all)
                     and isinstance(stmt, cst.SimpleStatementLine)
@@ -343,11 +298,10 @@ if HAS_LIBCST:
                             new_stmts.append(stmt.with_changes(body=[assign]))
                             continue
                         else:
-                            continue  # `x: int` -> remove statement
+                            continue
 
                 new_stmts.append(stmt)
 
-            # Insert pass if body becomes empty
             if not new_stmts and not is_module:
                 new_stmts = [cst.SimpleStatementLine(body=[cst.Pass()])]
 
@@ -385,11 +339,6 @@ def transform_libcst(source: str, options: StripOptions) -> str:
     return transformed_tree.code
 
 
-# =============================================================================
-# Backend 3: Tree-Sitter Backend
-# =============================================================================
-
-
 def transform_tree_sitter(source: str, options: StripOptions) -> str:
     """
     Transform Python source using Tree-sitter.
@@ -404,7 +353,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
     source_bytes = source.encode("utf-8")
     tree = parser.parse(source_bytes)
 
-    # Edit ranges: list of (start_byte, end_byte, replacement_bytes)
     edits: list[tuple[int, int, bytes]] = []
 
     def is_special_comment(text: str) -> bool:
@@ -417,13 +365,12 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
             if options.remove_all:
                 edits.append((node.start_byte, node.end_byte, b""))
             elif c_text.startswith("#!"):
-                pass  # Keep shebang
+                pass
             elif is_special_comment(c_text):
-                pass  # Keep # type: / # fmt:
+                pass
             elif options.remove_comments:
                 edits.append((node.start_byte, node.end_byte, b""))
             else:
-                # Default inline-only stripping
                 line_start = source_bytes.rfind(b"\n", 0, node.start_byte)
                 line_start = 0 if line_start == -1 else line_start + 1
                 before_comment = source_bytes[line_start : node.start_byte].strip()
@@ -440,7 +387,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
                     if options.remove_all or (options.remove_docstrings and not options.preserve_module_docstring):
                         edits.append((node.start_byte, node.end_byte, b""))
                 elif options.remove_docstrings or options.remove_all:
-                    # Check if body block would become empty
                     if parent and parent.type == "block" and len(parent.children) == 1:
                         edits.append((node.start_byte, node.end_byte, b"pass"))
                     else:
@@ -462,7 +408,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
 
     walk(tree.root_node)
 
-    # Sort edits in reverse byte order to apply replacements without offset drift
     res = bytearray(source_bytes)
     edits.sort(key=lambda x: x[0], reverse=True)
     last_start = len(res) + 1
@@ -472,11 +417,6 @@ def transform_tree_sitter(source: str, options: StripOptions) -> str:
             last_start = start
 
     return res.decode("utf-8", errors="replace")
-
-
-# =============================================================================
-# Validation & Atomic File IO Helpers
-# =============================================================================
 
 
 def validate_transformed_code(code: str) -> bool:
@@ -514,11 +454,6 @@ def atomic_write_file(path: Path, content: str) -> None:
         raise
 
 
-# =============================================================================
-# File Discovery Logic
-# =============================================================================
-
-
 def is_python_file(path: Path) -> bool:
     """
     Determine whether a path is a Python file.
@@ -527,7 +462,6 @@ def is_python_file(path: Path) -> bool:
     if not path.is_file():
         return False
 
-    # Skip common non-code files
     if path.name.startswith(".") or path.suffix in (
         ".pyc",
         ".pyo",
@@ -569,7 +503,6 @@ def discover_files(targets: list[Path]) -> list[Path]:
                 found.append(target)
         elif target.is_dir():
             for root, dirs, files in os.walk(target):
-                # Filter out hidden or build directories
                 dirs[:] = [
                     d for d in dirs if not d.startswith(".") and d not in ("__pycache__", "venv", "build", "dist")
                 ]
@@ -579,11 +512,6 @@ def discover_files(targets: list[Path]) -> list[Path]:
                         found.append(file_path)
 
     return sorted(set(found))
-
-
-# =============================================================================
-# Worker Process for Multiprocessing Pool
-# =============================================================================
 
 
 def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, str, str]:
@@ -617,7 +545,6 @@ def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, st
     except Exception as exc:
         return (file_path_str, "ERROR", f"Transformation error: {exc}")
 
-    # Requirement 5: Independent AST validation
     if not validate_transformed_code(transformed):
         return (
             file_path_str,
@@ -625,7 +552,6 @@ def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, st
             "Validation failed: transformed source is invalid Python syntax",
         )
 
-    # Avoid redundant write operations if file content did not change
     if transformed == source:
         return (file_path_str, "SKIPPED", "No changes required")
 
@@ -637,14 +563,9 @@ def process_file_worker(args_tuple: tuple[str, dict[str, Any]]) -> tuple[str, st
     return (file_path_str, "SUCCESS", "Successfully stripped")
 
 
-# =============================================================================
-# Pipeline Orchestrator & CLI Runner
-# =============================================================================
-
-
 def run_pipeline(paths: list[Path], options: StripOptions) -> None:
     """Orchestrate file discovery and worker task distribution using 8 workers."""
-    # Backend availability verification & fallback warnings
+
     actual_backend = options.backend
     if options.backend == "libcst" and not HAS_LIBCST:
         logger.warning("LibCST requested but not installed. Falling back to 'ast' backend.")
@@ -665,7 +586,6 @@ def run_pipeline(paths: list[Path], options: StripOptions) -> None:
     options_dict = options.to_dict()
     tasks = [(str(p), options_dict) for p in files]
 
-    # Requirement: multiprocessing.Pool.apply_async with a fixed pool of 8 workers
     num_workers = 8
     async_results = []
 
@@ -677,7 +597,6 @@ def run_pipeline(paths: list[Path], options: StripOptions) -> None:
         pool.close()
         pool.join()
 
-    # Process and log execution results
     success_count = 0
     skipped_count = 0
     error_count = 0

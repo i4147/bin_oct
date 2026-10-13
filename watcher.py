@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -146,7 +146,7 @@ class ChangeHandler(FileSystemEventHandler):
                                 print(f"  → removed from destination: /{rel}")
                             except OSError as e:
                                 self._errors.append(f"[delete-error] {dst_file}\n{e}")
-            except Exception as e:  # noqa: BLE001 - we want to keep going
+            except Exception as e:
                 self._errors.append(f"[processing-error] {src_path}\n{e}")
         self._pending.clear()
         self._last_flush = time.time()

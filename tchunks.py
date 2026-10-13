@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -214,7 +214,7 @@ def select_backend(requested: str | None, source: str, target: str) -> tuple[str
             translate_fn = factory(source, target)
             logger.debug(f"Selected backend via fallback order: {name}")
             return name, translate_fn
-        except Exception as e:  # noqa: BLE001 - deliberately broad: trying each backend
+        except Exception as e:
             logger.debug(f"Backend '{name}' unavailable during fallback: {e}")
             last_error = e
             continue
@@ -276,7 +276,7 @@ def translate_with_retry(
             result = translate_fn(text)
         except TranslationFailedError:
             raise
-        except Exception as e:  # noqa: BLE001 - normalize any backend error to our type
+        except Exception as e:
             msg = f"backend call raised: {e}"
             raise TranslationFailedError(msg) from e
         if not result or not result.strip():
@@ -383,7 +383,7 @@ def run_translation(
                     translated = fut.result()
                     results[str(idx)] = translated
                     logger.debug(f"Chunk {idx} translated ({len(translated)} chars)")
-                except Exception as e:  # noqa: BLE001 - any failure -> log + record as failed
+                except Exception as e:
                     logger.error(f"Chunk {idx} failed after retries: {e}")
                     append_failed_index(failed_path, idx)
                 completed_since_save += 1

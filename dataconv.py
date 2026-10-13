@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't produce that prompt from the code in this the code was cut off part see part of the script's logic. Reproducing it from a truncated excerpt would mean guessing at the rest of the behavior.
-
-If you paste the complete script, I'll write the self-contained reproduction prompt you described, with no code or preamble in the output.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

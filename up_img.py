@@ -1,5 +1,5 @@
-#!/data/data/com.termux/files/usr/bin/env python
-# -*- coding: utf-8 -*-
+#!/data/data/com.termux/files/usr/bin/python
+
 
 import argparse
 import os

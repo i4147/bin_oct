@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from typing import Any, Iterable, Sequence
 
 try:
     import tomllib  # type: ignore[import]
-except ModuleNotFoundError:  # pragma: no cover
+except ModuleNotFoundError:
     try:
         import tomli as tomllib  # type: ignore[no-redef]
     except ModuleNotFoundError:
@@ -62,7 +62,7 @@ def load_toml(path: Path) -> dict[str, Any]:
             return tomllib.load(fh)
     except FileNotFoundError:
         die(f"file not found: {path}")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         die(f"invalid TOML in {path}: {exc}")
     return {}
 
@@ -86,7 +86,7 @@ def load_user_info() -> dict[str, str]:
             return {str(k): str(v) for k, v in data.items()}
     except json.JSONDecodeError:
         pass
-    # Fallback: key = value
+
     out: dict[str, str] = {}
     for line in text.splitlines():
         line = line.strip()
@@ -1335,13 +1335,13 @@ def cmd_dev(args: argparse.Namespace) -> int:
     if not gitignore.exists():
         gitignore.write_text(GITIGNORE_DEV, encoding="utf-8")
         info("  Created: .gitignore")
-    # Pre-commit
+
     if args.install_hooks:
         try:
             (project / ".pre-commit-config.yaml").write_text(PRE_COMMIT_CONFIG, encoding="utf-8")
             subprocess.run(["pre-commit", "install"], cwd=project, check=True)
             info("  Pre-commit hooks installed")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             info(f"  warning: pre-commit setup failed: {exc}")
     info("")
     info("Setup complete. Next steps:")
@@ -1426,7 +1426,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--simple-cli", action="store_true")
     p_init.add_argument("--force", action="store_true")
     p_init.set_defaults(func=cmd_init)
-    # make-setup
+
     p_ms = sub.add_parser("make-setup", help="Generate setup.py from various sources.")
     p_ms.add_argument(
         "--from",
@@ -1446,7 +1446,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ms.add_argument("--force", action="store_true")
     p_ms.add_argument("--preview", action="store_true")
     p_ms.set_defaults(func=cmd_make_setup)
-    # cargo-toml
+
     p_ct = sub.add_parser("cargo-toml", help="Generate Cargo.toml from Cargo.lock.")
     p_ct.add_argument("-i", "--input", default="Cargo.lock")
     p_ct.add_argument("-o", "--output", default="Cargo.toml")
@@ -1462,7 +1462,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Install pre-commit hooks (requires pre-commit).",
     )
     p_dev.set_defaults(func=cmd_dev)
-    # new-script
+
     p_ns = sub.add_parser("new-script", help="Emit a Python script template.")
     p_ns.add_argument("path")
     p_ns.add_argument("--force", action="store_true")

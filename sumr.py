@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -326,7 +326,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             file=sys.stderr,
         )
         return 1
-    except Exception as exc:  # noqa: BLE001 — surface any backend error
+    except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 

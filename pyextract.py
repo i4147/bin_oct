@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -24,19 +24,19 @@ try:
     import tree_sitter_python
 
     HAS_TS = True
-except Exception:  # pragma: no cover
+except Exception:
     HAS_TS = False
 try:
     import libcst as cst
 
     HAS_LIBCST = True
-except Exception:  # pragma: no cover
+except Exception:
     HAS_LIBCST = False
 try:
     import zstandard as zstd
 
     HAS_ZSTD = True
-except Exception:  # pragma: no cover
+except Exception:
     HAS_ZSTD = False
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("pyextract")
@@ -746,7 +746,7 @@ def _worker(item: tuple) -> tuple:
             es, im = _extract(source, str(p), parser_name, include_nested, constants_only)
             entities.extend(es)
             imports.extend(im)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         err = f"{type(e).__name__}: {e}"
     return path_str, entities, imports, err
 

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ class DiskAnalyzer:
             for ar in async_results:
                 try:
                     results.append(ar.get())
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logger.warning("Worker failed: {}", exc)
         for child in results:
             child.parent = root_item

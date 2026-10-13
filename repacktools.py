@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -29,14 +29,14 @@ try:
     from wheel.wheelfile import WheelFile  # type: ignore
 
     _HAS_WHEEL = True
-except ImportError:  # pragma: no cover
+except ImportError:
     WheelFile = None  # type: ignore
     _HAS_WHEEL = False
 try:
     from tqdm import tqdm as _tqdm  # type: ignore
 
     _HAS_TQDM = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HAS_TQDM = False
 
     def _tqdm(it, **_kw):  # type: ignore
@@ -508,7 +508,6 @@ class Repacker:
         self.stats = RepackStats()
         self.results: list[dict[str, Any]] = []
 
-    # ---------------------------------------------------------------- public
     def repack_one(self, pkg: PackageInfo) -> tuple[bool, str, Optional[Path]]:
         if self.dry_run:
             tag = "py3-none-any" if pkg.is_pure else "-".join(current_sys_tag())
@@ -752,7 +751,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     sub = p.add_subparsers(dest="command", required=True)
-    # ------------------------------------------------------------- repack
+
     rp = sub.add_parser(
         "repack",
         help="Repack installed packages from a site-packages dir into wheels",
@@ -825,7 +824,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="list every .whl in the output directory at the end",
     )
     rp.add_argument("--no-progress", action="store_true", help="disable tqdm progress")
-    # ---------------------------------------------------------- pack-dirs
+
     pd = sub.add_parser(
         "pack-dirs",
         help="Pack pre-unpacked wheel directories into .whl files",

@@ -1,33 +1,20 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line utility named bash2py that extracts embedded Python heredoc bodies from a Bash script. Requirements to convey:
-
-Create a Python 3 script (with a Termux-style shebang pointing to the Termux Python interpreter, and `from __future__ import annotations` at the top) that reads a Bash script file whose path is given as the single command-line argument. It should use only the standard library: `re`, `sys`, and `pathlib`.
-
-Detection rule: a line qualifies as a heredoc start when, after optional leading spaces or tabs, it begins with `python`, `python3`, or `py` as a whole word, followed by any text on the same line, then `<<`, an optional `-` immediately after the `<<`, optional spaces or tabs, an optional single or double quote, an identifier delimiter (letters or underscore, then letters, digits, or underscores), a matching closing quote if one was opened, optional trailing spaces or tabs, and end of line. Capture the indentation, command, dash flag, quote, and delimiter as named groups. Compile the pattern with multiline mode, though it is applied per line.
-
-Extraction rule: scan the file line by line, preserving line endings. For each matching start line, collect following lines as the body until a terminator line is found. The terminator matches the delimiter exactly after stripping the trailing newline; if the start used the dash flag, the terminator comparison first strips leading and trailing whitespace from the line. The body lines exclude the terminator. When a terminator is found, store the joined body text and resume scanning after the terminator. If no terminator is found before end of file, store everything after the start line as the body and stop scanning. Return the list of all extracted bodies in order. Note that a start line is only checked at the outer scan position, so nested or consecutive heredocs are handled by resuming after each block's terminator.
-
-Main behavior: if fewer than two command-line arguments are supplied, print a usage message to standard error of the form "Usage: python bash2py.py <bash_script_path>" and exit with a nonzero status. Note that the original code has a defect: it references the exit function without calling it, so it does not actually terminate; the reproduction should call it with a nonzero status code, and this should be stated as the intended behavior. Otherwise, read the file at the given path, extract the heredoc bodies, and write results to standard output, separating blocks clearly. Edge cases to handle: a missing or unreadable file should produce a clear error to standard error with a nonzero exit; an empty file or a file with no matching heredocs should produce no block output without crashing; file encoding should be read as UTF-8 with reasonable handling of decode errors.
-
-Execution details: the script is run directly via its shebang or with the Python interpreter, takes the bash script path as its only argument, and should include an `if __name__ == "__main__":` guard calling main. Output should be plain text suitable for piping. Keep the implementation concise, idiomatic, and commented sparingly, matching standard Python style with type hints where helpful.
----"""
-
-from __future__ import annotations
-
+#!/data/data/com.termux/files/usr/bin/python
+import io
 import re
 import sys
 from pathlib import Path
+import tokenize
 
 HEREDOC_START_RE = re.compile(
-    r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^\n]*?)"
+    r"^(?P<indent>[ \t]*)(?P<cmd>(?:python3?|py)\b[^;\n]*?)"
     r"<<(?P<dash>-)?[ \t]*"
     r'(?P<quote>["\']?)(?P<delim>[A-Za-z_][A-Za-z0-9_]*)(?P=quote)[ \t]*$',
     re.MULTILINE,
 )
 
 
-def extract_python_heredocs(bash_text: str):
-    blocks = []
+def extract_python_heredocs(bash_text: str) -> list[str]:
+    blocks: list[str] = []
     lines = bash_text.splitlines(keepends=True)
     i = 0
     n = len(lines)
@@ -39,7 +26,7 @@ def extract_python_heredocs(bash_text: str):
             continue
         delim = m.group("delim")
         dash = m.group("dash") is not None
-        body_lines = []
+        body_lines: list[str] = []
         j = i + 1
         terminator_found = False
         while j < n:
@@ -60,33 +47,194 @@ def extract_python_heredocs(bash_text: str):
     return blocks
 
 
-def main():
+def format_python_code(code: str) -> str:
+    if not code.endswith("\n"):
+        code += "\n"
+    try:
+        tokens = list(tokenize.generate_tokens(io.StringIO(code).readline))
+    except tokenize.TokenError:
+        return code
+    result: list[str] = []
+    indent_level = 0
+    at_line_start = True
+    paren_depth = 0
+    previous = None
+
+    def append(text: str) -> None:
+        nonlocal at_line_start
+        if at_line_start:
+            result.append("    " * indent_level)
+            at_line_start = False
+        result.append(text)
+
+    def add_space() -> None:
+        if result and not result[-1].endswith((" ", "\n")):
+            result.append(" ")
+
+    def newline() -> None:
+        nonlocal at_line_start
+        while result and result[-1] == " ":
+            result.pop()
+        if result and not result[-1].endswith("\n"):
+            result.append("\n")
+        at_line_start = True
+
+    for token in tokens:
+        token_type = token.type
+        text = token.string
+        if token_type in {tokenize.ENCODING, tokenize.ENDMARKER, tokenize.NL}:
+            continue
+        if token_type == tokenize.NEWLINE:
+            newline()
+            previous = token
+            continue
+        if token_type == tokenize.INDENT:
+            indent_level += 1
+            continue
+        if token_type == tokenize.DEDENT:
+            indent_level = max(0, indent_level - 1)
+            continue
+        if token_type == tokenize.COMMENT:
+            if not at_line_start:
+                add_space()
+            append(text)
+            newline()
+            previous = token
+            continue
+        if text in {"(", "[", "{"}:
+            append(text)
+            paren_depth += 1
+            previous = token
+            continue
+        if text in {")", "]", "}"}:
+            append(text)
+            paren_depth = max(0, paren_depth - 1)
+            previous = token
+            continue
+        if text == ",":
+            append(",")
+            add_space()
+            previous = token
+            continue
+        if text == ";":
+            newline()
+            previous = token
+            continue
+        if text == ":" and paren_depth == 0:
+            append(":")
+            newline()
+            indent_level += 1
+            previous = token
+            continue
+        if (
+            token_type == tokenize.NAME
+            and previous is not None
+            and paren_depth == 0
+            and previous.string in {")", "]", "}", '"', "'"}
+            and text
+            in {
+                "import",
+                "from",
+                "for",
+                "while",
+                "if",
+                "elif",
+                "else",
+                "try",
+                "except",
+                "finally",
+                "with",
+                "def",
+                "class",
+                "return",
+                "raise",
+                "print",
+            }
+        ):
+            newline()
+        if (
+            previous is not None
+            and previous.type in {tokenize.NAME, tokenize.NUMBER, tokenize.STRING}
+            and token_type in {tokenize.NAME, tokenize.NUMBER, tokenize.STRING}
+        ):
+            add_space()
+        if text in {
+            "=",
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "//=",
+            "%=",
+            "==",
+            "!=",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "+",
+            "-",
+            "*",
+            "/",
+            "//",
+            "%",
+            "|",
+            "&",
+            "^",
+        }:
+            add_space()
+            append(text)
+            add_space()
+        else:
+            append(text)
+        previous = token
+    return "".join(result).rstrip() + "\n"
+
+
+def get_output_path(input_path: Path, idx: int, total: int) -> Path:
+    stem = input_path.stem or "extracted"
+    if total == 1:
+        output = Path.cwd() / f"{stem}.py"
+        number = 2
+        while output.exists():
+            output = Path.cwd() / f"{stem}_{number}.py"
+            number += 1
+        return output
+    else:
+        output = Path.cwd() / f"{stem}_{idx}.py"
+        number = 2
+        while output.exists():
+            output = Path.cwd() / f"{stem}_{idx}_{number}.py"
+            number += 1
+        return output
+
+
+def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: python bash2py.py <bash_script_path>", file=sys.stderr)
+        print("Usage: python script.py <bash_script_path>", file=sys.stderr)
         sys.exit(1)
-    input_path = Path(sys.argv[1])
+    input_path = Path(sys.argv[1]).expanduser()
     if not input_path.is_file():
         print(f"Error: file not found: {input_path}", file=sys.stderr)
         sys.exit(1)
-    bash_text = input_path.read_text(encoding="utf-8")
-    blocks = extract_python_heredocs(bash_text)
-    if not blocks:
-        print("No python heredocs found in the given script.", file=sys.stderr)
-        sys.exit(1)
-    base_name = input_path.stem
-    out_dir = Path.cwd()
-    written = []
-    if len(blocks) == 1:
-        out_path = out_dir / f"{base_name}.py"
-        out_path.write_text(blocks[0], encoding="utf-8")
-        written.append(out_path)
-    else:
+    try:
+        bash_text = input_path.read_text(encoding="utf-8")
+        blocks = extract_python_heredocs(bash_text)
+        if not blocks:
+            print("No python heredocs found in the given script.", file=sys.stderr)
+            sys.exit(1)
+        written: list[Path] = []
+        total = len(blocks)
         for idx, code in enumerate(blocks, start=1):
-            out_path = out_dir / f"{base_name}_{idx}.py"
-            out_path.write_text(code, encoding="utf-8")
+            formatted_code = format_python_code(code)
+            out_path = get_output_path(input_path, idx, total)
+            out_path.write_text(formatted_code, encoding="utf-8")
             written.append(out_path)
-    for p in written:
-        print(f"Wrote: {p}")
+        for p in written:
+            print(f"Wrote: {p}")
+    except Exception as error:
+        print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

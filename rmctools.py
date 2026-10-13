@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ try:
     from libcst import matchers as _m
 
     _HAS_LIBCST = True
-except ImportError:  # pragma: no cover
+except ImportError:
     cst = None  # type: ignore
     _m = None  # type: ignore
     _HAS_LIBCST = False
@@ -28,7 +28,7 @@ try:
     import astor  # type: ignore
 
     _HAS_ASTOR = True
-except ImportError:  # pragma: no cover
+except ImportError:
     astor = None  # type: ignore
     _HAS_ASTOR = False
 try:
@@ -40,7 +40,7 @@ try:
     def log_warning(msg: str) -> None:
         _loguru.warning(msg)
 
-except ImportError:  # pragma: no cover
+except ImportError:
 
     def log_error(msg: str) -> None:
         print(f"ERROR: {msg}", file=sys.stderr)
@@ -129,7 +129,7 @@ def run_parallel(
         for f, ar in async_results:
             try:
                 results.append((f, ar.get()))
-            except Exception as exc:  # pragma: no cover
+            except Exception as exc:
                 log_error(f"Worker error on {f}: {exc}")
                 results.append((f, ("worker-exception", str(exc))))
     return results
@@ -359,7 +359,7 @@ if _HAS_LIBCST:
                     total_d += res.docstrings_removed
                     total_changed += int(res.changed)
                     total_err += int(bool(res.error))
-        except Exception as exc:  # pragma: no cover
+        except Exception as exc:
             log_error(f"Pool failed ({exc}); falling back to serial.")
             for job in jobs:
                 res = _libcst_process_file(job)

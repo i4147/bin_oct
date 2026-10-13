@@ -1,10 +1,10 @@
-#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
-
+#!/data/data/com.termux/files/usr/bin/python
 import argparse
 import asyncio
+import ast
 import fnmatch
-import os
+from os import environ
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -13,9 +13,9 @@ import time
 from dh import DOC_TH1, DOC_TH2
 
 FELO_SUPERAGENT = "/data/data/com.termux/files/home/bashbin/felo-sa.mjs"
-FELO_TIMEOUT = int(os.environ.get("FELO_TIMEOUT", "300"))
+FELO_TIMEOUT = int(environ.get("FELO_TIMEOUT", "300"))
 PROMPT_TEMPLATE = """
-You are an expert prompt engineer.Given the Python code below, write a single self-contained prompt that another AI coding agent can use to reproduce the same Python script from scratch. The generated prompt must clearly describe the script’s purpose, its main inputs and outputs, and any notable behavior, including dependencies, key logic, error handling, edge cases, and execution or usage details. Do not include the original code or any code snippets. Output only the generated prompt in English. Do not add explanations, preamble, or these instructions.
+You are an expert software requirements writer. Analyze the Python code below and write a clear, high-level prompt or specification that can be given to an AI coding agent to build a similar script from scratch. The prompt must begin with a phrase like "Write a Python script that..." or "Generate a Python tool that...". Focus strictly on the high-level purpose, main inputs and outputs, and key behaviors. Do NOT describe the code line-by-line, and do not restrict low-level implementation details such as specific function names, loop types, internal variables, or imported libraries, allowing the AI complete creative freedom. Do not include code snippets. Output only the generated prompt in English without explanations or preamble.
 
 Python code:
 {code}
@@ -23,10 +23,6 @@ Python code:
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 FENCE_RE = re.compile(r"^\s*```.*$", re.MULTILINE)
 SHELL_PROMPT_RE = re.compile(r"^\s*(?:\$|>|>>>)\s.*$", re.MULTILINE)
-ECHO_LINE_RE = re.compile(
-    r"^\s*(?:felo|feli|SuperAgent|Received)[>:\s].*$",
-    re.MULTILINE | re.IGNORECASE,
-)
 PREAMBLE_RE = re.compile(
     r"^(?:sure[,!.]?|certainly[,!.]?|here(?:'s| is)[^\n]*|of course[,!.]?)\s*\n",
     re.IGNORECASE,
@@ -34,7 +30,83 @@ PREAMBLE_RE = re.compile(
 LIVEDOC_RE = re.compile(r"^\s*LiveDoc\s*:.*$", re.MULTILINE | re.IGNORECASE)
 
 
+class CodeMangler(ast.NodeTransformer):
+    def visit_Module(self, node: ast.Module) -> ast.Module:
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+            and isinstance(node.body[0].value.value, str)
+        ):
+            node.body.pop(0)
+        new_body: list[ast.stmt] = []
+        for stmt in node.body:
+            if isinstance(stmt, ast.ImportFrom) and stmt.module == "__future__":
+                continue
+            new_body.append(self.visit(stmt))
+        node.body = new_body
+        return node
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+            and isinstance(node.body[0].value.value, str)
+        ):
+            node.body.pop(0)
+        node.returns = None
+        for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs:
+            arg.annotation = None
+        if node.args.vararg:
+            node.args.vararg.annotation = None
+        if node.args.kwarg:
+            node.args.kwarg.annotation = None
+        return self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AST:
+        return self.visit_FunctionDef(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.AST:
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+            and isinstance(node.body[0].value.value, str)
+        ):
+            node.body.pop(0)
+        return self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AST:
+        if node.value is not None:
+            return ast.Assign(targets=[node.target], value=node.value)
+        return ast.Pass()
+
+
+def mangle_code(code: str) -> str:
+    try:
+        tree = ast.parse(code)
+        transformer = CodeMangler()
+        new_tree = transformer.visit(tree)
+        ast.fix_missing_locations(new_tree)
+        return ast.unparse(new_tree)
+    except Exception:
+        return code
+
+
 def clean_response(text: str) -> str:
+    lower_text = text.lower()
+    refusal_markers = [
+        "truncated",
+        "cut off",
+        "paste",
+        "mid-line",
+        "can't produce",
+        "cannot produce",
+        "complete file",
+    ]
+    if any(marker in lower_text for marker in refusal_markers):
+        return ""
     text = ANSI_RE.sub("", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     m = re.search(r"^\s*Received\s*:", text, re.MULTILINE | re.IGNORECASE)
@@ -104,7 +176,8 @@ def strip_module_docstring(body: str) -> str:
 
 
 async def ask_felo(code: str) -> str:
-    prompt = PROMPT_TEMPLATE.format(code=code)
+    mangled = mangle_code(code)
+    prompt = PROMPT_TEMPLATE.format(code=mangled)
     cmd = [
         "node",
         FELO_SUPERAGENT,
@@ -134,9 +207,9 @@ async def ask_felo(code: str) -> str:
     return stdout.decode("utf-8", errors="replace")
 
 
-async def annotate(path: str, dry_run: bool, force: bool, sem: asyncio.Semaphore) -> None:
+async def annotate(path: Path, dry_run: bool, force: bool, sem: asyncio.Semaphore, stats: dict[str, int]) -> None:
     async with sem:
-        if path.endswith((
+        if path.name in {
             "__init__.py",
             "__main__.py",
             "setup.py",
@@ -144,84 +217,95 @@ async def annotate(path: str, dry_run: bool, force: bool, sem: asyncio.Semaphore
             "test.py",
             "conf.py",
             "tests.py",
-        )):
+        }:
+            stats["skipped_ignored"] += 1
             return
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
+
+        if path.stat().st_size > 30 * 1024:
+            stats["skipped_size"] += 1
+            return
+
+        content = path.read_text(encoding="utf-8")
         header, body = split_header(content)
 
         if has_module_docstring(body):
             if not force:
-                print(f"[skip] {path}: module docstring already present")
+                stats["skipped_docstring"] += 1
                 return
             body = strip_module_docstring(body)
 
-        print(f"[ask ] {path}")
         try:
             raw = await ask_felo(content)
         except FileNotFoundError:
             sys.exit("ERROR: node CLI not found in PATH.")
         except subprocess.TimeoutExpired:
-            print(f"[time] {path}: felo timed out after {FELO_TIMEOUT}s")
+            stats["errors"] += 1
             return
-        except RuntimeError as e:
-            print(f"[err ] {path}: {e}")
+        except RuntimeError:
+            stats["errors"] += 1
             return
-        if os.environ.get("FELO_DEBUG"):
-            print("----- RAW RESPONSE -----")
-            print(raw)
-            print("----- END RAW ----------")
+
         cleaned = clean_response(raw)
         if not cleaned:
-            print(f"[none] {path}: empty response after cleaning")
+            stats["errors"] += 1
             return
+
         docstring = make_docstring(cleaned)
         new_content = header + docstring + body
         if dry_run:
-            print(f"--- would prepend to {path} ---")
-            print(docstring, end="")
-            print("--- end ---\n")
+            stats["success"] += 1
             return
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        print(f"[ok  ] {path}")
+        path.write_text(new_content, encoding="utf-8")
+        stats["success"] += 1
 
 
-def collect_files(inputs: list[str], pattern: str) -> list[str]:
-    me = os.path.abspath(__file__)
-    seen: set[str] = set()
-    out: list[str] = []
+def collect_files(inputs: list[str], pattern: str) -> list[Path]:
+    me = Path(__file__).resolve()
+    seen: set[Path] = set()
+    out: list[Path] = []
 
-    def add(path: str) -> None:
-        ap = os.path.abspath(path)
+    def add(p: Path) -> None:
+        ap = p.resolve()
         if ap == me:
             return
         if ap in seen:
             return
         seen.add(ap)
-        out.append(path)
+        out.append(ap)
 
     for inp in inputs:
-        if os.path.isfile(inp):
-            add(inp)
-        elif os.path.isdir(inp):
-            for root, _dirs, names in os.walk(inp):
+        inp_path = Path(inp)
+        if inp_path.is_file():
+            add(inp_path)
+        elif inp_path.is_dir():
+            for root, _dirs, names in inp_path.walk():
                 for name in names:
                     if fnmatch.fnmatch(name, pattern):
-                        add(os.path.join(root, name))
-        else:
-            print(f"[warn] skipping (not a file or directory): {inp}")
+                        add(root / name)
     return sorted(out)
 
 
-async def process_paths(paths: list[str], dry_run: bool, force: bool, concurrency: int, delay: float) -> None:
+async def process_paths(paths: list[Path], dry_run: bool, force: bool, concurrency: int, delay: float) -> None:
     sem = asyncio.Semaphore(concurrency)
-    tasks: list[asyncio.Task[None]] = []
-    for p in paths:
-        tasks.append(asyncio.create_task(annotate(p, dry_run, force, sem)))
-        if delay > 0:
-            await asyncio.sleep(delay)
-    await asyncio.gather(*tasks)
+    stats = {
+        "success": 0,
+        "skipped_size": 0,
+        "skipped_docstring": 0,
+        "skipped_ignored": 0,
+        "errors": 0,
+    }
+    async with asyncio.TaskGroup() as tg:
+        for p in paths:
+            tg.create_task(annotate(p, dry_run, force, sem, stats))
+            if delay > 0:
+                await asyncio.sleep(delay)
+
+    print("\n--- Execution Summary ---")
+    print(f"Successfully processed:     {stats['success']}")
+    print(f"Skipped (>30KB limit):      {stats['skipped_size']}")
+    print(f"Skipped (docstring exists): {stats['skipped_docstring']}")
+    print(f"Skipped (ignored filename): {stats['skipped_ignored']}")
+    print(f"Errors / Empty responses:   {stats['errors']}")
 
 
 def main() -> None:
@@ -231,7 +315,7 @@ def main() -> None:
     ap.add_argument(
         "paths",
         nargs="*",
-        help="One or more files or directories. If omitted, the current directory is processed recursively.",
+        help="One or more files or directories. If omitted, current directory is processed recursively.",
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
@@ -259,7 +343,6 @@ def main() -> None:
     if not paths:
         print(f"No matching files found (pattern={args.pattern!r}).")
         return
-    print(f"Found {len(paths)} file(s). dry_run={args.dry_run} force={args.force}")
     asyncio.run(process_paths(paths, args.dry_run, args.force, args.concurrency, args.delay))
 
 

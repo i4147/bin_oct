@@ -1,186 +1,392 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that asks an AI coding agent to recreate a Python module implementing a class for searching English subtitles on OpenSubtitles.
+#!/data/data/com.termux/files/usr/bin/python
+"""Unified subtitle downloader for local video files and title-based searches.
 
-Create a single-file Python 3 script (intended to run under Termux on Android, so include the Termux-style shebang line `#!/data/data/com.termux/files/usr/bin/env python`) that defines a `SubtitleDownloader` class for searching subtitles on the OpenSubtitles REST API.
+Usage examples:
+  python merged.py file movie.mkv
+  python merged.py file movie.mkv ./subtitles
+  python merged.py file movie.mkv --filename-suffix .en --scan-output processing --no-warn-non-mkv
+  python merged.py search "The Witcher season 2"
+  python merged.py search breaking_bad_s01e01 --output ./subs/breaking_bad.srt
 
-Requirements:
+Mapping from the supplied scripts:
+  get_subtitle.py -> file mode defaults
+  getsubtitle.py  -> file mode with .en suffix, processing-only output, and no MKV warning
+  getsub.py       -> search mode (OpenSubtitles, then YTS by default)
 
-**Purpose:** The script provides a downloader helper that searches OpenSubtitles for English-language subtitles matching a free-text query, such as a movie or show name or a release filename.
-
-**Imports and dependencies:**
-- Use `from __future__ import annotations` at the top.
-- Use the standard library modules `re` and `sys`, and `quote` from `urllib.parse`.
-- Use the third-party `requests` library for HTTP.
-
-**Class `SubtitleDownloader`:**
-- The constructor creates a `requests.Session` stored on `self.session`, and sets its headers to include a browser-like User-Agent string: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36`.
-- A method `search_opensubtitles(self, query)` performs the search:
-  - Normalize the query by replacing underscores and periods with spaces.
-  - Send a GET request to `https://rest.opensubtitles.com/api/v1/subtitles` with the query parameters `query` (the normalized string), `languages` set to `en`, and `type` set to `all`. Use the session for the request.
-  - If the HTTP status is 200, parse the JSON body. If the `data` key is present and non-empty, iterate through its items. Each item has an `attributes` object (default to an empty dict if missing). Return the first item whose `attributes.language` equals `en`, as a dictionary with keys:
-    - `id`: the item's `id` (required; use direct key access)
-    - `title`: the attribute `title`, defaulting to the original (un-normalized) query string
-    - `url`: the attribute `url` (may be None)
-    - `files`: the attribute `files`, defaulting to an empty list
-  - If no matching English item is found, or the status is not 200, or `data` is empty, return `None`.
-  - Wrap the whole operation in a try/except that catches any `Exception`, prints `Error searching OpenSubtitles: <error>` to standard output, and returns `None`.
-
-**Behavior notes and edge cases:**
-- No timeout, retry, or authentication headers are specified; the API key is not used in this version.
-- The method does not raise exceptions to callers; all failures result in `None`.
-- The `re`, `sys`, and `quote` imports are present in the original module; include them even though this portion does not need to use them, so the module matches the original structure.
-- The script has no `main` block or CLI in this portion; it only defines the class so it can be imported or extended.
-
-**Output expectations:** Produce only the complete Python file content, with the shebang, imports, and class as described, following standard PEP 8 style and a 4-space indent.
----"""
+The two local-file scripts share one implementation; their output naming and
+console behavior are selectable with file-mode options. Install the original
+third-party dependencies as needed: python -m pip install babelfish subliminal requests.
+"""
 
 from __future__ import annotations
 
+import argparse
+import logging
 import re
-import sys
-from urllib.parse import quote
+from pathlib import Path
+from typing import Any, Sequence
 
-import requests
+LOGGER = logging.getLogger(__name__)
+DEFAULT_PROVIDERS = ["opensubtitles", "podnapisi", "addic7ed", "tvsubtitles"]
+DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 
 
-class SubtitleDownloader:
-    def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+def normalize_extension(value: str) -> str:
+    if not value:
+        raise argparse.ArgumentTypeError("extension must not be empty")
+    return value if value.startswith(".") else f".{value}"
 
-    def search_opensubtitles(self, query):
+
+def normalize_title(title: str) -> str:
+    return title.replace("_", " ").replace(".", " ")
+
+
+def search_output_name(title: str, extension: str) -> str:
+    name = title.replace(" ", "_").replace(".", "_")
+    name = re.sub(r"[^\w\s-]", "", name)
+    name = re.sub(r"[-\s]+", "_", name).strip("_")
+    if not name:
+        name = "subtitle"
+    if not name.lower().endswith(extension.lower()):
+        name += extension
+    return name
+
+
+def run_file_mode(args: argparse.Namespace) -> int:
+    try:
+        import babelfish
+        from subliminal import download_best_subtitles, save_subtitles
+        from subliminal.providers import ProviderError
+        from subliminal.video import scan_video
+    except ImportError as exc:
+        LOGGER.error(
+            "File mode requires babelfish and subliminal. Install them with "
+            "'python -m pip install babelfish subliminal': %s",
+            exc,
+        )
+        return 1
+
+    video_path: Path = args.video
+    if not video_path.exists():
+        LOGGER.error("File not found: %s", video_path)
+        return 1
+    if args.warn_non_mkv and video_path.suffix.lower() != ".mkv":
+        LOGGER.warning("File is not an MKV: %s", video_path)
+
+    output_dir: Path = args.output_dir if args.output_dir is not None else video_path.parent
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        LOGGER.error("Could not create output directory %s: %s", output_dir, exc)
+        return 1
+
+    if args.scan_output == "details":
+        print(f"Scanning video: {video_path}")
+    try:
+        video = scan_video(video_path)
+        if args.scan_output == "details":
+            print(f"Found video: {video.name}")
+            print(f"-Size: {video.size} bytes")
+            print(f"-Duration: {video.duration:.2f} seconds")
+            print(f"-Hashes: {video.hashes}")
+        elif args.scan_output == "processing":
+            print(f"Processing: {video.name}")
+    except Exception as exc:
+        LOGGER.error("Error scanning video: %s", exc)
+        return 1
+
+    try:
+        language = babelfish.Language(args.language)
+        print(f"Searching for {args.language} subtitles...")
+        subtitles_by_video = download_best_subtitles([video], {language}, providers=args.providers)
+        subtitles = subtitles_by_video.get(video, set())
+        if not subtitles:
+            LOGGER.warning("No subtitles found for %s", video_path.name)
+            return 1
+
+        output_path = output_dir / f"{video_path.stem}{args.filename_suffix}{args.extension}"
+        save_subtitles(video, subtitles, single=True, path=output_path)
+        print(f"Subtitles saved to: {output_path}")
+        print("✓ Subtitles downloaded successfully!")
+        return 0
+    except ProviderError as exc:
+        LOGGER.error("Provider error: %s", exc)
+        return 1
+    except Exception as exc:
+        LOGGER.error("Error downloading subtitles: %s", exc)
+        return 1
+
+
+class TitleSubtitleClient:
+    def __init__(self, args: argparse.Namespace) -> None:
         try:
-            search_query = query.replace("_", " ").replace(".", " ")
-            url = "https://rest.opensubtitles.com/api/v1/subtitles"
-            params = {"query": search_query, "languages": "en", "type": "all"}
-            response = self.session.get(url, params=params)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("data"):
-                    for item in data["data"]:
-                        attrs = item.get("attributes", {})
-                        if attrs.get("language") == "en":
-                            return {
-                                "id": item["id"],
-                                "title": attrs.get("title", query),
-                                "url": attrs.get("url"),
-                                "files": attrs.get("files", []),
-                            }
-            return None
-        except Exception as e:
-            print(f"Error searching OpenSubtitles: {e}")
-            return None
+            import requests
+        except ImportError as exc:
+            raise RuntimeError(
+                "Search mode requires requests. Install it with 'python -m pip install requests'."
+            ) from exc
 
-    def download_from_opensubtitles(self, sub_info):
-        try:
-            if sub_info and sub_info.get("files"):
-                for file_info in sub_info["files"]:
-                    if file_info.get("file_name", "").endswith(".srt"):
-                        download_url = file_info.get("url")
-                        if download_url:
-                            response = self.session.get(download_url)
-                            if response.status_code == 200:
-                                return response.text
-            return None
-        except Exception as e:
-            print(f"Error downloading from OpenSubtitles: {e}")
-            return None
+        self.session: Any = requests.Session()
+        self.session.headers.update({"User-Agent": args.user_agent})
+        self.timeout: float | None = args.timeout
+        self.opensubtitles_url: str = args.opensubtitles_url
+        self.opensubtitles_download_url: str = args.opensubtitles_download_url
+        self.opensubtitles_api_key: str | None = args.opensubtitles_api_key
+        self.opensubtitles_language: str = args.opensubtitles_language
+        self.opensubtitles_type: str = args.opensubtitles_type
+        self.yts_movies_url: str = args.yts_movies_url
+        self.yts_details_url: str = args.yts_details_url
+        self.yts_limit: int = args.yts_limit
+        self.yts_with_images: bool = args.yts_with_images
+        self.yts_language: str = args.yts_language
+        self.sources: list[str] = args.sources
 
-    def search_yify_subtitles(self, query):
-        try:
-            query = query.replace("_", " ").replace(".", " ")
-            search_url = f"https://yts.mx/api/v2/list_movies.json?query_term={quote(query)}&limit=1"
-            response = self.session.get(search_url)
-            if response.status_code == 200:
-                data = response.json()
-                movies = data.get("data", {}).get("movies", [])
-                if movies:
-                    movie_id = movies[0]["id"]
-                    subtitle_url = f"https://yts.mx/api/v2/movie_details.json?movie_id={movie_id}&with_images=false"
-                    response = self.session.get(subtitle_url)
-                    if response.status_code == 200:
-                        data = response.json()
-                        movie = data.get("data", {}).get("movie", {})
-                        subtitles = movie.get("subtitles", [])
-                        for sub in subtitles:
-                            if sub.get("lang") == "english":
-                                return sub.get("url")
-            return None
-        except Exception as e:
-            print(f"Error searching YIFY subtitles: {e}")
-            return None
+    def timeout_kwargs(self) -> dict[str, Any]:
+        return {} if self.timeout is None else {"timeout": self.timeout}
 
-    def download_srt_from_url(self, url):
+    def api_headers(self) -> dict[str, str]:
+        return {"Api-Key": self.opensubtitles_api_key} if self.opensubtitles_api_key else {}
+
+    def search_opensubtitles(self, title: str) -> dict[str, Any] | None:
         try:
-            if not url:
+            params = {
+                "query": normalize_title(title),
+                "languages": self.opensubtitles_language,
+                "type": self.opensubtitles_type,
+            }
+            response = self.session.get(
+                self.opensubtitles_url,
+                params=params,
+                headers=self.api_headers(),
+                **self.timeout_kwargs(),
+            )
+            if response.status_code != 200:
                 return None
-            response = self.session.get(url)
-            if response.status_code == 200:
-                content = response.text
-                if content and ("1\n00:00:" in content or "WEBVTT" in content):
-                    return content
-                if "application/zip" in response.headers.get("Content-Type", ""):
-                    print("ZIP file detected, trying alternative source...")
-                    return None
-                return content
+            payload = response.json()
+            entries = payload.get("data", []) if isinstance(payload, dict) else []
+            for entry in entries:
+                attributes = entry.get("attributes", {})
+                if attributes.get("language") == self.opensubtitles_language:
+                    return {
+                        "id": entry.get("id"),
+                        "title": attributes.get("title", title),
+                        "url": attributes.get("url"),
+                        "files": attributes.get("files", []),
+                    }
             return None
-        except Exception as e:
-            print(f"Error downloading SRT: {e}")
+        except Exception as exc:
+            LOGGER.error("Error searching OpenSubtitles: %s", exc)
             return None
 
-    def download_subtitles(self, query):
-        print(f"Searching for subtitles: {query}")
-        print("Trying OpenSubtitles.org...")
-        sub_info = self.search_opensubtitles(query)
-        if sub_info:
-            content = self.download_from_opensubtitles(sub_info)
-            if content:
-                return content, "OpenSubtitles.org"
-        print("Trying YIFY subtitles...")
-        sub_url = self.search_yify_subtitles(query)
-        if sub_url:
-            content = self.download_srt_from_url(sub_url)
-            if content:
-                return content, "YIFY Subtitles"
+    def download_srt_from_url(self, url: str) -> str | None:
+        try:
+            response = self.session.get(url, **self.timeout_kwargs())
+            if response.status_code != 200:
+                return None
+            content_type = response.headers.get("Content-Type", "").lower()
+            content = response.content
+            # Preserve the original behavior: zipped subtitle packages are treated as a miss, not unpacked.
+            if "application/zip" in content_type or content.startswith(b"PK\x03\x04"):
+                LOGGER.info("ZIP file detected; trying another subtitle source")
+                return None
+            return response.text
+        except Exception as exc:
+            LOGGER.error("Error downloading subtitle: %s", exc)
+            return None
+
+    def download_from_opensubtitles(self, subtitle: dict[str, Any] | None) -> str | None:
+        if not subtitle:
+            return None
+        for file_info in subtitle.get("files", []):
+            if not isinstance(file_info, dict):
+                continue
+            file_name = str(file_info.get("file_name", ""))
+            if not file_name.lower().endswith(".srt"):
+                continue
+            direct_url = file_info.get("url")
+            if direct_url:
+                content = self.download_srt_from_url(str(direct_url))
+                if content:
+                    return content
+            file_id = file_info.get("file_id")
+            if file_id is not None and self.opensubtitles_api_key:
+                try:
+                    response = self.session.post(
+                        self.opensubtitles_download_url,
+                        json={"file_id": file_id},
+                        headers=self.api_headers(),
+                        **self.timeout_kwargs(),
+                    )
+                    if response.status_code == 200:
+                        download_info = response.json()
+                        download_url = download_info.get("link")
+                        if download_url:
+                            content = self.download_srt_from_url(str(download_url))
+                            if content:
+                                return content
+                except Exception as exc:
+                    LOGGER.error("Error requesting OpenSubtitles download link: %s", exc)
+        return None
+
+    def search_yts(self, title: str) -> str | None:
+        try:
+            response = self.session.get(
+                self.yts_movies_url,
+                params={"query_term": normalize_title(title), "limit": self.yts_limit},
+                **self.timeout_kwargs(),
+            )
+            if response.status_code != 200:
+                return None
+            payload = response.json()
+            movie_data = payload.get("data", {}) if isinstance(payload, dict) else {}
+            movies = movie_data.get("movies", []) if isinstance(movie_data, dict) else []
+            for movie in movies:
+                movie_id = movie.get("id")
+                if movie_id is None:
+                    continue
+                details = self.session.get(
+                    self.yts_details_url,
+                    params={
+                        "movie_id": movie_id,
+                        "with_images": str(self.yts_with_images).lower(),
+                    },
+                    **self.timeout_kwargs(),
+                )
+                if details.status_code != 200:
+                    continue
+                details_payload = details.json()
+                movie_info = details_payload.get("data", {}).get("movie", {})
+                for subtitle in movie_info.get("subtitles", []):
+                    if str(subtitle.get("lang", "")).lower() == self.yts_language.lower():
+                        subtitle_url = subtitle.get("url")
+                        if subtitle_url:
+                            return str(subtitle_url)
+            return None
+        except Exception as exc:
+            LOGGER.error("Error searching YTS subtitles: %s", exc)
+            return None
+
+    def download_subtitles(self, title: str) -> tuple[str | None, str | None]:
+        print(f"Searching for subtitles: {title}")
+        for source in self.sources:
+            if source == "opensubtitles":
+                print("Trying OpenSubtitles.org...")
+                result = self.search_opensubtitles(title)
+                content = self.download_from_opensubtitles(result)
+                if content:
+                    return content, "OpenSubtitles.org"
+            elif source == "yts":
+                print("Trying YIFY subtitles...")
+                url = self.search_yts(title)
+                content = self.download_srt_from_url(url) if url else None
+                if content:
+                    return content, "YIFY Subtitles"
         return None, None
 
-    def save_subtitle(self, content, filename):
-        if not content:
-            return False
-        filename = re.sub(r"[^\w\s-]", "", filename)
-        filename = re.sub(r"[-\s]+", "_", filename)
-        if not filename.endswith(".srt"):
-            filename += ".srt"
-        try:
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(content)
-            print(f"✅ Subtitle saved to: {filename}")
-            return True
-        except Exception as e:
-            print(f"Error saving file: {e}")
-            return False
 
+def run_search_mode(args: argparse.Namespace) -> int:
+    title = " ".join(args.query)
+    try:
+        client = TitleSubtitleClient(args)
+    except RuntimeError as exc:
+        LOGGER.error("%s", exc)
+        return 1
 
-def main():
-    if len(sys.argv) < 2:
-        print('Usage: python get_sub.py "movie_or_series_name"')
-        print("Example: python get_sub.py outcast_s01")
-        print('Example: python get_sub.py "The Witcher season 2"')
-        sys.exit(1)
-    query = " ".join(sys.argv[1:])
-    downloader = SubtitleDownloader()
-    content, source = downloader.download_subtitles(query)
-    if content:
-        print(f"✅ Subtitles found from {source}")
-        filename = query.replace(" ", "_").replace(".", "_")
-        downloader.save_subtitle(content, filename)
-    else:
+    content, source = client.download_subtitles(title)
+    if not content:
         print("❌ No subtitles found for the given query")
         print("Tips:")
-        print("  - Try using the exact movie/TV show name")
-        print("  - For TV series, use format: 'show_name_season_episode'")
-        print("  - Example: 'breaking_bad_s01e01'")
-        print("  - Try removing special characters")
+        print("- Try using the exact movie or TV show name")
+        print("- For TV series, use a format such as show_name_season_episode")
+        print("- Example: breaking_bad_s01e01")
+        print("- Try removing special characters")
+        return 1
+
+    output_path: Path = args.output or Path(search_output_name(title, args.extension))
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        LOGGER.error("Error saving subtitle to %s: %s", output_path, exc)
+        return 1
+    print(f"✅ Subtitles found from {source}")
+    print(f"✅ Subtitle saved to: {output_path}")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Download English subtitles for a local video or search by movie/series title."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    file_parser = subparsers.add_parser("file", help="scan a local video with subliminal")
+    file_parser.add_argument("video", type=Path, help="path to the video file")
+    file_parser.add_argument(
+        "output_dir", nargs="?", type=Path, help="output directory (defaults to the video directory)"
+    )
+    file_parser.add_argument("--language", default="eng", help="Babelfish language code (default: eng)")
+    file_parser.add_argument(
+        "--providers",
+        nargs="+",
+        default=DEFAULT_PROVIDERS,
+        help="subliminal providers (default: %(default)s)",
+    )
+    file_parser.add_argument(
+        "--filename-suffix", default="", help="suffix inserted before the extension (default: empty)"
+    )
+    file_parser.add_argument("--extension", type=normalize_extension, default=".srt")
+    file_parser.add_argument(
+        "--scan-output",
+        choices=("details", "processing", "none"),
+        default="details",
+        help="scan messages: full details, one processing line, or none",
+    )
+    file_parser.add_argument(
+        "--warn-non-mkv",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="warn when the input does not have an .mkv extension (default: enabled)",
+    )
+
+    search_parser = subparsers.add_parser("search", help="search subtitle services by title")
+    search_parser.add_argument("query", nargs="+", help="movie or series title")
+    search_parser.add_argument("--output", type=Path, help="output filename (defaults to a sanitized title)")
+    search_parser.add_argument("--extension", type=normalize_extension, default=".srt")
+    search_parser.add_argument(
+        "--sources",
+        nargs="+",
+        choices=("opensubtitles", "yts"),
+        default=["opensubtitles", "yts"],
+        help="search order (default: OpenSubtitles, then YTS)",
+    )
+    search_parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
+    search_parser.add_argument("--timeout", type=float, default=None, help="HTTP timeout in seconds (default: none)")
+    search_parser.add_argument("--opensubtitles-url", default="https://rest.opensubtitles.com/api/v1/subtitles")
+    search_parser.add_argument("--opensubtitles-download-url", default="https://api.opensubtitles.com/api/v1/download")
+    search_parser.add_argument("--opensubtitles-api-key", default=None)
+    search_parser.add_argument("--opensubtitles-language", default="en")
+    search_parser.add_argument("--opensubtitles-type", default="all")
+    search_parser.add_argument("--yts-movies-url", default="https://yts.mx/api/v2/list_movies.json")
+    search_parser.add_argument("--yts-details-url", default="https://yts.mx/api/v2/movie_details.json")
+    search_parser.add_argument("--yts-limit", type=int, default=1)
+    search_parser.add_argument(
+        "--yts-with-images",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="include images in the YTS details response (default: false)",
+    )
+    search_parser.add_argument("--yts-language", default="english")
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s-%(levelname)s-%(message)s")
+    if args.command == "file":
+        return run_file_mode(args)
+    return run_search_mode(args)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from typing import Iterable, Sequence
 try:
     import tree_sitter_python as _tspython
     from tree_sitter import Language, Node, Parser, Query, QueryCursor
-except ImportError as _exc:  # pragma: no cover
+except ImportError as _exc:
     print(
         f"error: missing dependency ({_exc}); install with: pip install tree-sitter tree-sitter-python",
         file=sys.stderr,
@@ -259,7 +259,7 @@ def _process_file(path: Path, cfg: StripConfig, write: bool = True) -> FileResul
         else:
             msg = f"unknown engine: {cfg.engine!r}"
             raise ValueError(msg)
-    except Exception as exc:  # noqa: BLE001 — per-file robustness
+    except Exception as exc:
         return FileResult(path=path, success=False, error=str(exc), elapsed=time.perf_counter() - t0)
     if new_source == source:
         return FileResult(

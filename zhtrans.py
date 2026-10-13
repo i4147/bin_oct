@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ def translate_with_retries(
                 if success_delay:
                     time.sleep(success_delay)
                 return result
-        except Exception as exc:  # noqa: BLE001 - we want to log anything
+        except Exception as exc:
             logger.warning(
                 "Translation failed (attempt {}/{}): {}",
                 attempt + 1,
@@ -187,7 +187,7 @@ def _worker_walk_file(task):
             print(f"  Completed: {stats['translated_lines']} lines translated")
         else:
             print("  No Chinese text found, skipping.")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"  Error processing {file_path}: {exc}")
         stats["errors"] += 1
     return stats
@@ -200,7 +200,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
         return 1
     try:
         lines = read_stripped_lines(input_path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error reading input file: {}", exc)
         return 1
     if not lines:
@@ -239,7 +239,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
                         "Failed to translate chunk starting with: {}",
                         chunk[0][:50],
                     )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.error(
                     "Unexpected error for chunk starting with '{}': {}",
                     chunk[0][:50],
@@ -250,7 +250,7 @@ def cmd_chunked(args: argparse.Namespace) -> int:
         print(
             f"Updated {input_path.name}: translated {len(translations)} lines, kept {len(non_chinese)} lines unchanged"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error updating input file: {}", exc)
         return 1
     return 0
@@ -263,7 +263,7 @@ def cmd_line(args: argparse.Namespace) -> int:
         return 1
     try:
         lines = read_stripped_lines(input_path)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error reading input file: {}", exc)
         return 1
     if not lines:
@@ -288,14 +288,14 @@ def cmd_line(args: argparse.Namespace) -> int:
                     print(f"{original} -> {translated}")
                 else:
                     logger.error("Could not translate: {}", original)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 logger.error("Unexpected error for '{}': {}", original, exc)
     try:
         write_inplace(input_path, lines, translations)
         print(
             f"Updated {input_path.name}: translated {len(translations)} lines, kept {len(non_chinese)} lines unchanged"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Error updating input file: {}", exc)
         return 1
     return 0
@@ -417,7 +417,7 @@ def cmd_whole(args: argparse.Namespace) -> int:
     if source_lang == "auto":
         try:
             source_lang = single_detection(text[:500])
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("Language auto-detection failed ({}); using zh-CN", exc)
             source_lang = "zh-CN"
     translator = build_translator(source_lang, args.target)

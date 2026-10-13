@@ -49,7 +49,7 @@ def translate_name(name: str) -> NamePair:
         if not translated:
             return (name, name)
         return (name, translated + suffix)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug(f"Translation failed for '{stem}': {exc}")
         return (name, name)
 

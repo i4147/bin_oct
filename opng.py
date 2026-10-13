@@ -1,20 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""You are writing a prompt for an AI coding agent. The prompt must describe, without including any code or code snippets, a Python command-line tool that recursively finds PNG files and losslessly optimizes them in place using the external `optipng` program, in parallel, with safety checks and reporting. Produce only that prompt, in English.
-
-Write the prompt so the agent can rebuild the script from scratch. Cover:
-
-- **Purpose:** A parallel, in-place PNG optimizer wrapping the `optipng` binary, designed to run on Termux (Android) with a Termux-style shebang line.
-- **Inputs:** A directory (defaults to the current directory) to scan recursively; command-line options for optimization level (integer 1–7, default 7), number of worker processes (default 8), per-file timeout in seconds (default 300), and a dry-run or similar mode if applicable; plus any flags for passing extra arguments to optipng. Specify that the agent should infer any remaining option names sensibly and document them in help text.
-- **Outputs:** Console progress and a summary of files processed, skipped, unchanged, failed, and total bytes saved; per-file error messages to stderr; an exit status reflecting success or failure.
-- **File discovery:** Use `Path.walk()` (Python 3.12+) with in-place pruning of a fixed set of directories (VCS folders, virtualenvs, caches, build outputs such as `node_modules`, `build`, `dist`, `target`, and tool caches like `.mypy_cache`, `.pytest_cache`, `.ruff_cache`). Only consider files with a `.png` suffix, and verify the 8-byte PNG magic signature before processing so mislabeled files are skipped.
-- **Processing:** Copy each file to a temporary directory, run `optipng` with the chosen level and a timeout via `subprocess`, check the return code against success status 0, and compare sizes. Replace the original only when the optimized file is smaller; otherwise leave it untouched and mark it as no-change. Use chunked byte comparison (64 KiB chunks) where content equality matters. Clean up temp files with context managers, even on failure.
-- **Parallelism:** Use `multiprocessing.Pool` with `imap` (chunksize 4) and `functools.partial` to bind shared options. Results are returned as a named tuple carrying path, sizes, captured stdout and stderr, skipped/no-change flags, and an optional error string.
-- **Error handling:** Handle missing `optipng` binary (check with `shutil.which` and exit with a clear message), timeouts, non-zero exit codes, permission errors (checking file mode bits with `stat`), files that vanish mid-run, and keyboard interrupts (terminate the pool cleanly). Never crash the whole run because of one file.
-- **Edge cases:** Empty directories, symlinks (do not follow or should be handled explicitly), non-existent or non-directory input paths, read-only files, zero-byte files, files already optimized, and invalid option values (argparse validation for level range and worker count).
-- **Execution:** Runnable as a standalone script with the Termux interpreter shebang, using `argparse` with `--help`, `from __future__ import annotations`, and type hints throughout, with `Final` constants at module level. No third-party dependencies beyond the standard library and the external `optipng` binary.
-
-Specify that the resulting script should be a single file, well-structured, with a `main()` function guarded by `if __name__ == "__main__":`, and that the agent should preserve file permissions and modification times when replacing a file.
----"""
 
 from __future__ import annotations
 

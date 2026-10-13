@@ -1,44 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to recreate a Python script with the following specification:
-
-Create a single-file Python 3 command-line script intended for Termux on Android (use the shebang `#!/data/data/com.termux/files/usr/bin/env python`). The script recursively compiles C and C++ source files found under the current working directory, in parallel, and reports the results.
-
-Requirements:
-
-**Imports and dependencies**
-- Use only the Python standard library: `from __future__ import annotations`, `subprocess`, `sys`, `multiprocessing.Pool`, and `pathlib.Path`.
-
-**Top-level worker function (must be a module-level function so it can be pickled by multiprocessing)**
-- Name it `compile_file` and have it accept a single tuple argument containing: the source file path (a `Path`), the compiler command name (a string), and the desired output path (a `Path`).
-- Build the command as: compiler, then the source path as a string, then `-o`, then the output path as a string.
-- Run it with `subprocess.run`, capturing stdout and stderr as text, with a 60-second timeout.
-- On return code 0, return a tuple of (source path as string, `True`, and a success message of the form "✓ Compiled: <source file name> -> <output file name>").
-- On a non-zero return code, return (source path as string, `False`, and a failure message of the form "✗ Failed: <source file name>" followed by a newline and the captured stderr).
-- Catch `subprocess.TimeoutExpired` and return a failure tuple with the message "✗ Timeout: <source file name>".
-- Catch any other `Exception` and return a failure tuple with the message "✗ Error: <source file name> - <exception text>".
-- Every path returns the same 3-element tuple shape: (path string, success boolean, message string).
-
-**`main` function**
-- Set the root directory to the current working directory (`Path.cwd()`).
-- Print "Scanning directory: <root path>" followed by a blank line.
-- Collect all `*.c` files and all `*.cpp` files recursively using `rglob`, into separate lists.
-- Build a task list: for each `.c` file, the task is (file, "clang", file with its suffix removed); for each `.cpp` file, the task is (file, "clang++", file with its suffix removed). Process all C tasks before C++ tasks.
-- If there are no tasks, print a message saying no `.c` or `.cpp` files were found, and exit with a nonzero status code via `sys.exit`.
-- Otherwise, compile all tasks in parallel using a `multiprocessing.Pool` (default worker count), via `imap`/`map`-style iteration over the task list.
-- For each result, print its message. Track the count of successes and failures.
-- After completion, print a summary line showing the number of successful and failed compilations (for example, "Done: X succeeded, Y failed"), and exit with status 1 if any failed, otherwise exit normally (status 0).
-
-**Entry point**
-- Guard the call to `main()` with the standard `if __name__ == "__main__":` check. Use `multiprocessing` safe conventions so it works when spawning workers.
-
-**Behavior notes and edge cases**
-- Output names are the source path with its extension removed, in the same directory as the source file; existing output files will be overwritten by the compiler.
-- Files are discovered recursively, so nested directories are included.
-- Compiler availability is not checked up front; a missing compiler surfaces as a per-file "Error" message rather than crashing the script.
-- Stderr is included in the output only for failed compilations.
-- Output should be written to stdout using the exact symbols (✓ and ✗) and formatting described above.
-- Keep the code concise, idiomatic, with minimal comments and no external dependencies.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

@@ -1,36 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The code you've pasted was cut off partway through `read_url_list`, so I can only infer the full behavior from what's visible. I'll write the prompt based on the visible portion and the clearly implied design, noting that the remainder should be matched to the complete source.
-
-Build a self-contained Python command-line downloader script that runs under Termux on Android (shebang pointing to the Termux Python path) and is written with `from __future__ import annotations`. The script reads a list of URLs from a text file and downloads them concurrently to a local directory, showing progress.
-
-**Dependencies and optional imports:**
-- Required: `requests` (HTTP downloads) and `tqdm` (progress bars).
-- Optional: `pycurl`. Import it inside a try block and set a module-level flag such as `_HAS_PYCURL` to True or False; when missing, set the module name to None and fall back to other transports.
-- Optional: `loguru`. If unavailable, provide a fallback logger shim object whose attribute access returns a function that simply prints its message and arguments. Expose the chosen object as `logger`.
-- Standard library only otherwise: argparse, contextlib, hashlib, json, multiprocessing, re, signal, sys, time, urllib (error, parse, request), and pathlib.Path. Type hints use `typing.Optional` and PEP 585 style such as `list[str]`.
-
-**Constants:**
-- Define a default desktop Chrome-on-Windows User-Agent string (Chrome 120, AppleWebKit/537.36) as a module constant, used for HTTP requests unless overridden.
-
-**Helper functions:**
-- `human_size(num)`: converts a byte count (accepts any numeric or string-coercible value; returns the input as a string if conversion fails) into a human-readable string with units B, KB, MB, GB, TB, falling back to PB, using 1024 as the divisor and two decimal places (e.g., "1.50 MB").
-- `read_url_list(path: Path) -> list[str]`: reads a UTF-8 text file with errors ignored, splits into lines, strips whitespace, and returns only non-empty lines. Skip blank lines and handle read errors gracefully. Lines beginning with `#` are typically treated as comments and should be skipped, and duplicate URLs should be removed while preserving order.
-
-**Expected behavior to implement (infer and complete the remaining logic consistently):**
-- Use argparse with options for the input URL list file, output directory, number of parallel workers (using `multiprocessing` pools or processes), user-agent override (defaulting to the constant above), retry count and delay, timeout, and optionally a flag to force pycurl or requests.
-- Derive a safe local filename from each URL using `urllib.parse` (taking the last path segment, decoding percent-encoding, falling back to a hash-based name via `hashlib` such as an MD5 or SHA-1 prefix when the name is empty or invalid). Sanitize filenames with `re` to strip unsafe characters.
-- Stream downloads to disk in chunks, using `requests` with a session and the chosen User-Agent, optionally switching to `pycurl` when available and requested. Show a per-file or overall `tqdm` progress bar, and report sizes via `human_size`.
-- Support resume-or-skip: if the target file already exists with matching size or a recorded state, skip it; write to a temporary `.part` file and rename on completion.
-- Retry transient failures (connection errors, timeouts, 5xx responses) with the configured delay; do not retry 4xx client errors beyond reporting them. Catch `urllib.error` and `requests` exceptions and log them through `logger` without crashing the whole batch.
-- Handle `SIGINT` (Ctrl+C) gracefully via `signal`: stop dispatching new work, terminate workers, clean up partial files, and exit with a nonzero status.
-- Optionally persist a JSON summary (counts of succeeded, skipped, and failed URLs with error messages and sizes) at the end of the run, and print a final summary.
-- Use `time` to measure elapsed time and average throughput for the final report.
-- Exit with status 0 if all downloads succeeded or were skipped, and a nonzero status if any failed; print a usage message on invalid arguments via argparse.
-
-**Entry point:** Guard the main logic with `if __name__ == "__main__":` and call a `main()` function that returns an integer exit code, passed to `sys.exit`.
-
-**Output requirements for the reproduced script:** Produce a single complete Python file that follows the structure above, with clear logging through the logger, idiomatic naming, and comments matching the density of a typical small utility script.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

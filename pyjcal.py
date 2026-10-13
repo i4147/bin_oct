@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -227,31 +227,63 @@ class JalaliCalendar:
         return calendar_grid
 
     def print_month(self, language: str = "en", show_header: bool = True) -> str:
-        output = []
-        if show_header:
-            if language == "fa":
+        if language == "fa":
+            output = []
+            if show_header:
                 month_name = JalaliDate.JALALI_MONTHS_FA[self.month - 1]
                 header = f"{month_name} {self.year}"
-            else:
-                month_name = JalaliDate.JALALI_MONTHS_EN[self.month - 1]
-                header = f"{month_name} {self.year}"
-            output.extend((header.center(28), ""))
-        if language == "fa":
+                output.extend((header.center(28), ""))
             weekdays = JalaliDate.JALALI_WEEKDAYS_FA
-        else:
-            weekdays = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"]
-        output.extend(("  ".join([f"{day:>3}" for day in weekdays]), "-" * 28))
+            output.extend(("  ".join([f"{day:>3}" for day in weekdays]), "-" * 28))
+            today = JalaliDate.today()
+            calendar_grid = self.get_month_calendar()
+            for week in calendar_grid:
+                week_str = []
+                for day in week:
+                    if day == 0:
+                        week_str.append("   ")
+                    elif self.year == today.year and self.month == today.month and day == today.day:
+                        week_str.append(f"{day:>3}*")
+                    else:
+                        week_str.append(f"{day:>3}")
+                output.append(" ".join(week_str))
+            return "\n".join(output)
+
+        output = []
+        width = 20
+
+        if show_header:
+            month_name = JalaliDate.JALALI_MONTHS_EN[self.month - 1]
+            header_text = f"{month_name} {self.year}"
+            left_pad = (width - len(header_text)) // 2
+            right_pad = width - len(header_text) - left_pad
+            header_colored = " " * left_pad + f"\033[37m{header_text}\033[0m" + " " * right_pad
+            output.append(header_colored)
+
+        weekdays_abbr = ["Sh", "Ye", "Do", "Se", "Ch", "Pa", "Jo"]
+        weekday_cells = []
+        for i, wd in enumerate(weekdays_abbr):
+            if i == 6:
+                colored = f"\033[31m{wd}\033[0m"
+            else:
+                colored = f"\033[37m{wd}\033[0m"
+            weekday_cells.append(colored)
+        output.append(" ".join(weekday_cells))
+
         today = JalaliDate.today()
         calendar_grid = self.get_month_calendar()
         for week in calendar_grid:
             week_str = []
-            for day in week:
+            for idx, day in enumerate(week):
                 if day == 0:
-                    week_str.append("   ")
-                elif self.year == today.year and self.month == today.month and day == today.day:
-                    week_str.append(f"{day:>3}*")
+                    cell = "  "
                 else:
-                    week_str.append(f"{day:>3}")
+                    cell = f"{day:2d}"
+                    if self.year == today.year and self.month == today.month and day == today.day:
+                        cell = f"\033[30;47m{cell}\033[0m"
+                    elif idx == 6:
+                        cell = f"\033[31m{cell}\033[0m"
+                week_str.append(cell)
             output.append(" ".join(week_str))
         return "\n".join(output)
 

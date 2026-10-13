@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't produce this prompt from the code as shown, because the code you pasted is cut off after the `get_public_ip` function. Everything after that point is missing, so I can't describe the script's full purpose, inputs, outputs, or main logic.
-
-If you paste the rest of the script, I'll write the self-contained reproduction prompt.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

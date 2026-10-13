@@ -7,7 +7,7 @@ import sys
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Optional imports for backends with graceful fallback handling
+
 try:
     import requests
 except ImportError:
@@ -36,7 +36,7 @@ def validDir(userDir):
         return userDir
     elif not userDir:
         return userDir
-    return userDir  # Will be created automatically via os.makedirs later
+    return userDir
 
 
 def validSize(size):
@@ -56,7 +56,6 @@ def getParams(sysArgs):
     """
     parser = argparse.ArgumentParser(description="Get arguments for searching and downloading Google images")
 
-    # Required and general arguments
     parser.add_argument("-q", "--query", help="Query to search for", type=str, required=True, nargs="+")
     parser.add_argument("-l", "--limit", help="Max images to download (default: 3)", type=int, default=3)
     parser.add_argument(
@@ -74,7 +73,6 @@ def getParams(sysArgs):
         required=False,
     )
 
-    # NEW FUNCTIONALITY: Download Backend Choice
     parser.add_argument(
         "-b",
         "--backend",
@@ -84,7 +82,6 @@ def getParams(sysArgs):
         default="requests",
     )
 
-    # NEW FUNCTIONALITY: Multi-threading support
     parser.add_argument(
         "-t",
         "--threads",
@@ -93,7 +90,6 @@ def getParams(sysArgs):
         default=4,
     )
 
-    # Query refinement arguments
     parser.add_argument("-epq", "--exactQuery", help="Words that must be included", type=str, default="")
     parser.add_argument("-oq", "--optionalQuery", help="Words that are optional", type=str, default="")
     parser.add_argument(
@@ -104,7 +100,6 @@ def getParams(sysArgs):
         default="",
     )
 
-    # Size selection
     sizeGroup = parser.add_mutually_exclusive_group(required=False)
     sizeGroup.add_argument(
         "-cs",
@@ -139,7 +134,6 @@ def getParams(sysArgs):
         ],
     )
 
-    # Aspect ratio & colors
     parser.add_argument(
         "-ar",
         "--aspectRatio",
@@ -177,7 +171,6 @@ def getParams(sysArgs):
         choices=["full-colour", "black-and-white", "transparent"],
     )
 
-    # File and image type filters
     parser.add_argument(
         "-it",
         "--imageType",
@@ -194,7 +187,6 @@ def getParams(sysArgs):
     )
     parser.add_argument("-s", "--site", help="Specific site or domain to search", type=str, default="")
 
-    # SafeSearch flag (FIXED bug: action="store_true" instead of type=bool)
     parser.add_argument(
         "-ss",
         "--SafeSearch",
@@ -214,7 +206,6 @@ def getParams(sysArgs):
     args = parser.parse_args(sysArgs)
     params = vars(args)
 
-    # Join list of query words into single string
     params["query"] = " ".join(params["query"]).strip()
     return params
 
@@ -284,7 +275,6 @@ def getParamValue(k, v, imgQuery):
         if k == "limit":
             return 3
         elif k == "outputDir":
-            # Default directory created in current working directory based on query
             safe_folder = re.sub(r"[^\w\s-]", "_", imgQuery).strip()
             return os.path.join(os.getcwd(), safe_folder)
         elif k == "SafeSearch":
@@ -323,7 +313,6 @@ def getImageUrls(params, url):
     imageUrls = []
     maxImages = params["limit"]
 
-    # Modern headless Chrome configuration
     chromeOptions = webdriver.ChromeOptions()
     chromeOptions.add_argument("--no-sandbox")
     chromeOptions.add_argument("--headless=new")
@@ -354,7 +343,6 @@ def getImageUrls(params, url):
         while len(imageUrls) < maxImages:
             scroll(driver)
 
-            # Updated modern Selenium By syntax
             thumbnails = driver.find_elements(By.CSS_SELECTOR, "img.Q4LuWd")
             resultsNo = len(thumbnails)
 
@@ -390,11 +378,6 @@ def getImageUrls(params, url):
 
     print(f"Done getting URLs. Total retrieved: {len(imageUrls)}")
     return imageUrls
-
-
-# ===========================================================================
-# BACKEND DOWNLOAD IMPLEMENTATIONS (requests, httpx, pycurl)
-# ===========================================================================
 
 
 def download_with_requests(url, timeout=10, headers=None):
@@ -442,7 +425,6 @@ def download_with_pycurl(url, timeout=10, headers=None):
     if status_code != 200:
         raise Exception(f"HTTP Status Code {status_code}")
 
-    # Extract Content-Type header from response
     header_text = header_buffer.getvalue().decode("iso-8859-1", errors="ignore")
     content_type = ""
     for line in header_text.splitlines():
@@ -521,7 +503,6 @@ def downloadImages(params, imageUrls):
         )
     }
 
-    # Execute parallel download jobs using ThreadPoolExecutor
     success_count = 0
     with ThreadPoolExecutor(max_workers=thread_count) as executor:
         futures = [

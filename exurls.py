@@ -1,32 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool with the following specification:
-
-Create a Python 3 command-line script for Termux (Android) that crawls a web page and extracts the hyperlinks it contains. The script should be runnable with a shebang line pointing to the Termux Python interpreter (`/data/data/com.termux/files/usr/bin/env python`) and use `from __future__ import annotations` for type hints. It must depend on the `requests` and `beautifulsoup4` (bs4) libraries, using the `html.parser` backend.
-
-Functional requirements:
-
-- Accept a URL as a required positional command-line argument, parsed with `argparse`. Provide additional options as needed to control the output file path and any other behavior the implementation requires.
-- Build a `requests.Session` through a factory function that sets a realistic desktop browser User-Agent and matching headers: Accept (HTML/XHTML/XML with image/webp and a fallback wildcard), Accept-Language favoring English with Persian as a secondary option, Accept-Encoding of gzip, deflate, and br, Connection keep-alive, Upgrade-Insecure-Requests set to 1, and Cache-Control max-age=0.
-- Fetch the target URL with a 30-second timeout, following redirects, and call `raise_for_status()` so HTTP errors surface as exceptions.
-- Set the response encoding to the detected apparent encoding, falling back to UTF-8 when detection returns nothing.
-- Parse the HTML with BeautifulSoup and collect every `<a>` tag that has an `href` attribute.
-- Strip whitespace from each href. Skip empty hrefs, fragment-only links starting with `#`, and `javascript:` pseudo-links.
-- Resolve each remaining href to an absolute URL relative to the page URL using `urljoin`.
-- Parse the resolved URLs with `urlparse` and keep only those with an http or https scheme and a non-empty network location, so mailto, tel, data, and similar schemes are excluded.
-- Deduplicate results using a set, then output the links in sorted order.
-- Write the sorted links one per line to the output destination, and print a summary or the links to standard output as appropriate for the design.
-- Optionally handle the output path as a `pathlib.Path`, creating parent directories if they do not exist.
-
-Error handling and edge cases:
-
-- Handle network failures, timeouts, and HTTP error statuses gracefully, reporting a clear message to standard error and exiting with a non-zero status code rather than printing a raw traceback.
-- Handle a page with no qualifying links by reporting that no links were found, without crashing.
-- Handle malformed or relative URLs, unusual schemes, and whitespace-padded hrefs as described above.
-- Handle file write errors (permissions, invalid path) with a clear message and non-zero exit.
-- Handle keyboard interrupt cleanly.
-
-Execution: the script should be executable directly from the command line and exit with status 0 on success and a non-zero status on any failure. Include a `main()` function guarded by `if __name__ == "__main__":` and return an integer exit code from it passed to `sys.exit`. Use only the standard library plus `requests` and `beautifulsoup4`.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

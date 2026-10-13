@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -214,7 +214,7 @@ def check_package_missing_full(pkg: str, filter_mode: str, timeout: float) -> di
             "missing_files": [],
             "error": "timeout",
         }
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception as exc:
         return {
             "package": pkg,
             "total_checked": 0,
@@ -266,7 +266,7 @@ def cmd_missing_files(args: argparse.Namespace) -> int:
         for index, future in enumerate(as_completed(future_to_pkg), 1):
             try:
                 result = future.result()
-            except Exception as exc:  # pragma: no cover - defensive
+            except Exception as exc:
                 result = {
                     "package": future_to_pkg[future],
                     "total_checked": 0,
@@ -562,7 +562,7 @@ def _make_deb_one(pkg: str, out_dir_str: str, log_path: str) -> bool:
         with open(log_path, "a", encoding="utf-8") as handle:
             handle.write(f"Fetch returned no file for {pkg}\n")
         return False
-    except Exception as exc:  # pragma: no cover - defensive
+    except Exception as exc:
         with open(log_path, "a", encoding="utf-8") as handle:
             handle.write(f"Error creating {pkg}.deb: {exc}\n")
         return False

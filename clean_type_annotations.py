@@ -1,38 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Create a self-contained prompt that instructs an AI coding agent to write a Python script with the following specification:
-
-Write a single Python executable script (Termux-style shebang pointing to the Termux Python interpreter, with `from __future__ import annotations` at the top) whose purpose is to strip type annotations from Python source files in place, converting annotated code into valid unannotated Python while preserving formatting, comments, and runtime behavior as much as possible.
-
-Core requirements:
-
-1. Purpose and approach: Use the libCST library to parse each target `.py` file into a concrete syntax tree and apply a custom transformer that removes type information. The transformer must:
-   - Remove annotations from function parameters (including those on parameters of all kinds) by setting the annotation to none, leaving the default values intact.
-   - Remove return annotations from function definitions.
-   - Remove PEP 695 type parameter lists from functions and classes when present, guarded with attribute checks so older libCST versions do not crash.
-   - Convert annotated assignments: if an annotated assignment has no value, remove the statement entirely; if it has a value, rewrite it as a plain assignment to the same target, preserving the value and whitespace/semicolon structure as much as practical.
-   - Handle any other annotation-only constructs (such as a type alias statement, if present in the libCST version) appropriately, dropping or simplifying them so the output remains valid Python.
-   - Leave nodes unchanged when there is nothing to remove, returning the original updated node.
-
-2. Inputs and outputs: The script accepts one or more file or directory paths on the command line (or a sensible default such as the current directory if none is given). For directories, it recursively finds all `.py` files, skipping any directory named `__pycache__`. Each file is processed and overwritten in place only if the transformed source differs from the original. It should report a summary (counts of files processed, changed, skipped, and failed) to stdout, and per-file errors to stderr.
-
-3. Parallelism: Process files concurrently using the `multiprocessing` module with a fixed worker pool of 8 processes. Use a top-level worker function so it is picklable. Collect results as they complete and aggregate them in the parent process. Guard the entry point with the standard main-module check. Handle the case where there are few files by not spawning more workers than files.
-
-4. Robustness and error handling:
-   - Read files with proper encoding detection: honor PEP 263 encoding declarations via the `tokenize` module's `detect_encoding`, falling back to UTF-8 on failure, and preserve the original encoding and line endings when writing back.
-   - Catch libCST parse errors and other exceptions per file so one bad file does not abort the run; record them as failures.
-   - Suppress unwanted stdout noise from libraries inside workers using `contextlib.redirect_stdout` or similar with an `io.StringIO` buffer where appropriate.
-   - Write files atomically where feasible (write to a temporary file in the same directory, then replace) to avoid corruption if interrupted.
-   - Gracefully handle nonexistent paths, unreadable files, and permission errors by reporting them and continuing.
-   - Use `pathlib.Path` throughout.
-
-5. Dependencies: Python standard library (`contextlib`, `io`, `multiprocessing`, `os`, `sys`, `tokenize`, `pathlib`, `typing`) and the third-party `libcst` package. Use `TYPE_CHECKING` guards for type-only imports such as `collections.abc` iterables and sequences.
-
-6. Execution details: Run as `python script.py [paths...]`. Exit with status 0 when all files succeed and a nonzero status if any file failed. Keep constants such as worker count and skipped directory names as module-level constants.
-
-7. Edge cases: empty files, files with no annotations (must not be rewritten), files with syntax errors, files with BOMs or non-UTF-8 encodings, symlinks (do not follow directory symlink loops), and deeply nested directories.
-
-Deliver the complete script in a single file, with clear structure, concise docstrings, and no unnecessary dependencies.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

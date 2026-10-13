@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple
 
-# Try importing translation backends gracefully
+
 try:
     from translate import Translator
 except ImportError:
@@ -32,7 +32,7 @@ def contains_non_english(text: str) -> bool:
     """
     if not text or not text.strip():
         return False
-    # Any character with code point > 127 is non-ASCII (e.g., CJK, Cyrillic, accented Latin)
+
     return any(ord(char) > 127 for char in text)
 
 
@@ -49,18 +49,17 @@ def translate_text(text: str, target_lang: str = "en") -> str:
     Returns:
         str: Translated string, or original text if all backends fail.
     """
-    # 1. Primary Backend: 'translate' library
+
     if Translator is not None:
         try:
             translator = Translator(to_lang=target_lang)
             result = translator.translate(text)
-            # Ensure valid translation output (MyMemory API warning check)
+
             if result and not result.startswith("MYMEMORY WARNING"):
                 return result
         except Exception:
-            pass  # Fail over to secondary backend
+            pass
 
-    # 2. Secondary Backend (Fallback): 'deep-translator' library
     if GoogleTranslator is not None:
         try:
             result = GoogleTranslator(source="auto", target=target_lang).translate(text)
@@ -69,7 +68,6 @@ def translate_text(text: str, target_lang: str = "en") -> str:
         except Exception as e:
             print(f"    [Warning] Fallback translation failed for '{text[:20]}...': {e}")
 
-    # If both backends fail or are uninstalled, return original string
     return text
 
 
@@ -88,11 +86,9 @@ def get_node_char_offsets(source_code: str, node: ast.AST) -> tuple[int, int]:
     source_bytes = source_code.encode("utf-8")
     lines_bytes = source_bytes.splitlines(keepends=True)
 
-    # Calculate absolute byte offset
     start_byte = sum(len(lines_bytes[i]) for i in range(node.lineno - 1)) + node.col_offset
     end_byte = sum(len(lines_bytes[i]) for i in range(node.end_lineno - 1)) + node.end_col_offset
 
-    # Convert byte offsets back to character counts
     start_char = len(source_bytes[:start_byte].decode("utf-8", errors="ignore"))
     end_char = len(source_bytes[:end_byte].decode("utf-8", errors="ignore"))
 
@@ -103,12 +99,10 @@ def reformat_literal(orig_slice: str, translated_text: str) -> str:
     if not orig_slice:
         return f'"{translated_text}"'
 
-    # Extract prefix (e.g. r, f, fr, rf, u, b)
     prefix_match = re.match(r"^([fFrRbBuU]{1,2})", orig_slice)
     prefix = prefix_match.group(1) if prefix_match else ""
     rest = orig_slice[len(prefix) :]
 
-    # Detect quote type
     if rest.startswith('"""') and rest.endswith('"""'):
         quote = '"""'
     elif rest.startswith("'''") and rest.endswith("'''"):
@@ -118,10 +112,8 @@ def reformat_literal(orig_slice: str, translated_text: str) -> str:
     elif rest.startswith("'") and rest.endswith("'"):
         quote = "'"
     else:
-        # Fallback if outer quotes are missing or inside f-string expressions
         return f'"{translated_text}"'
 
-    # Escape quotes and formatting inside translated string
     if quote in ('"""', "'''"):
         escaped = translated_text.replace(quote, "\\" + quote[0] * 3)
     else:
@@ -157,7 +149,6 @@ def process_python_file(file_path: Path) -> bool:
         print(f"Skipping {file_path} (Syntax Error: {e})")
         return False
 
-    # Collect AST nodes representing string constants with non-English text
     targets: list[tuple[int, int, str, str]] = []
 
     for node in ast.walk(tree):
@@ -172,8 +163,6 @@ def process_python_file(file_path: Path) -> bool:
         print(f"No non-English string literals found in: {file_path}")
         return False
 
-    # Process replacements in REVERSE order by character offset.
-    # This prevents earlier string modifications from shifting index positions of subsequent nodes.
     targets.sort(key=lambda x: x[0], reverse=True)
 
     modified_code = source_code
@@ -213,7 +202,6 @@ def resolve_input_paths(inputs: list[str]) -> list[Path]:
     target_files: list[Path] = []
 
     if not inputs:
-        # Default: process current directory recursively
         print("No input files specified. Recursively scanning current directory for .py files...")
         target_files = [p for p in Path(".").rglob("*.py") if p.is_file()]
     else:
@@ -226,7 +214,6 @@ def resolve_input_paths(inputs: list[str]) -> list[Path]:
             else:
                 print(f"Warning: Ignored '{item}' (not a valid .py file or directory)")
 
-    # Deduplicate and exclude the translator script itself
     unique_files = sorted(list({f.resolve() for f in target_files if f.resolve() != current_script}))
     return unique_files
 
@@ -240,7 +227,6 @@ def main():
     )
     args = parser.parse_args()
 
-    # Warn if libraries are missing
     if Translator is None and GoogleTranslator is None:
         print("Error: Neither 'translate' nor 'deep-translator' is installed.")
         print("Please install at least one using:")

@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -46,9 +46,9 @@ def _read_source(path: Path) -> Optional[str]:
     except UnicodeDecodeError:
         try:
             return path.read_text(encoding="latin-1")
-        except Exception:  # noqa: BLE001
+        except Exception:
             return None
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
@@ -178,7 +178,7 @@ def strip_ast_unparse(source: str, *, preserve_module_docstring: bool = True) ->
     ast.fix_missing_locations(new_tree)
     try:
         return ast.unparse(new_tree), count
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None, 0
 
 
@@ -256,7 +256,7 @@ def _tidy(source: str) -> str:
     return "\n".join(line.rstrip() for line in source.split("\n"))
 
 
-def _libcst_is_docstring_line(node) -> bool:  # noqa: ANN001
+def _libcst_is_docstring_line(node) -> bool:
     if not isinstance(node, cst.SimpleStatementLine):
         return False
     if len(node.body) != 1:
@@ -287,14 +287,14 @@ class _LibCSTStripper(cst.CSTTransformer):
             return False
         return text.lstrip().startswith(("#!", "# fmt", "# type"))
 
-    def leave_EmptyLine(self, orig, updated):  # noqa: ANN001
+    def leave_EmptyLine(self, orig, updated):
         if self.remove_comments and updated.comment is not None:
             if not self._keep_comment(updated.comment.value):
                 self.comments_removed += 1
                 return updated.with_changes(comment=None)
         return updated
 
-    def leave_TrailingWhitespace(self, orig, updated):  # noqa: ANN001
+    def leave_TrailingWhitespace(self, orig, updated):
         if self.remove_comments and updated.comment is not None:
             if not self._keep_comment(updated.comment.value):
                 self.comments_removed += 1
@@ -307,7 +307,7 @@ class _LibCSTStripper(cst.CSTTransformer):
             return (cst.SimpleStatementLine(body=[cst.Pass()]),)
         return body
 
-    def leave_Module(self, orig, updated):  # noqa: ANN001
+    def leave_Module(self, orig, updated):
         if not self.preserve_module_docstring and updated.body and _libcst_is_docstring_line(updated.body[0]):
             self.docstrings_removed += 1
             return updated.with_changes(body=updated.body[1:])
@@ -320,7 +320,7 @@ class _LibCSTStripper(cst.CSTTransformer):
             return indented_block.with_changes(body=new_body)
         return indented_block
 
-    def leave_FunctionDef(self, orig, updated):  # noqa: ANN001
+    def leave_FunctionDef(self, orig, updated):
         if isinstance(updated.body, cst.IndentedBlock):
             new_block = self._strip_suite(updated.body)
             if new_block is not updated.body:
@@ -329,7 +329,7 @@ class _LibCSTStripper(cst.CSTTransformer):
 
     leave_AsyncFunctionDef = leave_FunctionDef  # type: ignore[assignment]
 
-    def leave_ClassDef(self, orig, updated):  # noqa: ANN001
+    def leave_ClassDef(self, orig, updated):
         if isinstance(updated.body, cst.IndentedBlock):
             new_block = self._strip_suite(updated.body)
             if new_block is not updated.body:
@@ -355,7 +355,7 @@ def strip_libcst(
         body = buf.read()
     try:
         module = cst.parse_module(body)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None, 0, 0
     stripper = _LibCSTStripper(
         preserve_module_docstring=preserve_module_docstring,
@@ -364,7 +364,7 @@ def strip_libcst(
     )
     try:
         new_module = module.visit(stripper)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None, 0, 0
     out = new_module.code
     if shebang:
@@ -475,7 +475,7 @@ def _scan_file_for_findings(path_str: str) -> tuple[str, list[tuple[int, str, bo
     findings: list[tuple[int, str, bool]] = []
     try:
         src = path.read_text(encoding="utf-8", errors="ignore")
-    except Exception:  # noqa: BLE001
+    except Exception:
         return path_str, findings
     doc_lines: set[int] = set()
     try:
@@ -732,7 +732,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         LOG.warning("Operation cancelled by user")
         return 130
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         LOG.error("Unexpected error: %s", e, exc_info=True)
         return 1
 

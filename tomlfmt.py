@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import contextlib
@@ -107,7 +107,6 @@ class Entry:
     comment: str | None
 
 
-# ----------------------------------------------------------------------------- parser
 class Parser:
     def __init__(self, source: str) -> None:
         self.s = source
@@ -322,7 +321,6 @@ class Parser:
                 self.error("expected ',' or '}' in inline table")
 
 
-# ----------------------------------------------------------------------------- printer
 @dataclass(slots=True)
 class Line:
     text: str
@@ -484,7 +482,6 @@ def render(items: list) -> str:
     return "\n".join(align_comments(lines)) + "\n"
 
 
-# ----------------------------------------------------------------------------- validation
 def same_data(a, b) -> bool:
 
     if type(a) is not type(b):
@@ -600,7 +597,6 @@ def process_file(path_str: str, check: bool) -> Result:
         return Result(path_str, "error", f"unexpected error: {type(exc).__name__}: {exc}")
 
 
-# ----------------------------------------------------------------------------- discovery
 def walk_toml(root: str) -> Iterator[str]:
 
     stack = [root]
@@ -651,7 +647,6 @@ def display_path(path: str) -> str:
         return path
 
 
-# ----------------------------------------------------------------------------- CLI
 def iter_results(files: list[str], check: bool) -> Iterator[Result]:
     worker = functools.partial(process_file, check=check)
     if len(files) == 1:

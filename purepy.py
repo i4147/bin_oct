@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def check_package(name: str) -> PackageResult:
         if has_native_wheels(info):
             return name, "native"
         return name, "pure"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug(f"Error querying {name}: {exc}")
         return name, "not_found"
 

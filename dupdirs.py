@@ -1,27 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python duplicate-file finder with the following specification:
-
-Build a command-line Python 3 script (Termux-compatible, shebang pointing to the Termux Python path) that finds duplicate files under one or more directory roots by content hashing. Use the xxhash library's 64-bit xxHash (xxh64) for hashing and multiprocessing.Pool with 8 workers for parallel hashing.
-
-Behavior requirements:
-
-- Accept one or more root directories via argparse as positional arguments (use `from __future__ import annotations` at the top). Validate that each path exists and is a directory; report errors clearly and exit with a nonzero status if a root is invalid.
-- Traverse each root iteratively (stack-based, not recursive) using os.scandir. Maintain a maximum directory depth of 64; deeper directories are skipped silently. Skip any directory named ".git". Never follow symbolic links: skip symlinks entirely, both to directories and to files. Use is_dir(follow_symlinks=False) and is_file(follow_symlinks=False).
-- Silently skip directise PermissionError or other scanning, and skip individual entries that raise OSError.
-- Collect each regular file as a (relative POSIX path, absolute Path) pair, with the relative path computed against the resolved root.
-- Group files by size first. Only files whose size matches at least one other file are hashed, since unique sizes cannot be duplicates. Handle zero-byte files consistently (they share a size group and can be reported as duplicates of each other).
-- Hash candidate files in parallel with a multiprocessing Pool of 8 workers. Hash with xxh64 by reading in 1 MiB chunks (1 << 20 bytes) so large files do not load into memory. Group results by hash digest, and report only groups containing two or more files.
-- Handle files that vanish or become unreadable between scanning and hashing: catch OSError per file, skip them, and continue without crashing.
-- Output: for each duplicate group, print the shared hash and the member file paths (relative or absolute as appropriate, with clear labeling per root), plus a summary of total duplicate groups, total duplicate files, and reclaimable bytes (sum of sizes of all copies beyond the first in each group). Print nothing extra if no duplicates are found, or print a clear "no duplicates found" message.
-- Guard the entry point with `if __name__ == "__main__":` and ensure multiprocessing works correctly (the Pool must be created under that guard).
-- Exit codes: 0 on success regardless of duplicates found; nonzero on invalid arguments or fatal errors. Use sys.exit appropriately and write errors to stderr.
-
-Dependencies: standard library (argparse, os, sys, collections.defaultdict, multiprocessing.Pool, pathlib.Path) plus the third-party `xxhash` package. Mention in the script's usage that `xxhash` must be installed (e.g., via pip).
-
-Implementation constraints: use type hints where helpful, keep the code idiomatic and well-structured with small helper functions (a file hashing helper, a file collection helper, and the main orchestration), and keep the module importable without side effects. Ensure the collection helper returns a list of (relative path, absolute path) tuples and returns it correctly at the end.
-
-Deliver the complete script as a single file, runnable with `python script.py <dir> [<dir> ...]`.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

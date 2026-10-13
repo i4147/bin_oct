@@ -1,15 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-r"""pyenhance: fix common problems in Python source files, in place.
-
-Fixes (select with --select, disable 'is' with --no-is):
-  regex   escaped regex literals ("\\d+") passed to re.* or assigned to *pattern*/*regex* names -> raw (r"\d+")
-  escape  invalid escape sequences ("\d", "\s") -> doubled backslashes (identical runtime value)
-  bytes   non-ASCII characters inside bytes literals (SyntaxError) -> \xHH escapes
-  is      `x is "lit"` / `x is 3` (SyntaxWarning) -> `x == "lit"` / `x == 3`
-
-Every rewrite is validated (compiles, AST unchanged apart from the intended fixes)
-before anything touches disk. Edits are byte-level, so formatting is preserved.
-"""
 
 from __future__ import annotations
 
@@ -118,11 +107,6 @@ class Positions:
         return self.starts[row - 1] + col
 
 
-# --------------------------------------------------------------------------- #
-# Low-level helpers
-# --------------------------------------------------------------------------- #
-
-
 def splice(src: bytes, edits: Sequence[Edit]) -> bytes:
     parts: list[bytes] = []
     cursor = 0
@@ -191,11 +175,6 @@ def fingerprint(text: str) -> str:
     return ast.dump(_NormalizeIs().visit(parse(text)))
 
 
-# --------------------------------------------------------------------------- #
-# Fix 1 and 2: regex -> raw, invalid escapes
-# --------------------------------------------------------------------------- #
-
-
 def regex_constant_spans(tree: ast.AST, pos: Positions) -> set[tuple[int, int]]:
     re_modules: set[str] = {"re"}
     re_funcs: set[str] = set()
@@ -243,7 +222,7 @@ def to_raw_literal(tok: str) -> str | None:
         return None
     prefix, quote, _ = parts
     lowered = prefix.lower()
-    if set(lowered) - {"b", "u"}:  # already raw, or an f-string
+    if set(lowered) - {"b", "u"}:
         return None
     is_bytes = "b" in lowered
     try:
@@ -257,7 +236,7 @@ def to_raw_literal(tok: str) -> str | None:
     else:
         body = value
     if quote in body or any(ord(c) < 32 or ord(c) == 127 for c in body):
-        return None  # control characters would need \n-style escapes, which changes the text
+        return None
     candidate = ("rb" if is_bytes else "r") + quote + body + quote
     try:
         same = ast.literal_eval(candidate) == value
@@ -320,11 +299,6 @@ def string_edits(src: bytes, text: str, tree: ast.AST, pos: Positions, cfg: Conf
     return edits, counts
 
 
-# --------------------------------------------------------------------------- #
-# Fix 3: non-ASCII bytes literals (token-level, runs before ast.parse)
-# --------------------------------------------------------------------------- #
-
-
 def fix_nonascii_bytes(text: str) -> tuple[str, int]:
     src = text.encode("utf-8")
     pos = Positions(text)
@@ -343,11 +317,6 @@ def fix_nonascii_bytes(text: str) -> tuple[str, int]:
         )
         edits.append(Edit(start, end, (prefix + quote + escaped + quote).encode("utf-8")))
     return splice(src, edits).decode("utf-8"), len(edits)
-
-
-# --------------------------------------------------------------------------- #
-# Fix 4: `is` with literal -> ==
-# --------------------------------------------------------------------------- #
 
 
 def is_literal(node: ast.expr) -> bool:
@@ -372,11 +341,6 @@ def is_edits(src: bytes, tree: ast.AST, pos: Positions) -> tuple[list[Edit], Cou
                     counts["is"] += 1
             left = right
     return edits, counts
-
-
-# --------------------------------------------------------------------------- #
-# Orchestration
-# --------------------------------------------------------------------------- #
 
 
 def fix_source(original: str, cfg: Config) -> FixResult:
@@ -404,7 +368,7 @@ def fix_source(original: str, cfg: Config) -> FixResult:
     if new_text == original:
         return FixResult(original, Counter(), [])
 
-    compile_check(new_text)  # must be valid Python before anything is written
+    compile_check(new_text)
     if text == original and fingerprint(original) != fingerprint(new_text):
         raise ValueError("AST changed beyond the intended fixes; refusing to write")
 
@@ -429,7 +393,7 @@ def write_atomic(path: Path, data: bytes, backup: bool) -> None:
     tmp = path.with_name(f".{path.name}.pyenhance-tmp")
     try:
         tmp.write_bytes(data)
-        shutil.copymode(path, tmp)  # keep executable bits on shebang scripts
+        shutil.copymode(path, tmp)
         os.replace(tmp, path)
     finally:
         tmp.unlink(missing_ok=True)
@@ -477,11 +441,6 @@ def process_file(path: Path, cfg: Config) -> FileReport:
     return report
 
 
-# --------------------------------------------------------------------------- #
-# Discovery, pool, CLI
-# --------------------------------------------------------------------------- #
-
-
 def discover(inputs: Sequence[str], excludes: set[str]) -> list[Path]:
     roots = [Path(p) for p in inputs] if inputs else [Path.cwd()]
     skip = SKIP_DIRS | excludes
@@ -514,7 +473,7 @@ def iter_results(files: list[Path], cfg: Config) -> Iterator[FileReport]:
     worker = partial(process_file, cfg=cfg)
     try:
         pool = mp.Pool(WORKERS)
-    except OSError as exc:  # restricted environments (some Termux setups)
+    except OSError as exc:
         logger.warning(f"multiprocessing unavailable ({exc}); running sequentially")
         yield from map(worker, files)
         return

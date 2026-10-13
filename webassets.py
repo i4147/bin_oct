@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ from typing import Any, Callable, Optional, Sequence
 
 try:
     from rcssmin import cssmin as _rcssmin  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     _rcssmin = None
 try:
     from rjsmin import jsmin as _rjsmin  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     _rjsmin = None
 _NONE_TYPE = type(None)
 _ANSI = {
@@ -287,7 +287,7 @@ def minify_html_hmin(path: Path, timeout: Optional[int] = None) -> Result:
         out = _post_process_html(proc.stdout)
         path.write_text(out, encoding="utf-8")
         return Result(path, orig, file_size(path), True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
     finally:
         if tmp_cfg is not None and tmp_cfg.exists():
@@ -320,7 +320,7 @@ def minify_html_htmin(path: Path, timeout: int = 30) -> Result:
         return Result(path, orig, orig, False, "html-minifier-terser not found")
     except subprocess.TimeoutExpired:
         return Result(path, orig, orig, False, f"timeout ({timeout}s exceeded)")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
 
 
@@ -341,7 +341,7 @@ def minify_css_csso(path: Path) -> Result:
         return Result(path, orig, new, True, no_change=(new == orig))
     except FileNotFoundError:
         return Result(path, orig, orig, False, "csso not found")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
 
 
@@ -357,7 +357,7 @@ def minify_css_rcssmin(path: Path) -> Result:
             return Result(path, orig, orig, True, no_change=True)
         path.write_text(out, encoding="utf-8")
         return Result(path, orig, file_size(path), True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
 
 
@@ -373,7 +373,7 @@ def minify_js_rjsmin(path: Path) -> Result:
             return Result(path, orig, orig, True, no_change=True)
         path.write_text(out, encoding="utf-8")
         return Result(path, orig, file_size(path), True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
 
 
@@ -382,7 +382,7 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
     orig = file_size(path)
     try:
         content = path.read_text(encoding="utf-8")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, f"cannot read: {exc}")
     try:
         data = json.loads(content)
@@ -399,7 +399,7 @@ def minify_json(path: Path, dry: bool = False, spaced: bool = False) -> Result:
     try:
         path.write_text(out, encoding="utf-8")
         return Result(path, orig, file_size(path), True)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, f"cannot write: {exc}")
 
 
@@ -426,7 +426,7 @@ def minify_svg_svgcleaner(path: Path, skip_parts: Sequence[str] = ("lazy",)) -> 
         return Result(path, orig, new, True, no_change=(new == orig))
     except FileNotFoundError:
         return Result(path, orig, orig, False, "svgcleaner not found")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return Result(path, orig, orig, False, str(exc))
     finally:
         if tmp_path is not None and tmp_path.exists():
@@ -496,7 +496,7 @@ def minify_mixed(path: Path) -> tuple[Path, str]:
             return path, f"SKIP → {path}"
         path.write_text(out, encoding="utf-8")
         return path, f"OK → {path}"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return path, f"ERR ({path}): {exc}"
 
 

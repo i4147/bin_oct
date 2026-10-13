@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""strip_py.py - Strip comments and docstrings from Python files.
-
-Backends: libcst (preferred, formatting-preserving), tree-sitter, ast (stdlib fallback).
-Only docstring/comment byte ranges are edited; the rest of each file is untouched.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -25,9 +19,6 @@ from typing import Callable, Iterable, Iterator
 
 from loguru import logger
 
-# --------------------------------------------------------------------------- #
-# Constants
-# --------------------------------------------------------------------------- #
 
 SKIP_DIRS: frozenset[str] = frozenset({
     ".git",
@@ -35,14 +26,8 @@ SKIP_DIRS: frozenset[str] = frozenset({
     ".mypy_cache",
     ".ruff_cache",
     ".pytest_cache",
-    ".venv",
-    "venv",
     "lazy",
-    "node_modules",
     ".tox",
-    "build",
-    "dist",
-    ".eggs",
 })
 SKIP_DIR_GLOBS: tuple[str, ...] = ("*.egg-info",)
 POOL_WORKERS: int = 8
@@ -50,10 +35,6 @@ ENCODINGS: tuple[str, ...] = ("utf-8", "utf-8-sig", "latin-1")
 GREEN = "\033[32m"
 GRAY = "\033[90m"
 RESET = "\033[0m"
-
-# --------------------------------------------------------------------------- #
-# Result / options
-# --------------------------------------------------------------------------- #
 
 
 @dataclass(slots=True)
@@ -64,7 +45,7 @@ class FileResult:
     docstrings_removed: int = 0
     error: str | None = None
     changed: bool = False
-    final_code: str | None = None  # populated only for -x mode
+    final_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,13 +60,7 @@ class Options:
     clipboard: bool = False
 
 
-# --------------------------------------------------------------------------- #
-# Encoding / detection helpers
-# --------------------------------------------------------------------------- #
-
-
 def read_text(path: Path) -> str:
-    """Read a file trying utf-8, utf-8-sig, then latin-1."""
     raw = path.read_bytes()
     for enc in ENCODINGS:
         try:
@@ -96,7 +71,6 @@ def read_text(path: Path) -> str:
 
 
 def is_python_candidate(path: Path) -> bool:
-    """Heuristic: .py files, or extensionless files with a python shebang or parseable content."""
     if path.suffix == ".py":
         return True
     if path.suffix:
@@ -108,7 +82,6 @@ def is_python_candidate(path: Path) -> bool:
             return True
         if head.strip():
             return False
-        # Empty first line: fall back to parse attempt only if file is small.
         if path.stat().st_size > 2_000_000:
             return False
         ast.parse(read_text(path))
@@ -118,7 +91,6 @@ def is_python_candidate(path: Path) -> bool:
 
 
 def iter_targets(inputs: Iterable[Path]) -> Iterator[Path]:
-    """Yield python files and .whl archives, pruning heavy directories in place."""
     for root in inputs:
         if root.is_file():
             if root.suffix == ".whl" or is_python_candidate(root):
@@ -145,19 +117,12 @@ def relpath(path: Path) -> str:
         return str(path)
 
 
-# --------------------------------------------------------------------------- #
-# Span computation (shared by all backends)
-# --------------------------------------------------------------------------- #
-
-
 @dataclass(frozen=True, slots=True)
 class Edit:
-    """A replacement of the half-open character range [start, end) in source text."""
-
     start: int
     end: int
     replacement: str
-    kind: str  # "comment" | "docstring"
+    kind: str
 
 
 def _line_offsets(source: str) -> list[int]:
@@ -187,7 +152,6 @@ def _is_string_stmt(node: ast.AST) -> bool:
 
 
 def _docstring_edits(source: str, tree: ast.Module, opts: Options) -> list[Edit]:
-    """Compute edits that remove docstrings according to options."""
     offsets = _line_offsets(source)
     edits: list[Edit] = []
     remove_all = opts.strip_all or opts.strip_docstrings
@@ -217,7 +181,6 @@ def _docstring_edits(source: str, tree: ast.Module, opts: Options) -> list[Edit]
 
 
 def _comment_edits(source: str, opts: Options) -> list[Edit]:
-    """Use tokenize to find real COMMENT tokens (never inside strings)."""
     edits: list[Edit] = []
     lines = source.splitlines(keepends=True)
     offsets = _line_offsets(source)
@@ -240,17 +203,14 @@ def _comment_edits(source: str, opts: Options) -> list[Edit]:
         end = _pos(offsets, lineno, col + len(text))
         before = line[:col]
         if before.strip() == "":
-            # Standalone comment line: replace with empty line to keep numbering.
             edits.append(Edit(_pos(offsets, lineno, 0), _pos(offsets, lineno, len(line.rstrip("\r\n"))), "", "comment"))
         else:
-            # Trailing comment: strip whitespace before it too.
             trimmed_start = _pos(offsets, lineno, len(before.rstrip()))
             edits.append(Edit(trimmed_start, end, "", "comment"))
     return edits
 
 
 def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
-    """Remove annotations from function args/returns and annotated assignments (-t)."""
     offsets = _line_offsets(source)
     edits: list[Edit] = []
 
@@ -264,9 +224,7 @@ def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if node.returns is not None:
-                # Remove "-> ann" region conservatively via text search after args.
                 r_start = _pos(offsets, node.returns.lineno, node.returns.col_offset)
-                # find the arrow before it
                 arrow = source.rfind("->", 0, r_start)
                 if arrow != -1:
                     end = _pos(
@@ -288,7 +246,6 @@ def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
                     )
                     edits.append(Edit(colon, end, "", "annotation"))
         elif isinstance(node, ast.AnnAssign) and node.simple:
-            # x: int = 1  ->  x = 1 ; x: int -> removed as bare annotation statement
             t_end = _pos(offsets, node.target.end_lineno or node.target.lineno, node.target.end_col_offset or 0)
             a_start = _pos(offsets, node.annotation.lineno, node.annotation.col_offset)
             a_end = _pos(
@@ -304,7 +261,6 @@ def _type_annotation_edits(source: str, tree: ast.Module) -> list[Edit]:
 
 
 def _apply_edits(source: str, edits: list[Edit]) -> str:
-    """Apply non-overlapping edits from the end of the file backwards."""
     seen: set[tuple[int, int]] = set()
     unique: list[Edit] = []
     for e in sorted(edits, key=lambda x: (x.start, x.end)):
@@ -317,15 +273,10 @@ def _apply_edits(source: str, edits: list[Edit]) -> str:
     last_start = len(source) + 1
     for e in sorted(unique, key=lambda x: x.start, reverse=True):
         if e.end > last_start:
-            continue  # overlapping: skip the inner edit, outer already applied
+            continue
         out = out[: e.start] + e.replacement + out[e.end :]
         last_start = e.start
     return out
-
-
-# --------------------------------------------------------------------------- #
-# Backends
-# --------------------------------------------------------------------------- #
 
 
 @dataclass(frozen=True, slots=True)
@@ -342,7 +293,6 @@ def _count(edits: list[Edit]) -> tuple[int, int]:
 
 
 def backend_ast(source: str, opts: Options) -> Stripped:
-    """Stdlib backend: ast locates docstrings, tokenize locates comments."""
     tree = ast.parse(source)
     edits: list[Edit] = []
     if opts.strip_comments or opts.strip_all:
@@ -357,8 +307,7 @@ def backend_ast(source: str, opts: Options) -> Stripped:
 
 
 def backend_libcst(source: str, opts: Options) -> Stripped:
-    """libcst backend: formatting-preserving CST transform."""
-    import libcst as cst  # type: ignore[import-not-found]
+    import libcst as cst
 
     class _Stripper(cst.CSTTransformer):
         def __init__(self) -> None:
@@ -389,7 +338,7 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
 
         def leave_Module(self, original: cst.Module, updated: cst.Module) -> cst.Module:
             new_body = self._maybe_strip_docstring(cst.IndentedBlock(body=list(updated.body)), is_module=True)
-            return updated.with_changes(body=list(new_body.body))  # type: ignore[attr-defined]
+            return updated.with_changes(body=list(new_body.body))
 
         def leave_FunctionDef(self, original: cst.FunctionDef, updated: cst.FunctionDef) -> cst.FunctionDef:
             return updated.with_changes(body=self._maybe_strip_docstring(updated.body, is_module=False))
@@ -400,7 +349,7 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
     module = cst.parse_module(source)
     stripper = _Stripper()
     module = module.visit(stripper)
-    # Comment removal: delegate to tokenize-based edits for exact preservation rules.
+
     code = module.code
     if opts.strip_comments or opts.strip_all:
         edits = _comment_edits(code, opts)
@@ -410,16 +359,15 @@ def backend_libcst(source: str, opts: Options) -> Stripped:
 
 
 def backend_tree_sitter(source: str, opts: Options) -> Stripped:
-    """tree-sitter backend: locate comment and docstring nodes precisely."""
-    import tree_sitter_python as tspy  # type: ignore[import-not-found]
-    from tree_sitter import Language, Parser  # type: ignore[import-not-found]
+    import tree_sitter_python as tspy
+    from tree_sitter import Language, Parser
 
     parser = Parser(Language(tspy.language()))
     data = source.encode("utf-8")
     tree = parser.parse(data)
     edits: list[Edit] = []
 
-    def walk(node) -> Iterator:  # type: ignore[no-untyped-def]
+    def walk(node) -> Iterator:
         stack = [node]
         while stack:
             n = stack.pop()
@@ -453,7 +401,6 @@ def backend_tree_sitter(source: str, opts: Options) -> Stripped:
             only = is_body and parent is not None and parent.named_child_count == 1
             edits.append(Edit(n.start_byte, n.end_byte, "pass" if only else "", "docstring"))
 
-    # tree-sitter edits are in bytes; convert to char offsets via re-encoding.
     byte_edits = edits
     out_bytes = bytearray(data)
     for e in sorted(byte_edits, key=lambda x: x.start, reverse=True):
@@ -471,13 +418,12 @@ BACKENDS: dict[str, Callable[[str, Options], Stripped]] = {
 
 
 def resolve_backend(requested: str | None) -> str:
-    """Choose backend: honour explicit request, otherwise libcst if installed, else ast."""
     if requested:
         if requested not in BACKENDS:
             raise SystemExit(f"Unknown backend: {requested}")
         return requested
     try:
-        import libcst  # noqa: F401
+        import libcst
 
         return "libcst"
     except ImportError:
@@ -487,34 +433,27 @@ def resolve_backend(requested: str | None) -> str:
 def check_backend_available(name: str) -> None:
     if name == "libcst":
         try:
-            import libcst  # noqa: F401
+            import libcst
         except ImportError as exc:
             raise SystemExit("libcst not installed: pip install libcst") from exc
     elif name == "tree-sitter":
         try:
-            import tree_sitter  # noqa: F401
-            import tree_sitter_python  # noqa: F401
+            import tree_sitter
+            import tree_sitter_python
         except ImportError as exc:
             raise SystemExit("tree-sitter not installed: pip install tree-sitter tree-sitter-python") from exc
 
 
-# --------------------------------------------------------------------------- #
-# Core per-file processing
-# --------------------------------------------------------------------------- #
-
-
 def process_source(source: str, opts: Options) -> Stripped:
-    """Run the configured backend and validate the output parses."""
     backend_fn = BACKENDS[opts.backend]
     result = backend_fn(source, opts)
     if opts.strip_types or opts.strip_all:
-        pass  # types handled inside the backends' edit pipeline where applicable
-    ast.parse(result.code)  # validation; raises SyntaxError to caller
+        pass
+    ast.parse(result.code)
     return result
 
 
 def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
-    """Write via a same-directory temp file then shutil.move for atomic replacement."""
     tmp_name: str | None = None
     try:
         with tempfile.NamedTemporaryFile(
@@ -542,7 +481,6 @@ def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
 
 
 def process_python_file(path: Path, opts: Options) -> FileResult:
-    """Process one file. Never raises; errors are captured in the result."""
     result = FileResult(path=path)
     try:
         original = read_text(path)
@@ -571,7 +509,7 @@ def process_python_file(path: Path, opts: Options) -> FileResult:
             "".join(__import__("traceback").format_exception(exc)),
         )
         return result
-    except Exception as exc:  # noqa: BLE001 - per-file isolation is intentional
+    except Exception as exc:
         result.error = f"{type(exc).__name__}: {exc}"
         logger.opt(exception=exc).error("Failed processing {}", path)
         return result
@@ -602,13 +540,11 @@ def process_python_file(path: Path, opts: Options) -> FileResult:
 
 
 def _worker_single(args: tuple[Path, Options]) -> FileResult:
-    """Module-level picklable worker for multiprocessing."""
     path, opts = args
     return process_python_file(path, opts)
 
 
 def process_wheel(path: Path, opts: Options) -> FileResult:
-    """Sequentially rewrite .py members of a wheel; rebuild only if something changed."""
     result = FileResult(path=path)
     tmp_dir = Path(tempfile.mkdtemp(prefix="strip_whl_", dir=path.parent))
     out_tmp = tmp_dir / path.name
@@ -662,11 +598,6 @@ def process_wheel(path: Path, opts: Options) -> FileResult:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-# --------------------------------------------------------------------------- #
-# Reporting
-# --------------------------------------------------------------------------- #
-
-
 def report(result: FileResult) -> None:
     rel = relpath(result.path)
     if result.error:
@@ -699,15 +630,10 @@ def copy_to_clipboard(code: str) -> None:
         logger.error("termux-clipboard-set failed: {}", exc)
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
-
-
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Strip comments and docstrings from Python files.")
     p.add_argument("paths", nargs="*", type=Path, help="Files or directories (default: cwd)")
-    p.add_argument("-c", "--comments", action="store_true", help="Remove all comments except shebang, # type, # fmt.")
+    p.add_argument("-c", "--comments", action="store_true", help="Remove all comments")
     p.add_argument("-d", "--docstring", action="store_true", help="Remove all docstrings except module docstring.")
     p.add_argument("-a", "--all", action="store_true", help="Remove all comments and docstrings, even preserved ones.")
     p.add_argument("-t", "--type", action="store_true", help="Remove type annotations.")

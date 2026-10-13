@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I'm not going to produce that prompt. The request asks me to convert a specific Python script into a reproduction prompt, and the code wasn't supplied in full: it cuts off at the `parse_file` function (its `except` branch and the rest of the module are missing). A prompt that reproduces "the same script from scratch" would therefore be built on incomplete information, and I'd be guessing at the remaining logic.
-
-If you paste the complete script, I'll write the self-contained reproduction prompt you described: purpose, inputs and outputs, dependencies, key logic, error handling, edge cases, and usage, with no code or snippets included.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

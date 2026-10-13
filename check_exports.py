@@ -1,29 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The code you pasted is cut off partway through the `extract_definitions` function (it ends at `node.target.`), so I can only describe what is visible. Here is the prompt, based on the visible portion:
-
-Write a self-contained Python 3 command-line script that statically inspects a Python source file and reports its top-level public definitions, without importing or executing the file.
-
-Purpose: Given a path to a Python file, parse it with the standard library `ast` module and list the names of its public top-level functions, classes, and constants. Public means the name does not start with an underscore. Constants are module-level assignments whose target is a simple name that is entirely uppercase (using `str.isupper()`), including both plain assignments and annotated assignments that have a simple name as the target.
-
-Requirements and behavior:
-- Start the file with a `#!/data/data/com.termux/files/usr/bin/env python` shebang line and `from __future__ import annotations`.
-- Use `argparse` for the command-line interface, taking a file path argument. Convert it to a `pathlib.Path`.
-- Use `loguru`'s `logger` for all error reporting, not `print` or the `logging` module.
-- Implement a function `extract_definitions(path: Path) -> dict[str, list[str]]` that returns a dictionary with the keys `"functions"`, `"classes"`, and `"constants"`, each mapping to a list of names in source order. Return these empty lists on any failure.
-- Read the file as UTF-8 and parse it with `ast.parse`, passing the filename for error messages.
-- Error handling: catch `SyntaxError` and `UnicodeDecodeError` together, logging an error like "Failed to parse <path>: <error>" and returning the empty result. Catch any other `Exception` separately, logging "Unexpected error reading <path>: <error>" and returning the empty result.
-- Only iterate over the module's top-level `tree.body`; do not descend into nested functions, classes, or methods.
-- Treat both `FunctionDef` and `AsyncFunctionDef` as functions. Skip any whose names begin with an underscore.
-- Skip classes whose names begin with an underscore.
-- For assignments, iterate over all targets of a multi-target assignment and only record targets that are simple `Name` nodes, with uppercase, non-underscore names.
-- Handle annotated assignments (`AnnAssign`) with a simple name target under the same constant rules.
-- Edge cases to handle: files with syntax errors, non-UTF-8 files, empty files (should yield empty lists), names with only underscores or digits, and tuple-unpacking assignments (which should be ignored because their targets are not simple names).
-- Print the results in a readable form (for example, grouped under "Functions", "Classes", and "Constants" headings), and exit with a non-zero status if the file cannot be read or parsed.
-- Include a `main()` function and an `if __name__ == "__main__":` guard.
-- Dependencies: only the Python standard library plus `loguru`.
-
-Usage: `python script.py <path-to-file.py>`. The script should work on Termux (Android), so avoid platform-specific assumptions beyond the shebang.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

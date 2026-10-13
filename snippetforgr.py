@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -751,9 +751,9 @@ def _html_run_multi(files: Sequence[str], output_dir: Path, workers: int) -> int
 
 def cmd_html(args: argparse.Namespace) -> int:
     try:
-        import bs4  # noqa: F401
-        import loguru  # noqa: F401
-        import requests  # noqa: F401
+        import bs4
+        import loguru
+        import requests
     except ImportError as exc:
         print(
             f"html subcommand requires: requests, beautifulsoup4, loguru ({exc})",

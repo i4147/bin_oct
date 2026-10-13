@@ -1,44 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool with the following specification:
-
-Build a Python 3 command-line script that scans a directory tree for Python source files and detects near-duplicate top-level code objects (functions, async functions, classes, and simple single-name module-level constants) across those files, using fuzzy similarity rather than exact matching.
-
-**Purpose and overall behavior**
-- The script walks a given root directory recursively and collects every file ending in ".py", skipping any file whose name is exactly "utils.py".
-- For each collected file, it parses the source with Python's standard `ast` module and extracts top-level objects only (direct children of the module body). Each extracted object records its type ("function", "class", or "constant"), its name, and its source code segment.
-- Files that cannot be read as UTF-8 or that fail to parse due to syntax errors are silently skipped and yield no objects.
-- Only these top-level node kinds are considered: sync and async function definitions, class definitions, and assignments with exactly one target that is a simple name. Other statements are ignored.
-- The script then compares extracted objects to find near-duplicates, grouping objects whose code is highly similar, and reports the results.
-
-**Dependencies and startup**
-- Requires the third-party packages `ssdeep` (fuzzy hashing) and `rapidfuzz` (string similarity, using its `fuzz` module). If either import fails, print exactly this message to stdout and exit with status 1: "Please install dependencies: pip install ssdeep rapidfuzz".
-- Use only standard-library modules otherwise: argparse, ast, hashlib, json, multiprocessing, os, sys, and collections.defaultdict. Include `from __future__ import annotations` at the top.
-- Begin the file with a shebang line for Termux on Android: `#!/data/data/com.termux/files/usr/bin/env python`.
-
-**Expected inputs**
-- A command-line interface built with argparse, accepting a directory path to scan, and any options the implementer deems useful (for example, a similarity threshold and an output format or output file). Choose sensible defaults and document them in the help text.
-
-**Comparison and grouping logic**
-- Use a two-stage approach: compute a fuzzy hash (ssdeep) per object's source for a fast candidate filter, then confirm candidates with rapidfuzz similarity scoring against a configurable threshold.
-- Use hashlib (for example, a content hash) to detect exact duplicates cheaply before fuzzy comparison.
-- Group objects by name or type where appropriate so that unrelated items are not compared needlessly; use collections.defaultdict for grouping.
-- Use multiprocessing to parallelize file extraction or comparison across CPU cores, and make sure the script's entry point is guarded by `if __name__ == "__main__":` so it works with multiprocessing on all platforms.
-- Guard against self-comparison and avoid reporting the same pair twice.
-
-**Outputs**
-- Print or write results describing each group of near-duplicate objects: the object type, name, the file path and line information, and the similarity score(s).
-- Support machine-readable output via json if the implementer includes a JSON option; otherwise print a readable text report to stdout.
-- If no duplicates are found, state that clearly rather than printing nothing.
-
-**Error handling and edge cases**
-- Handle empty directories, directories with no `.py` files, non-existent or non-directory paths (report a clear error and exit non-zero), files with encoding or syntax errors (skip silently), and files containing no qualifying top-level objects.
-- Handle objects whose source segments cannot be recovered (use a safe fallback).
-- Ensure a single unreadable file does not crash the whole run.
-
-**Execution details**
-- Run as a standalone script from the command line; it should be executable with `python <script>` or directly via its shebang.
-- Keep the code idiomatic, well-structured into small functions (file discovery, object extraction, comparison, reporting, and a main function with argparse setup), and include brief docstrings.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

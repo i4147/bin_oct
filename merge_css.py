@@ -55,7 +55,7 @@ def process_css_files(files: list[Path], font_dir: str) -> tuple[Optional[str], 
 
         for line in lines:
             stripped_lower = line.strip().lower()
-            # Hoist the first @charset rule found and remove subsequent ones
+
             if stripped_lower.startswith("@charset"):
                 if charset is None:
                     charset = line.strip()

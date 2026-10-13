@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -147,7 +147,7 @@ def process_file(path: Path) -> FileReport:
     transformer = StripTransformer()
     try:
         new_module = module.visit(transformer)
-    except Exception as exc:  # noqa: BLE001 - transformer must never abort the pool
+    except Exception as exc:
         logger.exception("transformer crashed on {}: {}", path, exc)
         report.skipped = True
         return report

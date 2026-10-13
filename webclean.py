@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -397,7 +397,7 @@ def process_job(job: Job) -> Result:
         return Result(job.path, False, 0)
     try:
         new_text, n = strip_text(text, job.lang, job.approach, job)
-    except Exception as exc:  # noqa: BLE001 - surface any parser error to caller
+    except Exception as exc:
         return Result(job.path, False, 0, f"{type(exc).__name__}: {exc}")
     if n == 0 or new_text == text:
         return Result(job.path, False, 0)
@@ -471,7 +471,7 @@ def run_jobs(jobs: list[Job], workers: int, dry_run: bool) -> int:
             for fut in futures:
                 try:
                     report(fut.get())
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     errors += 1
                     print(
                         f"ERROR: worker failed: {type(exc).__name__}: {exc}",
@@ -510,7 +510,7 @@ def _load_asset(src: str, base: Path) -> Optional[str]:
         p = (base / src.lstrip("/")).resolve()
         if p.is_file():
             return p.read_text(encoding="utf-8", errors="replace")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[warn] could not load asset '{src}': {exc}", file=sys.stderr)
     return None
 
@@ -770,7 +770,7 @@ def _make_job(path: Path, lang: str, args: argparse.Namespace) -> Job:
 def cmd_language(args: argparse.Namespace, lang: str) -> int:
     if args.approach == "tree-sitter":
         try:
-            import tree_sitter  # noqa: F401
+            import tree_sitter
         except ImportError as exc:
             print(
                 f"error: tree-sitter not installed ({exc}). Use --approach regex or install it.",
@@ -786,7 +786,7 @@ def cmd_language(args: argparse.Namespace, lang: str) -> int:
 def cmd_all(args: argparse.Namespace) -> int:
     if args.approach == "tree-sitter":
         try:
-            import tree_sitter  # noqa: F401
+            import tree_sitter
         except ImportError as exc:
             print(
                 f"error: tree-sitter not installed ({exc}). Use --approach regex.",

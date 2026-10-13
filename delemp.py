@@ -1,30 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool with the following specification:
-
-Build a Python command-line utility that recursively scans a directory tree and removes blank or whitespace-only lines from text files, skipping binary files and certain excluded paths. It must run on Termux (Android) with a `/data/data/com.termux/files/usr/bin/env python` shebang, use Python 3 with `from __future__ import annotations`, and rely on two external helper modules: a local module named `dh` providing `is_binary(path)` and `should_skip(path)` functions, and the third-party `loguru` package for logging.
-
-Requirements for the tool:
-
-**Purpose and inputs.** Accept a target directory (or file) path and optional flags via `argparse`. Support at minimum a dry-run mode that reports what would change without writing, a flag to disable colored output, and a verbosity/quiet option. Validate that the path exists and print a clear error and exit with a nonzero status if it does not.
-
-**Outputs.** Print a summary report at the end containing: total files scanned, text files, binary files skipped, files modified, total lines removed, and error count. Optionally list up to a fixed maximum number of previewed modified files (define this as a constant, default 5) with their removed-line counts. Use ANSI color codes (reset, bold, dim, cyan, green, yellow, red) defined as module-level constants, and wrap them in a small `ANSI` class whose `disable()` classmethod blanks all color attributes when color is turned off.
-
-**Data model.** Use `dataclasses` for a per-file result record (path, status, total lines, removed lines, error message, is-binary flag) and an aggregate stats record with counters that are summed as results arrive.
-
-**Concurrency.** Process files in parallel using `multiprocessing.Pool` with a constant worker count (default 8). Use `apply_async` or `imap`-style submission, collecting `AsyncResult` objects, and guard the entry point with `if __name__ == "__main__":`. Type-only imports (like `AsyncResult`) go under `TYPE_CHECKING`. Worker functions must be top-level so they are picklable.
-
-**Per-file logic.** For each file: skip if `should_skip` returns true; skip and count as binary if `is_binary` returns true; otherwise read the text (handle encoding errors gracefully, e.g., reading with replacement or ignoring errors), remove lines that are empty or contain only whitespace while preserving all other lines byte-for-byte including line endings where feasible, count total and removed lines, and rewrite the file only if not in dry-run mode and only if lines were actually removed. Catch `OSError` and `UnicodeError` per file, record the error message in the result, and continue processing the rest. Preserve file permissions and avoid leaving partial writes (write to a temporary file in the same directory then atomically replace).
-
-**Edge cases.** Handle empty files, files with no blank lines (no write should occur), files consisting entirely of blank lines (result is an empty file), symlinks (do not follow symlinked files outside the root unless specified—pick a safe default and document it), unreadable files, permission-denied directories, files with CRLF endings, and a final line without a trailing newline.
-
-**Logging.** Configure `loguru` with a concise format, route per-file errors to warning or error level, and reduce console noise unless verbose mode is enabled. Ensure the logger is configured once in the main process.
-
-**Execution and exit codes.** Return exit code 0 on success, 1 if any file errors occurred, and 2 for invalid arguments or a missing path. Measure and print elapsed time in the summary. Use `sys.exit` with the return code from `main()`.
-
-**Dependencies.** Standard library only apart from `loguru` and the local `dh` helper module; do not invent other third-party packages.
-
-Structure the solution as a single file with functions for argument parsing, file collection (using `pathlib` with recursive globbing), per-file processing, aggregation, reporting, and `main()`.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

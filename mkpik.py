@@ -14,7 +14,7 @@ from typing import List
 def get_py_files(target: Path) -> list[Path]:
     if not target.exists() or target.is_symlink():
         return []
-    # Skip .git directories to avoid modifying repository internals
+
     if ".git" in target.parts:
         return []
     if target.is_file() and target.suffix == ".py":
@@ -105,7 +105,6 @@ def cmd_measure(args: argparse.Namespace) -> None:
     final_size = get_dir_size(cwd)
     size_diff = initial_size - final_size
 
-    # Reproduce original space difference indicator sign logic
     if final_size > initial_size:
         sign = "+"
     elif initial_size > final_size:

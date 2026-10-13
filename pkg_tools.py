@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -20,16 +20,16 @@ from typing import Any, Callable, Optional, Sequence
 
 try:
     from rapidfuzz import fuzz as _rapidfuzz  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     _rapidfuzz = None
 try:
     import importlib.metadata as _im  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     import importlib_metadata as _im  # type: ignore  # noqa: F401
 try:
     from packaging.utils import parse_wheel_filename  # type: ignore
     from packaging.version import Version  # type: ignore
-except ImportError:  # pragma: no cover
+except ImportError:
     parse_wheel_filename = None  # type: ignore
     Version = None  # type: ignore
 _ANSI = {
@@ -573,7 +573,7 @@ def _reinstall_one_subprocess(
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return pkg, False, "Timeout"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return pkg, False, str(exc)
     if proc.returncode == 0:
         return pkg, True, "OK"
@@ -995,7 +995,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         return 130
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 

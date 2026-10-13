@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ try:
     from packaging.version import Version
 
     _HAVE_PACKAGING = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HAVE_PACKAGING = False
     parse_tag = None  # type: ignore
     canonicalize_name = None  # type: ignore
@@ -30,7 +30,7 @@ try:
     import requests
 
     _HAVE_REQUESTS = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HAVE_REQUESTS = False
     requests = None  # type: ignore
 try:
@@ -38,7 +38,7 @@ try:
     from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn
 
     _HAVE_RICH = True
-except ImportError:  # pragma: no cover
+except ImportError:
     _HAVE_RICH = False
     Console = None  # type: ignore
 
@@ -105,7 +105,7 @@ def read_wheel_metadata(whl: Path) -> tuple[Optional[str], Optional[str]]:
                         version = line.split(":", 1)[1].strip()
                     if name and version:
                         return name, version
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error reading {whl.name}: {exc}", file=sys.stderr)
     return None, None
 
@@ -120,7 +120,7 @@ def split_wheel_filename(whl: Path) -> tuple[str, str]:
 def parse_metadata_version(value: str):
     try:
         return tuple(int(part) for part in value.split(".") if part.isdigit())
-    except Exception:  # noqa: BLE001
+    except Exception:
         return (value,)
 
 
@@ -162,7 +162,7 @@ def cmd_check(args: argparse.Namespace) -> int:
                     print("-" * 40)
         except zipfile.BadZipFile:
             print(f"Error: {whl.name} is a corrupt or invalid zip/wheel file.")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"Error processing {whl.name}: {exc}")
     verb = "Would move" if args.dry_run else "Moved"
     print(
@@ -181,7 +181,7 @@ def wheel_has_entry_points(whl: Path) -> tuple[bool, Optional[str]]:
             return False, None
     except zipfile.BadZipFile:
         return False, None
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error reading {whl}: {exc}", file=sys.stderr)
         return False, None
 
@@ -240,7 +240,7 @@ def _query_pypi(name: str, timeout: float) -> int:
     url = f"https://pypi.org/pypi/{name}/json"
     try:
         resp = requests.get(url, timeout=timeout)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"{name}: request failed: {exc}")
         return 1
     if resp.status_code == 200:
@@ -401,16 +401,16 @@ def _passes_structural_check(whl: Path) -> bool:
             return False
         try:
             Version(version)
-        except Exception:  # noqa: BLE001
+        except Exception:
             return False
         if not py_tag[0].isdigit():
             return False
         try:
             parse_tag(py_tag + "-" + abi_tag + "-" + plat_tag.split("-")[-1])
-        except Exception:  # noqa: BLE001
+        except Exception:
             return False
         return True
-    except Exception:  # noqa: BLE001
+    except Exception:
         return False
 
 
@@ -458,10 +458,10 @@ def _wheel_unpacked_size(whl: Path) -> tuple[Path, int, Optional[str]]:
             with zipfile.ZipFile(whl, "r") as zf:
                 for info in zf.filelist:
                     total += info.file_size
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return whl, 0, f"Failed to read wheel: {exc}"
         return whl, total, None
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return whl, 0, f"Unexpected error: {exc}"
 
 

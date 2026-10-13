@@ -1,450 +1,372 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""Write a self-contained prompt that instructs an AI coding agent to build a Python command-line tool for Brotli-based compression and decompression of files and directories. The prompt must cover the following:
+#!/data/data/com.termux/files/usr/bin/python
+"""
+Unified Brotli compression / decompression tool.
 
-**Purpose:** A Termux-targeted (Android, shebang points to `/data/data/com.termux/files/usr/bin/env python`) utility that compresses files and directories with Brotli at maximum quality, and decompresses `.br` files back to their originals. It also bundles directories into tar archives before compression.
+Merged from: br.py, br2.py, brer.py
 
-**Required dependencies:** `brotli` (Python bindings) and `loguru` for logging; standard library modules `argparse`, `asyncio`, `mmap`, `shutil`, `sys`, `tarfile`, `multiprocessing.Pool`, `pathlib`, and `typing.Final`. Use `from __future__ import annotations`.
+Subcommands
+-----------
+  compress      Compress files (-> .br) and directories (-> .tar.br)
+  decompress    Decompress .br files and .tar.br archives
 
-**Constants to define exactly:** `MAX_WORKERS = 8`, `CHUNK_SIZE = 524288` (512 KiB), `CHUNK_SIZE_SMALL = 32768` (32 KiB), `BROTLI_QUALITY = 11`, `BROTLI_LGWIN = 24`, `MIN_COMPRESS_SIZE = 1024` (files smaller than this should not be compressed). Use `Final` type annotations.
-
-**Required functions and behavior:**
-- `fsz(size: int) -> str`: human-readable size formatting iterating units B, KB, MB, GB, TB, dividing by 1024 with one decimal place; bytes shown as an integer with "B" suffix; TB is the final unit regardless of magnitude.
-- `get_pool() -> Pool`: lazily creates a module-level global `multiprocessing.Pool` with `MAX_WORKERS` processes, reused across calls.
-- `compress_chunk(data: bytes) -> bytes`: calls `brotli.compress` with quality 11, lgwin 24, and `brotli.MODE_GENERIC`.
-- `decompress_file(path: Path) -> bool`: returns False immediately if the suffix is not `.br`; computes the output path by stripping the `.br` suffix; reads the file bytes; returns False for empty files; decompresses with `brotli.decompress`; writes the result to the output path; returns True on success, and handles exceptions by logging and returning False (wrap I/O and decompression in try/except).
-
-**Remaining functionality to implement (complete the script consistently with the above):**
-- A compression routine that reads files in `CHUNK_SIZE` chunks (memory-mapped via `mmap` for large inputs where appropriate, falling back gracefully for empty files since mmap cannot map zero-length files), compresses chunks in parallel using the pool, and writes a `.br` output. Files smaller than `MIN_COMPRESS_SIZE` should be skipped or stored without compression as the design dictates, and the agent should document this choice.
-- Directory handling: archive a directory into a tar stream via `tarfile` before compressing, and optionally extract/decompress tar archives on decompression.
-- Asynchronous orchestration with `asyncio` to process multiple files concurrently while offloading CPU-bound compression to the process pool (e.g., via `loop.run_in_executor` or `asyncio.to_thread`).
-- Use `loguru` for all logging (info for progress, error for failures), and print human-readable sizes with `fsz` in summaries including original size, compressed size, and compression ratio/savings percentage.
-- Ensure the pool is closed and joined on exit (use a `try/finally` or `atexit`), and handle `KeyboardInterrupt` gracefully.
-- Edge cases: nonexistent paths (log error and exit with non-zero status), zero-byte files, files that already end in `.br`, permission errors, and overwriting existing outputs (either refuse or require a `--force` flag).
-
-**CLI interface via `argparse`:** A main entry point with subcommands or flags to compress and decompress, accepting one or more input paths, an optional output directory, a flag to keep or delete source files, and a force-overwrite flag. Provide `--help` text. Exit codes: 0 on success, nonzero on any failure. Run via `if __name__ == "__main__":` calling `sys.exit(main())`.
-
-**Output requirements:** A single complete Python file, with a Termux shebang line as given, PEP 8 style, type hints throughout, and docstrings for public functions. Include no external config files.
----"""
+Examples
+--------
+  python merged.py compress
+  python merged.py compress --workers 8 --quality 11 --lgwin 24
+  python merged.py compress --executor thread
+  python merged.py compress --force --chunk-threshold 0
+  python merged.py compress --chunk-threshold 524288 --keep-if-larger
+  python merged.py decompress
+  python merged.py decompress --buffer-size 65536 --workers 8
+"""
 
 from __future__ import annotations
 
 import argparse
-import asyncio
 import mmap
 import shutil
-import sys
 import tarfile
-from multiprocessing import Pool
+from concurrent.futures import (
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+    as_completed,
+)
 from pathlib import Path
-from typing import Final
+from typing import Sequence
 
 import brotli
-from loguru import logger
 
-MAX_WORKERS: Final[int] = 8
-CHUNK_SIZE: Final[int] = 524288
-CHUNK_SIZE_SMALL: Final[int] = 32768
-BROTLI_QUALITY: Final[int] = 11
-BROTLI_LGWIN: Final[int] = 24
-MIN_COMPRESS_SIZE: Final[int] = 1024
-_POOL: Pool | None = None
+try:
+    from loguru import logger
+
+    if not hasattr(logger, "success"):
+        logger.success = logger.info
+except ImportError:
+    import logging
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    logger = logging.getLogger("br")
+    logger.success = logger.info
 
 
-def fsz(size: int) -> str:
-    value: float = float(size)
+def human_size(size: float) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
-        if value < 1024.0 or unit == "TB":
-            return f"{value:.1f}{unit}" if unit != "B" else f"{int(value)}B"
-        value /= 1024.0
-    return f"{value:.1f}TB"
+        if size < 1024.0 or unit == "TB":
+            return f"{int(size)}B" if unit == "B" else f"{size:.1f}{unit}"
+        size /= 1024.0
+    return f"{size:.1f}TB"
 
 
-def get_pool() -> Pool:
-    global _POOL
-    if _POOL is None:
-        _POOL = Pool(processes=MAX_WORKERS)
-    return _POOL
+def _compress_bytes(data: bytes, quality: int, lgwin: int) -> bytes:
+    return brotli.compress(data, quality=quality, lgwin=lgwin, mode=brotli.MODE_GENERIC)
 
 
-def compress_chunk(data: bytes) -> bytes:
-    return brotli.compress(
-        data,
-        quality=BROTLI_QUALITY,
-        lgwin=BROTLI_LGWIN,
-        mode=brotli.MODE_GENERIC,
-    )
-
-
-def decompress_file(path: Path) -> bool:
-    if path.suffix != ".br":
-        return False
-    out_path: Path = path.with_suffix("")
+def _stream_compress(src: Path, dst: Path, buffer_size: int, quality: int, lgwin: int) -> bool:
     try:
-        compressed_data: bytes = path.read_bytes()
-        if not compressed_data:
-            return False
-        decompressed_data: bytes = brotli.decompress(compressed_data)
-        out_path.write_bytes(decompressed_data)
-        original_size: int = path.stat().st_size
-        decompressed_size: int = out_path.stat().st_size
-        print(f"  ✓ Decompressed {path.name}: {fsz(original_size)} → {fsz(decompressed_size)}")
-        path.unlink()
+        comp = brotli.Compressor(quality=quality, lgwin=lgwin)
+        with open(src, "rb") as f_in, open(dst, "wb") as f_out:
+            while True:
+                chunk = f_in.read(buffer_size)
+                if not chunk:
+                    break
+                f_out.write(comp.process(chunk))
+            f_out.write(comp.finish())
         return True
     except Exception as e:
-        logger.error(f"  ✗ Failed to decompress {path.name}: {e}")
+        logger.error(f"Error compressing to {dst.name}: {e}")
         return False
 
 
-def compress_in_memory(infile: Path, outfile: Path) -> bool:
+def _stream_decompress(src: Path, dst: Path, buffer_size: int) -> bool:
     try:
-        data: bytes = infile.read_bytes()
-        if not data:
-            return False
-        compressed: bytes = brotli.compress(
-            data,
-            quality=BROTLI_QUALITY,
-            lgwin=BROTLI_LGWIN,
-            mode=brotli.MODE_GENERIC,
-        )
-        outfile.write_bytes(compressed)
+        dec = brotli.Decompressor()
+        with open(src, "rb") as f_in, open(dst, "wb") as f_out:
+            while True:
+                chunk = f_in.read(buffer_size)
+                if not chunk:
+                    break
+                f_out.write(dec.process(chunk))
         return True
-    except (OSError, MemoryError, brotli.error) as e:
-        logger.error(f"Memory compression failed for {infile.name}: {e}")
+    except Exception as e:
+        logger.error(f"Error decompressing {src.name}: {e}")
         return False
 
 
-def compress_chunked(in_path: Path, out_path: Path, file_size: int) -> bool:
+def _chunked_compress(src: Path, dst: Path, size: int, chunk_size: int, quality: int, lgwin: int, workers: int) -> bool:
+    # Nested thread pool is safe when this runs inside a process-pool worker.
     try:
-        chunk_count: int = (file_size + CHUNK_SIZE_SMALL - 1) // CHUNK_SIZE_SMALL
-        pool: Pool = get_pool()
+        n = (size + chunk_size - 1) // chunk_size
         with (
-            out_path.open("wb", buffering=1024 * 1024) as fout,
-            in_path.open("rb") as fin,
-            mmap.mmap(fin.fileno(), length=0, access=mmap.ACCESS_READ) as mm,
+            ThreadPoolExecutor(max_workers=workers) as ex,
+            open(dst, "wb", buffering=1 << 20) as f_out,
+            open(src, "rb") as f_in,
+            mmap.mmap(f_in.fileno(), length=0, access=mmap.ACCESS_READ) as mm,
         ):
-            async_results = []
-            for i in range(chunk_count):
-                start: int = i * CHUNK_SIZE_SMALL
-                end: int = min((i + 1) * CHUNK_SIZE_SMALL, file_size)
-                chunk: bytes = mm[start:end]
-                async_results.append(pool.apply_async(compress_chunk, (chunk,)))
-            results: list[bytes | None] = [None] * chunk_count
-            for idx, ar in enumerate(async_results):
+            futs = [
+                ex.submit(_compress_bytes, mm[i * chunk_size : min((i + 1) * chunk_size, size)], quality, lgwin)
+                for i in range(n)
+            ]
+            blobs: list[bytes] = []
+            for idx, fut in enumerate(futs):
                 try:
-                    results[idx] = ar.get()
+                    blobs.append(fut.result())
                 except Exception as e:
                     logger.error(f"Chunk {idx} compression failed: {e}")
                     return False
-            for compressed_chunk in results:
-                if compressed_chunk:
-                    fout.write(compressed_chunk)
-                else:
+            for blob in blobs:
+                if not blob:
                     return False
-            return True
-    except (OSError, MemoryError, brotli.error) as e:
-        logger.error(f"Chunked compression failed for {in_path.name}: {e}")
-        return False
-
-
-def create_tar_archive(source_dir: Path, output_path: Path) -> bool:
-    try:
-        with tarfile.open(output_path, "w") as tar:
-            for item in source_dir.rglob("*"):
-                if item.is_file():
-                    arcname: Path = item.relative_to(source_dir.parent)
-                    tar.add(item, arcname=str(arcname))
+                f_out.write(blob)
         return True
     except Exception as e:
-        logger.error(f"  Failed to create tar archive: {e}")
+        logger.error(f"Chunked compression failed for {src.name}: {e}")
         return False
 
 
-def compress_tar_to_br(tar_path: Path, br_path: Path) -> bool:
+def _tar(src_dir: Path, tar_path: Path) -> bool:
     try:
-        tar_size: int = tar_path.stat().st_size
-        if tar_size < CHUNK_SIZE:
-            success: bool = compress_in_memory(tar_path, br_path)
-        else:
-            success = compress_chunked(tar_path, br_path, tar_size)
-        if success and br_path.exists():
-            br_size: int = br_path.stat().st_size
-            if br_size == 0:
-                logger.warning(f"Compressed archive empty for {tar_path.name}")
-                br_path.unlink()
-                return False
-            if br_size < tar_size:
-                tar_path.unlink()
-                reduction: float = (tar_size - br_size) / tar_size * 100
-                print(f"  ✓ Compressed archive: {reduction:.1f}% saved ({fsz(tar_size)} → {fsz(br_size)})")
-                return True
-            logger.warning("  ✗ Archive compression didn't save space, keeping .tar")
-            br_path.unlink()
-            return False
-        return False
+        with tarfile.open(tar_path, "w") as tar:
+            for p in src_dir.rglob("*"):
+                if p.is_file():
+                    tar.add(p, arcname=str(p.relative_to(src_dir.parent)))
+        return True
     except Exception as e:
-        logger.error(f"  ✗ Failed to compress tar archive: {e}")
+        logger.error(f"Failed to create tar archive: {e}")
         return False
 
 
-async def compress_folder_async(folder_path: Path, output_base_name: str) -> bool:
-    loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-    tar_path: Path = Path(output_base_name + ".tar")
-    br_path: Path = Path(output_base_name + ".tar.br")
-    try:
-        print("  Creating tar archive...")
-        success: bool = await loop.run_in_executor(None, create_tar_archive, folder_path, tar_path)
-        if not success or not tar_path.exists():
-            logger.error("  Failed to create tar archive")
-            return False
-        print("  Compressing tar archive with Brotli (max quality)...")
-        if compress_tar_to_br(tar_path, br_path):
-            await loop.run_in_executor(None, shutil.rmtree, folder_path)
-            return True
-        return False
-    except Exception as e:
-        logger.error(f"Failed to compress folder {folder_path.name}: {e}")
-        if tar_path.exists():
-            tar_path.unlink()
-        if br_path.exists():
-            br_path.unlink()
-        return False
-
-
-def compress_file(path: Path) -> tuple[bool, int, int]:
-    out_path: Path = path.with_suffix(path.suffix + ".br")
-    if out_path.exists():
-        print(f"Skipping {path.name} - output already exists")
-        return False, 0, 0
-    try:
-        original_size: int = path.stat().st_size
-        if not original_size:
-            return False, 0, 0
-        if original_size < CHUNK_SIZE:
-            success: bool = compress_in_memory(path, out_path)
-        else:
-            success = compress_chunked(path, out_path, original_size)
-        if success and out_path.exists():
-            compressed_size: int = out_path.stat().st_size
-            if compressed_size == 0:
-                logger.warning(f"Compressed file empty for {path.name}")
-                out_path.unlink()
-                return False, 0, 0
-            if compressed_size < original_size:
-                path.unlink()
-                reduction: float = (original_size - compressed_size) / original_size * 100
-                print(f"  ✓ {path.name}: {reduction:.1f}% saved ({fsz(original_size)} → {fsz(compressed_size)})")
-                return True, original_size, compressed_size
-            print(f"  ✗ {path.name}: No space saved, removing compressed file")
-            out_path.unlink()
-            return False, 0, 0
-        return False, 0, 0
-    except (OSError, PermissionError, brotli.error) as e:
-        logger.error(f"  ✗ Failed to compress {path.name}: {e}")
-        return False, 0, 0
-
-
-def should_compress(path: Path) -> bool:
-    try:
-        if not path.is_file() or path.is_symlink():
-            return False
-        compressed_extensions: tuple[str, ...] = (
-            ".br",
-            ".xz",
-            ".gz",
-            ".bz2",
-            ".7z",
-            ".zip",
-            ".tar",
-        )
-        if path.suffix in compressed_extensions:
-            return False
-        size: int = path.stat().st_size
-        return size >= MIN_COMPRESS_SIZE
-    except (OSError, PermissionError):
-        return False
-
-
-def get_files(directory: Path, mode: str = "compress") -> list[Path]:
-    if mode == "compress":
-        return [p for p in directory.glob("*") if p.is_file() and not p.is_symlink() and should_compress(p)]
-    return [p for p in directory.glob("*.br") if p.is_file() and not p.is_symlink()]
-
-
-def get_dirs(directory: Path) -> list[Path]:
-    return [p for p in directory.glob("*") if not p.is_symlink() and p.is_dir()]
-
-
-def extract_tar_archive(tar_path: Path, extract_dir: Path) -> bool:
+def _untar(tar_path: Path, dest: Path) -> bool:
     try:
         with tarfile.open(tar_path, "r") as tar:
-            tar.extractall(path=extract_dir)
+            tar.extractall(dest)
         return True
     except Exception as e:
-        logger.error(f"  Failed to extract tar archive: {e}")
+        logger.error(f"Failed to extract tar archive: {e}")
         return False
 
 
-async def process_compress() -> None:
-    cwd: Path = Path.cwd()
-    print("\n🔧 Brotli Compression Settings:")
-    print(f"   Quality: {BROTLI_QUALITY}/11 (maximum)")
-    print("   Window size: 16MB")
-    print(f"   Workers: {MAX_WORKERS}")
-    print(f"   Chunk size: {fsz(CHUNK_SIZE)}")
-    dirs_to_compress: list[Path] = get_dirs(cwd)
-    if dirs_to_compress:
-        print(f"\n📁 Compressing {len(dirs_to_compress)} directories...")
-        for dir_path in sorted(dirs_to_compress):
-            relative_path: Path = dir_path.relative_to(cwd)
-            print(f"\n  Processing {relative_path}...")
-            archive_path: str = str(dir_path.parent / dir_path.name)
-            if await compress_folder_async(dir_path, archive_path):
-                print(f"  ✓ Successfully compressed {relative_path} to {dir_path.name}.tar.br")
-            else:
-                logger.error(f"  ✗ Failed to compress {relative_path}")
-    files_to_compress: list[Path] = get_files(cwd, mode="compress")
-    if not files_to_compress:
-        print("\n📄 No files to compress")
-        return
-    print(f"\n📄 Compressing {len(files_to_compress)} files with Brotli max compression...")
-    total_original: int = 0
-    total_compressed: int = 0
-    successful: int = 0
-    for i, path in enumerate(sorted(files_to_compress), 1):
-        print(f"\n[{i}/{len(files_to_compress)}] {path.name}")
-        success, orig_size, comp_size = compress_file(path)
-        if success:
-            successful += 1
-            total_original += orig_size
-            total_compressed += comp_size
-    if successful > 0:
-        savings: int = total_original - total_compressed
-        savings_percent: float = savings / total_original * 100
-        print(f"\n{'=' * 40}")
-        print(f"✅ Compressed {successful}/{len(files_to_compress)} files")
-        print(f"📊 Original size:  {fsz(total_original)}")
-        print(f"📦 Compressed size: {fsz(total_compressed)}")
-        print(f"💾 Space saved:    {fsz(savings)} ({savings_percent:.1f}%)")
-        print(f"{'=' * 40}")
-    elif files_to_compress:
-        logger.error("\n❌ No files were successfully compressed")
+def _compress_to(src: Path, dst: Path, args) -> bool:
+    size = src.stat().st_size
+    if args.chunk_threshold > 0 and size >= args.chunk_threshold:
+        return _chunked_compress(src, dst, size, args.chunk_size, args.quality, args.lgwin, args.workers)
+    return _stream_compress(src, dst, args.buffer_size, args.quality, args.lgwin)
 
 
-async def process_decompress() -> None:
-    cwd: Path = Path.cwd()
-    archives: list[Path] = [p for p in cwd.glob("*.tar.br") if p.is_file()]
-    if archives:
-        print(f"\n📦 Decompressing {len(archives)} archives...")
-        for archive in sorted(archives):
-            print(f"\n  Decompressing {archive.name}...")
-            tar_path: Path | None = None
+def _finish_compress(src: Path, dst: Path, args, label: str) -> bool:
+    if not dst.exists() or dst.stat().st_size == 0:
+        dst.unlink(missing_ok=True)
+        return False
+    src_size = src.stat().st_size
+    dst_size = dst.stat().st_size
+    if args.force:
+        src.unlink()
+        logger.success(f"Compressed: {label}")
+        return True
+    if dst_size < src_size:
+        src.unlink()
+        saved = (src_size - dst_size) / src_size * 100 if src_size else 0.0
+        print(f"  ✓ {label}: {saved:.1f}% saved ({human_size(src_size)} -> {human_size(dst_size)})")
+        return True
+    print(f"  ✗ {label}: no space saved, keeping original")
+    dst.unlink()
+    return False
+
+
+def compress_file(src: Path, args) -> bool:
+    if src.stat().st_size < args.min_size:
+        return False
+    dst = src.with_name(f"{src.name}.br")
+    if dst.exists():
+        print(f"  Skipping {src.name}: output already exists")
+        return False
+    if not _compress_to(src, dst, args):
+        return False
+    return _finish_compress(src, dst, args, src.name)
+
+
+def compress_dir(src_dir: Path, args) -> bool:
+    tmp_tar = src_dir.with_name(f"{src_dir.name}.tar")
+    dst = src_dir.with_name(f"{src_dir.name}.tar.br")
+    if not _tar(src_dir, tmp_tar):
+        return False
+    if not _compress_to(tmp_tar, dst, args):
+        tmp_tar.unlink(missing_ok=True)
+        return False
+    src_size = tmp_tar.stat().st_size
+    dst_size = dst.stat().st_size if dst.exists() else 0
+    if dst_size == 0:
+        dst.unlink(missing_ok=True)
+        tmp_tar.unlink(missing_ok=True)
+        return False
+    if not args.force and dst_size >= src_size:
+        print(f"  ✗ {src_dir.name}: no space saved, keeping original")
+        dst.unlink()
+        tmp_tar.unlink()
+        return False
+    tmp_tar.unlink()
+    shutil.rmtree(src_dir)
+    saved = (src_size - dst_size) / src_size * 100 if src_size else 0.0
+    print(f"  ✓ {src_dir.name}: {saved:.1f}% saved ({human_size(src_size)} -> {human_size(dst_size)})")
+    return True
+
+
+def decompress_br(src: Path, args) -> bool:
+    if src.name.endswith(".tar.br"):
+        return False
+    dst = src.with_suffix("")
+    if dst.exists():
+        print(f"  Skipping {src.name}: output already exists")
+        return False
+    if not _stream_decompress(src, dst, args.buffer_size):
+        return False
+    old = src.stat().st_size
+    new = dst.stat().st_size
+    print(f"  ✓ Decompressed {src.name}: {human_size(old)} -> {human_size(new)}")
+    src.unlink()
+    return True
+
+
+def decompress_tar_br(src: Path, args) -> bool:
+    dst_dir = src.with_name(src.name[: -len(".tar.br")])
+    tmp_tar = src.with_name(src.name[: -len(".br")])
+    if not _stream_decompress(src, tmp_tar, args.buffer_size):
+        return False
+    if not _untar(tmp_tar, dst_dir.parent):
+        tmp_tar.unlink(missing_ok=True)
+        return False
+    tmp_tar.unlink()
+    src.unlink()
+    print(f"  ✓ Extracted {src.name} -> {dst_dir.name}/")
+    return True
+
+
+def _iter_dirs(root: Path) -> list[Path]:
+    return [p for p in root.iterdir() if p.is_dir() and not p.is_symlink() and not p.name.startswith(".")]
+
+
+def _iter_files(root: Path, self_name: str, skip_ext: Sequence[str], min_size: int) -> list[Path]:
+    out: list[Path] = []
+    for p in root.iterdir():
+        if not p.is_file() or p.is_symlink():
+            continue
+        if p.name == self_name:
+            continue
+        if p.suffix in skip_ext or p.suffix == ".br":
+            continue
+        try:
+            if p.stat().st_size < min_size:
+                continue
+        except OSError:
+            continue
+        out.append(p)
+    return out
+
+
+def _iter_archives(root: Path) -> list[Path]:
+    return [
+        p
+        for p in root.rglob("*")
+        if p.is_file() and not p.is_symlink() and (p.name.endswith(".tar.br") or p.suffix == ".br")
+    ]
+
+
+def cmd_compress(args) -> int:
+    root = Path.cwd()
+    self_name = Path(__file__).name
+    skip_ext = tuple(args.skip_ext.split(",")) if args.skip_ext else ()
+    dirs = _iter_dirs(root)
+    files = _iter_files(root, self_name, skip_ext, args.min_size)
+    if not dirs and not files:
+        logger.warning("No files or subdirectories found to compress.")
+        return 0
+    print(f"Found {len(dirs)} subdirs and {len(files)} files to compress.")
+    print(f"Starting parallel compression (quality={args.quality}, lgwin={args.lgwin}, workers={args.workers})...")
+    Executor = ThreadPoolExecutor if args.executor == "thread" else ProcessPoolExecutor
+    with Executor(max_workers=args.workers) as ex:
+        futures = [ex.submit(compress_dir, d, args) for d in dirs]
+        futures += [ex.submit(compress_file, f, args) for f in files]
+        for fut in as_completed(futures):
             try:
-                tar_path = archive.with_suffix("")
-                print("    Decompressing Brotli...")
-                compressed_data: bytes = archive.read_bytes()
-                tar_data: bytes = brotli.decompress(compressed_data)
-                tar_path.write_bytes(tar_data)
-                extract_dir: str = archive.stem
-                print(f"    Extracting tar to {extract_dir}/...")
-                loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-                success: bool = await loop.run_in_executor(None, extract_tar_archive, tar_path, Path(extract_dir))
-                if success:
-                    tar_path.unlink()
-                    archive.unlink()
-                    print(f"  ✓ Extracted {archive.name} to {extract_dir}/")
-                else:
-                    logger.error(f"  ✗ Failed to extract {archive.name}")
+                fut.result()
             except Exception as e:
-                logger.error(f"  ✗ Failed to decompress {archive.name}: {e}")
-                if tar_path is not None and tar_path.exists():
-                    tar_path.unlink()
-    files_to_decompress: list[Path] = get_files(cwd, mode="decompress")
-    if not files_to_decompress:
-        print("\n📄 No .br files to decompress")
-        return
-    files_to_decompress = [p for p in files_to_decompress if p.suffixes != [".tar", ".br"]]
-    if not files_to_decompress:
-        return
-    print(f"\n📄 Decompressing {len(files_to_decompress)} Brotli files...")
-    total_original: int = 0
-    total_decompressed: int = 0
-    successful: int = 0
-    for i, path in enumerate(sorted(files_to_decompress), 1):
-        print(f"\n[{i}/{len(files_to_decompress)}] {path.name}")
-        original_size: int = path.stat().st_size
-        total_original += original_size
-        if decompress_file(path):
-            successful += 1
-            out_path: Path = path.with_suffix("")
-            if out_path.exists():
-                total_decompressed += out_path.stat().st_size
-    if successful > 0:
-        print(f"\n{'=' * 40}")
-        print(f"✅ Decompressed {successful}/{len(files_to_decompress)} files")
-        print(f"📦 Compressed size:   {fsz(total_original)}")
-        print(f"📊 Decompressed size: {fsz(total_decompressed)}")
-        print(f"{'=' * 40}")
-    elif files_to_decompress:
-        logger.error("\n❌ No files were successfully decompressed")
+                logger.error(f"Task failed: {e}")
+    logger.success("Compression completed.")
+    return 0
 
 
-async def main_async(mode: str = "compress") -> None:
-    if mode == "compress":
-        await process_compress()
-    elif mode == "decompress":
-        await process_decompress()
-    else:
-        logger.error(f"Unknown mode: {mode}")
+def cmd_decompress(args) -> int:
+    root = Path.cwd()
+    archives = _iter_archives(root)
+    if not archives:
+        logger.warning("No .br or .tar.br files found to decompress.")
+        return 0
+    tar_brs = [p for p in archives if p.name.endswith(".tar.br")]
+    brs = [p for p in archives if not p.name.endswith(".tar.br")]
+    print(f"Found {len(tar_brs)} .tar.br archives and {len(brs)} .br files to decompress.")
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+        futures = [ex.submit(decompress_tar_br, p, args) for p in tar_brs]
+        futures += [ex.submit(decompress_br, p, args) for p in brs]
+        for fut in as_completed(futures):
+            try:
+                fut.result()
+            except Exception as e:
+                logger.error(f"Task failed: {e}")
+    logger.success("Decompression completed.")
+    return 0
 
 
-def shutdown_pool() -> None:
-    global _POOL
-    if _POOL is not None:
-        _POOL.close()
-        _POOL.join()
-        _POOL = None
-
-
-def main() -> None:
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description="Multi-processed Brotli compression/decompression tool (max compression)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s -c
-  %(prog)s -d
-  %(prog)s
-Brotli Settings:
-  - Quality: 11/11 (maximum compression)
-  - Window size: 16MB (lgwin=24)
-  - Mode: Generic
-        """,
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="merged.py",
+        description="Unified Brotli compression / decompression tool (br.py + br2.py + brer.py).",
     )
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
-        "-c",
-        "--compress",
+    sub = parser.add_subparsers(dest="command")
+    sub.required = True
+
+    c = sub.add_parser("compress", help="Compress files (.br) and dirs (.tar.br)")
+    c.add_argument("-q", "--quality", type=int, default=11, help="Brotli quality 0-11. Default 11.")
+    c.add_argument("--lgwin", type=int, default=24, help="Brotli window bits 10-24. Default 24.")
+    c.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
+    c.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")
+    c.add_argument("--chunk-size", type=int, default=32768, help="Chunk size for chunked mode (bytes). Default 32768.")
+    c.add_argument(
+        "--chunk-threshold",
+        type=int,
+        default=524288,
+        help="Files >= this size use chunked compression. 0 disables chunking. Default 524288.",
+    )
+    c.add_argument("--min-size", type=int, default=1024, help="Skip files smaller than this many bytes. Default 1024.")
+    c.add_argument(
+        "--force",
         action="store_true",
-        help="Compress files and folders with Brotli (default)",
+        help="Always replace original even if compression grew the file. "
+        "Default: keep original when compression does not save space.",
     )
-    group.add_argument(
-        "-d",
-        "--decompress",
-        action="store_true",
-        help="Decompress .br and .tar.br files",
+    c.add_argument(
+        "--executor",
+        choices=("process", "thread"),
+        default="process",
+        help="Top-level worker pool type. Default process.",
     )
-    args: argparse.Namespace = parser.parse_args()
-    mode: str = "decompress" if args.decompress else "compress"
-    try:
-        asyncio.run(main_async(mode))
-    except KeyboardInterrupt:
-        logger.warning("\n\n⚠️  Interrupted by user")
-        sys.exit(1)
-    except Exception as e:
-        logger.error(f"\n❌ Unexpected error: {e}")
-        sys.exit(1)
-    finally:
-        shutdown_pool()
+    c.add_argument(
+        "--skip-ext", default=".br,.xz,.gz,.bz2,.7z,.zip,.tar", help="Comma-separated list of extensions to skip."
+    )
+
+    d = sub.add_parser("decompress", help="Decompress .br files and .tar.br archives")
+    d.add_argument("-w", "--workers", type=int, default=8, help="Parallel workers. Default 8.")
+    d.add_argument("--buffer-size", type=int, default=65536, help="Stream buffer size (bytes). Default 65536.")
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "compress":
+        return cmd_compress(args)
+    if args.command == "decompress":
+        return cmd_decompress(args)
+    parser.print_help()
+    return 1
 
 
 if __name__ == "__main__":

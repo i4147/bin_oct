@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -711,11 +711,11 @@ def emit_result(
     if args.files_with_matches:
         _emit_path(result.path, out_fh, color)
         return
-    # -c / --count
+
     if args.count:
         print(f"{result.path}:{result.match_count}", file=out_fh)
         return
-    # --json
+
     if args.json:
         for group in result.groups:
             for lineno, text, is_match, spans in group:
@@ -1093,7 +1093,7 @@ def main(argv: list[str] | None = None) -> int:
                     for fut in as_completed(futures):
                         try:
                             yield fut.result()
-                        except Exception as exc:  # pragma: no cover
+                        except Exception as exc:
                             yield FileResult(path="<worker>", error=str(exc))
 
                 _consume(_gen())

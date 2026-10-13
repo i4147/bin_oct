@@ -1,10 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Recursive website image downloader.
-
-Requirements:
-    pip install pycurl
-"""
 
 from __future__ import annotations
 
@@ -26,9 +20,6 @@ USER_AGENT = "Mozilla/5.0 (compatible; ImageCrawler/1.0)"
 SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
-# --------------------------------------------------------------------------- #
-# HTML parsing
-# --------------------------------------------------------------------------- #
 class LinkParser(HTMLParser):
     """Collect anchors, <base>, and image URLs from an HTML document."""
 
@@ -64,9 +55,6 @@ class LinkParser(HTMLParser):
                     self.images.append(url)
 
 
-# --------------------------------------------------------------------------- #
-# HTTP via pycurl
-# --------------------------------------------------------------------------- #
 def fetch(url: str, timeout: int = 30):
     """Return (status, content_type, body_bytes) or (None, None, None)."""
     body = io.BytesIO()
@@ -81,7 +69,7 @@ def fetch(url: str, timeout: int = 30):
     c.setopt(c.TIMEOUT, timeout)
     c.setopt(c.CONNECTTIMEOUT, timeout)
     c.setopt(c.USERAGENT, USER_AGENT)
-    c.setopt(c.ACCEPT_ENCODING, "")  # let libcurl negotiate gzip/deflate/br
+    c.setopt(c.ACCEPT_ENCODING, "")
 
     try:
         c.perform()
@@ -96,9 +84,6 @@ def fetch(url: str, timeout: int = 30):
     return status, ctype.lower(), body.getvalue()
 
 
-# --------------------------------------------------------------------------- #
-# Saving
-# --------------------------------------------------------------------------- #
 def sanitize(segment: str) -> str:
     return SAFE_RE.sub("_", segment) or "_"
 
@@ -121,7 +106,6 @@ def save_image(url: str, data: bytes, out_dir: Path) -> Path:
 
     target = sub / fname
     if target.exists():
-        # Avoid collisions from query-string variants / duplicate names.
         digest = hashlib.md5(url.encode("utf-8")).hexdigest()[:8]
         target = target.with_name(f"{target.stem}_{digest}{target.suffix}")
 
@@ -129,9 +113,6 @@ def save_image(url: str, data: bytes, out_dir: Path) -> Path:
     return target
 
 
-# --------------------------------------------------------------------------- #
-# Crawler
-# --------------------------------------------------------------------------- #
 def crawl(
     start_url: str, out_dir: Path, max_pages: int = 200, max_depth: int = 3, same_host: bool = True, timeout: int = 30
 ) -> None:
@@ -160,7 +141,6 @@ def crawl(
             print(f"  ! skipped ({status})", file=sys.stderr)
             continue
 
-        # Direct hit on an image URL
         if ctype.startswith("image/"):
             if url not in seen_images:
                 seen_images.add(url)
@@ -175,12 +155,11 @@ def crawl(
         parser = LinkParser()
         try:
             parser.feed(html)
-        except Exception as exc:  # malformed HTML shouldn't kill the crawl
+        except Exception as exc:
             print(f"  ! parse error: {exc}", file=sys.stderr)
 
         base = urljoin(url, parser.base) if parser.base else url
 
-        # ---- images ------------------------------------------------------ #
         for raw in parser.images:
             img_url = urljoin(base, raw).split("#", 1)[0]
             if not img_url.lower().startswith(("http://", "https://")):
@@ -198,7 +177,6 @@ def crawl(
                 else:
                     print(f"  - not an image ({ct}) {img_url}")
 
-        # ---- follow internal links -------------------------------------- #
         if depth >= max_depth:
             continue
         for raw in parser.links:
@@ -214,9 +192,6 @@ def crawl(
     print(f"\nDone. Pages crawled: {len(visited_pages)}  Images downloaded: {len(seen_images)}")
 
 
-# --------------------------------------------------------------------------- #
-# CLI
-# --------------------------------------------------------------------------- #
 def main() -> int:
     ap = argparse.ArgumentParser(description="Recursively download images from a website.")
     ap.add_argument("url", help="Starting URL, e.g. https://example.com/")

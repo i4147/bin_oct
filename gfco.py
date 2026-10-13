@@ -1,8 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-Advanced Font Converter Script using fonttools and pathlib.
-Supports multi-worker parallel conversion via multiprocessing and concurrent.futures (Python 3.14).
-"""
 
 import argparse
 import sys
@@ -17,7 +13,7 @@ except ImportError:
     print("Error: 'fonttools' library is not installed. Install it using: pip install fonttools[woff] brotli")
     sys.exit(1)
 
-# Safely import InterpreterPoolExecutor (added in Python 3.14)
+
 try:
     from concurrent.futures import InterpreterPoolExecutor
 except ImportError:
@@ -42,7 +38,6 @@ def convert_font(
     if not input_path.exists() or not input_path.is_file():
         raise FileNotFoundError(f"Source font file not found: {input_path}")
 
-    # Special handling for EOT since fonttools primarily manages sfnt-based containers
     if target_format == "eot":
         print(
             f"[-] Notice: Native EOT writing requires specialized binary mapping. "
@@ -50,7 +45,6 @@ def convert_font(
         )
         return
 
-    # Set up output path using pathlib
     out_dir = output_dir if output_dir else input_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / f"{input_path.stem}.{target_format}"
@@ -60,7 +54,6 @@ def convert_font(
     try:
         font = TTFont(str(input_path))
 
-        # Configure font flavor for web formats or clear it for binary formats
         if target_format in {"woff", "woff2"}:
             font.flavor = target_format
         else:
@@ -74,7 +67,6 @@ def convert_font(
             print(f"[-] Error converting {input_path.name}: {e}")
         return
 
-    # Calculate and report size changes
     original_size = input_path.stat().st_size
     new_size = output_path.stat().st_size
     size_diff = new_size - original_size
@@ -91,7 +83,6 @@ def convert_font(
     print(f"    [+] Original Size: {original_size / 1024:.2f} KB | New Size: {new_size / 1024:.2f} KB")
     print(f"    [+] Size {change_str}")
 
-    # Remove original file if requested and conversion was successful
     if remove_original and output_path.exists():
         try:
             input_path.unlink()
@@ -102,12 +93,12 @@ def convert_font(
     print()
 
 
-def _worker_wrapper(args: Tuple[Path, str, Optional[Path], bool]) -> None:
+def _worker_wrapper(args: tuple[Path, str, Optional[Path], bool]) -> None:
     """Helper wrapper to unpack arguments for multiprocessing pool methods."""
     convert_font(*args)
 
 
-def find_fonts_in_current_dir() -> List[Path]:
+def find_fonts_in_current_dir() -> list[Path]:
     """Recursively search current directory for supported font files."""
     current_dir = Path.cwd()
     found_fonts = [f for f in current_dir.rglob("*") if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS]
@@ -147,10 +138,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Map typo alias if provided
     pool_method = "apply_async" if args.pool_method == "apply_asybc" else args.pool_method
 
-    # Default behavior: if no input files specified, scan current directory recursively for TTF targets
     input_files = args.input_files
     if not input_files:
         print("[*] No input files specified. Scanning current directory recursively...")

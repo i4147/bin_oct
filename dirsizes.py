@@ -107,7 +107,6 @@ def scan_directory(
                     if entry.is_dir(follow_symlinks=False):
                         subdirs.append(entry_path)
                     elif entry.is_file(follow_symlinks=False):
-                        # entry.stat() is cached on supported operating systems
                         files_with_sizes.append((entry_path, entry.stat().st_size))
                 except (PermissionError, OSError) as err:
                     if wordy:
@@ -120,7 +119,6 @@ def scan_directory(
 
     yield target_dir, subdirs, files_with_sizes
 
-    # Recurse into subdirectories if within depth limit
     if max_depth == -1 or current_depth < max_depth:
         for subdir in subdirs:
             yield from scan_directory(subdir, exclude_paths, wordy, max_depth, current_depth + 1)
@@ -135,12 +133,11 @@ def print_results(
     """Prints output formatted cleanly to fit the active terminal width."""
     term_width = console.width
 
-    # Sort order: default is descending (largest first)
     sorted_items = sorted(items, key=lambda x: x[0], reverse=not reverse)
 
     rank_width = len(str(len(sorted_items))) + 2
     size_width = 12
-    # Adjust path column width according to terminal dimensions
+
     path_width = max(20, term_width - rank_width - size_width - 6)
 
     console.print()
@@ -151,7 +148,6 @@ def print_results(
         formatted_size = format_size(size)
         path_str = str(path)
 
-        # Truncate left side of long paths to preserve target filename/dir
         if len(path_str) > path_width:
             path_str = "…" + path_str[-(path_width - 1) :]
 

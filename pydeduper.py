@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ try:
     from loguru import logger
 
     _HAS_LOGURU = True
-except ImportError:  # pragma: no cover
+except ImportError:
     import logging
 
     logger = logging.getLogger("pydedup")
@@ -152,7 +152,7 @@ def _decompress(path: Path) -> Optional[bytes]:
                 logger.warning(f"brotli not installed; skipping {path}")
                 return None
             return brotli.decompress(raw)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(f"decompression failed for {path}: {exc}")
     return None
 
@@ -165,7 +165,7 @@ def _iter_zip(path: Path) -> Iterator[Source]:
                     continue
                 try:
                     raw = zf.read(info)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logger.error(f"cannot read {path}::{info.filename}: {exc}")
                     continue
                 try:
@@ -349,7 +349,7 @@ def extract_definitions(
             continue
         try:
             src = ast.unparse(node)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error(f"unparse failed in {origin} for {name}: {exc}")
             continue
         out.append(
@@ -409,14 +409,14 @@ def _read_existing_hashes(path: Path) -> set[str]:
         return set()
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning(f"cannot parse {path}: {exc}")
         return set()
     hashes: set[str] = set()
     for node in tree.body:
         try:
             hashes.add(_sha256(ast.unparse(node)))
-        except Exception:  # noqa: BLE001
+        except Exception:
             continue
     return hashes
 
@@ -818,7 +818,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 130
     except BrokenPipeError:
         return 0
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if _HAS_LOGURU:
             logger.exception(f"fatal: {exc}")
         else:

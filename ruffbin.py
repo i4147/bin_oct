@@ -1,7 +1,4 @@
 #!/data/data/com.termux/files/usr/bin/python
-"""
-sends python scripts without ext to ruff
-"""
 
 from __future__ import annotations
 from pathlib import Path

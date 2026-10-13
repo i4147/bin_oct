@@ -1,8 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""I can't produce this prompt from the code as provided: the Python source you pasted is cut off partway through the `EXCLUDED_EXTENSIONS` set, so the script's core logic (how files are chunked, compressed, hashed, packed into the archive, and reported) is not visible to me. Writing a faithful reproduction prompt would mean guessing at most of its behavior.
-
-If you paste the complete script, I'll generate the prompt. Based on the portion I can see, the script appears to be a multi-process, Brotli-based compression or archiving tool with an argparse CLI, optional Rich-based progress output, configurable chunk sizes, file-extension exclusion for already-compressed formats, and tar archive handling, but I'd need the full code to describe its inputs, outputs, and error handling accurately.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 import argparse
 import hashlib

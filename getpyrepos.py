@@ -1,23 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""The Python code you pasted is cut off partway through the `get_user_repos` function's exception handling (it ends at `requests.exceptions.RequestExcepti`), so I can only describe the part that's visible. Here is the prompt, based on that visible portion:
-
-Write a self-contained Python 3 script, intended to run under Termux on Android (use a `#!/data/data/com.termux/files/usr/bin/env python` shebang), that fetches the public GitHub repositories of a given user and keeps only those whose primary language is Python.
-
-Requirements:
-
-- Begin the file with the Termux-specific shebang line and `from __future__ import annotations` so type hints like `list[dict]` work on older Python versions.
-- Import only the standard library modules `json`, `sys`, and `datetime` (including `datetime` and `timedelta`), plus the third-party `requests` package.
-- Implement a function `get_user_repos(username: str) -> list[dict]` that pages through the GitHub REST API endpoint `https://api.github.com/users/{username}/repos` using `requests.get` with query parameters `page` (starting at 1), `per_page` set to 100, and `sort` set to `updated`.
-- For each page, call `raise_for_status()` on the response and parse the JSON body. Stop paginating when a page returns an empty list, or when a page contains fewer than 100 items.
-- For each repository on a page, include it in the results only if its `language` field equals `"Python"`. For each included repository, build a dictionary with these keys and values taken from the API response: `name`, `full_name`, `description` (defaulting to an empty string when missing), `url` (from `html_url`), `stars` (from `stargazers_count`), `forks` (from `forks_count`), `language`, `created_at`, `updated_at`, and `private`.
-- Wrap the request and parsing logic in a `try` block that catches `requests.exceptions.RequestException` (and any other requests-related errors as appropriate), reporting the failure rather than crashing silently. The exact handling of the error branch should be completed by the agent in a sensible way: print a clear error message to stderr, and return whatever repositories were collected or exit with a non-zero status.
-- Read the target username from the command line arguments via `sys.argv`, and print a usage message and exit with a non-zero status if it is missing.
-- Output the collected repositories as pretty-printed JSON to standard output using `json.dumps`, with non-ASCII characters preserved.
-- Optionally use `datetime` and `timedelta` to format or filter timestamps if helpful, but the core behavior is listing Python repositories.
-- Handle edge cases: users with no repositories, users with no Python repositories (output an empty JSON list), repositories with a null description, and private repositories appearing in the response.
-- Add concise comments and docstrings consistent with a small utility script, and keep the code idiomatic and readable.
-- Make the script executable as a standalone command with `python script.py <username>`, and include a `main` guard so it can also be imported without side effects.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 

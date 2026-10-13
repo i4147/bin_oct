@@ -4,18 +4,7 @@ import re
 import sys
 from pathlib import Path
 
-# --------------------------------------------------------------------------- #
-# Regex for fenced Python code blocks.
-#
-#   ^```(?:python|py)\b  ->  opening fence tagged "python" or "py"
-#   \s*\n                ->  rest of the opening line (e.g. trailing spaces)
-#   (.*?)                ->  the code body (non-greedy, captured)
-#   ^```[ \t]*$          ->  closing fence on its own line
-#
-# Flags:
-#   re.DOTALL     -> "." also matches newlines (needed for the body)
-#   re.MULTILINE  -> "^" / "$" match at the start/end of every line
-# --------------------------------------------------------------------------- #
+
 CODE_BLOCK_RE = re.compile(
     r"^```(?:python|py)\b\s*\n(.*?)^```[ \t]*$",
     re.DOTALL | re.MULTILINE,
@@ -40,15 +29,14 @@ def markdown_files(argv: list[str]) -> list[Path]:
 
 
 def main() -> None:
-    out_dir = Path.cwd()  # write outputs next to where we're run
-    counter = 0  # global counter across all markdown files
+    out_dir = Path.cwd()
+    counter = 0
 
     for md_path in markdown_files(sys.argv):
         if not md_path.is_file():
             print(f"skip (not a file): {md_path}")
             continue
 
-        # Read the markdown source (assume UTF-8; tweak if you need otherwise)
         text = md_path.read_text(encoding="utf-8")
 
         for code in extract_blocks(text):

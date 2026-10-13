@@ -1,34 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python
-"""You are reproducing a Python command-line utility from scratch. Write a single, self-contained Python 3 script (intended for Termux on Android, with the shebang `#!/data/data/com.termux/files/usr/bin/env python`) that benchmarks and compares many compression formats and codecs against a given input file or directory.
-
-**Purpose:** The script takes a source file or directory, packages it as a tar archive if it is a directory, then compresses that data with a large set of compressors, timing each run and reporting the output size, compression ratio, and elapsed time. Results should be printed in a readable, sorted or tabular form so the user can compare formats.
-
-**Inputs:**
-- A path to a file or directory supplied via command-line arguments (`sys.argv`). Use `sys.exit` with a usage message if arguments are missing or the path does not exist.
-- Optional compression level(s) per codec, where applicable, with sensible defaults per format.
-
-**Outputs:**
-- Compressed artifacts written into a temporary or designated output directory, named by format and level.
-- A console report listing, for each compressor: format name, level, compressed size (human-readable via a helper that formats bytes into B/KB/MB/GB/TB/PB with two decimals), compression ratio versus original size, and wall-clock time. Clean up temporary files at the end unless configured otherwise.
-
-**Required structure and behavior:**
-- Use `from __future__ import annotations`, and standard-library modules only for core functionality: `bz2`, `gzip`, `lzma`, `shutil`, `sys`, `tarfile`, `tempfile`, `time`, `zipfile`, and `pathlib.Path`, with `typing.Callable` and `Optional`.
-- Define a type alias for compressor functions with the signature: takes a source Path, a destination Path, and an optional integer level, and returns nothing.
-- Define a `human(n)` helper that loops through units up to TB and falls back to PB.
-- Define a `make_tar(src_dir, tar_path)` helper that creates an uncompressed tar archive with the directory's name as the arcname.
-- Define a `_read_all(src)` helper that reads a whole file as bytes for in-memory codecs.
-- Optional third-party codecs must be imported inside `try/except ImportError` blocks, setting the module to `None` on failure, so the script still runs with only the standard library. Cover these optional libraries: brotli, zstandard, lz4.frame, py7zr, pylzma, cramjam, zopfli.gzip, pyppmd, pyzstd, zipfile_deflate64, and pyzipper.
-- Build a registry of compressors (name → function) covering the standard-library formats (gzip, bz2, lzma/xz, zip with deflate, tar variants) and each optional codec only when its module is available; skip unavailable ones silently or with a note.
-- Each compressor function must handle its own level argument, falling back to a default when none is given, and must write to the destination path.
-- Gracefully handle per-codec exceptions: catch errors for an individual format, report it as failed or skipped in the output, and continue with the remaining formats rather than aborting the whole run.
-- Handle edge cases: empty files, missing paths, directories versus single files, unreadable files, zero-byte compressed output (avoid division by zero in ratio calculation), and filenames with special characters.
-- Use `time.perf_counter()` for timing each compression run.
-- Use `tempfile` for scratch output so results are isolated, and remove temporary artifacts in a `finally` path.
-- Guard the entry point with `if __name__ == "__main__":` and exit with a nonzero status on fatal usage errors.
-- Keep the code clear and idiomatic: type hints on function signatures, docstrings or brief comments where logic is non-obvious, and no external dependencies beyond the optional codecs listed above.
-
-**Execution:** Run as `python script.py <path> [options]` in Termux. The script should work with only the standard library installed and automatically enable extra formats when the optional packages are present.
----"""
+#!/data/data/com.termux/files/usr/bin/python
 
 from __future__ import annotations
 
